@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
-    "scan": "python3 scripts/scan_public_dist.py dist"
+    "data:export": "python3 scripts/export_snapshot.py",
+    "scan": "python3 scripts/scan_public_dist.py --dir dist"
   },
   "dependencies": {
     "echarts": "6.1.0",

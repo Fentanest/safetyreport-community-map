@@ -1,7 +1,6 @@
 import type { DashboardData, Scope } from '../domain/public';
 import {
-  metaSchema, overviewResponseSchema, pointsResponseSchema, seriesResponseSchema,
-  entitiesResponseSchema, vehiclesResponseSchema,
+  metaSchema, dashboardResponseSchema, snapshotManifestSchema,
 } from './schema';
 
 export type DataMode = 'demo' | 'live';
@@ -25,6 +24,29 @@ function query(scope: Scope, version?: string, extra?: Record<string, string>): 
   return p;
 }
 
+function sameScope(a: Scope, b: Scope): boolean {
+  return a.start === b.start && a.end === b.end && a.category === b.category &&
+    a.region_code === b.region_code && a.agency_key === b.agency_key &&
+    a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox);
+}
+
+async function readSnapshot(scope: Scope, version: string, signal?: AbortSignal) {
+  try {
+    const base = import.meta.env.BASE_URL;
+    const manifestResponse = await fetch(`${base}data/manifest.json`, { signal, cache: 'no-store' });
+    if (!manifestResponse.ok) return null;
+    const manifest = snapshotManifestSchema.parse(await manifestResponse.json());
+    if (manifest.dataset_version !== version || !sameScope(manifest.scope, scope)) return null;
+    const response = await fetch(`${base}data/${encodeURIComponent(version)}/dashboard.json`, { signal, cache: 'no-store' });
+    if (!response.ok) return null;
+    const snapshot = dashboardResponseSchema.parse(await response.json());
+    return snapshot.dataset_version === version && !snapshot.sample && sameScope(snapshot.scope, scope) ? snapshot : null;
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    return null;
+  }
+}
+
 async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
   if (!base) throw new PublicApiError('공개 통계 API 주소가 설정되지 않았습니다.');
@@ -45,24 +67,20 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     return demoDashboard(scope, state === 'one' || state === 'empty' ? state : 'overview');
   }
   const meta = metaSchema.parse(await read('meta', null, signal));
+  if (meta.capabilities.daily_report_dates?.status !== 'supported') {
+    throw new PublicApiError('임의 기간의 공개 집계가 아직 준비되지 않았습니다.', 503);
+  }
   const q = query(scope, meta.dataset_version);
-  const [overview, points, series, agencies, managers, vehicles] = await Promise.all([
-    read('overview', q, signal).then(v => overviewResponseSchema.parse(v)),
-    read('map', q, signal).then(v => pointsResponseSchema.parse(v)),
-    read('series', q, signal).then(v => seriesResponseSchema.parse(v)),
-    read('entities', query(scope, meta.dataset_version, { kind: 'agency', page_size: '100' }), signal).then(v => entitiesResponseSchema.parse(v)),
-    read('entities', query(scope, meta.dataset_version, { kind: 'manager', page_size: '100' }), signal).then(v => entitiesResponseSchema.parse(v)),
-    read('vehicles/top', q, signal).then(v => vehiclesResponseSchema.parse(v)),
-  ]);
-  const parts = [overview, points, series, agencies, managers, vehicles];
-  if (parts.some(part => part.dataset_version !== meta.dataset_version || part.sample !== meta.sample ||
-      JSON.stringify(part.scope) !== JSON.stringify(scope))) {
+  const result = await readSnapshot(scope, meta.dataset_version, signal) ??
+    dashboardResponseSchema.parse(await read('dashboard', q, signal));
+  if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
+      !sameScope(result.scope, scope)) {
     throw new PublicApiError('데이터 버전 또는 조회 범위가 바뀌었습니다. 다시 조회해 주세요.', 409);
   }
   return {
-    meta, scope, overview: overview.overview, points: points.points, monthly: series.monthly,
-    agencies: agencies.items, managers: managers.items, vehicles: vehicles.items,
-    vehicle_total_scope_reports: vehicles.total_scope_reports,
-    vehicle_identifiable_reports: vehicles.identifiable_reports,
+    meta, scope, overview: result.overview, points: result.points, monthly: result.monthly,
+    agencies: result.agencies, managers: result.managers, vehicles: result.vehicles,
+    vehicle_total_scope_reports: result.vehicle_total_scope_reports,
+    vehicle_identifiable_reports: result.vehicle_identifiable_reports,
   };
 }

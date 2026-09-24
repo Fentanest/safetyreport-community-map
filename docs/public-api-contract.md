@@ -6,6 +6,7 @@ base는 환경별 공개 URL. 비로그인 GET, response projection은 fixed all
 | 경로 | 용도 |
 |---|---|
 | GET /public-analytics/meta | version, coverage, capabilities, available date bounds, dictionaries |
+| GET /public-analytics/dashboard | 첫 화면용 overview/map/series/entities/TOP5 합성 응답. 같은 버전·scope에서 한 번만 집계 |
 | GET /public-analytics/overview | 선택 범위 KPI + 기준·분모·비교값 |
 | GET /public-analytics/map | zoom/bbox에 맞는 clusters 또는 exact points |
 | GET /public-analytics/series | 일별/월별 report/completed/fine/results |
@@ -49,3 +50,13 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 오류에 SQL/stack/private 요청값/원번호 포함 금지.
 초기 cache 제안: overview/series 60초, detail/entities/vehicles 30초 이하, meta 30초.
 삭제·version변경 시 invalidation 경로 구현. 헤더만 적어놓고 실제 CDN cache가 생긴다고 가정하지 않는다.
+
+## 현재 로컬 구현 상태
+
+`server/publicHandler.ts`가 이 경로와 합성 `dashboard` 경로를 고정 라우팅한다. Supabase Edge
+`supabase/functions/public-analytics/index.ts`는 service-role credential을 서버 안에서만 사용해
+`internal_analytics_v2_*` RPC를 호출하고 고정 공개 DTO만 반환한다. base 설정값은
+`https://<project>.supabase.co/functions/v1`이며 브라우저는 그 뒤에 `/public-analytics/...`를 붙인다.
+현재 응답은 철회/버전 무효화 전파를 우선해 `Cache-Control: no-store`다. 공개 정적 snapshot은
+meta version이 같은 경우에만 읽는다. 운영에서 v2 사실이 준비되지 않으면 meta capability는 missing,
+집계 경로는 503을 반환한다. 이 코드는 아직 운영 DB·Edge에 배포되지 않았다.

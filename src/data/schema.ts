@@ -19,7 +19,7 @@ const capability = z.strictObject({
 
 export const metaSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string().min(1), sample: z.boolean(),
-  source_updated_at: z.string().nullable(), generated_at: z.string(), published_at: z.string().nullable(),
+  source_updated_at: z.string().nullable(), generated_at: z.string().nullable(), published_at: z.string().nullable(),
   data_min: date.nullable(), data_max: date.nullable(), coverage_note: z.string(),
   dedupe_policy_version: z.string(), capabilities: z.record(z.string(), capability),
 });
@@ -29,7 +29,10 @@ const countMetric = z.strictObject({
   previous: nullableCount, delta: z.number().int().nullable(), delta_percent: z.number().nullable(),
   delta_reason: z.enum(['new', 'no_baseline']).nullable(), note: z.string().optional(),
 });
-const rateMetric = countMetric.extend({ numerator: nullableCount, unit: z.literal('percent') });
+const rateMetric = countMetric.extend({
+  value: z.number().min(0).max(100).nullable(), previous: z.number().min(0).max(100).nullable(),
+  delta: z.number().nullable(), numerator: nullableCount, unit: z.literal('percent'),
+});
 const outcomes = z.strictObject({
   accepted: count, partial: count, rejected: count, result_known: count, result_unknown: count,
 });
@@ -73,6 +76,7 @@ export const seriesResponseSchema = z.strictObject({
 export const entitiesResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema,
   sample: z.boolean(), items: z.array(entitySchema).max(100),
+  total_rows: count, page: z.number().int().positive(), page_size: z.number().int().min(1).max(100),
 });
 export const vehiclesResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema,
@@ -83,4 +87,17 @@ export const vehiclesResponseSchema = z.strictObject({
 export const overviewResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema,
   sample: z.boolean(), overview: overviewSchema,
+});
+
+export const dashboardResponseSchema = z.strictObject({
+  schema_version: z.literal(2), dataset_version: z.string(), sample: z.boolean(), scope: scopeSchema,
+  overview: overviewSchema, points: z.array(pointSchema).max(1000), monthly: z.array(monthlySchema),
+  agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
+  vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,
+  vehicle_identifiable_reports: count,
+});
+
+export const snapshotManifestSchema = z.strictObject({
+  schema_version: z.literal(2), dataset_version: z.string().regex(/^[A-Za-z0-9._-]{1,120}$/),
+  scope: scopeSchema, generated_at: z.string(),
 });

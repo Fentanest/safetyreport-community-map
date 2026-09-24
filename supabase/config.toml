@@ -1,0 +1,2 @@
+[functions.public-analytics]
+verify_jwt = false

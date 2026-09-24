@@ -16,4 +16,6 @@ playwright-report/
 test-results/
 __pycache__/
 *.py[cod]
+*.tsbuildinfo
+public/data/
 .local-data/

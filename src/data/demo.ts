@@ -1,4 +1,4 @@
-import type { DashboardData, CountMetric, RateMetric, Scope } from '../domain/public';
+import { DEMO_SCOPE, type DashboardData, type CountMetric, type RateMetric, type Scope } from '../domain/public';
 
 // Every value here is synthetic, already public, and only loaded for explicit demo builds.
 const count = (value: number | null, basis: 'report_date' | 'completed_date', denominator: number | null = null): CountMetric => ({
@@ -13,7 +13,7 @@ const unavailable = (basis: 'report_date' | 'completed_date'): CountMetric => ({
 export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' = 'overview'): DashboardData {
   const supported = state !== 'empty' && scope.category === 'all' && !scope.region_code &&
     !scope.agency_key && !scope.manager_key && !scope.bbox &&
-    scope.start === '2025-09-25' && scope.end === '2026-09-24';
+    scope.start === DEMO_SCOPE.start && scope.end === DEMO_SCOPE.end;
   const one = state === 'one';
   const available = supported;
   const R = one ? 1 : 9;
@@ -84,7 +84,7 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       { rank: 1, rank_item_id: 'r1', masked_plate: '1*가*4*6', report_count: 1, percentage: 100 },
     ] : [
       { rank: 1, rank_item_id: 'r1', masked_plate: '1*가*4*6', report_count: 3, percentage: 33.3333333333 },
-      { rank: 2, rank_item_id: 'r2', masked_plate: '1*3나*5*7', report_count: 2, percentage: 22.2222222222 },
+      { rank: 2, rank_item_id: 'r2', masked_plate: '1*3*4*67', report_count: 2, percentage: 22.2222222222 },
       { rank: 3, rank_item_id: 'r3', masked_plate: '2*다*6*8', report_count: 1, percentage: 11.1111111111 },
       { rank: 4, rank_item_id: 'r4', masked_plate: '1*가*4*6', report_count: 1, percentage: 11.1111111111 },
     ],

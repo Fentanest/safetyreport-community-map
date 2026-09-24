@@ -23,7 +23,7 @@ export interface PublicMeta {
   dataset_version: string;
   sample: boolean;
   source_updated_at: string | null;
-  generated_at: string;
+  generated_at: string | null;
   published_at: string | null;
   data_min: string | null;
   data_max: string | null;
@@ -120,7 +120,18 @@ export interface DashboardData {
   vehicle_identifiable_reports: number | null;
 }
 
-export const DEFAULT_SCOPE: Scope = {
+export const DEMO_SCOPE: Scope = {
   start: '2025-09-25', end: '2026-09-24', category: 'all', region_code: null,
   agency_key: null, manager_key: null, bbox: null,
 };
+
+function recentTwelveMonths(): Pick<Scope, 'start' | 'end'> {
+  const end = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const [year, month, day] = end.split('-').map(Number);
+  const priorMonthDays = new Date(Date.UTC(year - 1, month, 0)).getUTCDate();
+  const first = new Date(Date.UTC(year - 1, month - 1, Math.min(day, priorMonthDays)));
+  first.setUTCDate(first.getUTCDate() + 1);
+  return { start: first.toISOString().slice(0, 10), end };
+}
+
+export const DEFAULT_SCOPE: Scope = { ...DEMO_SCOPE, ...recentTwelveMonths() };
