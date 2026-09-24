@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "project": "safetyreport-community-map",
+  "policy_version": "cm-2026-09-24",
+  "models": {
+    "lead": "gpt-6-sol",
+    "muse_display_name": "Muse Spark contributor",
+    "muse_runtime_id": null,
+    "muse_variant": null
+  },
+  "runtime_id_source": "opencode models + current subscription provider metadata on host; never guess",
+  "roles": {
+    "sol": [
+      "contracts",
+      "data",
+      "security",
+      "integration"
+    ],
+    "muse": [
+      "ui_implementation",
+      "browser_uiux_review"
+    ]
+  },
+  "runtime_dir": ".agent-runtime",
+  "review_milestones": [
+    "M0-design",
+    "M1-vertical",
+    "M2-full",
+    "M3-integrated"
+  ],
+  "automatic_cloud_writes": false,
+  "automatic_deploy": false
+}

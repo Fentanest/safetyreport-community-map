@@ -1,0 +1,32 @@
+/* Family reference → community map implementation tokens. No font binary bundled. */
+:root {
+  --brand: #0D6EFD; --brand-dark:#0B4ED7; --brand-light:#E7F1FF; --cyan:#06B6D4;
+  --accepted:#22C55E; --partial:#F59E0B; --rejected:#EF4444; --processing:#3B82F6;
+  --completed:#06B6D4; --withdrawn:#94A3B8; --supplement:#F97316; --fine:#EC4899;
+  --warning-penalty:#8B5CF6; --unknown:#6B7280;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:24px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px;
+  --font:"Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --fast:160ms; --normal:220ms; --easing:cubic-bezier(.2,.7,.2,1);
+}
+:root, [data-theme="dark"] {
+  color-scheme:dark; --bg:#0B1220; --surface:#111827; --raised:#1F2937; --border:#334155;
+  --text:#F8FAFC; --text-secondary:#CBD5E1; --muted:#94A3B8; --link:#74B4FF;
+  --hover:rgba(116,180,255,.10); --shadow:0 12px 32px rgba(0,0,0,.18); --grid:rgba(148,163,184,.10);
+}
+[data-theme="light"] {
+  color-scheme:light; --bg:#F8FAFC; --surface:#FFFFFF; --raised:#F1F5F9; --border:#E2E8F0;
+  --text:#0F172A; --text-secondary:#475569; --muted:#64748B; --link:#0B4ED7;
+  --hover:rgba(13,110,253,.06); --shadow:0 8px 28px rgba(15,23,42,.07); --grid:rgba(71,85,105,.10);
+}
+* { box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); margin:0; font-size:14px; line-height:1.55; }
+button,input,select { font:inherit; }
+button,a,input,select { -webkit-tap-highlight-color:transparent; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid var(--link); outline-offset:3px; }
+.cm-panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); min-width:0; }
+.cm-number { font-variant-numeric:tabular-nums; letter-spacing:-.025em; }
+.cm-muted { color:var(--muted); }
+.cm-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:999px; font-size:12px; line-height:18px; color:var(--text-secondary); background:var(--raised); border:1px solid var(--border); white-space:nowrap; }
+.cm-glow { background:radial-gradient(ellipse at 25% 0,rgba(13,110,253,.12),transparent 55%); }
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:0ms!important; transition-duration:0ms!important; scroll-behavior:auto!important; } }

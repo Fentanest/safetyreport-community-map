@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PublicVehicleTop5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sample",
+    "dataset_version",
+    "time_basis",
+    "scope",
+    "total_scope_reports",
+    "identifiable_reports",
+    "items"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "sample": {
+      "type": "boolean"
+    },
+    "dataset_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time_basis": {
+      "const": "report_date"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start",
+        "end",
+        "region_code"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date"
+        },
+        "end": {
+          "type": "string",
+          "format": "date"
+        },
+        "region_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "total_scope_reports": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "identifiable_reports": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rank",
+          "rank_item_id",
+          "masked_plate",
+          "report_count",
+          "percentage"
+        ],
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "rank_item_id": {
+            "type": "string",
+            "pattern": "^r[1-5]$"
+          },
+          "masked_plate": {
+            "type": "string",
+            "pattern": "^[0-9]\\*[0-9가-힣]\\*[0-9]\\*[0-9]{1,2}$"
+          },
+          "report_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "percentage": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,137 +1,59 @@
-# 아키텍처
+# 아키텍처 · Pages 정적 UI + 제한된 공개 집계 API
 
-## 1. 구성요소
-
-### 데이터 제공자
-
-- `safetyreport-mobile` 단독 모드는 로컬 SQLite에서 위치별 통계를 계산한다.
-- `safetyreport` 서버 모드는 서버 DB에서 위치별 통계를 계산한다.
-- 두 클라이언트 모두 개별 신고 원문이 아닌 집계 스냅샷만 전송한다.
-
-### Supabase Auth
-
-- 휴대폰 SMS OTP를 통해 번호 소유를 확인한다.
-- 확인된 번호는 `auth.users.phone`에 저장된다.
-- 다른 테이블은 전화번호 대신 `auth.users.id`만 참조한다.
-- 동일한 번호로 모바일과 서버에서 로그인하면 동일 UUID를 사용한다.
-
-### Edge Functions
-
-외부 요청의 유일한 진입점이다.
-
-- 로그인 JWT 검증
-- JSON 스키마와 크기 검증
-- 위경도·연도·분류·집계 수치 검증
-- 위치 키 재계산
-- 사용자·IP 단위 속도 제한
-- 스냅샷 청크 저장과 원자적 활성화
-- 공개 지도 쿼리 및 캐시 헤더 처리
-- 탈퇴·기여 철회 처리
-
-클라이언트에는 Supabase publishable key만 포함한다. `service_role` 키는 Edge Function의 비밀 환경변수로만 사용한다.
-
-### Postgres
-
-데이터를 세 영역으로 분리한다.
-
-1. `auth.users`: 전화번호와 인증 상태
-2. `private.*`: 동의 기록, 스냅샷, 기여 지점, 남용 감사 정보
-3. `public.public_map_points`: 공개 API가 읽는 비식별 집계 결과
-
-`private` 스키마와 공개 집계 테이블은 앱에서 직접 읽거나 쓰지 못하게 한다. Edge Function만 서비스 역할로 접근한다.
-
-### GitHub Pages
-
-- HTML/CSS/JavaScript와 지도 정적 자산만 제공한다.
-- `GET /functions/v1/public-map`을 호출한다.
-- 휴대폰번호, 사용자 UUID 또는 비공개 기여 테이블에는 접근하지 않는다.
-
-## 2. 인증 흐름
-
+## 1. 경계
 ```text
-사용자                     Supabase Auth                 SMS 사업자
-  │ signInWithOtp(phone)         │                           │
-  ├─────────────────────────────►│ OTP 발송                   │
-  │                              ├───────────────────────────►│
-  │◄──────────────────────────── SMS 수신                     │
-  │ verifyOtp(phone, code)       │                           │
-  ├─────────────────────────────►│                           │
-  │◄──────────────────────────── JWT + refresh token         │
+safetyreport / safetyreport-mobile (이 작업 밖의 업로더)
+      → 동의·Google Auth·최신 private contribution facts
+                         │
+                   Supabase Postgres
+                         ├─ private facts / identity / raw vehicle
+                         ├─ versioned aggregates / export-only read model
+                         └─ public-analytics Edge API (공개 허용 DTO만)
+                                      ↑
+GitHub Actions → safe export view → initial snapshot → GitHub Pages React UI
+                                                     │
+                                                     ├─ Kakao JS SDK (공개 JS key)
+                                                     └─ public-analytics GET (비밀키 없음)
 ```
 
-모바일은 refresh token을 OS 보안 저장소에 보관한다. 로컬 서버는 운영체제 권한이 제한된 별도 비밀 저장소에 보관하며 로그·설정 화면·백업에 노출하지 않는다.
+Pages에서 브라우저가 비밀키 없는 공개 API를 호출하는 것은 가능하다. 불가능한 것은 브라우저에 넣은 secret을 숨기는 일이다.
+'Pages니까 모든 값을 빌드 시점에만 계산해야 한다'는 앞선 단정을 정정한다.
+[근거: S01·S02·S03·S07, docs/sources.md]
 
-현재 안전신문고 기능용으로 입력된 번호를 자동 전송하지 않는다. 사용자가 공동 지도 참여에 별도로 동의한 뒤 OTP 인증을 수행한다.
+## 2. 왜 순수 정적 TOP5가 아닌가
+기간 A와 B 각각 6등인 차량이 A+B 합계에서 1등일 수 있다. 월별 상위 5개만 보관하면 범위 TOP5를 복구할 수 없다.
+모든 차량·날짜·정확좌표·안정 ID를 정적 JSON으로 배포하면 마스킹해도 쓸데없이 추적 가능한 데이터가 크게 늘어난다.
+따라서 **전체 후보는 private에 유지하고, 선택 범위를 서버가 집계한 상위 5개 결과만 반환**한다.
+기관·담당자·상태·처분 교차 필터와 distinct contributor도 같은 읽기 모델에서 처리해 수치를 맞춘다.
 
-## 3. 스냅샷 업로드 흐름
+## 3. 책임
+- Postgres: 소유 snapshot 교체, normalized facts, versioned aggregation, 조건에 맞는 정확한 집계.
+- Edge: 쿼리 파싱/allowlist, query complexity·limit, response DTO projection, 마스킹 검증, cache·rate limit.
+- Actions: 공개 안전한 meta/overview/map preview만 읽어 초기 캐시 생성, missing address 필요 시 제한적 geocode,
+  테스트·빌드·artifact scan. raw 차량/사용자 토큰을 Actions로 가져오지 않는다.
+- Browser: 페이지 표시·필터·키보드/터치·공개 캐시·map overlays. 사용자가 request를 변조해도 읽기 범위를 벗어나지 못해야 한다.
 
-```text
-클라이언트                 Edge Function                    Postgres
-  │ POST contribute/begin       │                              │
-  ├────────────────────────────►│ JWT·동의·제한 확인          │
-  │◄──────────────────────────── upload_id                    │
-  │                                                           │
-  │ POST contribute/chunk       │                              │
-  ├────────────────────────────►│ 검증·위치키 생성             │
-  │                             ├─────────────────────────────►│ staged points
-  │◄──────────────────────────── accepted                     │
-  │                                                           │
-  │ POST contribute/finalize    │                              │
-  ├────────────────────────────►│ 건수·해시 확인               │
-  │                             ├─────────────────────────────►│ 새 snapshot 활성화
-  │                             │                              │ 이전 snapshot 대체
-  │◄──────────────────────────── active                       │
-```
+## 4. 데이터 모드
+`demo`: 합성 fixtures 전용; 모든 화면에 예시 배지; production 빌드와 별도.
+`snapshot`: 배포 시점 summary·points 캐시. 값의 dataset_version·time range·scope를 표시.
+`live`: 같은 공개 API에서 상세 필터 응답. 데이터 실시간 수집을 뜻하지 않는다.
+실제 upstream 없음/키 누락 시 demo로 자동 대체하지 말고 live 기능의 준비 상태를 보여준다.
 
-업로드가 중간에 실패하면 기존 활성 스냅샷은 그대로 유지된다. 모든 청크와 전체 해시 검증이 끝난 뒤에만 새 스냅샷을 활성화한다.
+## 5. 일관성
+manifest의 `dataset_version`을 한 분석 세션에 고정한다. API 요청에 expected_version을 보내고 불일치하면
+409 DATASET_CHANGED로 안내 후 전체 패널을 같은 version으로 재조회한다. 서로 다른 생성본의 KPI와 TOP5 혼합 금지.
+API는 계산 시 동일 snapshot/transaction을 사용한다. 단순 max(updated_at)을 data version으로 쓰지 않는다.
+사전집계 refresh는 shadow tables/version pointer의 atomic switch; 삭제는 active version에서도 즉시 반영돼야 한다.
 
-활성 스냅샷은 사용자당 하나다. 모바일과 서버가 같은 데이터를 각각 전송해도 마지막으로 완성된 스냅샷이 교체될 뿐 합산되지 않는다.
+## 6. 성능 목표(검증할 예산, 현재 성능 주장 아님)
+- 앱 초기 JS gzip 350KiB 이내 목표(지도 SDK 별도), 첫 데이터 gzip 200KiB 목표.
+- nationwide marker node 전부 생성 금지. 저줌 aggregate clusters, 고줌 exact points, bbox 단위 lazy data.
+- map request는 idle 250~350ms debounce + AbortController + query key/version. 이전 응답이 최신 선택을 덮지 못하게 한다.
+- markers window budget 1,000 전후로 시작하고 결과 truncated/resolution 표시. 통계 합계는 렌더링된 마커 수가 아니라 전체 조건 집합.
+- charts는 ECharts lazy import, route chunks, ResizeObserver. 사용 후 event listener/overlay clear.
+- public API query는 fixed SQL/params, statement timeout, bounded pagination. raw SQL/테이블명 요청 금지.
 
-## 4. 공개 집계 흐름
-
-```text
-활성 스냅샷들
-    │
-    │ 위치키 + 연도 + 분류로 합산
-    ▼
-public_map_points
-    │
-    │ GET public-map?year=2026&category=traffic&bbox=...
-    ▼
-Edge Function
-    │
-    ├─ 공개 허용 필드만 선택
-    ├─ 기여자 식별값 제거
-    ├─ 신뢰도·최소 기여자 정책 적용
-    └─ ETag/Cache-Control 설정
-    ▼
-GitHub Pages 지도
-```
-
-공개 집계에는 개별 기여자 UUID가 들어가지 않는다. `contributor_count`는 숫자로만 제공하며 특정 위치들을 같은 사용자의 활동으로 연결할 수 없게 한다.
-
-## 5. 위치 정확도
-
-현재 신고 지도는 정확한 `lat`, `lng`에 마커를 찍고 같은 위치의 신고건수로 마커 크기를, 과태료 비율로 색상을 계산한다. 따라서 공동 지도도 정확한 위경도와 표시 주소를 받는다.
-
-위치 키는 소수 6자리로 반올림한 좌표만으로 만들고 주소는 키에 넣지 않는다. 두 레포의 주소 정규화가 공백 정리 수준이라 표기 편차로 동일 지점이 갈라질 수 있고, 같은 주소는 지오코딩 캐시를 통해 같은 좌표를 받기 때문이다. 최종 알고리즘은 ADR-003에서 확정한다.
-
-위험 완화는 좌표를 무조건 흐리는 방식이 아니라 다음 방식으로 수행한다.
-
-- 차량번호·신고번호·본문·첨부·정확한 발생시각을 받지 않는다.
-- 공개 응답에서 기여자 UUID를 제거한다.
-- 주택 동·호수 등 불필요한 상세 주소는 정규화 단계에서 제거한다.
-- 기여자 수가 적은 지점은 신뢰도 표기 또는 공개 임계값을 적용한다.
-
-## 6. 장애와 복구
-
-- 업로드 중 장애: staged 스냅샷을 폐기하고 이전 활성본 유지
-- 집계 작업 장애: 마지막 공개 집계 유지 후 재시도
-- 공개 API 장애: Pages가 마지막 성공 응답을 브라우저 캐시에서 사용할 수 있게 ETag 적용
-- 탈퇴: Auth 사용자와 비공개 기여를 삭제하고 공개 집계를 재생성
-- 잘못된 대량 업로드: 스냅샷을 격리하고 이전 활성본으로 되돌림
-
-## 7. 선택적 확장
-
-지도 조회량이 커지면 Supabase 집계 결과를 Cloudflare R2나 CDN에 정적 GeoJSON/타일로 배포할 수 있다. 이는 공개 결과물 캐시용 확장이며, Auth와 관계형 원본 DB는 계속 Supabase가 담당한다.
-
+## 7. 선택적 정적 확장
+일별 joint 공개 cube가 정확성·용량·프라이버시 검사를 통과하면 일부 통계를 Worker에서 계산할 수 있다.
+그러나 임의 필터의 exact TOP5·distinct contributor를 보장하지 못하면 해당 기능은 API 경로를 유지한다.
+정적 경로만 가능하다는 이유로 사용자가 선택할 수 있는 날짜/공간 범위를 몰래 줄이지 않는다.

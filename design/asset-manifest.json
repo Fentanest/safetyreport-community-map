@@ -1,0 +1,66 @@
+{
+  "version": "cm-2026-09-24",
+  "references": [
+    {
+      "file": "references/family-design-tokens.png",
+      "source_name": "design tokens.png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    },
+    {
+      "file": "references/family-component-kit.png",
+      "source_name": "UI COMPONENT KIT.png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    },
+    {
+      "file": "references/family-pc-dark.png",
+      "source_name": "pc dark.png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    },
+    {
+      "file": "references/family-pc-light.png",
+      "source_name": "pc light.png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    },
+    {
+      "file": "references/family-mobile-dark.png",
+      "source_name": "mobile dark.png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    },
+    {
+      "file": "references/family-chart-guide.png",
+      "source_name": "guide(1).png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    },
+    {
+      "file": "references/family-empty-states.png",
+      "source_name": "board(1).png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    },
+    {
+      "file": "references/family-logo-source.png",
+      "source_name": "LOGO.png",
+      "purpose": "private design reference; exclude from Pages artifact"
+    }
+  ],
+  "assets": [
+    {
+      "file": "assets/family-mark.png",
+      "source": "references/family-logo-source.png",
+      "operation": "exact crop [72,184,366,476]",
+      "purpose": "family mark"
+    },
+    {
+      "file": "assets/family-logo-light.png",
+      "source": "references/family-logo-source.png",
+      "operation": "exact crop top wordmark",
+      "purpose": "light theme"
+    },
+    {
+      "file": "assets/family-logo-dark.png",
+      "source": "references/family-logo-source.png",
+      "operation": "exact crop bottom wordmark",
+      "purpose": "dark theme"
+    }
+  ],
+  "fonts_bundled": false
+}

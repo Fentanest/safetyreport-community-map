@@ -1,0 +1,52 @@
+# Reference only. Promote after package scripts exist and actions are reviewed/pinned.
+name: community-map-publication
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 19 * * *' # UTC: next-day 04:17 KST, not a guaranteed execution time
+permissions:
+  contents: read
+concurrency:
+  group: community-map-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4 # Verify current release and pin full SHA before promotion.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:ci
+      - name: Export sanitized initial snapshot
+        run: npm run data:export
+        env:
+          SUPABASE_EXPORT_DATABASE_URL: ${{ secrets.SUPABASE_EXPORT_DATABASE_URL }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+      - name: Build (public config only)
+        run: npm run build
+        env:
+          VITE_KAKAO_MAP_JS_KEY: ${{ vars.KAKAO_MAP_JS_KEY }}
+          VITE_PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
+          VITE_BASE_PATH: /safetyreport-community-map/
+          VITE_DATA_MODE: live
+      - run: python3 scripts/scan_public_dist.py --dir dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy approved artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

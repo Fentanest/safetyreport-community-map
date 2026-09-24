@@ -1,0 +1,15 @@
+-- REFERENCE ONLY. Do not run against production without schema/owner/grant review.
+-- Source tables/views must already be implemented and audited safe.
+-- Do not grant this role access to private facts, raw vehicles, or auth.users.
+CREATE ROLE cm_export_reader NOLOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+GRANT CONNECT ON DATABASE postgres TO cm_export_reader;
+GRANT USAGE ON SCHEMA cm_export TO cm_export_reader;
+GRANT SELECT ON cm_export.meta, cm_export.overview, cm_export.map_preview
+  TO cm_export_reader;
+ALTER ROLE cm_export_reader SET default_transaction_read_only = true;
+ALTER ROLE cm_export_reader SET statement_timeout = '20s';
+-- Set LOGIN/password out-of-band in an approved secret-management workflow.
+-- default_transaction_read_only is defense in depth, NOT a replacement for grants.
+-- Audit PUBLIC privileges and mutating SECURITY DEFINER functions too.
+-- Never revoke shared application privileges blindly on an existing project.
+-- Verify positive SELECT and negative INSERT/UPDATE/DELETE/private/auth/RPC tests.

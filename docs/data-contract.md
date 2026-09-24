@@ -1,242 +1,53 @@
-# 데이터 계약
+# 데이터 계약 v2 · 공개 지도 읽기 모델
+upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계약이다. 실제 테이블/컬럼명은 adapter로 매핑한다.
+원본 앱/서버를 이 작업에서 임의로 수정하지 않는다. 기존 v1 aggregate만 있으면 v2 지원으로 위장하지 않는다.
 
-## 1. 수집 단위
-
-서버는 개별 신고 레코드를 받지 않는다. 각 클라이언트가 로컬에서 아래 키로 묶은 집계 지점만 받는다.
-
-```text
-연도(신고일 기준) + 신고 분류 + 정확한 위치
-```
-
-연도는 **신고일** 기준이다. `safetyreport` 서버의 현재 지도 통계는 답변일 기준으로 연도를 필터하므로, 업로드 DTO 생성 시 신고일 기준으로 변환해야 한다. 처리기관·담당자별 세부 통계는 각 지점의 breakdown으로 포함한다. 담당자는 비공개 저장 전용이다.
-
-## 2. 업로드 스냅샷 예시
-
-```json
-{
-  "schema_version": 1,
-  "source_mode": "mobile_standalone",
-  "generated_at": "2026-08-15T10:30:00Z",
-  "data_through_at": "2026-08-15T10:25:00Z",
-  "points": [
-    {
-      "year": 2026,
-      "category": "traffic",
-      "lat": 37.123456,
-      "lng": 127.123456,
-      "address": "서울특별시 ○○구 ○○로 ○○교차로",
-      "region": "서울특별시 ○○구",
-      "total": 12,
-      "accepted": 8,
-      "processing": 2,
-      "rejected": 1,
-      "withdrawn": 1,
-      "fine": 5,
-      "status_counts": {
-        "수용": 7,
-        "일부수용": 1,
-        "처리중": 2,
-        "불수용": 1,
-        "취하": 1
-      },
-      "disposition_counts": {
-        "과태료": 5,
-        "경고/범칙금": 3,
-        "미확인": 4
-      },
-      "agency_counts": {
-        "○○경찰서": 12
-      },
-      "manager_counts": {
-        "홍길동": 7,
-        "김담당": 5
-      }
-    }
-  ]
-}
-```
-
-`source_mode` 허용값:
-
-- `mobile_standalone`
-- `mobile_server`
-- `safetyreport_server`
-
-사용자 UUID와 전화번호는 본문에 넣지 않는다. Edge Function은 JWT의 `sub`에서 사용자 UUID를 얻는다.
-
-### 라벨 사전
-
-두 레포의 지도 통계가 실제로 생성하는 라벨만 허용한다. 사전에 없는 라벨은 요청을 거부한다.
-
-- `status_counts` 허용 라벨(9종): `수용`, `일부수용`, `불수용`, `기타`, `답변완료`, `보완요청`, `처리중`, `취하`, `이송`
-- `disposition_counts` 허용 라벨(4종): `과태료`, `경고/범칙금`, `불수용/기타`, `미확인`
-
-### 고정 컬럼 매핑
-
-고정 건수 컬럼은 두 클라이언트가 동일한 규칙으로 계산한다.
-
-| 고정 컬럼 | 계산 |
+## A. 최소 private 분석 사실
+개별 report fact 또는 아래 차원을 보존한 joint cube가 필요하다.
+| 의미 | 타입/규칙 |
 |---|---|
-| `accepted` | `수용` + `일부수용` |
-| `processing` | `처리중` + `보완요청` |
-| `rejected` | `불수용` |
-| `withdrawn` | `취하` |
-| `fine` | disposition `과태료` |
+| fact_identity | private 중복 제거 키. 공개 금지. 신고번호 수집 여부는 upstream 계약에서 별도 결정 |
+| contributor_id / snapshot_id | private; active snapshot만 계산 |
+| report_date | KST ISO date, null 허용하되 신고일 지표 제외 수 보고 |
+| completed_date | 확인된 처리완료일 KST date, null은 결측. 업로드일로 대체 금지 |
+| category | traffic / parking / other |
+| status | accepted / partial / rejected / processing / supplement / withdrawn / transferred / completed_unknown / other |
+| disposition | fine / penalty / warning / warning_or_penalty / other / unknown 중 원천 지원 값 |
+| lat / lng | WGS84 원 double 값. finite·대한민국 서비스 범위 검증. 주소→좌표 재생성으로 원 좌표 덮지 않음 |
+| point_key | 서버 위치 기준 version; 좌표 공개 정밀도와 key 묶음 알고리즘은 별개 |
+| address / region codes | 제공된 위치 표시 주소·행정구역. 주소 없으면 역지오코딩 대기 상태 |
+| agency_key / agency_name | 검증된 기관 코드 우선. 정규화 규칙 version |
+| manager_key / manager_name | agency_key + name + 가능하면 안정 담당자 식별. 이름 단독 전역 병합 금지 |
+| vehicle_canonical | private 원번호 정규화. region prefix를 동일성에서 보존 |
+| fine_amount | 선택, 실제 원천의 금액만. 없으면 금액 차트 비활성 |
+| count | fact=1; joint cube면 1 이상의 가중치 |
 
-`답변완료`, `기타`, `이송`은 고정 컬럼에 포함하지 않고 `status_counts`에만 나타난다. 따라서 고정 컬럼 합은 `total`보다 작을 수 있다.
+manager 동명이인이 같은 기관에도 존재할 수 있다. 별도 ID가 없으면 '기관·성명 기준 묶음'임을 표시하고 동일인으로 단정하지 않는다.
+담당자 미상은 '담당자 정보 없음'으로 별도 유지하며 0건으로 버리지 않는다.
 
-### 분류 매핑
+## B. 절대 금지 추론
+`agency_counts={A:10,B:10}`과 `status_counts={수용:10,불수용:10}`만으로 A의 수용률을 구할 수 없다.
+`manager_counts`도 동일하다. 비례 배분·동일 평균 가정·연간 값을 월별 1/12 분배 금지.
+status/처분 구분이 combined뿐이면 warning_or_penalty를 유지하며 금액·범칙금 개별 건수를 상상하지 않는다.
 
-업로드 `category`는 enum이고 화면 라벨은 한글이다.
+## C. 중복 제거 단위
+한 업로더의 같은 자료 재전송은 active snapshot 교체로 중복 제거한다.
+서로 다른 계정의 동일 신고인지 판정할 실제 키가 없으면 전역 완전 중복 제거를 주장하지 않는다.
+복수 신고자가 같은 차량/위치에 신고한 건은 별도 신고일 수 있다. 좌표+차량+날짜만 같다는 이유로 임의 삭제 금지.
+`dedupe_policy_version`과 `coverage_note`를 meta에 넣는다.
 
-| enum | 원본 판별 | 표시 라벨 |
-|---|---|---|
-| `traffic` | 민원 유형에 `자동차·교통위반` 포함 | `교통위반` |
-| `parking` | 민원 유형에 `불법주정차신고` 포함 | `주정차위반` |
-| `other` | 그 외 | `기타위반` |
+## D. 공개 DTO allowlist
+계정 정보 없음. 기관명·담당자명은 공개한다. exact lat/lng·주소·집계수·분모·기준일·데이터시각은 공개한다.
+차량 DTO는 `rank, masked_plate, report_count, percentage, rank_item_id`만 기본 허용.
+rank_item_id는 응답 내부 항목 구분용이며 영속 식별자가 아니다. 차량별 상세좌표/날짜 추적 링크 금지.
+공개 차트 데이터는 count와 eligible/missing denominator를 함께 제공한다. null과 0을 구분한다.
 
-## 3. 허용 필드
+## E. capabilities
+meta.capabilities: daily_report_dates, completion_dates, manager_status_cross,
+agency_status_cross, vehicle_top5, fine_amount, processing_duration, region_boundaries.
+각각 supported / missing / partial + reason + coverage.{eligible,total}로 표현한다.
+지원하지 않는 패널은 설명된 준비 상태로 남긴다. 사용자가 요청한 패널 자체를 흔적 없이 삭제하지 않는다.
 
-| 필드 | 비공개 저장 | 공개 지도 | 비고 |
-|---|---:|---:|---|
-| 정확한 위도·경도 | 예 | 예 | 현재 지도 마커 위치에 필요 |
-| 위반장소 주소 | 예 | 예 | 동·호수 등 불필요한 상세는 제거 |
-| 행정구역 | 예 | 예 | 지도 라벨·필터 |
-| 연도 | 예 | 예 | 날짜는 연도 단위부터 시작 |
-| 신고 분류 | 예 | 예 | 교통·주정차·기타 |
-| 신고·상태·처분 건수 | 예 | 예 | 집계값만 허용 |
-| 처리기관 | 예 | 예 | 기관별 집계 |
-| 담당자 이름 | 예 | 아니요 | 비공개 수집 전용, 공개 여부는 ADR-004. 두 레포의 현재 지도 집계 경로에는 없어 DTO 생성 시 담당자 집계 추가 필요 |
-| 기여자 UUID | 예 | 아니요 | 내부 중복 방지용 |
-| 휴대폰번호 | Auth만 | 아니요 | 기여 테이블에는 저장 금지 |
-
-## 4. 전송 금지 필드
-
-- 차량번호 또는 차량번호 해시
-- 안전신문고 신고번호, `C_NO`, 내부 신고 ID 또는 그 해시
-- 신고 제목·본문·처리 답변 전문
-- 사진·영상·첨부파일 URL
-- 정확한 발생일시·신고일시·답변일시
-- 신고자 이름·이메일·주소
-- 안전신문고 아이디·비밀번호·토큰·쿠키
-- 피신고자나 제3자의 전화번호
-- 보완 요청자 연락처
-
-알 수 없는 필드가 들어오면 조용히 저장하지 않고 요청 전체를 거부한다.
-
-## 5. 서버 검증
-
-- `lat`: `32.0 <= lat <= 39.5`
-- `lng`: `124.0 <= lng <= 132.0`
-- `year`: `2020 <= year <= 서버 현재연도 + 1`
-- 주소: 200자 이하 (DB `char_length` 검사와 동일 기준)
-- 행정구역: 100자 이하
-- breakdown 라벨: 상태·처분은 라벨 사전에 있는 값만 허용, 기관명·담당자명은 자유 텍스트 100자 이하
-- 지점의 모든 건수: 0 이상의 정수
-- 상태 건수 합: `total`을 초과할 수 없음
-- 개별 상태·처분 건수: `total`을 초과할 수 없음
-- disposition 건수 합: `total`을 초과할 수 없음 (`safetyreport` 서버의 처분 판정 마스크가 상호배타적이지 않아 수정 전에는 이 검증에 걸릴 수 있음 — 로드맵 0단계)
-- 청크: 최대 500개 지점, 압축 해제 후 최대 1MiB를 시작값으로 사용
-- 스냅샷: 최대 10,000개 지점을 시작값으로 사용
-
-실제 사용자 데이터 분포를 측정한 뒤 제한값을 조정한다.
-
-## 6. 위치 키
-
-클라이언트가 보낸 키는 신뢰하지 않는다. Edge Function이 다음 결과로 위치 키를 다시 만든다.
-
-```text
-canonical = round(lat, 6) + "|" + round(lng, 6)
-
-location_key = SHA-256(canonical)
-```
-
-시작값은 좌표만 사용하는 키다. 두 레포의 주소 정규화는 공백 정리 수준이라 표기 편차가 있으면 동일 지점이 갈라져 `contributor_count`가 과소집계되고, 같은 주소는 카카오 지오코딩 캐시를 통해 같은 좌표를 받으므로 좌표 키의 병합률이 더 높다. 주소는 키에 넣지 않고 대표 표시값으로 저장한다. 주소 포함 여부의 최종 결정은 0단계 표기 편차 측정 후 ADR-003에서 확정한다.
-
-6자리 소수 좌표는 대략 수십 센티미터 수준이며 현재 지도 마커 정밀도를 유지한다. 클라이언트는 좌표를 반올림하지 않고 원값을 보내며, 반올림은 서버가 수행한다. 키 알고리즘 버전은 스냅샷의 `location_key_version`으로 기록하고, 알고리즘이 바뀌면 저장된 원본 좌표·주소로 키를 재계산한다.
-
-## 7. 중복 방지와 스냅샷
-
-한 사용자는 활성 스냅샷 하나만 가진다.
-
-```text
-동일 전화번호
-  ├─ 모바일 스냅샷 A
-  └─ 서버 스냅샷 B
-
-최종 집계에는 마지막으로 정상 완료된 하나만 활성
-```
-
-스냅샷 내부에서는 다음 조합이 고유하다.
-
-```text
-snapshot_id + year + category + location_key
-```
-
-같은 데이터를 다시 보내면 `payload_sha256`로 멱등 처리한다. 청크가 모두 도착하기 전에는 새 스냅샷을 공개 집계에 포함하지 않는다.
-
-해시는 다음과 같이 정의한다.
-
-- `chunk_sha256`: 해당 청크의 `points` 배열을 RFC 8785(JCS) 정준 JSON으로 직렬화한 UTF-8 바이트의 SHA-256, 소문자 16진수
-- `payload_sha256`: 모든 `chunk_sha256` 16진수 문자열을 `chunk_index` 순서로 이어 붙인 UTF-8 문자열의 SHA-256
-
-서버는 finalize 시점에 저장된 청크 해시로 `payload_sha256`를 재계산해 비교한다. 정준 직렬화 없이 JSON을 그대로 해시하면 키 순서·공백 차이만으로 같은 데이터가 다른 해시를 얻는다.
-
-## 8. 공개 응답 예시
-
-현재 모바일 앱의 `ReportMapPayload`와 쉽게 호환되도록 구성한다.
-
-```json
-{
-  "schema_version": 1,
-  "generated_at": "2026-08-15T10:35:00Z",
-  "points": [
-    {
-      "lat": 37.123456,
-      "lng": 127.123456,
-      "address": "서울특별시 ○○구 ○○로 ○○교차로",
-      "region": "서울특별시 ○○구",
-      "total": 42,
-      "accepted_count": 31,
-      "fine_count": 18,
-      "fine_rate": 42.86,
-      "contributor_count": 7,
-      "confidence": "high",
-      "status_breakdown": [
-        {"label": "수용", "count": 31, "pct": 73.81}
-      ],
-      "disposition_breakdown": [
-        {"label": "과태료", "count": 18, "pct": 42.86}
-      ],
-      "agency_breakdown": [
-        {"name": "○○경찰서", "count": 42, "pct": 100.0}
-      ],
-      "category_breakdown": [
-        {"label": "교통위반", "count": 42, "pct": 100.0}
-      ]
-    }
-  ],
-  "meta": {
-    "current_year": "2026",
-    "selected_category": "traffic",
-    "total_reports": 42,
-    "address_groups": 1
-  }
-}
-```
-
-공개 응답에는 전화번호, 사용자 UUID, 스냅샷 ID, 담당자 이름을 포함하지 않는다.
-
-`agency_breakdown` 항목만 `label` 대신 `name` 키를 쓰는데, 현재 모바일 `ReportMapAgencyItem` 파서와의 호환을 위한 의도적 비대칭이다.
-
-## 9. 신뢰도와 공개 임계값
-
-초기 권장값:
-
-- `low`: 검증된 기여자 1명
-- `medium`: 2~4명
-- `high`: 5명 이상
-- 정책 모드에서는 검증된 기여자 3명 미만을 공개하지 않도록 설정 가능
-
-파일럿 초기에는 데이터 공백을 확인하기 위해 낮은 신뢰도 지점을 표시할 수 있지만, UI에서 단일 출처임을 명확히 보여준다. 최종 공개 임계값은 실제 지점별 기여자 분포를 측정한 뒤 결정한다.
-
+## F. fixture 원칙
+합성 fixture는 sample=true를 강제하고 private raw facts는 tests/fixtures 또는 docs 외부 빌드입력에만 둔다.
+prod output에는 fixtures/원번호를 복사하지 않는다. 1건·0분모·동명이인·마스크충돌·완료일결측·월 경계·연말·중복재전송 포함.

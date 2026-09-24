@@ -1,113 +1,16 @@
 # 구현 로드맵
+각 단계는 문서 생성만으로 완료하지 않는다. 구현 허용이 주어졌으므로 0단계 보고만 하고 멈추지 않는다.
 
-## 0단계: 정책과 표본 측정
+| 단계 | 산출물 | 통과 기준 |
+|---|---|---|
+| 0. 실제 환경/원천 | HEAD·remote·upstream capability·Muse doctor·파일 소유 ledger | no invented model/schema |
+| 1. 계약·설계 | strict DTO, metric functions/tests, UI tokens, Muse 방향 검수 | mask/date/denominator edge cases passed |
+| 2. UI 수직 슬라이스 | 전국 dashboard, map mount, KPI, one panel, filters, light/dark | 실제 browser screenshots·키보드 동작 |
+| 3. 분석 기능 | 기관/담당자, 월별, region compare, top5, capabilities | cross-filter·version·1건·0분모 passed |
+| 4. 실읽기 연동 | public Edge API/RPC, safe exporter, version consistency | raw/secret 안 내려옴, 정확 sample 대조 |
+| 5. 지도 완성/성능 | Kakao clusters, detail, relayout, LOD, tests | 키 있는 도메인에서 실제 지도 검수 |
+| 6. release preparation | Actions templates→검증된 workflows, dist scan, runbook | no blocked hard gate |
+| 7. 승인 후 배포 | actual Pages URL·smoke tests·rollback | 운영 승인/근거 남김 |
 
-- 실제 모바일·서버 데이터에서 위치별 집계 지점 수 측정
-- 금지 필드가 없는 DTO 변환 테스트
-- 동일 장소 주소 표기 편차·좌표 일치율 측정 (ADR-003 좌표 키 확정 근거)
-- `safetyreport` 서버의 disposition 판정 중복 카운트 수정 (판정 마스크 상호배타화)
-- 두 레포의 연도 배정을 신고일 기준으로 통일하는 변환 검증
-- 업로드 옵션 고정값(취하 포함·경찰서명 정규화·dedupe 모드) 합의
-- 동의서·개인정보 처리방침 초안 검토
-- SMS 사업자 국내 실발송 테스트(발신번호 사전등록·건당 비용 포함)와 Supabase 리전 결정
-
-완료 조건: 데이터 계약 제한값과 공개 임계값을 수치로 결정할 수 있다.
-
-## 1단계: Supabase 기반
-
-- Supabase 프로젝트 생성
-- Phone Auth와 SMS 사업자 연결
-- SQL migration 적용
-- 로컬·staging·production 환경 분리
-- Edge Function 공통 JWT·오류·CORS 모듈 작성
-- RLS/권한 자동 테스트
-
-완료 조건: OTP 사용자 A가 다른 사용자 B의 비공개 데이터에 어떤 경로로도 접근하지 못한다.
-
-## 2단계: 업로드 API
-
-- 동의 등록
-- begin/chunk/finalize 구현
-- payload hash 멱등 처리
-- 위치 키와 주소 정규화
-- 속도 제한과 격리 규칙 (`private.rate_limits` 카운터)
-- 보존기간 정리 작업 (pg_cron + `internal_cleanup_expired`)
-- 철회·삭제 구현
-
-완료 조건: 중단된 업로드가 기존 활성 스냅샷을 훼손하지 않고 동일 payload 재전송이 건수를 늘리지 않는다.
-
-## 3단계: 모바일 연동
-
-- 공동 지도 참여 설정 UI
-- Phone Auth OTP UI
-- 로컬 지도 통계를 업로드 DTO로 변환 (담당자 집계 추가 포함)
-- 금지 필드 검사
-- 안전 저장소 세션 관리
-- 업로드 상태와 철회 UI
-
-완료 조건: 앱의 로컬 지도와 단일 사용자 업로드 결과가 같은 총계·비율을 보인다.
-
-## 4단계: `safetyreport` 연동
-
-- 기존 지도 통계를 같은 DTO로 변환 (담당자 집계 추가 포함)
-- 모바일 경유 업로드 또는 서버 직접 업로드 방식 확정
-- 동일 번호 모바일·서버 중복 테스트
-- 업로드 옵션 고정값·신고일 기준 연도로 두 레포 스냅샷 일치 검증
-- 서버 secret 저장과 로그 마스킹
-
-완료 조건: 두 레포에서 동일 자료를 보내도 공개 집계가 한 번만 증가한다.
-
-## 5단계: 집계와 공개 API
-
-- 활성 스냅샷 전체 집계 작업
-- `public_map_points` 생성
-- bbox·연도·분류 필터
-- contributor count와 confidence
-- ETag·캐시·응답 크기 제한
-- 이상 데이터 제외·재집계 도구
-
-완료 조건: 공개 API 응답에 전화번호·사용자 UUID·담당자 이름이 없고 현재 앱 지도 모델로 변환 가능하다.
-
-## 6단계: GitHub Pages 지도
-
-- 지도 SDK·타일 공급자 확정 (ADR-007, 도메인 제한 키)
-- 기본 지도와 마커 클러스터
-- 신고건수 기반 크기
-- 과태료 비율 기반 색상
-- 상태·처분·기관 breakdown
-- 연도·분류·화면영역 필터
-- 낮은 신뢰도 표시
-- 데이터 출처·갱신시각·삭제요청 안내
-
-완료 조건: 모바일 신고 지도와 같은 핵심 정보를 공개 데이터만으로 표시한다.
-
-## 7단계: 파일럿
-
-- 내부 5~10명 참여
-- 업로드 크기·DB 용량·API egress 계측
-- 동일 장소 정규화 정확도 검토
-- 단일·다중 기여자 지점 분포 확인
-- SMS 비용 공격 테스트
-- 탈퇴 후 데이터 제거 검증
-- 공개 전 개인정보 재식별 점검
-
-완료 조건: 정식 공개 임계값, 보존기간, 자동 업로드 간격을 확정한다.
-
-## 8단계: 운영 강화
-
-- 모니터링과 비용 경보
-- 관리자 격리·복구 도구
-- 정리 작업 모니터링과 잔여 데이터 점검 (기본 정리는 2단계에서 구현)
-- 보안 사고 대응 절차
-- 백업과 복구 훈련
-- 필요 시 R2 GeoJSON/지도 타일 캐시
-
-## 테스트 범주
-
-- 단위: 정규화, 위치 키, 건수 검증, 금지 필드
-- 통합: Auth JWT, Edge Function, DB 활성화 트랜잭션
-- 보안: RLS, IDOR, JWT 변조, rate limit, service role 노출
-- 개인정보: 로그·오류·공개 API 필드 검사
-- 회귀: 현재 앱/서버 지도 총계와 업로드 총계 비교
-- 부하: 동시 스냅샷, bbox 조회, 전체 집계
-
+공통 상세기능은 docs/acceptance-matrix.md를 따른다. 키가 없는 동안에도 1~3·대부분 테스트를 진행한다.
+4~5 실제 연결과 운영 배포가 막혀 있으면 이유/필요 설정을 기록하며 fake success로 바꾸지 않는다.
