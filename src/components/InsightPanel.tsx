@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { DashboardData, PublicEntity, PublicPoint } from '../domain/public';
-import { fmtCoord6, fmtDate, fmtInt, fmtPct1 } from './format';
+import { fmtCoord6, fmtDate, fmtInt, fmtPercent } from './format';
 import Icon from './icons';
 
 interface Props {
@@ -33,7 +33,7 @@ export default function InsightPanel(p: Props) {
     }
   };
 
-  const title = p.point ? (p.point.address ?? '주소 미상') : '대한민국 전국';
+  const title = p.point ? (p.point.aggregate ? `${p.point.point_count}곳 집계 표시` : (p.point.address ?? '주소 미상')) : '대한민국 전국';
   const reportN = p.point ? p.point.report_count : (o?.report_count.value ?? null);
   const accPct = p.point
     ? p.point.outcomes && p.point.outcomes.result_known > 0
@@ -43,44 +43,44 @@ export default function InsightPanel(p: Props) {
   const contrib = o?.contributor_count.value ?? null;
 
   const agencies = d?.agencies ?? [];
-  const managers = d?.managers ?? [];
-  const rel: PublicEntity[] = p.point
-    ? [...agencies, ...managers].slice(0, 3)
-    : agencies.slice(0, 3);
+  const rel: PublicEntity[] = p.point ? [] : agencies.slice(0, 3);
+  const selectedOutcomes = p.point ? p.point.outcomes : o?.outcomes;
 
   return (
     <aside className="cm-panel insight" aria-label="선택 범위 인사이트">
       <div className="insight-top">
         <span className="overline">REGION INSIGHT</span>
-        <span className="cm-chip">{p.point ? '선택 지점' : '선택 범위'}</span>
+        <span className="cm-chip">{p.point?.aggregate ? '여러 지점 집계' : p.point ? '선택 지점' : '선택 범위'}</span>
       </div>
       <h2>{title}</h2>
       <p className="subtitle" style={{ margin: 0 }}>
-        {p.scopeLabel} · 합성 예시{d?.meta.sample ? ' · demo' : ''}
+        {p.scopeLabel}{d?.meta.sample ? ' · 합성 예시 · demo' : ' · 공개 제공 표본'}
       </p>
       <div className="insight-metrics">
         <div><b className="cm-number">{fmtInt(reportN)}</b><small>신고 접수 (신고일)</small></div>
-        <div><b className="cm-number">{fmtPct1(accPct)}<span>%</span></b><small>수용·일부수용 (완료일)</small></div>
-        <div><b className="cm-number">{fmtInt(contrib)}</b><small>기여 계정 (합산 아님)</small></div>
+        <div><b className="cm-number">{fmtPercent(accPct)}</b><small>수용·일부수용 (완료일)</small></div>
+        <div><b className="cm-number">{fmtInt(contrib)}</b><small>기여 계정 (현재 전체 범위)</small></div>
       </div>
       {p.point && (
         <div className="insight-section" aria-label="지점 상세">
-          <div className="section-title"><h3>지점 상세</h3><span>원좌표 그대로 · 격자화 없음</span></div>
-          <div className="addr-row">
-            <code>{fullCoord ? `${p.point.lat}, ${p.point.lng}` : `${fmtCoord6(p.point.lat)}, ${fmtCoord6(p.point.lng)}`}</code>
-            <button className="mini-btn" type="button" onClick={() => setFullCoord((v) => !v)}>
-              {fullCoord ? '6자리로' : '전체 정밀도'}
-            </button>
-            <button className="mini-btn" type="button" onClick={() => copy(`${p.point!.lat},${p.point!.lng}`, '좌표 원값')}>좌표 복사</button>
-            <button className="mini-btn" type="button" onClick={() => copy(p.point!.address ?? '', '주소')}>주소 복사</button>
-          </div>
+          <div className="section-title"><h3>{p.point.aggregate ? '집계 표시 상세' : '지점 상세'}</h3><span>{p.point.aggregate ? '지도 표시 중심점 · 원좌표 아님' : '원좌표 그대로 · 격자화 없음'}</span></div>
+          {p.point.aggregate ? (
+            <p className="insight-copy">{fmtInt(p.point.point_count ?? null)}개 원 지점을 묶어 표시합니다. 각 지점의 원좌표는 지도를 확대하거나 범위를 적용해 확인할 수 있습니다.</p>
+          ) : (
+            <div className="addr-row">
+              <code>{fullCoord ? `${p.point.lat}, ${p.point.lng}` : `${fmtCoord6(p.point.lat)}, ${fmtCoord6(p.point.lng)}`}</code>
+              <button className="mini-btn" type="button" onClick={() => setFullCoord((v) => !v)}>{fullCoord ? '6자리로' : '전체 정밀도'}</button>
+              <button className="mini-btn" type="button" onClick={() => copy(`${p.point!.lat},${p.point!.lng}`, '좌표 원값')}>좌표 복사</button>
+              <button className="mini-btn" type="button" onClick={() => copy(p.point!.address ?? '', '주소')}>주소 복사</button>
+            </div>
+          )}
           <div className="distribution">
             <div><span>처리완료</span><b>{fmtInt(p.point.completed_count)}</b><small>완료일</small></div>
             <div><span>과태료 처분 신고</span><b>{fmtInt(p.point.fine_count)}</b><small>완료일</small></div>
             <div><span>결과 미확인</span><b>{fmtInt(p.point.outcomes?.result_unknown ?? null)}</b><small>결측 표시</small></div>
           </div>
           <button className="wide-button" type="button" onClick={() => p.onAnalyzePoint(p.point!)}>
-            이 지점 범위로 분석 →
+            {p.point.aggregate ? '집계 표시 범위로 분석 →' : '이 지점 범위로 분석 →'}
           </button>
         </div>
       )}
@@ -101,20 +101,20 @@ export default function InsightPanel(p: Props) {
       {tab === 'outcome' && (
         <div className="insight-section">
           <div className="section-title"><h3>처리결과</h3><span>처리완료일 · 분모 D</span></div>
-          {o ? (
+          {selectedOutcomes ? (
             <div className="distribution">
-              <div><span><i className="dot" style={{ background: 'var(--accepted)' }} />수용</span><b>{fmtInt(o.outcomes.accepted)}</b><small>{fmtPct1(pct(o.outcomes.accepted, o.outcomes.result_known))}%</small></div>
-              <div><span><i className="dot" style={{ background: 'var(--partial)' }} />일부수용</span><b>{fmtInt(o.outcomes.partial)}</b><small>{fmtPct1(pct(o.outcomes.partial, o.outcomes.result_known))}%</small></div>
-              <div><span><i className="dot" style={{ background: 'var(--rejected)' }} />불수용</span><b>{fmtInt(o.outcomes.rejected)}</b><small>{fmtPct1(pct(o.outcomes.rejected, o.outcomes.result_known))}%</small></div>
+              <div><span><i className="dot" style={{ background: 'var(--accepted)' }} />수용</span><b>{fmtInt(selectedOutcomes.accepted)}</b><small>{fmtPercent(pct(selectedOutcomes.accepted, selectedOutcomes.result_known))}</small></div>
+              <div><span><i className="dot" style={{ background: 'var(--partial)' }} />일부수용</span><b>{fmtInt(selectedOutcomes.partial)}</b><small>{fmtPercent(pct(selectedOutcomes.partial, selectedOutcomes.result_known))}</small></div>
+              <div><span><i className="dot" style={{ background: 'var(--rejected)' }} />불수용</span><b>{fmtInt(selectedOutcomes.rejected)}</b><small>{fmtPercent(pct(selectedOutcomes.rejected, selectedOutcomes.result_known))}</small></div>
             </div>
-          ) : <span className="cm-muted" style={{ fontSize: 13 }}>불러오는 중…</span>}
-          <p className="insight-copy">결과 미확인 {fmtInt(o?.outcomes.result_unknown ?? null)}건은 분모에서 제외하고 별도 표시합니다.</p>
+          ) : <span className="cm-muted" style={{ fontSize: 13 }}>이 지점의 결과 교차자료가 제공되지 않았습니다.</span>}
+          <p className="insight-copy">결과 미확인 {fmtInt(selectedOutcomes?.result_unknown ?? null)}건은 분모에서 제외하고 별도 표시합니다.</p>
         </div>
       )}
       {tab === 'entities' && (
         <div className="insight-section">
           <div className="section-title"><h3>기관·담당자</h3><span>전체 성명 + 기관</span></div>
-          {rel.length === 0 && <span className="cm-muted" style={{ fontSize: 13 }}>표시할 기관·담당자가 없습니다.</span>}
+          {rel.length === 0 && <span className="cm-muted" style={{ fontSize: 13 }}>{p.point ? '이 지점의 기관·담당자 교차자료가 아직 제공되지 않았습니다.' : '표시할 기관·담당자가 없습니다.'}</span>}
           <div className="distribution">
             {rel.map((e) => (
               <div key={e.key}>

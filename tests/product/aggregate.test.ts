@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateDashboard, growth, kstDate, previousWindow, type PrivateFact } from '../../server/aggregate';
-import { overviewResponseSchema, vehicleSchema } from '../../src/data/schema';
+import { overviewResponseSchema, pointSchema, vehicleSchema } from '../../src/data/schema';
 import type { Scope } from '../../src/domain/public';
 
 const base: PrivateFact = {
@@ -101,6 +101,19 @@ describe('identity, scope and public projection', () => {
     expect(data.points[0]).toMatchObject({ lat: 37.566535, lng: 126.9779692, report_count: 1 });
     expect(data.managers[0]).toMatchObject({ manager_name: '김하늘', completed_count: 1 });
     expect(data.vehicles[0].report_count).toBe(1);
+  });
+  it('returns bounded aggregate map nodes for ten thousand exact source locations without changing totals', () => {
+    const facts = Array.from({ length: 10_000 }, (_, i) => fact(i + 1, {
+      point_key: `point-${i}`, lat: 33.1 + Math.floor(i / 100) * 0.05,
+      lng: 124.1 + (i % 100) * 0.07,
+    }));
+    const data = aggregate(facts);
+    expect(data.overview.report_count.value).toBe(10_000);
+    expect(data.overview.point_count.value).toBe(10_000);
+    expect(data.points.length).toBeLessThanOrEqual(1000);
+    expect(data.points.some(point => point.aggregate === true && (point.point_count ?? 0) > 1)).toBe(true);
+    expect(data.points.reduce((sum, point) => sum + point.report_count, 0)).toBe(10_000);
+    expect(data.points.every(point => pointSchema.safeParse(point).success)).toBe(true);
   });
   it('rejects private or unknown response fields instead of silently projecting them', () => {
     const data = aggregate([base]);

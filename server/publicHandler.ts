@@ -29,7 +29,7 @@ const cors = {
 };
 const allowed = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox',
-  'expected_version', 'kind', 'page', 'page_size', 'zoom', 'metric',
+  'expected_version', 'kind', 'page', 'page_size',
 ]);
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const key = /^[\p{L}\p{N}._:-]{1,160}$/u;
@@ -119,6 +119,9 @@ export function createPublicHandler(repo: AnalyticsRepository) {
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
         return json(meta(state), 200, 30);
       }
+      if (route !== 'entities' && ['kind', 'page', 'page_size'].some(name => url.searchParams.has(name))) {
+        throw new QueryError('INVALID_QUERY', 400);
+      }
       const scope = parseScope(url.searchParams, state);
       if (url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) {
         throw new QueryError('DATASET_CHANGED', 409);
@@ -154,7 +157,10 @@ export function createPublicHandler(repo: AnalyticsRepository) {
         return json({ ...common, items: rows.slice((page - 1) * pageSize, page * pageSize),
           total_rows: rows.length, page, page_size: pageSize }, 200, 30);
       }
-      const pointKey = decodeURIComponent(route.slice('points/'.length));
+      let pointKey: string;
+      try { pointKey = decodeURIComponent(route.slice('points/'.length)); }
+      catch { throw new QueryError('INVALID_QUERY', 400); }
+      if (!pointKey || pointKey.length > 160) throw new QueryError('INVALID_QUERY', 400);
       const point = data.points.find(row => row.key === pointKey);
       return point ? json({ ...common, point }, 200, 30) : errorResponse('NOT_FOUND', 404);
     } catch (e) {

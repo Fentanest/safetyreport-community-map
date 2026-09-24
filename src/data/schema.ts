@@ -43,7 +43,9 @@ export const overviewSchema = z.strictObject({
 });
 
 export const pointSchema = z.strictObject({
-  key: z.string(), lat: z.number().min(33).max(39), lng: z.number().min(124).max(132),
+  key: z.string(), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
+  aggregate: z.boolean().optional(), point_count: count.optional(),
+  bbox: z.tuple([positive, positive, positive, positive]).optional(),
   address: z.string().nullable(), region_code: z.string().nullable(), report_count: count,
   completed_count: nullableCount, outcomes: outcomes.nullable(), fine_count: nullableCount,
 });

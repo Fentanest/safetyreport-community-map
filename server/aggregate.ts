@@ -163,6 +163,52 @@ function pointRows(reported: readonly PrivateFact[], done: readonly PrivateFact[
   }).sort((a, b) => b.report_count - a.report_count || a.key.localeCompare(b.key));
 }
 
+function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
+  if (exact.length <= 1000) return [...exact];
+  let cell = 0.04;
+  let groups = new Map<string, PublicPoint[]>();
+  for (;;) {
+    groups = new Map();
+    for (const point of exact) {
+      const cellKey = `${Math.floor((point.lat - 32) / cell)}:${Math.floor((point.lng - 124) / cell)}`;
+      const group = groups.get(cellKey);
+      if (group) group.push(point);
+      else groups.set(cellKey, [point]);
+    }
+    if (groups.size <= 1000) break;
+    cell *= 2;
+  }
+  return [...groups].map(([cellKey, rows]) => {
+    if (rows.length === 1) return rows[0];
+    const sum = (pick: (point: PublicPoint) => number) => rows.reduce((n, row) => n + pick(row), 0);
+    const reportCount = sum(row => row.report_count);
+    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+    for (const row of rows) {
+      minLng = Math.min(minLng, row.lng); minLat = Math.min(minLat, row.lat);
+      maxLng = Math.max(maxLng, row.lng); maxLat = Math.max(maxLat, row.lat);
+    }
+    const allOutcomes = rows.map(row => row.outcomes);
+    const result = allOutcomes.every(row => row !== null) ? {
+      accepted: sum(row => row.outcomes!.accepted), partial: sum(row => row.outcomes!.partial),
+      rejected: sum(row => row.outcomes!.rejected), result_known: sum(row => row.outcomes!.result_known),
+      result_unknown: sum(row => row.outcomes!.result_unknown),
+    } : null;
+    return {
+      key: `cluster:${cell}:${cellKey}`,
+      lat: sum(row => row.lat * row.report_count) / reportCount,
+      lng: sum(row => row.lng * row.report_count) / reportCount,
+      aggregate: true, point_count: rows.length,
+      bbox: [minLng, minLat, maxLng, maxLat] as [number, number, number, number],
+      address: null,
+      region_code: rows.every(row => row.region_code === rows[0].region_code) ? rows[0].region_code : null,
+      report_count: reportCount,
+      completed_count: rows.every(row => row.completed_count !== null) ? sum(row => row.completed_count!) : null,
+      outcomes: result,
+      fine_count: rows.every(row => row.fine_count !== null) ? sum(row => row.fine_count!) : null,
+    };
+  }).sort((a, b) => b.report_count - a.report_count || a.key.localeCompare(b.key));
+}
+
 function vehicleRows(reported: readonly PrivateFact[]) {
   const counts = new Map<string, { raw: string; count: number }>();
   for (const fact of reported) {
@@ -201,8 +247,8 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const priorResult = outcomes(previousDone), priorD = priorResult.result_known;
   const fine = done.filter(fact => fact.disposition === 'fine').length;
   const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
-  const points = pointRows(reported, done);
-  if (points.length > 1000) throw new Error('map node budget exceeded; clustered adapter required');
+  const exactPoints = pointRows(reported, done);
+  const points = mapNodes(exactPoints);
   const vehicles = vehicleRows(reported);
   const sourceDates = activeFacts(input).flatMap(fact => [kstDate(fact.report_date), kstDate(fact.completed_date)])
     .filter((day): day is string => day !== null).sort();
@@ -256,7 +302,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
         delta_percent: null, delta_reason: !comparisonCovered ? null : priorD ? null : D ? 'new' : 'no_baseline',
       },
       fine_count: countMetric(fine, 'completed_date', comparisonCovered ? priorFine : null, 0, done.length),
-      point_count: countMetric(points.length, 'report_date', comparisonCovered ? new Set(previousReported.map(fact => fact.point_key)).size : null, 0, reported.length),
+      point_count: countMetric(exactPoints.length, 'report_date', comparisonCovered ? new Set(previousReported.map(fact => fact.point_key)).size : null, 0, reported.length),
       contributor_count: countMetric(new Set(reported.map(fact => fact.contributor_id)).size, 'report_date',
         comparisonCovered ? new Set(previousReported.map(fact => fact.contributor_id)).size : null, 0, reported.length),
       outcomes: result,

@@ -72,6 +72,10 @@ export interface PublicPoint {
   key: string;
   lat: number;
   lng: number;
+  /** Aggregated map node; lat/lng is a display centroid, never a source coordinate. */
+  aggregate?: boolean;
+  point_count?: number;
+  bbox?: [number, number, number, number];
   address: string | null;
   region_code: string | null;
   report_count: number;

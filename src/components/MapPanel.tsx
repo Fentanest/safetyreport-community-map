@@ -15,7 +15,6 @@ interface Props {
   onApplyView: (bbox: [number, number, number, number]) => void;
   autoRefresh: boolean;
   onAutoRefresh: (v: boolean) => void;
-  pendingBbox: boolean;
 }
 
 const METRICS: Array<{ id: MapMetric; label: string; legend: string; basis: string }> = [
@@ -26,9 +25,10 @@ const METRICS: Array<{ id: MapMetric; label: string; legend: string; basis: stri
 
 function metricValue(p: PublicPoint, m: MapMetric): number | null {
   if (m === 'reports') return p.report_count;
-  const o = p.outcomes;
-  if (!o || o.result_known === 0) return null;
-  if (m === 'acceptance') return ((o.accepted + o.partial) / o.result_known) * 100;
+  if (m === 'acceptance') {
+    const o = p.outcomes;
+    return o && o.result_known > 0 ? ((o.accepted + o.partial) / o.result_known) * 100 : null;
+  }
   if (p.fine_count == null || (p.completed_count ?? 0) === 0) return null;
   return (p.fine_count / (p.completed_count ?? 1)) * 100;
 }
@@ -41,6 +41,8 @@ export default function MapPanel(p: Props) {
     kakaoKey() ? null : 'Kakao JavaScript 키가 설정되지 않아 실제 지도를 불러올 수 없습니다. 아래 지점 목록에서 동일하게 탐색할 수 있습니다.',
   );
   const [bbox, setBbox] = useState<[number, number, number, number] | null>(null);
+  const applyViewRef = useRef(p.onApplyView);
+  applyViewRef.current = p.onApplyView;
   const active = METRICS.find((m) => m.id === p.metric)!;
 
   useEffect(() => {
@@ -79,19 +81,25 @@ export default function MapPanel(p: Props) {
         key: pt.key,
         lat: pt.lat,
         lng: pt.lng,
-        label: `${pt.address ?? '주소 미상'} · 신고 ${pt.report_count}건`,
+        label: `${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} · 신고 ${pt.report_count}건`,
         count: pt.report_count,
         selected: pt.key === p.selectedKey,
         metricValue: metricValue(pt, p.metric),
       })),
     );
-  }, [p.points, p.selectedKey, p.metric]);
+  }, [p.points, p.selectedKey, p.metric, sdkState]);
 
   useEffect(() => {
     const onResize = () => handleRef.current?.relayout();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  useEffect(() => {
+    if (!p.autoRefresh || !bbox) return;
+    const timer = window.setTimeout(() => applyViewRef.current(bbox), 300);
+    return () => window.clearTimeout(timer);
+  }, [p.autoRefresh, bbox]);
 
   const retry = () => {
     if (!kakaoKey()) {
@@ -111,7 +119,7 @@ export default function MapPanel(p: Props) {
         handleRef.current.setPoints(
           p.points.map((pt) => ({
             key: pt.key, lat: pt.lat, lng: pt.lng,
-            label: `${pt.address ?? '주소 미상'} · 신고 ${pt.report_count}건`,
+            label: `${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} · 신고 ${pt.report_count}건`,
             count: pt.report_count, selected: pt.key === p.selectedKey, metricValue: metricValue(pt, p.metric),
           })),
         );
@@ -144,8 +152,7 @@ export default function MapPanel(p: Props) {
         </div>
       </div>
       <div className="map-canvas" role="region" aria-label={sdkState === 'ready' ? 'Kakao 실제 지도' : '지도 대체 영역: 지점 목록으로 동일 탐색 가능'}>
-        {sdkState === 'ready' && <div ref={hostRef} className="map-sdk-host" />}
-        {sdkState === 'idle' && <div ref={hostRef} className="map-sdk-host" aria-hidden="true" />}
+        {kakaoKey() && <div ref={hostRef} className="map-sdk-host" aria-hidden={sdkState !== 'ready'} />}
         {sdkState === 'error' && (
           <div className="map-fallback">
             <div className="map-error-card" role="alert">
@@ -161,7 +168,7 @@ export default function MapPanel(p: Props) {
                 </button>
               </div>
             </div>
-            <p className="map-points-note">접근 가능한 대체 수단 — 아래 목록은 지도 마커와 같은 지점·건수입니다. (원좌표 6자리 표기)</p>
+            <p className="map-points-note">접근 가능한 대체 수단 — 아래 목록은 지도 마커와 같은 지점·건수입니다. 집계 표시의 중심점은 원좌표가 아닙니다.</p>
             <ul className="point-list" id="cm-point-list" aria-label="신고 지점 목록">
               {p.points.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 지점이 없습니다.</li>}
               {p.points.map((pt) => (
@@ -169,11 +176,11 @@ export default function MapPanel(p: Props) {
                   <button
                     type="button"
                     aria-pressed={pt.key === p.selectedKey}
-                    aria-label={`${pt.address ?? '주소 미상'} 신고 ${pt.report_count}건 선택`}
+                    aria-label={`${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} 신고 ${pt.report_count}건 선택`}
                     onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}
                   >
-                    <b>{pt.address ?? '주소 미상'}</b>
-                    <small>신고 {fmtInt(pt.report_count)}건 · {fmtCoord6(pt.lat)}, {fmtCoord6(pt.lng)} · 원좌표 그대로</small>
+                    <b>{pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')}</b>
+                    <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}</small>
                   </button>
                 </li>
               ))}
@@ -206,9 +213,25 @@ export default function MapPanel(p: Props) {
             <span className="cm-muted">높음</span>
             <span className="cm-muted">{active.basis}</span>
           </span>
-          <span className="map-demo-label">{sdkState === 'ready' ? 'Kakao ©' : '실지도 아님 · 모형 아님(목록)'}</span>
+          <span className="map-demo-label">{sdkState === 'ready' ? 'Kakao ©' : '지도 연결 안 됨 · 지점 목록 제공'}</span>
         </div>
       </div>
+      {sdkState === 'ready' && (
+        <details className="map-point-alternative">
+          <summary>지도 지점 목록으로 탐색 · {fmtInt(p.points.length)}곳</summary>
+          <ul className="point-list" id="cm-point-list" aria-label="신고 지점 목록">
+            {p.points.map((pt) => (
+              <li key={pt.key}>
+                <button type="button" aria-pressed={pt.key === p.selectedKey}
+                  onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}>
+                  <b>{pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')}</b>
+                  <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}</small>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '0 16px 14px', flexWrap: 'wrap' }}>
         <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center', fontSize: 13, color: 'var(--muted)' }}>
           <input
@@ -218,8 +241,7 @@ export default function MapPanel(p: Props) {
           />
           화면 범위 자동 갱신{p.autoRefresh ? ' 켜짐' : ' 꺼짐'}
         </label>
-        {p.pendingBbox && <span className="cm-chip">화면 범위 대기 중</span>}
-        <span className="cm-muted" style={{ fontSize: 12 }}>지도를 움직여도 전국 KPI는 바뀌지 않습니다. 버튼으로 명시 적용하세요.</span>
+        <span className="cm-muted" style={{ fontSize: 12 }}>{p.autoRefresh ? '지도를 움직이면 화면 범위를 분석 조건으로 적용합니다.' : '지도를 움직여도 전국 KPI는 바뀌지 않습니다. 버튼으로 명시 적용하세요.'}</span>
       </div>
     </article>
   );

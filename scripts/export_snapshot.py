@@ -61,9 +61,13 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
     exact_keys(overview['outcomes'], outcome_keys)
     for point in top['points']:
         exact_keys(point, {'key', 'lat', 'lng', 'address', 'region_code', 'report_count',
-                           'completed_count', 'outcomes', 'fine_count'})
+                           'completed_count', 'outcomes', 'fine_count'},
+                   {'aggregate', 'point_count', 'bbox'})
         if not 32 <= point['lat'] <= 39.5 or not 124 <= point['lng'] <= 132:
             raise ValueError('invalid public coordinate')
+        if point.get('aggregate') is True:
+            if not isinstance(point.get('point_count'), int) or point['point_count'] < 2 or not isinstance(point.get('bbox'), list) or len(point['bbox']) != 4:
+                raise ValueError('aggregate map node needs a bounded point count and bbox')
         if point['outcomes'] is not None:
             exact_keys(point['outcomes'], outcome_keys)
     if len(top['points']) > 1000:

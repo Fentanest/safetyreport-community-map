@@ -1,5 +1,5 @@
 import type { OutcomeCounts } from '../domain/public';
-import { fmtInt, fmtPct1 } from './format';
+import { fmtInt, fmtPercent } from './format';
 
 export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts }) {
   const d = outcomes.result_known;
@@ -18,7 +18,7 @@ export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts }) {
         </div>
       </div>
       <div className="outcome-summary">
-        <b className="cm-number">{fmtPct1(top)}<span>%</span></b>
+        <b className="cm-number">{fmtPercent(top)}</b>
         <small>수용 · 일부수용 (분모 D=결과 확인건)</small>
       </div>
       <div className="stack result-stack" role="img" aria-label={`수용 ${outcomes.accepted}건, 일부수용 ${outcomes.partial}건, 불수용 ${outcomes.rejected}건`}>
@@ -31,7 +31,7 @@ export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts }) {
           <div key={r.label}>
             <span><i className="dot" style={{ background: r.color }} />{r.label}</span>
             <b>{fmtInt(r.v)}</b>
-            <small>{fmtPct1(d > 0 ? (r.v / d) * 100 : null)}%</small>
+            <small>{fmtPercent(d > 0 ? (r.v / d) * 100 : null)}</small>
           </div>
         ))}
       </div>

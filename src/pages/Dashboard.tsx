@@ -37,7 +37,7 @@ function resolveTheme(t: ThemeMode): 'dark' | 'light' {
 export default function Dashboard() {
   const [scope, setScope] = useState<Scope>(() => scopeFromSearch(window.location.search, baseScope(dataMode)));
   const [draft, setDraft] = useState<DraftFilters>(() => draftFromScope(scopeFromSearch(window.location.search, baseScope(dataMode))));
-  const [fixture, setFixture] = useState(() => fixtureFromSearch(window.location.search));
+  const [fixture, setFixture] = useState(() => dataMode === 'demo' ? fixtureFromSearch(window.location.search) : 'overview');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [apiError, setApiError] = useState<{ message: string; retryAfter: number | null } | null>(null);
@@ -48,7 +48,6 @@ export default function Dashboard() {
   const [mapMetric, setMapMetric] = useState<MapMetric>('reports');
   const [entityTab, setEntityTab] = useState<EntityTab>('agency');
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [pendingBbox, setPendingBbox] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [nav, setNav] = useState('mapsection');
   const [dateError, setDateError] = useState<string | null>(null);
@@ -127,14 +126,14 @@ export default function Dashboard() {
       const s = scopeFromSearch(window.location.search, baseScope(dataMode));
       setScope(s);
       setDraft(draftFromScope(s));
-      setFixture(fixtureFromSearch(window.location.search));
+      setFixture(dataMode === 'demo' ? fixtureFromSearch(window.location.search) : 'overview');
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   const pushUrl = (s: Scope) => {
-    const search = scopeToSearch(s, { fixture: fixture === 'overview' ? null : fixture });
+    const search = scopeToSearch(s, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null });
     window.history.pushState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}`);
   };
 
@@ -164,10 +163,10 @@ export default function Dashboard() {
   }, [showToast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const share = useCallback(async () => {
-    const url = `${window.location.origin}${window.location.pathname}?${scopeToSearch(scope, { fixture: fixture === 'overview' ? null : fixture })}`;
+    const url = `${window.location.origin}${window.location.pathname}?${scopeToSearch(scope, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null })}`;
     try {
       await navigator.clipboard.writeText(url);
-      showToast('기간·지역·분류 조건 URL을 복사했습니다. 차량·계정정보는 포함되지 않습니다.');
+      showToast('공개 조회 조건 URL을 복사했습니다. 차량·계정정보는 포함되지 않습니다.');
     } catch {
       showToast(`공유 URL: ${url}`);
     }
@@ -180,11 +179,14 @@ export default function Dashboard() {
 
   const unsupported = useMemo(() => {
     if (!data) return false;
-    return data.overview.report_count.value == null || data.points.length === 0;
+    return data.overview.report_count.value == null;
   }, [data]);
+  const empty = data?.overview.report_count.value === 0;
 
   const unsupportedNote = unsupported
-    ? '선택 범위의 합성 집계가 준비되지 않았습니다. 기본 범위(전국 · 전체 · 2025-09-25 — 2026-09-24)로 돌리면 집계가 표시됩니다.'
+    ? dataMode === 'demo'
+      ? '선택 범위의 합성 집계가 준비되지 않았습니다. 초기화하면 기본 예시 범위가 표시됩니다.'
+      : '선택 범위의 집계가 제공되지 않습니다. 데이터 범위와 지원 여부를 확인해 주세요.'
     : null;
 
   const appliedLabel = `${regionLabel(scope.region_code)} · ${CATEGORY_LABEL[scope.category]}`;
@@ -207,21 +209,23 @@ export default function Dashboard() {
       pushUrl(next);
       return next;
     });
-    showToast('기관·담당자 조건을 적용했습니다. 합성 fixture는 기본 범위 집계만 지원합니다.');
+    showToast(dataMode === 'demo' ? '조건을 적용했습니다. 합성 fixture는 기본 범위 집계만 지원합니다.' : '기관·담당자 조건을 적용했습니다.');
   };
 
   const analyzePoint = (pt: PublicPoint) => {
-    showToast(`선택 지점(${pt.address ?? pt.key}) 범위로 분석하려면 지도에서 화면 범위를 적용해 주세요. 선택만으로 전체 scope는 바뀌지 않습니다.`);
+    const bbox: [number, number, number, number] = pt.bbox ?? [pt.lng, pt.lat, pt.lng, pt.lat];
+    applyView(bbox);
+    showToast(pt.aggregate ? `${pt.point_count}곳의 집계 표시 범위를 분석 조건으로 적용했습니다.` : '선택 지점의 정확 좌표를 분석 조건으로 적용했습니다.');
   };
 
   const applyView = (bbox: [number, number, number, number]) => {
     setScope((prev) => {
+      if (JSON.stringify(prev.bbox) === JSON.stringify(bbox)) return prev;
       const next: Scope = { ...prev, bbox };
-      if (autoRefresh) pushUrl(next);
-      else setPendingBbox(true);
+      pushUrl(next);
       return next;
     });
-    showToast(autoRefresh ? '화면 범위를 적용했습니다.' : '화면 범위를 draft로 받았습니다. 합성 fixture는 bbox 집계를 지원하지 않습니다.');
+    showToast(dataMode === 'demo' ? '화면 범위를 적용했습니다. 합성 fixture에는 이 범위의 집계가 없습니다.' : '화면 범위를 분석 조건으로 적용했습니다.');
   };
 
   const retry = () => {
@@ -314,17 +318,17 @@ export default function Dashboard() {
 
           {loadState === 'ready' && data && (
             <>
-              {unsupported && (
+              {(unsupported || empty) && (
                 <div className="banner warn" role="note">
                   <span className="grow">
-                    {fixture === 'empty'
+                    {empty
                       ? '현재 필터에 결과가 없습니다. 조건을 해제하면 전국 집계를 볼 수 있습니다.'
                       : unsupportedNote}
                   </span>
                   <button className="ghost-btn" type="button" onClick={reset}>전국으로 초기화</button>
                 </div>
               )}
-              {fixture === 'one' && (
+              {dataMode === 'demo' && fixture === 'one' && (
                 <div className="banner" role="note">
                   <span className="grow">표본 1건 상태 — 행·마커·카드를 모두 유지하고 ‘표본 1건’ 배지를 표시합니다.</span>
                 </div>
@@ -341,7 +345,6 @@ export default function Dashboard() {
                   onApplyView={applyView}
                   autoRefresh={autoRefresh}
                   onAutoRefresh={setAutoRefresh}
-                  pendingBbox={pendingBbox}
                 />
                 <InsightPanel
                   data={data}
@@ -374,7 +377,7 @@ export default function Dashboard() {
           )}
 
           <footer className="page-footer">
-            <span>나만의 안전신문고 <b>COMMUNITY MAP</b> · demo 합성 데이터</span>
+            <span>나만의 안전신문고 <b>COMMUNITY MAP</b>{dataMode === 'demo' ? ' · demo 합성 데이터' : ' · 공개 제공 표본'}</span>
             <span>이용자가 제공한 표본 · 데이터 기준과 분모를 함께 확인하세요.</span>
           </footer>
         </main>

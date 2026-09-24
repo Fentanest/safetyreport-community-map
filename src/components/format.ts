@@ -4,6 +4,9 @@ export const fmtInt = (v: number | null | undefined): string =>
 export const fmtPct1 = (v: number | null | undefined): string =>
   v == null || !Number.isFinite(v) ? '—' : `${v.toFixed(1)}`;
 
+export const fmtPercent = (v: number | null | undefined): string =>
+  v == null || !Number.isFinite(v) ? '—' : `${v.toFixed(1)}%`;
+
 export const fmtDate = (iso: string): string => {
   const [y, m, d] = iso.split('-');
   return `${y}.${m}.${d}`;

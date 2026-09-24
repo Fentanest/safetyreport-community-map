@@ -1,5 +1,4 @@
-import { DEFAULT_SCOPE, type Category, type Scope } from '../domain/public';
-import * as domainModule from '../domain/public';
+import { DEFAULT_SCOPE, DEMO_SCOPE, type Category, type Scope } from '../domain/public';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type MapMetric = 'reports' | 'acceptance' | 'fine';
@@ -8,13 +7,8 @@ export type EntityTab = 'agency' | 'manager';
 export const THEME_KEY = 'cm-theme';
 export const DEFAULT_DATES = { start: DEFAULT_SCOPE.start, end: DEFAULT_SCOPE.end };
 
-/**
- * demo 초기·reset 기준. Sol이 `DEMO_SCOPE`를 추가하면 자동으로 전환되고,
- * 아직 없는 통합 전에는 `DEFAULT_SCOPE`로 동작한다. Sol 소유 파일을 건드리지 않는다.
- */
 export function demoScope(): Scope {
-  const m = domainModule as { DEMO_SCOPE?: Scope };
-  return m.DEMO_SCOPE ?? DEFAULT_SCOPE;
+  return DEMO_SCOPE;
 }
 
 export function baseScope(mode: 'demo' | 'live'): Scope {
@@ -48,13 +42,15 @@ export function regionLabel(code: string | null): string {
 }
 
 export function isValidDate(s: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(`${s}T00:00:00`).getTime());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const parsed = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === s;
 }
 
 export function validateRange(start: string, end: string, min: string | null, max: string | null): string | null {
   if (!isValidDate(start) || !isValidDate(end)) return '시작일과 종료일을 YYYY-MM-DD 형식으로 입력해 주세요.';
   if (start > end) return '시작일은 종료일보다 늦을 수 없습니다.';
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   if (end > today) return '종료일은 오늘 이후일 수 없습니다.';
   if (min && start < min) return `분석 가능 기간은 ${min} 이후입니다.`;
   if (max && end > max) return `분석 가능 기간은 ${max} 이전입니다.`;
@@ -78,7 +74,7 @@ export function draftFromScope(scope: Scope): DraftFilters {
   return { start: scope.start, end: scope.end, category: scope.category, region_code: scope.region_code };
 }
 
-/** URL에 보존해도 되는 공개 필터만 직렬화한다. 차량·계정·원좌표는 절대 포함하지 않는다. */
+/** URL에는 공개 필터와 선택된 viewport bbox만 보존한다. 차량·계정 식별자는 포함하지 않는다. */
 export function scopeToSearch(scope: Scope, extra?: { fixture?: string | null }): string {
   const p = new URLSearchParams();
   p.set('start', scope.start);
@@ -87,6 +83,7 @@ export function scopeToSearch(scope: Scope, extra?: { fixture?: string | null })
   if (scope.region_code) p.set('region_code', scope.region_code);
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
   if (scope.manager_key) p.set('manager_key', scope.manager_key);
+  if (scope.bbox) p.set('bbox', scope.bbox.join(','));
   if (extra?.fixture) p.set('fixture', extra.fixture);
   return p.toString();
 }
@@ -99,6 +96,11 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
   const region = p.get('region_code');
   const agency = p.get('agency_key');
   const manager = p.get('manager_key');
+  const bboxValues = p.get('bbox')?.split(',').map(Number);
+  const bbox = bboxValues?.length === 4 && bboxValues.every(Number.isFinite) &&
+    bboxValues[0] >= 124 && bboxValues[2] <= 132 && bboxValues[1] >= 32 && bboxValues[3] <= 39.5 &&
+    bboxValues[0] <= bboxValues[2] && bboxValues[1] <= bboxValues[3]
+    ? bboxValues as Scope['bbox'] : null;
   return {
     ...fallback,
     start: start && isValidDate(start) ? start : fallback.start,
@@ -107,7 +109,7 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
     region_code: region || null,
     agency_key: agency || null,
     manager_key: manager || null,
-    bbox: null,
+    bbox,
   };
 }
 
@@ -124,10 +126,16 @@ export const PRESETS: Array<{ id: string; label: string; days: number | null }> 
 ];
 
 export function presetRange(days: number | null, min: string | null, max: string | null): { start: string; end: string } {
-  const end = max ?? new Date().toISOString().slice(0, 10);
+  const end = max ?? DEFAULT_SCOPE.end;
   if (days == null) return { start: min ?? DEFAULT_SCOPE.start, end };
-  const e = new Date(`${end}T00:00:00`);
-  e.setDate(e.getDate() - (days - 1));
+  const e = new Date(`${end}T00:00:00Z`);
+  if (days === 365) {
+    const previousYear = e.getUTCFullYear() - 1;
+    const month = e.getUTCMonth();
+    const clippedDay = Math.min(e.getUTCDate(), new Date(Date.UTC(previousYear, month + 1, 0)).getUTCDate());
+    e.setUTCFullYear(previousYear, month, clippedDay);
+    e.setUTCDate(e.getUTCDate() + 1);
+  } else e.setUTCDate(e.getUTCDate() - (days - 1));
   const start = e.toISOString().slice(0, 10);
   return { start: min && start < min ? min : start, end };
 }

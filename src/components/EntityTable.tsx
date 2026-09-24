@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { PublicEntity } from '../domain/public';
 import type { EntityTab } from '../state/filters';
-import { fmtInt, fmtPct1 } from './format';
+import { fmtInt, fmtPercent } from './format';
 
 interface Props {
   agencies: PublicEntity[];
@@ -135,10 +135,10 @@ export default function EntityTable(p: Props) {
                     </button>
                   </td>
                   <td className="num">{fmtInt(e.completed_count)}</td>
-                  <td className="num">{fmtInt(e.outcomes.accepted)}<small>{fmtPct1(d > 0 ? (e.outcomes.accepted / d) * 100 : null)}%</small></td>
-                  <td className="num">{fmtInt(e.outcomes.partial)}<small>{fmtPct1(d > 0 ? (e.outcomes.partial / d) * 100 : null)}%</small></td>
-                  <td className="num">{fmtInt(e.outcomes.rejected)}<small>{fmtPct1(d > 0 ? (e.outcomes.rejected / d) * 100 : null)}%</small></td>
-                  <td className="num">{fmtPct1(d > 0 ? ((e.outcomes.accepted + e.outcomes.partial) / d) * 100 : null)}%</td>
+                  <td className="num">{fmtInt(e.outcomes.accepted)}<small>{fmtPercent(d > 0 ? (e.outcomes.accepted / d) * 100 : null)}</small></td>
+                  <td className="num">{fmtInt(e.outcomes.partial)}<small>{fmtPercent(d > 0 ? (e.outcomes.partial / d) * 100 : null)}</small></td>
+                  <td className="num">{fmtInt(e.outcomes.rejected)}<small>{fmtPercent(d > 0 ? (e.outcomes.rejected / d) * 100 : null)}</small></td>
+                  <td className="num">{fmtPercent(d > 0 ? ((e.outcomes.accepted + e.outcomes.partial) / d) * 100 : null)}</td>
                   <td className="num">{e.fine_count == null ? '—' : fmtInt(e.fine_count)}</td>
                   <td>
                     <div className="stack mini-stack" aria-hidden="true">

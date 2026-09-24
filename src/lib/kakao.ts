@@ -36,7 +36,7 @@ declare global {
         Marker: new (opts: unknown) => KakaoMarkerInstance;
         MarkerImage: new (src: string, size: unknown, opts?: unknown) => unknown;
         Size: new (w: number, h: number) => unknown;
-        event: { addListener(obj: unknown, type: string, cb: () => void): void; removeListener?: unknown };
+        event: { addListener(obj: unknown, type: string, cb: () => void): void; removeListener(obj: unknown, type: string, cb: () => void): void };
       };
     };
   }
@@ -100,6 +100,7 @@ function loadSdk(key: string): Promise<void> {
   });
   sdkPromise.catch(() => {
     sdkPromise = null;
+    document.querySelector('script[data-cm-kakao]')?.remove();
   });
   return sdkPromise;
 }
@@ -130,7 +131,7 @@ export async function createKakaoMap(
   let markers: KakaoMarkerInstance[] = [];
   let disposed = false;
 
-  kakao.event.addListener(map, 'idle', () => {
+  const onIdle = () => {
     if (disposed || !opts.onIdle) return;
     try {
       const b = map.getBounds();
@@ -140,7 +141,9 @@ export async function createKakaoMap(
     } catch {
       /* bounds unavailable — ignore */
     }
-  });
+  };
+  kakao.event.addListener(map, 'idle', onIdle);
+  onIdle();
 
   return {
     setPoints(points: KakaoPointInput[]) {
@@ -179,6 +182,7 @@ export async function createKakaoMap(
     },
     destroy() {
       disposed = true;
+      kakao.event.removeListener(map, 'idle', onIdle);
       for (const m of markers) {
         try {
           m.setMap(null);

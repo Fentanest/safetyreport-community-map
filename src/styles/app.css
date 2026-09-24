@@ -127,6 +127,9 @@ button.cm-chip { cursor: pointer; }
 .point-list b { display: block; font-size: 14px; }
 .point-list small { color: var(--muted); font-size: 12px; }
 .map-points-note { font-size: 12px; color: var(--muted); margin: 4px 10px; }
+.map-point-alternative { padding: 8px 16px; border-top: 1px solid var(--border); }
+.map-point-alternative summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--link); }
+.map-point-alternative .point-list { max-height: 280px; overflow: auto; margin: 0 0 8px; }
 
 .insight { padding: 16px; gap: 12px; overflow: auto; max-height: clamp(440px, 52vh, 720px); }
 .insight-top { display: flex; justify-content: space-between; align-items: center; }

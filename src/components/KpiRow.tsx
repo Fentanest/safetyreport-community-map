@@ -1,5 +1,5 @@
 import type { Overview } from '../domain/public';
-import { fmtInt, fmtPct1 } from './format';
+import { fmtInt, fmtPct1, fmtPercent } from './format';
 import Icon, { type IconName } from './icons';
 
 interface Props {
@@ -45,7 +45,7 @@ export default function KpiRow({ overview, unsupported }: Props) {
         {o.report_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.report_count.value)}<span>건</span></div>
         )}
-        {foot('신고일 기준', unsupported ? '선택 범위 집계 미지원' : '전국 제공 표본')}
+        {foot('신고일 기준', unsupported ? '선택 범위 집계 미지원' : '선택 범위 제공 표본')}
       </article>
       <article className="cm-panel kpi cyan">
         {head('처리완료 신고', 'check')}
@@ -56,7 +56,7 @@ export default function KpiRow({ overview, unsupported }: Props) {
       </article>
       <article className="cm-panel kpi green">
         {head('수용 · 일부수용 비중', 'pie')}
-        {accPct == null ? unsup('집계 미지원') : (
+        {accPct == null ? unsup(accDen === 0 ? '분모 0건 · 비율 없음' : '집계 미지원') : (
           <div className="value cm-number">{fmtPct1(accPct)}<span>%</span></div>
         )}
         {foot('처리완료일 기준', `${fmtInt(accNum)} / ${fmtInt(accDen)}건 · 미확인 ${fmtInt(o.outcomes.result_unknown)}건 제외`)}
@@ -66,14 +66,14 @@ export default function KpiRow({ overview, unsupported }: Props) {
         {o.fine_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.fine_count.value)}<span>건</span></div>
         )}
-        {foot('처리완료일 기준', `처리완료 ${fmtInt(fineDen)}건 중 ${fmtPct1(fineDen ? (o.fine_count.value ?? 0) / fineDen * 100 : null)}%`)}
+        {foot('처리완료일 기준', fineDen === 0 ? '처리완료 0건 · 비율 없음' : `처리완료 ${fmtInt(fineDen)}건 중 ${fmtPercent(fineDen ? (o.fine_count.value ?? 0) / fineDen * 100 : null)}`)}
       </article>
       <article className="cm-panel kpi">
         {head('신고 지점', 'pin')}
         {o.point_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.point_count.value)}<span>곳</span></div>
         )}
-        {foot('신고일 기준', '원 좌표로 표시 · 집계 표시는 구분')}
+        {foot('신고일 기준', '원좌표 보존 · 지도 집계 표시는 구분')}
       </article>
       <article className="cm-panel kpi purple">
         {head('기여 계정', 'users')}
