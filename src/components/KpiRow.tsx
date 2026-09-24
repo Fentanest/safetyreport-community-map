@@ -1,9 +1,16 @@
 import type { Overview } from '../domain/public';
 import { fmtInt, fmtPct1 } from './format';
+import Icon, { type IconName } from './icons';
 
 interface Props {
   overview: Overview | null;
   unsupported: boolean;
+}
+
+function head(label: string, icon: IconName) {
+  return (
+    <div className="kpi-head"><span>{label}</span><span className="cm-muted"><Icon name={icon} size={18} /></span></div>
+  );
 }
 
 function foot(basis: string, extra: string) {
@@ -34,42 +41,42 @@ export default function KpiRow({ overview, unsupported }: Props) {
   return (
     <section className="kpis" aria-label="핵심 지표">
       <article className="cm-panel kpi">
-        <div className="kpi-head"><span>신고 접수 건수</span><span aria-hidden="true">▦</span></div>
+        {head('신고 접수 건수', 'doc')}
         {o.report_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.report_count.value)}<span>건</span></div>
         )}
         {foot('신고일 기준', unsupported ? '선택 범위 집계 미지원' : '전국 제공 표본')}
       </article>
       <article className="cm-panel kpi cyan">
-        <div className="kpi-head"><span>처리완료 신고</span><span aria-hidden="true">✓</span></div>
+        {head('처리완료 신고', 'check')}
         {o.completed_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.completed_count.value)}<span>건</span></div>
         )}
         {foot('처리완료일 기준', `결과 확인 ${fmtInt(o.outcomes.result_known)}건`)}
       </article>
       <article className="cm-panel kpi green">
-        <div className="kpi-head"><span>수용 · 일부수용 비중</span><span aria-hidden="true">◔</span></div>
+        {head('수용 · 일부수용 비중', 'pie')}
         {accPct == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtPct1(accPct)}<span>%</span></div>
         )}
         {foot('처리완료일 기준', `${fmtInt(accNum)} / ${fmtInt(accDen)}건 · 미확인 ${fmtInt(o.outcomes.result_unknown)}건 제외`)}
       </article>
       <article className="cm-panel kpi pink">
-        <div className="kpi-head"><span>과태료 처분 신고</span><span aria-hidden="true">▦</span></div>
+        {head('과태료 처분 신고', 'doc')}
         {o.fine_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.fine_count.value)}<span>건</span></div>
         )}
         {foot('처리완료일 기준', `처리완료 ${fmtInt(fineDen)}건 중 ${fmtPct1(fineDen ? (o.fine_count.value ?? 0) / fineDen * 100 : null)}%`)}
       </article>
       <article className="cm-panel kpi">
-        <div className="kpi-head"><span>신고 지점</span><span aria-hidden="true">⌖</span></div>
+        {head('신고 지점', 'pin')}
         {o.point_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.point_count.value)}<span>곳</span></div>
         )}
         {foot('신고일 기준', '원 좌표로 표시 · 집계 표시는 구분')}
       </article>
       <article className="cm-panel kpi purple">
-        <div className="kpi-head"><span>기여 계정</span><span aria-hidden="true">👥</span></div>
+        {head('기여 계정', 'users')}
         {o.contributor_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.contributor_count.value)}<span>개</span></div>
         )}

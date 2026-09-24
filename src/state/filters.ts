@@ -1,4 +1,5 @@
 import { DEFAULT_SCOPE, type Category, type Scope } from '../domain/public';
+import * as domainModule from '../domain/public';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type MapMetric = 'reports' | 'acceptance' | 'fine';
@@ -6,6 +7,19 @@ export type EntityTab = 'agency' | 'manager';
 
 export const THEME_KEY = 'cm-theme';
 export const DEFAULT_DATES = { start: DEFAULT_SCOPE.start, end: DEFAULT_SCOPE.end };
+
+/**
+ * demo 초기·reset 기준. Sol이 `DEMO_SCOPE`를 추가하면 자동으로 전환되고,
+ * 아직 없는 통합 전에는 `DEFAULT_SCOPE`로 동작한다. Sol 소유 파일을 건드리지 않는다.
+ */
+export function demoScope(): Scope {
+  const m = domainModule as { DEMO_SCOPE?: Scope };
+  return m.DEMO_SCOPE ?? DEFAULT_SCOPE;
+}
+
+export function baseScope(mode: 'demo' | 'live'): Scope {
+  return mode === 'demo' ? demoScope() : DEFAULT_SCOPE;
+}
 
 export interface DraftFilters {
   start: string;

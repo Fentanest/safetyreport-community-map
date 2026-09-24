@@ -95,7 +95,7 @@ export default function EntityTable(p: Props) {
       <div className="table-scroll">
         <table className="entity-table">
           <caption className="cm-muted" style={{ textAlign: 'left', padding: '0 16px 8px', fontSize: 12 }}>
-            {p.tab === 'agency' ? '처리기관' : '담당자 · 소속기관'} · 완료건수 내림차순 기본 · 표본 1건 포함 · 같은 기관·이름 묶음의 한계가 있습니다.
+            {p.tab === 'agency' ? '처리기관' : '담당자 · 소속기관'} · {COLUMNS.find((c) => c.key === sortKey)!.label} {dir === 'desc' ? '내림' : '오름'}차순{sortKey === 'completed' && dir === 'desc' ? ' 기본' : ''} · 표본 1건 포함 · 같은 기관·이름 묶음의 한계가 있습니다.
           </caption>
           <thead>
             <tr>

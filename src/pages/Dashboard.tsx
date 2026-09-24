@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DEFAULT_SCOPE, type DashboardData, type PublicPoint, type Scope } from '../domain/public';
+import { type DashboardData, type PublicPoint, type Scope } from '../domain/public';
 import { PublicApiError, dataMode, loadDashboard } from '../data/client';
 import {
-  CATEGORY_LABEL, draftFromScope, fixtureFromSearch, regionLabel, scopeFromDraft, scopeFromSearch,
+  CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, regionLabel, scopeFromDraft, scopeFromSearch,
   scopeToSearch, validateRange, type DraftFilters, type EntityTab, type MapMetric, type ThemeMode,
 } from '../state/filters';
 import TopBar from '../components/TopBar';
@@ -35,8 +35,8 @@ function resolveTheme(t: ThemeMode): 'dark' | 'light' {
 }
 
 export default function Dashboard() {
-  const [scope, setScope] = useState<Scope>(() => scopeFromSearch(window.location.search, DEFAULT_SCOPE));
-  const [draft, setDraft] = useState<DraftFilters>(() => draftFromScope(scopeFromSearch(window.location.search, DEFAULT_SCOPE)));
+  const [scope, setScope] = useState<Scope>(() => scopeFromSearch(window.location.search, baseScope(dataMode)));
+  const [draft, setDraft] = useState<DraftFilters>(() => draftFromScope(scopeFromSearch(window.location.search, baseScope(dataMode))));
   const [fixture, setFixture] = useState(() => fixtureFromSearch(window.location.search));
   const [data, setData] = useState<DashboardData | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('loading');
@@ -124,7 +124,7 @@ export default function Dashboard() {
   // back/forward
   useEffect(() => {
     const onPop = () => {
-      const s = scopeFromSearch(window.location.search, DEFAULT_SCOPE);
+      const s = scopeFromSearch(window.location.search, baseScope(dataMode));
       setScope(s);
       setDraft(draftFromScope(s));
       setFixture(fixtureFromSearch(window.location.search));
@@ -154,7 +154,7 @@ export default function Dashboard() {
   }, [draft, data, showToast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
-    const next: Scope = { ...DEFAULT_SCOPE };
+    const next: Scope = { ...baseScope(dataMode) };
     setScope(next);
     setDraft(draftFromScope(next));
     setSelection(null);
@@ -246,7 +246,10 @@ export default function Dashboard() {
       });
   };
 
-  const stamp = data?.meta.data_max ? fmtDate(data.meta.data_max) : fmtDate(DEFAULT_SCOPE.end);
+  const stamp = data?.meta.data_max ? fmtDate(data.meta.data_max) : fmtDate(baseScope(dataMode).end);
+  const resolvedTheme: 'dark' | 'light' = theme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+    : theme;
 
   return (
     <>
@@ -256,7 +259,7 @@ export default function Dashboard() {
         briefing={briefing}
         onBriefing={() => setBriefing((v) => !v)}
         dataStamp={stamp}
-        sample={data?.meta.sample ?? true}
+        sample={data?.meta.sample ?? false}
       />
       <div className="app">
         <Rail active={nav} onNavigate={setNav} onAbout={() => document.getElementById('guide')?.scrollIntoView({ behavior: 'auto' })} />
@@ -350,7 +353,7 @@ export default function Dashboard() {
                 />
               </section>
               <section className="analytics-grid" id="analytics" aria-label="하단 분석 카드">
-                <TrendCard monthly={data.monthly} />
+                <TrendCard monthly={data.monthly} theme={resolvedTheme} />
                 <OutcomeCard outcomes={data.overview.outcomes} />
                 <VehicleTop5
                   vehicles={data.vehicles}

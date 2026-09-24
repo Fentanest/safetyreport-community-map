@@ -5,6 +5,7 @@ import {
   type DraftFilters,
 } from '../state/filters';
 import { fmtDate } from './format';
+import Icon from './icons';
 
 interface Props {
   draft: DraftFilters;
@@ -34,9 +35,9 @@ export default function CommandBar(p: Props) {
         onClick={() => setOpen((v) => !v)}
         title="기간을 선택합니다. 적용을 눌러야 반영됩니다."
       >
-        <span aria-hidden="true">📅</span>
+        <span aria-hidden="true"><Icon name="calendar" /></span>
         <span>{fmtDate(p.draft.start)} — {fmtDate(p.draft.end)}</span>
-        <span aria-hidden="true">▾</span>
+        <span aria-hidden="true"><Icon name="chevron" /></span>
       </button>
       <div className="segments" role="group" aria-label="신고 분류">
         {CATS.map((c) => (
@@ -52,19 +53,19 @@ export default function CommandBar(p: Props) {
         ))}
       </div>
       <span className="cm-chip" title="현재 적용된 공간 범위">
-        <span aria-hidden="true">⌖</span>
+        <Icon name="pin" size={14} />
         <span>{p.appliedLabel}</span>
       </span>
       <div className="command-end">
         <button className="control control-extra" type="button" onClick={p.onOpenDrawer}>
-          <span aria-hidden="true">⚙</span>
+          <Icon name="filter" />
           <span>상세 필터{p.filterCount > 0 ? ` ${p.filterCount}` : ''}</span>
         </button>
         <button className="icon-btn" type="button" onClick={p.onReset} aria-label="조건 초기화" title="조건 초기화">
-          <span aria-hidden="true">⟲</span>
+          <Icon name="reset" />
         </button>
         <button className="icon-btn" type="button" onClick={p.onShare} aria-label="조건 공유" title="조건 공유">
-          <span aria-hidden="true">⤴</span>
+          <Icon name="share" />
         </button>
       </div>
       {open && (

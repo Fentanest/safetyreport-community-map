@@ -3,6 +3,7 @@ import type { PublicPoint } from '../domain/public';
 import { createKakaoMap, kakaoKey, type KakaoHandle } from '../lib/kakao';
 import type { MapMetric } from '../state/filters';
 import { fmtCoord6, fmtInt } from './format';
+import Icon from './icons';
 
 interface Props {
   points: PublicPoint[];
@@ -194,7 +195,7 @@ export default function MapPanel(p: Props) {
           <div className="map-tools" role="group" aria-label="지도 조작">
             <button className="map-button" type="button" aria-label="확대" onClick={() => handleRef.current?.zoomIn()}>+</button>
             <button className="map-button" type="button" aria-label="축소" onClick={() => handleRef.current?.zoomOut()}>−</button>
-            <button className="map-button" type="button" aria-label="전국으로 초기화" onClick={() => handleRef.current?.reset()}>⌂</button>
+            <button className="map-button" type="button" aria-label="전국으로 초기화" onClick={() => handleRef.current?.reset()}><Icon name="focus" /></button>
           </div>
         )}
         <div className="map-bottom">

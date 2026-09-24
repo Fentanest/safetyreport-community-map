@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { DashboardData, PublicEntity, PublicPoint } from '../domain/public';
 import { fmtCoord6, fmtDate, fmtInt, fmtPct1 } from './format';
+import Icon from './icons';
 
 interface Props {
   data: DashboardData | null;
@@ -90,7 +91,7 @@ export default function InsightPanel(p: Props) {
       </div>
       {tab === 'overview' && (
         <div className="insight-section">
-          <div className="section-title"><h3>데이터를 읽는 기준</h3><span>ⓘ</span></div>
+          <div className="section-title"><h3>데이터를 읽는 기준</h3><span className="cm-muted"><Icon name="info" size={14} /></span></div>
           <p className="insight-copy">
             신고 건수와 처리결과는 서로 다른 날짜 기준으로 집계합니다. 표본이 {reportN === 1 ? '1건인 지점도' : '적은 지점도'} 그대로 표시합니다.
           </p>

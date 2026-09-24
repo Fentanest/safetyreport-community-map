@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { CATEGORY_LABEL, REGION_OPTIONS, regionLabel, type DraftFilters } from '../state/filters';
+import Icon from './icons';
 
 interface Props {
   open: boolean;
@@ -57,7 +58,7 @@ export default function FilterDrawer(p: Props) {
         <div className="drawer-header">
           <h2 id="drawer-title">분석 조건</h2>
           <button className="icon-btn" type="button" onClick={p.onClose} aria-label="닫기">
-            <span aria-hidden="true">✕</span>
+            <Icon name="close" />
           </button>
         </div>
         <div className="chip-row" aria-label="적용된 조건">
