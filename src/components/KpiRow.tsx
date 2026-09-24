@@ -52,14 +52,14 @@ export default function KpiRow({ overview, unsupported }: Props) {
         {o.completed_count.value == null ? unsup('집계 미지원') : (
           <div className="value cm-number">{fmtInt(o.completed_count.value)}<span>건</span></div>
         )}
-        {foot('처리완료일 기준', `결과 확인 ${fmtInt(o.outcomes.result_known)}건`)}
+        {foot('처리완료일 기준', o.outcomes ? `결과 확인 ${fmtInt(o.outcomes.result_known)}건` : '결과 집계 미지원')}
       </article>
       <article className="cm-panel kpi green">
         {head('수용 · 일부수용 비중', 'pie')}
         {accPct == null ? unsup(accDen === 0 ? '분모 0건 · 비율 없음' : '집계 미지원') : (
           <div className="value cm-number">{fmtPct1(accPct)}<span>%</span></div>
         )}
-        {foot('처리완료일 기준', `${fmtInt(accNum)} / ${fmtInt(accDen)}건 · 미확인 ${fmtInt(o.outcomes.result_unknown)}건 제외`)}
+        {foot('처리완료일 기준', o.outcomes ? `${fmtInt(accNum)} / ${fmtInt(accDen)}건 · 미확인 ${fmtInt(o.outcomes.result_unknown)}건 제외` : '선택 범위 결과 집계 미지원')}
       </article>
       <article className="cm-panel kpi pink">
         {head('과태료 처분 신고', 'doc')}

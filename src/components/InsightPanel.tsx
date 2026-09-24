@@ -8,7 +8,7 @@ interface Props {
   point: PublicPoint | null;
   scopeLabel: string;
   onAnalyzePoint: (pt: PublicPoint) => void;
-  onPickEntity: (kind: 'agency' | 'manager', key: string) => void;
+  onPickEntity: (kind: 'agency' | 'manager', entity: PublicEntity) => void;
   toast: (msg: string) => void;
 }
 
@@ -122,7 +122,8 @@ export default function InsightPanel(p: Props) {
                   <button
                     type="button" className="mini-btn" style={{ padding: '4px 8px' }}
                     title="이 기관·담당자 조건으로 조회"
-                    onClick={() => p.onPickEntity(e.manager_name ? 'manager' : 'agency', e.key)}
+                    onClick={() => p.onPickEntity(e.manager_name ? 'manager' : 'agency', e)}
+                    disabled={!e.agency_key || (!!e.manager_name && !e.manager_key)}
                   >
                     {e.manager_name ? `${e.manager_name} · ${e.agency_name}` : e.agency_name}
                   </button>

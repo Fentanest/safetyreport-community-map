@@ -143,7 +143,8 @@ function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'manager'): 
     groups.set(key, existing);
   }
   return [...groups].map(([key, rows]) => ({
-    key, agency_name: rows[0].agency_name || '기관 정보 없음',
+    key, agency_key: rows[0].agency_key, manager_key: kind === 'manager' ? rows[0].manager_key : null,
+    agency_name: rows[0].agency_name || '기관 정보 없음',
     manager_name: kind === 'manager' ? rows[0].manager_name : null,
     completed_count: rows.length, outcomes: outcomes(rows),
     fine_count: rows.filter(row => row.disposition === 'fine').length,

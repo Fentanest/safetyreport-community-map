@@ -39,7 +39,8 @@ private v2 사실에서 정확히 집계한다. 차량은 지역 접두어를 �
 집계에서 없는 일자·담당자 결과 교차·차량 후보를 재구성하지 않는다. 초기 `ready=false`여서 upstream
 v2 사실이 적재·검증되기 전에는 API가 준비 상태를 표시한다. 정적 첫 화면 캐시는 공개 API에서만
 `PUBLIC_ANALYTICS_URL=... npm run data:export`로 생성하며, API version이 다르면 사용하지 않는다.
-`product-check.yml`은 테스트·빌드·공개 artifact 검사만 수행하고 배포하지 않는다.
+`product-check.yml`은 검증 전용이다. `publish-pages.yml`은 main에서 수동 실행할 때만
+공개 API snapshot 검증 후 Pages 배포를 시도하며, 아직 실행하지 않았다.
 
 ## 설계
 - docs/product-decisions.md — 고정 요구와 이번 결정

@@ -39,7 +39,7 @@ const outcomes = z.strictObject({
 
 export const overviewSchema = z.strictObject({
   report_count: countMetric, completed_count: countMetric, accepted_including_partial: rateMetric,
-  fine_count: countMetric, point_count: countMetric, contributor_count: countMetric, outcomes,
+  fine_count: countMetric, point_count: countMetric, contributor_count: countMetric, outcomes: outcomes.nullable(),
 });
 
 export const pointSchema = z.strictObject({
@@ -57,7 +57,8 @@ export const monthlySchema = z.strictObject({
 });
 
 export const entitySchema = z.strictObject({
-  key: z.string(), agency_name: z.string(), manager_name: z.string().nullable(),
+  key: z.string(), agency_key: z.string().nullable(), manager_key: z.string().nullable(),
+  agency_name: z.string(), manager_name: z.string().nullable(),
   completed_count: count, outcomes, fine_count: nullableCount,
 });
 

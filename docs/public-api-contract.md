@@ -34,6 +34,9 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 }
 ```
 기관/담당자명 XSS 방지: textContent/React text로 렌더; arbitrary HTML 금지.
+기관/담당자 행은 표시용 `key`와 조회 필터용 `agency_key`, `manager_key`를 분리한다.
+담당자 행을 선택하면 해당 기관 키와 담당자 키를 함께 전달한다. 키가 없는 미상 행은
+필터 버튼을 비활성화하고 해당 1건 표본 자체는 계속 표시한다.
 차량 응답은 contracts/public-vehicles.schema.json과 일치. 공개 rank_item_id는 응답 내 위치 구분값이지 원본 ID 아니다.
 
 ## 정확성과 취소
@@ -60,3 +63,6 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 현재 응답은 철회/버전 무효화 전파를 우선해 `Cache-Control: no-store`다. 공개 정적 snapshot은
 meta version이 같은 경우에만 읽는다. 운영에서 v2 사실이 준비되지 않으면 meta capability는 missing,
 집계 경로는 503을 반환한다. 이 코드는 아직 운영 DB·Edge에 배포되지 않았다.
+지도는 현재 bbox로 범위를 좁히고 표시 노드를 1,000개 이하로 묶는다. 별도 `zoom/resolution`과
+result/disposition 조건, entities 서버 정렬, 기관 전체 페이지 탐색은 아직 구현되지 않아
+`INVALID_QUERY` 또는 첫 100행만 제공한다. 운영 연동 전 이 계약 차이를 해소해야 한다.

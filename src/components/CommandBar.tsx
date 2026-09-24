@@ -25,7 +25,7 @@ const CATS: Category[] = ['all', 'traffic', 'parking', 'other'];
 
 export default function CommandBar(p: Props) {
   const [open, setOpen] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   return (
     <section className="cm-panel command" aria-label="분석 조건">
       <button

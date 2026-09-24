@@ -65,7 +65,7 @@ export interface Overview {
   fine_count: CountMetric;
   point_count: CountMetric;
   contributor_count: CountMetric;
-  outcomes: OutcomeCounts;
+  outcomes: OutcomeCounts | null;
 }
 
 export interface PublicPoint {
@@ -96,6 +96,8 @@ export interface MonthlyBucket {
 
 export interface PublicEntity {
   key: string;
+  agency_key: string | null;
+  manager_key: string | null;
   agency_name: string;
   manager_name: string | null;
   completed_count: number;

@@ -1,7 +1,13 @@
 import type { OutcomeCounts } from '../domain/public';
 import { fmtInt, fmtPercent } from './format';
 
-export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts }) {
+export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts | null }) {
+  if (!outcomes) return (
+    <article className="cm-panel outcome-card" aria-label="처리결과 구성">
+      <div className="panel-top"><div><h2>처리결과 구성</h2><span className="subtitle">처리완료일 기준</span></div></div>
+      <p className="cm-muted">선택 범위의 처리결과 집계가 제공되지 않습니다.</p>
+    </article>
+  );
   const d = outcomes.result_known;
   const rows = [
     { label: '수용', v: outcomes.accepted, color: 'var(--accepted)' },

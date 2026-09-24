@@ -8,7 +8,7 @@ interface Props {
   managers: PublicEntity[];
   tab: EntityTab;
   onTab: (t: EntityTab) => void;
-  onPick: (kind: EntityTab, key: string) => void;
+  onPick: (kind: EntityTab, entity: PublicEntity) => void;
 }
 
 type SortKey = 'completed' | 'accepted' | 'partial' | 'rejected' | 'fine' | 'acceptRate';
@@ -128,7 +128,8 @@ export default function EntityTable(p: Props) {
                     <button
                       type="button" className="mini-btn" style={{ textAlign: 'left', maxWidth: 260, whiteSpace: 'normal' }}
                       title="이 조건으로 지도·표·차트 조회"
-                      onClick={() => p.onPick(p.tab, e.key)}
+                      onClick={() => p.onPick(p.tab, e)}
+                      disabled={!e.agency_key || (p.tab === 'manager' && !e.manager_key)}
                     >
                       <span className="table-name">{p.tab === 'agency' ? e.agency_name : (e.manager_name ?? '성명 미상')}</span>
                       <small>{p.tab === 'agency' ? '기관별 관측 결과' : e.agency_name}</small>

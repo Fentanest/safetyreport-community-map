@@ -81,7 +81,7 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
         if len(top[name]) > 100:
             raise ValueError('entity page budget exceeded')
         for entity in top[name]:
-            exact_keys(entity, {'key', 'agency_name', 'manager_name', 'completed_count', 'outcomes', 'fine_count'})
+            exact_keys(entity, {'key', 'agency_key', 'manager_key', 'agency_name', 'manager_name', 'completed_count', 'outcomes', 'fine_count'})
             exact_keys(entity['outcomes'], outcome_keys)
     if len(top['vehicles']) > 5:
         raise ValueError('vehicle limit exceeded')

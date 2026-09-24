@@ -14,6 +14,7 @@ describe('public UI states', () => {
 
     const unavailable = demoDashboard({ ...DEMO_SCOPE, region_code: '11' });
     expect(unavailable.overview.report_count.value).toBeNull();
+    expect(unavailable.overview.outcomes).toBeNull();
     expect(unavailable.meta.capabilities.daily_report_dates.status).toBe('missing');
   });
 

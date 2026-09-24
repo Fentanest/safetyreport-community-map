@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type DashboardData, type PublicPoint, type Scope } from '../domain/public';
+import { type DashboardData, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
 import { PublicApiError, dataMode, loadDashboard } from '../data/client';
 import {
   CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, regionLabel, scopeFromDraft, scopeFromSearch,
@@ -144,13 +144,11 @@ export default function Dashboard() {
       showToast(err);
       return;
     }
-    setScope((prev) => {
-      const next = scopeFromDraft(draft, prev);
-      pushUrl(next);
-      return next;
-    });
+    const next = scopeFromDraft(draft, scope);
+    setScope(next);
+    pushUrl(next);
     setDrawer(false);
-  }, [draft, data, showToast]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [draft, scope, data, showToast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
     const next: Scope = { ...baseScope(dataMode) };
@@ -199,16 +197,15 @@ export default function Dashboard() {
     ...(scope.manager_key ? [`담당 ${scope.manager_key}`] : []),
   ];
 
-  const pickEntity = (kind: EntityTab, key: string) => {
-    setScope((prev) => {
-      const next: Scope = {
-        ...prev,
-        agency_key: kind === 'agency' ? key : prev.agency_key,
-        manager_key: kind === 'manager' ? key : prev.manager_key,
-      };
-      pushUrl(next);
-      return next;
-    });
+  const pickEntity = (kind: EntityTab, entity: PublicEntity) => {
+    if (!entity.agency_key || (kind === 'manager' && !entity.manager_key)) return;
+    const next: Scope = {
+      ...scope,
+      agency_key: entity.agency_key,
+      manager_key: kind === 'manager' ? entity.manager_key : null,
+    };
+    setScope(next);
+    pushUrl(next);
     showToast(dataMode === 'demo' ? '조건을 적용했습니다. 합성 fixture는 기본 범위 집계만 지원합니다.' : '기관·담당자 조건을 적용했습니다.');
   };
 
@@ -219,12 +216,10 @@ export default function Dashboard() {
   };
 
   const applyView = (bbox: [number, number, number, number]) => {
-    setScope((prev) => {
-      if (JSON.stringify(prev.bbox) === JSON.stringify(bbox)) return prev;
-      const next: Scope = { ...prev, bbox };
-      pushUrl(next);
-      return next;
-    });
+    if (JSON.stringify(scope.bbox) === JSON.stringify(bbox)) return;
+    const next: Scope = { ...scope, bbox };
+    setScope(next);
+    pushUrl(next);
     showToast(dataMode === 'demo' ? '화면 범위를 적용했습니다. 합성 fixture에는 이 범위의 집계가 없습니다.' : '화면 범위를 분석 조건으로 적용했습니다.');
   };
 

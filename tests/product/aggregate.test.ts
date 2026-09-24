@@ -99,8 +99,22 @@ describe('identity, scope and public projection', () => {
   it('keeps exact coordinate, full manager name, and a one-record entity', () => {
     const data = aggregate([base]);
     expect(data.points[0]).toMatchObject({ lat: 37.566535, lng: 126.9779692, report_count: 1 });
-    expect(data.managers[0]).toMatchObject({ manager_name: '김하늘', completed_count: 1 });
+    expect(data.managers[0]).toMatchObject({ key: 'agency-1:manager-1', agency_key: 'agency-1',
+      manager_key: 'manager-1', manager_name: '김하늘', completed_count: 1 });
+    expect(data.agencies[0]).toMatchObject({ agency_key: 'agency-1', manager_key: null });
     expect(data.vehicles[0].report_count).toBe(1);
+  });
+  it('uses the manager row filter keys rather than its display row key', () => {
+    const source = [base, fact(2, { agency_key: 'agency-2', manager_key: 'manager-2' })];
+    const overview = aggregate(source);
+    const row = overview.managers.find(entity => entity.agency_key === 'agency-1')!;
+    const selected = aggregateDashboard(source, {
+      ...scope('2026-01-01', '2026-02-28'), agency_key: row.agency_key,
+      manager_key: row.manager_key,
+    }, options);
+    expect(row.key).not.toBe(row.manager_key);
+    expect(selected.overview.report_count.value).toBe(1);
+    expect(selected.managers).toHaveLength(1);
   });
   it('returns bounded aggregate map nodes for ten thousand exact source locations without changing totals', () => {
     const facts = Array.from({ length: 10_000 }, (_, i) => fact(i + 1, {

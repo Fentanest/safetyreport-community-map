@@ -51,7 +51,7 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       report_count: metric(R, 'report_date'), completed_count: metric(C, 'completed_date'),
       accepted_including_partial: rate, fine_count: metric(empty || one ? 0 : 2, 'completed_date', C),
       point_count: metric(empty ? 0 : one ? 1 : 3, 'report_date', R), contributor_count: metric(empty ? 0 : one ? 1 : 4, 'report_date', R),
-      outcomes: available ? outcomes : { accepted: 0, partial: 0, rejected: 0, result_known: 0, result_unknown: 0 },
+      outcomes: available ? outcomes : null,
     },
     points: !available || empty ? [] : one ? [
       { key: 'synthetic-point-3', lat: 33.499621, lng: 126.531188, address: '제주특별자치도 제주시 예시 지점', region_code: '50', report_count: 1, completed_count: 1, outcomes, fine_count: 0 },
@@ -68,18 +68,18 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       { month: '2026-09', report_count: 4, completed_count: 3, fine_count: 1, outcomes: { accepted: 2, partial: 0, rejected: 1, result_known: 3, result_unknown: 0 }, partial: true, coverage_note: null },
     ],
     agencies: !available || empty ? [] : one ? [
-      { key: 'a3', agency_name: '예시 제주 기관', manager_name: null, completed_count: 1, outcomes, fine_count: 0 },
+      { key: 'a3', agency_key: 'a3', manager_key: null, agency_name: '예시 제주 기관', manager_name: null, completed_count: 1, outcomes, fine_count: 0 },
     ] : [
-      { key: 'a1', agency_name: '예시 서울 기관', manager_name: null, completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 }, fine_count: 1 },
-      { key: 'a2', agency_name: '예시 부산 기관', manager_name: null, completed_count: 2, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 1 }, fine_count: 1 },
-      { key: 'a3', agency_name: '예시 제주 기관', manager_name: null, completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
+      { key: 'a1', agency_key: 'a1', manager_key: null, agency_name: '예시 서울 기관', manager_name: null, completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 }, fine_count: 1 },
+      { key: 'a2', agency_key: 'a2', manager_key: null, agency_name: '예시 부산 기관', manager_name: null, completed_count: 2, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 1 }, fine_count: 1 },
+      { key: 'a3', agency_key: 'a3', manager_key: null, agency_name: '예시 제주 기관', manager_name: null, completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
     ],
     managers: !available || empty ? [] : one ? [
-      { key: 'm3', agency_name: '예시 제주 기관', manager_name: '김하늘', completed_count: 1, outcomes, fine_count: 0 },
+      { key: 'm3', agency_key: 'a3', manager_key: 'm3', agency_name: '예시 제주 기관', manager_name: '김하늘', completed_count: 1, outcomes, fine_count: 0 },
     ] : [
-      { key: 'm1', agency_name: '예시 서울 기관', manager_name: '김하늘', completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 }, fine_count: 1 },
-      { key: 'm2', agency_name: '예시 부산 기관', manager_name: '이서윤', completed_count: 2, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 1 }, fine_count: 1 },
-      { key: 'm3', agency_name: '예시 제주 기관', manager_name: '김하늘', completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
+      { key: 'm1', agency_key: 'a1', manager_key: 'm1', agency_name: '예시 서울 기관', manager_name: '김하늘', completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 }, fine_count: 1 },
+      { key: 'm2', agency_key: 'a2', manager_key: 'm2', agency_name: '예시 부산 기관', manager_name: '이서윤', completed_count: 2, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 1 }, fine_count: 1 },
+      { key: 'm3', agency_key: 'a3', manager_key: 'm3', agency_name: '예시 제주 기관', manager_name: '김하늘', completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
     ],
     vehicles: !available || empty ? [] : one ? [
       { rank: 1, rank_item_id: 'r1', masked_plate: '1*가*4*6', report_count: 1, percentage: 100 },

@@ -22,13 +22,15 @@ VITE_에 PRIVATE/SECRET/REST/DSN이 들어가면 검증 실패. 단순 환경변
 프로젝트 하위 경로 base를 맞춘다. 날짜·탭은 query 또는 hash routing으로 유지해 deep-link 404를 피한다.
 assets/data 주소에 import.meta.env.BASE_URL 사용. 자동 임의 wildcard redirect에 의존하지 않는다.
 실제 배포 artifact는 dist 하나만; repository root/documentation/reference-image 전체를 upload하지 않는다.
-현재 `product-check.yml`은 검증 전용이며 Pages에 배포하지 않는다. 정적 첫 화면 snapshot은
+`product-check.yml`은 검증 전용이다. `publish-pages.yml`은 main의 수동 `workflow_dispatch`만
+받아 public endpoint에서 snapshot export·검사·live 빌드가 모두 성공했을 때만 Pages artifact를
+배포하도록 작성했으나, 현재 운영값과 v2 원천이 없어 실행하지 않았다. 정적 첫 화면 snapshot은
 `PUBLIC_ANALYTICS_URL=https://<project>.supabase.co/functions/v1 npm run data:export`로 **공개 API**에서만
 생성한다. 이 URL은 비밀키가 아니다. `public/data/`는 생성 파일이며 gitignore 대상이다.
 export가 실패하거나 v2 capability가 missing이면 manifest를 갱신하지 않는다. 런타임은 API meta의
 현재 dataset_version과 snapshot version이 일치할 때만 정적 파일을 사용한다.
-워크플로 예시는 templates/github-pages.yml.example이며 Sol이 script/package명을 실제 구현과 맞춘 후
-현재 지원 action을 확인·버전/SHA 고정해서 `.github/workflows/`로 승격한다.
+`publish-pages.yml`의 Pages Actions는 확인한 버전의 전체 commit SHA로 고정했다. 오래된
+`templates/github-pages.yml.example`은 비교용 참고 파일이다.
 
 ## Actions 안전
 PR 검증은 secrets 없는 fixture job. fork PR/pull_request_target에서 비밀값과 untrusted 코드를 함께 실행하지 않는다.
