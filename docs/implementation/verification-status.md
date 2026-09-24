@@ -27,4 +27,6 @@
 | REL03 | M3_PENDING | M0/M1/M2는 실제 Muse 모델/브라우저 근거 보존; 통합본 M3 진행 중 |
 | REL04 | PASS_LOCAL | 운영 DB·push·배포 없음. 로컬 migration 제안과 검증만 수행 |
 
-재현 명령: `npm test` (22개), `python3 -m unittest discover -s tests/product -p 'test_*.py'` (3개), `python3 -m unittest discover -s tests/blueprint` (27개), `VITE_DATA_MODE=live npm run build`, `npm run scan`. 전체 실행 결과는 최종 작업 기록에 남긴다.
+아직 구현하지 못한 명세 항목: 지역 A/B 비교 슬롯, 최근 증가 지점 목록, `map`의 별도 zoom/resolution·상태 조건, 기관 전체 페이지 탐색과 서버 정렬, 운영 취소 요청의 정적 캐시 긴급 재발행 자동화. 현재 화면이 이 기능을 제공한다고 표시하지 않으며 `docs/public-api-contract.md`에 계약 차이를 적었다.
+
+재현 명령: `npm test` (23개), `python3 -m unittest discover -s tests/product -p 'test_*.py'` (3개), `python3 -m unittest discover -s tests/blueprint` (27개), `VITE_DATA_MODE=live npm run build`, `npm run scan`. 전체 실행 결과는 최종 작업 기록에 남긴다.

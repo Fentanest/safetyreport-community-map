@@ -64,6 +64,9 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
   if (dataMode === 'demo') {
     const { demoDashboard } = await import('./demo');
     const state = new URLSearchParams(window.location.search).get('fixture');
+    if (state === 'offline') throw new PublicApiError('네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
+    if (state === 'rate') throw new PublicApiError('요청이 많아 잠시 후 다시 시도해 주세요.', 429, 60);
+    if (state === 'stale') throw new PublicApiError('데이터 버전이 변경됐습니다. 다시 조회해 주세요.', 409);
     return demoDashboard(scope, state === 'one' || state === 'empty' ? state : 'overview');
   }
   const meta = metaSchema.parse(await read('meta', null, signal));

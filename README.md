@@ -22,8 +22,9 @@ VITE_DATA_MODE=live npm run build
 npm run scan
 ```
 
-데모 화면은 `http://127.0.0.1:4173/`이다. `?fixture=one`과 `?fixture=empty`로 1건·무자료
-상태를 확인할 수 있다. 데모는 합성 공개 DTO만 사용하며, 임의 범위에는 지원하지 않는 집계를
+데모 화면은 `http://127.0.0.1:4173/`이다. `?fixture=one`과 `?fixture=empty`로 1건·무자료,
+`?fixture=offline`, `?fixture=rate`, `?fixture=stale`로 연결 실패·429·버전 변경 상태를 확인할 수 있다.
+데모는 합성 공개 DTO만 사용하며, 임의 범위에는 지원하지 않는 집계를
 만들어 표시하지 않는다. Kakao JavaScript 키가 없으면 지도 오류 안내와 지점 목록이 표시된다.
 `design/reference-ui/index.html`은 디자인 기준판이며 제품 화면과 별개다.
 

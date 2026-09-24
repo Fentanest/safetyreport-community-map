@@ -113,9 +113,9 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
   };
 }
 
-export function fixtureFromSearch(search: string): 'overview' | 'one' | 'empty' {
+export function fixtureFromSearch(search: string): 'overview' | 'one' | 'empty' | 'offline' | 'rate' | 'stale' {
   const f = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('fixture');
-  return f === 'one' || f === 'empty' ? f : 'overview';
+  return f === 'one' || f === 'empty' || f === 'offline' || f === 'rate' || f === 'stale' ? f : 'overview';
 }
 
 export const PRESETS: Array<{ id: string; label: string; days: number | null }> = [

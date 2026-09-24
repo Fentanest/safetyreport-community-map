@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { demoDashboard } from '../../src/data/demo';
 import { DEMO_SCOPE } from '../../src/domain/public';
-import { scopeFromSearch, scopeToSearch, validateRange } from '../../src/state/filters';
+import { fixtureFromSearch, scopeFromSearch, scopeToSearch, validateRange } from '../../src/state/filters';
 
 describe('public UI states', () => {
   it('keeps a supported zero-result scope distinct from unavailable data', () => {
@@ -26,5 +26,10 @@ describe('public UI states', () => {
 
   it('rejects calendar-invalid dates rather than accepting normalized dates', () => {
     expect(validateRange('2026-02-30', '2026-03-01', null, null)).not.toBeNull();
+  });
+
+  it('selects explicit error fixtures without treating unknown URLs as data', () => {
+    expect(['offline', 'rate', 'stale'].map(name => fixtureFromSearch(`?fixture=${name}`))).toEqual(['offline', 'rate', 'stale']);
+    expect(fixtureFromSearch('?fixture=unknown')).toBe('overview');
   });
 });
