@@ -52,7 +52,8 @@ v2 사실이 적재·검증되기 전에는 API가 준비 상태를 표시한다
 - docs/acceptance-matrix.md / deployment.md — 검증·운영 준비
 - docs/repository-audit.md — 옛 데이터 모델과의 차이
 - docs/upstream-gaps.md — 실제 v1 필드와 v2 필요 필드
-- docs/reviews/ — Muse의 M0/M1/M2 브라우저 검수·스크린샷
+- docs/implementation/verification-status.md — 통과·차단·남은 구현 항목
+- docs/reviews/ — Muse의 M0/M1/M2/M3/M3-F 브라우저 검수·스크린샷
 
 공개 열람은 비로그인이다. 업로더의 Google Auth·세션 갱신·02~03시 자동 업로드는 기존 앱/서버의 별도 기능이며
 그 계약은 docs/client-integration.md에 유지한다. 이 UI 작업을 핑계로 SMS 인증을 다시 넣지 않는다.

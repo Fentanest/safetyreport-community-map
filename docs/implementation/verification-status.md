@@ -1,6 +1,6 @@
 # 구현 검증 상태 · 2026-09-24
 
-범위는 로컬 구현과 명시적 합성 fixture다. `PASS_LOCAL`은 운영 승인이나 실데이터 검증을 뜻하지 않는다. `BLOCKED`는 필요한 운영 키·원천·배포가 없어서 통과 판정할 수 없다는 뜻이다. 제품 기준 커밋은 `d05033469ca30480718b6345c8ff05f50b3a0810`; M3 결과는 별도 보고서에 기록한다.
+범위는 로컬 구현과 명시적 합성 fixture다. `PASS_LOCAL`은 운영 승인이나 실데이터 검증을 뜻하지 않는다. `BLOCKED`는 필요한 운영 키·원천·배포가 없어서 통과 판정할 수 없다는 뜻이다. Muse M3-F가 재검수한 제품 코드는 `56c7a3ad15356d6e9e4e52618c36275e7e9f2d39`에 고정됐고, 증거는 `docs/reviews/M3-final.md`에 있다. 이후 커밋은 검수 보고서와 상태 문서만 더한다.
 
 | acceptance ID | 상태 | 확인 근거와 남은 경계 |
 |---|---|---|
@@ -16,15 +16,16 @@
 | SEC03 | BLOCKED | allowlist/429/DB rate RPC 단위·로컬 검증. 실제 Edge gateway, 공격성 부하·timeout 검증은 미실행 |
 | SEC04 | PASS_LOCAL | 악성 기관명·담당자명·주소를 React 서버 렌더에 넣어 HTML escape 확인. 운영 응답의 브라우저 공격성 검사는 미실행 |
 | SEC05 | BLOCKED | 로컬 DB 철회 시 version 변경·ready=false 및 클라이언트 version 일치 검사. 운영 API/정적 캐시 긴급 재생성은 미실행 |
-| UI01–02 | M3_PENDING | M2의 브라우저 다해상도 검수 후 통합본 M3 검수 진행 중 |
+| UI01–02 | PASS_LOCAL | M3 8개 화면/테마 셀, M3-F 4개 회귀 셀과 390px overflow 0 확인 |
 | UI03 | BLOCKED | 실제 Kakao JS 키·등록 도메인 없음. mock SDK 경로는 실지도 통과로 계산하지 않음 |
-| UI04–05 | M3_PENDING | 1건·0건·미지원과 범위·분모 코드를 구현, M3 브라우저 재검수 진행 중 |
-| UI06–09 | M3_PENDING | M2 브라우저 근거 있음. 통합본의 브리핑·테마·접근성·attribution 재검수 진행 중 |
+| UI04–05 | PASS_LOCAL | M3/M3-F에서 1건·0건·미지원, 선택 지점과 전체 수치, 범위·분모 표시를 실제 Chrome으로 확인 |
+| UI06–08 | PASS_LOCAL | M3에서 1440/2560·브리핑/Esc·light·정렬·표 대안 확인. 스크린리더 전체 탐색과 reduced-motion 실측은 NOT_RUN |
+| UI09 | BLOCKED | 실패 카드가 attribution 영역을 가리지 않는 것은 확인. 실제 Kakao 로고·축척·dark 지도 동작은 키가 없어 미검증 |
 | PERF01 | PASS_LOCAL | 10,000개 원 지점을 1,000개 이하 표시 노드로 묶고 원건수/지점수 보존하는 테스트. 실제 패닝 성능은 BLOCKED |
 | PERF02 | BLOCKED | 초기 JS gzip 약 115 KB, 차트 지연 로드. 운영 장시간 task·메모리 측정은 미실행 |
-| REL01 | BLOCKED | Vite 하위 경로 빌드 설정과 URL 상태 구현. 실제 GitHub Pages 배포/새로고침 검사는 미실행 |
+| REL01 | BLOCKED | M3-F가 로컬 `/safetyreport-community-map/` 정적 호스팅의 assets/파비콘·새로고침·Back을 통과. 실제 GitHub Pages 배포 smoke는 미실행 |
 | REL02 | PASS_LOCAL | live 실패 시 demo 자동 대체 없음, sample 배지 분기. 실제 live endpoint 검사는 BLOCKED |
-| REL03 | M3_PENDING | M0/M1/M2는 실제 Muse 모델/브라우저 근거 보존; 통합본 M3 진행 중 |
+| REL03 | PASS_LOCAL | M0/M1/M2/M3/M3-F Muse 호출, M3-F 세션 export에서 `opencode-go/muse-spark-1.3-contributor` 확인. 제품 코드 고정 커밋과 보고서 commit은 문서 추가로 구분 |
 | REL04 | PASS_LOCAL | 운영 DB·push·배포 없음. 로컬 migration 제안과 검증만 수행 |
 
 아직 구현하지 못한 명세 항목: 지역 A/B 비교 슬롯, 최근 증가 지점 목록, `map`의 별도 zoom/resolution·상태 조건, 기관 전체 페이지 탐색과 서버 정렬, 운영 취소 요청의 정적 캐시 긴급 재발행 자동화. 현재 화면이 이 기능을 제공한다고 표시하지 않으며 `docs/public-api-contract.md`에 계약 차이를 적었다.
