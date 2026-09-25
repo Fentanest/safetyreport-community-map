@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Verifies a built safeauth artifact before it is composed into any site.
 //   node scripts/safeauth/verify-artifact.mjs --dir dist-safeauth [--base /safeauth/]
-//        [--require-config] [--expect-supabase https://<ref>.supabase.co] [--site-origin https://worklazy.net] [--json]
+//        [--require-config] [--expect-supabase https://<ref>.supabase.co] [--site-origin https://worklazy.net] [--allow-origin https://x ...] [--json]
 // Checks: file allowlist, no symlinks, per-page security meta (referrer first, CSP
 // without inline script), noindex, asset paths under the base, no third-party
 // runtime, ads/analytics/service worker, no secrets, no design-demo leftovers, and
@@ -50,7 +50,16 @@ function jwtRoles(text) {
   return roles;
 }
 
-export function verifyArtifact({ dir, base = '/safeauth/', requireConfig = false, expectSupabase = null, siteOrigin = 'https://worklazy.net' }) {
+// Origins a bundle may mention: the site, the configured Supabase project, and any
+// operator link compiled in from the same public build variables (privacy policy).
+export function configuredOrigins(env = process.env) {
+  const out = [];
+  const policy = env.SAFEAUTH_PUBLIC_PRIVACY_POLICY_URL;
+  if (policy) { try { const u = new URL(policy); if (u.protocol === 'https:') out.push(u.origin); } catch { /* ignored */ } }
+  return out;
+}
+
+export function verifyArtifact({ dir, base = '/safeauth/', requireConfig = false, expectSupabase = null, siteOrigin = 'https://worklazy.net', allowOrigins = configuredOrigins() }) {
   const errors = [];
   const files = walk(dir);
   const rel = f => relative(dir, f.path).split(sep).join('/');
@@ -110,7 +119,7 @@ export function verifyArtifact({ dir, base = '/safeauth/', requireConfig = false
     if (name.endsWith('.js') || name.endsWith('.css')) {
       for (const m of text.matchAll(/https?:\/\/[A-Za-z0-9.-]+(?::\d+)?/g)) {
         const origin = m[0];
-        const ok = origin === siteOrigin || origin === 'http://www.w3.org' || (connect && origin === connect);
+        const ok = origin === siteOrigin || origin === 'http://www.w3.org' || (connect && origin === connect) || allowOrigins.includes(origin);
         if (!ok) errors.push(`${name}: unexpected URL ${origin}`);
       }
     }
@@ -127,6 +136,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     requireConfig: args.includes('--require-config'),
     expectSupabase: get('--expect-supabase') ?? null,
     siteOrigin: get('--site-origin') ?? 'https://worklazy.net',
+    allowOrigins: [...configuredOrigins(), ...args.flatMap((a, i) => (a === '--allow-origin' ? [args[i + 1]] : []))],
   });
   if (args.includes('--json')) console.log(JSON.stringify(result, null, 2));
   else {
