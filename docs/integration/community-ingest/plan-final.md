@@ -12,7 +12,7 @@ v1(`plan-v1.md`)을 대체한다. 지적별 처리는 `plan-resolution.md`. 원 
 | 수집 사본 | 파서 직후·override 전 DTO → 정규 JSON → `community.db` journal+outbox 먼저 commit → 개인 저장 → wake. `personal_save_state` 로 crash 상태 정의(S-03) |
 | 전송 | `request_community_upload(trigger)` 하나(`realtime/manual/midnight/recovery/rebuild/reshare`). 이벤트별 durable ACK 로만 outbox 삭제 |
 | 식별·순서 | fact 키 (contributor, dataset_key(연결에서), source_report_key(서버 계산)) (S-05). 순서 (writer_epoch, source_revision). 같은 사용자 재로그인은 rebind(epoch 유지) (S-04) |
-| 공개 | fact 는 **수락한 grant 가 활성**일 때만 공개(S-02). 재동의 자동 재공개 없음, 명시적 `reshare` 만. 삭제 = fact 삭제 + 서버 identity tombstone(영구, 클라이언트 시각 무관). 좌표 결측 fact 도 통계에 포함, 지점에서만 제외(S-01). **공개 소스는 ingest fact 만** — 구 v2 snapshot 자료는 쓰는 클라이언트가 없어(코드 grep) 운영에 없어야 하며, migration 이 자료를 발견하면 적용을 중단해 운영자 결정을 요구(조용한 소실·재공개·이중 집계 모두 차단, S-10·S-02) |
+| 공개 | fact 는 **수락한 grant 의 계보(lineage)에 사용자 철회되지 않은 grant 가 있을 때만** 공개(S-02; 정책 버전 갱신 재동의는 같은 계보를 잇고, 사용자 철회 뒤 새 동의는 새 계보). 재동의 자동 재공개 없음, 명시적 `reshare` 만. 삭제 = fact 삭제 + 서버 identity tombstone(영구, 클라이언트 시각 무관). 좌표 결측 fact 도 통계에 포함, 지점에서만 제외(S-01). **공개 소스는 ingest fact 만** — 구 v2 snapshot 자료는 쓰는 클라이언트가 없어(코드 grep) 운영에 없어야 하며, migration 이 자료를 발견하면 적용을 중단해 운영자 결정을 요구(조용한 소실·재공개·이중 집계 모두 차단, S-10·S-02) |
 | 자정 | KST 00:00 due, 키 범위 (namespace, contributor, dataset, epoch, date), 최신 키 1회 보충(S-15). PC scheduler 는 크롤 job 만 재생성(S-08) |
 | 초기화 | 사전 일관 백업 + 사용자 데이터 보존 제자리 갱신(기존 수집 경로) + community.db staging→검증→cutover. PC `--force --rebuild <run>` 신규 연결, 모바일 rebuild 에서 부재 행 삭제 금지(S-06) |
 
@@ -27,6 +27,7 @@ v1 §1 표 유지(R-ENV, R-AUTH, R-CONSENT, R-GATE-M/P, R-REBUILD, R-CAPTURE, R-
   → 모드별 권한 보충(기존 PermissionScreen 의 모드 의존 항목, 이미 허용된 것은 건너뜀) → 초기화 안내·확인(Standalone: 로컬 job / Client: 서버 job) → 메인
 [모바일 기존 사용자] 게이트 → (기존 권한 확인 동작 그대로) → 초기화 안내(필요 시) → 메인
 원 프롬프트 §6.2 순서(게이트 → 권한 → 설정)를 그대로 따른다. PermissionScreen 의 모드 의존 판정은 설정 뒤 보충 단계로 분리(S-21).
+권한 항목은 OS 별로 나눈다: Android 전용(알림 리스너 접근·배터리 최적화 예외·백그라운드 위치 등)은 iOS 에서 건너뛰고, `MethodChannel` 호출은 `MissingPluginException`·`PlatformException` 을 잡아 "해당 없음"으로 처리해 iOS 에서 멈추지 않게 한다(3차 재확인 §3.8).
 [PC/Docker] 기존 관리자 로그인/최초 설정 → 게이트 미들웨어 → /onboarding/community(두 카드)
   → 원래 목적지(검증된 상대경로) → 초기화 필요 시 배너 + /onboarding/rebuild 안내·확인
 ```
@@ -48,7 +49,8 @@ v1 §1 표 유지(R-ENV, R-AUTH, R-CONSENT, R-GATE-M/P, R-REBUILD, R-CAPTURE, R-
 - 전환 경로 테스트: 빈 DB(1→5), map 만(1,2 → 3,4,5), auth 만(3 → 1,2,4,5), 양쪽(1,2,3 → 4,5). 기존 SQL 수정 금지·운영 적용 없음.
 
 ### 3.2 auth 신규(4) — 정책·grant·연결
-- 테이블: `private.community_policy`(singleton: required_version `2026-09-26.1`, consent_text_sha256 = 계약 동의문 해시, effective_at), `private.community_consent_grants`(grant_id, user_id, policy_version, consent_text_sha256, granted_via, granted_session_id, granted_at, revoked_at, revoked_session_id, revoke_reason; 사용자당 활성 1개), `private.community_connections`(connection_id, user_id, bound_session_id, connection_secret_sha256, source_app, source_mode, platform, device_label, dataset_key, writer_epoch(시퀀스), status active/superseded/revoked/suspended, last_accepted_revision, created/rebound/revoked_at; (user,dataset_key) 활성 1개), 시퀀스 `private.community_writer_epoch_seq`.
+- 테이블(정책 정본은 아래 `community_policies`+`community_policy_current` 두 표뿐): `private.community_consent_grants`(grant_id, user_id, policy_version, consent_text_sha256, granted_via, granted_session_id, granted_at, revoked_at, revoked_session_id, revoke_reason; 사용자당 활성 1개), `private.community_connections`(connection_id, user_id, bound_session_id, connection_secret_sha256, source_app, source_mode, platform, device_label, dataset_key, writer_epoch(시퀀스), status active/superseded/revoked/suspended, last_accepted_revision, created/rebound/revoked_at; (user,dataset_key) 활성 1개), 시퀀스 `private.community_writer_epoch_seq`.
+- grant 계보: `lineage_id`, `superseded_by`. 구버전 정책 grant 를 새 정책 동의가 대체하면 이전 grant 는 `revoke_reason='superseded_policy'` + 같은 lineage 를 이어 받음. 사용자 철회 뒤 새 동의는 새 lineage.
 - 정책(N-03): `private.community_policies`(version PK, consent_text_sha256, created_at; UPDATE/DELETE 거부 트리거) + `private.community_policy_current`(singleton → version). grant 의 (version, hash) 쌍이 현재와 둘 다 같아야 active. seed = `2026-09-26.1` / 계약 동의문 sha256.
 - 잠금 순서(모든 RPC 공통, S-09): **policy_current → contributor_profiles → grant → connection → (map) tombstone/fact → analytics_state**. 계정 변경 RPC 는 contributor 행 FOR UPDATE(사용자당 뮤텍스), ingest 는 FOR SHARE. 운영자 policy 변경은 policy FOR UPDATE.
 - K 판정 SQL `private.community_identity_state(user, session)`: `auth.users`(삭제·익명·차단 아님) + `auth.identities` provider=`kakao` + `auth.sessions` 존재·not_after. user_metadata 는 쓰지 않는다.
@@ -68,7 +70,9 @@ v1 §1 표 유지(R-ENV, R-AUTH, R-CONSENT, R-GATE-M/P, R-REBUILD, R-CAPTURE, R-
 - 구 자료 가드(S-10): migration 시작 부분에서 `private.report_facts_v2` 에 행이 있거나 `private.upload_snapshots` 에 staged/active 행이 있으면 `raise exception 'LEGACY_SNAPSHOT_DATA_PRESENT'` — 운영자가 `scripts/integration/preflight_counts.sql` 로 확인하고 별도 전환 결정을 해야 적용된다. 근거: PC·모바일·map·auth 어디에도 이 표를 쓰는 코드가 없음(2026-09-26 grep).
 - `public.internal_community_ingest(user, session, request_id, envelope, events)`: 잠금 순서대로 권한 재확인(K·세션·grant 활성·정책 일치·connection active·bound_session·mode 일치·contributor active) — 실패는 요청 전체 오류, 쓰기 0. 이벤트별: epoch≠connection epoch → rejected; tombstone 이전 captured_at → rejected(deleted); `on conflict (contributor,event_id)` → 같은 해시 duplicate / 다른 해시 conflict; fact FOR UPDATE 후 (epoch,rev) 비교: 새 fact → accepted; 더 크고 해시·grant 같음 → no_change(순서 표지만 전진); 더 크고 해시 다르거나 grant 가 다름 → accepted(내용·grant 갱신); 작거나 같음 → stale_ignored. last_accepted_revision 전진. 변경 있으면 analytics_state 의 dataset_version·source_updated_at·generated_at 갱신(같은 트랜잭션 — projection 유실 없음).
 - `private.community_delete_contributions(user)`: 사용자 fact 전부 삭제, tombstone 기록, version 갱신. 이벤트 원장(비공개)은 감사 목적 30일 보관 후 운영 정리(문서화).
-- 공개 RPC 교체 `internal_analytics_v2_facts`(같은 서명·반환 형태): 소스 = ingest fact 만. 조건 `public_state='completed'` ∧ **fact.consent_grant_id 의 grant 가 활성이고 (version, hash) 가 현재 정책과 같음** ∧ contributor active ∧ tombstone 없음. **좌표 결측도 포함**(lat/lng null); bbox 인자가 있으면 좌표 있는 행만.
+- grant 귀속 규칙(S-02): 기존 fact 의 계보가 사용자 철회로 비활성이면 `reshare` 가 아닌 이벤트는 내용·순서만 갱신하고 옛 grant 에 남김(비공개 유지). tombstone 키 = (contributor, source_report_key)(dataset_key 무관).
+- 구 자료 가드 범위(3차): **공개 중인** 구 자료(active snapshot 의 v2 fact)만 중단 조건. staged/만료 snapshot 행은 공개되지 않으므로 막지 않는다. 사전 점검 `scripts/integration/preflight_counts.sql`, 결정표 `deployment-and-rollback.md`.
+- 공개 RPC 교체 `internal_analytics_v2_facts`(같은 서명·반환 형태): 소스 = ingest fact 만. 조건 `public_state='completed'` ∧ **fact.consent_grant_id 의 계보에 활성 grant 존재**(`private.community_lineage_active`) ∧ contributor active(삭제된 fact 는 행이 없음). 정책 버전만 바뀐 상태에서는 이전 조건으로 공유된 fact 가 계속 공개되고, 새 업로드만 `consent_outdated` 로 막힌다(POC 검증). **좌표 결측도 포함**(lat/lng null); bbox 인자가 있으면 좌표 있는 행만.
   반환: 기존 PrivateFact 형태(`fact_identity`=`dataset_key:source_report_key`, `snapshot_id`=`ingest-v1`, `snapshot_generation`=1), lat/lng nullable.
 - manifest RPC `internal_community_manifest(user, session, connection)` → 연결 검사 후 그 (user, dataset_key) 의 completed fact `source_report_key` 앞 24hex 목록(S-04). ingest 함수의 `/manifest` 경로가 호출.
 - `server/aggregate.ts`·`publicHandler.ts` 변경: PrivateFact.lat/lng nullable, 지점·bbox 는 좌표 있는 fact 만, `coverage.location_missing` 추가, meta 에 `population: "shared_completed_reports"` 와 모집단 설명, 완료 비율·미완료 비중·처리 중 비중 등 분모 없는 지표는 `unsupported`(값 null)로.
@@ -98,7 +102,9 @@ v1 §5 + 변경:
 - `context` 에 `dataset_key`, `writer_epoch`, `consent_text_sha256` 추가. 연결 비밀 원문은 community.db 에 두지 않는다(PC `data/auth` 암호화 저장소, 모바일 secure storage).
 - `detail_status`(상세 당시 C_NOW 라벨, S-12), `server_completed`(중앙 manifest, S-04) 추가. rebuild staging 은 병합 전용(S-06).
 - `rotate_dataset(reason)`: 개인 DB 교체·공식 계정 변경 **직전** 호출(보수적 선회전, S-20). 교체 실패여도 되돌리지 않음(초기화 1회 추가 비용만). 이전 journal/outbox 는 원 귀속 그대로 보존.
-- capture 실패 시 그 신고의 개인 저장을 건너뛴다(S-03) — 개인 상태가 전진하지 않아 다음 수집이 다시 읽는다.
+- capture 실패 시 그 신고의 개인 저장을 건너뛰고(S-03) 별도 파일 `community_capture_retry.json` 에 ID 를 남겨 다음 증분에서 반드시 다시 읽는다. 한 실행에서 연속 3회 실패하면 수집을 `community_store_unavailable` 로 멈추고 복구 안내.
+- revision 은 파일 전체 단조(`meta.next_revision`, 데이터셋 회전으로 초기화 안 함, S-20).
+- manifest 신선도: `meta.manifest_scope`=`dataset_key:writer_epoch` 가 현재와 다르면 수집 전에 전 페이지를 받아 교체, 실패하면 수집 시작 안 함(S-04).
 - 전송 대상: outbox 행의 (contributor_fingerprint, connection_id, consent_grant_id, project_namespace) 가 현재 context 와 같을 때만. 다르면 `blocked:context_mismatch` 로 보존·표시. 다른 계정 토큰으로 절대 전송 안 함(C04).
 
 ## 6. 게이트
@@ -124,7 +130,7 @@ v1 §6.4 그대로 + 동의문에 "철회하면 공개에서 제외, 재동의�
 - **PC**: `crawl_control.start_rebuild(run_id)` → 명령 `start.py --force --rebuild <run_id>`(frozen 은 `--mode crawl --force --rebuild`). start.py 는 이번 run 의 목록 수집이 **모든 페이지 성공**일 때만 그 ID 집합을 `rebuild_items` 로 등록(부분 실패면 failed), 상세는 items 중 미완료만(checkpoint). `--reset` 사용 금지.
 - **모바일**: `SyncEngine.start(fullSync: true, rebuildRunId: …)` — rebuild 모드는 목록 부재 행 삭제를 건너뛰고(orphan 보존·건수 표시), items checkpoint, 상세 실패는 item 단위 재시도.
 - 개인 DB 는 **사전 일관 백업**(PC sqlite backup API, 모바일 `VACUUM INTO`, 둘 다 integrity_check) 후 기존 수집 경로로 제자리 갱신(override·감시목록·중복 판단·지오코딩 캐시 보존 — 기존 동작). 개인 DB 전체 shadow cutover 는 하지 않는다(기존 저장 계층이 사용자 데이터를 보존하므로 불필요, 실패 시 백업으로 복구 안내).
-- community.db staging: rebuild run 동안 items·journal·`report_latest_staging` 에 쓰고, validating 통과 뒤 한 트랜잭션으로 `report_latest` 교체 + marker(committing→completed).
+- community.db staging: rebuild run 동안 items·journal·`report_latest_staging` 에 쓰고, validating 통과 뒤 한 트랜잭션으로 staging 을 `report_latest` 에 **upsert 병합**(삭제 없음, 영구 실패·목록 부재는 기존 포인터 carry-forward) + marker(committing→completed). 시작 전 manifest 전 페이지 수신 필수(실패 시 시작 안 함).
 - 완료 기준: 목록 전 페이지 성공 ∧ items 전부 fetched 또는 영구 실패로 분류 ∧ 파서 오류 0(또는 사용자가 누락 N건을 명시 수락 → completed_with_gaps). 로그인 실패·403·목록 일부 실패는 failed(0건 성공 금지). 정상 인증 빈 목록은 completed.
 - 동시성: 크롤 lock, 초기화 필요·진행 중 다른 크롤 409, 확인 연타·다중 브라우저·Client 동시 요청은 unique 제약+lease 로 run 하나. 재시작·재부팅 시 같은 run 재개. 철회·로그아웃 → 다음 item 경계 paused, 재동의 뒤 사용자가 계속.
 - 복원·공식 계정 변경 → rotate_dataset → 새 범위 키라 초기화 다시 필요(G14).
@@ -140,7 +146,7 @@ v1 §6.4 그대로 + 동의문에 "철회하면 공개에서 제외, 재동의�
 ### 8.4 지도 탭 패널
 v1 §8 문구 + `이전 수집 사본 다시 공유(N건)`(재동의·takeover 뒤에만 보임, 확인 대화상자) + `blocked` 사유별 안내.
 ### 8.5 완료 후 상태 변화 감지(S-12)
-두 앱의 증분 선정: 신규 ∨ 종결여부≠Y ∨ 보완_미응답=Y(모바일 기존) ∨ **목록 `상태` ≠ 마지막 상세의 `상태`**(둘 다 `_C_NOW_STATUS` 라벨). PC `_get_new_and_incomplete_ids`, 모바일 sync_engine 필터를 같은 fixture(`vectors/list_refetch.json`)로 검증. 상세를 다시 받으면 capture 규칙이 correction 을 결정한다(목록만으로 correction 금지).
+두 앱의 증분 선정: `vectors/list_refetch.json` 규칙 그대로 — 신규 ∨ 종결여부≠Y ∨ 보완_미응답=Y ∨ capture 재시도 목록 ∨ (detail_status 없음 ∧ (영구 실패 아님 ∨ 목록 라벨이 실패 당시와 다름)) ∨ (detail_status 있음 ∧ **목록 C_NOW 라벨 ≠ `community.db detail_status` 라벨**). null 을 `!=` 로 직접 비교하지 않는다. PC `_get_new_and_incomplete_ids`, 모바일 sync_engine 필터를 같은 fixture(`vectors/list_refetch.json`)로 검증. 상세를 다시 받으면 capture 규칙이 correction 을 결정한다(목록만으로 correction 금지).
 
 ## 9. 설정·비밀
 v1 §9 유지. 추가: PC 공개 설정 환경변수 우선순위 env(`COMMUNITY_*` 별칭 = 기존 `SAFETYREPORT_COMMUNITY_*`, 둘 다 있고 다르면 `config_conflict`) > config.ini > 번들 `community_public.json`. `[COMMUNITY] enabled=false` 는 더 이상 게이트를 끄지 못함(공식 제품에서 필수 — 설정은 무시하고 경고). `upload_enabled` 도 폐기(동의 grant 가 정본).
@@ -180,3 +186,8 @@ v1 §14 동일(계획 재확인 → 구현·회수 → 통합 검증 → Sol 통
 S-02·S-10(critical): 공개 소스 ingest 전용 + 구 자료 발견 시 migration 중단 + identity tombstone. S-03: capture 실패 시 개인 저장 보류. S-04: 중앙 manifest(`server_completed`). S-06: staging 병합 전용 + 무변경 포인터 기록.
 S-12: `detail_status` 로 상세 당시 C_NOW 보존·비교. S-20: 개인 DB 교체 전 선회전. S-21: 원문 순서(게이트→권한→설정) + 모드 의존 권한 보충. N-01: 금액 문법·서버 값 검증. N-02: `acceptance-matrix.md`. N-03: 정책 (버전, 해시) 불변 이력.
 S-09·S-11·S-18 은 구현 게이트(최종 SQL·실제 스택 HTTP 증거로 닫음, POC 로 닫지 않음).
+
+## 16. 3차 재확인(plan-review-sol-03) 반영 요약
+S-02: 철회 계보 fact 는 reshare 없이 새 grant 로 재귀속 안 함 + tombstone 은 신고 identity 단위. S-10: 가드를 공개 중인 구 자료로 한정 + preflight SQL·결정표. S-03: 재시도 파일 + 연속 실패 중단. S-04: manifest 페이지·전체성 검증·fail-closed.
+S-06: 무이벤트·무포인터는 detail_status 만, cutover 는 병합. S-12: null 비교 명시·영구 실패 당시 라벨. S-20: revision 파일 전체 단조. S-21: OS 별 권한 집합·채널 예외 처리. N-03: 정책 정본 두 표로 단일화.
+최종 SQL 초안(격리 POC `stack-poc/poc-sql/v2/`)으로 위 S-02·S-04·S-10·N-03 동작을 실제 Postgres·PostgREST 에서 확인(증거 `poc_v2.mjs` 출력 — 최종 검증은 통합 스택에서 다시).

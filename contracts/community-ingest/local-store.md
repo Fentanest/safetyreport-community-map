@@ -76,13 +76,17 @@ CREATE UNIQUE INDEX rebuild_one_active ON rebuild_jobs(required_version, local_d
   WHERE state NOT IN ('completed','completed_with_gaps','abandoned');
 CREATE TABLE rebuild_items (run_id TEXT NOT NULL, source_report_id TEXT NOT NULL,
   state TEXT NOT NULL CHECK (state IN ('pending','fetched','failed_retryable','failed_permanent')),
-  attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT, event_id TEXT, PRIMARY KEY (run_id, source_report_id));
+  attempts INTEGER NOT NULL DEFAULT 0, last_error TEXT, event_id TEXT,
+  last_list_label TEXT,            -- 영구 실패 당시 목록 C_NOW 라벨(나중에 바뀌면 다시 조회, S-12)
+  PRIMARY KEY (run_id, source_report_id));
 ```
 
 규칙
-- capture: detail_status UPSERT + (이벤트면) journal INSERT·outbox INSERT(context active 일 때)·meta.next_revision 증가 + report_latest UPSERT(rebuild 중이면 report_latest_staging 에 **항상** 유효 최신 포인터 — 새 이벤트면 그 id, 이벤트가 없으면 기존 최신 id) 를 **한 트랜잭션**으로 commit 한 뒤 개인 DB 저장. capture 가 실패하면 그 신고의 개인 저장을 하지 않는다. 저장 결과로 최신 journal 행의 `personal_save_state` 갱신.
+- capture: detail_status UPSERT + (이벤트면) journal INSERT·outbox INSERT(context active 일 때)·meta.next_revision 증가 + report_latest UPSERT(rebuild 중이면 report_latest_staging 에 유효 최신 포인터 — 새 이벤트면 그 id, 이벤트가 없으면 기존 최신 id, **둘 다 없으면 쓰지 않음**) 를 **한 트랜잭션**으로 commit 한 뒤 개인 DB 저장. capture 가 실패하면 그 신고의 개인 저장을 하지 않는다. 저장 결과로 최신 journal 행의 `personal_save_state` 갱신.
 - 시작 시 정리: `personal_save_state='pending'` 이고 10분 지난 행은 개인 DB 의 원본 상세 행이 그 payload 의 status_raw 와 같으면 saved, 아니면 failed 로 맞춘다(표시용; 전송 가능 여부와 무관).
-- `source_revision` 은 로컬 데이터셋 단조 증가. 중앙 status 의 `last_accepted_revision` 보다 작으면 그 값+1 로 올린다.
+- `source_revision` 은 `meta.next_revision` 하나로 파일 전체 단조 증가(데이터셋 회전으로 초기화하지 않음). 중앙 status·manifest 의 `last_accepted_revision` 보다 작으면 그 값+1 로 올린다.
+- capture 실패 재시도 목록(S-03): community.db 자체가 실패할 수 있으므로 **별도 파일** `<data>/community_capture_retry.json`(PC) / 앱 폴더 같은 이름(모바일) — `[{source_report_id, reason, failed_at, attempts}]`, 원자적 쓰기(임시 파일→fsync→rename). 증분 선정에 항상 포함하고 capture 성공 시 제거. 한 수집 실행에서 capture 가 **연속 3회** 실패하면 수집을 `community_store_unavailable` 오류로 멈추고(공식 사이트 반복 호출 방지) 화면에 복구 안내.
+- manifest 신선도(S-04): `meta.manifest_scope` = `<dataset_key>:<writer_epoch>` 가 현재 연결과 같을 때만 수집(실시간·초기화)을 시작한다. 다르면 먼저 manifest 전 페이지를 받아 `server_completed` 를 교체(한 트랜잭션)한 뒤 기록. 실패하면 수집을 시작하지 않고 `manifest_unavailable` 로 표시(fail-closed).
 - 전송 대상 = outbox 행 중 journal 의 (project_namespace, contributor_fingerprint, connection_id, consent_grant_id) 가 현재 `context` 와 같은 것. 다르면 `blocked:context_mismatch`.
 - 삭제: outbox 는 durable ACK 때 삭제. journal 은 신고별 최신 행 + 미ACK 전부 보존, 나머지 ACK 행은 90일 뒤 정리. 파일 200MB 초과 시 경고(자동 삭제 안 함).
 - `rotate_dataset(reason)`: 개인 DB 교체(복원·가져오기·모드 전환)·공식 계정 변경 **직전에** 호출(보수적 선회전, S-20) → 새 local_dataset_id, 이전 id 를 dataset_history 에. 교체가 실패해도 되돌리지 않는다(초기화를 한 번 더 요구할 뿐 데이터 손실·오귀속 없음). 이전 journal/outbox 삭제 안 함.

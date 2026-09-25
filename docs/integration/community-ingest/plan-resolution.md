@@ -53,3 +53,19 @@ Sol 독립 재계산: 벡터 25+7건 불일치 0, MANIFEST 20파일 OK.
 | N-03 | **수용** | 정책 이력 표(version, hash) 불변 트리거 + current 포인터, grant 의 (version, hash) 쌍 비교 |
 | S-09·S-11·S-18 | 구현 게이트 | 최종 SQL·실제 스택 HTTP·익명 API 증거로만 닫는다. POC 는 증거로 인용하지 않는다 |
 | 기타 | 수용 | status 응답에 dataset_key 포함(account-api 와 일치), plan-final §5 의 connection_secret 문장 정정 |
+
+## 3차 재확인(plan-review-sol-03) 처리 — job `task-muh9kni1-m2c5mw`, 같은 thread·model `gpt-6-sol`
+판정: 착수 불가(S-02 critical 잔여, S-03/04/06/12/20/21·N-03 high 부분). Sol 독립 재계산: 관측 32·이벤트 10 일치, 목록 11건은 null 가드 필요.
+
+| ID | 처리 |
+|---|---|
+| S-02 | 철회된 계보의 fact 는 `reshare` 가 아니면 옛 grant 에 남김(비공개 유지), tombstone 키를 (contributor, source_report_key) 로 — dataset_key 재등록 우회 차단. 최종 SQL 초안으로 격리 스택에서 확인: 재동의 후 일반 이벤트 no_change/held·공개 0, 다른 dataset_key 로 삭제 신고 재업로드 rejected |
+| S-10 | 가드를 **공개 중인** 구 자료(active snapshot 의 v2 fact)로 한정, staged 는 통과(격리 스택에서 staged 통과·active v2 중단 확인). `preflight_counts.sql`(읽기 전용), `deployment-and-rollback.md` 결정표 |
+| S-03 | `community_capture_retry.json`(별도 파일, 원자 쓰기) 로 재시도 강제, 연속 3회 실패 시 `community_store_unavailable` 중단·안내 |
+| S-04 | manifest 페이지(≤5000, `after` 커서)·total 검증·원자 교체, 실패 시 수집·초기화 시작 안 함, no-store·로그 금지 |
+| S-06 | 무이벤트·무포인터 관측은 detail_status 만, plan §7 을 병합 cutover 로 정정 |
+| S-12 | null 비교 명시 규칙 + `rebuild_items.last_list_label`, 벡터 13건(재계산 일치) |
+| S-20 | revision 은 `meta.next_revision` 파일 전체 단조(회전으로 초기화 안 함) — 옛 대기 이벤트가 새 관측을 되돌리지 못함 |
+| S-21 | OS 별 권한 집합, iOS 는 Android 전용 항목 건너뜀, MethodChannel 예외(`MissingPluginException`) 처리 — T5 작업서 반영 |
+| N-03 | plan-final 에서 구 singleton 문장 삭제, 정책 정본 = `community_policies` + `community_policy_current` |
+| 추가(Opus 발견) | grant **계보(lineage)**: 정책 버전 갱신 재동의는 계보를 이어 기존 공개 유지, 사용자 철회 뒤 새 동의는 새 계보. 없으면 정책 버전 교체만으로 공개 자료 전부가 사라지는 결함(격리 스택에서 발견·수정·확인) |

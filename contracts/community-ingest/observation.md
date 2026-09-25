@@ -65,12 +65,13 @@ payload 키는 항상 모두 있다: `address, agency_name, amount{confirmed_won
 로컬 prev 가 없고 그 신고의 `source_report_key` 앞 24hex 가 `server_completed`(중앙 manifest — 이 dataset 에서 이미 completed 로 저장된 신고)에 있으면 prev 를 "eligible, 해시 불명"으로 본다(S-04: writer 전환·재설치 뒤 첫 비적격 관측도 정정을 보냄).
 - eligible: prev 가 있고 payload_sha256 이 같으면 새 이벤트 없음(내용 변화 없음). 아니면 `completed_observation`.
 - not eligible: prev 가 eligible 이면 `status_correction`(payload = 이번 관측 그대로). 아니면 이벤트 없음.
+- 이벤트가 없고 prev 도 없으면(예: 처음 본 처리중·취하 신고) `detail_status` 만 기록하고 report_latest/staging 은 쓰지 않는다(가리킬 journal 행이 없음). 이것은 capture 성공이다(S-06).
 - `location_supplement`: 수동·자정·recovery 트리거 때, 신고별 최신 journal 행이 eligible 이고 `location.source="none"` 인데 그 행의 `address` 로 지오코딩 캐시(공식 주소 결과만)가 이제 `ok` 이면, 같은 payload 에 location 만 채운 새 이벤트.
 - `reshare`: 재동의·writer 전환 뒤 사용자가 지도 탭에서 **명시적으로** 요청할 때만. 신고별 최신 eligible journal 행의 payload·captured_at 을 그대로 두고 새 event_id·새 source_revision·현재 grant/connection/epoch 로 발급. 자동 실행 금지.
 - 개인 편집·백업 복원·DB 변환·가져오기·모바일 Client 는 이벤트를 만들지 않는다.
 - capture 가 실패하면(community.db 오류 등) **그 신고의 개인 저장도 하지 않는다**(저장 실패로 집계). 개인 상태가 전진하지 않으므로 다음 수집의 선정 규칙(신규·미종결·목록 상태 변경)이 그 신고를 다시 읽는다 — 공유 사본을 영구히 놓치지 않는다(S-03).
 - 상세를 받을 때마다(이벤트 여부와 무관) `detail_status` 에 그 상세의 C_NOW 라벨(`progress_status`)을 같은 트랜잭션으로 기록한다(목록 상태 변경 감지용, S-12).
-- `event_id` = 새 UUIDv4(소문자). `source_revision` = 로컬 데이터셋 단조 증가 정수(`meta.next_revision`, 서버 `last_accepted_revision` 보다 작아지지 않게 올림). `captured_at` = UTC ISO-8601 `Z`(밀리초).
+- `event_id` = 새 UUIDv4(소문자). `source_revision` = `community.db` **전체**에서 단조 증가하는 정수(`meta.next_revision` — 데이터셋 회전으로 초기화하지 않음, 서버 `last_accepted_revision` 보다 작아지지 않게 올림). 그래서 회전 전 대기 이벤트가 회전 뒤 새 관측보다 늦게 도착해도 새 관측을 되돌리지 못한다(S-20). `captured_at` = UTC ISO-8601 `Z`(밀리초).
 
 ## 5. 서버 검증·파생(ingest)
 스키마(`observation.schema.json`)가 형식·enum·길이·상한을 검사하고, 서버 코드가 아래 **값 규칙**을 추가로 검사한다(위반 = 422 `schema_invalid`, 쓰기 0):
@@ -80,7 +81,9 @@ payload 키는 항상 모두 있다: `address, agency_name, amount{confirmed_won
 - `status == map(status_raw)` 가 아니면 그 이벤트는 `quarantined:status_mapping_mismatch`(durable, fact 반영 안 함).
 - event_type 일관성: `completed_observation`·`location_supplement`·`reshare` 는 eligible payload 만, `status_correction` 은 not eligible payload 만, `location_supplement` 는 `location.source="geocode"` 만. 어기면 422. `reshare` 이벤트는 envelope `trigger="reshare"` 에서만 허용.
 - 서버가 `source_report_key = sha256(utf8("safetyreport|" + source_report_id))` 를 계산한다(클라이언트 값 받지 않음). fact 키는 (contributor, 연결의 dataset_key, source_report_key).
-- 삭제 tombstone 에 있는 (contributor, dataset_key, source_report_key) 의 이벤트는 captured_at 과 무관하게 영구 `rejected:deleted`.
+- 삭제 tombstone 은 (contributor, source_report_key) — dataset_key 와 무관 — 이고, 그 신고의 이벤트는 captured_at·dataset_key 와 무관하게 영구 `rejected:deleted`.
+- grant 귀속: 기존 fact 의 grant 계보가 **사용자 철회로 비활성**이면, `reshare` 가 아닌 이벤트는 내용·순서만 갱신하고 fact 는 옛 (비공개) grant 에 남긴다 → 공개되지 않음(`projection_status=held`). `reshare` 이거나 계보가 활성(정책 갱신 재동의 포함)이면 현재 grant 로 귀속(S-02).
+- `projection_status=published` 는 커밋 시 analytics ready ∧ generated_at 존재 ∧ 그 fact 가 공개 조건(계보 활성)을 만족할 때만. 아니면 `held`.
 - 파생: `public_state` = eligible ? `completed` : `not_completed`; lat/lng = 문자열을 double 로(원 문자열도 `lat_text`/`lng_text` 로 보존); `point_key = "v1:" + lat + "," + lng`(문자열 그대로);
   `region_code` = 주소 앞 두 토큰(공백 분리, 시·도 약칭 정규화) — 공개 필터용 표시 키, 행정코드가 아님;
   `agency_key = "a1:" + sha256(NFC(agency_name))[:24]`, `manager_key = "m1:" + sha256(agency_key + "|" + NFC(manager_name))[:24]`(기관이 다르면 같은 이름도 다른 키).
