@@ -7,7 +7,7 @@
 | VITE_KAKAO_MAP_JS_KEY | repo variable 또는 CI frontend env | 공개 JS key. secrets에 저장해도 번들에서는 공개 |
 | VITE_PUBLIC_ANALYTICS_URL | variable / frontend | 공개 read-only Edge API base |
 | VITE_DATA_MODE | variable | live 또는 명시 demo |
-| VITE_BASE_PATH | variable | /safetyreport-community-map/ 기본 |
+| VITE_BASE_PATH | variable | `/` 기본 (공개 주소 `https://safemap.worklazy.net/`) |
 | PUBLIC_ANALYTICS_URL | CI variable, snapshot exporter | 현재 구현은 이미 공개 허용된 Edge API만 읽음. 비밀키 불필요 |
 | SUPABASE_EXPORT_DATABASE_URL | 선택적 후속 direct exporter 전용 | 현재 스크립트는 사용하지 않음. 사용 시 specific safe views SELECT 전용 DSN/TLS 필요 |
 | KAKAO_REST_API_KEY | 선택적 주소 보완 step만 | 현재 스크립트는 사용하지 않음. 브라우저 변수 금지 |
@@ -19,7 +19,11 @@
 VITE_에 PRIVATE/SECRET/REST/DSN이 들어가면 검증 실패. 단순 환경변수 이름보다 실제 artifact도 검사한다.
 
 ## Pages
-프로젝트 하위 경로 base를 맞춘다. 날짜·탭은 query 또는 hash routing으로 유지해 deep-link 404를 피한다.
+공개 주소는 `https://safemap.worklazy.net/`(이 저장소의 GitHub Pages, base `/`)다. Settings → Pages에서
+Source = GitHub Actions, Custom domain = `safemap.worklazy.net`, Enforce HTTPS. DNS는 `safemap` CNAME → `fentanest.github.io`
+(Cloudflare는 DNS 전용). 카카오 지도 JavaScript 키의 사이트 도메인에 `https://safemap.worklazy.net`을 등록한다.
+push만으로는 배포되지 않는다(`publish-pages.yml` 수동 실행).
+base 설정을 맞춘다. 날짜·탭은 query 또는 hash routing으로 유지해 deep-link 404를 피한다.
 assets/data 주소에 import.meta.env.BASE_URL 사용. 자동 임의 wildcard redirect에 의존하지 않는다.
 실제 배포 artifact는 dist 하나만; repository root/documentation/reference-image 전체를 upload하지 않는다.
 `product-check.yml`은 검증 전용이다. `publish-pages.yml`은 main의 수동 `workflow_dispatch`만

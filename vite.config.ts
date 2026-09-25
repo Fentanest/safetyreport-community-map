@@ -6,7 +6,7 @@ export default defineConfig(({ command, mode, isPreview }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   return {
     plugins: [react()],
-    base: command === 'serve' && isPreview !== true ? '/' : (env.VITE_BASE_PATH || '/safetyreport-community-map/'),
+    base: command === 'serve' && isPreview !== true ? '/' : (env.VITE_BASE_PATH || '/'),
     build: { outDir: 'dist', sourcemap: false, emptyOutDir: true },
     test: { environment: 'node' },
   };

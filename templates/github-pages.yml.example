@@ -30,7 +30,7 @@ jobs:
         env:
           VITE_KAKAO_MAP_JS_KEY: ${{ vars.KAKAO_MAP_JS_KEY }}
           VITE_PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
-          VITE_BASE_PATH: /safetyreport-community-map/
+          VITE_BASE_PATH: /
           VITE_DATA_MODE: live
       - run: python3 scripts/scan_public_dist.py --dir dist
       - uses: actions/configure-pages@v5

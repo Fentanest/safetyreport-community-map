@@ -20,5 +20,5 @@ jobs:
       - run: npm run build
         env:
           VITE_DATA_MODE: live
-          VITE_BASE_PATH: /safetyreport-community-map/
+          VITE_BASE_PATH: /
       - run: npm run scan

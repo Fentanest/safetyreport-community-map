@@ -31,12 +31,12 @@ npm run scan
 ## 커뮤니티 계정 연결
 
 카카오 계정 연결 중앙 페이지(`https://safeauth.worklazy.net/`)와 relay는 별도 저장소
-`Fentanest/safetyreport-community-auth`에서 관리한다. 이 저장소는 지도(`worklazy.net/safemap` 예정)만 다룬다.
+`Fentanest/safetyreport-community-auth`에서 관리한다. 이 저장소는 지도(`https://safemap.worklazy.net/`)만 다룬다.
 
 ## 데이터·배포 경계
 
 운영 UI는 `VITE_DATA_MODE=live`, `VITE_PUBLIC_ANALYTICS_URL=https://<project>.supabase.co/functions/v1`,
-`VITE_KAKAO_MAP_JS_KEY`(공개 JS 키), `VITE_BASE_PATH=/safetyreport-community-map/`을 사용한다.
+`VITE_KAKAO_MAP_JS_KEY`(공개 JS 키), `VITE_BASE_PATH=/`를 사용한다(공개 주소 `https://safemap.worklazy.net/`).
 임의 날짜·복합 필터·차량 TOP5는 `supabase/functions/public-analytics/`의 공개 GET API가
 private v2 사실에서 정확히 집계한다. 차량은 지역 접두어를 내부 동일성에 보존하고, 공개 시 지역명은
 그대로 두고 그 뒤 번호의 2·4·6번째 글자를 마스킹한다(경기76자3623 → 경기7*자*6*3). API에는 계정·원번호·전역 차량 키를 내보내지 않는다.

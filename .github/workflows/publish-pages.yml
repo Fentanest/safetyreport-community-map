@@ -39,7 +39,7 @@ jobs:
         run: npm run build
         env:
           VITE_DATA_MODE: live
-          VITE_BASE_PATH: /safetyreport-community-map/
+          VITE_BASE_PATH: /
           VITE_PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
           VITE_KAKAO_MAP_JS_KEY: ${{ vars.KAKAO_MAP_JS_KEY }}
       - run: npm run scan
