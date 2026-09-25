@@ -1,0 +1,79 @@
+{
+  "contract": "list-refetch-v1",
+  "rule": "refetch = not in_detail OR coalesce(closed,'') != 'Y' OR supplement_open == 'Y' OR list_status != detail_status (site values only; overrides ignored)",
+  "cases": [
+    {
+      "name": "new_report",
+      "in_detail": false,
+      "list_status": "진행",
+      "detail_status": null,
+      "closed": null,
+      "supplement_open": null,
+      "refetch": true
+    },
+    {
+      "name": "open_report",
+      "in_detail": true,
+      "list_status": "진행",
+      "detail_status": "진행",
+      "closed": "N",
+      "supplement_open": "N",
+      "refetch": true
+    },
+    {
+      "name": "closed_unchanged",
+      "in_detail": true,
+      "list_status": "답변완료",
+      "detail_status": "답변완료",
+      "closed": "Y",
+      "supplement_open": "N",
+      "refetch": false
+    },
+    {
+      "name": "closed_list_changed_to_progress",
+      "in_detail": true,
+      "list_status": "진행",
+      "detail_status": "답변완료",
+      "closed": "Y",
+      "supplement_open": "N",
+      "refetch": true
+    },
+    {
+      "name": "closed_list_changed_to_withdrawn",
+      "in_detail": true,
+      "list_status": "취하",
+      "detail_status": "답변완료",
+      "closed": "Y",
+      "supplement_open": "N",
+      "refetch": true
+    },
+    {
+      "name": "transferred_unchanged",
+      "in_detail": true,
+      "list_status": "이송",
+      "detail_status": "이송",
+      "closed": "Y",
+      "supplement_open": "N",
+      "refetch": false
+    },
+    {
+      "name": "closed_null_is_open",
+      "in_detail": true,
+      "list_status": "답변완료",
+      "detail_status": "답변완료",
+      "closed": null,
+      "supplement_open": "N",
+      "refetch": true
+    },
+    {
+      "name": "user_override_closed_is_ignored",
+      "in_detail": true,
+      "list_status": "진행",
+      "detail_status": "진행",
+      "closed": "N",
+      "supplement_open": "N",
+      "override_closed": "Y",
+      "refetch": true
+    }
+  ]
+}
