@@ -105,3 +105,14 @@ Sol 독립 재계산: 벡터 25+7건 불일치 0, MANIFEST 20파일 OK.
 | N-06 | 잠금 뒤 `clock_timestamp()` + `greatest()` 로 fence 단조, 응답 deleted_at = 저장값 | 먼저 시작해 늦게 끝난 삭제 D1 뒤에도 fence ≥ D2 |
 | N-07 | fact 표 AFTER 트리거가 완료 key 집합 변화 때만 세대 증가(RPC·운영 DML 공통), 명시 bump 제거 | 순서 필드만 UPDATE → 세대 불변, completed↔not_completed 직접 DML → +1 |
 | N-08 | 병렬 40요청 각 응답 200 + results 2건 + 상태 ∈ {accepted, no_change, stale_ignored} + durable assert | 통과 |
+
+## 7차 재확인(plan-review-sol-final) — job `task-muhay8zj-gkdjv4`, 같은 thread·model `gpt-6-sol`
+**판정: 구현 착수 가능**(critical/high 미해소 0). 남은 medium·low 는 구현 중 처리 — 착수 전에 초안에 먼저 반영했다:
+
+| ID | 처리 | 회귀(sql-drafts/regression_poc.mjs, 16 checks exit 0) |
+|---|---|---|
+| N-09 medium | fact 표 **문장 단위** AFTER 트리거가 공개 dataset_version·generated_at 갱신(운영 직접 정정 포함, 잠금 순서 fact→세대→analytics 유지), ingest 의 명시 갱신 제거 | 운영자 직접 금액 정정 → dataset_version 변경 |
+| N-10 medium | 삭제 경쟁 회귀가 첫 삭제 프로세스의 종료 코드·stderr·deletion_id 를 검사, 두 삭제 사이 capture 된 이벤트의 새 연결 재전송 거절 확인 | 통과 |
+| N-11 low | 세대 트리거를 완료 key 의 등장·소멸·이동으로만 좁힘 | 미완료 신고 삽입·상태 변경 → 세대 불변 |
+
+구현 게이트(Sol §4)는 `acceptance-matrix.md` 와 plan-final §20 에 옮겨 통합 단계에서 실제 스택·HTTP·앱 증거로 닫는다.

@@ -92,17 +92,18 @@ create index community_report_facts_grant_idx on private.community_report_facts(
 -- transaction, whatever code path (RPC or operator DML) made it (N-07). Order-only updates do not bump.
 create or replace function private.community_facts_manifest_trigger()
 returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+    v_old_in boolean := tg_op in ('UPDATE', 'DELETE') and old.public_state = 'completed';
+    v_new_in boolean := tg_op in ('UPDATE', 'INSERT') and new.public_state = 'completed';
 begin
-    if tg_op = 'INSERT' then
-        if new.public_state = 'completed' then perform private.community_bump_manifest(new.contributor_id, new.dataset_key); end if;
-    elsif tg_op = 'DELETE' then
-        if old.public_state = 'completed' then perform private.community_bump_manifest(old.contributor_id, old.dataset_key); end if;
-    elsif old.public_state is distinct from new.public_state or old.source_report_key is distinct from new.source_report_key
-          or old.dataset_key is distinct from new.dataset_key or old.contributor_id is distinct from new.contributor_id then
+    -- Only a change of the COMPLETED key set counts (N-11): a completed key appears, disappears or moves.
+    if v_old_in and (not v_new_in or old.contributor_id <> new.contributor_id or old.dataset_key <> new.dataset_key
+                     or old.source_report_key <> new.source_report_key) then
         perform private.community_bump_manifest(old.contributor_id, old.dataset_key);
-        if old.contributor_id <> new.contributor_id or old.dataset_key <> new.dataset_key then
-            perform private.community_bump_manifest(new.contributor_id, new.dataset_key);
-        end if;
+    end if;
+    if v_new_in and (not v_old_in or old.contributor_id <> new.contributor_id or old.dataset_key <> new.dataset_key
+                     or old.source_report_key <> new.source_report_key) then
+        perform private.community_bump_manifest(new.contributor_id, new.dataset_key);
     end if;
     return null;
 end;
@@ -155,6 +156,19 @@ grant select, insert, update, delete on private.community_ingest_events, private
     private.community_fact_tombstones, private.community_deletion_fences, private.community_manifest_generations to service_role;
 create trigger community_report_facts_manifest after insert or update or delete on private.community_report_facts
 for each row execute function private.community_facts_manifest_trigger();
+
+-- Any fact DML (ingest, deletion, operator correction) moves the public dataset_version in the same transaction (N-09).
+-- Statement level, after the row triggers: lock order stays fact -> manifest generation -> analytics_state.
+create or replace function private.community_facts_projection_trigger()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+    perform private.community_bump_projection();
+    return null;
+end;
+$$;
+revoke all on function private.community_facts_projection_trigger() from public, anon, authenticated;
+create trigger community_report_facts_projection after insert or update or delete on private.community_report_facts
+for each statement execute function private.community_facts_projection_trigger();
 
 -- A fact is listed by the public API when completed, has a report or completion date, its contributor is active and
 -- its consent lineage is active (mirrors internal_analytics_v2_facts; ready/generated_at are checked separately).
@@ -359,9 +373,6 @@ begin
     if v_max_rev > v_conn.last_accepted_revision then
         update private.community_connections set last_accepted_revision = v_max_rev where connection_id = v_conn.connection_id;
     end if;
-    if v_changed then
-        perform private.community_bump_projection();
-    end if;
     select dataset_version into v_version from private.analytics_state where singleton;
     return jsonb_build_object('results', v_results, 'dataset_version', v_version);
 end;
@@ -439,7 +450,7 @@ begin
     on conflict do nothing;
     delete from private.community_report_facts where contributor_id = p_user;
     get diagnostics v_count = row_count;
-    perform private.community_bump_projection();
+    perform private.community_bump_projection();  -- also when there were no facts (fence/revocation changed state)
     return jsonb_build_object('deletion_id', v_deletion, 'deleted_facts', v_count, 'revoked_connections', v_conns,
         'deleted_at', v_fence_at);
 end;

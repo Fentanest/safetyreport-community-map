@@ -200,3 +200,10 @@ D-01: SQL 정본 초안을 `sql-drafts/` 에 SHA256 고정, duplicate 비교 필
 ## 19. 6차 재확인(plan-review-sol-06) 반영 요약
 N-05: manifest_token 계약을 10진 세대 문자열로 고정(`^[0-9]+$`, 빈 dataset "0"). N-06: 삭제 fence 는 잠금 뒤 clock_timestamp() + greatest() 로 단조. N-07: 세대 증가를 fact 표 트리거로 중앙화(완료 key 집합이 바뀔 때만). N-08: 회귀 스크립트가 병렬 응답 본문의 결과 상태·개수까지 검증.
 회귀 `sql-drafts/regression_poc.mjs` 14 checks exit 0(격리 스택).
+
+## 20. 구현 게이트 (Sol 7차 §4 — 통과 전 구현 완료·배포 준비 판정 금지)
+1. 통합 DB: sql-drafts 를 SHA256 그대로 각 레포 migration 으로, 합성 4경로(빈/map 선행/auth 선행/양쪽) + 공개 legacy v2 가드, 동시 ingest·삭제·철회·정책 전환 deadlock 0.
+2. HTTP·권한: 실제 Edge 에서 중복 신고 422·원장 0, 비 service_role 의 ingest/account/private RPC·REST·GraphQL·Realtime 차단, 익명 공개 API 의 published/removed/철회·삭제 후 0/좌표 결측 통계 포함. 오류 JSON·HTTP 상태 모두 검사.
+3. manifest·앱: 빈 "0", 다중 페이지 동일 토큰·개수·중복, 변화 시 최대 3회 뒤 fail-closed(PC·모바일). 삭제 뒤 옛 연결·identity·삭제 전 대기 차단, 새 관측 재공유.
+4. 공개 버전: 운영 직접 DML 도 dataset_version 갱신(N-09 트리거) — 새 HTTP 조회가 새 버전·값 반환.
+5. 원천·앱 내구성: capture 의도 파일 실패·수동 재시도·rebuild/목록 재조회·ACK 별 로컬 상태를 PC·모바일 실제 테스트로. POC 직접 RPC 결과로 대체 금지.
