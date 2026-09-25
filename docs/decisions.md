@@ -13,3 +13,6 @@
 
 추가 변경은 문제/대안/선택/영향/검증을 새 ADR에 기록한다. 의사결정 문서만 새로 만들고 계약/테스트/UI를
 과거 규칙으로 남기는 것은 허용하지 않는다.
+- ADR-201 (2026-09-26, ADR-101 대체): 기여 계정은 카카오로 연결한 Supabase Auth 사용자, 신고내용 공유 동의는 필수 진입 조건·중앙 grant 정본.
+  업로드는 한 이벤트 = 한 신고 관측(`community-ingest`), 실시간·지도 탭 수동·매일 00:00 KST. 구 snapshot 업로드와 02~03시 설계는 폐기.
+  공개 소스는 ingest fact 만(구 active snapshot v2 자료가 있으면 migration 이 중단 — 운영자 결정). 근거: `docs/integration/community-ingest/plan-final.md`.
