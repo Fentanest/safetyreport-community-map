@@ -1,0 +1,90 @@
+name: safeauth-check
+# Verification only. Nothing here deploys, migrates a hosted database, or needs secrets:
+# the stack job generates throwaway local keys at runtime.
+on:
+  pull_request:
+    paths:
+      - 'apps/safeauth/**'
+      - 'server/safeauth/**'
+      - 'supabase/**'
+      - 'scripts/safeauth/**'
+      - 'tests/safeauth/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/safeauth-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Unit tests (no containers)
+        run: npx vitest run tests/safeauth/unit.test.ts
+      - name: Production build is refused with a secret key
+        run: |
+          if SAFEAUTH_PUBLIC_SUPABASE_URL=https://example.supabase.co SAFEAUTH_PUBLIC_PUBLISHABLE_KEY=sb_secret_x npx vite build --config apps/safeauth/vite.config.ts; then
+            echo "secret key was accepted"; exit 1; fi
+      - name: Build safeauth (production shape, example public values)
+        run: npm run build:safeauth
+        env:
+          SAFEAUTH_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      - name: Verify artifact allowlist, CSP, secrets and demo leftovers
+        run: node scripts/safeauth/verify-artifact.mjs --dir dist-safeauth --require-config --expect-supabase https://example.supabase.co
+      - name: Map build and safeauth build do not overwrite each other
+        run: |
+          npm run build
+          test -f dist-safeauth/callback.html
+          test ! -e dist/safeauth
+        env:
+          VITE_DATA_MODE: live
+          VITE_BASE_PATH: /safetyreport-community-map/
+      - name: Deno type check of the Edge functions
+        run: docker run --rm -v "$PWD":/work:ro -w /work -e DENO_DIR=/tmp/deno --entrypoint deno denoland/deno:2.5.6 check supabase/functions/community-auth-relay/index.ts supabase/functions/public-analytics/index.ts
+
+  local-stack:
+    runs-on: ubuntu-latest
+    needs: build-and-unit
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start local Supabase Postgres + Auth + PostgREST and apply all migrations
+        run: node tests/safeauth/stack/stack.mjs up
+      - name: Relay integration (real Supabase Auth PKCE, mock Kakao)
+        run: npx vitest run tests/safeauth/relay.integration.test.ts
+        env:
+          SAFEAUTH_STACK: '1'
+      - name: Browser review on a composed site
+        run: |
+          mkdir -p .ci-site && printf '<!doctype html><title>root</title>' > .ci-site/index.html && cp .ci-site/index.html .ci-site/404.html
+          mkdir -p .ci-site/ko && cp .ci-site/index.html .ci-site/ko/index.html
+          printf 'User-agent: *\nAllow: /\n' > .ci-site/robots.txt && printf '<urlset/>' > .ci-site/sitemap.xml && printf 'google.com, pub-0, DIRECT\n' > .ci-site/ads.txt
+          tests/safeauth/stack/prepare-sites.sh .ci-site
+          node scripts/safeauth/verify-composed-site.mjs --site-dist .ci-site
+          node --experimental-strip-types tests/safeauth/stack/serve-local.ts .ci-site > serve-local.log 2>&1 &
+          sleep 3
+          SAFEAUTH_STACK=1 SAFEAUTH_BROWSER=1 npx vitest run tests/safeauth/browser.e2e.test.ts --testTimeout 180000
+      - name: Keep screenshots and results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: safeauth-browser-review
+          path: |
+            docs/safeauth/qa/screenshots
+            docs/safeauth/qa/browser-results.json
+          if-no-files-found: ignore
+      - name: Stop stack
+        if: always()
+        run: node tests/safeauth/stack/stack.mjs down

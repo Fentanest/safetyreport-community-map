@@ -9,7 +9,11 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "data:export": "python3 scripts/export_snapshot.py",
-    "scan": "python3 scripts/scan_public_dist.py --dir dist"
+    "scan": "python3 scripts/scan_public_dist.py --dir dist",
+    "build:safeauth": "tsc -p tsconfig.safeauth.json && vite build --config apps/safeauth/vite.config.ts",
+    "test:safeauth": "vitest run tests/safeauth",
+    "safeauth:stack": "node tests/safeauth/stack/stack.mjs",
+    "scan:safeauth": "node scripts/safeauth/verify-artifact.mjs --dir dist-safeauth"
   },
   "dependencies": {
     "echarts": "6.1.0",
@@ -18,10 +22,13 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "2.117.1",
     "@types/node": "^22.15.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "6.1.1",
+    "axe-core": "4.13.0",
+    "playwright": "1.63.0",
     "typescript": "5.9.3",
     "vite": "8.3.0",
     "vitest": "5.0.1"
