@@ -83,3 +83,15 @@ Sol 독립 재계산: 벡터 25+7건 불일치 0, MANIFEST 20파일 OK.
 | S-10-D | preflight 를 DO 블록 동적 SQL 로(부재 표 조회 안 함), plan §3.4 를 SQL 기준으로 재작성 | — |
 | S-03-F | 재시도 의도를 capture **전에** 기록, 기록 실패 시 저장 없이 즉시 중단 | — (앱 구현 테스트) |
 | S-04-M | 페이지마다 `manifest_token`, 전 페이지 동일할 때만 교체, 최대 3회 | 같은 상태 두 페이지 토큰 동일, 쓰기 뒤 토큰 변경 |
+
+## 5차 재확인(plan-review-sol-05) 처리 — job `task-muhae66b-5g505d`, 같은 thread·model `gpt-6-sol`
+판정: 착수 불가(critical 0, high 4: S-11-B·S-04-T·N-04-L·D-01, medium 2). 처리 뒤 assertion 회귀 `sql-drafts/regression_poc.mjs`(격리 스택 `ci0926-poc`, exit 0, 12 checks):
+
+| ID | 처리 | 회귀 |
+|---|---|---|
+| S-11-B | 요청 안 같은 신고 중복 금지(Edge 422 + SQL invalid_request) | 같은 R3 두 이벤트 → invalid_request |
+| S-04-T | `community_manifest_generations` 세대 번호 = manifest_token, accepted 변경·삭제 때 같은 트랜잭션 증가 | 완료↔미완료 교환(총수 동일)에도 토큰 변경 |
+| N-04-L | 입력 계보가 닫혔고 다른 활성 계보가 있으면 `stale_grant` | 사용자 철회 뒤 새 계보 활성, 옛 G1 철회 → stale_grant·공개 유지 |
+| D-01 | SQL 초안을 `sql-drafts/`+SHA256SUMS 로 고정, 계획 정본 경로 교체, duplicate 불변 필드 = 계약 | 같은 event_id 다른 captured_at → conflict, 전송 문맥만 다르면 duplicate |
+| S-02-F | 삭제 보장 범위 문서화(서버: 연결 폐기·identity tombstone·주장 시각 fence / 앱: journal 비승계) | 삭제 후 옛 연결 connection_revoked, 새 연결 재발급 rejected:deleted |
+| S-03-I | 남는 한계 명시(수동 단건 + 파일 쓰기 실패 → 실패 표시·재요청), rebuild 는 items 로 재시도 | — |

@@ -86,7 +86,9 @@ CREATE TABLE rebuild_items (run_id TEXT NOT NULL, source_report_id TEXT NOT NULL
 - 시작 시 정리: `personal_save_state='pending'` 이고 10분 지난 행은 개인 DB 의 원본 상세 행이 그 payload 의 status_raw 와 같으면 saved, 아니면 failed 로 맞춘다(표시용; 전송 가능 여부와 무관).
 - `source_revision` 은 `meta.next_revision` 하나로 파일 전체 단조 증가(데이터셋 회전으로 초기화하지 않음). 중앙 status·manifest 의 `last_accepted_revision` 보다 작으면 그 값+1 로 올린다.
 - capture 재시도 의도 기록(S-03): community.db 자체가 실패할 수 있으므로 **별도 파일** `<data>/community_capture_retry.json`(PC) / 앱 폴더 같은 이름(모바일) — `[{source_report_id, reason, failed_at, attempts}]`, 원자적 쓰기(임시 파일→fsync→rename).
-  순서: 상세를 받으면 **capture 전에** 그 ID 를 의도로 기록 → capture → 개인 저장 → 성공이면 의도 제거. 의도 기록 자체가 실패하면 그 건을 저장하지 않고 수집을 즉시 멈춘다(개인 상태가 전진하지 않았으므로 다음 실행의 선정 규칙이 같은 이유로 다시 고른다). 증분 선정에 항상 포함. 한 수집 실행에서 capture 가 **연속 3회** 실패하면 수집을 `community_store_unavailable` 오류로 멈추고(공식 사이트 반복 호출 방지) 화면에 복구 안내.
+  순서: 상세를 받으면 **capture 전에** 그 ID 를 의도로 기록 → capture → 개인 저장 → 성공이면 의도 제거. 의도 기록 자체가 실패하면 그 건을 저장하지 않고 수집을 즉시 멈춘다(개인 상태가 전진하지 않았으므로 다음 실행의 선정 규칙이 같은 이유로 다시 고른다). 증분 선정에 항상 포함.
+  남는 한계(S-03-I): 선정 규칙상 다시 고르지 않는 신고(이미 종결 Y·같은 목록 라벨)를 **사용자가 수동 단건 재수집**하다가 의도 파일 쓰기까지 실패하면 그 수동 요청은 저장 없이 실패로 끝난다(화면에 실패 표시, 사용자가 다시 요청). 초기화 item 은 `rebuild_items` 로 재시도되므로 해당 없음.
+- 삭제 뒤(`contributions-delete` 성공): 모든 outbox 대기 행 `blocked:deleted_by_user`, 삭제 시각 이전 journal 행은 `blocked_reason='deleted_by_user'` 로 표시해 reshare·location_supplement 후보에서 영구 제외. 한 수집 실행에서 capture 가 **연속 3회** 실패하면 수집을 `community_store_unavailable` 오류로 멈추고(공식 사이트 반복 호출 방지) 화면에 복구 안내.
 - manifest 신선도(S-04): `meta.manifest_scope` = `<dataset_key>:<writer_epoch>` 가 현재 연결과 같을 때만 수집(실시간·초기화)을 시작한다. 다르면 먼저 manifest 전 페이지를 받아 `server_completed` 를 교체(한 트랜잭션)한 뒤 기록. 실패하면 수집을 시작하지 않고 `manifest_unavailable` 로 표시(fail-closed).
 - 전송 대상 = outbox 행 중 journal 의 (project_namespace, contributor_fingerprint, connection_id, consent_grant_id) 가 현재 `context` 와 같은 것. 다르면 `blocked:context_mismatch`.
 - 삭제: outbox 는 durable ACK 때 삭제. journal 은 신고별 최신 행 + 미ACK 전부 보존, 나머지 ACK 행은 90일 뒤 정리. 파일 200MB 초과 시 경고(자동 삭제 안 함).

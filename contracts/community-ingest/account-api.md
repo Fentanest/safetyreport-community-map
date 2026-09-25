@@ -10,7 +10,7 @@
 |---|---|---|---|
 | `status` | `connection_id?` | 아래 status | `auth_required`(401) |
 | `consent` | `policy_version`, `consent_text_sha256`, `via`(`safetyreport_server`/`mobile_standalone`/`mobile_client`), `accepted: true` | `grant_id`, `policy_version`, `granted_at`, `created` | `kakao_required`(403), `policy_mismatch`(409 + `required_version`), `contributor_suspended`(403) |
-| `consent-revoke` | `grant_id`(현재 또는 같은 계보의 이전 grant) | `grant_id`(실제로 철회된 활성 grant), `revoked:true`, `already_revoked`, `lineage_active:false` | `not_found`(404) |
+| `consent-revoke` | `grant_id`(현재 또는 같은 계보의 이전 grant) | `grant_id`(실제로 철회된 활성 grant), `revoked:true`, `already_revoked`, `lineage_active:false` | `not_found`(404), `stale_grant`(409: 그 계보는 이미 닫혔고 다른 활성 동의가 있음 — status 를 다시 받아 현재 grant 로 요청) |
 | `connections` | `source_app`, `source_mode`, `platform`, `device_label`(1~40, relay 규칙), `dataset_key`(64hex), `connection_secret`(base64url 32바이트 — 서버는 sha256 만 저장), `takeover`(bool) | `connection_id`, `writer_epoch`, `superseded_previous` | `kakao_required`, `writer_conflict`(409 + `active_writer:{device_label, platform, source_app, created_at}`), `invalid_request` |
 | `connections-rebind` | `connection_id`, `connection_secret` | `connection_id`, `writer_epoch`, `last_accepted_revision` | `not_found`(404, 타인·없음 구분 안 함), `connection_revoked`/`connection_superseded`/`connection_suspended`(409) |
 | `connections-revoke` | `connection_id` | `connection_id`, `status:"revoked"` | `not_found` |
@@ -43,7 +43,7 @@ status 응답:
 다른 사용자로 로그인하면 rebind 가 `not_found` → 새 사용자로 `connections` 등록, 이전 사용자 대기 이벤트는 보존·전송 금지.
 중앙 manifest(S-04, map 의 ingest 함수): `POST {url}/functions/v1/community-ingest/manifest` 본문 `{"protocol":1,"connection_id":"…","after":null|"<64hex>","limit":5000}`(같은 헤더·인증·연결 검사, `Cache-Control: no-store`, 로그에 남기지 않음) →
 `{"protocol":1,"dataset_key":"…","writer_epoch":N,"total":T,"manifest_token":"<md5>","key_prefixes":["<24hex>",…],"next_after":null|"<64hex>"}` — 호출자 소유·연결의 dataset_key·`public_state='completed'` fact 의 `source_report_key` 앞 24hex, 키 순서, 페이지당 최대 5000.
-클라이언트는 `next_after` 가 null 이 될 때까지 받고, **모든 페이지의 manifest_token 이 같고** 받은 개수 = total 이고 중복이 없을 때만 `server_completed` 를 한 트랜잭션으로 교체한다. 토큰이 바뀌면 처음부터 다시(최대 3회), 그래도 실패하면 교체하지 않고 수집을 시작하지 않는다(`manifest_unavailable`).
+클라이언트는 `next_after` 가 null 이 될 때까지 받고, **모든 페이지의 manifest_token(그 dataset 의 fact 변경·삭제마다 같은 트랜잭션에서 증가하는 세대 번호)이 같고** 받은 개수 = total 이고 중복이 없을 때만 `server_completed` 를 한 트랜잭션으로 교체한다. 토큰이 바뀌면 처음부터 다시(최대 3회), 그래도 실패하면 교체하지 않고 수집을 시작하지 않는다(`manifest_unavailable`).
 철회 규칙: `consent-revoke` 는 주어진 grant 가 속한 **계보의 활성 grant** 를 철회한다(정책 갱신으로 대체된 옛 grant ID 를 보내도 사용자가 보는 동의가 실제로 철회됨). 삭제 규칙: `contributions-delete` 는 공유 fact 삭제 + 신고 identity tombstone + 삭제 fence(그 시각 이전 captured_at 이벤트 거절) + writer 연결 전부 폐기. 앱은 성공 응답 뒤 로컬 outbox 의 대기 행을 모두 `blocked:deleted_by_user` 로 바꾸고 새 연결 등록부터 다시 시작한다.
 
 `dataset_key = sha256("safetyreport-dataset|v1|" + 공식 로그인 ID 소문자·앞뒤 공백 제거)` — 클라이언트 주장값(증명 아님), writer 충돌 제어와 fact 네임스페이스용.

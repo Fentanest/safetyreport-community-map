@@ -74,6 +74,8 @@ payload 키는 항상 모두 있다: `address, agency_name, amount{confirmed_won
 - `event_id` = 새 UUIDv4(소문자). `source_revision` = `community.db` **전체**에서 단조 증가하는 정수(`meta.next_revision` — 데이터셋 회전으로 초기화하지 않음, 서버 `last_accepted_revision` 보다 작아지지 않게 올림). 그래서 회전 전 대기 이벤트가 회전 뒤 새 관측보다 늦게 도착해도 새 관측을 되돌리지 못한다(S-20). `captured_at` = UTC ISO-8601 `Z`(밀리초).
 
 ## 5. 서버 검증·파생(ingest)
+- 한 요청 안에서 같은 신고(`source_report_id`)의 이벤트는 하나만(S-11-B). 업로더는 같은 신고의 다음 이벤트를 앞 요청의 ACK 뒤에 보낸다.
+- 같은 event_id 재전송 판정: 불변 필드(event_type, source_report_id, source_revision, writer_epoch, captured_at, payload_sha256, 연결의 dataset_key)가 모두 같으면 `duplicate`, 하나라도 다르면 `conflict`. grant·connection·trigger·request_id 는 전송 문맥이라 비교하지 않는다(재로그인 rebind·정책 재동의 뒤 재전송 허용).
 스키마(`observation.schema.json`)가 형식·enum·길이·상한을 검사하고, 서버 코드가 아래 **값 규칙**을 추가로 검사한다(위반 = 422 `schema_invalid`, 쓰기 0):
 - 날짜: 실제 달력 날짜(`2026-02-30` 거부). `completed_date` 는 payload 가 eligible 일 때만 값을 가질 수 있다(not eligible 인데 값이 있으면 거부).
 - 좌표: `source="none"` ⇒ lat·lng 둘 다 null. `source="geocode"` ⇒ 둘 다 문자열, double 로 해석되고 lat ∈ [32, 39.5]·lng ∈ [124, 132], 그리고 **정규형**(해석한 double 의 최단 왕복 표기 + `.0` 규칙)과 문자열이 정확히 같아야 한다(`37.000`·`+37.5` 거부).
@@ -86,7 +88,7 @@ payload 키는 항상 모두 있다: `address, agency_name, amount{confirmed_won
 - ACK `projection_status`(실제 공개 조건 기준 — 공개 RPC 와 같은 함수 `community_fact_publicly_listed`: completed ∧ 신고일·처리완료일 중 하나 이상 ∧ contributor active ∧ 계보 활성):
   `published` = 커밋 뒤 익명 API 가 이 fact 를 보여 줌(ready ∧ generated_at 존재) · `removed` = 보이던 fact 가 이번 변경으로 안 보이게 됨 ·
   `held` = 보일 조건이지만 공개 스위치 꺼짐(ready=false) 또는 계보 비활성 · `not_public` = 저장만 되고 목록에 안 나옴(미완료, 날짜 둘 다 없음) · `not_applicable` = fact 변경 없음.
-- 삭제 fence: 사용자가 `contributions-delete` 를 하면 그 시각 이전 `captured_at` 의 이벤트는 모두 `rejected:deleted`(중앙에 없던 대기 이벤트 포함), 사용자의 writer 연결은 모두 `revoked(contributions_deleted)` — 이후 공유는 새 연결 등록부터.
+- 삭제 보장 범위(S-02-F): 서버가 보장하는 것 — ① 삭제 시점의 모든 writer 연결 폐기(그 연결의 대기 이벤트는 captured_at 과 무관하게 거절), ② 이미 공유된 신고 identity 의 영구 tombstone, ③ 삭제 시각 이전으로 **주장된** captured_at 의 이벤트 거절. captured_at 은 클라이언트 시각이므로 ③은 정상 앱을 위한 보호다. 정상 앱은 삭제 성공 뒤 삭제 이전 journal 을 새 연결로 승계·재발급(reshare 포함)하지 않는다(계약 local-store). 조작된 클라이언트가 미래 시각으로 자기 자료를 다시 올리는 것은 막지 못한다(사용자 자신의 자료, 보안 경계 밖).
 - 파생: `public_state` = eligible ? `completed` : `not_completed`; lat/lng = 문자열을 double 로(원 문자열도 `lat_text`/`lng_text` 로 보존); `point_key = "v1:" + lat + "," + lng`(문자열 그대로);
   `region_code` = 주소 앞 두 토큰(공백 분리, 시·도 약칭 정규화) — 공개 필터용 표시 키, 행정코드가 아님;
   `agency_key = "a1:" + sha256(NFC(agency_name))[:24]`, `manager_key = "m1:" + sha256(agency_key + "|" + NFC(manager_name))[:24]`(기관이 다르면 같은 이름도 다른 키).
