@@ -83,7 +83,10 @@ payload 키는 항상 모두 있다: `address, agency_name, amount{confirmed_won
 - 서버가 `source_report_key = sha256(utf8("safetyreport|" + source_report_id))` 를 계산한다(클라이언트 값 받지 않음). fact 키는 (contributor, 연결의 dataset_key, source_report_key).
 - 삭제 tombstone 은 (contributor, source_report_key) — dataset_key 와 무관 — 이고, 그 신고의 이벤트는 captured_at·dataset_key 와 무관하게 영구 `rejected:deleted`.
 - grant 귀속: 기존 fact 의 grant 계보가 **사용자 철회로 비활성**이면, `reshare` 가 아닌 이벤트는 내용·순서만 갱신하고 fact 는 옛 (비공개) grant 에 남긴다 → 공개되지 않음(`projection_status=held`). `reshare` 이거나 계보가 활성(정책 갱신 재동의 포함)이면 현재 grant 로 귀속(S-02).
-- `projection_status=published` 는 커밋 시 analytics ready ∧ generated_at 존재 ∧ 그 fact 가 공개 조건(계보 활성)을 만족할 때만. 아니면 `held`.
+- ACK `projection_status`(실제 공개 조건 기준 — 공개 RPC 와 같은 함수 `community_fact_publicly_listed`: completed ∧ 신고일·처리완료일 중 하나 이상 ∧ contributor active ∧ 계보 활성):
+  `published` = 커밋 뒤 익명 API 가 이 fact 를 보여 줌(ready ∧ generated_at 존재) · `removed` = 보이던 fact 가 이번 변경으로 안 보이게 됨 ·
+  `held` = 보일 조건이지만 공개 스위치 꺼짐(ready=false) 또는 계보 비활성 · `not_public` = 저장만 되고 목록에 안 나옴(미완료, 날짜 둘 다 없음) · `not_applicable` = fact 변경 없음.
+- 삭제 fence: 사용자가 `contributions-delete` 를 하면 그 시각 이전 `captured_at` 의 이벤트는 모두 `rejected:deleted`(중앙에 없던 대기 이벤트 포함), 사용자의 writer 연결은 모두 `revoked(contributions_deleted)` — 이후 공유는 새 연결 등록부터.
 - 파생: `public_state` = eligible ? `completed` : `not_completed`; lat/lng = 문자열을 double 로(원 문자열도 `lat_text`/`lng_text` 로 보존); `point_key = "v1:" + lat + "," + lng`(문자열 그대로);
   `region_code` = 주소 앞 두 토큰(공백 분리, 시·도 약칭 정규화) — 공개 필터용 표시 키, 행정코드가 아님;
   `agency_key = "a1:" + sha256(NFC(agency_name))[:24]`, `manager_key = "m1:" + sha256(agency_key + "|" + NFC(manager_name))[:24]`(기관이 다르면 같은 이름도 다른 키).

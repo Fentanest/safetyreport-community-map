@@ -69,3 +69,17 @@ Sol 독립 재계산: 벡터 25+7건 불일치 0, MANIFEST 20파일 OK.
 | S-21 | OS 별 권한 집합, iOS 는 Android 전용 항목 건너뜀, MethodChannel 예외(`MissingPluginException`) 처리 — T5 작업서 반영 |
 | N-03 | plan-final 에서 구 singleton 문장 삭제, 정책 정본 = `community_policies` + `community_policy_current` |
 | 추가(Opus 발견) | grant **계보(lineage)**: 정책 버전 갱신 재동의는 계보를 이어 기존 공개 유지, 사용자 철회 뒤 새 동의는 새 계보. 없으면 정책 버전 교체만으로 공개 자료 전부가 사라지는 결함(격리 스택에서 발견·수정·확인) |
+
+## 4차 재확인(plan-review-sol-04) 처리 — job `task-muha0cn7-tk25ah`, 같은 thread·model `gpt-6-sol`
+판정: 착수 불가(S-02-R·S-09-R critical, S-11-R·N-04 high, medium 4). 목록 13·관측 32·이벤트 10 독립 재계산 일치.
+처리 후 격리 스택 회귀(`stack-poc/poc_v3.mjs`) 결과:
+
+| ID | 처리 | 격리 스택 결과 |
+|---|---|---|
+| S-02-R | 삭제 fence(`community_deletion_fences`) + 삭제 시 사용자 연결 전부 revoked + 로컬 대기 행 blocked:deleted_by_user | 대기(중앙 미존재) R50 → 옛 연결 `connection_revoked`, 새 연결로 재전송해도 `rejected:deleted`, 삭제 뒤 새 관측은 published |
+| S-09-R | ingest 가 connection 을 FOR UPDATE(동일 연결 직렬화, 잠금 순서 유지) | 같은 연결 병렬 2요청 × 20회(같은·다른 신고 교차) → 200 40건, deadlock 0 |
+| S-11-R | ACK projection_status 5종(published/removed/held/not_public/not_applicable), 공개 RPC 와 같은 판정 함수 | 새 완료 published, 날짜 없는 완료 not_public, 완료→취하 정정 removed(익명 목록 0) |
+| N-04 | 철회는 계보의 활성 grant 로 귀결 | 정책 승계 후 옛 G1 ID 로 철회 → G2 철회·공개 0, 이후 새 동의 새 계보·공개 0 |
+| S-10-D | preflight 를 DO 블록 동적 SQL 로(부재 표 조회 안 함), plan §3.4 를 SQL 기준으로 재작성 | — |
+| S-03-F | 재시도 의도를 capture **전에** 기록, 기록 실패 시 저장 없이 즉시 중단 | — (앱 구현 테스트) |
+| S-04-M | 페이지마다 `manifest_token`, 전 페이지 동일할 때만 교체, 최대 3회 | 같은 상태 두 페이지 토큰 동일, 쓰기 뒤 토큰 변경 |

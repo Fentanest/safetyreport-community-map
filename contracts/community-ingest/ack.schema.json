@@ -67,7 +67,9 @@
               "projection_status": {
                 "enum": [
                   "published",
+                  "removed",
                   "held",
+                  "not_public",
                   "not_applicable"
                 ]
               },
