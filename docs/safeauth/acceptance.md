@@ -5,10 +5,10 @@
 
 | 저장소 | 브랜치 | 커밋 (로컬 전용, push 안 함) |
 |---|---|---|
-| safetyreport-community-map | `feat/safeauth` | `cb9b1be`, `7a38713`, `216e36f` + 이 문서 커밋 |
-| safetyreport | `feat/community-account` | `5b76918`, `ca57ed8`, `28c26f1` |
-| safetyreport-mobile | `feat/community-account` | `4e5454a6`, `42836dca` |
-| WorklazyTools | (변경 없음) | 패치만: `integration-patches/worklazytools/` |
+| safetyreport-community-map | `main`으로 통합 | safeauth 커밋 전부 (서브도메인 전환 포함) |
+| safetyreport | `feat/community-account` (로컬) | `5b76918`, `ca57ed8`, `28c26f1`, `a509494` |
+| safetyreport-mobile | `feat/community-account` (로컬) | `4e5454a6`, `42836dca`, `42670fac` |
+| WorklazyTools | 변경 없음 | 인증은 서브도메인으로 옮겨 합성 패치 불필요(삭제) |
 
 ## 실행한 명령과 결과
 
@@ -19,11 +19,10 @@
 | `SAFEAUTH_STACK=1 … relay.integration.test.ts` (Node relay) | 24 pass |
 | 같은 테스트를 Deno Edge 엔트리 경유 (`denoland/deno:2.5.6`) | 24 pass |
 | `deno check` 두 Edge 함수 | pass |
-| `SAFEAUTH_STACK=1 SAFEAUTH_BROWSER=1 … browser.e2e.test.ts` (Chromium) | 13 pass → `qa/browser-results.json`, `qa/screenshots/` |
+| `SAFEAUTH_STACK=1 SAFEAUTH_BROWSER=1 … browser.e2e.test.ts` (Chromium, 루트 base) | 11 pass → `qa/browser-results.json`, `qa/screenshots/` |
 | `npm run build:safeauth` + `verify-artifact` | pass (미설정 빌드는 `--require-config`에서 의도대로 fail) |
 | 지도 `npm run build` + `npm run scan`, python blueprint/product | pass (회귀 없음) |
-| WorklazyTools CI 단계 모사: 깨끗한 clone `7a38713` → `npm ci` → build → compose → 경로 검사 | pass, 기존 1066 파일 해시 동일 |
-| actionlint (패치된 `deploy-pages.yml`, `safeauth-check.yml`), `git apply --check` | pass |
+| actionlint (`publish-safeauth.yml`, `publish-pages.yml`, `safeauth-check.yml`) | pass |
 | safetyreport `unittest discover` | 196 OK (3 skip = live) · 기존 142 |
 | safetyreport `tests.test_community_auth_live` (로컬 스택) | 3 OK |
 | mobile `flutter test` | 313 pass, 2 skip (기존 218) |
@@ -41,7 +40,8 @@
 | P05 고정 callback·맥락 없는 callback | PASS (L) | P05, P05b(허용 목록 밖 redirect는 Site URL로 감), E2E U03 |
 | S01–S17 | PASS (L/U) | relay integration, unit |
 | S18 로컬 API 권한·CSRF | PASS (U) | safetyreport tests (CSRF·Origin·권한 없는 API 키 403) |
-| U01–U08, U11 | PASS (L) | 브라우저 E2E |
+| U01–U07, U11 | PASS (L) | 브라우저 E2E |
+| U08 base 이식성 | PASS (L) | 루트(`/`) 배포 형태 + `/sub/` 하위 경로 빌드 모두 전체 흐름 |
 | U09 광고·CDN·분석·SW 요청 없음 | PASS (L) / 실제 응답 헤더 NOT RUN | 요청 호스트 = 사이트·relay·모의 카카오. Pages 헤더는 미배포 |
 | U10 공식 카카오 버튼·데모 잔재 없음 | PASS | 공식 SVG 해시 검증, verify-artifact |
 | U12 키보드·live region·reduced motion·axe | PASS(자동) / 스크린리더 수동 NOT RUN | axe serious/critical 0 |
@@ -61,13 +61,11 @@
 | A13 기능 OFF 회귀 없음 | PASS (U) | 기존 142 테스트 포함 196 OK |
 | M02, M05–M08, M10 | PASS (U) | flutter tests |
 | M01, M03(기기), M04, M09 | NOT RUN | 실기기/에뮬레이터 미사용 |
-| D01–D06, D08, D10–D13 | PASS | compose/verify 스크립트, CI 모사 |
-| D07 루트 서비스워커·기존 경로 | PASS (L) | 로컬 복사본. 실제 worklazy.net 과거 SW 설치 사용자 NOT RUN |
-| D09 기존 storage 불간섭 | PASS (L) | `worklazy_lang` 유지 |
+| D01–D13 (하위 경로·합성 배포 항목) | NOT APPLICABLE | 인증을 `safeauth.worklazy.net` 별도 origin으로 옮김(2026-09-25). 산출물 검증은 verify-artifact로 유지 |
 | D14 Cloudflare | NOT APPLICABLE | 사용 안 함 |
 | §6 hosted Kakao E2E 1–7 | NOT RUN | 운영자 수동 (deployment.md §7) |
 
 ## 출시 판단
 
 production-ready로 표시하지 않는다. 남은 필수 항목: hosted E2E, 운영자 개인정보처리방침에 커뮤니티 계정 처리 추가,
-실제 응답 헤더 확인, 모바일 실기기 검수, 독립 보안 검토. 알려진 잔여 위험은 `security-review.md` §3–5.
+실제 응답 헤더 확인, DNS·Pages 사용자 도메인 설정(private 저장소 Pages 요금제 확인 포함), 모바일 실기기 검수, 독립 보안 검토. 알려진 잔여 위험은 `security-review.md` §3–5.

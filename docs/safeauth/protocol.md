@@ -12,9 +12,9 @@
 
 | 항목 | 값 |
 |---|---|
-| 중앙 페이지 | `https://worklazy.net/safeauth/` |
-| 웹 콜백 (Supabase Redirect URL) | `https://worklazy.net/safeauth/callback.html` |
-| 브라우저 Origin (CORS) | `https://worklazy.net` (경로 없음) |
+| 중앙 페이지 | `https://safeauth.worklazy.net/` |
+| 웹 콜백 (Supabase Redirect URL) | `https://safeauth.worklazy.net/callback.html` |
+| 브라우저 Origin (CORS) | `https://safeauth.worklazy.net` (경로 없음) |
 | 중계 API | `POST {SUPABASE_URL}/functions/v1/community-auth-relay/{action}` |
 | 모바일 Standalone 복귀 | `com.fentanest.mysafetyreport://auth/callback` (중계를 쓰지 않음) |
 
@@ -53,7 +53,7 @@ created → claimed → oauth_started → code_ready → code_delivered → devi
 
 - 모든 요청: `POST`, `Content-Type: application/json`, 본문 8KB 이하, `"protocol": 1` 필수, **모르는 필드는 거부**.
 - 응답: `Cache-Control: no-store`. 오류는 `{ "error": { "code", "message", "requestTraceId", "retryAfterSeconds"? } }`.
-- `Origin` 헤더가 있으면 허용 목록(`https://worklazy.net`)과 정확히 같아야 한다. 서버·앱은 Origin 없이 호출한다. Origin은 인증이 아니다.
+- `Origin` 헤더가 있으면 허용 목록(`https://safeauth.worklazy.net`)과 정확히 같아야 한다. 서버·앱은 Origin 없이 호출한다. Origin은 인증이 아니다.
 - 429는 `Retry-After` 초를 따른다.
 
 | error.code | HTTP | 의미 / 원래 기기 처리 |
@@ -83,7 +83,7 @@ created → claimed → oauth_started → code_ready → code_delivered → devi
 - `device_label`: NFC 정규화·공백 축약 후 1~40자. 제어문자·양방향 제어·`<>"'\`\\`·URL 스킴 형태는 400.
 - 응답 201(신규) / 200(같은 `device_secret` 재시도, 새 ticket 발급·이전 ticket 무효):
 ```json
-{ "protocol": 1, "request_id": "<uuid>", "bootstrap_url": "https://worklazy.net/safeauth/#r=<uuid>&t=<ticket>",
+{ "protocol": 1, "request_id": "<uuid>", "bootstrap_url": "https://safeauth.worklazy.net/#r=<uuid>&t=<ticket>",
   "display_code": "ABCD-2345", "expires_at": "<ISO>", "poll_interval_seconds": 5, "code_ttl_seconds": 120 }
 ```
 - `bootstrap_url`은 1회용 민감 링크다. 로그·설정 응답·백업에 넣지 않는다. 화면 표시/새 탭 열기만.

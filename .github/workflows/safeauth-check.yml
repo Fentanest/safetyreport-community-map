@@ -66,14 +66,10 @@ jobs:
         run: npx vitest run tests/safeauth/relay.integration.test.ts
         env:
           SAFEAUTH_STACK: '1'
-      - name: Browser review on a composed site
+      - name: Browser review
         run: |
-          mkdir -p .ci-site && printf '<!doctype html><title>root</title>' > .ci-site/index.html && cp .ci-site/index.html .ci-site/404.html
-          mkdir -p .ci-site/ko && cp .ci-site/index.html .ci-site/ko/index.html
-          printf 'User-agent: *\nAllow: /\n' > .ci-site/robots.txt && printf '<urlset/>' > .ci-site/sitemap.xml && printf 'google.com, pub-0, DIRECT\n' > .ci-site/ads.txt
-          tests/safeauth/stack/prepare-sites.sh .ci-site
-          node scripts/safeauth/verify-composed-site.mjs --site-dist .ci-site
-          node --experimental-strip-types tests/safeauth/stack/serve-local.ts .ci-site > serve-local.log 2>&1 &
+          tests/safeauth/stack/build-local.sh
+          node --experimental-strip-types tests/safeauth/stack/serve-local.ts .safeauth-stack/dist-safeauth-local > serve-local.log 2>&1 &
           sleep 3
           SAFEAUTH_STACK=1 SAFEAUTH_BROWSER=1 npx vitest run tests/safeauth/browser.e2e.test.ts --testTimeout 180000
       - name: Keep screenshots and results

@@ -1,6 +1,6 @@
-// Independent build for the central account-link pages (worklazy.net/safeauth/).
-//   npm run build:safeauth                 -> dist-safeauth/ with base /safeauth/
-//   SAFEAUTH_BASE=/ vite build --mode localtest ...  (local root-base check only)
+// Independent build for the central account-link pages (https://safeauth.worklazy.net/).
+//   npm run build:safeauth                 -> dist-safeauth/ with base /
+//   SAFEAUTH_BASE=/sub/ vite build --mode localtest ...  (local subpath check only)
 // Shares no entry, router, layout, ads or analytics with the map app or WorklazyTools.
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../..');
-const PROD_SITE = 'https://worklazy.net/safeauth/';
+const PROD_SITE = 'https://safeauth.worklazy.net/';
 
 function fail(message: string): never {
   throw new Error(`[safeauth build] ${message}`);
@@ -22,7 +22,7 @@ function jwtRole(token: string): string | null {
 
 function checkedEnv(mode: string, base: string, env: Record<string, string>) {
   const local = mode === 'localtest';
-  if (!local && base !== '/safeauth/') fail('production base must be /safeauth/');
+  if (!local && base !== '/') fail('production base must be /');
   const site = env.SAFEAUTH_PUBLIC_SITE_URL || PROD_SITE;
   const siteUrl = new URL(site);
   if (siteUrl.pathname !== base) fail('SAFEAUTH_PUBLIC_SITE_URL path must equal the build base');
@@ -72,7 +72,7 @@ function cspPlugin(supabaseOrigin: string | null, local: boolean, isBuild: boole
 }
 
 export default defineConfig(({ mode, command }) => {
-  const base = process.env.SAFEAUTH_BASE || '/safeauth/';
+  const base = process.env.SAFEAUTH_BASE || '/';
   const env = loadEnv(mode, repo, 'SAFEAUTH_PUBLIC_');
   const { supabaseOrigin, local, site } = checkedEnv(mode, base, env);
   return {

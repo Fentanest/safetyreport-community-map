@@ -1,4 +1,4 @@
--- Community account device-link relay (worklazy.net/safeauth).
+-- Community account device-link relay (safeauth.worklazy.net).
 -- Additive only: existing contributor/upload/analytics objects are untouched.
 --
 -- The relay lets a PC/Docker safetyreport server that owns a PKCE verifier receive
@@ -55,7 +55,7 @@ create table private.community_auth_requests (
 );
 
 comment on table private.community_auth_requests is
-    'Short-lived device-link relay state for worklazy.net/safeauth. Not contributor consent.';
+    'Short-lived device-link relay state for safeauth.worklazy.net. Not contributor consent.';
 
 create index community_auth_requests_expires_idx on private.community_auth_requests(expires_at);
 create index community_auth_requests_install_active_idx

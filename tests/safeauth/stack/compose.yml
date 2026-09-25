@@ -27,8 +27,8 @@ services:
       API_EXTERNAL_URL: http://127.0.0.1:54400/auth/v1
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${SAFEAUTH_PG_PASSWORD}@127.0.0.1:54432/postgres
-      GOTRUE_SITE_URL: http://127.0.0.1:8480/
-      GOTRUE_URI_ALLOW_LIST: http://127.0.0.1:8480/safeauth/callback.html,http://127.0.0.1:8481/callback.html,com.fentanest.mysafetyreport://auth/callback
+      GOTRUE_SITE_URL: http://127.0.0.1:8490/
+      GOTRUE_URI_ALLOW_LIST: http://127.0.0.1:8480/callback.html,http://127.0.0.1:8481/sub/callback.html,com.fentanest.mysafetyreport://auth/callback
       GOTRUE_DISABLE_SIGNUP: "false"
       GOTRUE_JWT_SECRET: ${SAFEAUTH_JWT_SECRET}
       GOTRUE_JWT_EXP: ${SAFEAUTH_JWT_EXP:-3600}

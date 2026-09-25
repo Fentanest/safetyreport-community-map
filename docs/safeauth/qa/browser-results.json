@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T14:13:11.290Z",
+  "generatedAt": "2026-09-25T14:51:49.851Z",
   "browser": "chromium (playwright 1.63.0)",
   "data": "local stack + mock Kakao",
   "results": {
@@ -55,16 +55,6 @@
         "docs/safeauth/qa/screenshots/expired-1440-light.png",
         "docs/safeauth/qa/screenshots/storage-blocked-320-light.png"
       ]
-    },
-    "D05": {
-      "pass": true
-    },
-    "D07": {
-      "pass": true,
-      "rootServiceWorkerScopes": [
-        "http://127.0.0.1:8480/"
-      ],
-      "safeauthControlledBySw": true
     },
     "U11": {
       "pass": true,
@@ -267,7 +257,7 @@
     },
     "U08": {
       "pass": true,
-      "base": "/"
+      "base": "/sub/"
     },
     "configMissing": {
       "pass": true,

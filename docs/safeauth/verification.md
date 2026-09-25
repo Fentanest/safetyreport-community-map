@@ -11,7 +11,7 @@
 | PostgREST | 127.0.0.1:54498 | `postgrest/postgrest:v13.0.7` |
 | 게이트웨이(“Supabase URL”) | 127.0.0.1:54400 | `tests/safeauth/stack/gateway.ts` — `/auth/v1`, `/rest/v1` 프록시 + relay |
 | 모의 카카오 | 127.0.0.1:54410 | `tests/safeauth/stack/mock-kakao.mjs` |
-| 합성 사이트 | 127.0.0.1:8480 | GitHub Pages 흉내 정적 서버 |
+| 중앙 페이지 | 127.0.0.1:8480 (루트 base, `safeauth.worklazy.net` 역할) | GitHub Pages 흉내 정적 서버 |
 
 비밀값(Postgres 비밀번호, JWT 서명키, 모의 카카오 secret, pepper, 암호화 키)은 `stack.mjs up` 때
 `.safeauth-stack/stack.env`(0600, gitignore)에 생성된다. 저장소에 하드코딩된 키는 없다.
@@ -30,17 +30,16 @@ docker run -d --name safeauth-deno-relay --network host -v "$PWD":/work:ro -w /w
   run --allow-net --allow-env --allow-read supabase/functions/community-auth-relay/index.ts
 SAFEAUTH_STACK=1 SAFEAUTH_RELAY_UPSTREAM=http://127.0.0.1:8000 npx vitest run tests/safeauth/relay.integration.test.ts
 
-# 브라우저 검수: 사이트 복사본에 합성 후 서비스 실행
-cp -r <WorklazyTools dist> /tmp/site && tests/safeauth/stack/prepare-sites.sh /tmp/site
-node scripts/safeauth/verify-composed-site.mjs --site-dist /tmp/site
-node --experimental-strip-types tests/safeauth/stack/serve-local.ts /tmp/site &
+# 브라우저 검수 (relay integration과 포트가 겹치므로 그 테스트가 끝난 뒤 실행)
+tests/safeauth/stack/build-local.sh
+node --experimental-strip-types tests/safeauth/stack/serve-local.ts .safeauth-stack/dist-safeauth-local &
 SAFEAUTH_STACK=1 SAFEAUTH_BROWSER=1 npx vitest run tests/safeauth/browser.e2e.test.ts --testTimeout 180000
 
 node tests/safeauth/stack/stack.mjs down
 ```
 
 `.safeauth-stack/deno.env`는 `stack.env`의 서비스 키·pepper·암호화 키와 `AUTH_RELAY_LOCAL_STACK=loopback-only`,
-`AUTH_SITE_URL=http://127.0.0.1:8480/safeauth/`, `AUTH_BROWSER_ORIGIN=http://127.0.0.1:8480`, `SUPABASE_URL=http://127.0.0.1:54400`,
+`AUTH_SITE_URL=http://127.0.0.1:8480/`, `AUTH_BROWSER_ORIGIN=http://127.0.0.1:8480`, `SUPABASE_URL=http://127.0.0.1:54400`,
 `AUTH_RELAY_ENABLED=true`로 만든다(권한 0600).
 
 ## 한계

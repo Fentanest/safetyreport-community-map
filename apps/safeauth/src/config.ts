@@ -3,8 +3,8 @@
 import { RELAY_FUNCTION_NAME } from '../../../server/safeauth/protocol.ts';
 
 export interface PublicConfig {
-  siteUrl: string;          // https://worklazy.net/safeauth/
-  callbackUrl: string;      // https://worklazy.net/safeauth/callback.html
+  siteUrl: string;          // https://safeauth.worklazy.net/
+  callbackUrl: string;      // https://safeauth.worklazy.net/callback.html
   supabaseUrl: string;      // https://<ref>.supabase.co (origin only)
   relayBase: string;        // <supabaseUrl>/functions/v1/community-auth-relay
   publishableKey: string | null;

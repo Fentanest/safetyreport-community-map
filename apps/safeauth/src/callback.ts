@@ -1,4 +1,4 @@
-// Entry for /safeauth/callback.html. The auth code is read into memory and the
+// Entry for /callback.html. The auth code is read into memory and the
 // address bar is scrubbed before anything else runs; the code is never stored,
 // logged, rendered, or sent anywhere except the relay publish call for the request
 // that this same tab started. Without that tab context the code is discarded.

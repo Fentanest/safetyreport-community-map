@@ -28,18 +28,18 @@ npm run scan
 만들어 표시하지 않는다. Kakao JavaScript 키가 없으면 지도 오류 안내와 지점 목록이 표시된다.
 `design/reference-ui/index.html`은 디자인 기준판이며 제품 화면과 별개다.
 
-## 커뮤니티 계정 연결 (worklazy.net/safeauth)
+## 커뮤니티 계정 연결 (safeauth.worklazy.net)
 
 중앙 인증 페이지·relay·migration·테스트의 정본도 이 저장소에 있다. 지도 앱과 빌드·산출물이 분리돼 있다.
 
 ```bash
-npm run build:safeauth        # apps/safeauth -> dist-safeauth/ (base /safeauth/)
+npm run build:safeauth        # apps/safeauth -> dist-safeauth/ (base /)
 npm run scan:safeauth         # 아티팩트 허용 목록·CSP·비밀·공식 카카오 에셋 검사
 npm run safeauth:stack -- up  # 로컬 Supabase Auth/Postgres 검증 스택
 ```
 
-공개 주소는 `https://worklazy.net/safeauth/`이며 WorklazyTools Pages 배포에 고정 커밋으로 합성된다.
-이 저장소 push만으로 공개되지 않는다. 문서: `docs/safeauth/` (protocol, deployment, security-review, verification).
+공개 주소는 `https://safeauth.worklazy.net/`이며 이 저장소의 GitHub Pages(`publish-safeauth.yml`, 수동 실행,
+저장소 변수 `PAGES_SITE=safeauth`)로 배포한다. push만으로 배포되지 않는다. 문서: `docs/safeauth/` (protocol, deployment, security-review, verification).
 
 ## 데이터·배포 경계
 

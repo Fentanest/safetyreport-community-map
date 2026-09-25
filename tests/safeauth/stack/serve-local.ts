@@ -1,6 +1,6 @@
 // Starts the LOCAL node-side services for manual/browser/app verification:
 //   mock Kakao :54410, Supabase-like gateway :54400 (relay in-process),
-//   static site :8480 serving a composed site dir (e.g. WorklazyTools dist + /safeauth/).
+//   static site :8480 serving a built safeauth dir at the root (like safeauth.worklazy.net).
 // Usage: node --experimental-strip-types tests/safeauth/stack/serve-local.ts <site-dir>
 // Containers must already be up (node tests/safeauth/stack/stack.mjs up).
 import { startGateway } from './gateway.ts';
@@ -28,6 +28,5 @@ await startStaticServer({ root: siteDir, port: PORTS.site });
 console.log(JSON.stringify({
   supabaseUrl: gateway.url,
   site: `http://127.0.0.1:${PORTS.site}/`,
-  safeauth: `http://127.0.0.1:${PORTS.site}/safeauth/`,
   mockKakao: `http://127.0.0.1:${PORTS.kakao}/`,
 }));

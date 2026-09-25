@@ -97,7 +97,7 @@ describe.skipIf(!enabled)('safeauth relay on the local Supabase stack', () => {
       expectOk(await browser.claim());
       const prepared = expectOk(await browser.prepare());
       const { landed, outcome } = await browser.login(String(prepared.json.authorize_url));
-      expect(`${landed.origin}${landed.pathname}`).toBe(`${ORIGIN}/safeauth/callback.html`);
+      expect(`${landed.origin}${landed.pathname}`).toBe(`${ORIGIN}/callback.html`);
       expect([...landed.searchParams.keys()]).toEqual(['code']);
       const stranger = new Browser(BASE, ORIGIN);
       stranger.requestId = browser.requestId;
@@ -112,7 +112,7 @@ describe.skipIf(!enabled)('safeauth relay on the local Supabase stack', () => {
       const url = new URL(`${BASE}/auth/v1/authorize`);
       url.search = new URLSearchParams({ provider: 'kakao', redirect_to: 'https://attacker.invalid/cb', code_challenge: 'x'.repeat(43), code_challenge_method: 's256' }).toString();
       const { landed } = await new Browser(BASE, ORIGIN).login(url.toString());
-      expect(landed.origin).toBe(ORIGIN); // GOTRUE_SITE_URL, not the attacker
+      expect(landed.origin).toBe('http://127.0.0.1:8490'); // GOTRUE_SITE_URL, not the attacker
       expect(landed.pathname).toBe('/');
     });
 
@@ -346,7 +346,7 @@ describe.skipIf(!enabled)('safeauth relay on the local Supabase stack', () => {
       expect(extra.status).toBe(400);
       const device = new Device(BASE, stack.SAFEAUTH_ANON_KEY, 'ok', 'pc', '192.0.2.92');
       expectOk(await device.create());
-      expect(device.bootstrapUrl.startsWith(`${ORIGIN}/safeauth/#r=`)).toBe(true);
+      expect(device.bootstrapUrl.startsWith(`${ORIGIN}/#r=`)).toBe(true);
       const b = new Browser(BASE, ORIGIN);
       b.open(device.bootstrapUrl);
       await b.claim();
@@ -357,7 +357,7 @@ describe.skipIf(!enabled)('safeauth relay on the local Supabase stack', () => {
       const prepared = expectOk(await b.prepare());
       const url = new URL(String(prepared.json.authorize_url));
       expect(url.origin + url.pathname).toBe(`${BASE}/auth/v1/authorize`);
-      expect(url.searchParams.get('redirect_to')).toBe(`${ORIGIN}/safeauth/callback.html`);
+      expect(url.searchParams.get('redirect_to')).toBe(`${ORIGIN}/callback.html`);
     });
 
     it('S17: CORS allows only the exact central origin; native callers without Origin still need capabilities', async () => {

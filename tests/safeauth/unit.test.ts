@@ -9,12 +9,12 @@ import {
 import { createRelayHandler } from '../../server/safeauth/relay.ts';
 
 const SUPA = 'https://abcdefghijklmnop.supabase.co';
-const CALLBACK = 'https://worklazy.net/safeauth/callback.html';
+const CALLBACK = 'https://safeauth.worklazy.net/callback.html';
 const ID = '6f37df54-911b-4c37-8020-a0b45a84591d';
 
 function env(overrides: Record<string, string | undefined> = {}) {
   const base: Record<string, string | undefined> = {
-    SUPABASE_URL: SUPA, AUTH_SITE_URL: 'https://worklazy.net/safeauth/', AUTH_BROWSER_ORIGIN: 'https://worklazy.net',
+    SUPABASE_URL: SUPA, AUTH_SITE_URL: 'https://safeauth.worklazy.net/', AUTH_BROWSER_ORIGIN: 'https://safeauth.worklazy.net',
     AUTH_RELAY_ENABLED: 'true', AUTH_RELAY_HASH_PEPPER: randomSecret(), AUTH_RELAY_ENCRYPTION_KEY: randomSecret(),
   };
   const merged = { ...base, ...overrides };
@@ -100,12 +100,12 @@ describe('relay configuration fails closed', () => {
     ['placeholder key', { AUTH_RELAY_ENCRYPTION_KEY: 'REPLACE_WITH_SERVER_SECRET' }],
     ['short key', { AUTH_RELAY_ENCRYPTION_KEY: randomSecret(16) }],
     ['low entropy', { AUTH_RELAY_HASH_PEPPER: 'A'.repeat(43) }],
-    ['origin with path', { AUTH_BROWSER_ORIGIN: 'https://worklazy.net/safeauth' }],
-    ['http site', { AUTH_SITE_URL: 'http://worklazy.net/safeauth/' }],
-    ['site without slash', { AUTH_SITE_URL: 'https://worklazy.net/safeauth' }],
+    ['origin with path', { AUTH_BROWSER_ORIGIN: 'https://safeauth.worklazy.net/callback' }],
+    ['http site', { AUTH_SITE_URL: 'http://safeauth.worklazy.net/' }],
+    ['site origin not allowed', { AUTH_BROWSER_ORIGIN: 'https://worklazy.net' }],
     ['callback mismatch', { AUTH_CALLBACK_URL: 'https://worklazy.net/other.html' }],
     ['code ttl above auth flow', { AUTH_RELAY_CODE_TTL_SECONDS: '300' }],
-    ['loopback without local flag', { AUTH_SITE_URL: 'http://127.0.0.1:8480/safeauth/', AUTH_BROWSER_ORIGIN: 'http://127.0.0.1:8480' }],
+    ['loopback without local flag', { AUTH_SITE_URL: 'http://127.0.0.1:8480/', AUTH_BROWSER_ORIGIN: 'http://127.0.0.1:8480' }],
   ])('%s', async (_name, overrides) => {
     const result = await loadRelayConfig(env(overrides));
     expect(result.ok).toBe(false);
@@ -116,7 +116,7 @@ describe('relay configuration fails closed', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.config.callbackUrl).toBe(CALLBACK);
-      expect(result.config.browserOrigins).toEqual(['https://worklazy.net']);
+      expect(result.config.browserOrigins).toEqual(['https://safeauth.worklazy.net']);
       expect(result.config.jwtIssuer).toBe(`${SUPA}/auth/v1`);
       expect(result.config.enabled).toBe(true);
     }
@@ -144,10 +144,10 @@ describe('relay handler validation (stub repository)', () => {
 
   it('preflight and origin policy', async () => {
     const { h } = await handler();
-    const pre = await h(new Request(`${SUPA}/functions/v1/community-auth-relay/claim`, { method: 'OPTIONS', headers: { origin: 'https://worklazy.net' } }));
+    const pre = await h(new Request(`${SUPA}/functions/v1/community-auth-relay/claim`, { method: 'OPTIONS', headers: { origin: 'https://safeauth.worklazy.net' } }));
     expect(pre.status).toBe(204);
-    expect(pre.headers.get('access-control-allow-origin')).toBe('https://worklazy.net');
-    const evil = await h(req('claim', {}, { origin: 'https://worklazy.net.evil.invalid' }));
+    expect(pre.headers.get('access-control-allow-origin')).toBe('https://safeauth.worklazy.net');
+    const evil = await h(req('claim', {}, { origin: 'https://safeauth.worklazy.net.evil.invalid' }));
     expect(evil.status).toBe(403);
     expect((await h(req('claim', {}, {}, 'GET'))).status).toBe(405);
   });

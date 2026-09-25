@@ -5,9 +5,9 @@ import { base64UrlDecode, type CodeKey, Hasher, importCodeKey } from './crypto.t
 
 export interface RelayConfig {
   enabled: boolean;
-  siteUrl: string;            // https://worklazy.net/safeauth/
-  callbackUrl: string;        // https://worklazy.net/safeauth/callback.html
-  browserOrigins: string[];   // https://worklazy.net (origin only, never a path)
+  siteUrl: string;            // https://safeauth.worklazy.net/
+  callbackUrl: string;        // https://safeauth.worklazy.net/callback.html
+  browserOrigins: string[];   // https://safeauth.worklazy.net (origin only, never a path)
   publicSupabaseUrl: string;  // origin used in the authorize URL and JWT issuer
   jwtIssuer: string;
   requestTtlSeconds: number;

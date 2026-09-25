@@ -67,7 +67,7 @@ export function isClientKind(value: unknown): value is ClientKind {
   return typeof value === 'string' && (CLIENT_KINDS as readonly string[]).includes(value);
 }
 
-// Central browser entry: https://worklazy.net/safeauth/#r=<request_id>&t=<ticket>
+// Central browser entry: https://safeauth.worklazy.net/#r=<request_id>&t=<ticket>
 // The fragment never reaches an HTTP server or Referer header.
 export function buildBootstrapUrl(siteUrl: string, requestId: string, ticket: string): string {
   const fragment = new URLSearchParams({ r: requestId, t: ticket }).toString();

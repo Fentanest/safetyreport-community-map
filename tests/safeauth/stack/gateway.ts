@@ -42,7 +42,7 @@ export async function startGateway(options: GatewayOptions = {}) {
     SUPABASE_URL: self,
     AUTH_RELAY_LOCAL_STACK: 'loopback-only',
     AUTH_RELAY_ENABLED: 'true',
-    AUTH_SITE_URL: options.siteUrl ?? `http://127.0.0.1:${PORTS.site}/safeauth/`,
+    AUTH_SITE_URL: options.siteUrl ?? `http://127.0.0.1:${PORTS.site}/`,
     AUTH_BROWSER_ORIGIN: options.browserOrigins ?? `http://127.0.0.1:${PORTS.site}`,
     AUTH_JWT_ISSUER: `http://127.0.0.1:${PORTS.gateway}/auth/v1`,
     AUTH_RELAY_HASH_PEPPER: stack.AUTH_RELAY_HASH_PEPPER,

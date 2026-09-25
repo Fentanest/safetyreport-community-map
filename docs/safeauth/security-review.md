@@ -1,7 +1,7 @@
 # safeauth 보안 검토 기록
 
 범위: community-map의 중앙 페이지(`apps/safeauth`), relay(`server/safeauth`, Edge 함수, migration),
-합성 배포 스크립트. 앱 쪽(safetyreport, mobile) 검토는 각 저장소 문서와 `acceptance.md`를 본다.
+배포 워크플로. 앱 쪽(safetyreport, mobile) 검토는 각 저장소 문서와 `acceptance.md`를 본다.
 검토자는 구현자와 같다(자기 검토). 운영 전 독립 검토를 권한다.
 
 ## 1. 핵심 보장과 근거
@@ -14,7 +14,7 @@
 | 원래 기기 저장 확인 전 완료 표시 없음 | `device_confirmed`는 `/complete`(검증된 JWT + device secret)로만 | E2E: 코드 전달·교환 후에도 “원래 기기에서 계정을 확인해 주세요” 유지, complete 후에만 완료 |
 | 기존 로그인 대체·공개 동의 자동 처리 없음 | relay는 contributor_profiles를 쓰지 않음. 앱 기능 기본 OFF | migration 검토, S13 |
 | 광고·분석·SPA router·지도 앱 미로딩 | 독립 MPA, 허용 목록 아티팩트, CSP `script-src 'self'` | verify-artifact, E2E 요청 호스트 = 사이트·relay·카카오(모의)뿐 |
-| `/safeauth/`를 독립 origin이라 주장하지 않음 | 문서·화면·개인정보 안내에 같은 origin 명시 | 이 문서 §3 |
+| 인증 페이지 전용 origin | `safeauth.worklazy.net` 전용 Pages 사이트 | 이 문서 §3 |
 
 ## 2. 위협과 대응
 
@@ -33,17 +33,18 @@
   프레임 안에서는 동작을 거부한다(E2E 확인). 헤더 수준 보장은 없음 → 잔여 위험.
 - **XSS**: 서버 제공 문자열은 textContent로만, 기기명은 relay에서 제어문자·마크업 문자·URL 스킴 거부, CSP로 인라인 스크립트 차단.
 
-## 3. 같은 origin의 한계 (잔여 위험)
+## 3. 별도 서브도메인 (2026-09-25 변경)
 
-`https://worklazy.net/`(WorklazyTools)과 `/safeauth/`는 같은 origin이다. 경로·번들 분리·storage 접두사는
-격리가 아니다. WorklazyTools 쪽에 XSS가 생기면 같은 origin 스크립트가 `/safeauth/` 탭의 sessionStorage
-(요청 id·브라우저 비밀)를 읽거나 페이지를 조작할 수 있다. 이 경우에도 verifier·세션 토큰은 중앙에 없으므로
-탈취 대상은 “진행 중인 연결 1건을 방해/가로채기”로 제한되지만, 가로챈 브라우저 비밀로 코드 publish를 조작하면
-사용자 기기에 공격자 계정이 제시될 수 있다(원래 앱의 계정 확인 단계가 마지막 방어선).
+중앙 페이지는 `https://safeauth.worklazy.net`이라는 **별도 origin**이다. `worklazy.net`(WorklazyTools)과
+`worklazy.net/safemap`(지도, 카카오 지도 SDK 등 외부 스크립트 포함)의 스크립트는 이 origin의 sessionStorage·DOM에
+접근할 수 없고, WorklazyTools의 루트 서비스워커도 이 주소를 제어하지 않는다. 이전의 “같은 origin” 잔여 위험은 해소됐다.
 
-루트 서비스워커(`/service-worker.js`, scope `/`)는 `/safeauth/`를 제어할 수 있다. 현재 코드는 worker 요청과 특정
-tools 경로만 가로채고 나머지는 통과시킨다(WorklazyTools `public/service-worker.js` 검토, 로컬 E2E D07에서 흐름 정상).
-향후 이 워커가 탐색 요청을 캐시하도록 바뀌면 `/safeauth/`를 제외해야 한다 — WorklazyTools 변경 시 점검 항목.
+남는 것:
+- 같은 상위 도메인(same-site)이다. `worklazy.net`이 `Domain=worklazy.net` 쿠키를 설정하면 이 주소로도 전송되지만,
+  중앙 페이지는 쿠키를 쓰지 않고 relay 호출은 `credentials: 'omit'`이다.
+- 서브도메인 탈취: DNS CNAME이 남은 채 Pages 설정이 사라지면 제3자가 그 이름을 가져갈 수 있다. GitHub의 Verified domains로
+  `worklazy.net`을 인증해 두고, 서비스를 내릴 때 DNS부터 지운다.
+- `worklazy.net/safemap`이 이 저장소 코드라도 인증 페이지와 번들·origin을 공유하지 않는다.
 
 ## 4. 헤더와 호스팅
 
@@ -54,5 +55,5 @@ GitHub Pages는 사용자 정의 응답 헤더를 지원하지 않는다. 따라
 ## 5. 확인하지 못한 것
 
 - 실제 카카오 로그인·hosted Supabase(프로젝트 설정, 비대칭 JWT 서명 키 사용 여부에 따른 issuer 등) — 로컬은 HS256 GoTrue.
-- 실제 worklazy.net 응답 헤더·서비스워커 과거 버전 설치 사용자.
+- 실제 safeauth.worklazy.net 응답 헤더(미배포).
 - 독립 보안 검토, 스크린리더 수동 검수.

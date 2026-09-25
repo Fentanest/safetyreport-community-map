@@ -1,8 +1,8 @@
 // Real-browser review of the central pages on the LOCAL stack (Chromium via Playwright).
 // Preconditions (see docs/safeauth/verification.md):
 //   node tests/safeauth/stack/stack.mjs up
-//   build+compose the localtest artifact into a site dir and run
-//   node --experimental-strip-types tests/safeauth/stack/serve-local.ts <site-dir>
+//   tests/safeauth/stack/build-local.sh
+//   node --experimental-strip-types tests/safeauth/stack/serve-local.ts .safeauth-stack/dist-safeauth-local
 //   SAFEAUTH_STACK=1 SAFEAUTH_BROWSER=1 npx vitest run tests/safeauth/browser.e2e.test.ts
 // Kakao is the local mock; this is not a hosted Kakao E2E.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -73,7 +73,7 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     stack = loadStackEnv();
     psql("delete from private.rate_limits where bucket like 'sa:%';", { env: stack });
     browser = await chromium.launch();
-    const probe = await fetch(`${SITE}/safeauth/`);
+    const probe = await fetch(`${SITE}/`);
     if (!probe.ok) throw new Error('serve-local.ts is not running');
   });
 
@@ -87,7 +87,7 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     const context = await ctx();
     const page = await context.newPage();
     const rec = record(page);
-    await page.goto(`${SITE}/safeauth/`);
+    await page.goto(`${SITE}/`);
     await waitTitle(page, '앱에서 연결을 시작해 주세요');
     expect(await page.locator('#kakao-button').count()).toBe(0);
     expect(rec.requests.filter(r => r.url.includes('/functions/v1/'))).toHaveLength(0);
@@ -99,7 +99,6 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     const device = newDevice();
     expectOk(await device.create());
     const context = await ctx();
-    await context.addInitScript(() => { try { localStorage.setItem('worklazy_lang', 'ko'); } catch { /* ignore */ } });
     const page = await context.newPage();
     const rec = record(page);
     await page.goto(device.bootstrapUrl);
@@ -117,10 +116,10 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     await kakao.click();
     await page.waitForURL(`http://127.0.0.1:${PORTS.kakao}/oauth/authorize**`);
     await page.locator('#mock-account-a').click();
-    await page.waitForURL(`${SITE}/safeauth/callback.html`);
+    await page.waitForURL(`${SITE}/callback.html`);
     await page.locator('#auth-card h2', { hasText: '원래 기기에서 계정을 확인해 주세요' }).waitFor();
-    expect(page.url()).toBe(`${SITE}/safeauth/callback.html`); // U06: code scrubbed
-    const code = new URL(rec.requests.find(r => r.url.startsWith(`${SITE}/safeauth/callback.html?`))!.url).searchParams.get('code')!;
+    expect(page.url()).toBe(`${SITE}/callback.html`); // U06: code scrubbed
+    const code = new URL(rec.requests.find(r => r.url.startsWith(`${SITE}/callback.html?`))!.url).searchParams.get('code')!;
     expect(code).toBeTruthy();
     const dom = await page.content();
     const storage = await page.evaluate(() => JSON.stringify({ ...sessionStorage }) + JSON.stringify({ ...localStorage }));
@@ -144,11 +143,10 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     const after = rec.requests.slice(before).filter(r => r.url.includes('/functions/v1/'));
     expect(after).toHaveLength(0); // U07: polling stopped
     expect(await page.evaluate(() => sessionStorage.getItem('safeauth:v1:flow'))).toBeNull();
-    expect(await page.evaluate(() => localStorage.getItem('worklazy_lang'))).toBe('ko'); // D09
 
     const tokenCalls = rec.requests.filter(r => r.url.includes('/auth/v1/token'));
     expect(tokenCalls).toHaveLength(0); // P02
-    const ours = rec.requests.filter(r => r.url.startsWith(`${GW}/functions/`) || r.url.startsWith(`${GW}/auth/v1/authorize`) || r.url.startsWith(`${SITE}/safeauth/`));
+    const ours = rec.requests.filter(r => r.url.startsWith(`${GW}/functions/`) || r.url.startsWith(`${GW}/auth/v1/authorize`) || r.url.startsWith(`${SITE}/`));
     // Our pages send no Referer. The only one is the identity provider's own page origin
     // on its redirect into callback.html (the IdP's policy; origin only, no secret).
     const referers = ours.filter(r => r.referer);
@@ -186,7 +184,7 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     await waitTitle(page, '원래 기기에서 계정을 확인해 주세요');
     await page.reload();
     await waitTitle(page, '원래 기기에서 계정을 확인해 주세요');
-    expect(page.url()).toBe(`${SITE}/safeauth/callback.html`);
+    expect(page.url()).toBe(`${SITE}/callback.html`);
     const waitingDark = await shot(page, 'waiting-390-dark');
     const polled = expectOk(await device.poll());
     expect((await device.exchange(String(polled.json.auth_code))).status).toBe(200);
@@ -219,9 +217,9 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     const context = await ctx();
     const page = await context.newPage();
     const rec = record(page);
-    await page.goto(`${SITE}/safeauth/callback.html?code=00000000-0000-4000-8000-000000000000`);
+    await page.goto(`${SITE}/callback.html?code=00000000-0000-4000-8000-000000000000`);
     await waitTitle(page, '연결 정보를 찾을 수 없어요');
-    expect(page.url()).toBe(`${SITE}/safeauth/callback.html`);
+    expect(page.url()).toBe(`${SITE}/callback.html`);
     expect(rec.requests.filter(r => r.url.includes('/functions/v1/'))).toHaveLength(0);
     results.callbackWithoutContext = { pass: true, screenshot: await shot(page, 'invalid-callback-1440-light') };
     await context.close();
@@ -270,7 +268,7 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     await waitTitle(page, '연결 시간이 지났어요');
     const expiredShot = await shot(page, 'expired-1440-light');
 
-    await page.goto(`${SITE}/safeauth/#r=not-a-uuid&t=x`);
+    await page.goto(`${SITE}/#r=not-a-uuid&t=x`);
     await waitTitle(page, '연결 정보를 찾을 수 없어요');
 
     const blocked = await ctx({ viewport: { width: 320, height: 740 } });
@@ -289,45 +287,11 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
 
     const framer = await ctx();
     const fp = await framer.newPage();
-    await fp.setContent(`<iframe id="f" src="${SITE}/safeauth/" width="800" height="700"></iframe>`);
+    await fp.setContent(`<iframe id="f" src="${SITE}/" width="800" height="700"></iframe>`);
     const frame = await (await fp.waitForSelector('#f')).contentFrame();
     await frame!.locator('#auth-card h2', { hasText: '이 화면은 다른 페이지 안에서 열 수 없어요' }).waitFor();
     await framer.close();
     results.states = { pass: true, screenshots: [cancelledShot, expiredShot, storageShot] };
-    await context.close();
-  });
-
-  it('D05: /safeauth without slash keeps the fragment through the redirect', async () => {
-    const device = newDevice();
-    expectOk(await device.create());
-    const context = await ctx();
-    const page = await context.newPage();
-    const url = new URL(device.bootstrapUrl);
-    await page.goto(`${SITE}/safeauth${url.hash}`);
-    await waitTitle(page, '연결할 기기를 확인해 주세요');
-    expect(page.url()).toBe(`${SITE}/safeauth/`);
-    results.D05 = { pass: true };
-    await device.cancel();
-    await context.close();
-  });
-
-  it('D07: the site root service worker (if registered) does not break /safeauth/', async () => {
-    const context = await ctx();
-    const page = await context.newPage();
-    await page.goto(`${SITE}/`);
-    await page.waitForTimeout(2500);
-    const registrations = await page.evaluate(async () => (await navigator.serviceWorker?.getRegistrations?.() ?? []).map(r => r.scope));
-    const device = newDevice();
-    expectOk(await device.create());
-    await page.goto(device.bootstrapUrl);
-    await waitTitle(page, '연결할 기기를 확인해 주세요');
-    const controlled = await page.evaluate(() => Boolean(navigator.serviceWorker?.controller));
-    await page.locator('#confirm-start').check();
-    await page.locator('#kakao-button').click();
-    await page.locator('#mock-account-a').click();
-    await waitTitle(page, '원래 기기에서 계정을 확인해 주세요');
-    await device.cancel();
-    results.D07 = { pass: true, rootServiceWorkerScopes: registrations, safeauthControlledBySw: controlled };
     await context.close();
   });
 
@@ -351,7 +315,7 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
         const img = await page.locator('#kakao-button img').boundingBox();
         const enabledPath = [390, 320].includes(width) ? await shot(page, `${name}-checked`) : null;
         expect(disabledBox!.height).toBeGreaterThanOrEqual(48);
-        await page.goto(`${SITE}/safeauth/help.html`);
+        await page.goto(`${SITE}/help.html`);
         const helpOver = await overflow(page);
         report.push({ scheme, width, height, overflowPx: over, helpOverflowPx: helpOver, kakaoButtonHeight: kakaoBox?.height, kakaoImage: img && { w: img.width, h: img.height }, screenshots: [path, enabledPath].filter(Boolean) });
         expect(over, name).toBeLessThanOrEqual(0);
@@ -397,7 +361,7 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     const light = await axe(page);
     await page.emulateMedia({ colorScheme: 'dark' });
     const dark = await axe(page);
-    await page.goto(`${SITE}/safeauth/privacy.html`);
+    await page.goto(`${SITE}/privacy.html`);
     const privacy = await axe(page);
     results.U12 = { pass: true, tabOrder: order, focusOutline: outline, reducedMotionTransition: transition, liveRegion: live,
       axe: { readyLight: light, readyDark: dark, privacy }, note: 'axe covers automatable WCAG checks only; no screen-reader session was run' };
@@ -409,13 +373,13 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
     await context.close();
   });
 
-  it('U08: the same pages work from a root (/) base build', async () => {
-    const gw2 = await startGateway({ port: PORTS.gateway + 1, siteUrl: 'http://127.0.0.1:8481/', browserOrigins: 'http://127.0.0.1:8481' });
-    const site2 = await startStaticServer({ root: join(repo, '.safeauth-stack/dist-safeauth-root'), port: 8481 });
+  it('U08: the same pages also work from a subpath (/sub/) build', async () => {
+    const gw2 = await startGateway({ port: PORTS.gateway + 1, siteUrl: 'http://127.0.0.1:8481/sub/', browserOrigins: 'http://127.0.0.1:8481' });
+    const site2 = await startStaticServer({ root: join(repo, '.safeauth-stack/site-sub'), port: 8481 });
     try {
-      const device = new Device(`http://127.0.0.1:${PORTS.gateway + 1}`, stack.SAFEAUTH_ANON_KEY, '루트 배포 확인', 'pc');
+      const device = new Device(`http://127.0.0.1:${PORTS.gateway + 1}`, stack.SAFEAUTH_ANON_KEY, '하위 경로 배포 확인', 'pc');
       expectOk(await device.create());
-      expect(device.bootstrapUrl.startsWith('http://127.0.0.1:8481/#r=')).toBe(true);
+      expect(device.bootstrapUrl.startsWith('http://127.0.0.1:8481/sub/#r=')).toBe(true);
       const context = await ctx();
       const page = await context.newPage();
       await page.goto(device.bootstrapUrl);
@@ -423,15 +387,15 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
       await page.locator('#confirm-start').check();
       await page.locator('#kakao-button').click();
       await page.locator('#mock-account-a').click();
-      await page.waitForURL('http://127.0.0.1:8481/callback.html');
+      await page.waitForURL('http://127.0.0.1:8481/sub/callback.html');
       await waitTitle(page, '원래 기기에서 계정을 확인해 주세요');
       const polled = expectOk(await device.poll());
       expect((await device.exchange(String(polled.json.auth_code))).status).toBe(200);
       expectOk(await device.complete());
       await waitTitle(page, '기기 연결이 완료됐어요', 15000);
-      await page.goto('http://127.0.0.1:8481/callback.html');
+      await page.goto('http://127.0.0.1:8481/sub/callback.html');
       await waitTitle(page, '연결 정보를 찾을 수 없어요'); // direct reload after completion: no context, no 404
-      results.U08 = { pass: true, base: '/' };
+      results.U08 = { pass: true, base: '/sub/' };
       await context.close();
     } finally {
       await new Promise(r => gw2.server.close(r));
@@ -440,12 +404,12 @@ describe.skipIf(!enabled)('safeauth central pages in a real browser', () => {
   });
 
   it('config missing: an unconfigured production build shows the operator code and no login', async () => {
-    const site3 = await startStaticServer({ root: join(repo, '.safeauth-stack/site-unconfigured'), port: 8482 });
+    const site3 = await startStaticServer({ root: join(repo, 'dist-safeauth'), port: 8482 });
     try {
       const context = await ctx({ viewport: { width: 390, height: 844 } });
       const page = await context.newPage();
       const rec = record(page);
-      await page.goto('http://127.0.0.1:8482/safeauth/#r=00000000-0000-4000-8000-000000000000&t=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+      await page.goto('http://127.0.0.1:8482/#r=00000000-0000-4000-8000-000000000000&t=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
       await waitTitle(page, '연결 서비스를 준비 중이에요');
       expect(await page.locator('#auth-card').textContent()).toContain('AUTH_CONFIG_MISSING');
       expect(await page.locator('#kakao-button').count()).toBe(0);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Verifies a built safeauth artifact before it is composed into any site.
-//   node scripts/safeauth/verify-artifact.mjs --dir dist-safeauth [--base /safeauth/]
-//        [--require-config] [--expect-supabase https://<ref>.supabase.co] [--site-origin https://worklazy.net] [--allow-origin https://x ...] [--json]
+// Verifies a built safeauth artifact before it is published.
+//   node scripts/safeauth/verify-artifact.mjs --dir dist-safeauth [--base /]
+//        [--require-config] [--expect-supabase https://<ref>.supabase.co] [--site-origin https://safeauth.worklazy.net] [--allow-origin https://x ...] [--json]
 // Checks: file allowlist, no symlinks, per-page security meta (referrer first, CSP
 // without inline script), noindex, asset paths under the base, no third-party
 // runtime, ads/analytics/service worker, no secrets, no design-demo leftovers, and
@@ -59,7 +59,7 @@ export function configuredOrigins(env = process.env) {
   return out;
 }
 
-export function verifyArtifact({ dir, base = '/safeauth/', requireConfig = false, expectSupabase = null, siteOrigin = 'https://worklazy.net', allowOrigins = configuredOrigins() }) {
+export function verifyArtifact({ dir, base = '/', requireConfig = false, expectSupabase = null, siteOrigin = 'https://safeauth.worklazy.net', allowOrigins = configuredOrigins() }) {
   const errors = [];
   const files = walk(dir);
   const rel = f => relative(dir, f.path).split(sep).join('/');
@@ -132,10 +132,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const get = flag => { const i = args.indexOf(flag); return i >= 0 ? args[i + 1] : undefined; };
   const result = verifyArtifact({
     dir: get('--dir') ?? 'dist-safeauth',
-    base: get('--base') ?? '/safeauth/',
+    base: get('--base') ?? '/',
     requireConfig: args.includes('--require-config'),
     expectSupabase: get('--expect-supabase') ?? null,
-    siteOrigin: get('--site-origin') ?? 'https://worklazy.net',
+    siteOrigin: get('--site-origin') ?? 'https://safeauth.worklazy.net',
     allowOrigins: [...configuredOrigins(), ...args.flatMap((a, i) => (a === '--allow-origin' ? [args[i + 1]] : []))],
   });
   if (args.includes('--json')) console.log(JSON.stringify(result, null, 2));
