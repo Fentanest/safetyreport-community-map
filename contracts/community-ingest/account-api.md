@@ -42,8 +42,8 @@ status 응답:
 연결 규칙: 연결 비밀(`connection_secret`)은 기기에서 만들고 기기 보호 저장소에만 둔다(PC `data/auth` 암호화 저장소, 모바일 secure storage). 같은 사용자 재로그인 = `connections-rebind`(epoch 유지 → 대기 이벤트 계속 전송).
 다른 사용자로 로그인하면 rebind 가 `not_found` → 새 사용자로 `connections` 등록, 이전 사용자 대기 이벤트는 보존·전송 금지.
 중앙 manifest(S-04, map 의 ingest 함수): `POST {url}/functions/v1/community-ingest/manifest` 본문 `{"protocol":1,"connection_id":"…","after":null|"<64hex>","limit":5000}`(같은 헤더·인증·연결 검사, `Cache-Control: no-store`, 로그에 남기지 않음) →
-`{"protocol":1,"dataset_key":"…","writer_epoch":N,"total":T,"manifest_token":"<md5>","key_prefixes":["<24hex>",…],"next_after":null|"<64hex>"}` — 호출자 소유·연결의 dataset_key·`public_state='completed'` fact 의 `source_report_key` 앞 24hex, 키 순서, 페이지당 최대 5000.
-클라이언트는 `next_after` 가 null 이 될 때까지 받고, **모든 페이지의 manifest_token(그 dataset 의 fact 변경·삭제마다 같은 트랜잭션에서 증가하는 세대 번호)이 같고** 받은 개수 = total 이고 중복이 없을 때만 `server_completed` 를 한 트랜잭션으로 교체한다. 토큰이 바뀌면 처음부터 다시(최대 3회), 그래도 실패하면 교체하지 않고 수집을 시작하지 않는다(`manifest_unavailable`).
+`{"protocol":1,"dataset_key":"…","writer_epoch":N,"total":T,"manifest_token":"<10진 세대, 예: \"0\", \"17\">","key_prefixes":["<24hex>",…],"next_after":null|"<64hex>"}` — 호출자 소유·연결의 dataset_key·`public_state='completed'` fact 의 `source_report_key` 앞 24hex, 키 순서, 페이지당 최대 5000.
+클라이언트는 manifest 를 받는 동안 자기 업로드 lease(`leases('upload')`)를 잡아 자기 업로드로 세대가 바뀌지 않게 하고, `next_after` 가 null 이 될 때까지 받고, **모든 페이지의 manifest_token(`^[0-9]+$` — 그 dataset 의 완료 key 집합이 바뀔 때마다 같은 트랜잭션에서 증가하는 세대 번호, fact 표 트리거로 유지; 빈 dataset 은 `"0"`)이 같고** 받은 개수 = total 이고 중복이 없을 때만 `server_completed` 를 한 트랜잭션으로 교체한다. 토큰이 바뀌면 처음부터 다시(최대 3회), 그래도 실패하면 교체하지 않고 수집을 시작하지 않는다(`manifest_unavailable`).
 철회 규칙: `consent-revoke` 는 주어진 grant 가 속한 **계보의 활성 grant** 를 철회한다(정책 갱신으로 대체된 옛 grant ID 를 보내도 사용자가 보는 동의가 실제로 철회됨). 삭제 규칙: `contributions-delete` 는 공유 fact 삭제 + 신고 identity tombstone + 삭제 fence(그 시각 이전 captured_at 이벤트 거절) + writer 연결 전부 폐기. 앱은 성공 응답 뒤 로컬 outbox 의 대기 행을 모두 `blocked:deleted_by_user` 로 바꾸고 새 연결 등록부터 다시 시작한다.
 
 `dataset_key = sha256("safetyreport-dataset|v1|" + 공식 로그인 ID 소문자·앞뒤 공백 제거)` — 클라이언트 주장값(증명 아님), writer 충돌 제어와 fact 네임스페이스용.

@@ -65,7 +65,7 @@ v1 §1 표 유지(R-ENV, R-AUTH, R-CONSENT, R-GATE-M/P, R-REBUILD, R-CAPTURE, R-
 
 ### 3.4 map 신규(5) — ingest·fact·공개
 SQL 정본 초안(구현 때 **바이트 그대로** 각 소유 레포 migration 으로 옮기고 이 초안 폴더는 포인터로 대체): `docs/integration/community-ingest/sql-drafts/` — `SHA256SUMS` 고정
-(auth `202609260100_community_account_registry.sql` 4ee66b8a…, map `202609260200_community_ingest.sql` c47fd0e5…, 회귀 `regression_poc.mjs` a460a93c…). 이전 POC 경로(v2)는 정본이 아니다.
+(`SHA256SUMS` 참조 — 6차 재확인 반영본). 이전 POC 경로(v2)는 정본이 아니다.
 - 구 자료 가드(S-10): **공개 중인** 구 자료(active snapshot 의 `report_facts_v2` 행)가 있으면 `LEGACY_SNAPSHOT_DATA_PRESENT` 로 중단. staged/만료 snapshot 은 공개되지 않으므로 통과. 사전 점검 `scripts/integration/preflight_counts.sql`(표 부재도 안전), 결정표 `deployment-and-rollback.md`.
 - 표: `private.community_ingest_events`(receipt·event 원장, unique(contributor, event_id), dataset_key 포함), `private.community_report_facts`(PK contributor·dataset_key·source_report_key, 좌표 결측 허용·lat/lng_text 보존·penalty_points), `private.community_fact_tombstones`(PK contributor·source_report_key — dataset_key 무관), `private.community_deletion_fences`(contributor 당 마지막 삭제 시각). 모두 RLS on, anon/authenticated/public 권한 없음, service_role 만.
 - `public.internal_community_ingest(user, session, request_id, envelope, events)`: 잠금 policy_current(SHARE) → contributor(SHARE) → grant(SHARE) → **connection(UPDATE)** → fact(UPDATE) → analytics_state. 권한 재확인 실패는 요청 전체 오류·쓰기 0. 이벤트별: epoch 불일치 rejected, tombstone 또는 삭제 fence 이전 captured_at 은 rejected:deleted, 원장 insert(on conflict: 불변 필드 event_type·source_report_id·source_revision·writer_epoch·captured_at·payload_sha256·dataset_key 가 모두 같으면 duplicate, 아니면 conflict — grant·connection·trigger 는 전송 문맥), 한 요청의 같은 신고 중복은 요청 전체 invalid_request, `quarantine_reason` 있으면 quarantined, fact 비교((epoch, revision) 사전식) → accepted/no_change/stale_ignored. grant 귀속은 `reshare` 이거나 기존 계보가 활성일 때만 새 grant 로(S-02). ACK projection_status = published/removed/held/not_public/not_applicable(계약 observation.md). 변경 있으면 dataset_version·source_updated_at·generated_at 갱신(같은 트랜잭션).
@@ -196,3 +196,7 @@ N-04: 철회는 계보의 활성 grant 에 귀결. S-10-D: preflight 동적 SQL(
 S-11-B: 한 요청에 같은 신고 이벤트 1개(Edge 422 + SQL 방어). S-04-T: manifest_token = (contributor, dataset) 세대 번호, fact 변경·삭제와 같은 트랜잭션에서 증가. N-04-L: 다른 활성 계보가 있으면 옛 계보 철회는 `stale_grant`(409).
 D-01: SQL 정본 초안을 `sql-drafts/` 에 SHA256 고정, duplicate 비교 필드를 계약과 일치. S-02-F: 삭제 보장 범위 명시(연결 폐기·identity tombstone·주장된 captured_at fence, 정상 앱의 journal 비승계). S-03-I: 남는 한계(수동 단건 재수집 + 파일 쓰기 실패)와 화면 표시 규칙 명시.
 회귀: `sql-drafts/regression_poc.mjs` — assertion 12종, 격리 스택 exit 0.
+
+## 19. 6차 재확인(plan-review-sol-06) 반영 요약
+N-05: manifest_token 계약을 10진 세대 문자열로 고정(`^[0-9]+$`, 빈 dataset "0"). N-06: 삭제 fence 는 잠금 뒤 clock_timestamp() + greatest() 로 단조. N-07: 세대 증가를 fact 표 트리거로 중앙화(완료 key 집합이 바뀔 때만). N-08: 회귀 스크립트가 병렬 응답 본문의 결과 상태·개수까지 검증.
+회귀 `sql-drafts/regression_poc.mjs` 14 checks exit 0(격리 스택).

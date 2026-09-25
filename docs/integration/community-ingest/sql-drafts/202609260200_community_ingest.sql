@@ -88,6 +88,27 @@ create index community_report_facts_completed_date_idx on private.community_repo
 create index community_report_facts_point_idx on private.community_report_facts(point_key);
 create index community_report_facts_grant_idx on private.community_report_facts(consent_grant_id);
 
+-- Every change of the completed key set of a (contributor, dataset) bumps its manifest generation in the same
+-- transaction, whatever code path (RPC or operator DML) made it (N-07). Order-only updates do not bump.
+create or replace function private.community_facts_manifest_trigger()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+    if tg_op = 'INSERT' then
+        if new.public_state = 'completed' then perform private.community_bump_manifest(new.contributor_id, new.dataset_key); end if;
+    elsif tg_op = 'DELETE' then
+        if old.public_state = 'completed' then perform private.community_bump_manifest(old.contributor_id, old.dataset_key); end if;
+    elsif old.public_state is distinct from new.public_state or old.source_report_key is distinct from new.source_report_key
+          or old.dataset_key is distinct from new.dataset_key or old.contributor_id is distinct from new.contributor_id then
+        perform private.community_bump_manifest(old.contributor_id, old.dataset_key);
+        if old.contributor_id <> new.contributor_id or old.dataset_key <> new.dataset_key then
+            perform private.community_bump_manifest(new.contributor_id, new.dataset_key);
+        end if;
+    end if;
+    return null;
+end;
+$$;
+revoke all on function private.community_facts_manifest_trigger() from public, anon, authenticated;
+
 -- Deleted identities stay blocked forever, whatever captured_at a later client claims (S-02).
 -- Keyed by the official report identity only, so re-registering another dataset_key cannot re-upload it.
 create table private.community_fact_tombstones (
@@ -132,6 +153,8 @@ revoke all on private.community_ingest_events, private.community_report_facts, p
     private.community_deletion_fences, private.community_manifest_generations from public, anon, authenticated;
 grant select, insert, update, delete on private.community_ingest_events, private.community_report_facts,
     private.community_fact_tombstones, private.community_deletion_fences, private.community_manifest_generations to service_role;
+create trigger community_report_facts_manifest after insert or update or delete on private.community_report_facts
+for each row execute function private.community_facts_manifest_trigger();
 
 -- A fact is listed by the public API when completed, has a report or completion date, its contributor is active and
 -- its consent lineage is active (mirrors internal_analytics_v2_facts; ready/generated_at are checked separately).
@@ -313,10 +336,7 @@ begin
             v_result := 'stale_ignored';
         end if;
         update private.community_ingest_events set result = v_result where receipt_id = v_receipt;
-        if v_result = 'accepted' then
-            v_changed := true;
-            perform private.community_bump_manifest(p_user, v_conn.dataset_key);
-        end if;
+        if v_result = 'accepted' then v_changed := true; end if;
         select private.community_fact_publicly_listed(f) into v_visible from private.community_report_facts f
          where f.contributor_id = p_user and f.dataset_key = v_conn.dataset_key and f.source_report_key = v_key;
         -- published: after commit the anonymous API lists the fact; removed: it was listed and no longer is;
@@ -394,6 +414,7 @@ declare
     v_deletion uuid := gen_random_uuid();
     v_count integer;
     v_conns integer;
+    v_fence_at timestamptz;
 begin
     if not ((v_id->>'user_ok')::boolean and (v_id->>'kakao')::boolean and (v_id->>'session')::boolean) then
         return jsonb_build_object('error', 'kakao_required');
@@ -404,11 +425,14 @@ begin
     update private.community_connections set status = 'revoked', revoked_at = now(), revoke_reason = 'contributions_deleted'
      where user_id = p_user and status = 'active';
     get diagnostics v_conns = row_count;
-    insert into private.community_deletion_fences(contributor_id, deletion_id, fenced_at) values (p_user, v_deletion, now())
-    on conflict (contributor_id) do update set deletion_id = excluded.deletion_id, fenced_at = excluded.fenced_at;
-    insert into private.community_manifest_generations(contributor_id, dataset_key, generation)
-    select distinct p_user, dataset_key, 1 from private.community_report_facts where contributor_id = p_user
-    on conflict (contributor_id, dataset_key) do update set generation = private.community_manifest_generations.generation + 1;
+    -- clock_timestamp() AFTER the locks (now() is the transaction start and can be older than a concurrent deletion);
+    -- the stored fence never moves backwards (N-06).
+    v_fence_at := clock_timestamp();
+    insert into private.community_deletion_fences(contributor_id, deletion_id, fenced_at) values (p_user, v_deletion, v_fence_at)
+    on conflict (contributor_id) do update
+        set deletion_id = excluded.deletion_id,
+            fenced_at = greatest(private.community_deletion_fences.fenced_at, excluded.fenced_at)
+    returning fenced_at into v_fence_at;
     insert into private.community_fact_tombstones(contributor_id, source_report_key, deletion_id)
     select distinct contributor_id, source_report_key, v_deletion from private.community_report_facts
      where contributor_id = p_user
@@ -417,7 +441,7 @@ begin
     get diagnostics v_count = row_count;
     perform private.community_bump_projection();
     return jsonb_build_object('deletion_id', v_deletion, 'deleted_facts', v_count, 'revoked_connections', v_conns,
-        'deleted_at', now());
+        'deleted_at', v_fence_at);
 end;
 $$;
 

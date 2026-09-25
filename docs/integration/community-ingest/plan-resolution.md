@@ -95,3 +95,13 @@ Sol 독립 재계산: 벡터 25+7건 불일치 0, MANIFEST 20파일 OK.
 | D-01 | SQL 초안을 `sql-drafts/`+SHA256SUMS 로 고정, 계획 정본 경로 교체, duplicate 불변 필드 = 계약 | 같은 event_id 다른 captured_at → conflict, 전송 문맥만 다르면 duplicate |
 | S-02-F | 삭제 보장 범위 문서화(서버: 연결 폐기·identity tombstone·주장 시각 fence / 앱: journal 비승계) | 삭제 후 옛 연결 connection_revoked, 새 연결 재발급 rejected:deleted |
 | S-03-I | 남는 한계 명시(수동 단건 + 파일 쓰기 실패 → 실패 표시·재요청), rebuild 는 items 로 재시도 | — |
+
+## 6차 재확인(plan-review-sol-06) 처리 — job `task-muhapt73-a11l37`, 같은 thread·model `gpt-6-sol`
+판정: 착수 불가(high 2: N-05 manifest_token 형식, N-06 fence 역행 / medium 2). 5차 high 4건은 해소 판정.
+
+| ID | 처리 | 회귀(sql-drafts/regression_poc.mjs, 14 checks exit 0) |
+|---|---|---|
+| N-05 | 계약 manifest_token = 10진 세대 문자열(`^[0-9]+$`), 수신 중 자기 업로드 lease 유지 | S-04-T 교환 시 토큰 변경 |
+| N-06 | 잠금 뒤 `clock_timestamp()` + `greatest()` 로 fence 단조, 응답 deleted_at = 저장값 | 먼저 시작해 늦게 끝난 삭제 D1 뒤에도 fence ≥ D2 |
+| N-07 | fact 표 AFTER 트리거가 완료 key 집합 변화 때만 세대 증가(RPC·운영 DML 공통), 명시 bump 제거 | 순서 필드만 UPDATE → 세대 불변, completed↔not_completed 직접 DML → +1 |
+| N-08 | 병렬 40요청 각 응답 200 + results 2건 + 상태 ∈ {accepted, no_change, stale_ignored} + durable assert | 통과 |

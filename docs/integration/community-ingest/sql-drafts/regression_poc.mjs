@@ -47,8 +47,17 @@ await ing(g1.grant_id,[ev('R6','f2',c.writer_epoch,{type:'status_correction',d:N
 const t2=(await rpc('internal_community_manifest',{p_user:A.uid,p_session:A.sid,p_connection:c.connection_id,p_after:null,p_limit:5000}));
 assert.equal(t1.total, t2.total); assert.notEqual(t1.manifest_token, t2.manifest_token);
 check('S-09-R: 40 parallel same-connection requests, no deadlock', ()=>{});
-let bad=0; for (let i=0;i<20;i++){ const rs=await Promise.all([rpcRaw('internal_community_ingest',{p_user:A.uid,p_session:A.sid,p_request_id:'req-'+randomUUID(),p_envelope:envOf(c.connection_id,g1.grant_id),p_events:[ev('P'+i,'x'+i,c.writer_epoch),ev('Q','q'+i+'a',c.writer_epoch)]}), rpcRaw('internal_community_ingest',{p_user:A.uid,p_session:A.sid,p_request_id:'req-'+randomUUID(),p_envelope:envOf(c.connection_id,g1.grant_id),p_events:[ev('Q','q'+i+'b',c.writer_epoch),ev('P'+i,'y'+i,c.writer_epoch)]})]); for (const r of rs) if (r.s!==200 || /40P01|deadlock/.test(r.b)) bad++; }
-assert.equal(bad, 0);
+let good=0; for (let i=0;i<20;i++){ const rs=await Promise.all([rpcRaw('internal_community_ingest',{p_user:A.uid,p_session:A.sid,p_request_id:'req-'+randomUUID(),p_envelope:envOf(c.connection_id,g1.grant_id),p_events:[ev('P'+i,'x'+i,c.writer_epoch),ev('Q','q'+i+'a',c.writer_epoch)]}), rpcRaw('internal_community_ingest',{p_user:A.uid,p_session:A.sid,p_request_id:'req-'+randomUUID(),p_envelope:envOf(c.connection_id,g1.grant_id),p_events:[ev('Q','q'+i+'b',c.writer_epoch),ev('P'+i,'y'+i,c.writer_epoch)]})]);
+  for (const r of rs) { assert.equal(r.s, 200, r.b); const body=JSON.parse(r.b); assert.ok(Array.isArray(body.results), r.b); assert.equal(body.results.length, 2, r.b);
+    for (const x of body.results) { assert.ok(['accepted','no_change','stale_ignored'].includes(x.status), r.b); assert.equal(x.durable, true); } good++; } }
+assert.equal(good, 40);
+const lastRev = Number(sql(`select last_accepted_revision from private.community_connections where connection_id='${c.connection_id}'`));
+assert.ok(lastRev >= rev - 1 - 1, `last_accepted_revision ${lastRev} vs issued ${rev-1}`);
+check('N-07: direct DML completed->not_completed bumps the manifest generation; order-only update does not', ()=>{});
+const gen=()=>Number(sql(`select generation from private.community_manifest_generations where contributor_id='${A.uid}' and dataset_key='${'b'.repeat(64)}'`));
+const g0=gen(); sql(`update private.community_report_facts set source_revision=source_revision where contributor_id='${A.uid}' and source_report_key='${key('R5')}'`); assert.equal(gen(), g0);
+sql(`update private.community_report_facts set public_state='not_completed', status='withdrawn', completed_date=null where contributor_id='${A.uid}' and source_report_key='${key('R5')}'`); assert.equal(gen(), g0+1);
+sql(`update private.community_report_facts set public_state='completed', status='accepted', completed_date='2026-09-10' where contributor_id='${A.uid}' and source_report_key='${key('R5')}'`); assert.equal(gen(), g0+2);
 check('policy change keeps old-terms facts public; ingest needs the new policy', ()=>{});
 const before=await pub(); assert.ok(before > 0);
 sql(`insert into private.community_policies(version, consent_text_sha256) values ('2026-10-03.1', '${'e'.repeat(64)}'); update private.community_policy_current set version='2026-10-03.1'`);
@@ -77,6 +86,17 @@ const cn=await rpc('internal_account_register_connection',{p_user:A.uid,p_sessio
 assert.deepEqual(ack(await ing(g3.grant_id,[ev('R50','p',cn.writer_epoch,{at:capturedBefore})],cn.connection_id)), ['rejected/not_applicable:deleted']);
 assert.deepEqual(ack(await ing(g3.grant_id,[ev('R5','e',cn.writer_epoch)],cn.connection_id)), ['rejected/not_applicable:deleted']);
 assert.deepEqual(ack(await ing(g3.grant_id,[ev('R60','z',cn.writer_epoch)],cn.connection_id)), ['accepted/published']);
+check('N-06: an older, slower deletion never moves the fence backwards', ()=>{});
+const { spawn } = await import('node:child_process');
+const fenceBefore = sql(`select fenced_at from private.community_deletion_fences where contributor_id='${A.uid}'`);
+const d1 = spawn('docker',['exec','-i','supabase_db_ci0926-poc','psql','-U','postgres','-d','postgres','-q'],{stdio:['pipe','ignore','ignore']});
+d1.stdin.write(`begin; select now(); select pg_sleep(2); select public.internal_community_delete_contributions('${A.uid}','${A.sid}'); commit;\n`); d1.stdin.end();
+await new Promise(r=>setTimeout(r,500));
+const d2 = await rpc('internal_community_delete_contributions',{p_user:A.uid,p_session:A.sid});
+await new Promise(r=>d1.on('close', r));
+const fenceAfter = sql(`select fenced_at from private.community_deletion_fences where contributor_id='${A.uid}'`);
+assert.ok(new Date(fenceAfter) >= new Date(d2.deleted_at), `fence ${fenceAfter} < d2 ${d2.deleted_at}`);
+assert.ok(new Date(fenceAfter) > new Date(fenceBefore));
 check('policy rows are immutable', ()=>{});
 assert.throws(()=>sql(`update private.community_policies set consent_text_sha256='${'f'.repeat(64)}' where version='2026-09-26.1'`));
 sql(`update private.community_policy_current set version='2026-09-26.1'; update private.analytics_state set ready=false`);
