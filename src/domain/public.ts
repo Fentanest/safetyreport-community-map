@@ -28,6 +28,10 @@ export interface PublicMeta {
   data_min: string | null;
   data_max: string | null;
   coverage_note: string;
+  /** Who the numbers describe. 'shared_completed_reports' = only answered reports community users shared. */
+  population?: 'shared_completed_reports';
+  /** Facts in scope without coordinates: counted in statistics, never drawn as map points. */
+  location_missing?: number;
   dedupe_policy_version: string;
   capabilities: Record<string, Capability>;
 }

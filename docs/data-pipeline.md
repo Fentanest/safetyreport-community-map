@@ -1,7 +1,7 @@
 # 공개 데이터 파이프라인
 
 ## 매일 데이터 흐름
-업로더 02~03 KST 자동 실행은 PC/server/Android 책임이다. Android 지연 가능하므로 03시에 모든 사용자가 업로드를 마쳤다고 가정하지 않는다.
+업로드는 수집 직후 실시간 + 지도 탭 수동 + 매일 00:00 KST(PC/server/Android 책임, 지연 가능). 특정 시각에 모든 사용자가 업로드를 마쳤다고 가정하지 않는다.
 Supabase는 완료된 snapshot만 집계에 포함하고 version을 교체한다. Pages 초기 캐시는 daily 04:17 KST 목표로 생성하고
 추가 갱신은 workflow_dispatch / 승인된 repository_dispatch 등으로 할 수 있다.
 GitHub Actions cron 기본 UTC를 쓸 경우 `17 19 * * *`가 KST 다음날 04:17이다. 이 스케줄은 정시 보장이 아니며
