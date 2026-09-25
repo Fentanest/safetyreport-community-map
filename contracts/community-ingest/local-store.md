@@ -14,7 +14,7 @@ CREATE TABLE context (            -- 단일 행(id=1). 메인 프로세스/앱�
   id INTEGER PRIMARY KEY CHECK (id = 1),
   state TEXT NOT NULL CHECK (state IN ('active','inactive')),
   contributor_fingerprint TEXT, connection_id TEXT, writer_epoch INTEGER, dataset_key TEXT,
-  consent_grant_id TEXT, policy_version TEXT, source_app TEXT, source_mode TEXT,
+  consent_grant_id TEXT, policy_version TEXT, consent_text_sha256 TEXT, source_app TEXT, source_mode TEXT,
   verified_at TEXT, inactive_reason TEXT);
 
 CREATE TABLE source_journal (      -- 불변 관측 사본. ack/save 상태 열만 갱신
@@ -43,6 +43,12 @@ CREATE TABLE report_latest (       -- 신고별 최신 journal 행(이벤트 결
   PRIMARY KEY (local_dataset_id, source_report_id));
 CREATE TABLE report_latest_staging (run_id TEXT NOT NULL, source_report_id TEXT NOT NULL, event_id TEXT NOT NULL,
   payload_sha256 TEXT NOT NULL, eligible INTEGER NOT NULL, PRIMARY KEY (run_id, source_report_id));
+
+CREATE TABLE detail_status (       -- 마지막으로 capture 에 성공한 상세의 C_NOW 라벨(목록 상태 변경 감지, S-12)
+  local_dataset_id TEXT NOT NULL, source_report_id TEXT NOT NULL, c_now_label TEXT NOT NULL, observed_at TEXT NOT NULL,
+  PRIMARY KEY (local_dataset_id, source_report_id));
+CREATE TABLE server_completed (    -- 중앙 manifest: 이 dataset 에서 이미 completed 로 저장된 신고(source_report_key 앞 24hex, S-04)
+  dataset_key TEXT NOT NULL, key_prefix TEXT NOT NULL, fetched_at TEXT NOT NULL, PRIMARY KEY (dataset_key, key_prefix));
 
 CREATE TABLE upload_runs (run_id TEXT PRIMARY KEY, trigger TEXT NOT NULL, schedule_key TEXT,
   contributor_fingerprint TEXT, started_at TEXT NOT NULL, finished_at TEXT,
@@ -74,9 +80,11 @@ CREATE TABLE rebuild_items (run_id TEXT NOT NULL, source_report_id TEXT NOT NULL
 ```
 
 규칙
-- capture: journal INSERT + (이벤트면) outbox INSERT + report_latest(또는 rebuild 중이면 staging) UPSERT + meta.next_revision 증가를 **한 트랜잭션**으로 commit 한 뒤 개인 DB 저장. 저장 결과로 `personal_save_state` 갱신.
+- capture: detail_status UPSERT + (이벤트면) journal INSERT·outbox INSERT(context active 일 때)·meta.next_revision 증가 + report_latest UPSERT(rebuild 중이면 report_latest_staging 에 **항상** 유효 최신 포인터 — 새 이벤트면 그 id, 이벤트가 없으면 기존 최신 id) 를 **한 트랜잭션**으로 commit 한 뒤 개인 DB 저장. capture 가 실패하면 그 신고의 개인 저장을 하지 않는다. 저장 결과로 최신 journal 행의 `personal_save_state` 갱신.
+- 시작 시 정리: `personal_save_state='pending'` 이고 10분 지난 행은 개인 DB 의 원본 상세 행이 그 payload 의 status_raw 와 같으면 saved, 아니면 failed 로 맞춘다(표시용; 전송 가능 여부와 무관).
 - `source_revision` 은 로컬 데이터셋 단조 증가. 중앙 status 의 `last_accepted_revision` 보다 작으면 그 값+1 로 올린다.
 - 전송 대상 = outbox 행 중 journal 의 (project_namespace, contributor_fingerprint, connection_id, consent_grant_id) 가 현재 `context` 와 같은 것. 다르면 `blocked:context_mismatch`.
 - 삭제: outbox 는 durable ACK 때 삭제. journal 은 신고별 최신 행 + 미ACK 전부 보존, 나머지 ACK 행은 90일 뒤 정리. 파일 200MB 초과 시 경고(자동 삭제 안 함).
-- `rotate_dataset(reason)`: 개인 DB 교체(복원·가져오기·모드 전환·공식 계정 변경) 성공 뒤 호출 → 새 local_dataset_id, 이전 id 를 dataset_history 에. 이전 journal/outbox 삭제 안 함.
+- `rotate_dataset(reason)`: 개인 DB 교체(복원·가져오기·모드 전환)·공식 계정 변경 **직전에** 호출(보수적 선회전, S-20) → 새 local_dataset_id, 이전 id 를 dataset_history 에. 교체가 실패해도 되돌리지 않는다(초기화를 한 번 더 요구할 뿐 데이터 손실·오귀속 없음). 이전 journal/outbox 삭제 안 함.
+- `server_completed` 는 writer 등록·rebind·takeover 직후와 초기화 시작 때 `community-ingest/manifest` 로 새로 받아 dataset 단위로 교체한다. 해당 신고의 correction 이 ACK 되면 그 행을 지운다.
 - `project_namespace` 가 바뀌면 이전 namespace 행은 `blocked:namespace_changed`(E05).

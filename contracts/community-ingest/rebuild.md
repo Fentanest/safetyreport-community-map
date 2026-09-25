@@ -22,7 +22,8 @@ running ──철회·로그아웃·권한 상실·사용자 일시정지──�
   - 목록에서 사라진 기존 행은 **삭제하지 않는다**(orphan, 건수만 counts 에).
   - 상세 오류 분류: 네트워크·5xx·타임아웃 → failed_retryable(최대 5회), 접근 거절·삭제된 원본(사이트가 명확히 없음을 응답) → failed_permanent, 로그인 실패·토큰 만료 → run 전체 paused(auth).
 - `validating`: list_complete=1 ∧ pending·failed_retryable 0. failed_permanent 가 있으면 화면에 누락 N건과 ID 범위를 보여 주고 사용자가 수락해야 `completed_with_gaps`.
-- `committing`(community.db 한 트랜잭션): `report_latest` 를 staging 으로 교체(이 dataset), `source_generation` 증가, job completed, 완료 시각. 개인 DB 는 이미 제자리 갱신됨.
+- `committing`(community.db 한 트랜잭션): staging 행을 `report_latest` 에 **upsert(병합)** — staging 에 없는 신고(무변경은 staging 에 기존 포인터가 들어 있고, 영구 실패·목록 부재는 staging 에 없음)는 기존 행을 그대로 둔다(carry-forward, 삭제 없음). `source_generation` 증가, job completed, 완료 시각. 개인 DB 는 이미 제자리 갱신됨.
+- 시작 때(`running` 진입 전) 중앙 manifest 로 `server_completed` 를 새로 받는다(재설치·writer 전환 뒤 정정 누락 방지).
 - 정상 인증의 빈 목록(총 0건, 목록 탐색 완료) → completed.
 
 ## 동시성·재개

@@ -33,9 +33,14 @@ status 응답:
 - `fingerprint = sha256("sr-community-account|v1|" + user_id)` 앞 32 hex. user UUID·이메일·토큰은 반환하지 않는다. `display_name` 은 표시용(권한 근거 아님).
 - `connection` 은 요청한 connection_id 가 **이 사용자 것**일 때만 채운다(타인 것이면 null — 존재를 드러내지 않음).
 
+정책 불변성(N-03): `private.community_policies` 는 (version PK, consent_text_sha256) 이력이고 한 번 쓴 행은 바꿀 수 없다(트리거로 UPDATE/DELETE 거부). 현재 필수 정책은 `private.community_policy_current` 단일 행이 가리킨다. status·ingest 는 grant 의 **(policy_version, consent_text_sha256) 쌍**이 현재 정책과 둘 다 같을 때만 `active` 로 본다. 동의문을 바꾸려면 새 버전을 발급하고 앱 번들 사본·해시를 함께 올린다.
+
 동의 규칙: 카카오 로그인은 동의가 아니다. 앱은 동의 체크(기본 해제) + 계속 버튼으로만 `consent` 를 호출하고, 성공 응답을 받은 뒤에만 완료로 표시한다.
 같은 활성 grant·같은 정책이면 멱등(`created:false`). 철회 뒤 재동의는 새 grant(이전 grant 로 수락된 fact 는 공개되지 않음, `reshare` 필요).
 
 연결 규칙: 연결 비밀(`connection_secret`)은 기기에서 만들고 기기 보호 저장소에만 둔다(PC `data/auth` 암호화 저장소, 모바일 secure storage). 같은 사용자 재로그인 = `connections-rebind`(epoch 유지 → 대기 이벤트 계속 전송).
 다른 사용자로 로그인하면 rebind 가 `not_found` → 새 사용자로 `connections` 등록, 이전 사용자 대기 이벤트는 보존·전송 금지.
+중앙 manifest(S-04, map 의 ingest 함수): `POST {url}/functions/v1/community-ingest/manifest` 본문 `{"protocol":1,"connection_id":"…"}`(같은 헤더·인증·연결 검사) →
+`{"protocol":1,"dataset_key":"…","key_prefixes":["<24hex>",…],"count":N}` — 호출자 소유·연결의 dataset_key·`public_state='completed'` fact 의 `source_report_key` 앞 24hex. 다른 사용자·dataset 정보는 없다.
+
 `dataset_key = sha256("safetyreport-dataset|v1|" + 공식 로그인 ID 소문자·앞뒤 공백 제거)` — 클라이언트 주장값(증명 아님), writer 충돌 제어와 fact 네임스페이스용.

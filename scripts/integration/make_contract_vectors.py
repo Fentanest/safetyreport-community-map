@@ -104,6 +104,20 @@ OBS = [
         payload(agency_name=None, manager_name=None, vehicle_raw=None, category="other"), True),
     ("long_text_truncated_by_code_point", base_input(person_in_charge="가" * 170),
         payload(manager_name="가" * 160), True),
+    ("amount_negative_rejected", base_input(penalty_amount="과태료: -10,000원"),
+        payload(amount={"confirmed_won": None, "kind": "fine", "penalty_points": None}), True),
+    ("amount_man_unit_rejected", base_input(penalty_amount="과태료: 10만원"),
+        payload(amount={"confirmed_won": None, "kind": "fine", "penalty_points": None}), True),
+    ("amount_dot_thousands", base_input(penalty_amount="과태료: 40.000원"),
+        payload(amount={"confirmed_won": 40000, "kind": "fine", "penalty_points": None}), True),
+    ("amount_decimal_rejected", base_input(penalty_amount="과태료: 4.5원"),
+        payload(amount={"confirmed_won": None, "kind": "fine", "penalty_points": None}), True),
+    ("amount_over_cap_rejected", base_input(penalty_amount="범칙금: 200,000,000원", entry_value="자동차·교통위반"),
+        payload(amount={"confirmed_won": None, "kind": "penalty", "penalty_points": None}, disposition="penalty", category="traffic"), True),
+    ("amount_bad_grouping_rejected", base_input(penalty_amount="과태료: 4,00원"),
+        payload(amount={"confirmed_won": None, "kind": "fine", "penalty_points": None}), True),
+    ("points_over_cap_rejected", base_input(penalty_amount="범칙금: 30,000원", penalty_points="벌점: 1001점", entry_value="자동차·교통위반"),
+        payload(amount={"confirmed_won": 30000, "kind": "penalty", "penalty_points": None}, disposition="penalty", category="traffic"), True),
     ("quotes_and_backslash", base_input(violation_location='경기도 "수원시" 팔달구 \\ 1'),
         payload(address='경기도 "수원시" 팔달구 \\ 1'), True),
 ]
@@ -123,6 +137,12 @@ EVENTS = [
      "observation": "transferred_not_eligible", "expect": None},
     {"name": "eligible_again_after_correction", "prev": {"observation": "withdrawn_not_eligible"},
      "observation": "accepted_fine", "expect": "completed_observation"},
+    {"name": "server_known_completed_then_withdrawn", "prev": None, "server_completed": True,
+     "observation": "withdrawn_not_eligible", "expect": "status_correction"},
+    {"name": "server_known_completed_same_eligible_is_sent", "prev": None, "server_completed": True,
+     "observation": "accepted_fine", "expect": "completed_observation"},
+    {"name": "server_unknown_not_eligible_creates_nothing", "prev": None, "server_completed": False,
+     "observation": "withdrawn_not_eligible", "expect": None},
 ]
 
 
@@ -134,6 +154,7 @@ def main():
         cases.append({"name": name, "input": inp, "expected_payload": exp, "eligible": eligible,
                       "canonical_json": canonical(exp), "payload_sha256": sha(exp)})
     for ev in EVENTS:
+        ev.setdefault("server_completed", False)
         if ev["prev"]:
             prev_payload = by_name[ev["prev"]["observation"]]
             ev["prev"] = {"payload_sha256": sha(prev_payload),

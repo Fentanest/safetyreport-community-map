@@ -32,3 +32,24 @@ Sol 환경: deno·node 실행 가능, Supabase CLI(홈 telemetry 쓰기 EROFS)·
 §15 가정 판정 반영: 1(S-03 로 대체), 2(S-01·S-10·S-11 로 재설계), 3(잠금·트리거·삭제 계약 명시 후 공동 테스트), 4(유지: getUser + 트랜잭션 재확인, GoTrue 장애 시 503 retryable·수집은 계속), 5(S-04·S-05 로 재설계), 6(S-02 로 기각·재설계), 7(S-06 로 기각·재기술).
 
 POC 증거(격리 스택 `ci0926-poc`, 제품 레포 무변경): `safetyreport/.agent-runs/ci-20260926/stack-poc/poc_rpc.mjs` — anon·publishable 키 RPC 401, 사용자 JWT RPC 403, private REST 406, 같은 event 재전송 duplicate, 같은 event 다른 내용 conflict, 과거 revision stale_ignored, A→B→A accepted, 철회 트랜잭션 진행 중 ingest 는 대기 후 `consent_revoked`·쓰기 0(대기 약 2.3초).
+
+## 2차 재확인(plan-review-sol-02 — 파일은 Sol 이 `plan-review-sol-final.md` 로 쓴 것을 이름만 바꿔 보관) 처리
+
+같은 thread `01a0d999-…`, job `task-muh923li-2xepzj`, turn_context model `gpt-6-sol`·같은 cwd. 판정: 착수 불가(S-02·S-10 critical, S-03/04/06/12/20/21·N-03 high).
+Sol 독립 재계산: 벡터 25+7건 불일치 0, MANIFEST 20파일 OK.
+
+| ID | 처리 | 결정·근거 |
+|---|---|---|
+| S-10 | **수용(설계 변경)** | 공개 소스 = ingest fact 만. 구 v2 snapshot 자료를 쓰는 코드가 네 레포 어디에도 없음(grep: `upload_snapshots`/`report_facts_v2`/`internal_activate_snapshot` 호출 0). migration 5 가 구 자료(v2 fact 행 또는 staged/active snapshot)를 발견하면 `LEGACY_SNAPSHOT_DATA_PRESENT` 로 중단 → 조용한 소실·이중 집계 불가, 운영자 결정 필요. 사전 점검 SQL 제공 |
+| S-02 | **수용** | legacy 는 공개하지 않으므로 재동의 재공개 경로 없음. tombstone 을 (contributor, dataset_key, source_report_key) identity 단위 영구 차단으로 변경(클라이언트 시각 무관) |
+| S-03 | **수용** | capture 실패 → 그 신고 개인 저장 보류(`community_capture_failed`) → 개인 상태 미전진 → 다음 수집이 다시 읽음. pending 표시는 시작 시 정리 |
+| S-04 | **수용** | `community-ingest/manifest` 로 이 dataset 의 completed fact key 앞 24hex 를 받아 `server_completed` 에 보관, 로컬 prev 가 없을 때 eligible prev 로 취급 → 첫 비적격 관측도 correction. 벡터 3건 추가 |
+| S-06 | **수용** | rebuild 중 capture 는 staging 에 항상 유효 최신 포인터(무변경이면 기존 id)를 쓰고, cutover 는 upsert 병합(삭제 없음, 영구 실패·목록 부재는 carry-forward) |
+| S-12 | **수용** | `detail_status`(상세 당시 C_NOW 라벨)를 capture 트랜잭션에서 기록, 선정은 목록 라벨과 비교(처리상태와 비교 금지). PC 상세 표에는 C_NOW 열이 없음을 확인(`models.py` 의 `상태` 는 merge 표). 벡터 11건 |
+| S-20 | **수용(단순화)** | 개인 DB 교체·공식 계정 변경 **전에** dataset 선회전. 교체 실패 시 초기화 1회 추가 비용뿐, crash 창 없음 |
+| S-21 | **수용** | 원문 순서 준수: 게이트 → 모드 무관 권한 안내/요청 → Setup → 모드 의존 권한 보충 → 초기화. T5 가 PermissionScreen 을 두 단계로 분리 |
+| N-01 | **수용** | 금액 문법(세 자리 구분자만, 음수·만·소수·잘못된 묶음 → null, 1억 초과 null, 벌점 ≤1000)과 서버 값 검증(달력, not eligible 의 completed_date 금지, 좌표 정규형·일관성, reshare 는 trigger=reshare) 명시. 벡터 7건 추가 |
+| N-02 | **수용** | `acceptance-matrix.md` 작성 |
+| N-03 | **수용** | 정책 이력 표(version, hash) 불변 트리거 + current 포인터, grant 의 (version, hash) 쌍 비교 |
+| S-09·S-11·S-18 | 구현 게이트 | 최종 SQL·실제 스택 HTTP·익명 API 증거로만 닫는다. POC 는 증거로 인용하지 않는다 |
+| 기타 | 수용 | status 응답에 dataset_key 포함(account-api 와 일치), plan-final §5 의 connection_secret 문장 정정 |

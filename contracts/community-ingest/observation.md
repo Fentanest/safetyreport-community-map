@@ -46,9 +46,11 @@
 - `category`: entry_value 에 `자동차·교통위반` 포함 → `traffic`, `불법주정차신고` 포함 → `parking`, 그 밖 → `other`(PC `category_from_entry_value` 와 같음).
 - 날짜 `day(s)`: 앞 10자가 `YYYY-MM-DD` → 그대로, `YYYY.MM.DD` → 점을 `-` 로, 8자리 숫자 `YYYYMMDD` → 하이픈 삽입; 실제 달력 날짜가 아니면 null. 시각이 붙은 값은 앞 날짜만(안전신문고 표시 시각은 KST).
 - `report_date` = day(report_date). `completed_date` = eligible 이면 day(response_date), 아니면 null. 결측을 업로드일·신고일로 채우지 않는다.
-- 금액(확정만, 규칙 추정 금액은 넣지 않음): `penalty_amount` 가 `범칙금:` 으로 시작 → kind `penalty`, `과태료:` 로 시작 → `fine`, 정확히 `과태료` → `fine` + null, 그 밖 → `unknown` + null.
-  `confirmed_won` = 콜론 뒤 첫 `원` 앞 문자열의 숫자만 이은 정수(숫자가 없으면 null). 0 은 0 이다.
-  `penalty_points` = `penalty_points` 입력이 `벌점:` 으로 시작하면 콜론 뒤 첫 `점` 앞의 숫자만 이은 정수, 아니면 null.
+- 금액(확정만, 규칙 추정 금액은 넣지 않음) — `penalty_amount` 전체가 정확히 다음 문법일 때만 확정 금액:
+  `^(과태료|범칙금):\s*(<수>)\s*원$`, `<수>` = `[0-9]{1,3}([,.][0-9]{3})*` 또는 `[0-9]+`(구분자 `,`·`.` 은 세 자리 묶음만).
+  `confirmed_won` = `<수>` 의 숫자만 이은 정수, 단 100,000,000 초과면 null. 음수·`만`·소수·잘못된 묶음 등 문법 불일치면 null(추측 금지). 0 은 0.
+  `kind`: 앞머리가 `범칙금` → `penalty`, `과태료` → `fine`(금액 문법 불일치여도 앞머리로 판정), 그 밖 → `unknown`. `combined` 은 두 앞머리가 한 값에 함께 있을 때만 — 현재 파서는 만들지 않으므로 예약값.
+  `penalty_points`: `penalty_points` 입력 전체가 `^벌점:\s*([0-9]{1,4})\s*점$` 이고 값 ≤ 1000 이면 정수, 아니면 null.
 - `disposition`: status=rejected → `none`; 아니면 penalty_amount 가 `범칙금` 으로 시작 → `penalty`, `과태료` 로 시작 → `fine`, `경고` → `warning`, 그 밖(`미확인`·빈 값 포함) → `unknown`. 금액·처분을 추측하지 않는다.
 - `agency_name` = clean(processing_agency, 200), `manager_name` = clean(person_in_charge, 160), `vehicle_raw` = clean(car_number, 64), `address` = clean(violation_location, 200).
 - `location`: geocode 상태가 `ok` 이고 lat·lng 가 IEEE 754 double 로 해석되며(숫자 또는 10진 문자열) lat ∈ [32, 39.5], lng ∈ [124, 132] 이면
@@ -59,18 +61,26 @@ payload 키는 항상 모두 있다: `address, agency_name, amount{confirmed_won
 공식 로그인 정보·쿠키·헤더·사진·첨부·신고 본문·처리내용 원문은 넣지 않는다. `source_report_id` 는 envelope 의 event 필드(private)로만 간다.
 
 ## 4. event 결정 (앱의 capture 함수)
-`prev` = 같은 로컬 데이터셋에서 같은 신고의 **가장 최근 journal 행**.
+`prev` = 같은 로컬 데이터셋에서 같은 신고의 **가장 최근 journal 행**(rebuild 중이면 이번 run 의 staging 을 먼저 본다).
+로컬 prev 가 없고 그 신고의 `source_report_key` 앞 24hex 가 `server_completed`(중앙 manifest — 이 dataset 에서 이미 completed 로 저장된 신고)에 있으면 prev 를 "eligible, 해시 불명"으로 본다(S-04: writer 전환·재설치 뒤 첫 비적격 관측도 정정을 보냄).
 - eligible: prev 가 있고 payload_sha256 이 같으면 새 이벤트 없음(내용 변화 없음). 아니면 `completed_observation`.
 - not eligible: prev 가 eligible 이면 `status_correction`(payload = 이번 관측 그대로). 아니면 이벤트 없음.
 - `location_supplement`: 수동·자정·recovery 트리거 때, 신고별 최신 journal 행이 eligible 이고 `location.source="none"` 인데 그 행의 `address` 로 지오코딩 캐시(공식 주소 결과만)가 이제 `ok` 이면, 같은 payload 에 location 만 채운 새 이벤트.
 - `reshare`: 재동의·writer 전환 뒤 사용자가 지도 탭에서 **명시적으로** 요청할 때만. 신고별 최신 eligible journal 행의 payload·captured_at 을 그대로 두고 새 event_id·새 source_revision·현재 grant/connection/epoch 로 발급. 자동 실행 금지.
 - 개인 편집·백업 복원·DB 변환·가져오기·모바일 Client 는 이벤트를 만들지 않는다.
+- capture 가 실패하면(community.db 오류 등) **그 신고의 개인 저장도 하지 않는다**(저장 실패로 집계). 개인 상태가 전진하지 않으므로 다음 수집의 선정 규칙(신규·미종결·목록 상태 변경)이 그 신고를 다시 읽는다 — 공유 사본을 영구히 놓치지 않는다(S-03).
+- 상세를 받을 때마다(이벤트 여부와 무관) `detail_status` 에 그 상세의 C_NOW 라벨(`progress_status`)을 같은 트랜잭션으로 기록한다(목록 상태 변경 감지용, S-12).
 - `event_id` = 새 UUIDv4(소문자). `source_revision` = 로컬 데이터셋 단조 증가 정수(`meta.next_revision`, 서버 `last_accepted_revision` 보다 작아지지 않게 올림). `captured_at` = UTC ISO-8601 `Z`(밀리초).
 
 ## 5. 서버 검증·파생(ingest)
-- 스키마 엄격 검사(모르는 키 거부), 서버 해시 재계산 일치, `status == map(status_raw)` 아니면 `quarantined:status_mapping_mismatch`.
-- event_type 일관성: `completed_observation`·`location_supplement`·`reshare` 는 eligible payload 만, `status_correction` 은 not eligible payload 만, `location_supplement` 는 location.source=`geocode` 만. 어기면 422.
-- 삭제 tombstone 이전 captured_at 의 이벤트는 `rejected:deleted`.
+스키마(`observation.schema.json`)가 형식·enum·길이·상한을 검사하고, 서버 코드가 아래 **값 규칙**을 추가로 검사한다(위반 = 422 `schema_invalid`, 쓰기 0):
+- 날짜: 실제 달력 날짜(`2026-02-30` 거부). `completed_date` 는 payload 가 eligible 일 때만 값을 가질 수 있다(not eligible 인데 값이 있으면 거부).
+- 좌표: `source="none"` ⇒ lat·lng 둘 다 null. `source="geocode"` ⇒ 둘 다 문자열, double 로 해석되고 lat ∈ [32, 39.5]·lng ∈ [124, 132], 그리고 **정규형**(해석한 double 의 최단 왕복 표기 + `.0` 규칙)과 문자열이 정확히 같아야 한다(`37.000`·`+37.5` 거부).
+- 금액: `confirmed_won` ≤ 100,000,000, `penalty_points` ≤ 1000(스키마), kind=unknown 이면 confirmed_won 은 null.
+- `status == map(status_raw)` 가 아니면 그 이벤트는 `quarantined:status_mapping_mismatch`(durable, fact 반영 안 함).
+- event_type 일관성: `completed_observation`·`location_supplement`·`reshare` 는 eligible payload 만, `status_correction` 은 not eligible payload 만, `location_supplement` 는 `location.source="geocode"` 만. 어기면 422. `reshare` 이벤트는 envelope `trigger="reshare"` 에서만 허용.
+- 서버가 `source_report_key = sha256(utf8("safetyreport|" + source_report_id))` 를 계산한다(클라이언트 값 받지 않음). fact 키는 (contributor, 연결의 dataset_key, source_report_key).
+- 삭제 tombstone 에 있는 (contributor, dataset_key, source_report_key) 의 이벤트는 captured_at 과 무관하게 영구 `rejected:deleted`.
 - 파생: `public_state` = eligible ? `completed` : `not_completed`; lat/lng = 문자열을 double 로(원 문자열도 `lat_text`/`lng_text` 로 보존); `point_key = "v1:" + lat + "," + lng`(문자열 그대로);
   `region_code` = 주소 앞 두 토큰(공백 분리, 시·도 약칭 정규화) — 공개 필터용 표시 키, 행정코드가 아님;
   `agency_key = "a1:" + sha256(NFC(agency_name))[:24]`, `manager_key = "m1:" + sha256(agency_key + "|" + NFC(manager_name))[:24]`(기관이 다르면 같은 이름도 다른 키).

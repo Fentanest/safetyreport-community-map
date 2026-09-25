@@ -1,0 +1,29 @@
+{
+  "run_id": "ci-20260926",
+  "worktree_root": "/home/better0101/projects/worktree/ci-20260926",
+  "started_kst": "2026-09-26T02:03:33+09:00",
+  "pre_existing": {
+    "worktrees": "each repo: primary checkout only; ~/projects/worktree empty",
+    "branches_kept": ["safetyreport: dev, main, feat/community-account", "safetyreport-mobile: dev, main, feat/community-account", "community-map: main", "community-auth: main"]
+  },
+  "targets": {"safetyreport": "dev", "safetyreport-mobile": "dev", "community-map": "main", "community-auth": "main"},
+  "worktrees": [
+    {"repo": "safetyreport", "path": "safetyreport/survey", "branch": null, "base": "db4b38f", "owner": "Gemini(agy gemini-3.1-pro-high) read-only survey", "purpose": "investigation snapshot", "status": "active"},
+    {"repo": "safetyreport-mobile", "path": "safetyreport-mobile/survey", "branch": null, "base": "98e474b2", "owner": "Gemini read-only survey; Muse env check", "purpose": "investigation snapshot", "status": "active"},
+    {"repo": "community-map", "path": "community-map/survey", "branch": null, "base": "a829079", "owner": "Gemini read-only survey", "purpose": "investigation snapshot", "status": "active"},
+    {"repo": "community-auth", "path": "community-auth/survey", "branch": null, "base": "558ed6b", "owner": "Gemini read-only survey", "purpose": "investigation snapshot", "status": "active"},
+    {"repo": "community-map", "path": "community-map/integration", "branch": "ci0926/integration", "base": "a829079", "owner": "Opus5.5", "purpose": "plan, contracts, manifest, integration stack", "status": "active"},
+    {"repo": "community-map", "path": "community-map/plan-review-sol", "branch": null, "base": "868aaba -> 1fb7b2b", "owner": "GPT-6-Sol (codex gpt-6-sol) thread 01a0d999-7780-7592-86a0-caa9bde3eb43", "purpose": "plan review 01 + recheck", "status": "active"},
+    {"repo": "community-auth", "path": "community-auth/integration", "branch": "ci0926/integration", "base": "558ed6b", "owner": "Opus5.5", "purpose": "auth integration target before main", "status": "active"},
+    {"repo": "community-auth", "path": "community-auth/account", "branch": "ci0926/account", "base": "558ed6b", "owner": "Opus5.5", "purpose": "T1 account registry + community-account", "status": "active"},
+    {"repo": "safetyreport", "path": "safetyreport/integration", "branch": "ci0926/integration", "base": "db4b38f", "owner": "Opus5.5", "purpose": "T0b store + integration target before dev", "status": "active"},
+    {"repo": "safetyreport-mobile", "path": "safetyreport-mobile/integration", "branch": "ci0926/integration", "base": "98e474b2", "owner": "Opus5.5", "purpose": "T0b store + integration target before dev", "status": "active"}
+  ],
+  "jobs": [
+    {"id": "gemini-survey-{safetyreport,mobile,map,auth}", "model": "gemini-3.1-pro-high", "tool": "agy 1.2.11", "result": "safetyreport/.agent-runs/ci-20260926/gemini-survey-*/report.md", "status": "completed"},
+    {"id": "gemini-r2-{pc,mobile,map}", "model": "gemini-3.1-pro-high", "tool": "agy 1.2.11", "result": "safetyreport/.agent-runs/ci-20260926/gemini-r2-*/report.md", "status": "completed"},
+    {"id": "muse-envcheck", "model": "opencode-go/muse-spark-1.3-contributor", "session": "ses_f2665ccf9ffeqTEu7G1y7QhH5u", "cwd": "safetyreport-mobile/survey", "status": "completed"},
+    {"id": "sol-plan-review-01", "model": "gpt-6-sol", "codex_job": "task-muh8e98y-qnzsw0", "thread": "01a0d999-7780-7592-86a0-caa9bde3eb43", "status": "completed"},
+    {"id": "sol-plan-recheck", "model": "gpt-6-sol", "codex_job": "task-muh923li-2xepzj", "thread": "01a0d999-7780-7592-86a0-caa9bde3eb43", "status": "running"}
+  ]
+}

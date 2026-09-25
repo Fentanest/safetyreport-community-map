@@ -19,3 +19,7 @@ __pycache__/
 *.tsbuildinfo
 public/data/
 .local-data/
+
+# local integration stack (scripts/integration/compose_supabase.mjs)
+.integration-stack/
+supabase/.temp/

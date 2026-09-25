@@ -31,7 +31,7 @@ def refresh_now() -> GateState: ...                        # status 호출 + con
 # services/community_capture.py (T4, Muse)
 @dataclass(frozen=True)
 class CaptureResult: event_id: str | None; event_type: str | None; eligible: bool; payload_sha256: str
-def build_adapter_input(parsed: dict, title_fields: dict, entry_value: str, geo: dict) -> dict: ...
+def build_adapter_input(detail: dict, title_fields: dict | None, entry_value: str | None, geo: dict, progress_status: str | None) -> dict: ...
 def build_payload(adapter_input: dict) -> dict: ...        # observation.md 3절 — 순수 함수
 def canonical_json(obj) -> str: ...
 def capture(adapter_input: dict, *, source_report_id: str, trigger: str, rebuild_run_id: str | None = None) -> CaptureResult: ...
@@ -58,7 +58,10 @@ def required() -> bool: ...
 ```
 
 - `core/utils/scheduler.update_jobs()`(T3)는 크롤 job 만 제거·재생성하고 끝에서 `register_community_jobs(scheduler)` 를 다시 호출한다.
-- `core/storage/reports_repo._save_one()`(T4)는 `_prefetch_derived()` 결과(geo)가 나온 직후, 개인 저장 트랜잭션 **전에** `capture(...)` 를 호출하고, 저장 후 `mark_personal_save` 한다. capture 예외는 삼키지 않고 로그 + 개인 저장 계속 + 그 건을 `capture_failed` 로 기록(공유 성공으로 표시 안 함).
+- `core/storage/reports_repo._save_one()`(T4)는 `_prefetch_derived()` 결과(geo)가 나온 직후, 개인 저장 트랜잭션 **전에** `capture(...)` 를 호출하고, 저장 후 `mark_personal_save` 한다. capture 가 예외를 내면 **그 신고의 개인 저장을 하지 않고** `save_crawled` 의 실패 목록에 `community_capture_failed` 로 넣는다(다음 수집이 다시 읽게 — S-03).
+- `CommunityStore.rotate_dataset(reason)` 은 `services/db_backup.py` 의 복원 함수가 파일 교체 **전에** 호출한다(T3).
+- `community_uploader.refresh_server_completed()`(T4)는 `community-ingest/manifest` 로 `server_completed` 를 교체한다. T3 의 게이트가 writer 등록·rebind 직후, rebuild 가 시작 때 호출한다.
+- 증분 선정(T3 `core/database/database.py`)은 `vectors/list_refetch.json` 규칙: 기존 SQL 후보 ∪ {목록 C_NOW 라벨 ≠ `detail_status` 라벨, 또는 detail_status 없음(마지막 rebuild 의 failed_permanent 제외)} — community.db 를 읽는 파이썬 조인.
 - 수집 서브프로세스(start.py)는 `CommunityStore` 를 직접 열어 capture 한다. 메인 프로세스 uploader 는 `PRAGMA data_version` 1초 폴링으로 깨어난다.
 - `main.py` lifespan(T3): `CommunityStore.open()` → `community_gate.refresh_now()`(비동기) → `community_uploader.start_background()` → `register_community_jobs` → `catch_up_on_start()` → rebuild 재개 확인.
 
@@ -76,7 +79,7 @@ class CommunityGate extends ChangeNotifier { GateState get state; Future<GateSta
   Future<GateState> requireFresh({Duration maxAge = const Duration(seconds: 60)}); void invalidate(String reason); }
 
 // lib/community/capture/community_capture.dart (T6, Muse)
-Map<String,Object?> buildAdapterInput(Report report, String entryValue, GeocodeHit? geo);
+Map<String,Object?> buildAdapterInput(Report report, String entryValue, GeocodeHit? geo, String progressStatus);
 Map<String,Object?> buildPayload(Map<String,Object?> adapterInput);   // 순수 함수, 벡터 테스트
 String canonicalJson(Object? value);
 Future<CaptureResult> capture(Map<String,Object?> adapterInput, {required String sourceReportId, required String trigger, String? rebuildRunId});
