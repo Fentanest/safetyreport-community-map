@@ -32,7 +32,7 @@ export default function VehicleTop5({ vehicles, totalScope, identifiable, toast 
                 <code>{v.masked_plate}</code>
                 <button
                   type="button" className="mini-btn" style={{ marginLeft: 8 }}
-                  onClick={() => toast('마스킹 기준: 지역명 제외 후 2·4·6번째 글자를 *로 표시합니다. 원번호 조회·추적 화면은 제공하지 않습니다.')}
+                  onClick={() => toast('마스킹 기준: 지역명은 그대로 두고, 그 뒤 번호의 2·4·6번째 글자를 *로 표시합니다. 원번호 조회·추적 화면은 제공하지 않습니다.')}
                   aria-label={`${v.masked_plate} 마스킹 기준 설명`}
                 >
                   기준
@@ -46,7 +46,7 @@ export default function VehicleTop5({ vehicles, totalScope, identifiable, toast 
         </ol>
       )}
       <p className="card-footnote">
-        지역명 제외 후 2·4·6번째 글자 마스킹 · 1건도 표시 · 식별 {fmtInt(identifiable)} / 전체 {fmtInt(totalScope)}건
+        지역명 뒤 번호의 2·4·6번째 글자 마스킹 · 1건도 표시 · 식별 {fmtInt(identifiable)} / 전체 {fmtInt(totalScope)}건
       </p>
     </article>
   );

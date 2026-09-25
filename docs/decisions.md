@@ -3,7 +3,7 @@
 
 - ADR-101: Phone OTP → Google 일반 계정. UUID 관계 유지, 자동업로드용 실행 담당 세션 갱신.
 - ADR-102: 정확좌표·담당자 실명·n=1 공개. 법적 익명성 보장 문구 없음.
-- ADR-103: 지역 prefix는 private vehicle identity에서 보존; 공개 표시만 제거 후 2/4/6 마스킹.
+- ADR-103 (2026-09-26 개정): 지역 prefix는 private vehicle identity에서 보존. 공개 표시에도 짧은 지역명을 그대로 두고, 그 뒤 번호의 2/4/6번째만 마스킹(경기76자3623 → 경기7*자*6*3).
 - ADR-104: Pages static UI + safe initial snapshot + fixed public aggregation API.
 - ADR-105: 임의 기간 TOP5는 private 전체 후보 재집계. 월별 TOP5 합산 금지.
 - ADR-106: 신고일/처리완료일 axis를 metric별 분리. 없는 역사/금액/분모 추정 금지.

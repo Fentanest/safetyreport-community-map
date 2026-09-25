@@ -47,7 +47,7 @@ describe('public analytics API boundary', () => {
     const response = await createPublicHandler(makeRepo())(endpoint(`vehicles/top?${q}`));
     const body = await response.json();
     expect(vehiclesResponseSchema.safeParse(body).success).toBe(true);
-    expect(body.items[0]).toMatchObject({ rank_item_id: 'r1', masked_plate: '1*가*4*6', report_count: 1 });
+    expect(body.items[0]).toMatchObject({ rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 1 });
   });
   it('exposes the v1 source gap and refuses an unsupported aggregate', async () => {
     let factCalls = 0;

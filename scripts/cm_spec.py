@@ -46,10 +46,13 @@ def mask_plate(raw: Any) -> str:
     parsed = parse_plate(raw)
     if parsed is None:
         return '번호 확인 불가'
-    chars = list(parsed[1])
+    canonical, body = parsed
+    region = canonical[:len(canonical) - len(body)]
+    chars = list(body)
     for index in (1, 3, 5):
         chars[index] = '*'
-    return ''.join(chars)
+    # The short region stays visible and is skipped when counting positions.
+    return region + ''.join(chars)
 
 
 def percent(numerator: int, denominator: int) -> float | None:

@@ -4,7 +4,7 @@
 ## 시작 순서
 PROJECT_RULES.md, 본인 역할 문서(SOL.md/MUSE.md), docs/implementation/MASTER_PROMPT.md,
 docs/product-decisions.md, docs/repository-audit.md를 읽는다. UI 담당은 docs/ui-spec.md,
-docs/screen-by-screen.md, design/reference-ui/index.html과 design/references/ 원본 이미지를 실제로 연다.
+docs/screen-by-screen.md, design/reference-ui/index.html을 실제로 연다(원본 참고 보드 이미지는 저장소에서 삭제됨).
 이 문서 파일을 생성했다는 사실은 제품 구현·브라우저 검수 완료 증거가 아니다.
 
 ## 역할

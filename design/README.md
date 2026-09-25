@@ -1,7 +1,7 @@
 # 디자인 자료
 토큰·브라우저 기준판·기존 보드·재사용용 로고 crop을 함께 제공한다.
 기준판 URL: /design/reference-ui/index.html. 모든 수치/이름은 합성 예시, 지도는 모형이다.
-원본 design/references/ PNG에는 과거 mock 민원/차량번호가 포함될 수 있으므로 public/dist에 절대 복사하지 않는다.
+원본 참고 보드 PNG(design/references/)는 실제처럼 보이는 차량번호·이름·주소가 들어 있어 2026-09-26 저장소에서 삭제했다. 기준은 design/tokens, design/reference-ui, docs/ui-spec.md다.
 구현물은 design/tokens와 허용된 assets만 필요한 부분을 source에 옮기고 기준판을 그대로 live app으로 납품하지 않는다.
 폰트 binary 미포함. 별도 디자인 방향 질문 없이 docs/ui-spec.md를 기준으로 Muse와 구현한다.
 

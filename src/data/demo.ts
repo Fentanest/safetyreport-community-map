@@ -82,12 +82,12 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       { key: 'm3', agency_key: 'a3', manager_key: 'm3', agency_name: '예시 제주 기관', manager_name: '김하늘', completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
     ],
     vehicles: !available || empty ? [] : one ? [
-      { rank: 1, rank_item_id: 'r1', masked_plate: '1*가*4*6', report_count: 1, percentage: 100 },
+      { rank: 1, rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 1, percentage: 100 },
     ] : [
-      { rank: 1, rank_item_id: 'r1', masked_plate: '1*가*4*6', report_count: 3, percentage: 33.3333333333 },
-      { rank: 2, rank_item_id: 'r2', masked_plate: '1*3*4*67', report_count: 2, percentage: 22.2222222222 },
+      { rank: 1, rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 3, percentage: 33.3333333333 },
+      { rank: 2, rank_item_id: 'r2', masked_plate: '경기1*3*4*67', report_count: 2, percentage: 22.2222222222 },
       { rank: 3, rank_item_id: 'r3', masked_plate: '2*다*6*8', report_count: 1, percentage: 11.1111111111 },
-      { rank: 4, rank_item_id: 'r4', masked_plate: '1*가*4*6', report_count: 1, percentage: 11.1111111111 },
+      { rank: 4, rank_item_id: 'r4', masked_plate: '서울1*가*4*6', report_count: 1, percentage: 11.1111111111 },
     ],
     vehicle_total_scope_reports: available ? R : null,
     vehicle_identifiable_reports: available ? (empty ? 0 : one ? 1 : 7) : null,

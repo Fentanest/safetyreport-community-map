@@ -16,7 +16,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 VERSION = re.compile(r'^[A-Za-z0-9._-]{1,120}$')
-MASKED = re.compile(r'^[0-9]\*[0-9가-힣]\*[0-9]\*[0-9]{1,2}$')
+MASKED = re.compile(r'^(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)?[0-9]\*[0-9가-힣]\*[0-9]\*[0-9]{1,2}$')
 FORBIDDEN = {'contributor_id', 'snapshot_id', 'vehicle_raw', 'vehicle_canonical', 'raw_plate',
              'vehicle_hash', 'email', 'phone', 'access_token', 'refresh_token', 'google_sub'}
 

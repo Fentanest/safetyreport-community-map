@@ -77,11 +77,22 @@ describe('identity, scope and public projection', () => {
     expect(data.vehicle_identifiable_reports).toBe(3);
     expect(data.vehicles).toHaveLength(2);
     expect(data.vehicles.map(row => [row.masked_plate, row.report_count])).toEqual([
-      ['1*가*4*6', 2], ['1*가*4*6', 1],
+      ['서울1*가*4*6', 2], ['부산1*가*4*6', 1],
     ]);
     expect(data.vehicles.every(row => vehicleSchema.safeParse(row).success)).toBe(true);
     expect(JSON.stringify(data)).not.toContain('서울12가3456');
     expect(JSON.stringify(data)).not.toContain('private-user');
+  });
+  it('keeps the region in the label and never merges vehicles whose labels collide', () => {
+    const data = aggregate([
+      fact(1, { vehicle_raw: '경기76자3623' }),
+      fact(2, { vehicle_raw: '서울12가3456' }),
+      fact(3, { vehicle_raw: '서울13가3456' }),
+    ]);
+    expect(data.vehicles.map(row => row.masked_plate).sort()).toEqual(['경기7*자*6*3', '서울1*가*4*6', '서울1*가*4*6']);
+    expect(data.vehicles.every(row => row.report_count === 1)).toBe(true);
+    expect(data.vehicles.every(row => vehicleSchema.safeParse(row).success)).toBe(true);
+    expect(JSON.stringify(data)).not.toContain('76자3623');
   });
   it('recomputes TOP5 across all months rather than adding monthly TOP5 lists', () => {
     const facts: PrivateFact[] = [];
@@ -94,7 +105,7 @@ describe('identity, scope and public projection', () => {
       for (let j = 0; j < 4; j++) facts.push(fact(++id, { report_date: `2026-${month}-10`, vehicle_raw: '서울12가3456' }));
     }
     const data = aggregate(facts);
-    expect(data.vehicles[0]).toMatchObject({ masked_plate: '1*가*4*6', report_count: 8 });
+    expect(data.vehicles[0]).toMatchObject({ masked_plate: '서울1*가*4*6', report_count: 8 });
   });
   it('keeps exact coordinate, full manager name, and a one-record entity', () => {
     const data = aggregate([base]);

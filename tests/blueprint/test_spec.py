@@ -11,13 +11,18 @@ class MaskingTests(unittest.TestCase):
             with self.subTest(v=v): self.assertEqual(mask_plate(v['input']),v['output'])
     def test_identity_retains_region(self):
         self.assertNotEqual(parse_plate('서울12가3456')[0],parse_plate('부산12가3456')[0])
-        self.assertEqual(mask_plate('서울12가3456'),mask_plate('부산12가3456'))
+        self.assertEqual(mask_plate('경기76자3623'),'경기7*자*6*3')
+        # Different vehicles can still share a label; they must stay separate rows.
+        self.assertEqual(mask_plate('서울12가3456'),mask_plate('서울13가3456'))
+        self.assertNotEqual(parse_plate('서울12가3456')[0],parse_plate('서울13가3456')[0])
     def test_display_mask_before_output_only(self):
         records=[{'report_date':'2026-01-01','vehicle':'서울12가3456','count':2},
                  {'report_date':'2026-01-01','vehicle':'부산12가3456','count':1}]
         r=exact_vehicle_top5(records,start='2026-01-01',end='2026-01-31')
         self.assertEqual(len(r['items']),2);self.assertEqual([x['report_count'] for x in r['items']],[2,1])
-        self.assertNotIn('서울',json.dumps(r,ensure_ascii=False))
+        dumped=json.dumps(r,ensure_ascii=False)
+        self.assertNotIn('서울12가3456',dumped);self.assertNotIn('12가3456',dumped)
+        self.assertEqual([x['masked_plate'] for x in r['items']],['서울1*가*4*6','부산1*가*4*6'])
     def test_unrecognized_is_not_raw(self):
         for raw in ['외교123456','1가2','<script>12가3456</script>','서울'*40,42]:
             self.assertEqual(mask_plate(raw),'번호 확인 불가')

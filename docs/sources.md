@@ -58,7 +58,7 @@ https://playwright.dev/docs/test-snapshots
 ## 사용자 제공 디자인 원본
 Library의 design tokens.png / UI COMPONENT KIT.png / pc dark.png / pc light.png /
 mobile dark.png / guide(1).png / board(1).png / LOGO.png.
-패키지 design/references에 사본, asset-manifest에 파생 crop 이력. 폰트 binary 없음.
+원본 참고 보드 사본은 2026-09-26 저장소에서 삭제했다. asset-manifest에 파생 crop 이력. 폰트 binary 없음.
 소스 이미지 내용의 모든 문구·예시 번호가 실제 제품 데이터라는 뜻은 아니다.
 
 ## 검증 한계

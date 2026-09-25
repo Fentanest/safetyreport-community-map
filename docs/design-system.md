@@ -1,5 +1,5 @@
 # 디자인 시스템 · 구현용 토큰과 에셋
-원본 자료는 design/references/에 있다. 이들은 사용자가 이전 제품군에 제공한 **참고 보드**다.
+원본 참고 보드(사용자가 이전 제품군에 제공한 이미지)는 실제처럼 보이는 샘플 개인정보 때문에 2026-09-26 저장소에서 삭제했다.
 `design/tokens.json`과 CSS는 이를 읽어 정리한 community-map 구현 정본이다. 다크 중성 표면·강조색은 safetyreport `dev` 커밋 `2f20f2e`의 `contracts/dark-palette.json`에 맞췄다. 상태색과 라이트 모드는 기존 community-map 값을 유지한다.
 
 ## 파일
@@ -8,7 +8,7 @@
 - design/assets/family-mark.png: 사용자 LOGO 보드의 아이콘 부분을 정확히 잘라 재사용한 에셋.
 - design/assets/family-logo-light.png, family-logo-dark.png: 원본의 테마별 wordmark crop.
 - design/reference-ui/index.html + ui.css + app.js: 키 없이 브라우저로 확인할 수 있는 기준판.
-- design/references/*: 원본 이미지 8개. 공개 dist에는 포함하지 않는다.
+- design/references/*: 삭제됨(2026-09-26). 토큰·기준판·로고 crop만 남는다.
 
 ## 패밀리 일체감
 카메라/안전도로/방패 계열 기존 로고를 임의의 새로운 상표로 대체하지 않는다.

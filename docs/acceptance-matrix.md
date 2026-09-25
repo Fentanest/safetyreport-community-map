@@ -15,7 +15,7 @@ P0 실패는 출시 차단. 검증 불가면 BLOCKED/NOT_RUN, 합격으로 바�
 | DATA10 | P0 | completion/date 결측을 신고일/업로드일로 대체 안 함 |
 | PRIV01 | P0 | 담당자 full name, exact coords, n=1 marker/row/차트 모두 표시 |
 | PRIV02 | P0 | raw vehicle/hashed global id/계정정보가 response·HTML·JS·URL·aria·export에 없음 |
-| PRIV03 | P0 | canonical prefix는 identity 보존, display prefix제거 + 2/4/6 글자 정확한 위치 |
+| PRIV03 | P0 | canonical prefix는 identity 보존, display는 짧은 지역명 유지 + 지역명 뒤 2/4/6 글자 정확한 위치 |
 | PRIV04 | P0 | duplicate masked label을 합치지 않고 독립 row 표시 |
 | SEC01 | P0 | CI role이 private/auth/write/RPC mutating에 접근 못함; 키 이름 아닌 실제권한 검사 |
 | SEC02 | P0 | VITE 변수/소스맵/압축·Pages artifact에 secret/원본 fixture 없음 |

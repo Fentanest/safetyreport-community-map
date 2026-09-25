@@ -64,7 +64,8 @@ export const entitySchema = z.strictObject({
 
 export const vehicleSchema = z.strictObject({
   rank: z.number().int().min(1).max(5), rank_item_id: z.string().regex(/^r[1-5]$/),
-  masked_plate: z.string().regex(/^[0-9]\*[0-9가-힣]\*[0-9]\*[0-9]{1,2}$/),
+  // Optional short region (kept visible), then the masked number: 경기7*자*6*3, 1*가*4*6.
+  masked_plate: z.string().regex(/^(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)?[0-9]\*[0-9가-힣]\*[0-9]\*[0-9]{1,2}$/),
   report_count: z.number().int().positive(), percentage: z.number().min(0).max(100).nullable(),
 });
 

@@ -13,9 +13,14 @@ const bodyPattern = /^[0-9]{2,3}[가-힣][0-9]{4}$/u;
 export interface ParsedPlate {
   /** Server-only vehicle identity; the regional prefix remains significant. */
   canonical: string;
+  /** Short regional prefix such as '경기', or '' when the plate has none. */
+  region: string;
   /** Prefix-free supported plate body. */
   body: string;
 }
+
+/** Short regional prefixes that may appear in a public masked plate. */
+export const PUBLIC_REGION_PREFIXES: readonly string[] = [...new Set(Object.values(regions))];
 
 export function parsePlate(raw: unknown): ParsedPlate | null {
   if (typeof raw !== 'string' || raw.length > 64) return null;
@@ -29,13 +34,18 @@ export function parsePlate(raw: unknown): ParsedPlate | null {
     }
   }
   if (!bodyPattern.test(text)) return null;
-  return { canonical: region + text, body: text };
+  return { canonical: region + text, region, body: text };
 }
 
+/**
+ * Public display: the short region stays visible (경기도 → 경기) and is skipped when
+ * counting; the 1-based 2nd/4th/6th characters of the remaining number become '*'.
+ * 경기76자3623 → 경기7*자*6*3, 12가3456 → 1*가*4*6.
+ */
 export function maskPlate(raw: unknown): string {
   const parsed = parsePlate(raw);
   if (!parsed) return '번호 확인 불가';
   const letters = Array.from(parsed.body);
   for (const position of [1, 3, 5]) letters[position] = '*';
-  return letters.join('');
+  return parsed.region + letters.join('');
 }

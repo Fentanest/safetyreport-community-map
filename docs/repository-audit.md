@@ -37,7 +37,7 @@ brand primary #0D6EFD, dark bg #0B1220, navy surfaces, cyan/blue highlights와 �
 `lib/server_palette.dart` 기존 구현은 Bootstrap 계열(#198754 등)로 색 수치가 일부 다르다.
 새 토큰은 사용자 제공 디자인 보드의 색을 기준으로 정리한 **구현용 제안 정본**이며 기존 코드와 동일 값이라고 주장하지 않는다.
 원본 보드의 폰트·hex 오탈자·가짜 수치·차량/민원번호는 기능 명세나 공개 데이터가 아니다.
-`design/references/`는 빌드 산출물에 절대 포함하지 않는다.
+원본 참고 보드(`design/references/`)는 2026-09-26 저장소에서 삭제했다.
 
 ## 다크 배색 변경 (2026-09-25)
 `safetyreport`의 `dev` 작업트리 `2f20f2e`에서 웹·모바일 공통 B안 딥 다크 팔레트를 확인했다.

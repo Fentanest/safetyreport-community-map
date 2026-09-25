@@ -38,8 +38,8 @@ npm run scan
 운영 UI는 `VITE_DATA_MODE=live`, `VITE_PUBLIC_ANALYTICS_URL=https://<project>.supabase.co/functions/v1`,
 `VITE_KAKAO_MAP_JS_KEY`(공개 JS 키), `VITE_BASE_PATH=/safetyreport-community-map/`을 사용한다.
 임의 날짜·복합 필터·차량 TOP5는 `supabase/functions/public-analytics/`의 공개 GET API가
-private v2 사실에서 정확히 집계한다. 차량은 지역 접두어를 내부 동일성에 보존하고, 공개 시 접두어를
-제거한 뒤 2·4·6번째 글자를 마스킹한다. API에는 계정·원번호·전역 차량 키를 내보내지 않는다.
+private v2 사실에서 정확히 집계한다. 차량은 지역 접두어를 내부 동일성에 보존하고, 공개 시 지역명은
+그대로 두고 그 뒤 번호의 2·4·6번째 글자를 마스킹한다(경기76자3623 → 경기7*자*6*3). API에는 계정·원번호·전역 차량 키를 내보내지 않는다.
 
 `supabase/migrations/202609240001_analytics_v2.sql`은 **운영 미적용** 로컬 제안이다. 기존 연간
 집계에서 없는 일자·담당자 결과 교차·차량 후보를 재구성하지 않는다. 초기 `ready=false`여서 upstream
