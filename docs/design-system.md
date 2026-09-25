@@ -1,6 +1,6 @@
 # 디자인 시스템 · 구현용 토큰과 에셋
 원본 자료는 design/references/에 있다. 이들은 사용자가 이전 제품군에 제공한 **참고 보드**다.
-`design/tokens.json`과 CSS는 이를 읽어 정리한 새 community-map 구현 정본이다. 기존 코드와 byte-for-byte 동일한 값이라는 뜻은 아니다.
+`design/tokens.json`과 CSS는 이를 읽어 정리한 community-map 구현 정본이다. 다크 중성 표면·강조색은 safetyreport `dev` 커밋 `2f20f2e`의 `contracts/dark-palette.json`에 맞췄다. 상태색과 라이트 모드는 기존 community-map 값을 유지한다.
 
 ## 파일
 - design/tokens.json: 브랜드·두 테마·상태·간격·radius·타이포·motion.

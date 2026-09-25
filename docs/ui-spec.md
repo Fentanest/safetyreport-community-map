@@ -3,7 +3,7 @@
 기준판 `design/reference-ui/index.html`을 브라우저로 보고 구현하며, 실제 상품화 디테일은 Muse가 검수한다.
 
 ## 1. 시각적 방향
-**나만의 안전신문고 제품군의 공개 분석 상황판**. 네이비·일렉트릭 블루·시안의 정제된 레이어,
+**나만의 안전신문고 제품군의 공개 분석 상황판**. 딥 다크 중성 표면과 블루·시안의 절제된 강조,
 큰 전국 지도, 명확한 수치, 서로 연결된 패널로 '거대한 프로젝터의 정보 월'을 표현한다.
 화려한 랜딩 히어로, 과도한 네온, SF 장식 숫자, 눈에 띄는 장식 애니메이션, 3D 파이차트는 쓰지 않는다.
 지도와 데이터가 주인공이며 장식은 여백·경계·조명감에서만 나온다.
@@ -37,9 +37,11 @@
 
 ## 4. 색과 표면
 `design/tokens.json`이 머신 정본, `design/tokens.css`는 동등 값의 실행 기준이다.
-- dark: bg#0B1220, panels#111827, raised#1F2937, border#334155, text#F8FAFC/#CBD5E1.
+- dark: bg#0b0b0c, panels#131314, raised#1b1b1c, high#232324, border#2d2d2f, text#f3f3f4, muted#9ea0a4.
 - light: bg#F8FAFC, panels#FFFFFF, raised#F1F5F9, border#E2E8F0, text#0F172A/#64748B.
-- 브랜드: #0D6EFD, dark brand#0B4ED7, cyan#06B6D4.
+- 브랜드: 라이트 #0D6EFD; 다크 강조 글자·아이콘 #60a5fa, 흰 글자 채움 #2563eb; cyan#06B6D4.
+- 다크 배색은 safetyreport `dev` 커밋 `2f20f2e`의 `contracts/dark-palette.json`을 따른다. 상태 의미색과 실제 Kakao 지도 타일은 유지한다.
+- 다크 좌측 rail은 원본 사이드바와 같은 bg#050505, border#18181a, active#1e1e20, text#e2e2e4, muted#84868a를 쓴다.
 - 상태: 수용 green, 일부수용 amber, 불수용 red, 처리중 blue, 답변완료 cyan,
   취하 slate, 보완요청 orange, 과태료 pink, 경고/범칙금 purple, 미확인 neutral.
 - 상태 색은 차트·badge·범례에서 동일. 과태료 건수를 red failure로 칠하지 않는다.

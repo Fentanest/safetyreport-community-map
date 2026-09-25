@@ -38,3 +38,8 @@ brand primary #0D6EFD, dark bg #0B1220, navy surfaces, cyan/blue highlights와 �
 새 토큰은 사용자 제공 디자인 보드의 색을 기준으로 정리한 **구현용 제안 정본**이며 기존 코드와 동일 값이라고 주장하지 않는다.
 원본 보드의 폰트·hex 오탈자·가짜 수치·차량/민원번호는 기능 명세나 공개 데이터가 아니다.
 `design/references/`는 빌드 산출물에 절대 포함하지 않는다.
+
+## 다크 배색 변경 (2026-09-25)
+`safetyreport`의 `dev` 작업트리 `2f20f2e`에서 웹·모바일 공통 B안 딥 다크 팔레트를 확인했다.
+위의 2026-09-24 네이비 채택 기록은 이전 결정이다. 현재 community-map은 배경·표면·테두리·글자와
+강조 글자/채움 색을 `contracts/dark-palette.json`에 맞춘다. 원본 참고 이미지는 이전 시안으로 보존한다.

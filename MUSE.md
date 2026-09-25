@@ -3,7 +3,7 @@ OpenCode에 실제 연결된 구독 모델을 사용한다. worktree/세션/정�
 이름이 Muse로 표시돼도 실제 provider/model이 확인되지 않으면 `MODEL_UNVERIFIED`다.
 
 ## UI 방향
-기존 safetyreport PC dark/light와 design tokens/component kit의 네이비·블루 제품군을 확장한다.
+라이트와 상태색은 기존 제품군을 유지하고, 다크 배경·표면·강조색은 safetyreport `dev`의 2026-09-25 딥 다크 팔레트를 따른다. 이전 PC dark/디자인 보드의 네이비 배경은 참고 이미지다.
 첫 화면은 홍보 랜딩이 아니라 **정교한 전국 데이터 상황판**이다. 검은 배경에 네온 테두리만 씌우는 연출 금지.
 실제 지도, KPI, 상세패널, 추이·처리결과·표가 일관된 hierarchy를 가져야 한다.
 

@@ -41,11 +41,13 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
       .then((init) => {
         if (dead) return;
         const css = getComputedStyle(document.documentElement);
-        const text = css.getPropertyValue('--text').trim() || '#F8FAFC';
-        const muted = css.getPropertyValue('--muted').trim() || '#94A3B8';
+        const text = css.getPropertyValue('--text').trim() || '#f3f3f4';
+        const muted = css.getPropertyValue('--muted').trim() || '#9ea0a4';
         const grid = css.getPropertyValue('--grid').trim() || 'rgba(148,163,184,.12)';
-        const surface = css.getPropertyValue('--surface').trim() || '#111827';
-        const border = css.getPropertyValue('--border').trim() || '#334155';
+        const surface = css.getPropertyValue('--surface').trim() || '#131314';
+        const border = css.getPropertyValue('--border').trim() || '#2d2d2f';
+        const brandInk = css.getPropertyValue('--brand-ink').trim() || '#0D6EFD';
+        const cyan = css.getPropertyValue('--cyan').trim() || '#06B6D4';
         chart = init(el);
         const option: TrendOption = {
           animationDuration: reduced ? 0 : 220,
@@ -77,9 +79,9 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
               connectNulls: false,
               showSymbol: true,
               symbolSize: 7,
-              lineStyle: { width: 2.5, color: '#0D6EFD' },
-              itemStyle: { color: '#0D6EFD' },
-              areaStyle: { color: 'rgba(13,110,253,0.14)' },
+              lineStyle: { width: 2.5, color: brandInk },
+              itemStyle: { color: brandInk },
+              areaStyle: { color: brandInk, opacity: 0.14 },
             },
             {
               name: '처리완료',
@@ -87,8 +89,8 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
               data: monthly.map((m) => m.completed_count),
               connectNulls: false,
               showSymbol: false,
-              lineStyle: { width: 2, color: '#06B6D4' },
-              itemStyle: { color: '#06B6D4' },
+              lineStyle: { width: 2, color: cyan },
+              itemStyle: { color: cyan },
             },
           ],
         };
@@ -130,7 +132,7 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
         </button>
       </div>
       <div className="chart-legend">
-        <span><i className="dot" style={{ background: 'var(--brand)' }} />신고 접수</span>
+        <span><i className="dot" style={{ background: 'var(--brand-ink)' }} />신고 접수</span>
         <span><i className="dot" style={{ background: 'var(--cyan)' }} />처리완료</span>
         {delta != null && last && <b>{fmtMonth(last.month)} 신고 <strong>{delta >= 0 ? '+' : ''}{delta.toFixed(1)}%</strong><small> 전월 대비(건수)</small></b>}
         {last?.partial && <span className="cm-chip">진행 중 월 포함</span>}

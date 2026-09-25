@@ -18,3 +18,14 @@ body.briefing .rail,body.briefing .page-heading,body.briefing .entities,body.bri
  .map-top{align-items:flex-start;gap:6px}.map-apply{padding:0 7px;font-size:11px}.map-status{font-size:11px}
  .trend{height:190px}.chart-caption{line-height:1.7}
 }
+
+/* The family dark palette now uses neutral surfaces. This canvas is only a reference mock. */
+[data-theme="dark"] body{background:radial-gradient(ellipse at 48% -16%,rgba(96,165,250,.05),transparent 48%),var(--bg)}
+[data-theme="dark"] .map-canvas{background:var(--raised)}
+[data-theme="dark"] .map-grid{background-image:linear-gradient(rgba(158,160,164,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(158,160,164,.06) 1px,transparent 1px)}
+[data-theme="dark"] .map-status,[data-theme="dark"] .map-reference-label,[data-theme="dark"] .legend-title{background:rgba(19,19,20,.88);color:var(--text-secondary);border-color:var(--border)}
+[data-theme="dark"] .map-apply,[data-theme="dark"] .map-button{background:var(--raised-high);color:var(--link);border-color:var(--border)}
+[data-theme="dark"] .map-point small,[data-theme="dark"] .map-demo-label{color:var(--muted);text-shadow:none}
+[data-theme="dark"] .rail{background:var(--sidebar-bg);border-color:var(--sidebar-border)}
+[data-theme="dark"] .nav-item{color:var(--sidebar-muted)}
+[data-theme="dark"] .nav-item.active{background:var(--sidebar-active);color:var(--sidebar-text);border-color:var(--sidebar-border)}

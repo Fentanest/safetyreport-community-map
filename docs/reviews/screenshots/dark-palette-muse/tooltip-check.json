@@ -1,0 +1,16 @@
+{
+  "box": {
+    "x": 105,
+    "y": 402,
+    "w": 866,
+    "h": 220
+  },
+  "tip": {
+    "hasTip": true,
+    "tipText": [
+      "본문 바로가기커뮤니티 신고 지도나만의 안전신문고 · COMMUNITY MAPdemo · 합성 데이터데이터 기준 2026.09.24다크브리핑 모드상황판지역기관추이안내상황판지역기관추이NATIONWIDE OBSERVATORY · DEMO함께 모은 신고, 전국을 한눈에.숫자 "
+    ],
+    "allBodyDivs": 1
+  },
+  "tipStyle": []
+}

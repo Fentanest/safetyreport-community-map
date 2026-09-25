@@ -1,0 +1,72 @@
+{
+  "themeNow": "dark",
+  "drawerInDark": {
+    "bg": "rgb(19, 19, 20)",
+    "color": "rgb(243, 243, 244)",
+    "w": 400
+  },
+  "drawerAfterEsc": {
+    "dialogs": 0,
+    "drawers": 0,
+    "backdrop": false,
+    "body": "drawer-text-still-in-dom"
+  },
+  "canvasBefore": {
+    "canvas": 1,
+    "tables": 1
+  },
+  "chartBox": {
+    "x": 850,
+    "y": 1332,
+    "w": 866,
+    "h": 220
+  },
+  "tooltip": {
+    "echartsTip": false,
+    "tipEls": 0,
+    "anyAbs": []
+  },
+  "focusedDark": {
+    "tag": "BUTTON",
+    "label": "다시 시도"
+  },
+  "contrast": [
+    {
+      "sel": ".kpi .value, .kpi",
+      "color": "rgb(243, 243, 244)",
+      "bg": "rgb(19, 19, 20)",
+      "fs": "14px"
+    },
+    {
+      "sel": ".cm-panel",
+      "color": "rgb(243, 243, 244)",
+      "bg": "rgb(19, 19, 20)",
+      "fs": "14px"
+    },
+    {
+      "sel": ".nav-item.active",
+      "color": "rgb(226, 226, 228)",
+      "bg": "rgb(30, 30, 32)",
+      "fs": "12px"
+    },
+    {
+      "sel": "table td",
+      "color": "rgb(243, 243, 244)",
+      "bg": "rgba(0, 0, 0, 0)",
+      "fs": "14px"
+    },
+    {
+      "sel": ".map-error-card, .map-fallback",
+      "color": "rgb(243, 243, 244)",
+      "bg": "rgba(0, 0, 0, 0)",
+      "fs": "14px"
+    },
+    {
+      "sel": ".chart-legend",
+      "color": "rgb(158, 160, 164)",
+      "bg": "rgba(0, 0, 0, 0)",
+      "fs": "12px"
+    }
+  ],
+  "errors": []
+}
