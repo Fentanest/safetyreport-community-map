@@ -19,6 +19,3 @@ __pycache__/
 *.tsbuildinfo
 public/data/
 .local-data/
-# safeauth: separate build output and local verification runtime (secrets live here)
-dist-safeauth/
-.safeauth-stack/

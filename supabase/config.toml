@@ -1,7 +1,2 @@
 [functions.public-analytics]
 verify_jwt = false
-
-# Pre-login device-link relay. Callers have no user JWT yet; each action checks its
-# own capability in server/safeauth/relay.ts. Other functions keep their settings.
-[functions.community-auth-relay]
-verify_jwt = false

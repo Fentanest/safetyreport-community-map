@@ -1,5 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": { "types": ["vite/client", "node"] },
-  "include": ["apps/safeauth/src", "apps/safeauth/vite.config.ts", "server/safeauth", "tests/safeauth"]
-}
