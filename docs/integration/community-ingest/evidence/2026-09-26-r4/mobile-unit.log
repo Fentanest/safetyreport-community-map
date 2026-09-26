@@ -1,0 +1,11 @@
+  Skip: logic parity harness: SR_LP_MOBILE_DB 가 있을 때만 실행
+  Skip: roundtrip harness: SR_RT_MODE=import 일 때만 실행
+  Skip: COMMUNITY_STACK=1 과 COMMUNITY_PUBLISHABLE_KEY 가 필요하다(실제 로컬 스택)
+*** sqflite warning ***
+
+You are changing sqflite default factory.
+Be aware of the potential side effects. Any library using sqflite
+will have this factory as the default for all operations.
+
+*** sqflite warning ***
+

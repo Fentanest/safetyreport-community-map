@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "note": "Canonical composition of the shared Supabase project history. Owner repo keeps each SQL; nothing is copied back. sha256 = committed content in the owner repo's integration branch.",
+  "staging": {
+    "project_id": "ci0926-int",
+    "ports": {
+      "api": 56321,
+      "db": 56322,
+      "shadow": 56320,
+      "inspector": 56383
+    },
+    "site_url": "http://127.0.0.1:56480/",
+    "redirect_urls": [
+      "http://127.0.0.1:56480/callback.html",
+      "com.fentanest.mysafetyreport://auth/callback"
+    ],
+    "kakao_mock_url": "http://host.docker.internal:56410",
+    "function_env": {
+      "AUTH_RELAY_ENABLED": "true",
+      "AUTH_RELAY_LOCAL_STACK": "loopback-only",
+      "AUTH_SITE_URL": "http://127.0.0.1:56480/",
+      "AUTH_BROWSER_ORIGIN": "http://127.0.0.1:56480",
+      "COMMUNITY_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490",
+      "AUTH_PUBLIC_SUPABASE_URL": "http://127.0.0.1:56321"
+    }
+  },
+  "migrations": [
+    {
+      "version": "202608150001",
+      "repo": "map",
+      "path": "supabase/migrations/202608150001_initial_schema.sql",
+      "sha256": "4588c08acaaa87c7773e86215fce8eae2e3ba44168ae76f0828b14c7ca8c7da6",
+      "depends_on": []
+    },
+    {
+      "version": "202609240001",
+      "repo": "map",
+      "path": "supabase/migrations/202609240001_analytics_v2.sql",
+      "sha256": "809e5cab1b32cf56afc834c80b5fc7e1a7723b965dc68f87ac373a487b93fb33",
+      "depends_on": [
+        "202608150001"
+      ]
+    },
+    {
+      "version": "202609251200",
+      "repo": "auth",
+      "path": "supabase/migrations/202609251200_community_auth_relay.sql",
+      "sha256": "4dca9216f52e9b2a6b7cd2dff898833ec6a8c556649f134db6e5d8029373a03c",
+      "depends_on": []
+    },
+    {
+      "version": "202609260100",
+      "repo": "auth",
+      "path": "supabase/migrations/202609260100_community_account_registry.sql",
+      "sha256": "4ee66b8a3b13c6f826a7351a25603d2596ba421183cee1686292fb4721f4223d",
+      "depends_on": [
+        "202608150001"
+      ]
+    },
+    {
+      "version": "202609260200",
+      "repo": "map",
+      "path": "supabase/migrations/202609260200_community_ingest.sql",
+      "sha256": "041da47a647e17e22b42deef5efaba6ea046bcbd8ba1ad70d91775fa84caf99f",
+      "depends_on": [
+        "202609240001",
+        "202609260100"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "public-analytics",
+      "repo": "map",
+      "verify_jwt": false,
+      "shared": [
+        "server/aggregate.ts",
+        "server/plate.ts",
+        "server/publicHandler.ts",
+        "src/domain/public.ts"
+      ]
+    },
+    {
+      "name": "community-ingest",
+      "repo": "map",
+      "verify_jwt": true,
+      "shared": [
+        "server/ingest/handler.ts",
+        "server/ingest/observation.ts"
+      ]
+    },
+    {
+      "name": "community-auth-relay",
+      "repo": "auth",
+      "verify_jwt": false,
+      "shared": [
+        "server/adapters.ts",
+        "server/config.ts",
+        "server/crypto.ts",
+        "server/protocol.ts",
+        "server/relay.ts"
+      ]
+    },
+    {
+      "name": "community-account",
+      "repo": "auth",
+      "verify_jwt": true,
+      "shared": [
+        "server/account.ts",
+        "server/adapters.ts",
+        "server/crypto.ts"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,227 @@
+
+
+
+
+
+Running 126 tests using 1 worker
+
+[1/126] [chromium] › specs/dashboard-cards.spec.ts:16:5 › dashboard cards match api and links
+
+[2/126] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 1440
+[3/126] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 390
+[4/126] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 1440
+[5/126] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 390
+[6/126] [chromium] › specs/dashboard-cards.spec.ts:102:5 › dashboard shows the last crawl time and cards work from the keyboard
+[7/126] [chromium] › specs/duplicates-manage.spec.ts:11:5 › status tabs filter the groups and mark the current one
+[8/126] [chromium] › specs/duplicates-manage.spec.ts:24:5 › saving a group records a user decision shown in the header
+[9/126] [chromium] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in light
+[10/126] [chromium] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in dark
+[11/126] [chromium] › specs/editor-override.spec.ts:11:5 › edited field shows a badge and the site original, and can be reverted
+[12/126] [chromium] › specs/fixture-smoke.spec.ts:18:5 › unauthenticated navigation redirects to login; AJAX gets 401
+[13/126] [chromium] › specs/fixture-smoke.spec.ts:25:5 › dashboard, list, stats render with fixture data
+[14/126] [chromium] › specs/fixture-smoke.spec.ts:46:5 › fixture mode blocks crawl start instead of spawning crawler
+
+[15/126] [chromium] › specs/fixture-smoke.spec.ts:54:5 › mobile API contract: /api/v1/summary requires key and keeps fields
+[16/126] [chromium] › specs/fixture-smoke.spec.ts:66:5 › accessibility baseline (report only)
+[17/126] [chromium] › specs/job-bar.spec.ts:14:5 › bottom bar shows running, paused and completed jobs and hides when idle
+[18/126] [chromium] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (light 1440)
+[19/126] [chromium] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 1440)
+[20/126] [chromium] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 390)
+[21/126] [chromium] › specs/list-empty-state.spec.ts:11:5 › empty result message is inside the visible table area
+[22/126] [chromium] › specs/list-empty-state.spec.ts:27:5 › search box stays inside the card at 390px
+[23/126] [chromium] › specs/list-interactions.spec.ts:20:7 › List Interactions and Modals › advanced search AND/OR filters correctly
+[24/126] [chromium] › specs/list-interactions.spec.ts:50:7 › List Interactions and Modals › multi-select for status filters correctly
+[25/126] [chromium] › specs/list-interactions.spec.ts:60:7 › List Interactions and Modals › selection persists after pagination
+[26/126] [chromium] › specs/list-interactions.spec.ts:74:7 › List Interactions and Modals › copy report numbers (selected, current page, all)
+[27/126] [chromium] › specs/list-interactions.spec.ts:111:7 › List Interactions and Modals › CSV export matches table headers
+[28/126] [chromium] › specs/list-interactions.spec.ts:118:7 › List Interactions and Modals › crawl selected blocked in fixture mode
+
+[29/126] [chromium] › specs/list-interactions.spec.ts:134:7 › List Interactions and Modals › attachment and text modals open and close
+[30/126] [chromium] › specs/list-interactions.spec.ts:144:7 › List Interactions and Modals › detail modal opens with link and shows key fields
+[31/126] [chromium] › specs/map-page.spec.ts:11:5 › year and category buttons mark the selection and filter by URL
+[32/126] [chromium] › specs/map-page.spec.ts:20:5 › missing address list opens
+[33/126] [chromium] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in light
+[34/126] [chromium] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in dark
+[35/126] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 1440x900
+
+
+
+[36/126] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 390x844
+
+
+
+[37/126] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 1440x900
+
+
+
+
+[38/126] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 390x844
+
+
+
+
+[39/126] [chromium] › specs/ops-pages.spec.ts:59:7 › Ops Pages UI Renewal Checks › Crawl page: crawl start button shows fixture block message
+
+
+
+[40/126] [chromium] › specs/ops-pages.spec.ts:86:7 › Ops Pages UI Renewal Checks › Watchlist page: add and remove updates list
+[41/126] [chromium] › specs/ops-pages.spec.ts:105:7 › Ops Pages UI Renewal Checks › Rating page: target list render and WebSocket log connection
+
+
+[42/126] [chromium] › specs/rating-cause.spec.ts:23:5 › cause counter counts code points and blocks over the limit
+
+
+[43/126] [chromium] › specs/rating-cause.spec.ts:41:5 › submit sends the trimmed cause with ids and score
+
+
+[44/126] [chromium] › specs/rating-cause.spec.ts:59:5 › empty cause still submits (old behaviour)
+
+
+[45/126] [chromium] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in light
+[46/126] [chromium] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in dark
+[47/126] [chromium] › specs/settings-pages.spec.ts:27:5 › a setting survives a save and reload, then is restored
+[48/126] [chromium] › specs/settings-pages.spec.ts:41:5 › API key can be created (name shown as text) and deleted
+[49/126] [chromium] › specs/settings-pages.spec.ts:57:5 › backup download responds
+[50/126] [chromium] › specs/stats-drilldown.spec.ts:17:5 › agency with & # + drills down to exactly its reports
+[51/126] [chromium] › specs/stats-drilldown.spec.ts:40:5 › reports without a law drill down to a non-empty list
+[52/126] [chromium] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1280px
+[53/126] [chromium] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1440px
+[54/126] [chromium] › specs/stats-top.spec.ts:15:5 › filter summary lists the active conditions and offers a reset
+[55/126] [chromium] › specs/stats-top.spec.ts:31:5 › category and grouping tabs mark the selection and survive a reload
+[56/126] [chromium] › specs/stats-top.spec.ts:47:5 › law chip shows the active law
+[57/126] [chromium] › specs/stats-top.spec.ts:55:5 › column panel is collapsed by default and hiding a column updates the count
+[58/126] [chromium] › specs/stats-top.spec.ts:72:5 › summary cards match the mobile overview API for each category
+[59/126] [chromium] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in light theme without new console errors
+[60/126] [chromium] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in dark theme without new console errors
+[61/126] [chromium] › specs/theme-pilot.spec.ts:57:5 › theme switch persists across reload and does not submit forms
+[62/126] [chromium] › specs/theme-pilot.spec.ts:69:5 › narrow viewport keeps sidebar toggle and theme switch reachable
+[63/126] [chromium] › specs/theme-pilot.spec.ts:81:5 › on phones the menu button does not cover an open search panel
+[64/126] [firefox] › specs/dashboard-cards.spec.ts:16:5 › dashboard cards match api and links
+[65/126] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 1440
+[66/126] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 390
+[67/126] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 1440
+[68/126] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 390
+[69/126] [firefox] › specs/dashboard-cards.spec.ts:102:5 › dashboard shows the last crawl time and cards work from the keyboard
+[70/126] [firefox] › specs/duplicates-manage.spec.ts:11:5 › status tabs filter the groups and mark the current one
+[71/126] [firefox] › specs/duplicates-manage.spec.ts:24:5 › saving a group records a user decision shown in the header
+[72/126] [firefox] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in light
+[73/126] [firefox] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in dark
+[74/126] [firefox] › specs/editor-override.spec.ts:11:5 › edited field shows a badge and the site original, and can be reverted
+[75/126] [firefox] › specs/fixture-smoke.spec.ts:18:5 › unauthenticated navigation redirects to login; AJAX gets 401
+[76/126] [firefox] › specs/fixture-smoke.spec.ts:25:5 › dashboard, list, stats render with fixture data
+[77/126] [firefox] › specs/fixture-smoke.spec.ts:46:5 › fixture mode blocks crawl start instead of spawning crawler
+
+[78/126] [firefox] › specs/fixture-smoke.spec.ts:54:5 › mobile API contract: /api/v1/summary requires key and keeps fields
+[79/126] [firefox] › specs/fixture-smoke.spec.ts:66:5 › accessibility baseline (report only)
+[80/126] [firefox] › specs/job-bar.spec.ts:14:5 › bottom bar shows running, paused and completed jobs and hides when idle
+[81/126] [firefox] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (light 1440)
+[82/126] [firefox] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 1440)
+[83/126] [firefox] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 390)
+[84/126] [firefox] › specs/list-empty-state.spec.ts:11:5 › empty result message is inside the visible table area
+[85/126] [firefox] › specs/list-empty-state.spec.ts:27:5 › search box stays inside the card at 390px
+[86/126] [firefox] › specs/list-interactions.spec.ts:20:7 › List Interactions and Modals › advanced search AND/OR filters correctly
+[87/126] [firefox] › specs/list-interactions.spec.ts:50:7 › List Interactions and Modals › multi-select for status filters correctly
+[88/126] [firefox] › specs/list-interactions.spec.ts:60:7 › List Interactions and Modals › selection persists after pagination
+[89/126] [firefox] › specs/list-interactions.spec.ts:74:7 › List Interactions and Modals › copy report numbers (selected, current page, all)
+[90/126] [firefox] › specs/list-interactions.spec.ts:111:7 › List Interactions and Modals › CSV export matches table headers
+[91/126] [firefox] › specs/list-interactions.spec.ts:118:7 › List Interactions and Modals › crawl selected blocked in fixture mode
+
+[92/126] [firefox] › specs/list-interactions.spec.ts:134:7 › List Interactions and Modals › attachment and text modals open and close
+[93/126] [firefox] › specs/list-interactions.spec.ts:144:7 › List Interactions and Modals › detail modal opens with link and shows key fields
+[94/126] [firefox] › specs/map-page.spec.ts:11:5 › year and category buttons mark the selection and filter by URL
+[95/126] [firefox] › specs/map-page.spec.ts:20:5 › missing address list opens
+[96/126] [firefox] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in light
+[97/126] [firefox] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in dark
+[98/126] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 1440x900
+
+
+
+
+[99/126] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 390x844
+
+
+
+
+
+  1) [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 390x844 
+
+    Error: Console should have no errors on watchlist
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1
+
+      51 |           });
+      52 |           expect(hasHorizontalScroll, `${p.name} page should not have horizontal scroll`).toBeFalsy();
+    > 53 |           expect(errors.length, `Console should have no errors on ${p.name}`).toBe(0);
+         |                                                                               ^
+      54 |         }
+      55 |       });
+      56 |     }
+        at /home/better0101/projects/worktree/ci-20260926/safetyreport/integration/tools/web-tests/specs/ops-pages.spec.ts:53:79
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/ops-pages-Ops-Pages-UI-Ren-5c3c1-errors-for-light-at-390x844-firefox/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/ops-pages-Ops-Pages-UI-Ren-5c3c1-errors-for-light-at-390x844-firefox/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/ops-pages-Ops-Pages-UI-Ren-5c3c1-errors-for-light-at-390x844-firefox/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/ops-pages-Ops-Pages-UI-Ren-5c3c1-errors-for-light-at-390x844-firefox/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[100/126] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 1440x900
+
+
+
+
+[101/126] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 390x844
+
+
+
+
+[102/126] [firefox] › specs/ops-pages.spec.ts:59:7 › Ops Pages UI Renewal Checks › Crawl page: crawl start button shows fixture block message
+
+
+
+[103/126] [firefox] › specs/ops-pages.spec.ts:86:7 › Ops Pages UI Renewal Checks › Watchlist page: add and remove updates list
+[104/126] [firefox] › specs/ops-pages.spec.ts:105:7 › Ops Pages UI Renewal Checks › Rating page: target list render and WebSocket log connection
+
+
+[105/126] [firefox] › specs/rating-cause.spec.ts:23:5 › cause counter counts code points and blocks over the limit
+
+
+[106/126] [firefox] › specs/rating-cause.spec.ts:41:5 › submit sends the trimmed cause with ids and score
+
+
+[107/126] [firefox] › specs/rating-cause.spec.ts:59:5 › empty cause still submits (old behaviour)
+
+
+[108/126] [firefox] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in light
+[109/126] [firefox] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in dark
+[110/126] [firefox] › specs/settings-pages.spec.ts:27:5 › a setting survives a save and reload, then is restored
+[111/126] [firefox] › specs/settings-pages.spec.ts:41:5 › API key can be created (name shown as text) and deleted
+[112/126] [firefox] › specs/settings-pages.spec.ts:57:5 › backup download responds
+[113/126] [firefox] › specs/stats-drilldown.spec.ts:17:5 › agency with & # + drills down to exactly its reports
+[114/126] [firefox] › specs/stats-drilldown.spec.ts:40:5 › reports without a law drill down to a non-empty list
+[115/126] [firefox] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1280px
+[116/126] [firefox] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1440px
+[117/126] [firefox] › specs/stats-top.spec.ts:15:5 › filter summary lists the active conditions and offers a reset
+[118/126] [firefox] › specs/stats-top.spec.ts:31:5 › category and grouping tabs mark the selection and survive a reload
+[119/126] [firefox] › specs/stats-top.spec.ts:47:5 › law chip shows the active law
+[120/126] [firefox] › specs/stats-top.spec.ts:55:5 › column panel is collapsed by default and hiding a column updates the count
+[121/126] [firefox] › specs/stats-top.spec.ts:72:5 › summary cards match the mobile overview API for each category
+[122/126] [firefox] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in light theme without new console errors
+[123/126] [firefox] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in dark theme without new console errors
+[124/126] [firefox] › specs/theme-pilot.spec.ts:57:5 › theme switch persists across reload and does not submit forms
+[125/126] [firefox] › specs/theme-pilot.spec.ts:69:5 › narrow viewport keeps sidebar toggle and theme switch reachable
+[126/126] [firefox] › specs/theme-pilot.spec.ts:81:5 › on phones the menu button does not cover an open search panel
+  1 failed
+    [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 390x844 
+  125 passed (6.8m)

@@ -1,0 +1,11 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-map/integration
+
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+NOTICE:  policy "rt_read" for relation "public.it_realtime_control" does not exist, skipping
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  12:22:58
+   Duration  33.18s (tests 100%)
+

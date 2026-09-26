@@ -340,6 +340,7 @@ export default function Dashboard() {
                   onApplyView={applyView}
                   autoRefresh={autoRefresh}
                   onAutoRefresh={setAutoRefresh}
+                  locationMissing={data.meta.location_missing ?? null}
                 />
                 <InsightPanel
                   data={data}

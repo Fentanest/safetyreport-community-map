@@ -3,7 +3,7 @@
 ## 1. 경계
 ```text
 safetyreport / safetyreport-mobile (이 작업 밖의 업로더)
-      → 동의·Google Auth·최신 private contribution facts
+      → 카카오 계정·필수 공유 동의·신고별 ingest fact(ADR-201)
                          │
                    Supabase Postgres
                          ├─ private facts / identity / raw vehicle

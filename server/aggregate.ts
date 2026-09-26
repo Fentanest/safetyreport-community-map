@@ -2,8 +2,8 @@
 import type {
   Category, CountMetric, DashboardData, MonthlyBucket, OutcomeCounts,
   PublicEntity, PublicMeta, PublicPoint, Scope,
-} from '../src/domain/public';
-import { maskPlate, parsePlate } from './plate';
+} from '../src/domain/public.ts';
+import { maskPlate, parsePlate } from './plate.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'processing' | 'supplement' |
   'withdrawn' | 'transferred' | 'completed_unknown' | 'other';
@@ -20,9 +20,9 @@ export interface PrivateFact {
   status: Status;
   disposition: Disposition;
   vehicle_raw: string | null;
-  point_key: string;
-  lat: number;
-  lng: number;
+  point_key: string | null;
+  lat: number | null;   // community ingest keeps facts without coordinates (statistics only, never a map point)
+  lng: number | null;
   address: string | null;
   region_code: string | null;
   agency_key: string | null;
@@ -92,6 +92,7 @@ function dimensions(fact: PrivateFact, scope: Scope): boolean {
   if (scope.manager_key && fact.manager_key !== scope.manager_key) return false;
   if (scope.bbox) {
     const [minLng, minLat, maxLng, maxLat] = scope.bbox;
+    if (fact.lat === null || fact.lng === null) return false;  // a viewport filter can only keep located facts
     if (fact.lng < minLng || fact.lng > maxLng || fact.lat < minLat || fact.lat > maxLat) return false;
   }
   return true;
@@ -151,9 +152,13 @@ function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'manager'): 
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
 
-function pointRows(reported: readonly PrivateFact[], done: readonly PrivateFact[]): PublicPoint[] {
-  const reports = new Map<string, PrivateFact[]>();
-  const completions = new Map<string, PrivateFact[]>();
+type LocatedFact = PrivateFact & { point_key: string; lat: number; lng: number };
+const located = (fact: PrivateFact): fact is LocatedFact => fact.point_key !== null && fact.lat !== null && fact.lng !== null;
+
+function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly PrivateFact[]): PublicPoint[] {
+  const reported = reportedAll.filter(located), done = doneAll.filter(located);
+  const reports = new Map<string, LocatedFact[]>();
+  const completions = new Map<string, LocatedFact[]>();
   for (const fact of reported) reports.set(fact.point_key, [...(reports.get(fact.point_key) || []), fact]);
   for (const fact of done) completions.set(fact.point_key, [...(completions.get(fact.point_key) || []), fact]);
   return [...reports].map(([key, rows]) => {
@@ -277,8 +282,11 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const meta: PublicMeta = {
     schema_version: 2, dataset_version: options.datasetVersion, sample: options.sample,
     source_updated_at: options.sourceUpdatedAt, generated_at: options.generatedAt, published_at: null,
-    data_min: dataMin, data_max: options.asOf, coverage_note: '자발적 제공 표본이며 전국 전체 신고를 대표하지 않습니다.',
-    dedupe_policy_version: 'active-snapshot-v1', capabilities: {
+    data_min: dataMin, data_max: options.asOf,
+    coverage_note: '커뮤니티 사용자가 공유한 답변 완료 신고만 집계합니다. 전국 전체 신고나 미완료 신고를 대표하지 않습니다.',
+    population: 'shared_completed_reports',
+    location_missing: facts.filter(fact => !located(fact)).length,
+    dedupe_policy_version: 'ingest-latest-v1', capabilities: {
       daily_report_dates: capability('supported'), completion_dates: capability('supported'),
       manager_status_cross: capability('supported'), agency_status_cross: capability('supported'),
       vehicle_top5: capability('supported'), fine_amount: capability('missing', '금액 원천이 없습니다.'),
@@ -303,7 +311,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
         delta_percent: null, delta_reason: !comparisonCovered ? null : priorD ? null : D ? 'new' : 'no_baseline',
       },
       fine_count: countMetric(fine, 'completed_date', comparisonCovered ? priorFine : null, 0, done.length),
-      point_count: countMetric(exactPoints.length, 'report_date', comparisonCovered ? new Set(previousReported.map(fact => fact.point_key)).size : null, 0, reported.length),
+      point_count: countMetric(exactPoints.length, 'report_date', comparisonCovered ? new Set(previousReported.filter(located).map(fact => fact.point_key)).size : null, 0, reported.length),
       contributor_count: countMetric(new Set(reported.map(fact => fact.contributor_id)).size, 'report_date',
         comparisonCovered ? new Set(previousReported.map(fact => fact.contributor_id)).size : null, 0, reported.length),
       outcomes: result,

@@ -148,3 +148,21 @@ describe('identity, scope and public projection', () => {
     expect(overviewResponseSchema.safeParse({ ...good, contributor_id: 'private-user-1' }).success).toBe(false);
   });
 });
+
+describe('community ingest facts without coordinates (S-01)', () => {
+  it('counts them in statistics, never as map points, and reports how many lack a location', () => {
+    const facts = [fact(1), fact(2, { lat: null, lng: null, point_key: null }), fact(3, { lat: null, lng: null, point_key: null })];
+    const data = aggregate(facts);
+    expect(data.overview.report_count.value).toBe(3);
+    expect(data.points).toHaveLength(1);
+    expect(data.meta.location_missing).toBe(2);
+    expect(data.meta.population).toBe('shared_completed_reports');
+  });
+  it('a viewport filter keeps only located facts', () => {
+    const facts = [fact(1), fact(2, { lat: null, lng: null, point_key: null })];
+    const data = aggregateDashboard(facts, { start: '2026-01-01', end: '2026-02-28', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: [124, 32, 132, 39.5] },
+      { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-03-01T00:00:00Z', asOf: '2026-02-28', sample: false });
+    expect(data.overview.report_count.value).toBe(1);
+  });
+});
+

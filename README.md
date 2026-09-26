@@ -60,5 +60,5 @@ v2 사실이 적재·검증되기 전에는 API가 준비 상태를 표시한다
 - docs/implementation/verification-status.md — 통과·차단·남은 구현 항목
 - docs/reviews/ — Muse의 M0/M1/M2/M3/M3-F 브라우저 검수·스크린샷
 
-공개 열람은 비로그인이다. 업로더의 Google Auth·세션 갱신·02~03시 자동 업로드는 기존 앱/서버의 별도 기능이며
+공개 열람은 비로그인이다. 업로더의 카카오 계정 연결·필수 공유 동의·실시간/수동/00:00 KST 업로드는 기존 앱/서버의 기능이며(`contracts/community-ingest/`, `supabase/functions/community-ingest/`)
 그 계약은 docs/client-integration.md에 유지한다. 이 UI 작업을 핑계로 SMS 인증을 다시 넣지 않는다.

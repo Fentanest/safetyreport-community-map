@@ -7,19 +7,19 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 | 의미 | 타입/규칙 |
 |---|---|
 | fact_identity | private 중복 제거 키. 공개 금지. 신고번호 수집 여부는 upstream 계약에서 별도 결정 |
-| contributor_id / snapshot_id | private; active snapshot만 계산 |
+| contributor_id / snapshot_id | private. community ingest 는 신고별 최신 fact(`snapshot_id='ingest-v1'`), 구 snapshot 경로는 공개 소스에서 제외(가드) |
 | report_date | KST ISO date, null 허용하되 신고일 지표 제외 수 보고 |
 | completed_date | 확인된 처리완료일 KST date, null은 결측. 업로드일로 대체 금지 |
 | category | traffic / parking / other |
 | status | accepted / partial / rejected / processing / supplement / withdrawn / transferred / completed_unknown / other |
-| disposition | fine / penalty / warning / warning_or_penalty / other / unknown 중 원천 지원 값 |
+| disposition | fine / penalty / warning / none / unknown (SQL·`server/aggregate.ts` 정본. 2026-09-26 문서 정정: 이전 문서의 warning_or_penalty/other 는 코드에 없음) |
 | lat / lng | WGS84 원 double 값. finite·대한민국 서비스 범위 검증. 주소→좌표 재생성으로 원 좌표 덮지 않음 |
 | point_key | 서버 위치 기준 version; 좌표 공개 정밀도와 key 묶음 알고리즘은 별개 |
 | address / region codes | 제공된 위치 표시 주소·행정구역. 주소 없으면 역지오코딩 대기 상태 |
 | agency_key / agency_name | 검증된 기관 코드 우선. 정규화 규칙 version |
 | manager_key / manager_name | agency_key + name + 가능하면 안정 담당자 식별. 이름 단독 전역 병합 금지 |
-| vehicle_canonical | private 원번호 정규화. region prefix를 동일성에서 보존 |
-| fine_amount | 선택, 실제 원천의 금액만. 없으면 금액 차트 비활성 |
+| vehicle_raw | private 원번호(업로드 원문). 공개 전 `parsePlate` 로 정규화(지역 접두어 보존)·마스킹 |
+| amount_confirmed_won / penalty_points | private 저장만(답변에 적힌 확정 금액·벌점). 공개 capability `fine_amount` 는 missing 유지 |
 | count | fact=1; joint cube면 1 이상의 가중치 |
 
 manager 동명이인이 같은 기관에도 존재할 수 있다. 별도 ID가 없으면 '기관·성명 기준 묶음'임을 표시하고 동일인으로 단정하지 않는다.
@@ -31,7 +31,7 @@ manager 동명이인이 같은 기관에도 존재할 수 있다. 별도 ID가 �
 status/처분 구분이 combined뿐이면 warning_or_penalty를 유지하며 금액·범칙금 개별 건수를 상상하지 않는다.
 
 ## C. 중복 제거 단위
-한 업로더의 같은 자료 재전송은 active snapshot 교체로 중복 제거한다.
+같은 기여자·같은 공식 계정(dataset_key)·같은 신고는 fact 하나(`(writer_epoch, source_revision)` 순서, 같은 event_id 는 멱등). 좌표 없는 fact 는 통계에 포함하고 지도 지점에서만 제외한다.
 서로 다른 계정의 동일 신고인지 판정할 실제 키가 없으면 전역 완전 중복 제거를 주장하지 않는다.
 복수 신고자가 같은 차량/위치에 신고한 건은 별도 신고일 수 있다. 좌표+차량+날짜만 같다는 이유로 임의 삭제 금지.
 `dedupe_policy_version`과 `coverage_note`를 meta에 넣는다.

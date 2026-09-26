@@ -1,0 +1,215 @@
+{
+  "run_id": "ci-20260926",
+  "worktree_root": "/home/better0101/projects/worktree/ci-20260926",
+  "started_kst": "2026-09-26T02:03:33+09:00",
+  "pre_existing": {
+    "worktrees": "each repo: primary checkout only; ~/projects/worktree empty",
+    "branches_kept": [
+      "safetyreport: dev, main, feat/community-account",
+      "safetyreport-mobile: dev, main, feat/community-account",
+      "community-map: main",
+      "community-auth: main"
+    ]
+  },
+  "targets": {
+    "safetyreport": "dev",
+    "safetyreport-mobile": "dev",
+    "community-map": "main",
+    "community-auth": "main"
+  },
+  "worktrees": [
+    {
+      "repo": "safetyreport",
+      "path": "safetyreport/survey",
+      "branch": null,
+      "base": "db4b38f",
+      "owner": "Gemini(agy gemini-3.1-pro-high) read-only survey",
+      "purpose": "investigation snapshot",
+      "status": "active"
+    },
+    {
+      "repo": "safetyreport-mobile",
+      "path": "safetyreport-mobile/survey",
+      "branch": null,
+      "base": "98e474b2",
+      "owner": "Gemini read-only survey; Muse env check",
+      "purpose": "investigation snapshot",
+      "status": "active"
+    },
+    {
+      "repo": "community-map",
+      "path": "community-map/survey",
+      "branch": null,
+      "base": "a829079",
+      "owner": "Gemini read-only survey",
+      "purpose": "investigation snapshot",
+      "status": "active"
+    },
+    {
+      "repo": "community-auth",
+      "path": "community-auth/survey",
+      "branch": null,
+      "base": "558ed6b",
+      "owner": "Gemini read-only survey",
+      "purpose": "investigation snapshot",
+      "status": "active"
+    },
+    {
+      "repo": "community-map",
+      "path": "community-map/integration",
+      "branch": "ci0926/integration",
+      "base": "a829079",
+      "owner": "Opus5.5",
+      "purpose": "plan, contracts, manifest, integration stack",
+      "status": "active"
+    },
+    {
+      "repo": "community-map",
+      "path": "community-map/plan-review-sol",
+      "branch": null,
+      "base": "868aaba -> 1fb7b2b",
+      "owner": "GPT-6-Sol (codex gpt-6-sol) thread 01a0d999-7780-7592-86a0-caa9bde3eb43",
+      "purpose": "plan review 01 + recheck",
+      "status": "active"
+    },
+    {
+      "repo": "community-auth",
+      "path": "community-auth/integration",
+      "branch": "ci0926/integration",
+      "base": "558ed6b",
+      "owner": "Opus5.5",
+      "purpose": "auth integration target before main",
+      "status": "active"
+    },
+    {
+      "repo": "community-auth",
+      "path": "community-auth/account",
+      "branch": "ci0926/account",
+      "base": "558ed6b",
+      "owner": "Opus5.5",
+      "purpose": "T1 account registry + community-account",
+      "status": "active"
+    },
+    {
+      "repo": "safetyreport",
+      "path": "safetyreport/integration",
+      "branch": "ci0926/integration",
+      "base": "db4b38f",
+      "owner": "Opus5.5",
+      "purpose": "T0b store + integration target before dev",
+      "status": "active"
+    },
+    {
+      "repo": "safetyreport-mobile",
+      "path": "safetyreport-mobile/integration",
+      "branch": "ci0926/integration",
+      "base": "98e474b2",
+      "owner": "Opus5.5",
+      "purpose": "T0b store + integration target before dev",
+      "status": "active"
+    }
+  ],
+  "jobs": [
+    {
+      "task": "T0/T0b/T1/T2/T3a/T8 + 통합",
+      "agent": "Opus5.5 (Claude Code)",
+      "worktrees": [
+        "community-map/integration",
+        "community-map/ingest",
+        "community-auth/account",
+        "community-auth/integration",
+        "safetyreport/integration",
+        "safetyreport/gate-rebuild",
+        "safetyreport-mobile/integration"
+      ],
+      "result": "committed"
+    },
+    {
+      "task": "T3b PC rebuild",
+      "agent": "Muse Spark Contributor",
+      "model_verified": "opencode-go/muse-spark-1.3-contributor (opencode export)",
+      "session": "ses_f2614b624ffe7ehHynjULB7Nm6",
+      "worktree": "safetyreport/rebuild",
+      "branch": "ci0926/rebuild",
+      "base": "857185d",
+      "commits": [
+        "c5d12fb"
+      ],
+      "merged_into": "safetyreport ci0926/integration (376bc9a)"
+    },
+    {
+      "task": "T4 PC data path",
+      "agent": "Muse Spark Contributor",
+      "model_verified": "opencode-go/muse-spark-1.3-contributor",
+      "session": "ses_f261de6f6ffebvtnAD46CvtjCd",
+      "worktree": "safetyreport/upload",
+      "branch": "ci0926/upload",
+      "base": "857185d",
+      "commits": [
+        "5d25a62",
+        "f3f9087",
+        "56ca4cf",
+        "f064333"
+      ],
+      "merged_into": "safetyreport ci0926/integration (fa2a1da)",
+      "note": "여러 번 조기 종료 → 같은 세션 continue 루프"
+    },
+    {
+      "task": "T5 mobile gate",
+      "agent": "Muse Spark Contributor",
+      "model_verified": "opencode-go/muse-spark-1.3-contributor",
+      "session": "ses_f261de70bffe9KSEGvkP1PqYWo",
+      "worktree": "safetyreport-mobile/gate-rebuild",
+      "branch": "ci0926/gate-rebuild",
+      "base": "b39875fa",
+      "commits": [
+        "1fda4aee",
+        "e733e475",
+        "ac0e08a5",
+        "b9a249ba"
+      ],
+      "merged_into": "safetyreport-mobile ci0926/integration"
+    },
+    {
+      "task": "T6 mobile data path",
+      "agent": "Muse Spark Contributor",
+      "model_verified": "opencode-go/muse-spark-1.3-contributor",
+      "session": "ses_f261de719ffeAW37IMgBr5CCld",
+      "worktree": "safetyreport-mobile/upload",
+      "branch": "ci0926/upload",
+      "base": "b39875fa",
+      "commits": [
+        "9ec8e646",
+        "9333443d"
+      ],
+      "merged_into": "safetyreport-mobile ci0926/integration (f6f6673d)"
+    },
+    {
+      "task": "T7 browser QA",
+      "agent": "Muse Spark Contributor",
+      "session": "ses_f24a465fcffeuyYWRlR51L3pDb",
+      "worktree": "safetyreport/qa (detached d37749e), community-map/qa (detached)",
+      "mode": "read-only reviewer",
+      "evidence": "~/projects/safetyreport/.agent-runs/ci-20260926/T7-evidence/"
+    },
+    {
+      "task": "코드 조사·diff 검토",
+      "agent": "Gemini (agy gemini-3.1-pro-high)",
+      "runs": [
+        "gemini-survey-{safetyreport,mobile,map,auth}",
+        "gemini-r2-{pc,mobile,map}",
+        "gemini-review-pc",
+        "gemini-review-mobile-t6"
+      ],
+      "note": "read-only; 판정은 Opus 가 실행 증거로(docs/reviews)"
+    },
+    {
+      "task": "계획 검토·통합 후보 검토·7일 감사",
+      "agent": "GPT-6-Sol (codex companion, --model gpt-6-sol --effort high)",
+      "runs": [
+        "plan-review-sol-01..06, final",
+        "integration-review-sol-01 (진행 중)"
+      ]
+    }
+  ]
+}

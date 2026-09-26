@@ -1,0 +1,16 @@
+# cmd: timeout 600 npx vitest run --exclude 'tests/integration/**'
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-map/integration
+# candidate: b6bb6a6 (ci0926/integration)
+# dirty: 0 tracked changes
+# start: 2026-09-26T12:49:34+09:00
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-map/integration
+
+
+ Test Files  7 passed (7)
+      Tests  74 passed (74)
+   Start at  12:49:35
+   Duration  766ms (transform 52%, tests 26%, import 21%, worker 2%)
+
+# end: 2026-09-26T12:49:36+09:00
+# exit: 0
