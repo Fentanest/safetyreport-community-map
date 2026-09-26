@@ -70,4 +70,5 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 `sort`(`completed`·`accepted`·`partial`·`rejected`·`fine`·`acceptRate`), `dir`(`asc`·`desc`)를 받는다. 셋 다 없으면
 예전 순서 그대로이고 응답 필드는 바뀌지 않았다. 다른 경로에 이 인자를 주면 400.
 지도 점(SOL-06): 신고일 위치와 완료일 위치의 합집합이며 점마다 신고 건수(신고일 기준)와 완료 건수(완료일 기준)를 따로 센다.
+`overview.point_count` 는 신고일 기준 위치 수 그대로다(basis `report_date`) — 완료일만 범위에 든 위치는 지도 점에는 있지만 이 지표에는 없다.
 `location_missing`(SOL-07): 현재 범위의 신고일 또는 완료일 지표에 실제로 들어간 고유 fact 중 좌표 없는 것(비교 기간만 속한 fact 제외, 한 번만).
