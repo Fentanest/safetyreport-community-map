@@ -53,7 +53,7 @@ describe('community-ingest handler', () => {
         headers: { 'content-type': 'application/json', authorization: `Bearer ${jwt(claims)}`, ...headers } } as RequestInit);
       return { req, state };
     };
-    for (const headers of [{}, { 'content-length': '100' }]) {
+    for (const headers of [{}, { 'content-length': '100' }] as Record<string, string>[]) {
       const { req, state } = streamed(headers);
       const res = await handler(req);
       expect(res.status).toBe(413);
