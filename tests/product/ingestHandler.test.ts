@@ -42,6 +42,29 @@ describe('community-ingest handler', () => {
     expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
   });
 
+  it('stops reading an oversized body at 256 KiB even without or with a false Content-Length (SOL-10)', async () => {
+    const { handler, calls } = setup();
+    const streamed = (headers: Record<string, string>) => {
+      const state = { pulled: 0 };
+      const body = new ReadableStream<Uint8Array>({
+        pull(c) { state.pulled++; c.enqueue(new Uint8Array(16 * 1024).fill(0x20)); },
+      }, { highWaterMark: 0 });
+      const req = new Request('https://p.supabase.co/functions/v1/community-ingest', { method: 'POST', body, duplex: 'half',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${jwt(claims)}`, ...headers } } as RequestInit);
+      return { req, state };
+    };
+    for (const headers of [{}, { 'content-length': '100' }]) {
+      const { req, state } = streamed(headers);
+      const res = await handler(req);
+      expect(res.status).toBe(413);
+      expect(state.pulled).toBeLessThanOrEqual(256 / 16 + 2);
+    }
+    const declared = streamed({ 'content-length': String(1 << 30) });
+    expect((await handler(declared.req)).status).toBe(413);
+    expect(declared.state.pulled).toBe(0);
+    expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
+  });
+
   it('OPTIONS answers CORS for allowed origins without auth or side effects', async () => {
     const { handler, calls } = setup();
     const res = await handler(new Request('https://p.supabase.co/functions/v1/community-ingest', { method: 'OPTIONS', headers: { origin: 'https://safemap.worklazy.net' } }));

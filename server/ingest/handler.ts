@@ -21,6 +21,31 @@ export interface IngestDeps {
 }
 
 const MAX_BODY = 256 * 1024;
+
+/** 요청 본문을 최대 max 바이트까지만 읽는다(감사 SOL-10, auth `server/adapters.ts readBodyLimited` 와 같은 규칙).
+ *  선언된 Content-Length 가 max 를 넘거나 숫자가 아니면 읽지 않고, 읽는 도중 max 를 넘는 순간 스트림을 취소한다. 넘으면 null. */
+export async function readBodyLimited(request: Request, max: number): Promise<Uint8Array | null> {
+  const declared = request.headers.get('content-length');
+  if (declared !== null && declared.trim() !== '' && !(Number(declared) <= max)) return null;
+  if (!request.body) return new Uint8Array(0);
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      try { await reader.cancel(); } catch { /* 이미 닫힘 */ }
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) { out.set(c, offset); offset += c.byteLength; }
+  return out;
+}
 const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -112,15 +137,15 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       const path = new URL(request.url).pathname.replace(/\/+$/, '');
       route = path.endsWith('/manifest') ? 'manifest' : (path.endsWith('/community-ingest') ? 'ingest' : fail('invalid_request'));
       if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) fail('unsupported_media_type');
-      const declared = Number(request.headers.get('content-length') || '0');
-      if (declared > MAX_BODY) fail('payload_too_large');
+      const declared = request.headers.get('content-length');
+      if (declared !== null && declared.trim() !== '' && !(Number(declared) <= MAX_BODY)) fail('payload_too_large');
       const m = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(request.headers.get('authorization') || '');
       if (!m) fail('auth_required');
       const token = m![1];
-      const buf = new Uint8Array(await request.arrayBuffer());
-      if (buf.length > MAX_BODY) fail('payload_too_large');
+      const buf = await readBodyLimited(request, MAX_BODY); // 선언이 없거나 거짓이어도 읽는 도중 상한에서 멈춘다(SOL-10)
+      if (!buf) fail('payload_too_large');
       let body: unknown;
-      try { body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buf)); } catch { return fail('invalid_request'); }
+      try { body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buf!)); } catch { return fail('invalid_request'); }
 
       let user: IngestUser | null;
       try { user = await deps.getUser(token); } catch { return fail('service_unavailable'); }
