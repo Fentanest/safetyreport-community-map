@@ -1,10 +1,15 @@
-import type { DashboardData, Scope } from '../domain/public';
+import type { DashboardData, PublicEntity, Scope } from '../domain/public';
 import {
-  metaSchema, dashboardResponseSchema, snapshotManifestSchema,
+  entitiesResponseSchema, metaSchema, dashboardResponseSchema, snapshotManifestSchema,
 } from './schema';
 
 export type DataMode = 'demo' | 'live';
 export const dataMode: DataMode = import.meta.env.VITE_DATA_MODE === 'demo' ? 'demo' : 'live';
+
+// SOL-08: the entity table uses full /entities browsing only when the live analytics base URL exists.
+export function entitiesAvailable(): boolean {
+  return dataMode === 'live' && !!import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
+}
 
 export class PublicApiError extends Error {
   constructor(message: string, readonly status: number | null = null, readonly retryAfter: number | null = null) {
@@ -13,7 +18,7 @@ export class PublicApiError extends Error {
   }
 }
 
-function query(scope: Scope, version?: string, extra?: Record<string, string>): URLSearchParams {
+function scopeParams(scope: Scope, version?: string, extra?: Record<string, string>): URLSearchParams {
   const p = new URLSearchParams({ start: scope.start, end: scope.end, category: scope.category });
   if (scope.region_code) p.set('region_code', scope.region_code);
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
@@ -60,6 +65,52 @@ async function read(path: string, params: URLSearchParams | null, signal?: Abort
   return res.json();
 }
 
+export type EntityKind = 'agency' | 'manager';
+export type EntitySortKey = 'completed' | 'accepted' | 'partial' | 'rejected' | 'fine' | 'acceptRate';
+export type SortDir = 'asc' | 'desc';
+
+export interface EntitiesQuery {
+  kind: EntityKind;
+  q?: string;
+  sort?: EntitySortKey;
+  dir?: SortDir;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface EntitiesPage {
+  datasetVersion: string;
+  scope: Scope;
+  items: PublicEntity[];
+  totalRows: number;
+  page: number;
+  pageSize: number;
+}
+
+// SOL-08: full-list entity browsing over /entities (server search/sort/pagination). The dashboard
+// top-100 arrays stay summary-only; this is the table's data source in live mode.
+export async function loadEntities(scope: Scope, query: EntitiesQuery, version?: string, signal?: AbortSignal): Promise<EntitiesPage> {
+  const extra: Record<string, string> = {
+    kind: query.kind,
+    page: String(query.page ?? 1),
+    page_size: String(query.pageSize ?? 50),
+  };
+  if (query.q !== undefined && query.q.trim() !== '') extra.q = query.q.trim();
+  if (query.sort !== undefined) extra.sort = query.sort;
+  if (query.dir !== undefined) extra.dir = query.dir;
+  const parsed = entitiesResponseSchema.parse(await read('entities', scopeParams(scope, version, extra), signal));
+  if (version !== undefined && parsed.dataset_version !== version) {
+    throw new PublicApiError('데이터 버전 또는 조회 범위가 바뀌었습니다. 다시 조회해 주세요.', 409);
+  }
+  if (!sameScope(parsed.scope, scope)) {
+    throw new PublicApiError('데이터 버전 또는 조회 범위가 바뀌었습니다. 다시 조회해 주세요.', 409);
+  }
+  return {
+    datasetVersion: parsed.dataset_version, scope: parsed.scope, items: parsed.items,
+    totalRows: parsed.total_rows, page: parsed.page, pageSize: parsed.page_size,
+  };
+}
+
 export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
   if (dataMode === 'demo') {
     const { demoDashboard } = await import('./demo');
@@ -73,7 +124,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
   if (meta.capabilities.daily_report_dates?.status !== 'supported') {
     throw new PublicApiError('임의 기간의 공개 집계가 아직 준비되지 않았습니다.', 503);
   }
-  const q = query(scope, meta.dataset_version);
+  const q = scopeParams(scope, meta.dataset_version);
   const result = await readSnapshot(scope, meta.dataset_version, signal) ??
     dashboardResponseSchema.parse(await read('dashboard', q, signal));
   if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type DashboardData, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
-import { PublicApiError, dataMode, loadDashboard } from '../data/client';
+import { PublicApiError, dataMode, entitiesAvailable, loadDashboard, loadEntities, type EntitySortKey, type SortDir } from '../data/client';
 import {
   CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, regionLabel, scopeFromDraft, scopeFromSearch,
   scopeToSearch, validateRange, type DraftFilters, type EntityTab, type MapMetric, type ThemeMode,
@@ -15,7 +15,7 @@ import InsightPanel from '../components/InsightPanel';
 import TrendCard from '../components/TrendCard';
 import OutcomeCard from '../components/OutcomeCard';
 import VehicleTop5 from '../components/VehicleTop5';
-import EntityTable from '../components/EntityTable';
+import EntityTable, { type ServerEntityState } from '../components/EntityTable';
 import DataGuide from '../components/DataGuide';
 import { fmtDate } from '../components/format';
 
@@ -47,6 +47,18 @@ export default function Dashboard() {
   const [selection, setSelection] = useState<string | null>(null);
   const [mapMetric, setMapMetric] = useState<MapMetric>('reports');
   const [entityTab, setEntityTab] = useState<EntityTab>('agency');
+  // SOL-08: full /entities browsing in live mode; the dashboard top-100 arrays stay summary-only.
+  const ENTITY_PAGE_SIZE = 20;
+  const [entityQ, setEntityQ] = useState('');
+  const [entitySort, setEntitySort] = useState<EntitySortKey>('completed');
+  const [entityDir, setEntityDir] = useState<SortDir>('desc');
+  const [entityPage, setEntityPage] = useState(1);
+  const [entityItems, setEntityItems] = useState<PublicEntity[]>([]);
+  const [entityTotal, setEntityTotal] = useState(0);
+  const [entityLoading, setEntityLoading] = useState(false);
+  const [entityError, setEntityError] = useState<string | null>(null);
+  const [entityReload, setEntityReload] = useState(0);
+  const entitiesLive = entitiesAvailable();
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [nav, setNav] = useState('mapsection');
@@ -131,6 +143,49 @@ export default function Dashboard() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  // SOL-08: full entity list follows scope/tab/query; page restarts at 1 on any query change.
+  useEffect(() => {
+    setEntityPage(1);
+  }, [scope, entityTab, entityQ, entitySort, entityDir]);
+
+  useEffect(() => {
+    if (!entitiesLive) return;
+    const ac = new AbortController();
+    setEntityLoading(true);
+    setEntityError(null);
+    loadEntities(scope,
+      { kind: entityTab, q: entityQ, sort: entitySort, dir: entityDir, page: entityPage, pageSize: ENTITY_PAGE_SIZE },
+      data?.meta.dataset_version ?? undefined, ac.signal)
+      .then((result) => {
+        if (ac.signal.aborted) return;
+        setEntityItems(result.items);
+        setEntityTotal(result.totalRows);
+        setEntityLoading(false);
+      })
+      .catch((e: unknown) => {
+        if (ac.signal.aborted) return;
+        setEntityError(e instanceof Error ? e.message : '전체 목록 조회에 실패했습니다.');
+        setEntityLoading(false);
+      });
+    return () => ac.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, entityTab, entityQ, entitySort, entityDir, entityPage, entitiesLive, entityReload, data?.meta.dataset_version]);
+
+  const sortEntities = useCallback((key: EntitySortKey) => {
+    if (key === entitySort) setEntityDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    else {
+      setEntitySort(key);
+      setEntityDir('desc');
+    }
+  }, [entitySort]);
+
+  const entityServer: ServerEntityState | null = entitiesLive ? {
+    items: entityItems, total: entityTotal, page: entityPage, pageSize: ENTITY_PAGE_SIZE,
+    loading: entityLoading, error: entityError, q: entityQ, sortKey: entitySort, dir: entityDir,
+    onSearch: setEntityQ, onSort: sortEntities, onPage: setEntityPage,
+    onRetry: () => setEntityReload((n) => n + 1),
+  } : null;
 
   const pushUrl = (s: Scope) => {
     const search = scopeToSearch(s, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null });
@@ -367,6 +422,7 @@ export default function Dashboard() {
                 tab={entityTab}
                 onTab={setEntityTab}
                 onPick={pickEntity}
+                server={entityServer}
               />
               <DataGuide data={data} />
             </>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { PublicEntity } from '../domain/public';
+import type { EntitySortKey, SortDir } from '../data/client';
 import type { EntityTab } from '../state/filters';
 import { fmtInt, fmtPercent } from './format';
 
@@ -9,10 +10,29 @@ interface Props {
   tab: EntityTab;
   onTab: (t: EntityTab) => void;
   onPick: (kind: EntityTab, entity: PublicEntity) => void;
+  // SOL-08: when present, the table browses the full /entities list (server search/sort/page)
+  // instead of the dashboard top-100 summary arrays. Null keeps the previous summary behavior (demo).
+  server?: ServerEntityState | null;
 }
 
-type SortKey = 'completed' | 'accepted' | 'partial' | 'rejected' | 'fine' | 'acceptRate';
-type Dir = 'asc' | 'desc';
+export interface ServerEntityState {
+  items: PublicEntity[];
+  total: number;
+  page: number;
+  pageSize: number;
+  loading: boolean;
+  error: string | null;
+  q: string;
+  sortKey: EntitySortKey;
+  dir: SortDir;
+  onSearch: (q: string) => void;
+  onSort: (key: EntitySortKey) => void;
+  onPage: (page: number) => void;
+  onRetry: () => void;
+}
+
+type SortKey = EntitySortKey;
+type Dir = SortDir;
 
 const COLUMNS: Array<{ key: SortKey; label: string; num: boolean }> = [
   { key: 'completed', label: '완료 건수', num: true },
@@ -40,6 +60,8 @@ export default function EntityTable(p: Props) {
   const [dir, setDir] = useState<Dir>('desc');
   const [q, setQ] = useState('');
   const [mobileCols, setMobileCols] = useState(false);
+  // SOL-08: server mode browses the full /entities list; summary mode keeps the dashboard top-100.
+  const server = p.server ?? null;
   const rows = p.tab === 'agency' ? p.agencies : p.managers;
 
   const filtered = useMemo(() => {
@@ -58,6 +80,10 @@ export default function EntityTable(p: Props) {
   }, [rows, q, sortKey, dir]);
 
   const toggle = (k: SortKey) => {
+    if (server) {
+      server.onSort(k);
+      return;
+    }
     if (k === sortKey) setDir((d) => (d === 'desc' ? 'asc' : 'desc'));
     else {
       setSortKey(k);
@@ -65,8 +91,13 @@ export default function EntityTable(p: Props) {
     }
   };
 
+  const activeSort = server ? server.sortKey : sortKey;
+  const activeDir = server ? server.dir : dir;
+  const shown = server ? server.items : filtered;
+  const pages = server ? Math.max(1, Math.ceil(server.total / server.pageSize)) : 1;
+
   const ariaSort = (k: SortKey): 'ascending' | 'descending' | 'none' =>
-    k !== sortKey ? 'none' : dir === 'asc' ? 'ascending' : 'descending';
+    k !== activeSort ? 'none' : activeDir === 'asc' ? 'ascending' : 'descending';
 
   return (
     <section className="cm-panel entities" id="entities" aria-label="기관 · 담당자 처리결과 비교">
@@ -82,8 +113,8 @@ export default function EntityTable(p: Props) {
       </div>
       <div className="entity-toolbar">
         <input
-          type="search" value={q} placeholder="기관·성명 검색" aria-label="기관·성명 검색"
-          onChange={(e) => setQ(e.target.value)}
+          type="search" value={server ? server.q : q} placeholder="기관·성명 검색" aria-label="기관·성명 검색"
+          onChange={(e) => (server ? server.onSearch(e.target.value) : setQ(e.target.value))}
         />
         <button className="ghost-btn" type="button" aria-pressed={mobileCols} onClick={() => setMobileCols((v) => !v)}>
           열 선택
@@ -92,10 +123,18 @@ export default function EntityTable(p: Props) {
           <span className="col-picker">모바일에서는 성명·기관·완료 3열 + 가로스크롤로 확인하세요. 전체 성명은 항상 접근 가능합니다.</span>
         )}
       </div>
+      {server?.error && (
+        <div className="banner error" role="alert">
+          <span className="grow">기관·담당자 전체 목록 조회에 실패했습니다: {server.error} 다시 시도해 주세요.</span>
+          <button className="ghost-btn" type="button" onClick={server.onRetry}>다시 시도</button>
+        </div>
+      )}
       <div className="table-scroll">
         <table className="entity-table">
           <caption className="cm-muted" style={{ textAlign: 'left', padding: '0 16px 8px', fontSize: 12 }}>
-            {p.tab === 'agency' ? '처리기관' : '담당자 · 소속기관'} · {COLUMNS.find((c) => c.key === sortKey)!.label} {dir === 'desc' ? '내림' : '오름'}차순{sortKey === 'completed' && dir === 'desc' ? ' 기본' : ''} · 표본 1건 포함 · 같은 기관·이름 묶음의 한계가 있습니다.
+            {server
+              ? `${p.tab === 'agency' ? '처리기관' : '담당자 · 소속기관'} 전체 ${fmtInt(server.total)}건 · ${server.page}/${pages}페이지 · ${COLUMNS.find((c) => c.key === activeSort)!.label} ${activeDir === 'desc' ? '내림' : '오름'}차순 · 서버 검색·정렬`
+              : `${p.tab === 'agency' ? '처리기관' : '담당자 · 소속기관'} · ${COLUMNS.find((c) => c.key === activeSort)!.label} ${activeDir === 'desc' ? '내림' : '오름'}차순${activeSort === 'completed' && activeDir === 'desc' ? ' 기본' : ''} · 표본 1건 포함 · 같은 기관·이름 묶음의 한계가 있습니다.`}
           </caption>
           <thead>
             <tr>
@@ -109,7 +148,7 @@ export default function EntityTable(p: Props) {
                   tabIndex={0}
                   title={`${c.label} 기준 정렬`}
                 >
-                  {c.label}{sortKey === c.key ? (dir === 'desc' ? ' ▼' : ' ▲') : ''}
+                  {c.label}{activeSort === c.key ? (activeDir === 'desc' ? ' ▼' : ' ▲') : ''}
                 </th>
               ))}
               <th scope="col">처리결과 구성</th>
@@ -117,10 +156,13 @@ export default function EntityTable(p: Props) {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {server?.loading && shown.length === 0 && (
+              <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">전체 목록을 불러오는 중입니다…</td></tr>
+            )}
+            {!(server?.loading && shown.length === 0) && shown.length === 0 && (
               <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다. 검색어·필터를 확인해 주세요.</td></tr>
             )}
-            {filtered.map((e) => {
+            {shown.map((e) => {
               const d = e.outcomes.result_known;
               return (
                 <tr key={e.key}>
@@ -157,8 +199,17 @@ export default function EntityTable(p: Props) {
       </div>
       <div className="table-footer">
         <span>전체 성명과 기관을 함께 표시합니다. 동명이인은 이름만으로 합치지 않습니다.</span>
-        <span>1건 표본도 공개 · 별·메달·우수 판정 없음</span>
+        {server
+          ? <span>전체 {fmtInt(server.total)}건을 서버에서 검색·정렬·페이지로 조회합니다.{server.loading ? ' 불러오는 중…' : ''}</span>
+          : <span>1건 표본도 공개 · 별·메달·우수 판정 없음</span>}
       </div>
+      {server && (
+        <div className="table-pager" style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end', padding: '8px 16px' }}>
+          <span className="cm-muted" style={{ fontSize: 12 }} aria-live="polite">{server.page} / {pages}페이지 · 전체 {fmtInt(server.total)}건</span>
+          <button className="ghost-btn" type="button" disabled={server.page <= 1 || server.loading} onClick={() => server.onPage(server.page - 1)} aria-label="이전 페이지">이전</button>
+          <button className="ghost-btn" type="button" disabled={server.page >= pages || server.loading} onClick={() => server.onPage(server.page + 1)} aria-label="다음 페이지">다음</button>
+        </div>
+      )}
     </section>
   );
 }
