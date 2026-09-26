@@ -136,7 +136,7 @@ export default function MapPanel(p: Props) {
       <div className="panel-top">
         <div>
           <h2>전국 신고 분포</h2>
-          <span className="subtitle">{p.categoryLabel} · 저줌 집계 표시는 원좌표와 다릅니다{p.locationMissing ? ` · 좌표 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 포함` : ''}</span>
+          <span className="subtitle">{p.categoryLabel} · 저줌 집계 표시는 원좌표와 다릅니다 · 지도 점에는 완료일만 범위에 든 위치도 포함{p.locationMissing ? ` · 좌표 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 포함` : ''}</span>
         </div>
         <div className="mini-segments" role="group" aria-label="지도 지표">
           {METRICS.map((m) => (
@@ -169,7 +169,7 @@ export default function MapPanel(p: Props) {
                 </button>
               </div>
             </div>
-            <p className="map-points-note">접근 가능한 대체 수단 — 아래 목록은 지도 마커와 같은 지점·건수입니다. 집계 표시의 중심점은 원좌표가 아닙니다.</p>
+            <p className="map-points-note">접근 가능한 대체 수단 — 아래 목록은 지도 마커와 같은 지점·건수입니다. 지도 점에는 완료일만 범위에 든 위치도 포함됩니다. 집계 표시의 중심점은 원좌표가 아닙니다.</p>
             <ul className="point-list" id="cm-point-list" aria-label="신고 지점 목록">
               {p.points.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 지점이 없습니다.</li>}
               {p.points.map((pt) => (

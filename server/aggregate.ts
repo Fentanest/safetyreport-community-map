@@ -266,8 +266,12 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
   const exactPoints = pointRows(reported, done);
   const points = mapNodes(exactPoints);
-  const previousPointKeys = new Set(
-    [...previousReported.filter(located), ...previousDone.filter(located)].map(fact => fact.point_key));
+  // AF-MAP2: point_count is the report-date location count (unique point_key among located
+  // reported facts) so it matches basis='report_date' and the report-count denominator. The map
+  // itself still draws the union of report-date and completion-date points, so a completion-only
+  // location appears in `points` but not in point_count.
+  const reportedPointKeys = new Set(reported.filter(located).map(fact => fact.point_key));
+  const previousReportedPointKeys = new Set(previousReported.filter(located).map(fact => fact.point_key));
   const vehicles = vehicleRows(reported);
   const sourceDates = activeFacts(input).flatMap(fact => [kstDate(fact.report_date), kstDate(fact.completed_date)])
     .filter((day): day is string => day !== null).sort();
@@ -330,7 +334,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
         delta_percent: null, delta_reason: !comparisonCovered ? null : priorD ? null : D ? 'new' : 'no_baseline',
       },
       fine_count: countMetric(fine, 'completed_date', comparisonCovered ? priorFine : null, 0, done.length),
-      point_count: countMetric(exactPoints.length, 'report_date', comparisonCovered ? previousPointKeys.size : null, 0, reported.length),
+      point_count: countMetric(reportedPointKeys.size, 'report_date', comparisonCovered ? previousReportedPointKeys.size : null, 0, reported.length),
       contributor_count: countMetric(new Set(reported.map(fact => fact.contributor_id)).size, 'report_date',
         comparisonCovered ? new Set(previousReported.map(fact => fact.contributor_id)).size : null, 0, reported.length),
       outcomes: result,

@@ -34,6 +34,15 @@ function resolveTheme(t: ThemeMode): 'dark' | 'light' {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
+// AF-MAP2: empty only when neither indicator has rows and no map point exists, so a
+// completion-only range still shows its result screen instead of the empty banner.
+export function isEmptyResult(data: DashboardData | null): boolean {
+  if (!data) return false;
+  return data.overview.report_count.value === 0 &&
+    data.overview.completed_count.value === 0 &&
+    data.points.length === 0;
+}
+
 export default function Dashboard() {
   const [scope, setScope] = useState<Scope>(() => scopeFromSearch(window.location.search, baseScope(dataMode)));
   const [draft, setDraft] = useState<DraftFilters>(() => draftFromScope(scopeFromSearch(window.location.search, baseScope(dataMode))));
@@ -234,7 +243,7 @@ export default function Dashboard() {
     if (!data) return false;
     return data.overview.report_count.value == null;
   }, [data]);
-  const empty = data?.overview.report_count.value === 0;
+  const empty = isEmptyResult(data);
 
   const unsupportedNote = unsupported
     ? dataMode === 'demo'
