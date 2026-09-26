@@ -116,3 +116,23 @@ R2-01·R2-03·SOL-02·SOL-05 는 3차에서 닫혔다. 대기 큐 경로의 새 
 | PC 단위 / 서버↔모바일 왕복 / 실스택 | 388 OK(skip 4) / diff_count 0 / 1 OK |
 | PC 브라우저 스모크 | 127 passed, **1 failed** — chromium `list-interactions` 1건: 외부 CDN `cdn.datatables.net` 스크립트가 `net::ERR_NETWORK_CHANGED` 로 받아지지 않아 표 미초기화(제품 서버 `/data/all` 은 200). 원인 `pc-browser-smoke-failure-cause.txt`, 같은 스펙 chromium+firefox 재실행 16/16 passed(`pc-browser-smoke-rerun-list-interactions.log`) |
 | 음성 대조(각각 따로) | `neg-r3-01-remove-before-start`, `neg-r3-01-fixed-queue-file`, `neg-r3-02-no-gate`, `neg-r3-03-swallow-save` — 모두 목표 단언에서 실패 |
+
+## Sol 4차 재검증(`audit-sol-recheck-04.md`, "수정 후 재검토") 반영
+
+| ID | 지적 | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit5/neg-*.log`, 각각 따로) |
+|---|---|---|---|---|
+| R4-04 높음 | 커밋한 음성 대조 로그(`audit4/neg-r3-02-no-gate.log`)에 mock 호출 인자로 **환경 변수 전체**(실행 세션 토큰 포함)가 찍힘 | ① 해당 줄을 지운 사본으로 **로컬 커밋을 고침**(map `804a30b` → `bfc9edd`, push 한 적 없음). 이 branch·HEAD reflog 만료 — 어떤 ref 도 옛 commit 을 가리키지 않음(객체는 사용자의 다음 `git gc` 까지 로컬 객체 저장소에만 남음). 실행 폴더 원본도 같은 처리. 다른 증거·Sol 작업 로그에 같은 값 0건 확인 ② 테스트가 `assert_called*`(실패 시 인자 출력) 대신 호출 **횟수**를 비교(PC `1997065`, `test_fixture_runtime_mode.py` 도) ③ 증거 사본 스크립트가 `env=` 줄을 지우고 비밀 패턴이 남으면 실패 | map `bfc9edd`, PC `1997065` | 증거 전체 비밀 패턴 검사 0건 |
+| R4-01 높음 | Popen 반환 즉시 큐에서 빼서, 자식이 큐 파일을 읽기 전 실패하면 번호 유실 | 맡은 번호는 **예약**(다른 실행이 다시 맡지 않음), 자식이 **exit 0 으로 끝난 뒤에만** 큐에서 뺌. 실패하면 예약만 풀어 큐에 남김(곧바로 재시도하지 않고 다음 계기에) | PC `1997065` | `test_items_stay_queued_until_the_child_exits_cleanly`(실행 중·실패 종료·실행 중 들어온 번호·파일 내용) / `neg-r4-01-remove-on-start.log` |
+| R4-02 중간 | 동시 launch 중복 시작, 지는 쪽이 실행 중 크롤의 로그를 지움 | 대기 큐 시작 직렬화(`_launch_lock`) + 예약. 로그 교체·실행별 큐 파일은 `start_crawl(prepare=…)` 로 **같은 잠금 안에서 시작 확정 뒤에만**. 사용자 시작(`crawl_control`)도 같은 방식이고 시작 경쟁에서 지면 번호를 대기 큐로 | PC `1997065` | `test_two_launches_never_hand_the_same_numbers_to_two_crawls`(첫 자식 즉시 종료), `test_concurrent_launches_start_once_and_keep_the_running_log` / `neg-r4-02-no-launch-lock.log`(같은 번호 2회), `neg-r4-02-user-log-before-start.log`(로그 덮어씀) |
+| R4-03 높음 | 게이트 통과 뒤 복원이 끝나면 새 데이터셋에서 재검사 없이 시작 | 복원이 시작될 때마다 `restore_generation` +1. 모든 크롤 시작(대기 큐·사용자)이 검사 **전에** 세대를 읽고 `start_crawl` 이 같은 잠금 안에서 비교 — 달라졌으면 시작 거부(대기 큐는 보존) | PC `1997065` | `test_a_restore_between_the_check_and_the_start_blocks_the_start`(대기 큐·`enqueue_report` 모두) / `neg-r4-03-no-generation.log` |
+
+테스트 격리: 복원 뒤 재개 스레드가 실제 게이트 검사를 하며 다음 테스트로 새는 간헐 실패(16회 중 1회)가 있어, 테스트 기본값으로 게이트 검사를 즉시 거부하고 크롤 후처리 스레드(이름 `crawl-*`)를 테스트 끝에 기다리게 했다. 이후 `tests.test_storage_exchange` 12회 연속 통과.
+
+### 4차 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit5/`, PC 만 변경)
+후보 PC `1997065`. mobile `2debce44`·map 제품 `e284c86`·auth 제품 `5a4d678` 은 audit3 과 같다.
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 392 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
+| 음성 대조(각각 따로) | `neg-r4-01-remove-on-start`, `neg-r4-02-no-launch-lock`, `neg-r4-02-user-log-before-start`, `neg-r4-03-no-generation` — 모두 목표 단언에서 실패 |
+| 증거 비밀 검사 | 모든 추적 증거에서 세션 토큰·SSH/DBUS·`env={` 0건(사본 스크립트가 남으면 실패) |
