@@ -219,7 +219,9 @@ export default function Dashboard() {
   }, [scope, entityTab, entityQ, entitySort, entityDir]);
 
   useEffect(() => {
-    if (!entitiesLive) return;
+    // Only browse entities for a dashboard that actually loaded (same version); a not-ready or failed
+    // dashboard must not trigger a second failing request.
+    if (!entitiesLive || loadState !== 'ready' || !data) return;
     const ac = new AbortController();
     setEntityLoading(true);
     setEntityError(null);
@@ -239,7 +241,7 @@ export default function Dashboard() {
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, entityTab, entityQ, entitySort, entityDir, entityPage, entitiesLive, entityReload, data?.meta.dataset_version]);
+  }, [scope, entityTab, entityQ, entitySort, entityDir, entityPage, entitiesLive, entityReload, data?.meta.dataset_version, loadState]);
 
   const sortEntities = useCallback((key: EntitySortKey) => {
     if (key === entitySort) setEntityDir((d) => (d === 'desc' ? 'asc' : 'desc'));
