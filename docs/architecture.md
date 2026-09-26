@@ -16,6 +16,10 @@ GitHub Actions → safe export view → initial snapshot → GitHub Pages React 
                                                      └─ public-analytics GET (비밀키 없음)
 ```
 
+선택 기능 `내 데이터 함께 보기`(docs/personal-comparison.md): 브라우저가 Supabase Auth 카카오 로그인(PKCE, 지도 전용 세션)으로
+`my-analytics` Edge(verify_jwt)에 Bearer로 GET한다. 이 함수는 공개 API와 같은 사실 원천을 한 스냅숏에서 읽어 전체/내 값을 함께 계산하고
+private/no-store로 돌려준다. 공개 API·정적 snapshot 경로와 섞이지 않는다.
+
 Pages에서 브라우저가 비밀키 없는 공개 API를 호출하는 것은 가능하다. 불가능한 것은 브라우저에 넣은 secret을 숨기는 일이다.
 'Pages니까 모든 값을 빌드 시점에만 계산해야 한다'는 앞선 단정을 정정한다.
 [근거: S01·S02·S03·S07, docs/sources.md]

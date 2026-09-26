@@ -14,6 +14,10 @@
 | ANALYTICS_RATE_SALT | Supabase Edge Function secret | 공개 요청 IP의 1분 rate bucket용 salt. 프런트/CI에 넣지 않음 |
 | optional SUPABASE_PUBLISHABLE_KEY | 공개 direct adapter만 | anon/access grants로 제한. 기본 UI는 필요 없음 |
 | service_role/secret | 중앙 Supabase 함수 runtime만 | 관리자 성격. CI readonly 대용으로 사용하지 않음 |
+| VITE_SUPABASE_URL | variable / frontend | 선택. 지도 웹 로그인(내 신고 비교)용 프로젝트 URL. 비우면 로그인 미설정으로 공개 지도만 |
+| VITE_SUPABASE_PUBLISHABLE_KEY | variable / frontend | 선택. 공개 publishable(`sb_publishable_…`) 키. secret/service_role 금지(dist 스캔이 비-anon JWT 차단) |
+| MY_ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | `my-analytics` Origin allowlist. 운영 `https://safemap.worklazy.net` |
+| MY_ANALYTICS_ENABLED | Supabase Edge Function secret | `false`면 개인 비교만 503(공개 지도 영향 없음) |
 
 환경 파일은 .env.example만 커밋한다. 실제값은 요청받아 채팅에 복사시키지 말고 사용자가 GitHub/Supabase 설정에 입력한다.
 VITE_에 PRIVATE/SECRET/REST/DSN이 들어가면 검증 실패. 단순 환경변수 이름보다 실제 artifact도 검사한다.
@@ -56,3 +60,12 @@ production deployment는 별도 사용자 승인 후. concurrency와 rollback ru
 ## rollback
 새 build 실패면 배포하지 않음. 배포 후 문제가 생기면 직전 검증 artifact로 rollback(권한 승인 범위),
 다만 삭제 요청으로 폐기된 data version으로 되돌아가면 안 됨. 코드 rollback과 데이터 version은 분리 관리.
+
+## 내 신고 비교(my-analytics) 운영 적용 — 별도 승인 필요
+1. 운영 DB에 `supabase/migrations/202609270100_my_analytics.sql` 적용(읽기 전용 STABLE RPC 1개, service_role만 실행). 수집·동의·writer 스키마 변경 없음.
+2. `supabase functions deploy my-analytics`(verify_jwt=true), secret `MY_ANALYTICS_ALLOWED_ORIGINS`.
+3. Supabase Auth: Kakao provider 리다이렉트 허용에 `https://safemap.worklazy.net/**` 추가(지도 페이지로 돌아오는 PKCE).
+4. Pages 변수 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` 설정 후 `VITE_DATA_MODE=live npm run build && npm run scan`.
+5. smoke: 비로그인 공개 화면 → 로그인 → 비교 켜기 → 전체 열 = 공개 KPI → 로그아웃 → 앱 수동 업로드가 계속 ACK되는지.
+6. 되돌리기: `MY_ANALYTICS_ENABLED=false` 또는 Pages 변수 제거(로그인 미설정 상태로 공개 지도 유지). RPC drop은 선택.
+로컬 합성 스택 검증 결과는 `docs/integration/community-ingest/evidence/2026-09-27-personal-compare/`. 운영 적용·실카카오는 BLOCKED.

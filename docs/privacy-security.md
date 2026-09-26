@@ -28,6 +28,13 @@ snapshot IDs, 이메일·전화번호·계정 이름·Google sub·JWT·refresh t
 공개 담당자 이름과 기관 이름은 예외적으로 **명시 허용**된 필드다. 이메일/연락처와 같이 내려오는 payload를 통째로 펼치지 않는다.
 차량 raw를 HTML hidden, title, data-attribute, tooltip, aria-label, analytics 이벤트, URL query에 넣어도 노출이다.
 
+## 내 신고 비교(개인 읽기) 경계
+- 공개 API는 Authorization을 받지 않고(CORS 허용 헤더 `Accept`) 요청자가 누구든 같은 응답이다(테스트 고정).
+- 개인 응답(`my-analytics`)은 검증된 사용자 본인에게만, `Cache-Control: private, no-store`·`Vary: Authorization`. 계정 id·세션·이메일을 담지 않는다.
+- exporter는 `mine`·`viewer`·`my_points`·`user_id`·`session_id` 필드를 거부하고, share URL에는 비교 모드·계정 상태를 넣지 않는다.
+- 관심 지역·비교 토글은 이 브라우저 localStorage에만(서버 전송 없음). 브리핑 모드는 내 데이터를 기본으로 숨긴다.
+- 지도 로그인은 relay·account API와 별개이며 `signOut({scope:'local'})`만 쓴다. dist 스캔이 relay/account 참조와 비-anon JWT를 차단한다.
+
 ## 최소 권한
 Pages에는 public API URL·Kakao JavaScript key만 필요하다. Supabase direct-read adapter를 쓰는 경우 publishable key는
 공개 설정이며 read-only는 key 이름이 아니라 grants/RLS/함수 권한으로 강제한다.
