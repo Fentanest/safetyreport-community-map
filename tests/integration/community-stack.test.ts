@@ -133,6 +133,34 @@ const envelope = (w: Writer, events: unknown[], over: Partial<Json> = {}) => ({ 
 const ingest = (w: Writer, events: unknown[], over: Partial<Json> = {}, token = w.session.access) => ingestRaw(envelope(w, events, over), token);
 
 const ledger = () => count('private.community_ingest_events');
+const RT_CONTROL = 'it_realtime_control';
+// 로컬 스택 전용 Realtime 대조 표를 만들고(없으면), 실제 변경 전달이 될 때까지 기다린다 — 초기화된 스택의 첫 실행에서도
+// 대조가 성립하게 테스트 **전** 준비 단계에서 한다(Sol 3차 M-02).
+async function ensureRealtimeReady(): Promise<number> {
+  sql(`create table if not exists public.${RT_CONTROL}(id bigint primary key, v text);
+    alter table public.${RT_CONTROL} enable row level security;
+    drop policy if exists rt_read on public.${RT_CONTROL};
+    create policy rt_read on public.${RT_CONTROL} for select to anon, authenticated using (true);
+    grant select on public.${RT_CONTROL} to anon, authenticated;
+    do $$ begin if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = '${RT_CONTROL}')
+      then alter publication supabase_realtime add table public.${RT_CONTROL}; end if; end $$;`);
+  const started = Date.now();
+  const ws = new WebSocket(`${API.replace('http', 'ws')}/realtime/v1/websocket?apikey=${keys.PUBLISHABLE_KEY}&vsn=1.0.0`);
+  const got: Json[] = [];
+  await new Promise<void>((resolve, reject) => { ws.onopen = () => resolve(); ws.onerror = e => reject(e); });
+  ws.onmessage = m => got.push(JSON.parse(String(m.data)));
+  ws.send(JSON.stringify({ topic: 'realtime:warmup', event: 'phx_join', ref: 'w', join_ref: 'w',
+    payload: { config: { postgres_changes: [{ event: 'INSERT', schema: 'public', table: RT_CONTROL }] }, access_token: keys.PUBLISHABLE_KEY } }));
+  try {
+    for (let i = 0; i < 60 && !got.some(m => m.event === 'postgres_changes'); i++) {
+      if (got.some(m => m.event === 'system' && m.payload?.status === 'ok')) sql(`insert into public.${RT_CONTROL}(id, v) values (${Date.now() * 10 + i}, 'warmup');`);
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  } finally { ws.close(); }
+  if (!got.some(m => m.event === 'postgres_changes')) throw new Error(`realtime control never delivered: ${JSON.stringify(got).slice(0, 300)}`);
+  return Date.now() - started;
+}
+
 const SERVE_LOG = process.env.COMMUNITY_SERVE_LOG ?? '/home/better0101/projects/safetyreport/.agent-runs/ci-20260926/stack-int/serve.log';
 function runtimeTerminations(): number {
   try {
@@ -172,14 +200,16 @@ async function publicMeta(): Promise<Json> {
 }
 
 describe.skipIf(!enabled)('community ingest on the composed local stack', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     const status = JSON.parse(execFileSync('npx', ['supabase', 'status', '-o', 'json', '--workdir', '.integration-stack'], { encoding: 'utf8' }));
     keys = status as Keys;
     // shared local stack: reset only rate-limit windows so reruns are independent
     sql('delete from private.rate_limits; delete from private.community_auth_rate_limits;');
     // deployment-and-rollback.md step 7: the operator switches the public projection on
     sql('update private.analytics_state set ready = true, published_at = coalesce(published_at, now()) where singleton;');
-  });
+    const warm = await ensureRealtimeReady();
+    console.info(`[realtime] control delivery ready after ${warm} ms`);
+  }, 120_000);
 
   describe('security matrix (prompt §14)', () => {
     it('refuses URL + publishable key only, publishable key as bearer, forged/other-project/expired JWTs, legacy keys', async () => {
@@ -361,15 +391,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     it('Realtime: every private subscription is answered, none delivers changes, while a public control table does', async () => {
       const w = await writerFor('B');
       // 양성 대조군: 이 테스트만 쓰는 공개 표를 publication 에 넣어 Realtime 이 실제로 변경을 전달하는지 먼저 증명한다
-      // 로컬 스택 전용 대조 표(한 번 만들고 계속 쓴다 — 매번 publication 에 넣고 빼면 Realtime 복제가 흔들린다)
-      const control = 'it_realtime_control';
-      sql(`create table if not exists public.${control}(id bigint primary key, v text);
-        alter table public.${control} enable row level security;
-        drop policy if exists rt_read on public.${control};
-        create policy rt_read on public.${control} for select to anon, authenticated using (true);
-        grant select on public.${control} to anon, authenticated;
-        do $$ begin if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = '${control}')
-          then alter publication supabase_realtime add table public.${control}; end if; end $$;`);
+      const control = RT_CONTROL; // beforeAll 이 만들고 전달 준비를 증명했다
       const base = Date.now();
       {
         const messages: Json[] = [];
@@ -440,12 +462,19 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
           expect(JSON.stringify(up.json)).toMatch(/row-level security|Unauthorized|not allowed/i);
         }
         expect(Number(sql(`select count(*) from storage.objects where bucket_id = '${bucket}';`))).toBe(0);
-        sql(`insert into storage.objects(bucket_id, name) values ('${bucket}', 'seeded.json');`);
+        // 읽기 양성 대조: service role 이 실제 객체를 올리고 읽을 수 있음을 먼저 확인 → anon·사용자 거절이 '파일 없음'이 아님을 보인다
+        const svc = { token: keys.SERVICE_ROLE_KEY, apikey: keys.SERVICE_ROLE_KEY };
+        const put = await call('POST', `/storage/v1/object/${bucket}/seeded.json`, { ...svc, body: '{"seed":true}' });
+        expect(put.status, JSON.stringify(put.json)).toBe(200);
+        const own = await call('GET', `/storage/v1/object/${bucket}/seeded.json`, svc);
+        expect([own.status, own.json]).toEqual([200, { seed: true }]);
         for (const token of [undefined, w.session.access]) {
           const get = await call('GET', `/storage/v1/object/${bucket}/seeded.json`, { token });
-          expect(get.status).toBeGreaterThanOrEqual(400);
+          expect(get.status, JSON.stringify(get.json)).toBeGreaterThanOrEqual(400);
+          expect(JSON.stringify(get.json)).not.toContain('seed');
         }
       } finally {
+        await call('DELETE', `/storage/v1/object/${bucket}/seeded.json`, { token: keys.SERVICE_ROLE_KEY, apikey: keys.SERVICE_ROLE_KEY });
         sql(`begin; set local storage.allow_delete_query = 'true'; delete from storage.objects where bucket_id = '${bucket}';
           delete from storage.buckets where id = '${bucket}'; commit;`);
       }

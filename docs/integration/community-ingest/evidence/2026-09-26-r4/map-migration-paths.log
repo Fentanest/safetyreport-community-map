@@ -1,0 +1,15 @@
+== path: empty (initial: none)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: map-first (initial: 202608150001_initial_schema.sql 202609240001_analytics_v2.sql)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: auth-first (initial: 202609251200_community_auth_relay.sql)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: both (initial: 202608150001_initial_schema.sql 202609240001_analytics_v2.sql 202609251200_community_auth_relay.sql)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: both + public legacy v2 facts (guard)
+  ok: stopped with LEGACY_SNAPSHOT_DATA_PRESENT, nothing half-applied
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+  ok: applies after the legacy snapshot is retired
+== restore the integration stack to the full composed history
+  ok
+MIGRATION PATHS: PASS
