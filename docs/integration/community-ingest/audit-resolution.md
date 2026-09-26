@@ -44,3 +44,30 @@ Gemini(agy) 보조 조사는 구독 할당량 소진(429, 약 94시간 뒤 초�
 | 지도 화면(실제 브라우저, live 모드) | 표가 `/entities` 전체 조회 모드(캡션 "전체 N건 · 서버 검색·정렬"), 검색·정렬 요청 200, 콘솔 오류 0 — `map-entities.png`, `map-page.png` |
 
 auth relay·브라우저 첫 실행은 감사 worktree 에 로컬 스택 접속 파일(`.safeauth-stack/stack.env`, git 무시)과 로컬 사이트 서버가 없어 실행되지 못했다(skip·연결 거부). 같은 `safeauth-local` 스택의 파일을 복사하고 `tests/stack/build-local.sh` + `serve-local.ts` 를 띄운 뒤 위 결과를 얻었다.
+
+## Sol 재검증(`audit-sol-recheck.md`, "수정 후 재검토") 반영
+
+| ID | 재검증 지적 | 조치 | commit | 회귀 테스트 / 음성 대조 로그 |
+|---|---|---|---|---|
+| SOL-02 | 모바일 가드는 상세 표가 **하나라도** 있으면 merge 표를 모두 건너뛰는데, 읽기는 **분류별**로 상세 표가 없으면 merge 를 읽는다(혼합 구버전 DB) | 가드가 분류마다 `_readServerReportRows` 와 같은 조건으로 표를 고른다 | mobile `c52a12c7` | `server_import_test.dart` "mixed old DB …" — 음성 대조 `evidence/2026-09-26-audit2/neg-mobile-sol02-guard-before-recheck.log`(표 선택만 되돌리면 실패) |
+| SOL-04 | 복원이 `is_crawling()` 을 장벽 전에 한 번만 보고, 크롤러(별도 프로세스)는 복원 장벽을 보지 않음 | `crawl_manager.hold_for_restore()` — 크롤 시작과 **같은 잠금**에서 "크롤 중 아님" 확인과 "복원 중" 표시를 한 번에. 복원 동안 `start_crawl` 은 `CrawlBlockedByRestore`, 대기 큐 자동 시작은 신고번호를 큐로 되돌림. 복원은 hold → 쓰기 장벽 순서 | PC `57a8cb3` | `test_crawler_cannot_start_while_a_restore_is_running`, `test_restore_is_refused_atomically_when_a_crawl_is_running` — 음성 대조 `neg-pc-sol04-no-crawl-hold.log`(hold 를 빼면 2건 실패) |
+| SOL-05 | 남긴 사본을 사용자가 되돌릴 화면 경로가 없음 | 설정(단독 모드)에 "직전 DB 로 되돌리기" — `LocalDbService.revertToPreviousImport()`(되돌리기도 복원이라 바뀌기 전 DB 를 다시 사본으로 남겨 되돌리기를 되돌릴 수 있음) | mobile `c52a12c7` | `server_import_test.dart` "the settings revert …"(A→B 가져오기 → 되돌리기 A → 다시 B). 설정 화면 버튼 자체의 위젯 테스트는 없다(SettingsScreen 위젯 테스트 틀이 저장소에 없음) — **미검증** |
+| SOL-06 | `point_count` 가 합집합을 세며 basis/분모/문구와 어긋나고, 완료만 있는 범위에 빈 결과 안내 | Muse(AF-MAP2): `point_count` 는 신고일 기준 위치 수로 복원(지도 점은 합집합 유지, 지도 부제·대체 목록에 안내), 빈 결과는 신고·완료·점이 모두 없을 때만 | Muse `e11ebb2`, 병합 `b09b9ef`, 문서 `e284c86` | `tests/product/afMap2PointCount.test.tsx` 3건(8월 신고·9월 완료 1건 → point_count 0/basis report_date/분모 0, 점 1개, 빈 배너 없음) |
+
+음성 대조: 1차 반영의 음성 대조는 이 대화에서 실행했지만 로그를 남기지 않았다(Sol 지적 그대로). 재검증 반영분부터 `neg-*.log` 로 남긴다.
+
+### 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit2/`)
+후보: PC `57a8cb3`, mobile `c52a12c7`, map `e284c86`(+ 이 문서 commit), auth `5a4d678`(제품 코드) / `1dddcc4`(브라우저 QA 결과 파일 갱신만).
+함수는 감사 수정 코드로 다시 합성해 띄웠다(config·env·migration 바이트 동일).
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 실스택 / 브라우저 스모크 | 382 OK(skip 4) / 1 OK / 128 passed |
+| 서버↔모바일 왕복 | diff_count 0 |
+| mobile 단위 / 실스택 / analyze | 523 passed(3 skipped) / 1 passed / No issues found |
+| map 단위+tsc+build / 실스택 ×2 / Deno 4함수 / compose check | 88 passed / 21·21 / 4 ok / ok |
+| auth 단위 / relay / 브라우저 | 38 passed / 24 passed / 11 passed |
+| 지도 화면(live) | 표 서버 조회·검색·정렬 요청 200, 콘솔 오류 0 (`map-entities.png`, `map-page.png`) |
+| 음성 대조 | `neg-pc-sol04-no-crawl-hold.log`(exit 1 기대), `neg-mobile-sol02-guard-before-recheck.log`(exit 1 기대) |
+
+auth relay 첫 실행(스크립트 순서상)은 브라우저 시험용 serve-local 이 mock Kakao 포트 54410 을 잡고 있어 시작하지 못했다(EADDRINUSE, 24 skip). serve-local 을 멈춘 뒤 다시 실행한 결과가 위 24 passed 이고 로그는 그 실행으로 덮었다.
