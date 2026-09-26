@@ -1,4 +1,4 @@
-import type { Scope } from './public';
+import type { Scope } from './public.ts';
 
 /**
  * Personal comparison (my-analytics) DTO. Returned only to the verified signed-in user, never

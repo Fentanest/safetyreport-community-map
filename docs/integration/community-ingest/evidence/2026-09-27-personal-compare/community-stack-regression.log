@@ -1,0 +1,35 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map
+
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+NOTICE:  relation "it_realtime_control" already exists, skipping
+stdout | tests/integration/community-stack.test.ts > community ingest on the composed local stack
+[realtime] control delivery ready after 3184 ms
+
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > security matrix (prompt §14) > refuses URL + publishable key only, publishable key as bearer, forged/other-project/expired JWTs, legacy keys 948ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > security matrix (prompt §14) > treats Supabase anonymous and non-Kakao sessions as not community users 874ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > security matrix (prompt §14) > requires consent, a registered connection, the owner, and the bound session 2614ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > security matrix (prompt §14) > refuses still-valid JWTs after consent revoke, connection revoke and logout 1833ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > security matrix (prompt §14) > refuses unsupported apps/modes and malformed or oversized requests without writing 1919ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > security matrix (prompt §14) > rate limits the account API per user 2607ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > security matrix (prompt §14) > blocks direct REST/RPC/GraphQL access to private data and leaves row counts unchanged 3878ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > realtime and storage channels (§14, Sol M-02) > Realtime: every private subscription is answered, none delivers changes, while a public control table does 3217ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > realtime and storage channels (§14, Sol M-02) > Storage: no buckets by default; a real private bucket refuses anonymous and user writes and reads 954ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > holds accepted facts while the public projection is switched off, then serves them when on 710ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > accepts, is idempotent for the same event, conflicts on changed content, and publishes to the anonymous API 1052ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > does not count an unchanged re-observation and keeps the newest revision 888ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > counts coordinate-missing facts in the public population but not on the map 594ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > removes a revoked lineage from the public API, keeps it hidden after re-consent, and republishes only on explicit reshare 1642ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > deletes contributions: public removal, fence for earlier captures, all connections revoked, new connection works 1050ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > enforces the single writer epoch: takeover supersedes the old connection 629ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > serves the manifest: empty "0", stable token across pages, count = total 1377ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > keeps identical report ids of different users and datasets apart (C05, S-05) 1291ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > removes the fact from the public API when a newer correction says it is no longer final (D04) 870ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > races ingest against revoke, takeover and a policy switch without deadlocks or partial writes (S-09) 6642ms
+ ✓ tests/integration/community-stack.test.ts > community ingest on the composed local stack > ingest semantics and public projection > bumps the public dataset version on operator DML and serves the new value over HTTP (N-09, §20-4) 633ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  02:19:10
+   Duration  42.43s (tests 99%)
+
