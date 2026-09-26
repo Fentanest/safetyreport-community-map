@@ -28,6 +28,22 @@ interface Props {
   totalPoints?: number;
 }
 
+const FILTER_REASON: Record<PointFilter, string> = {
+  all: '',
+  mine: '내 데이터 함께 보기를 켜고 로그인하면 사용할 수 있습니다.',
+  shared: '내 데이터 함께 보기를 켜고 로그인하면 사용할 수 있습니다.',
+  interest: '지역 목록에서 ★로 관심 지역을 지정하면 사용할 수 있습니다.',
+};
+
+/** Visible reason for disabled display filters (a disabled button's tooltip is not reliably shown). */
+function unavailableHint(available: Record<PointFilter, boolean> | undefined): string | null {
+  if (!available) return null;
+  const parts: string[] = [];
+  if (!available.mine) parts.push('내 지점 필터: 내 데이터 함께 보기 + 로그인');
+  if (!available.interest) parts.push('관심 지역: 지역 목록의 ★로 지정');
+  return parts.length ? parts.join(' · ') : null;
+}
+
 function markLabel(mark: PointMark | undefined): string {
   if (!mark) return '';
   const parts: string[] = [];
@@ -196,13 +212,18 @@ export default function MapPanel(p: Props) {
       </div>
       {p.onPointFilter && (
         <div className="point-filter" role="group" aria-label="지점 표시 필터 (통계 범위는 바뀌지 않음)">
-          {(['all', 'mine', 'shared', 'interest'] as PointFilter[]).map((f) => (
-            <button key={f} type="button" className={p.pointFilter === f ? 'selected' : ''} aria-pressed={p.pointFilter === f}
-              disabled={!(p.filterAvailable?.[f] ?? f === 'all')} onClick={() => p.onPointFilter!(f)}>
-              {POINT_FILTER_LABEL[f]}
-            </button>
-          ))}
+          {(['all', 'mine', 'shared', 'interest'] as PointFilter[]).map((f) => {
+            const available = p.filterAvailable?.[f] ?? f === 'all';
+            return (
+              <button key={f} type="button" className={p.pointFilter === f ? 'selected' : ''} aria-pressed={p.pointFilter === f}
+                disabled={!available} title={available ? undefined : FILTER_REASON[f]}
+                aria-describedby={available ? undefined : 'point-filter-hint'} onClick={() => p.onPointFilter!(f)}>
+                {POINT_FILTER_LABEL[f]}
+              </button>
+            );
+          })}
           <span className="cm-muted">표시 필터 · 통계 범위는 그대로{p.pointFilter && p.pointFilter !== 'all' ? ` · ${fmtInt(p.points.length)} / ${fmtInt(p.totalPoints ?? p.points.length)}곳 표시` : ''}</span>
+          {unavailableHint(p.filterAvailable) && <span className="cm-muted point-filter-hint" id="point-filter-hint">{unavailableHint(p.filterAvailable)}</span>}
         </div>
       )}
       <div className={`map-canvas${sdkState === 'error' ? ' map-fallback-mode' : ''}`} role="region" aria-label={sdkState === 'ready' ? 'Kakao 실제 지도' : '지도 대체 영역: 지점 목록으로 동일 탐색 가능'}>

@@ -30,7 +30,7 @@ export default function ViewControls(p: Props) {
           {p.briefingHidden && <small className="cm-muted">브리핑 중 숨김</small>}
         </label>
         {p.compareDisabledReason && (
-          <small className="compare-disabled-note" role="note">{p.compareDisabledReason} 공개 화면은 그대로 볼 수 있습니다.</small>
+          <small className="compare-disabled-note" role="note">{p.compareDisabledReason}</small>
         )}
       </span>
       <div className="segments view-switch" role="group" aria-label="보기 전환">

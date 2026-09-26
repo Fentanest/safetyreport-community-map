@@ -84,6 +84,17 @@ describe('map web login (separate from relay and app sessions)', () => {
   });
 });
 
+describe('session-expired guidance (docs/personal-comparison.md §6)', () => {
+  it('tells the viewer that the app upload connection is not affected', async () => {
+    installWindow('?me=expired');
+    const { createDemoAuth } = await import('../../src/auth/mapAuth');
+    const auth = createDemoAuth('?me=expired');
+    expect(await auth.refreshToken()).toBeNull();
+    expect(auth.snapshot()).toMatchObject({ status: 'signed_out' });
+    expect(auth.snapshot().message).toContain('자동 업로드 연결에는 영향이 없습니다');
+  });
+});
+
 describe('personal client', () => {
   const scope = { start: '2025-09-25', end: '2026-09-24', category: 'all' as const, region_code: '서울 중구', agency_key: null, manager_key: null, bbox: null };
   async function sample() {

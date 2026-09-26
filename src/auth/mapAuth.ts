@@ -156,7 +156,7 @@ export function createLiveAuth(): MapAuth {
       if (!config || !clientPromise) return null;
       const { data, error } = await (await client()).auth.refreshSession();
       if (error || !data.session) {
-        emitter.set({ status: 'signed_out', displayName: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
+        emitter.set({ status: 'signed_out', displayName: null, message: '지도 로그인이 만료되었습니다. 다시 로그인해 주세요. 앱·서버의 자동 업로드 연결에는 영향이 없습니다.' });
         return null;
       }
       return data.session.access_token;
@@ -203,7 +203,7 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
     async accessToken() { return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null; },
     async refreshToken() {
       if (fixture === 'expired') {
-        emitter.set({ status: 'signed_out', displayName: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
+        emitter.set({ status: 'signed_out', displayName: null, message: '지도 로그인이 만료되었습니다. 다시 로그인해 주세요. 앱·서버의 자동 업로드 연결에는 영향이 없습니다.' });
         return null;
       }
       return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null;
