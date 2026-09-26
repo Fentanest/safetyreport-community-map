@@ -2,7 +2,7 @@
 
 ## 1. rollout 순서
 1. 운영자: `scripts/integration/preflight_counts.sql`(읽기 전용) 실행 → §2 결정표.
-2. 중앙 SQL: manifest 순서로 auth `202609260100` → map `202609260200`(합성 이력, `compose_supabase.mjs check` 통과본만). `db push`·repair·reset 금지.
+2. 중앙 SQL: manifest 순서로 auth `202609260100` → map `202609260200`(합성 이력, `node scripts/integration/compose_supabase.mjs check --auth <배포할 safetyreport-community-auth checkout>` 통과본만 — 인증 경로는 필수, 기본값 없음). `db push`·repair·reset 금지.
 3. Edge Functions: `community-account`(verify_jwt=true), `community-ingest`(verify_jwt=true), `public-analytics` 재배포(공개 RPC 교체 반영), relay 는 변경 없음(verify_jwt=false 유지).
 4. auth 사이트 문구(도움말·개인정보) 배포.
 5. 앱 배포(PC·Docker·Android): 공개 설정 Variables 주입본만. **중앙 capability 확인 전 앱 배포 금지**(필수 게이트가 영구 잠김 방지) — 확인: 테스트 계정으로 `community-account/status` 200, `consent` 성공, `community-ingest/manifest` 200.

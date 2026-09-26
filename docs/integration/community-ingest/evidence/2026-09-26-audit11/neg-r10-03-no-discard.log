@@ -1,0 +1,66 @@
+# cmd: timeout 300 /home/better0101/projects/safetyreport/.venv/bin/python -m unittest tests.test_storage_exchange.ExchangeRestoreTests.test_a_direct_start_that_does_not_start_leaves_no_queue_file
+# NEGATIVE CONTROL: 시작 못 한 실행의 큐 파일을 남기는 동작 — 실패(exit≠0)가 기대값
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix
+# candidate: 2f925b5 (ci0926/audit-fix)
+# dirty: 4 tracked changes
+# start: 2026-09-26T20:29:03+09:00
+[2026-09-26 20:29:04,723][INFO|database.py-upgrade_schema:285] >> 테이블 'admin_users' 생성 중...
+[2026-09-26 20:29:04,733][INFO|database.py-upgrade_schema:285] >> 테이블 'api_keys' 생성 중...
+[2026-09-26 20:29:04,735][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety' 생성 중...
+[2026-09-26 20:29:04,738][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_cursor' 생성 중...
+[2026-09-26 20:29:04,740][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_log' 생성 중...
+[2026-09-26 20:29:04,742][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_decision' 생성 중...
+[2026-09-26 20:29:04,745][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_group' 생성 중...
+[2026-09-26 20:29:04,750][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_member' 생성 중...
+[2026-09-26 20:29:04,752][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_entry_value' 생성 중...
+[2026-09-26 20:29:04,757][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_geocode_cache' 생성 중...
+[2026-09-26 20:29:04,761][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_raw_content' 생성 중...
+[2026-09-26 20:29:04,763][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_report_override' 생성 중...
+[2026-09-26 20:29:04,765][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_sync_meta' 생성 중...
+[2026-09-26 20:29:04,767][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_watchlist' 생성 중...
+[2026-09-26 20:29:04,769][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_other' 생성 중...
+[2026-09-26 20:29:04,774][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_parking' 생성 중...
+[2026-09-26 20:29:04,777][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_traffic' 생성 중...
+[2026-09-26 20:29:04,782][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_other' 생성 중...
+[2026-09-26 20:29:04,785][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_parking' 생성 중...
+[2026-09-26 20:29:04,788][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_traffic' 생성 중...
+[2026-09-26 20:29:04,792][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 1 적용
+[2026-09-26 20:29:04,801][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 2 적용
+[2026-09-26 20:29:04,804][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 3 적용
+[2026-09-26 20:29:04,837][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 4 적용
+[2026-09-26 20:29:04,876][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 0개, 멤버 0건 재생성
+[2026-09-26 20:29:04,923][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_traffic synced_at 백필: 12건, 미해결 0건
+[2026-09-26 20:29:04,927][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_parking synced_at 백필: 6건, 미해결 0건
+[2026-09-26 20:29:04,932][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_other synced_at 백필: 6건, 미해결 0건
+[2026-09-26 20:29:04,934][INFO|database.py-backfill_synced_at:105] >> [migration] synced_at 백필 완료: 총 24건 갱신, merge 재생성 시작
+[2026-09-26 20:29:04,952][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 20:29:04,981][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 20:29:04,993][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 20:29:05,022][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+F
+======================================================================
+FAIL: test_a_direct_start_that_does_not_start_leaves_no_queue_file (tests.test_storage_exchange.ExchangeRestoreTests.test_a_direct_start_that_does_not_start_leaves_no_queue_file)
+감사 R10-03: 시작 경쟁에 지거나 시작이 막힌 직접 실행의 고유 큐 파일은 남기지 않는다.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tests/test_storage_exchange.py", line 994, in test_a_direct_start_that_does_not_start_leaves_no_queue_file
+    self.assertEqual(glob.glob(os.path.join(settings.datapath, "*queue_*.txt*")), [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['/tmp/tmp.WKNpE1LLFo/mobile_queue_8208075[244 chars]txt'] != []
+
+First list contains 4 additional elements.
+First extra element 0:
+'/tmp/tmp.WKNpE1LLFo/mobile_queue_8208075e534240d5bb6beeed946ed098.txt'
+
++ []
+- ['/tmp/tmp.WKNpE1LLFo/mobile_queue_8208075e534240d5bb6beeed946ed098.txt',
+-  '/tmp/tmp.WKNpE1LLFo/queue_1734eebe771a43fbba7fdf30da20fe73.txt',
+-  '/tmp/tmp.WKNpE1LLFo/web_selected_queue_18b02be6d1d64cd4b442354ab137565c.txt',
+-  '/tmp/tmp.WKNpE1LLFo/mobile_queue_723b657311954d9281a8ccd87ef1de38.txt']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.723s
+
+FAILED (failures=1)
+# end: 2026-09-26T20:29:05+09:00
+# exit: 1

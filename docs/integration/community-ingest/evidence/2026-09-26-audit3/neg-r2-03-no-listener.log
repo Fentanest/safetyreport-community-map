@@ -1,0 +1,42 @@
+# cmd: timeout 600 flutter test --no-pub test/widgets/settings_revert_button_test.dart
+# NEGATIVE CONTROL: 설정 화면이 provider 변경(데모 DB 전환)을 듣지 않는 상태 — 실패가 기대값
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix
+# candidate: c52a12c7 (ci0926/audit-fix)
+# dirty: 1 tracked changes
+# start: 2026-09-26T16:36:37+09:00
+00:00 +0: loading /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix/test/widgets/settings_revert_button_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: shows the revert only for a DB that has a pre-import copy, follows demo switches, and reverts
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: no matching candidates
+  Actual: _TextWidgetFinder:<Found 1 widget with text "직전 DB 로 되돌리기": [
+            Text("직전 DB 로 되돌리기", dependencies: [DefaultSelectionStyle, DefaultTextStyle,
+MediaQuery]),
+          ]>
+   Which: means one was found but none were expected
+데모 DB 에는 사본이 없다(R2-03)
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix/test/widgets/settings_revert_button_test.dart:100:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1682:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix/test/widgets/settings_revert_button_test.dart line 100
+The test description was:
+  shows the revert only for a DB that has a pre-import copy, follows demo switches, and reverts
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:03 +0 -1: shows the revert only for a DB that has a pre-import copy, follows demo switches, and reverts [E]
+  Test failed. See exception logs above.
+  The test description was: shows the revert only for a DB that has a pre-import copy, follows demo switches, and reverts
+  
+00:03 +0 -1: (tearDownAll)
+00:03 +0 -1: Some tests failed.
+# end: 2026-09-26T16:36:46+09:00
+# exit: 1

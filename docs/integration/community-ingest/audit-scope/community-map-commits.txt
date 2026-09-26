@@ -1,0 +1,42 @@
+ec3142cec05b728416d1be3c137453ddbe27a58d 2026-09-26T13:08:45+09:00 2026-09-26T13:08:45+09:00 Fentanest | Merge community ingest integration (ingest function, projection, public map)
+467fedc65926d1dd7a0e95c1745bba4d1ee16c18 2026-09-26T13:08:26+09:00 2026-09-26T13:08:26+09:00 Fentanest | Record Sol's fifth integration review: merge approved for the synthetic-stack gates
+b467bf402b4ae2a991f6cea2aa59d891e392321d 2026-09-26T13:02:53+09:00 2026-09-26T13:02:53+09:00 Fentanest | Answer Sol's fourth review with r5 run logs that carry command, SHA and exit code
+b6bb6a63c7673f95b9605db998b0448de18c34af 2026-09-26T12:33:52+09:00 2026-09-26T12:33:52+09:00 Fentanest | Answer Sol's third review: warm Realtime before the suite and prove Storage reads
+5a4b462646cda6bb3de61d3017ccef65b4e8b4ca 2026-09-26T12:07:10+09:00 2026-09-26T12:07:10+09:00 Fentanest | Answer Sol's second review with tracked evidence and harder channel tests
+3b6e8a4d04312d2f7e9caa0a62ec3406a090f737 2026-09-26T11:31:36+09:00 2026-09-26T11:31:36+09:00 Fentanest | Answer Sol's first integration review with fixes, stronger stack tests and run logs
+8e4be9b575f711b1a626faea61aefe28125542f8 2026-09-26T10:42:21+09:00 2026-09-26T10:42:21+09:00 Fentanest | Record the map artifact scan and the parallel-work jobs
+ea2e600d28e6082edf9d4257307e01f4bae44972 2026-09-26T10:40:15+09:00 2026-09-26T10:40:15+09:00 Fentanest | Fill the acceptance matrix from real runs and cover report-id isolation and corrections
+4555d758f37b0de96feec22675c45ca75bb17329 2026-09-26T10:12:16+09:00 2026-09-26T10:12:16+09:00 Fentanest | Test the composed stack over real HTTP and fix the public API boot and missing-location count
+bcf6ac8f14e434c743a327ea650d3990c6926fc8 2026-09-26T04:32:20+09:00 2026-09-26T04:32:20+09:00 Fentanest | Pin the Supabase CLI 2.118.0 as a dev dependency for local stack tests
+8e3b4f245c880164e57008234d622f7df8549d86 2026-09-26T04:32:00+09:00 2026-09-26T04:32:00+09:00 Fentanest | Merge T2 community ingest and public projection into map integration
+394218ecf07ad9b9af3a51806868f460c4c25414 2026-09-26T03:52:38+09:00 2026-09-26T03:52:38+09:00 Fentanest | Add the user-only community-ingest function, the per-report fact store and ingest-only public facts
+bd3c9bb8be6ec3ff23d484b3de8e9cc3ea3643d6 2026-09-26T03:42:18+09:00 2026-09-26T03:42:18+09:00 Fentanest | Record Sol's final plan approval, pre-apply its remaining medium fixes to the SQL drafts and list the implementation gates
+820bb4a7fc552b9234c2caa191901c3e072691e8 2026-09-26T03:36:28+09:00 2026-09-26T03:36:28+09:00 Fentanest | Resolve Sol's sixth plan review: decimal manifest generations kept by a trigger and a monotonic deletion fence
+e02211d56c7f70a07de0ff5f3e4b4aea5d41c1b6 2026-09-26T03:29:54+09:00 2026-09-26T03:29:54+09:00 Fentanest | Resolve Sol's fifth plan review: one event per report per request, manifest generations, stale-lineage revocation and pinned SQL drafts
+0e917824656beb3979d4e914c3fffe31e4674f82 2026-09-26T03:20:49+09:00 2026-09-26T03:20:49+09:00 Fentanest | Resolve Sol's fourth plan review: deletion fence, exclusive connection lock, projection-accurate ACKs and lineage-level revocation
+939a7f7f9c43b55107d441647e2449a0d32491a9 2026-09-26T03:10:02+09:00 2026-09-26T03:10:02+09:00 Fentanest | Resolve Sol's third plan review: lineage-bound publication, identity tombstones, paged manifest, capture retry and refetch null rules
+be5e7382c0b1847adaee28ef8fe12f5862801463 2026-09-26T02:57:48+09:00 2026-09-26T02:57:48+09:00 Fentanest | Resolve Sol's second plan review: ingest-only public source with a legacy data guard, identity tombstones, manifest-driven corrections and the acceptance matrix
+1fb7b2b054a389b94f2b481da7a19d0081b21d8b 2026-09-26T02:43:09+09:00 2026-09-26T02:43:09+09:00 Fentanest | Record Sol's plan review, the resolution, the final plan and the draft community-ingest contracts
+868aabadbb4b2b2d06cb0f8e82e08a7bf1832d13 2026-09-26T02:24:39+09:00 2026-09-26T02:24:39+09:00 Fentanest | Record the community-ingest repository map and the first integration plan
+a829079bff301450dcfe092b40611c198ecb1702 2026-09-26T00:50:03+09:00 2026-09-26T00:50:03+09:00 Fentanest | Serve the community map at https://safemap.worklazy.net/ from the site root
+9cd3dd2fcfc91790df5b94cca2a2fedbdc11c699 2026-09-26T00:26:02+09:00 2026-09-26T00:26:02+09:00 Fentanest | Keep the region in masked plates and delete the design mockup images
+d6046df06105ada92a8a37f0ecf4c2ea12e64f77 2026-09-26T00:13:28+09:00 2026-09-26T00:13:28+09:00 Fentanest | Move the community account-link code to safetyreport-community-auth
+5ac768928e5bd5fb12ee94c5b9ec5f669fe3f324 2026-09-25T23:56:40+09:00 2026-09-25T23:56:40+09:00 Fentanest | Move the account-link page to its own subdomain safeauth.worklazy.net
+dcd54b6cef47650530cd64ca1e83d9ae6001a981 2026-09-25T23:36:46+09:00 2026-09-25T23:36:46+09:00 Fentanest | Record safeauth acceptance results across the three repositories
+216e36f92c173501d6ba4bf3a0400747541314ee 2026-09-25T23:20:56+09:00 2026-09-25T23:20:56+09:00 Fentanest | Add help and privacy page screenshots to the safeauth browser review
+7a3871358aaa8f16dd3a18a481a62125b8d10cf9 2026-09-25T23:20:17+09:00 2026-09-25T23:20:17+09:00 Fentanest | Accept the operator privacy-policy origin compiled into the safeauth bundle
+cb9b1bef18bea865096a53b79558331453728c52 2026-09-25T23:19:09+09:00 2026-09-25T23:19:09+09:00 Fentanest | Add worklazy.net/safeauth central account-link page, relay and verification
+69a1b2156f72a0009bf9800cf1a76565736581c3 2026-09-25T19:00:55+09:00 2026-09-25T19:00:55+09:00 Fentanest | Align community map dark palette with safetyreport
+5261b22cef23814666d3f7195f4a2226b0edf6b7 2026-09-24T19:02:37+09:00 2026-09-24T19:02:37+09:00 Fentanest | Record verified implementation status and remaining live blockers
+06827d3815435c5f78ed7aac31bd9d5cb9cc641e 2026-09-24T19:00:56+09:00 2026-09-24T19:01:43+09:00 Fentanest | M3-F targeted final browser re-review at 56c7a3a (report + 17 screenshots)
+56c7a3ad15356d6e9e4e52618c36275e7e9f2d39 2026-09-24T18:43:49+09:00 2026-09-24T18:44:26+09:00 Fentanest | M3 final integration browser review at d050334 (report + 19 screenshots)
+7dabd203080d51934f38077b5c8f1c926264c4b5 2026-09-24T18:43:30+09:00 2026-09-24T18:43:30+09:00 Fentanest | Add explicit API error fixtures and repair Pages asset preview
+c4c3cd54f7208dee9a1b42b1f0f48bd1f8e43cc6 2026-09-24T18:39:05+09:00 2026-09-24T18:39:05+09:00 Fentanest | Fix history and entity filtering; prepare guarded Pages workflow
+d05033469ca30480718b6345c8ff05f50b3a0810 2026-09-24T18:23:33+09:00 2026-09-24T18:23:33+09:00 Fentanest | Polish integrated analytics UI and bounded map nodes
+981d88ab74facf13ee886beb21d98e6d97003ea2 2026-09-24T18:07:37+09:00 2026-09-24T18:07:37+09:00 Fentanest | Integrate Muse community map UI implementation
+215b37fe000da917b7fca0f93a9466ea0215b19f 2026-09-24T18:07:29+09:00 2026-09-24T18:07:29+09:00 Fentanest | Implement exact analytics, guarded public API and safe snapshot export
+288574751f8edd2ad5fdc664e10d9cebe91ee913 2026-09-24T18:06:31+09:00 2026-09-24T18:06:31+09:00 Fentanest | M2: fix six UI defects and expand browser review to four viewports
+3d6de9b3e6a56ccba8802008510ed4421bd19a19 2026-09-24T17:55:13+09:00 2026-09-24T17:55:13+09:00 Fentanest | M1: community map UI slice in React/TS with demo fixtures and browser evidence
+40ee9197271727d1917c2f441dc2b6d4050dcb84 2026-09-24T17:45:17+09:00 2026-09-24T17:45:17+09:00 Fentanest | Add typed public dashboard contract and explicit demo adapter
+901b7a730e9e3f621078a49da59fecfb9d4ce21c 2026-09-24T17:40:50+09:00 2026-09-24T17:40:50+09:00 Fentanest | Install community map implementation kit and record Muse M0 review
+ff63cfd0ac49da346d96bc22a39e7157254e336f 2026-09-23T09:29:41+09:00 2026-09-23T09:29:41+09:00 Fentanest | Add community map implementation plan

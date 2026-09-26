@@ -1,0 +1,12 @@
+# cmd: timeout 900 /home/better0101/projects/safetyreport/.venv/bin/python scripts/dev/db_roundtrip_check.py --mobile-repo /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix
+# candidate: 255247b (ci0926/audit-fix)
+# dirty: 0 tracked changes
+# start: 2026-09-26T15:34:11+09:00
+{
+ "work_dir": "/tmp/sr_roundtrip_qtgaqrb8",
+ "diff_count": 0,
+ "diffs": []
+}
+# end: 2026-09-26T15:34:23+09:00
+# exit: 0

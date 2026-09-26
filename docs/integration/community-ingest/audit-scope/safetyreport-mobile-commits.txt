@@ -1,0 +1,81 @@
+9bf23e9df7af34d5bad793eaf3af212c9d583add 2026-09-26T13:08:32+09:00 2026-09-26T13:08:32+09:00 Fentanest | Merge community ingest integration (mandatory Kakao + share consent gate, capture, upload)
+cd4454e80c64500cfc54f58bedfa93bd1e4458ef 2026-09-26T12:50:53+09:00 2026-09-26T12:50:53+09:00 Fentanest | Record the community integration review fixes in the changelog
+6c87d52167794add1d456340c7f657fd7cd2dcc3 2026-09-26T12:46:12+09:00 2026-09-26T12:46:12+09:00 Fentanest | Tell the user when local deletion cleanup is still pending
+729bc3dab95fd3cd0215fdb9cf2924638c943fb1 2026-09-26T12:25:11+09:00 2026-09-26T12:25:11+09:00 Fentanest | Separate prepared and confirmed mobile deletions and keep unknown outcomes blocked
+96085981624426212abec912425519ffe4dc47da 2026-09-26T11:56:08+09:00 2026-09-26T11:56:08+09:00 Fentanest | Keep the mobile deletion marker in community.db, written before the central call
+265f9d42c0e16a28f5f439bc2fb2eb67530788e0 2026-09-26T11:15:38+09:00 2026-09-26T11:15:38+09:00 Fentanest | Stop mobile collection without a share copy and keep deletion blocks durable
+a420095ef51c99c894b61f0586d9565e1ae511bc 2026-09-26T10:43:07+09:00 2026-09-26T10:43:07+09:00 Fentanest | Document how the mobile gate and data path are wired together
+e4c6eb08fd8a2b44f62d9c021353cb4fbdb55a3e 2026-09-26T10:40:56+09:00 2026-09-26T10:40:56+09:00 Fentanest | Correct the mobile test counts in the changelog
+4aee1e4e71cdab3eb6e7e1e30df90cab6fa701f2 2026-09-26T10:28:02+09:00 2026-09-26T10:28:02+09:00 Fentanest | Connect the mobile gate to the data path and fix uploads that never matched
+f6f6673d77e64ab2b7c0436d43697bde6680ff0f 2026-09-26T10:17:31+09:00 2026-09-26T10:17:31+09:00 Fentanest | Merge T6 mobile community data path into mobile integration
+c12f898f727b371397327c407e268910923aea9f 2026-09-26T10:17:21+09:00 2026-09-26T10:17:21+09:00 Fentanest | Merge T5 mobile community gate and rebuild into mobile integration
+b9a249bae178b82856c8c0b6f6684b2145a77f14 2026-09-26T05:06:31+09:00 2026-09-26T05:06:31+09:00 Fentanest | Server gate links, share settings card, iOS callback return and docs
+ac0e08a5b5beee6183412f59f4ae5d727d317d3e 2026-09-26T05:06:25+09:00 2026-09-26T05:06:25+09:00 Fentanest | Gate onboarding entry order and permission phases
+e733e475f86ad8b820d364927e8e72c9789389c1 2026-09-26T05:06:21+09:00 2026-09-26T05:06:21+09:00 Fentanest | Add community rebuild state machine and progress screen
+1fda4aeee1a61b53ff7a79f1fda2ba060b1b47d7 2026-09-26T05:06:17+09:00 2026-09-26T05:06:17+09:00 Fentanest | Add community gate evaluation, account client and gate state
+9333443d7d2e94fa7ef65723162353bb04efc869 2026-09-26T04:19:23+09:00 2026-09-26T04:19:23+09:00 Fentanest | Wire community data path into sync, map panel, builds
+9ec8e646eeea3ac82f6348fd167b1ad47a6106ae 2026-09-26T04:19:23+09:00 2026-09-26T04:19:23+09:00 Fentanest | Add community capture/upload modules with contract vector tests
+b39875fa6d0ad431f1315f5052ede93d7ef8d4cb 2026-09-26T03:43:38+09:00 2026-09-26T03:43:38+09:00 Fentanest | Add the community-ingest contract copy and the separate community.db store skeleton
+98e474b25d7b1b52a757a066e3d3d67078654f6d 2026-09-26T00:14:09+09:00 2026-09-26T00:14:09+09:00 Fentanest | Point the community account protocol reference at safetyreport-community-auth
+42670fac26b0433a179befe9c5547f5bfa399a9a 2026-09-25T23:55:55+09:00 2026-09-25T23:55:55+09:00 Fentanest | Point community account docs and fixtures at safeauth.worklazy.net
+42836dcaaf860ce725860148c93778de42b15df5 2026-09-25T23:25:38+09:00 2026-09-25T23:25:38+09:00 Fentanest | Document the community account flows, deep link, channel and storage keys
+4e5454a67a822564f3d4999dd1c1fc4d2b593889 2026-09-25T23:25:38+09:00 2026-09-25T23:25:38+09:00 Fentanest | Connect a Kakao community account in Standalone and manage the server's account from Client settings
+af2ae8092e6eb488a8cde87e278cda8a4c72e9c4 2026-09-25T19:11:20+09:00 2026-09-25T19:11:20+09:00 Fentanest | Match the server's storage and change rules found in the G17 parity audit (DB v15)
+658399376d124365439721d7fd130065bae259bd 2026-09-25T13:32:13+09:00 2026-09-25T13:32:13+09:00 Fentanest | Switch the dark theme to the deep-dark palette shared with the web UI
+7905b82656f665af3d0152d18b251f3b4fbf93ac 2026-09-25T13:29:37+09:00 2026-09-25T13:29:37+09:00 Fentanest | Post each rating once, fail when the site does not know the report, and decode popup reasons like the server
+3beb4984a005440e0e7e61d56a227d1e5017ebe3 2026-09-25T12:57:10+09:00 2026-09-25T12:57:10+09:00 Fentanest | Drop the legacy crawl type and minimal crawl options from the client crawl screen
+de0641b33211d8228a9fb89debbca612a4898b1d 2026-09-25T12:55:53+09:00 2026-09-25T12:55:53+09:00 Fentanest | Remove the non-member (manual) login option from the client crawl screen
+1d9d8b769b1e3a86273c2787ebc36858ffd2bb35 2026-09-25T12:54:39+09:00 2026-09-25T12:54:39+09:00 Fentanest | Let users add a common reason when rating and confirm each rating on the site
+e893f783a41b258eb42bfa7c64375c8066304554 2026-09-25T12:38:57+09:00 2026-09-25T12:38:57+09:00 Fentanest | Test the shared rating eligibility vectors used by the server
+496158dd01c42b0e1b833967660482b1fca9e4cc 2026-09-25T12:00:05+09:00 2026-09-25T12:00:05+09:00 Fentanest | Read parking photo capture times at the same points as the server crawl and match its six-month cutoff
+8835d2bd4c0ce3229180b8cc2a4198e8e5bf468f 2026-09-25T11:15:08+09:00 2026-09-25T11:15:08+09:00 Fentanest | Fill parking photo capture times on the device after an update and show one-time pass progress in a bar above the tabs
+7058ce5ddf5b9d140526a11b8477ded8e6c5de80 2026-09-25T11:06:07+09:00 2026-09-25T11:06:07+09:00 Fentanest | Parser parity with the server (app side): shared contracts/parser-vectors.json, keep the intro in report content (v14 restores rows the old app stripped), same-line car number, date separators, null-safe keys, supplement count, normalized raw text; list rows refresh stored titles; confirmed no-survey lookups reset poll and rating
+4456ade9c36180cf1b6447675094e2aec1893ace 2026-09-25T10:04:14+09:00 2026-09-25T10:04:14+09:00 Fentanest | Copy the local DB before a schema upgrade on first open after an app update (<db>.pre_v<old>.<ms>.bak, keep 3); document that older apps cannot open a newer DB
+f181215f1ccff06f6653507dc79575da0a40520e 2026-09-24T18:40:45+09:00 2026-09-24T18:40:45+09:00 Fentanest | Merge origin/dev into feature/storage-refactor (API-layer relogin replaces the sync engine's retry block; queue enum comments from dev)
+3d540e49a9abd1e886a131ff1c32fee8425b7b3a 2026-09-24T14:41:19+09:00 2026-09-24T14:41:19+09:00 Fentanest | Docs: record G11 fixes on mobile
+76354f39841c2fcef42532b3c035777c37fafc5e 2026-09-24T14:38:55+09:00 2026-09-24T14:38:55+09:00 Fentanest | Standalone detection queue uses per-item inbox keys like notifications (no shared CSV read-modify-write between the listener service and the app); DB copy/replace holds a file lock so other callers wait instead of reopening the file mid-swap (G11 findings 4, 5)
+d6d700701974bafd772cab1c494c86d13045730a 2026-09-24T13:21:43+09:00 2026-09-24T13:21:43+09:00 Fentanest | Docs: record prefs inbox and edited-address coordinates
+a49e296e9380bb6e592ebc6d06149b7fea4c6520 2026-09-24T13:21:07+09:00 2026-09-24T13:21:07+09:00 Fentanest | Edited addresses show coordinates from the geocode cache (pending until geocoded) and the map backfill geocodes them without touching the site row — same rule as the server (S-4)
+c74b20cb9b13bbcef5399f272663fe12e3f46f1c 2026-09-24T13:18:06+09:00 2026-09-24T13:18:06+09:00 Fentanest | Background service and app no longer read-modify-write the same prefs keys: WsService puts each notification/pending batch under a new inbox key, the app merges and removes only the keys it merged; the history key is written by the app only (M-29, M-31)
+9c5e32eae46a7c87bb05c3577e738034e488e476 2026-09-24T13:12:01+09:00 2026-09-24T13:12:01+09:00 Fentanest | Docs: record storage refactor R6 on mobile
+297887384a20d3fc6ec82831982383143e4cef19 2026-09-24T13:11:35+09:00 2026-09-24T13:11:35+09:00 Fentanest | R6 (app): sync stop is cooperative and isRunning stays true until the loop exits, closing the shared DB waits for sync/auto-sync/geocode work (which yield at the next checkpoint) and backup/restore/import are refused while it runs, server DB import inserts in batches, unused sync-time prefs copy removed (M-19, M-21, M-25, M-27)
+9c8e3b74d4b4c9cc319630be17a406dbf836023b 2026-09-24T12:55:15+09:00 2026-09-24T12:55:15+09:00 Fentanest | Docs: record storage refactor R4/R5 on mobile; emulator check of editor overrides
+2bc81a4daad9f5cac75dccf2081f8aaabafcacb1 2026-09-24T12:44:41+09:00 2026-09-24T12:44:41+09:00 Fentanest | R4 (app): editor marks edited fields, shows the site original and a revert button (standalone: local overrides, client: server site_values)
+ec589a8d290cbfe876e3c228797b6906eadd3424 2026-09-24T12:39:11+09:00 2026-09-24T12:39:11+09:00 Fentanest | R5: send an install id with /crawl/results for per-device read positions; notification history and pending changes re-read prefs before writing so background-service entries are kept (M-29, M-31)
+8a69c6626ff175622d62a99f07745e667fbd7a5b 2026-09-24T12:35:28+09:00 2026-09-24T12:35:28+09:00 Fentanest | Docs: record storage refactor R2/R3 on mobile
+c3e1f4760db23b6cb4715f880ff562842523ba05 2026-09-24T12:34:54+09:00 2026-09-24T12:34:54+09:00 Fentanest | R3c: full resync keeps user data (no upfront wipe, stale reports removed only after a complete list), demo account uses its own DB file, watchlist changes are transactional and start from the DB list, duplicate decisions table wins on rebuild, one-time legacy normalization (v13), cache invalidation after rating/geocode writes (M-1, M-4, M-5, M-6, M-7, M-14, M-18, M-20, M-24, M-30)
+d8be3869c5691f66433e3e9c7243e707c7a1a363 2026-09-24T12:27:57+09:00 2026-09-24T12:27:57+09:00 Fentanest | R3b: editor writes to report_override, display reads go through the reports_effective view (site originals stay in reports), sync engine picks refetch targets from site states only (M-12, M-13, M-17)
+666d936243148fcf6013df2fdd0e7eb325899354 2026-09-24T12:24:11+09:00 2026-09-24T12:24:11+09:00 Fentanest | R3a: upsertReport updates site/derived columns only (no REPLACE), keeps identity fields, applies rating rules by lookup result (M-2, M-3, M-16, M-22, M-23); Report.copyWith
+8b0ed133b6dbbeab601766630d7923a7cb8052aa 2026-09-24T12:15:15+09:00 2026-09-24T12:15:15+09:00 Fentanest | Contract: server schema v4
+6b8bb24cb1a70dd65ce47761eddb2de5609aac0b 2026-09-24T12:12:28+09:00 2026-09-24T12:12:33+09:00 Fentanest | Contract: server schema v3
+1667035932105544e3211055f36136ad516c6490 2026-09-24T12:07:13+09:00 2026-09-24T12:07:13+09:00 Fentanest | R2: import server reports from title+detail (site originals), not the merge view; hide expired attachments by report date in the detail sheet
+48676468d468a2310aa860894920c313b9a01863 2026-09-24T11:57:03+09:00 2026-09-24T11:57:03+09:00 Fentanest | Docs: record storage refactor R0/R1 on mobile
+b97c3881efe53f9571b8a77646727fa9b34db8cc 2026-09-24T11:51:14+09:00 2026-09-24T11:51:14+09:00 Fentanest | Tests: remove per-file temp DB directories after the run
+62b81a239d79f7c5d2fda69f07bcbba8ec1cf1f0 2026-09-24T11:49:56+09:00 2026-09-24T11:49:56+09:00 Fentanest | R1d: app backup restore checks kind/version, migrates and verifies in a staging copy, then swaps with .bak rollback (M-11)
+8bf86159bb921b973fbc4f237c9e24541206de95 2026-09-24T11:46:38+09:00 2026-09-24T11:46:38+09:00 Fentanest | R1b: server import keeps NULLs, coerces numeric columns, derives watch flags from server watchlist, copies override/decision tables, stops swallowing read errors
+6e30ae21de340dd97adbce4915dcccfca3ef1e76 2026-09-24T11:37:36+09:00 2026-09-24T11:37:36+09:00 Fentanest | R1a: DB v12 with override/decision tables, strict column migrations, single version constant
+53acb6d73c07673f7ef3acd38a56bced5c4edb67 2026-09-24T11:36:46+09:00 2026-09-24T11:36:46+09:00 Fentanest | Add a 512px Play Store icon generated from the new app icon
+5a78a8f103061ce46eeb79d754ef2674ff84a311 2026-09-24T11:34:11+09:00 2026-09-24T11:34:59+09:00 Fentanest | Adopt the new camera app icon and logo lockup to match the server
+89ece3e5c16fc29f6532beae19d7c089a05abe12 2026-09-24T11:26:09+09:00 2026-09-24T11:26:09+09:00 Fentanest | R0: mobile v9/v10 -> current upgrade tests against the storage contract
+51b8d9962a46794c56f94bf8ec3db126eb965ed2 2026-09-24T11:23:20+09:00 2026-09-24T11:23:20+09:00 Fentanest | R0: pin known mobile storage defects (M-1, M-2/3, M-12, M-24) as current-behavior tests
+906966b56103a0fd690e714b10835a5bfb8a5974 2026-09-24T11:20:25+09:00 2026-09-24T11:20:25+09:00 Fentanest | R0: storage contract file and schema conformance test; roundtrip harness removes its temp DB
+7aedf8d498a39291510543a96be5d802131389ab 2026-09-24T11:17:53+09:00 2026-09-24T11:17:53+09:00 Fentanest | Swap README list and detail shots to June reports and keep raw captures local
+b142789cde2340c035bc1e522ed84775719a1220 2026-09-24T11:03:54+09:00 2026-09-24T11:03:54+09:00 Fentanest | Docs: pointer to the shared storage refactor plan (server repo)
+3b45c10fce6bd4d8d7606cbb99c868cec35f9ce3 2026-09-24T10:57:37+09:00 2026-09-24T10:57:37+09:00 Fentanest | Rewrite README for end users with real-data screenshots
+e1af384cd0f2eefb387c570a2055df873c1e0e08 2026-09-24T10:37:33+09:00 2026-09-24T10:37:33+09:00 Fentanest | Auto-load attached videos one at a time once visible and idle
+bf8112350f5b2275007ad5a6b8b1c8186b85495c 2026-09-24T10:06:50+09:00 2026-09-24T10:06:50+09:00 Fentanest | DB v11: keep server photo capture columns; add server-mobile roundtrip harness
+4f714249dcd0acd78ff113d9167965376344d0f8 2026-09-24T09:56:11+09:00 2026-09-24T09:56:11+09:00 Fentanest | Stats: split unclassified, estimate fines without amounts, keep them separate
+fb5b55e57655a2461b8c38f458119972bcfe3a23 2026-09-24T09:46:52+09:00 2026-09-24T09:46:52+09:00 Fentanest | Harden Standalone relogin, add daily login check and store review prompt
+2ea0e45155aedd0280a9bff39c287c80646dadcc 2026-09-24T09:24:43+09:00 2026-09-24T09:24:43+09:00 Fentanest | Rules: classify overnight parking internally as fines (not a separate surcharge)
+210bdc556b356b584814c1ad48d8a973acb53599 2026-09-24T09:19:48+09:00 2026-09-24T09:19:48+09:00 Fentanest | Rules: zero-loss server/mobile DB exchange; keep confirmed and estimated fines separate
+cc7637db01b8324e2c106ef75ea29303dd987096 2026-09-24T09:15:30+09:00 2026-09-24T09:15:30+09:00 Fentanest | Move bug reporting to a support card at the top of settings
+bff762f88c089267b4c7a3db3c4ab6761b35cb5e 2026-09-24T09:15:30+09:00 2026-09-24T09:15:30+09:00 Fentanest | Load attached videos on tap to stop the detail sheet scroll freeze
+9d5e9e6bf106a4a3fe4e2b0f7044fd3ae54e87db 2026-09-24T08:45:59+09:00 2026-09-24T08:45:59+09:00 Fentanest | Count assigned in-progress reports in agency stats per S-10 decision
+e8a6f83d8ee9c9cd71d1dc66ed4a4e93cb353734 2026-09-24T08:21:01+09:00 2026-09-24T08:21:01+09:00 Fentanest | Cancel multi-selection on system back instead of leaving the app
+f2a5019ddfe10b7d987be97a13edf062d8907a5c 2026-09-24T04:52:43+09:00 2026-09-24T04:52:43+09:00 Fentanest | Remove analyzer warnings from delegated screens and correct reported counts
+b0ee2a936948a429011e5ecff3b5fdc0a44c9676 2026-09-24T04:46:48+09:00 2026-09-24T04:46:48+09:00 Fentanest | Document delegation lessons, E2E results and pre-existing selection back behavior
+119647fae17cbe72389b0c1936a518b91c6cef72 2026-09-24T03:49:23+09:00 2026-09-24T03:49:23+09:00 Fentanest | Fix tonal button colors and disabled-text contrast found in real-data review
+6fa4deb134c05d048ab399a56ae48bc8d6592b73 2026-09-24T03:29:49+09:00 2026-09-24T03:29:49+09:00 Fentanest | Move to 5 bottom tabs and unify all screens on the new design tokens
+00028685807af0cfd1ffc58149966aae9294721b 2026-09-24T02:56:19+09:00 2026-09-24T02:56:19+09:00 Fentanest | Fix statistics semantics per S-01/S-03/S-04/S-05/S-08/S-09 decisions
+d1cc8e6ce971deb50aa7d7a547ca773813593272 2026-09-24T02:51:29+09:00 2026-09-24T02:51:29+09:00 Fentanest | Add UI renewal pilot theme, report card, dashboard and stats overview
+e50650850e567f173e59ddccbee05a2591b657c0 2026-09-24T02:51:16+09:00 2026-09-24T02:51:16+09:00 Fentanest | Restructure agent docs and add UI renewal design/test specs

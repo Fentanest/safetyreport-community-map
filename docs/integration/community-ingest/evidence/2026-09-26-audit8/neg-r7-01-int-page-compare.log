@@ -1,0 +1,70 @@
+# cmd: timeout 300 /home/better0101/projects/safetyreport/.venv/bin/python -m unittest tests.test_storage_exchange.ExchangeRestoreTests.test_the_real_crawler_reports_saved_and_missing_numbers_only
+# NEGATIVE CONTROL: 실제 경과 형식(페이지 목록)을 정수로 비교하는 옛 코드 — 실패(exit≠0)가 기대값
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix
+# candidate: 2f38e71 (ci0926/audit-fix)
+# dirty: 7 tracked changes
+# start: 2026-09-26T18:59:16+09:00
+[2026-09-26 18:59:17,214][INFO|database.py-upgrade_schema:285] >> 테이블 'admin_users' 생성 중...
+[2026-09-26 18:59:17,222][INFO|database.py-upgrade_schema:285] >> 테이블 'api_keys' 생성 중...
+[2026-09-26 18:59:17,227][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety' 생성 중...
+[2026-09-26 18:59:17,229][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_cursor' 생성 중...
+[2026-09-26 18:59:17,233][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_log' 생성 중...
+[2026-09-26 18:59:17,235][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_decision' 생성 중...
+[2026-09-26 18:59:17,237][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_group' 생성 중...
+[2026-09-26 18:59:17,239][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_member' 생성 중...
+[2026-09-26 18:59:17,241][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_entry_value' 생성 중...
+[2026-09-26 18:59:17,243][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_geocode_cache' 생성 중...
+[2026-09-26 18:59:17,244][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_raw_content' 생성 중...
+[2026-09-26 18:59:17,246][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_report_override' 생성 중...
+[2026-09-26 18:59:17,248][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_sync_meta' 생성 중...
+[2026-09-26 18:59:17,250][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_watchlist' 생성 중...
+[2026-09-26 18:59:17,252][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_other' 생성 중...
+[2026-09-26 18:59:17,257][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_parking' 생성 중...
+[2026-09-26 18:59:17,259][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_traffic' 생성 중...
+[2026-09-26 18:59:17,266][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_other' 생성 중...
+[2026-09-26 18:59:17,269][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_parking' 생성 중...
+[2026-09-26 18:59:17,271][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_traffic' 생성 중...
+[2026-09-26 18:59:17,274][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 1 적용
+[2026-09-26 18:59:17,279][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 2 적용
+[2026-09-26 18:59:17,281][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 3 적용
+[2026-09-26 18:59:17,295][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 4 적용
+[2026-09-26 18:59:17,358][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 0개, 멤버 0건 재생성
+[2026-09-26 18:59:17,413][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_traffic synced_at 백필: 12건, 미해결 0건
+[2026-09-26 18:59:17,417][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_parking synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:59:17,421][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_other synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:59:17,423][INFO|database.py-backfill_synced_at:105] >> [migration] synced_at 백필 완료: 총 24건 갱신, merge 재생성 시작
+[2026-09-26 18:59:17,442][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:59:17,469][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 18:59:17,479][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:59:17,509][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 18:59:17,787][INFO|start.py-_run_crawling_process:335] >> 큐 지정 크롤링 모드입니다. 전체 목록 갱신을 건너뜁니다.
+[2026-09-26 18:59:17,789][WARNING|start.py-extract_ids_from_queue:126] >> 큐 신고번호 SPP-0000-NOPE의 ID를 찾을 수 없습니다. 목록 크롤링 후 재검색합니다.
+[2026-09-26 18:59:17,789][INFO|start.py-_run_crawling_process:380] >> 미확인 신고번호 1건을 목록 전체에서 찾습니다.
+[2026-09-26 18:59:17,789][INFO|crawltitle_api.py-crawl_titles:74] >> API 방식으로 목록 데이터를 호출합니다. (direct_login 세션)
+[2026-09-26 18:59:17,790][INFO|crawltitle_api.py-crawl_titles:104] >> API 확인됨: 총 24건 (1페이지 분량)
+[2026-09-26 18:59:17,790][INFO|crawltitle_api.py-crawl_titles:117] >> API 목록 로드 중: 1 페이지 (1~24건)
+E
+======================================================================
+ERROR: test_the_real_crawler_reports_saved_and_missing_numbers_only (tests.test_storage_exchange.ExchangeRestoreTests.test_the_real_crawler_reports_saved_and_missing_numbers_only)
+감사 R5-01·R6-01·R7-01: 실제 crawl_titles 로 목록 전체를 받은 뒤 — 저장까지 끝난 번호와 목록 어디에도 없는 번호만 보고한다.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tests/test_storage_exchange.py", line 795, in test_the_real_crawler_reports_saved_and_missing_numbers_only
+    queue_file, (done, not_found, ambiguous) = self._queue_run(
+                                               ~~~~~~~~~~~~~~~^
+        [num1, num2, "SPP-0000-NOPE"], listing=listing, details={id1})
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tests/test_storage_exchange.py", line 777, in _queue_run
+    start._run_crawling_process(None, get_engine(), args)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/start.py", line 393, in _run_crawling_process
+    search_complete = 1 >= progress.get("pages_expected", 0)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '>=' not supported between instances of 'int' and 'list'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.904s
+
+FAILED (errors=1)
+# end: 2026-09-26T18:59:18+09:00
+# exit: 1

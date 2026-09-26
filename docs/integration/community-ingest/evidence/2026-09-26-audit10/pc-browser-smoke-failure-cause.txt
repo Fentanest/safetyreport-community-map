@@ -1,0 +1,5 @@
+# pc-browser-smoke.log 의 실패 1건(firefox ops-pages "No horizontal scroll and no console errors for dark at 390x844", watchlist 콘솔 오류) 원인
+trace(test-results/ops-pages-…-dark-at-390x844-firefox/trace.zip)의 console error 는 1건:
+  [JavaScript Error: "downloadable font: download failed (font-family: "Pretendard Variable" ... src index:0): status=2152398850"
+→ 외부 CDN 웹폰트(Pretendard) 다운로드 실패(네트워크). r3 스모크의 같은 시험 실패와 같은 원인. 이번 PC diff 에는 화면·템플릿 변경이 없다.
+재실행: pc-browser-smoke-rerun-ops-pages.log (같은 후보, 해당 스펙 chromium+firefox).

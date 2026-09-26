@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Compose ONE local Supabase project from the map and auth repositories, for integration tests only.
 //
-//   node scripts/integration/compose_supabase.mjs check   [--manifest <file>]
-//   node scripts/integration/compose_supabase.mjs compose [--manifest <file>] [--out <dir>]
+//   node scripts/integration/compose_supabase.mjs check   --auth <auth checkout> [--manifest <file>]
+//   node scripts/integration/compose_supabase.mjs compose --auth <auth checkout> [--manifest <file>] [--out <dir>]
 //
-// Repositories are located by env SR_MAP_REPO / SR_AUTH_REPO (default: this checkout / sibling auth checkout).
+// Repositories: map = env SR_MAP_REPO (default: this checkout); auth = --auth <dir> or env SR_AUTH_REPO (required, no default).
 // "check" fails on: duplicate version, same version with different content, missing dependency,
 // dependency ordered after its dependent, file hash different from the manifest, shared server file clash.
 // "compose" copies each migration exactly once into <out>/supabase/migrations in manifest order, copies the
@@ -18,13 +18,24 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const mapRoot = resolve(process.env.SR_MAP_REPO || join(here, '../..'));
-const authRoot = resolve(process.env.SR_AUTH_REPO || join(mapRoot, '../../community-auth/account'));
-const roots = { map: mapRoot, auth: authRoot };
-
 const args = process.argv.slice(2);
 const cmd = args[0];
 const opt = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
+
+const mapRoot = resolve(process.env.SR_MAP_REPO || join(here, '../..'));
+// 인증 저장소 경로는 반드시 명시한다(감사 SOL-09): 예전 기본값은 병렬 작업용 임시 worktree 를 가리켜, 그 worktree 를
+// 정리한 뒤에는 검사가 실패하거나 엉뚱한 사본을 읽을 수 있었다. `--auth <dir>` 또는 env SR_AUTH_REPO.
+const authArg = opt('--auth') || process.env.SR_AUTH_REPO;
+if (!authArg && (cmd === 'check' || cmd === 'compose')) {
+  console.error('auth repository path required: pass --auth <safetyreport-community-auth checkout> or set SR_AUTH_REPO');
+  process.exit(2);
+}
+const authRoot = authArg ? resolve(authArg) : '';
+if (authRoot && !existsSync(join(authRoot, 'supabase', 'migrations'))) {
+  console.error(`auth repository not found or not a community-auth checkout: ${authRoot} (no supabase/migrations)`);
+  process.exit(2);
+}
+const roots = { map: mapRoot, auth: authRoot };
 const manifestPath = resolve(opt('--manifest') || join(mapRoot, 'docs/integration/community-ingest/migration-manifest.json'));
 const outDir = resolve(opt('--out') || join(mapRoot, '.integration-stack'));
 
@@ -198,6 +209,6 @@ if (cmd === 'check' || cmd === 'compose') {
   console.log(`manifest check ok: ${manifest.migrations.length} migrations, ${manifest.functions.length} functions (map=${relative(process.cwd(), mapRoot) || '.'}, auth=${authRoot})`);
   if (cmd === 'compose') console.log(`composed ${compose(manifest)}`);
 } else {
-  console.error('usage: compose_supabase.mjs check|compose [--manifest f] [--out dir]');
+  console.error('usage: compose_supabase.mjs check|compose --auth <dir> [--manifest f] [--out dir]');
   process.exit(2);
 }

@@ -1,0 +1,18 @@
+# cmd: COMMUNITY_STACK=1 timeout 900 npx vitest run tests/integration
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-map/audit-fix
+# candidate: 82ae871 (ci0926/audit-fix)
+# dirty: 0 tracked changes
+# start: 2026-09-26T15:29:27+09:00
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-map/audit-fix
+
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+NOTICE:  relation "it_realtime_control" already exists, skipping
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  15:29:28
+   Duration  36.00s (tests 100%)
+
+# end: 2026-09-26T15:30:04+09:00
+# exit: 0

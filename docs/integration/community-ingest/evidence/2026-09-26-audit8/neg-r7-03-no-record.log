@@ -1,0 +1,72 @@
+# cmd: timeout 300 /home/better0101/projects/safetyreport/.venv/bin/python -m unittest tests.test_storage_exchange.ExchangeRestoreTests.test_the_real_crawler_reports_saved_and_missing_numbers_only
+# NEGATIVE CONTROL: 처리하지 못한 번호를 남기지 않음 — 실패(exit≠0)가 기대값
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix
+# candidate: 2f38e71 (ci0926/audit-fix)
+# dirty: 7 tracked changes
+# start: 2026-09-26T18:59:28+09:00
+[2026-09-26 18:59:29,308][INFO|database.py-upgrade_schema:285] >> 테이블 'admin_users' 생성 중...
+[2026-09-26 18:59:29,319][INFO|database.py-upgrade_schema:285] >> 테이블 'api_keys' 생성 중...
+[2026-09-26 18:59:29,322][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety' 생성 중...
+[2026-09-26 18:59:29,325][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_cursor' 생성 중...
+[2026-09-26 18:59:29,334][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_log' 생성 중...
+[2026-09-26 18:59:29,336][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_decision' 생성 중...
+[2026-09-26 18:59:29,339][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_group' 생성 중...
+[2026-09-26 18:59:29,342][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_member' 생성 중...
+[2026-09-26 18:59:29,344][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_entry_value' 생성 중...
+[2026-09-26 18:59:29,353][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_geocode_cache' 생성 중...
+[2026-09-26 18:59:29,356][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_raw_content' 생성 중...
+[2026-09-26 18:59:29,358][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_report_override' 생성 중...
+[2026-09-26 18:59:29,359][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_sync_meta' 생성 중...
+[2026-09-26 18:59:29,366][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_watchlist' 생성 중...
+[2026-09-26 18:59:29,368][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_other' 생성 중...
+[2026-09-26 18:59:29,370][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_parking' 생성 중...
+[2026-09-26 18:59:29,372][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_traffic' 생성 중...
+[2026-09-26 18:59:29,375][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_other' 생성 중...
+[2026-09-26 18:59:29,377][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_parking' 생성 중...
+[2026-09-26 18:59:29,379][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_traffic' 생성 중...
+[2026-09-26 18:59:29,384][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 1 적용
+[2026-09-26 18:59:29,394][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 2 적용
+[2026-09-26 18:59:29,396][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 3 적용
+[2026-09-26 18:59:29,418][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 4 적용
+[2026-09-26 18:59:29,456][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 0개, 멤버 0건 재생성
+[2026-09-26 18:59:29,493][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_traffic synced_at 백필: 12건, 미해결 0건
+[2026-09-26 18:59:29,497][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_parking synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:59:29,500][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_other synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:59:29,504][INFO|database.py-backfill_synced_at:105] >> [migration] synced_at 백필 완료: 총 24건 갱신, merge 재생성 시작
+[2026-09-26 18:59:29,522][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:59:29,550][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 18:59:29,559][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:59:29,583][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 18:59:29,858][INFO|start.py-_run_crawling_process:335] >> 큐 지정 크롤링 모드입니다. 전체 목록 갱신을 건너뜁니다.
+[2026-09-26 18:59:29,860][WARNING|start.py-extract_ids_from_queue:126] >> 큐 신고번호 SPP-0000-NOPE의 ID를 찾을 수 없습니다. 목록 크롤링 후 재검색합니다.
+[2026-09-26 18:59:29,860][INFO|start.py-_run_crawling_process:380] >> 미확인 신고번호 1건을 목록 전체에서 찾습니다.
+[2026-09-26 18:59:29,860][INFO|crawltitle_api.py-crawl_titles:74] >> API 방식으로 목록 데이터를 호출합니다. (direct_login 세션)
+[2026-09-26 18:59:29,860][INFO|crawltitle_api.py-crawl_titles:104] >> API 확인됨: 총 24건 (1페이지 분량)
+[2026-09-26 18:59:29,860][INFO|crawltitle_api.py-crawl_titles:117] >> API 목록 로드 중: 1 페이지 (1~24건)
+[2026-09-26 18:59:29,890][INFO|database.py-title_to_sql:694] >> 총 24건 title 테이블 upsert 완료. (신규: 0건)
+[2026-09-26 18:59:29,891][WARNING|start.py-_run_crawling_process:419] >> 목록 전체를 찾아도 없는 신고번호: ['SPP-0000-NOPE']
+[2026-09-26 18:59:29,891][INFO|start.py-_run_crawling_process:423] >> 큐 파일에서 2개의 아이템 크롤링 시작.
+[2026-09-26 18:59:29,891][INFO|start.py-_run_crawling_process:437] >> 상세 크롤링 대상 ID: 2 건 (순차 처리)
+[2026-09-26 18:59:29,891][INFO|start.py-_run_crawling_process:442] >> [API 방식] 상세 데이터 추출 시작
+[2026-09-26 18:59:30,075][ERROR|start.py-_save_details_as_they_arrive:484] >> 상세 크롤링이 중간에 멈췄습니다(1건까지 저장됨): 네트워크 끊김
+[2026-09-26 18:59:30,076][INFO|start.py-_save_details_as_they_arrive:485] >> 상세 저장 1건 (변경/신규 1건, 실패 0건)
+[2026-09-26 18:59:30,087][WARNING|crawl_manager.py-_read_queue_report:210] >> [crawl] 대기 큐에서 목록 전체에 없는 신고번호 제외: ['SPP-0000-NOPE']
+F
+======================================================================
+FAIL: test_the_real_crawler_reports_saved_and_missing_numbers_only (tests.test_storage_exchange.ExchangeRestoreTests.test_the_real_crawler_reports_saved_and_missing_numbers_only)
+감사 R5-01·R6-01·R7-01: 실제 crawl_titles 로 목록 전체를 받은 뒤 — 저장까지 끝난 번호와 목록 어디에도 없는 번호만 보고한다.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tests/test_storage_exchange.py", line 805, in test_the_real_crawler_reports_saved_and_missing_numbers_only
+    self.assertIn({"number": "SPP-0000-NOPE", "reason": "not_found"},
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  [{k: e[k] for k in ("number", "reason")} for e in crawl_queue_report.unresolved()])
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'number': 'SPP-0000-NOPE', 'reason': 'not_found'} not found in []
+
+----------------------------------------------------------------------
+Ran 1 test in 1.068s
+
+FAILED (failures=1)
+# end: 2026-09-26T18:59:30+09:00
+# exit: 1

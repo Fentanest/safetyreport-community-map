@@ -1,5 +1,5 @@
 import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
-import type { PublicMeta, Scope } from '../src/domain/public.ts';
+import type { PublicEntity, PublicMeta, Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
   dataset_version: string;
@@ -29,10 +29,13 @@ const cors = {
 };
 const allowed = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox',
-  'expected_version', 'kind', 'page', 'page_size',
+  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir',
 ]);
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const key = /^[\p{L}\p{N}._:-]{1,160}$/u;
+// SOL-08: server-side search/sort keys for /entities. Value semantics mirror the EntityTable
+// client so summary and full-list ordering agree (nulls sort as -Infinity, as in the table).
+const entitySorts = new Set(['completed', 'accepted', 'partial', 'rejected', 'fine', 'acceptRate']);
 
 function json(body: unknown, status = 200, _cache = 0): Response {
   return new Response(JSON.stringify(body), { status, headers: {
@@ -97,6 +100,30 @@ function meta(state: AnalyticsState): PublicMeta {
   };
 }
 
+function entityValue(row: PublicEntity, sort: string): number | null {
+  const known = row.outcomes.result_known;
+  switch (sort) {
+    case 'accepted': return row.outcomes.accepted;
+    case 'partial': return row.outcomes.partial;
+    case 'rejected': return row.outcomes.rejected;
+    case 'fine': return row.fine_count;
+    case 'acceptRate': return known > 0 ? ((row.outcomes.accepted + row.outcomes.partial) / known) * 100 : null;
+    default: return row.completed_count;
+  }
+}
+
+function compareEntities(sort: string, dir: string): (a: PublicEntity, b: PublicEntity) => number {
+  return (a, b) => {
+    const va = entityValue(a, sort), vb = entityValue(b, sort);
+    const na = va === null ? -Infinity : va, nb = vb === null ? -Infinity : vb;
+    const primary = dir === 'desc' ? nb - na : na - nb;
+    if (primary !== 0) return primary;
+    return a.agency_name.localeCompare(b.agency_name, 'ko') ||
+      (a.manager_name ?? '').localeCompare(b.manager_name ?? '', 'ko') ||
+      (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+  };
+}
+
 function routeName(pathname: string): string {
   const marker = '/public-analytics/';
   const index = pathname.indexOf(marker);
@@ -119,7 +146,7 @@ export function createPublicHandler(repo: AnalyticsRepository) {
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
         return json(meta(state), 200, 30);
       }
-      if (route !== 'entities' && ['kind', 'page', 'page_size'].some(name => url.searchParams.has(name))) {
+      if (route !== 'entities' && ['kind', 'page', 'page_size', 'q', 'sort', 'dir'].some(name => url.searchParams.has(name))) {
         throw new QueryError('INVALID_QUERY', 400);
       }
       const scope = parseScope(url.searchParams, state);
@@ -138,7 +165,8 @@ export function createPublicHandler(repo: AnalyticsRepository) {
         dataMin: state.data_min,
       });
       const common = { schema_version: 2, dataset_version: state.dataset_version, sample: false, scope };
-      // location_missing: facts in scope counted in the statistics but not drawn on the map (no coordinates, S-01)
+      // location_missing: unique facts actually in the current range's report/completion indicators
+      // but without coordinates (SOL-07 basis: comparison-window-only facts excluded, counted once).
       if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
@@ -155,7 +183,19 @@ export function createPublicHandler(repo: AnalyticsRepository) {
         if (!Number.isInteger(page) || page < 1 || page > 10000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
           throw new QueryError('INVALID_QUERY', 400);
         }
-        const rows = url.searchParams.get('kind') === 'agency' ? data.agencies : data.managers;
+        // SOL-08: backward-compatible server search/sort over the full entity list. Existing callers
+        // that omit q/sort/dir get the previous ordering and page shape unchanged (no response fields removed).
+        const rawQ = url.searchParams.get('q');
+        if (rawQ !== null && rawQ.length > 160) throw new QueryError('INVALID_QUERY', 400);
+        const needle = (rawQ || '').trim();
+        const sort = url.searchParams.get('sort') || 'completed';
+        const dir = url.searchParams.get('dir') || 'desc';
+        if (!entitySorts.has(sort) || (dir !== 'asc' && dir !== 'desc')) throw new QueryError('INVALID_QUERY', 400);
+        let rows = url.searchParams.get('kind') === 'agency' ? data.agencies : data.managers;
+        if (needle) rows = rows.filter(row => row.agency_name.includes(needle) || (row.manager_name ?? '').includes(needle));
+        if (needle || url.searchParams.get('sort') !== null || url.searchParams.get('dir') !== null) {
+          rows = [...rows].sort(compareEntities(sort, dir));
+        }
         return json({ ...common, items: rows.slice((page - 1) * pageSize, page * pageSize),
           total_rows: rows.length, page, page_size: pageSize }, 200, 30);
       }

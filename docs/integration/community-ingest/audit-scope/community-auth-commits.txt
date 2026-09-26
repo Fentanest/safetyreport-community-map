@@ -1,0 +1,9 @@
+c71602d67f51f078e26a1a6cb56066acf9133065 2026-09-26T13:08:32+09:00 2026-09-26T13:08:32+09:00 Fentanest | Merge community ingest integration (auth relay, account API, help and privacy)
+3be1c395e1703b9afb0755ee856ece9333894596 2026-09-26T10:30:27+09:00 2026-09-26T10:30:27+09:00 Fentanest | Let the local auth stack apply the map schema the account registry builds on
+67bcf748ec2251df5297e03d3c036c9283e6bb8a 2026-09-26T04:31:52+09:00 2026-09-26T04:31:52+09:00 Fentanest | Merge T1 community account registry into auth integration
+fa82511fc09803787420dfe71fccdb6ccc592d48 2026-09-26T04:31:52+09:00 2026-09-26T04:31:52+09:00 Fentanest | Explain the mandatory share consent on the help and privacy pages
+4b09606ad4ae59d8dc31da296a4fcc4c8cfff06a 2026-09-26T03:48:27+09:00 2026-09-26T03:48:27+09:00 Fentanest | Add the user-only community-account API with the consent and writer-connection registry
+558ed6bafeb30a45da30a30743c5ea4a7b28472e 2026-09-26T00:50:37+09:00 2026-09-26T00:50:37+09:00 Fentanest | Fix the DNS step wording in the deployment runbook
+487d794bf8fd3f392ff1c823aad54b899d559070 2026-09-26T00:50:16+09:00 2026-09-26T00:50:16+09:00 Fentanest | Refer to the community map at safemap.worklazy.net
+66eacb30ebeba9cd43e06e9612ca7f427b4250c4 2026-09-26T00:44:10+09:00 2026-09-26T00:44:10+09:00 Fentanest | Stop running checks on push; keep pull request and manual runs
+72bbf7e38dd3852c449c0563a3faf3349b7fa8a4 2026-09-26T00:12:31+09:00 2026-09-26T00:12:31+09:00 Fentanest | Move the community account-link page and relay into this repository

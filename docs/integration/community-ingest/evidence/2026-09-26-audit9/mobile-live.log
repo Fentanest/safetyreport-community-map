@@ -1,0 +1,10 @@
+# cmd: COMMUNITY_STACK=1 timeout 600 flutter test --no-pub test/community/live_stack_test.dart
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix
+# candidate: 0f344b91 (ci0926/audit-fix)
+# dirty: 0 tracked changes
+# start: 2026-09-26T19:46:55+09:00
+00:00 +0: loading /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix/test/community/live_stack_test.dart
+00:00 +0: standalone capture → upload ACK → public → manifest → remote revoke blocks
+00:02 +1: All tests passed!
+# end: 2026-09-26T19:47:02+09:00
+# exit: 0

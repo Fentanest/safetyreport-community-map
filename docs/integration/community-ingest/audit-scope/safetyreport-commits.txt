@@ -1,0 +1,128 @@
+4023f64a554427cc637d12ebc69236984508cfeb 2026-09-26T13:08:26+09:00 2026-09-26T13:08:26+09:00 Fentanest | Merge community ingest integration (mandatory Kakao + share consent gate, capture, upload)
+8a1185ede7ee6cba51f9a440135b83ba1c2839fa 2026-09-26T12:50:53+09:00 2026-09-26T12:50:53+09:00 Fentanest | Record the community integration review fixes in the changelog
+4754d9fbd574f804271494c43963f62c0a76fe52 2026-09-26T12:46:12+09:00 2026-09-26T12:46:12+09:00 Fentanest | Confirm the local deletion before resetting the writer file
+ea5c342b514097a80ef710ee437ea3c6b3828e73 2026-09-26T12:23:52+09:00 2026-09-26T12:23:52+09:00 Fentanest | Separate prepared and confirmed deletions and keep unknown outcomes blocked
+b8e49a95ca4ce568063546426f2a477f0249d9fc 2026-09-26T11:53:59+09:00 2026-09-26T11:53:59+09:00 Fentanest | Keep the deletion marker in community.db and write it before asking the center
+47c41c3e48b81a9cd72cb6e9cc5762becd013644 2026-09-26T11:32:09+09:00 2026-09-26T11:32:09+09:00 Fentanest | Record the T7 browser QA findings and verdicts
+703332e628ff0571e33edcaedecf74560d7749d0 2026-09-26T11:30:37+09:00 2026-09-26T11:30:37+09:00 Fentanest | Make the PC live-stack test independent of consent left by other runs
+c188f70d8d609afabf0519463e350520c812a8cd 2026-09-26T11:14:05+09:00 2026-09-26T11:14:05+09:00 Fentanest | Block pre-deletion shares by row order and close event sockets on any gate loss
+435c01c47b1946c3764506e087ca62b2b3dd909b 2026-09-26T10:42:49+09:00 2026-09-26T10:42:49+09:00 Fentanest | Document the community gate API, WebSocket and media auth contract
+e3cc7e8a1c23204261002430c72ad2d34d20b0a3 2026-09-26T10:42:35+09:00 2026-09-26T10:42:35+09:00 Fentanest | List the community docs in the agent doc map
+d37749e8be80fa3b3bbf7ea5b2b1f69401d1f2da 2026-09-26T10:36:13+09:00 2026-09-26T10:36:13+09:00 Fentanest | Let the browser smoke suite seed a consented community session on the local stack
+153e07162c2389a97bfed68c950a654b30a96858 2026-09-26T10:35:48+09:00 2026-09-26T10:35:48+09:00 Fentanest | Add a loopback-only helper that seeds community sessions for screen QA
+c76ecb06878fab58895befef79743a451d818498 2026-09-26T10:34:48+09:00 2026-09-26T10:34:48+09:00 Fentanest | Bundle the consent copy and public community config into the PC artifacts
+2894038a497828864f6bf10e60454f3637bb69ba 2026-09-26T10:17:04+09:00 2026-09-26T10:17:04+09:00 Fentanest | Speak the manifest contract on the PC and verify the PC path against the real stack
+a138a4da5990da0f60f14311e2a6e5dd1d5fe585 2026-09-26T04:30:51+09:00 2026-09-26T04:30:51+09:00 Fentanest | Wire upload and rebuild routers and close the parallel-work fail-open paths
+fa2a1da648becc7686b414f5c91d616847265cf8 2026-09-26T04:23:07+09:00 2026-09-26T04:23:07+09:00 Fentanest | Merge T4 community upload data path into PC integration
+376bc9ade3466a3a4673965ca7f9c7cbc903a44e 2026-09-26T04:22:51+09:00 2026-09-26T04:22:51+09:00 Fentanest | Merge T3b one-time rebuild into PC integration
+2666e501d75c084b38d76c341f66bff2cca6ca8b 2026-09-26T04:22:40+09:00 2026-09-26T04:22:40+09:00 Fentanest | Merge T3a community gate into PC integration
+b5b24514719c35a35281773970166f23edffbc0d 2026-09-26T04:21:29+09:00 2026-09-26T04:21:29+09:00 Fentanest | Require Kakao sign-in and share consent before using the PC server
+c5d12fba618aa2c035b1bb3d7f04a8021f8b21e4 2026-09-26T04:12:24+09:00 2026-09-26T04:12:24+09:00 Fentanest | Add PC one-time rebuild crawl, list-refetch selection, scheduler split (T3b)
+f064333dd97de88bdf26da532387db019f7a41d5 2026-09-26T04:06:21+09:00 2026-09-26T04:06:21+09:00 Fentanest | Document community upload data path and changelog entry
+56ca4cf866eb2421e477eb4ec1df703032808a3f 2026-09-26T04:06:18+09:00 2026-09-26T04:06:18+09:00 Fentanest | Wire capture into save path and add community upload UI and routes
+f3f908742b61875457471cb94aef112a2638a04e 2026-09-26T04:06:13+09:00 2026-09-26T04:06:13+09:00 Fentanest | Implement community uploader and midnight scheduler with tests
+5d25a62714068176dfa0f1adb4c606f04fa9f323 2026-09-26T04:06:08+09:00 2026-09-26T04:06:08+09:00 Fentanest | Implement community capture and ingest client with contract vector tests
+857185d77364635e8798d3a21ecaa7d1f9037af4 2026-09-26T03:46:22+09:00 2026-09-26T03:46:22+09:00 Fentanest | Track the whole community-ingest contract copy
+1314650400d28cce9129f27ad7da8ae30d6f3972 2026-09-26T03:43:11+09:00 2026-09-26T03:43:11+09:00 Fentanest | Add the community-ingest contract copy and the separate community.db store skeleton
+db4b38f97e5ff4208c947fc88111526a2b610f8f 2026-09-26T00:50:40+09:00 2026-09-26T00:50:40+09:00 Fentanest | Name the community map address safemap.worklazy.net in settings
+daa2e6a4e443d5f8f8cee937ec0286b03abf62bf 2026-09-26T00:14:09+09:00 2026-09-26T00:14:09+09:00 Fentanest | Point community account references at the safetyreport-community-auth repository
+a509494fd2e7d05f747de7aa355b0e1c516d7638 2026-09-25T23:55:31+09:00 2026-09-25T23:55:31+09:00 Fentanest | Point the community account link at safeauth.worklazy.net
+28c26f1bf0dbcecb55f4d6274e71b07ac6679a07 2026-09-25T23:33:55+09:00 2026-09-25T23:33:55+09:00 Fentanest | Document community account linking
+ca57ed8a305362a3956d5863c6d5de9a04974549 2026-09-25T23:33:54+09:00 2026-09-25T23:33:54+09:00 Fentanest | Expose community account linking in settings and the mobile API
+5b769180eafa3fc7aa092099720c53ef79b2e9c5 2026-09-25T23:33:54+09:00 2026-09-25T23:33:54+09:00 Fentanest | Add community account device link service and encrypted session store
+cb4b027d2853134788707784ed25924e7c794940 2026-09-25T19:11:25+09:00 2026-09-25T19:11:25+09:00 Fentanest | Keep list identity values and law choices like the app, and add a server/app computation parity check
+2f20f2ef8586cce9fdbb4f4618dc2a6cab8da068 2026-09-25T13:43:35+09:00 2026-09-25T13:43:35+09:00 Fentanest | Switch the web dark theme to the deep-dark palette shared with the app
+8bbfc16d5b3bc66cc21cdc968d9658ec2a4c3175 2026-09-25T13:31:21+09:00 2026-09-25T13:31:21+09:00 Fentanest | Drop beautifulsoup4 now that no HTML parser imports it, and record the W3+W4 review
+0626127f5cec98cef3fe7d78d3d092b53633c4b7 2026-09-25T13:29:32+09:00 2026-09-25T13:29:32+09:00 Fentanest | Submit each rating once, fail on DB errors and share popup reason decoding with the app
+387ef8ed325c53989a167f56688d561333de7431 2026-09-25T13:25:02+09:00 2026-09-25T13:25:02+09:00 Fentanest | Remove the legacy Selenium HTML crawler and the minimal crawl mode
+b3e7e3c686cce7bffcf1bffc8e5c12b73241008c 2026-09-25T13:09:14+09:00 2026-09-25T13:09:14+09:00 Fentanest | Remove the non-member (manual) login crawl mode
+f5399a88d64ce9e9ffcc21cdab9c095d29ff8374 2026-09-25T13:05:50+09:00 2026-09-25T13:05:50+09:00 Fentanest | Let users add a common reason when rating and count a rating only once the site shows it
+3b6ea697e8e7e48a9d3db41929b1dfa7bd18235a 2026-09-25T12:38:52+09:00 2026-09-25T12:38:52+09:00 Fentanest | Share one rating eligibility rule with the mobile app and fix the pre-skip lookup
+6386fa30a8d8db273607dbd3e1cd15d20d7d82f1 2026-09-25T12:15:10+09:00 2026-09-25T12:15:10+09:00 Fentanest | Record the fact-check of Gemini's G15 investigations
+362238d5541b91b5f7d1c770278a3efd93a724fc 2026-09-25T12:00:18+09:00 2026-09-25T12:00:18+09:00 Fentanest | Note that mobile fills photo capture times at the same three points
+275d5db0b9b93039d87b34e605f0fdcf0706ee2e 2026-09-25T11:47:16+09:00 2026-09-25T11:47:16+09:00 Fentanest | Point the photo capture docs at the three places that fill it
+bef511f4a964bd6c2df20002886f3d4f5a527636 2026-09-25T11:16:44+09:00 2026-09-25T11:16:44+09:00 Fentanest | Share EXIF capture-time vectors with the mobile app and check them in the roundtrip contract comparison
+53e98f791b74f1f8545a565e803ce8ba81fb28c3 2026-09-25T11:06:52+09:00 2026-09-25T11:06:52+09:00 Fentanest | Roundtrip check also requires parser-vectors.json to be identical in both repos
+66d8f0bb4d651890009cf22c0565d2ef1f35af39 2026-09-25T11:06:12+09:00 2026-09-25T11:06:12+09:00 Fentanest | Contract: mobile schema v14 (report content restored from raw on upgrade)
+7d3653c3c943f74ce533bd4a81506c0a67fc1df2 2026-09-25T10:59:36+09:00 2026-09-25T10:59:36+09:00 Fentanest | Parser parity with the app (server side): car number stays on its own line, date separators, 검토중 fallback, fullwidth digits in answers, null-safe keys, detail satisfaction score kept as rating; shared contracts/parser-vectors.json; repair car numbers that swallowed the next line on first start
+323631d108e2722945b79abd4e11e07f00ad661e 2026-09-25T10:33:53+09:00 2026-09-25T10:33:53+09:00 Fentanest | One-time pass after an update: fill missing parking photo capture times in the background (throttled, pauses while crawling), with a one-line progress bar at the bottom of every page (Vista-style busy ring) and a status API for the app
+ed5b3cb32797f8de67ffa7e2d1d008d1c7659fe8 2026-09-25T10:01:56+09:00 2026-09-25T10:01:56+09:00 Fentanest | Back up the DB before a schema upgrade on first start of a new version (data/backups/before_schema_v<old>_<time>.db, keep 5)
+82d1dca39e004302e0a7eb26728495d837d11a33 2026-09-25T01:59:47+09:00 2026-09-25T01:59:47+09:00 Fentanest | Docs: G14 (W1) review record
+134b2ca7eea91232428c27a8ab766c338cbb8766 2026-09-25T01:59:36+09:00 2026-09-25T01:59:36+09:00 Fentanest | Merge W1 ops pages (crawl control, rating, watchlist; Gemini G14 + Opus integration)
+572b6bd79c2b0a9ccd9e7c4571433dbabcfb8322 2026-09-25T01:59:25+09:00 2026-09-25T01:59:25+09:00 Fentanest | Devices page: tables scroll inside their card on phones (Firefox overflowed by 3px)
+c5147ddbff2d92330275f678faa8ba5caf869a97 2026-09-25T01:47:59+09:00 2026-09-25T01:47:59+09:00 Fentanest | W1 integration: one token-based console style for both themes, pill badge for legacy mode, drop the capture spec from the test folder
+d52cc59805ac7c41baf909c1ac7fba7eca04d639 2026-09-25T01:45:02+09:00 2026-09-25T01:45:02+09:00 Fentanest | feat: ops pages ui renewal and tests
+0af1d3caa750be962c02f2c61335daa7f8d55cdb 2026-09-25T01:36:10+09:00 2026-09-25T01:36:10+09:00 Fentanest | W2: settings, admin, devices, backup and file browser in the approved style (plain card headers with accent icons, no white bands in dark, sticky save); new API key name is inserted as text
+fa58263754b13a9bccc493f59f94158abba76e54 2026-09-25T01:22:16+09:00 2026-09-25T01:22:16+09:00 Fentanest | W4: map page chrome in the approved style (chips, KPI-accent summary cards, segment year/category buttons, token panels); map overlays unchanged
+a858391d1892616bfda0caeede9084e4febf0347 2026-09-25T01:09:51+09:00 2026-09-25T01:09:51+09:00 Fentanest | W3: data editor in the approved style (segment tabs, pill badges, token colors); shared segment/empty-panel styles move to theme.css; theme pilot spec waits for DataTables init
+5baf5fb5b5036ce9064fd737541a871585f84a18 2026-09-25T00:57:26+09:00 2026-09-25T00:57:26+09:00 Fentanest | W3: duplicate groups page in the approved style (status tabs with counts, pill badges, toolbar) and shows whether each group has a saved user decision and when
+67311c6d53aeef05f50e861f898f3a0edb40f328 2026-09-25T00:52:05+09:00 2026-09-25T00:52:05+09:00 Fentanest | Docs: pilot (P1-P3) approved, P3 merged
+e35d2fcf31def6af1957a5e815560a3b59538b20 2026-09-24T20:39:19+09:00 2026-09-24T20:39:19+09:00 Fentanest | Merge P3 dashboard renewal (Gemini G13 + Opus integration; pilot approved 2026-09-24)
+e8b6a7efed240d4f4ad61e27d522cba915d3dea0 2026-09-24T20:10:35+09:00 2026-09-24T20:10:35+09:00 Fentanest | Tests: stabilize list AND/OR search spec (wait for the panel to open and close, assert results); G13 review record
+537252dd33253ed1c99ead3f2105b7ebe3bd5b63 2026-09-24T19:57:00+09:00 2026-09-24T19:57:00+09:00 Fentanest | P3 integration: two-column cards on phones, dashboard tables scroll horizontally instead of squashing
+4443cb15bd0a26e4fe543daac98640462d8b86ae 2026-09-24T19:42:00+09:00 2026-09-24T19:42:00+09:00 Fentanest | P3 integration: restore the last crawl time on the dashboard, keyboard access for cards, keep report numbers on one line
+d933d0e5d696e66cbd7ed4ebb92535c0e7c5f468 2026-09-24T19:00:39+09:00 2026-09-24T19:00:39+09:00 Fentanest | feat: migrate dashboard to card grid with tokens
+6718abccecb704c5a1f3f88906148284510289b8 2026-09-24T18:38:13+09:00 2026-09-24T18:38:13+09:00 Fentanest | Hide the phone menu button while a search panel is open (it covered the panel title); G12 review record
+9a06a06e1ce00926945ef289bc6090d5f675f8aa 2026-09-24T15:14:36+09:00 2026-09-24T15:14:36+09:00 Fentanest | P2b: stats summary cards and monthly reported/answered chart from the same overview function and filters as the mobile app (values checked against /api/v1/stats/overview)
+41bb8e47695c857440d5be5519a17089b905c13c 2026-09-24T15:04:18+09:00 2026-09-24T15:04:18+09:00 Fentanest | Docs: measure full duplicate regroup (1.5s per crawl at 3k reports) and keep it (G11-3)
+d55efe310e557e0cdc09d2c0748b7e87a603be78 2026-09-24T15:03:14+09:00 2026-09-24T15:03:14+09:00 Fentanest | P2: stats top renewal (condition summary, fine summary tiles, segmented year/category/grouping tabs with aria-pressed, law chips, collapsible column panel); drilldown URLs are URL-encoded and 'no law' drilldown lists its reports (D-STAT-8, reproduced first); banner follows filters (D-STAT-1 decided)
+cbdcbd738804fbc6eaddea2e861a3003b0dc8e9c 2026-09-24T14:41:16+09:00 2026-09-24T14:41:16+09:00 Fentanest | Exchange: app duplicate decisions follow the canonical group id, an empty app decision table clears server decisions (G11 findings 1, 2); G11 review record, note the per-crawl full regroup as a design deviation
+f12a823dc0cbab2a495c4c80a57e70024e8ae34d 2026-09-24T14:15:34+09:00 2026-09-24T14:15:34+09:00 Fentanest | P1 integration: pin the empty-result message to the visible table area, keep the search box inside the card on phones; G10 round 2 review
+ed0e81f502041ef9e71b9d064a74bf49111f2ce1 2026-09-24T14:09:43+09:00 2026-09-24T14:09:43+09:00 Fentanest | Merge G10 (P1 list and detail modal renewal, Gemini round 2)
+00630cdae17a737699717e6f0fae035dc1726a5e 2026-09-24T13:52:39+09:00 2026-09-24T13:52:39+09:00 Fentanest | Implement P2 UI fixes for list and detail modal
+845fc28621e8dd57e3efc874a82853db734f0c65 2026-09-24T13:21:40+09:00 2026-09-24T13:21:40+09:00 Fentanest | Docs: record S-4, S-8 and prefs inbox follow-ups
+da1c6212ebdb37cce7d25b3564a15d998481e1aa 2026-09-24T13:14:54+09:00 2026-09-24T13:14:54+09:00 Fentanest | Retry photo capture times for parking reports that are no longer recrawled (within 6 months, 30 per crawl, network outside transactions) (S-8)
+bfc41af7a80622ee87897cfed8d9ee759af69b87 2026-09-24T13:13:33+09:00 2026-09-24T13:13:33+09:00 Fentanest | Geocode backfill also resolves addresses changed in the editor: fills the cache and rebuilds the display row, site coordinates untouched (S-4)
+076fd3772116c6d928122c54e28d1c5483bf6ca7 2026-09-24T13:11:58+09:00 2026-09-24T13:11:58+09:00 Fentanest | Docs: record storage refactor R6
+0b691ca405f52bc78f063f14d10cc375af3d1cff 2026-09-24T13:06:30+09:00 2026-09-24T13:06:30+09:00 Fentanest | R6 (server): remove unused storage helpers (file-based crawl_changes take, clear_old_attachments, get_cNo, unused scoring/select/export helpers), drop idle device read positions when a batch is added; document timestamp formats and router execution (S-32, S-34)
+ac31131c9562329f64b3ea3e91b1ac3dfaf5347b 2026-09-24T13:04:20+09:00 2026-09-24T13:04:20+09:00 Fentanest | R6 (server): blocking routes run in the threadpool (await-free handlers are sync, body-reading handlers offload restore/editor/duplicate/zip work), crawl launch is serialized, watchlist remove resolves IDs (S-29, S-34); stats headers wrap in Safari
+104c8b90b71bebd3b35b2c6a95c5abeddbb8e1af 2026-09-24T12:55:15+09:00 2026-09-24T12:55:15+09:00 Fentanest | Docs: record storage refactor R4/R5
+23ff8fc788a8ee3307f845ec190c1ac8ac486f77 2026-09-24T12:43:07+09:00 2026-09-24T12:43:07+09:00 Fentanest | R4 (web): editor marks edited fields, shows the site original with a revert button; API returns overrides and site values (additive); editor notices updated
+9f93917bdb727e17ec4a0c4fbb1face484585d9e 2026-09-24T12:37:18+09:00 2026-09-24T12:37:18+09:00 Fentanest | R5: change log with per-device read positions for /crawl/results (legacy position for old apps), atomic state JSON writes, unreadable files are not deleted (S-18)
+15c4fadca7fc6e6a86a21a2a87fe0fa2b8aee5cf 2026-09-24T12:35:25+09:00 2026-09-24T12:35:25+09:00 Fentanest | Docs: record storage refactor R3 (mobile)
+3cc2b3721b986650937de023ebc43a2df342805f 2026-09-24T12:34:54+09:00 2026-09-24T12:34:54+09:00 Fentanest | Contract: mobile schema v13
+2716c3a7fddc59b95159d0f9739dec516c16e9a4 2026-09-24T12:20:33+09:00 2026-09-24T12:20:33+09:00 Fentanest | Tests: wait for DataTables init in stats layout spec; correct G10 review (the stats failure was this race, not Gemini's CSS)
+8d824c8cda8934b0f4e94883e77bd4d24faccb66 2026-09-24T12:16:05+09:00 2026-09-24T12:16:05+09:00 Fentanest | Docs: record storage refactor R2 (server)
+c3abe9993da52fb7432baa93ec309df7ccde0144 2026-09-24T12:15:15+09:00 2026-09-24T12:15:15+09:00 Fentanest | R2d: indexes (schema v4), crawler runs a light schema check, geocode backfill refreshes merge through the shared rule, queue numbers resolve by exact match
+9a15b98c53722ddf6d47a7c4d4a822e29be125a0 2026-09-24T12:12:28+09:00 2026-09-24T12:12:28+09:00 Fentanest | R2c: duplicate decisions table wins over rebuilt groups (survives reset), member first-grouped time kept, rating score stored, reset in one transaction; schema v3
+6e2628868a1df8c60e05a6fe91177477a79df762 2026-09-24T12:09:27+09:00 2026-09-24T12:09:27+09:00 Fentanest | R2c: editor saves to the override table (only sent fields, same-as-site clears), recrawl no longer reverts edits (S-1, S-2, S-3)
+3474b9a47c0c47f955bd5cdf401a88affaab29fe 2026-09-24T12:08:22+09:00 2026-09-24T12:08:22+09:00 Fentanest | Docs: G10 round 2 stopped by Gemini quota (429)
+6e0d229b1e41756e33905871848edcaa1458e587 2026-09-24T12:07:13+09:00 2026-09-24T12:07:13+09:00 Fentanest | Docs: mobile reports hold site originals; overrides and attachment expiry apply at display (roundtrip caught the merge-view import)
+53fa5aa887f9a2ee2a16472e9d02b037b4b51027 2026-09-24T12:04:15+09:00 2026-09-24T12:04:15+09:00 Fentanest | R2b: typed per-report save in one transaction (detail, raw, entry value, title, merge row), network before the transaction, normalized change detection, overrides and attachment expiry in every merge build, streaming save in start.py
+f3be5f276f3411f67422224054b7612bbec2a76c 2026-09-24T11:59:52+09:00 2026-09-24T11:59:52+09:00 Fentanest | R2a: recrawl reports with NULL closed flag (S-19), normalization covers NULL rows (S-20), list save never downgrades completed poll (S-26, D-3)
+c8a6524f646151e244721a0499324090430a0213 2026-09-24T11:56:41+09:00 2026-09-24T11:56:41+09:00 Fentanest | Docs: record storage refactor R1 (exchange, restore, schema version)
+9a1aa599fe70e53978397c911f3d52438eb945f7 2026-09-24T11:56:08+09:00 2026-09-24T11:56:08+09:00 Fentanest | Docs: G10 (P1 list/modal) round 1 review — rejected, round 2 issued
+b0c0c847160896e97d884ec5ce1824d66dfaf92b 2026-09-24T11:48:21+09:00 2026-09-24T11:48:21+09:00 Fentanest | R1c: mobile API channel keeps NULLs and integers (S-35); change payload no longer sends "None" (S-17)
+eaced394ff084b5d1302ca10da01d2d59e5ec4d6 2026-09-24T11:46:47+09:00 2026-09-24T11:46:47+09:00 Fentanest | R1b/R1d: contract-driven mobile->server conversion (NULLs kept, watchlist single source, server-only data kept, new tables exchanged), staged atomic restore with refusal while crawling, schema v2
+4f2dca2412845e9ed265f98a966fcead39508a21 2026-09-24T11:37:36+09:00 2026-09-24T11:37:36+09:00 Fentanest | R1a: server schema version (PRAGMA user_version), override/decision/change-log tables, contract v2
+0cbe2f8062c26b8479d3d816064ebd989a1a1b11 2026-09-24T11:27:44+09:00 2026-09-24T11:27:44+09:00 Fentanest | R0: roundtrip user-data scenarios (rating, duplicate decisions), pin S-35 API NULL handling; mark R0 done
+902e622e553cafd6e31a27ee1634b0c3dc5555b7 2026-09-24T11:25:01+09:00 2026-09-24T11:26:10+09:00 Fentanest | Implement P1: list and detail modal renewal
+db60bc36608315f55727faab6ff60194d891e71b 2026-09-24T11:25:06+09:00 2026-09-24T11:25:06+09:00 Fentanest | R0: old server schema fixture + upgrade test, prod-copy upgrade rehearsal script, record R0 findings
+e69914f9c6eebfa2acb1ccff4c02a4609274c042 2026-09-24T11:23:20+09:00 2026-09-24T11:23:20+09:00 Fentanest | R0: pin known server storage defects (S-1, S-2, S-5, S-17, S-19, S-26) as current-behavior tests
+c979a67dcd97ad03cb0f077a54470bc803254fc0 2026-09-24T11:20:39+09:00 2026-09-24T11:20:39+09:00 Fentanest | R0: storage contract file, server schema conformance tests, prod-copy roundtrip rehearsal mode
+ee8f058f7899bee1b34c28e7ec4135f5ac61f38a 2026-09-24T11:15:16+09:00 2026-09-24T11:15:16+09:00 Fentanest | Docs: record approved storage decisions (all a) and P0 theme approval
+f7a50513e7c7913b403aa05887cd83a4d5b29e35 2026-09-24T11:03:48+09:00 2026-09-24T11:03:48+09:00 Fentanest | Docs: fold Gemini G9 round 3 review into storage refactor plan
+3143fc1a8932076810998ab2031d16fd04339722 2026-09-24T10:58:24+09:00 2026-09-24T10:58:24+09:00 Fentanest | Docs: storage refactor plan draft, G9 review record, changelog for stats/logo/theme fixes
+f44275902d66261ba0852e9bc02ba1e65491dfc8 2026-09-24T10:54:10+09:00 2026-09-24T10:54:10+09:00 Fentanest | Use the LOGO lockup (light/dark) in sidebar and auth pages; camera icon for exe icons
+cea07529b8563d98609912b8818b3378b070b180 2026-09-24T10:48:10+09:00 2026-09-24T10:48:10+09:00 Fentanest | Use the new camera app icon for the web logo and favicon
+d38b693ff30bfc8f04e2f0ca24598c1134ba5ef1 2026-09-24T10:45:03+09:00 2026-09-24T10:45:03+09:00 Fentanest | Stats: fit tables without horizontal scroll (count+ratio in one cell, law filter above table, full footer)
+d434ee9021c9494e150262aed770b70130d46e1a 2026-09-24T10:31:49+09:00 2026-09-24T10:31:49+09:00 Fentanest | Theme: fix dark-mode leftovers on map, duplicates, settings and selected table rows
+5b519c4698d5d0621e3b5b44d2fef5fe01fd07b1 2026-09-24T10:05:27+09:00 2026-09-24T10:05:27+09:00 Fentanest | Add server-mobile DB roundtrip check; make fixture data crawler-realistic
+69a5a57a31e231c3a1aa26f537d29333da1edef5 2026-09-24T09:53:11+09:00 2026-09-24T09:53:11+09:00 Fentanest | Pilot P0: light/dark/system theme for the shared shell, Pretendard font
+a5404993ce2b416d4211b23bf757a270d3943901 2026-09-24T09:43:39+09:00 2026-09-24T09:43:39+09:00 Fentanest | Crawler: record parking photo capture times from EXIF
+f566e5ebe33b44b2a6456d8e442ab8369f72142a 2026-09-24T09:39:57+09:00 2026-09-24T09:39:57+09:00 Fentanest | Load DataTables Korean language file over https (BL-1)
+8a209cf8dac115906675ade5c93dd12d7893b9d1 2026-09-24T09:39:18+09:00 2026-09-24T09:39:18+09:00 Fentanest | Stats: calendar-day processing time, split unconfirmed, separate estimated fines
+2829c4d66b374ff806b482a7a89905faf0389bc2 2026-09-24T09:31:36+09:00 2026-09-24T09:31:36+09:00 Fentanest | Merge feature/stats-overview-api into dev
+64d484329742a74e231c332abdcb9be848cc2eb8 2026-09-24T09:24:43+09:00 2026-09-24T09:24:43+09:00 Fentanest | Spec: overnight parking counted as fines, 23:30-01:00 not eligible, hydrant lowest 4만
+5088d7f3b3770fa97315ace34e59932faf7f0ba8 2026-09-24T09:20:23+09:00 2026-09-24T09:20:23+09:00 Fentanest | Rules and spec: zero-loss DB exchange, confirmed vs estimated fine separation, overnight parking decision
+54ed40ce2dc044f3d17fb2e815e6382eff2f48a7 2026-09-24T09:12:56+09:00 2026-09-24T09:12:56+09:00 Fentanest | Spec: overnight truck parking (penalty surcharge) rules from verified G6 research
+def0c43009868d016e6c5cd08fdf47384b8cbd4c 2026-09-24T09:07:17+09:00 2026-09-24T09:07:17+09:00 Fentanest | Plan crawler change to record parking photo capture times
+e5502bcc08b782fdad38fd8eac8b41ccd4b0ffb8 2026-09-24T09:04:20+09:00 2026-09-24T09:04:20+09:00 Fentanest | Spec: use plate vehicle type, photo EXIF time for 2h parking surcharge, school-zone rule
+7f525b33c17edbf596cfc3cdaba2f750bdb2e1d8 2026-09-24T09:01:45+09:00 2026-09-24T09:01:45+09:00 Fentanest | Fill fine estimates for EV charging and disabled parking; record G5 review
+45f2b6d4353bf3e8a0c1f2d0ec36ae66f23bc26f 2026-09-24T08:59:18+09:00 2026-09-24T08:59:18+09:00 Fentanest | Record decision: estimate missing fine amounts with lowest standard amount
+fef44d80d7b62b035c7dd629e315c8ee5d9555b4 2026-09-24T08:45:24+09:00 2026-09-24T08:45:24+09:00 Fentanest | Count assigned in-progress reports in agency stats and align rounding with mobile
+5025ddc4c24d0fd38a330bec49d8d0a622209422 2026-09-24T08:21:35+09:00 2026-09-24T08:21:35+09:00 Fentanest | Record WebKit pass and mobile stats branch decisions in docs
+3ce6bd72c81596c24bb7c62d12d34047d566835e 2026-09-24T02:56:19+09:00 2026-09-24T02:56:19+09:00 Fentanest | Add fine_amount_unknown to stats rows and match law filter exactly
+1a777ef8d54490cca144a89dc4a355c6a1eea938 2026-09-24T02:54:58+09:00 2026-09-24T02:54:58+09:00 Fentanest | Reorganize agent docs and record web UI renewal baseline
+8297689fe7fee5a0c4586acf8bb862fcec2284dc 2026-09-24T02:51:40+09:00 2026-09-24T02:51:40+09:00 Fentanest | Add stats overview API for mobile statistics summary
+62da7f49b3f6c65af485b9a066d6d772f35ae4e9 2026-09-24T02:33:14+09:00 2026-09-24T02:33:14+09:00 Fentanest | Add fixture runtime seam, dev fixture server and web test tooling

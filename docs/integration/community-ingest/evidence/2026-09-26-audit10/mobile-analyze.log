@@ -1,0 +1,9 @@
+# cmd: timeout 300 flutter analyze --no-pub
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix
+# candidate: 83b57688 (ci0926/audit-fix)
+# dirty: 0 tracked changes
+# start: 2026-09-26T20:16:25+09:00
+Analyzing audit-fix...                                          
+No issues found! (ran in 3.6s)
+# end: 2026-09-26T20:16:30+09:00
+# exit: 0
