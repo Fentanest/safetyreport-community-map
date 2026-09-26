@@ -1,0 +1,32 @@
+# cmd: timeout 600 flutter test --no-pub test/services/crawl_unresolved_test.dart
+# NEGATIVE CONTROL: enqueueCrawl 이 서버 이유를 버리고 일반 문구만 던지는 옛 동작 — 실패가 기대값
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix
+# candidate: 2debce44 (ci0926/audit-fix)
+# dirty: 2 tracked changes
+# start: 2026-09-26T19:33:05+09:00
+00:00 +0: loading /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix/test/services/crawl_unresolved_test.dart
+00:00 +0: reads unresolved numbers from /crawl/status and tolerates old servers
+00:00 +1: enqueueCrawl surfaces the server reason for a refused number
+00:00 +1 -1: enqueueCrawl surfaces the server reason for a refused number [E]
+  Expected: throws satisfies function
+    Actual: <Instance of 'Future<void>'>
+     Which: threw _Exception:<Exception: Failed to enqueue crawl>
+            stack package:safetyreport/services/api_service.dart 578:7  ApiService.enqueueCrawl
+                  ===== asynchronous gap ===========================
+                  package:matcher                                       expectLater
+                  package:flutter_test/src/widget_tester.dart 507:8     expectLater
+                  test/services/crawl_unresolved_test.dart 30:13        main.<fn>.<fn>
+                  dart:async                                            runZoned
+                  package:http/src/client.dart 230:5                    runWithClient
+                  test/services/crawl_unresolved_test.dart 29:16        main.<fn>
+  
+  package:matcher                                    expectLater
+  package:flutter_test/src/widget_tester.dart 507:8  expectLater
+  test/services/crawl_unresolved_test.dart 30:13     main.<fn>.<fn>
+  dart:async                                         runZoned
+  package:http/src/client.dart 230:5                 runWithClient
+  test/services/crawl_unresolved_test.dart 29:16     main.<fn>
+  
+00:00 +1 -1: Some tests failed.
+# end: 2026-09-26T19:33:09+09:00
+# exit: 1

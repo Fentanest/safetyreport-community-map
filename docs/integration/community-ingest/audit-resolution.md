@@ -197,3 +197,24 @@ PyInstaller: 이 환경에 PyInstaller 가 없어 **번들 포함은 미검증**
 |---|---|
 | PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 404 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
 | 음성 대조(각각 따로) | `neg-r7-01-int-page-compare`(옛 코드가 실제 형식에서 TypeError), `neg-r7-01-ignore-list-ok`, `neg-r7-02-exit-gap`, `neg-r7-03-no-refusal`, `neg-r7-03-no-record` — 모두 실패 |
+
+## Sol 8차 재검증(`audit-sol-recheck-08.md`, "수정 후 재검토") 반영
+
+R7-01·R7-02 는 8차에서 닫혔다.
+
+| ID | 지적 | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit9/neg-*.log`, 각각 따로) |
+|---|---|---|---|---|
+| R8-01 높음 | 목록 뒤쪽 페이지 실패 때도 앞쪽에서 본 유일한 부분 일치를 저장하고 `processed` 로 보고 | 큐 해석은 **정확 일치(또는 `SPP-` 접두 정확)만** 바로 믿는다. 부분 일치는 목록 전체를 성공적으로 받은 뒤(`list_ok`)에만 확정 — 일부만 받았으면 정확 일치만 재해석하고 나머지는 큐에 남김. DB 에서 지금 유일해 보이는 부분 번호도 같은 규칙 | PC `61d2d41` | `test_a_partial_number_is_not_completed_from_an_incomplete_list`(실제 `crawl_titles`: 1쪽 A·2쪽 B, 2쪽 실패 두 번 → 저장 0·보고 0, 전체 → 모호, 정확 번호는 일부만 받아도 처리) / `neg-r8-01-partial-from-incomplete.log`, `neg-r8-01-initial-partial.log` |
+| R8-02 중간 | 모바일 `/crawl/start`(시작·실행 중 대기)·웹 시작에 모호 거부 없음, 직접 시작 결과 미기록, 앱이 400 이유를 안 보임 | 세 시작 경로 모두 같은 400 거부(대기 분기는 추가 뒤 시작 요청도). 큐 지정 직접 시작도 끝나면 보고를 읽어 unresolved 기록. **모바일**: `enqueueCrawl` 이 서버 `detail` 을 담아 던지고, 크롤 화면이 `/crawl/status` 의 `unresolved`(구서버엔 없음)를 "처리하지 못한 신고번호"로 표시 | PC `61d2d41`, mobile `0f344b91` | PC `test_mobile_start_refuses_ambiguous_numbers_and_direct_runs_record_unresolved`(실제 라우트 함수, 두 분기), M `test/services/crawl_unresolved_test.dart` / `neg-r8-02-no-mobile-refusal.log`, `neg-r8-02-no-direct-record.log`, `neg-mobile-r8-02-generic-enqueue-error.log` |
+| R8-03 중간 | 미해결 기록 저장 실패에도 큐에서 제거 | 기록(`record_unresolved`)이 성공했을 때만 없음·모호 번호를 끝난 것으로 봄 — 실패하면 큐에 남겨 다음에 다시 판정 | PC `61d2d41` | `test_numbers_stay_queued_when_the_unresolved_record_cannot_be_saved` / `neg-r8-03-drop-anyway.log` |
+
+남는 한계: 크롤 화면의 표시 위젯 자체는 렌더 테스트가 없다(파싱·API 는 테스트). 운영 목록 전체 받기의 시간·부하는 미측정.
+
+### 8차 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit9/`)
+후보 PC `61d2d41`, mobile `0f344b91`. map 제품 `e284c86`·auth 제품 `5a4d678` 은 audit3 과 같다.
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 407 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
+| mobile 단위 / analyze / 실스택 | 527 passed(3 skipped) / No issues found / 1 passed |
+| 음성 대조(각각 따로) | `neg-r8-01-partial-from-incomplete`, `neg-r8-01-initial-partial`, `neg-r8-02-no-mobile-refusal`, `neg-r8-02-no-direct-record`, `neg-r8-03-drop-anyway`, `neg-mobile-r8-02-generic-enqueue-error` — 모두 목표 단언에서 실패 |
