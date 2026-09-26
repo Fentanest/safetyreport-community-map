@@ -1,0 +1,8 @@
+# cmd: node scripts/integration/compose_supabase.mjs check
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-map/integration
+# candidate: b6bb6a6 (ci0926/integration)
+# dirty: 0 tracked changes
+# start: 2026-09-26T12:49:43+09:00
+manifest check ok: 5 migrations, 4 functions (map=., auth=/home/better0101/projects/worktree/ci-20260926/community-auth/integration)
+# end: 2026-09-26T12:49:43+09:00
+# exit: 0

@@ -1,0 +1,23 @@
+# cmd: timeout 900 bash scripts/integration/migration_paths.sh
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-map/integration
+# candidate: b6bb6a6 (ci0926/integration)
+# dirty: 0 tracked changes
+# start: 2026-09-26T12:57:07+09:00
+== path: empty (initial: none)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: map-first (initial: 202608150001_initial_schema.sql 202609240001_analytics_v2.sql)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: auth-first (initial: 202609251200_community_auth_relay.sql)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: both (initial: 202608150001_initial_schema.sql 202609240001_analytics_v2.sql 202609251200_community_auth_relay.sql)
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+== path: both + public legacy v2 facts (guard)
+  ok: stopped with LEGACY_SNAPSHOT_DATA_PRESENT, nothing half-applied
+  ok: 5/5 recorded, ingest/account RPCs present, no client grants on private
+  ok: applies after the legacy snapshot is retired
+== restore the integration stack to the full composed history
+  ok
+MIGRATION PATHS: PASS
+# end: 2026-09-26T13:00:25+09:00
+# exit: 0
+clean_stack=true
