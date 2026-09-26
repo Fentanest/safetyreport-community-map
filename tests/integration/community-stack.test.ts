@@ -133,6 +133,13 @@ const envelope = (w: Writer, events: unknown[], over: Partial<Json> = {}) => ({ 
 const ingest = (w: Writer, events: unknown[], over: Partial<Json> = {}, token = w.session.access) => ingestRaw(envelope(w, events, over), token);
 
 const ledger = () => count('private.community_ingest_events');
+const SERVE_LOG = process.env.COMMUNITY_SERVE_LOG ?? '/home/better0101/projects/safetyreport/.agent-runs/ci-20260926/stack-int/serve.log';
+function runtimeTerminations(): number {
+  try {
+    return readFileSync(SERVE_LOG, 'utf8').split('\n')
+      .filter(l => /connection closed before message completed|early termination has been triggered/.test(l)).length;
+  } catch { return 0; }
+}
 function rpcSignatures(): { name: string; body: Json }[] {
   const dummy = (type: string): unknown => ({ uuid: '00000000-0000-4000-8000-000000000000', text: 'x', jsonb: {}, integer: 1,
     boolean: false, date: '2026-01-01', 'timestamp with time zone': '2026-01-01T00:00:00Z', 'double precision[]': null } as Json)[type] ?? null;
@@ -351,43 +358,97 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
   });
 
   describe('realtime and storage channels (§14, Sol M-02)', () => {
-    it('a user or anonymous Realtime subscription to private tables receives no change events', async () => {
+    it('Realtime: every private subscription is answered, none delivers changes, while a public control table does', async () => {
       const w = await writerFor('B');
-      const events: Json[] = [];
-      const sockets: WebSocket[] = [];
-      for (const token of [keys.PUBLISHABLE_KEY, w.session.access]) {
-        const ws = new WebSocket(`${API.replace('http', 'ws')}/realtime/v1/websocket?apikey=${keys.PUBLISHABLE_KEY}&vsn=1.0.0`);
-        sockets.push(ws);
-        await new Promise<void>((resolve, reject) => { ws.onopen = () => resolve(); ws.onerror = e => reject(e); });
-        ws.onmessage = m => events.push(JSON.parse(String(m.data)));
-        for (const table of ['community_report_facts', 'community_ingest_events', 'community_connections']) {
-          ws.send(JSON.stringify({ topic: `realtime:private-${table}`, event: 'phx_join', ref: table, join_ref: table,
-            payload: { config: { postgres_changes: [{ event: '*', schema: 'private', table }] }, access_token: token } }));
+      // 양성 대조군: 이 테스트만 쓰는 공개 표를 publication 에 넣어 Realtime 이 실제로 변경을 전달하는지 먼저 증명한다
+      // 로컬 스택 전용 대조 표(한 번 만들고 계속 쓴다 — 매번 publication 에 넣고 빼면 Realtime 복제가 흔들린다)
+      const control = 'it_realtime_control';
+      sql(`create table if not exists public.${control}(id bigint primary key, v text);
+        alter table public.${control} enable row level security;
+        drop policy if exists rt_read on public.${control};
+        create policy rt_read on public.${control} for select to anon, authenticated using (true);
+        grant select on public.${control} to anon, authenticated;
+        do $$ begin if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = '${control}')
+          then alter publication supabase_realtime add table public.${control}; end if; end $$;`);
+      const base = Date.now();
+      {
+        const messages: Json[] = [];
+        const sockets: WebSocket[] = [];
+        const joins: { ref: string; token: string }[] = [];
+        for (const [who, token] of [['anon', keys.PUBLISHABLE_KEY], ['user', w.session.access]] as const) {
+          const ws = new WebSocket(`${API.replace('http', 'ws')}/realtime/v1/websocket?apikey=${keys.PUBLISHABLE_KEY}&vsn=1.0.0`);
+          sockets.push(ws);
+          await new Promise<void>((resolve, reject) => { ws.onopen = () => resolve(); ws.onerror = e => reject(e); });
+          ws.onmessage = m => messages.push({ who, ...JSON.parse(String(m.data)) });
+          for (const [schema, table] of [['private', 'community_report_facts'], ['private', 'community_ingest_events'],
+            ['private', 'community_connections'], ['public', control]]) {
+            const ref = `${who}:${table}`;
+            joins.push({ ref, token });
+            ws.send(JSON.stringify({ topic: `realtime:${ref}`, event: 'phx_join', ref, join_ref: ref,
+              payload: { config: { postgres_changes: [{ event: '*', schema, table }] }, access_token: token } }));
+          }
         }
+        // 모든 join 이 응답을 받을 때까지(상태 기록) 기다린다 — 죽은 소켓으로 '변경 0' 이 되는 것을 막는다
+        const deadline = Date.now() + 10_000;
+        while (Date.now() < deadline && joins.some(j => !messages.some(m => m.event === 'phx_reply' && m.ref === j.ref))) {
+          await new Promise(r => setTimeout(r, 100));
+        }
+        const replies = Object.fromEntries(joins.map(j => [j.ref, messages.find(m => m.event === 'phx_reply' && m.ref === j.ref)?.payload?.status]));
+        expect(Object.values(replies).every(Boolean), JSON.stringify(replies)).toBe(true);
+        expect(replies[`anon:${control}`]).toBe('ok');
+        expect(replies[`user:${control}`]).toBe('ok');
+        // 대조 채널의 postgres_changes 구독이 실제로 붙을 때까지("Subscribed to PostgreSQL") 기다린 뒤 변경을 만든다
+        const subscribed = (who: string) => messages.some(m => m.event === 'system' && m.who === who
+          && m.payload?.status === 'ok' && String(m.topic).endsWith(control));
+        const ready = Date.now() + 20_000;
+        while (Date.now() < ready && !(subscribed('anon') && subscribed('user'))) await new Promise(r => setTimeout(r, 100));
+        expect(subscribed('anon') && subscribed('user'), 'control subscriptions active').toBe(true);
+        sql(`insert into public.${control}(id, v) values (${base}, 'x');`);
+        expect((await ingest(w, [await event(w, `RT-${rid()}`)])).json.results[0].status).toBe('accepted');
+        // 스위트 전체에서 WAL 이 많이 쌓이면 Realtime 전달이 늦다 — 최대 30초, 10초마다 대조 행을 하나 더 넣는다
+        const delivered = () => messages.some(m => m.event === 'postgres_changes' && String(m.topic).includes(control));
+        for (let n = 2; n <= 4 && !delivered(); n++) {
+          const until = Date.now() + 10_000;
+          while (Date.now() < until && !delivered()) await new Promise(r => setTimeout(r, 100));
+          if (!delivered()) sql(`insert into public.${control}(id, v) values (${base + n}, 'x');`);
+        }
+        await new Promise(r => setTimeout(r, 2000));
+        for (const ws of sockets) ws.close();
+        const changes = messages.filter(m => m.event === 'postgres_changes');
+        expect(changes.some(m => String(m.topic).includes(control)), 'positive control delivered').toBe(true);
+        const leaked = changes.filter(m => !String(m.topic).includes(control));
+        expect(leaked, JSON.stringify(leaked).slice(0, 300)).toEqual([]);
       }
-      await new Promise(r => setTimeout(r, 1500));
-      expect((await ingest(w, [await event(w, `RT-${rid()}`)])).json.results[0].status).toBe('accepted');
-      await new Promise(r => setTimeout(r, 3000));
-      for (const ws of sockets) ws.close();
-      const changes = events.filter(e => e.event === 'postgres_changes');
-      expect(changes, JSON.stringify(changes).slice(0, 300)).toEqual([]);
-      expect(events.some(e => e.event === 'phx_reply' || e.event === 'system'), 'the channel answered (not a dead socket)').toBe(true);
-    }, 30_000);
+    }, 90_000);
 
-    it('Storage has no buckets and refuses bucket creation and uploads from clients', async () => {
+    it('Storage: no buckets by default; a real private bucket refuses anonymous and user writes and reads', async () => {
       const w = await writerFor('C');
-      const before = Number(sql('select count(*) from storage.buckets;'));
+      expect(Number(sql('select count(*) from storage.buckets;'))).toBe(0);
       for (const token of [undefined, w.session.access]) {
         const list = await call('GET', '/storage/v1/bucket', { token });
         expect([list.status, list.json]).toEqual([200, []]);
         const create = await call('POST', '/storage/v1/bucket', { token, body: { name: `x-${rid()}`, public: true } });
         expect(create.status).toBeGreaterThanOrEqual(400);
         expect(create.json.code ?? create.json.error).toBeTruthy();
-        const up = await call('POST', `/storage/v1/object/community/${rid()}.json`, { token, body: '{}' });
-        expect(up.status).toBeGreaterThanOrEqual(400);
       }
-      expect(Number(sql('select count(*) from storage.buckets;'))).toBe(before);
-      expect(before).toBe(0);
+      const bucket = `it-${rid()}`;
+      sql(`insert into storage.buckets(id, name, public) values ('${bucket}', '${bucket}', false);`);
+      try {
+        for (const token of [undefined, w.session.access]) {
+          const up = await call('POST', `/storage/v1/object/${bucket}/probe-${rid()}.json`, { token, body: '{"a":1}' });
+          expect(up.status, JSON.stringify(up.json)).toBeGreaterThanOrEqual(400);
+          expect(JSON.stringify(up.json)).toMatch(/row-level security|Unauthorized|not allowed/i);
+        }
+        expect(Number(sql(`select count(*) from storage.objects where bucket_id = '${bucket}';`))).toBe(0);
+        sql(`insert into storage.objects(bucket_id, name) values ('${bucket}', 'seeded.json');`);
+        for (const token of [undefined, w.session.access]) {
+          const get = await call('GET', `/storage/v1/object/${bucket}/seeded.json`, { token });
+          expect(get.status).toBeGreaterThanOrEqual(400);
+        }
+      } finally {
+        sql(`begin; set local storage.allow_delete_query = 'true'; delete from storage.objects where bucket_id = '${bucket}';
+          delete from storage.buckets where id = '${bucket}'; commit;`);
+      }
     });
   });
 
@@ -580,6 +641,8 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const statuses: number[] = [];
       const codes: string[] = [];
       const server5xx: string[] = [];
+      const deletedUsers: string[] = [];
+      const serveEventsBefore = runtimeTerminations();
       const runtime5xx: string[] = [];
       const record = (r: { status: number; json: Json }) => {
         statuses.push(r.status);
@@ -597,6 +660,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
           const b = await writerFor('C');
           const burst = async (w: Writer, n: number) => { for (let i = 0; i < n; i++) record(await ingest(w, [await event(w, `RC${round}${i}-${rid()}`)])); };
           const d = await writerFor('D');
+          deletedUsers.push(d.session.userId);
           await Promise.all([
             burst(a, 6), burst(b, 6), burst(d, 6),
             (async () => { await new Promise(r => setTimeout(r, 20 * round)); record(await account('contributions-delete', d.session.access, { confirm: 'DELETE_MY_SHARED_REPORTS' })); })(),
@@ -611,11 +675,14 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       }
       expect(deadlocks() - before).toBe(0);
       // 삭제와 경쟁한 ingest: 삭제 전에 커밋된 fact 는 삭제되고, 뒤에 온 요청은 폐기된 연결로 거절 → D 의 공개 fact 0
-      expect(publicFacts('%', sql("select id from auth.users where raw_user_meta_data->>'nickname' = '통합테스트D' or raw_user_meta_data->>'name' = '통합테스트D' limit 1;") || '-')).toBe(0);
+      expect(deletedUsers).toHaveLength(3);
+      for (const u of deletedUsers) expect(publicFacts('%', u), u).toBe(0);
       expect(codes).not.toContain('busy');
       expect(server5xx).toEqual([]);
-      if (runtime5xx.length) console.warn(`[race] edge runtime transient 5xx (retryable, not product errors): ${runtime5xx.join(' | ')}`);
-      expect(runtime5xx.length, 'runtime transient 5xx should stay rare').toBeLessThanOrEqual(3);
+      // 계약 형식이 아닌 5xx 는 같은 시간대 edge runtime 의 작업자 종료 기록과 1:1 로 대응될 때만 런타임 원인으로 인정한다
+      const runtimeEvents = runtimeTerminations() - serveEventsBefore;
+      if (runtime5xx.length) console.warn(`[race] non-contract 5xx=${runtime5xx.length}, runtime worker terminations=${runtimeEvents}: ${runtime5xx.join(' | ')}`);
+      expect(runtime5xx.length, 'every non-contract 5xx must match a logged runtime worker termination').toBeLessThanOrEqual(runtimeEvents);
       // every refused request wrote nothing: each ledger row belongs to an accepted-state connection at write time
       expect(count('private.community_ingest_events', "result = 'pending'")).toBe(0);
     }, 120_000);

@@ -1,0 +1,9 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-auth/integration
+
+
+ Test Files  2 passed | 2 skipped (4)
+      Tests  33 passed | 35 skipped (68)
+   Start at  11:29:52
+   Duration  777ms (import 46%, transform 42%, tests 11%, worker 1%)
+

@@ -1,0 +1,1 @@
+firefox console error cause (trace): downloadable font download failed — https://cdn.jsdelivr.net/npm/pretendard@1.3.9/... (external CDN network), not product code

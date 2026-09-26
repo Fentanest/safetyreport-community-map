@@ -1,0 +1,9 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-map/integration
+
+
+ Test Files  7 passed | 1 skipped (8)
+      Tests  74 passed | 21 skipped (95)
+   Start at  11:56:23
+   Duration  884ms (transform 54%, tests 23%, import 21%, worker 2%)
+

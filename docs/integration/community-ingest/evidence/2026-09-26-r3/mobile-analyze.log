@@ -1,0 +1,44 @@
+Analyzing integration...                                        
+
+   info • Use the null-aware marker '?' rather than a null check via an 'if' • lib/community/rebuild/community_rebuild.dart:396:34 • use_null_aware_elements
+   info • Unnecessary use of multiple underscores • lib/main.dart:661:41 • unnecessary_underscores
+   info • Unnecessary braces in a string interpolation • lib/main.dart:756:48 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/models/rating_batch_result.dart:119:29 • unnecessary_brace_in_string_interps
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/crawl_screen.dart:889:7 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/crawl_screen.dart:892:7 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/duplicate_management_screen.dart:162:17 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/screens/duplicate_management_screen.dart:188:17 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/duplicate_management_screen.dart:228:21 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/screens/duplicate_management_screen.dart:229:21 • deprecated_member_use
+   info • Unnecessary braces in a string interpolation • lib/screens/notifications_screen.dart:105:28 • unnecessary_brace_in_string_interps
+   info • Unnecessary use of multiple underscores • lib/screens/notifications_screen.dart:543:31 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/screens/notifications_screen.dart:567:31 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/screens/recent_answers_screen.dart:69:39 • unnecessary_underscores
+   info • Don't use 'BuildContext's across async gaps • lib/screens/settings_screen.dart:433:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/settings_screen.dart:434:48 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/settings_screen.dart:481:17 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/settings_screen.dart:585:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/settings_screen.dart:628:32 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/screens/settings_screen.dart:829:13 • use_build_context_synchronously
+warning • A value for optional parameter 'badge' isn't ever given • lib/screens/setup_screen.dart:581:10 • unused_element_parameter
+warning • A value for optional parameter 'badgeColor' isn't ever given • lib/screens/setup_screen.dart:582:10 • unused_element_parameter
+   info • Statements in an if should be enclosed in a block • lib/screens/statistics_screen.dart:165:7 • curly_braces_in_flow_control_structures
+   info • Unnecessary braces in a string interpolation • lib/screens/statistics_screen.dart:750:30 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/screens/statistics_screen.dart:751:15 • unnecessary_brace_in_string_interps
+   info • Use the null-aware marker '?' rather than a null check via an 'if' • lib/services/api_service.dart:208:11 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if' • lib/services/api_service.dart:209:11 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if' • lib/services/api_service.dart:210:11 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if' • lib/services/api_service.dart:212:11 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if' • lib/services/local_geocode_service.dart:116:7 • use_null_aware_elements
+   info • Unnecessary braces in a string interpolation • lib/services/standalone_api_service.dart:105:24 • unnecessary_brace_in_string_interps
+   info • Use the null-aware marker '?' rather than a null check via an 'if' • lib/services/standalone_api_service.dart:125:13 • use_null_aware_elements
+   info • Unnecessary braces in a string interpolation • lib/services/standalone_api_service.dart:170:19 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/services/standalone_auth_service.dart:213:42 • unnecessary_brace_in_string_interps
+   info • Statements in an if should be enclosed in a block • lib/services/standalone_pending_queue_store.dart:30:9 • curly_braces_in_flow_control_structures
+   info • Unnecessary use of multiple underscores • lib/widgets/report_detail_sheet.dart:845:39 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/widgets/report_detail_sheet.dart:1097:27 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/widgets/report_detail_sheet.dart:1097:31 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/widgets/report_detail_sheet.dart:1347:33 • unnecessary_underscores
+   info • The import of 'package:safetyreport/community/capture/canonical_json.dart' is unnecessary because all of the used elements are also provided by the import of 'package:safetyreport/community/capture/community_capture.dart' • test/community/integration_contract_test.dart:12:8 • unnecessary_import
+
+40 issues found. (ran in 2.4s)

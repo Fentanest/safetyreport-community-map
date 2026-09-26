@@ -1,0 +1,37 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-map/integration
+
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+NOTICE:  policy "rt_read" for relation "public.it_realtime_control" does not exist, skipping
+ ❯ tests/integration/community-stack.test.ts (21 tests | 1 failed) 57900ms
+   ❯ community ingest on the composed local stack (21)
+     ❯ realtime and storage channels (§14, Sol M-02) (2)
+       × Realtime: every private subscription is answered, none delivers changes, while a public control table does 33050ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/community-stack.test.ts > community ingest on the composed local stack > realtime and storage channels (§14, Sol M-02) > Realtime: every private subscription is answered, none delivers changes, while a public control table does
+AssertionError: positive control delivered: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/integration/community-stack.test.ts:418:100
+    416|         for (const ws of sockets) ws.close();
+    417|         const changes = messages.filter(m => m.event === 'postgres_cha…
+    418|         expect(changes.some(m => String(m.topic).includes(control)), '…
+       |                                                                                                    ^
+    419|         const leaked = changes.filter(m => !String(m.topic).includes(c…
+    420|         expect(leaked, JSON.stringify(leaked).slice(0, 300)).toEqual([…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+   Start at  11:50:17
+   Duration  58.18s (tests 100%)
+
