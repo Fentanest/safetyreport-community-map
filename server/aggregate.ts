@@ -156,17 +156,24 @@ type LocatedFact = PrivateFact & { point_key: string; lat: number; lng: number }
 const located = (fact: PrivateFact): fact is LocatedFact => fact.point_key !== null && fact.lat !== null && fact.lng !== null;
 
 function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly PrivateFact[]): PublicPoint[] {
+  // SOL-06: points are the union of report-date and completion-date location keys, so a fact whose
+  // report date is outside the range but whose completion date is inside still gets its completion
+  // point. Per-point report and completion counts use their own date basis independently, keeping
+  // the invariant overview.completed = sum(points.completed) + unlocated completions (same for reported).
   const reported = reportedAll.filter(located), done = doneAll.filter(located);
   const reports = new Map<string, LocatedFact[]>();
   const completions = new Map<string, LocatedFact[]>();
   for (const fact of reported) reports.set(fact.point_key, [...(reports.get(fact.point_key) || []), fact]);
   for (const fact of done) completions.set(fact.point_key, [...(completions.get(fact.point_key) || []), fact]);
-  return [...reports].map(([key, rows]) => {
+  const keys = new Set([...reports.keys(), ...completions.keys()]);
+  return [...keys].map((key) => {
+    const rows = reports.get(key) || [];
     const finished = completions.get(key) || [];
-    return { key, lat: rows[0].lat, lng: rows[0].lng, address: rows[0].address,
-      region_code: rows[0].region_code, report_count: rows.length, completed_count: finished.length,
+    const anchor = rows[0] || finished[0];
+    return { key, lat: anchor.lat, lng: anchor.lng, address: anchor.address,
+      region_code: anchor.region_code, report_count: rows.length, completed_count: finished.length,
       outcomes: outcomes(finished), fine_count: finished.filter(row => row.disposition === 'fine').length };
-  }).sort((a, b) => b.report_count - a.report_count || a.key.localeCompare(b.key));
+  }).sort((a, b) => b.report_count - a.report_count || b.completed_count - a.completed_count || a.key.localeCompare(b.key));
 }
 
 function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
@@ -201,8 +208,12 @@ function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
     } : null;
     return {
       key: `cluster:${cell}:${cellKey}`,
-      lat: sum(row => row.lat * row.report_count) / reportCount,
-      lng: sum(row => row.lng * row.report_count) / reportCount,
+      // SOL-06: completion-only points carry report_count 0, so a cluster of those would divide by
+      // zero with report weighting; fall back to the plain centroid then (display only, totals unchanged).
+      lat: reportCount > 0 ? sum(row => row.lat * row.report_count) / reportCount :
+        rows.reduce((n, row) => n + row.lat, 0) / rows.length,
+      lng: reportCount > 0 ? sum(row => row.lng * row.report_count) / reportCount :
+        rows.reduce((n, row) => n + row.lng, 0) / rows.length,
       aggregate: true, point_count: rows.length,
       bbox: [minLng, minLat, maxLng, maxLat] as [number, number, number, number],
       address: null,
@@ -255,6 +266,8 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
   const exactPoints = pointRows(reported, done);
   const points = mapNodes(exactPoints);
+  const previousPointKeys = new Set(
+    [...previousReported.filter(located), ...previousDone.filter(located)].map(fact => fact.point_key));
   const vehicles = vehicleRows(reported);
   const sourceDates = activeFacts(input).flatMap(fact => [kstDate(fact.report_date), kstDate(fact.completed_date)])
     .filter((day): day is string => day !== null).sort();
@@ -279,13 +292,19 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const capability = (status: 'supported' | 'missing', reason: string | null = null) => ({
     status, reason, coverage: status === 'supported' ? { eligible: facts.length, total: facts.length } : null,
   });
+  // SOL-07 basis: unique facts actually included in the current range's report-date or
+  // completion-date indicators that lack coordinates. Facts belonging only to the comparison
+  // window are excluded, and a fact present in both indicators is counted once.
+  const inScopeFacts = new Map<string, PrivateFact>();
+  for (const fact of [...reported, ...done]) inScopeFacts.set(`${fact.contributor_id}\u0000${fact.fact_identity}`, fact);
+  const locationMissing = [...inScopeFacts.values()].filter(fact => !located(fact)).length;
   const meta: PublicMeta = {
     schema_version: 2, dataset_version: options.datasetVersion, sample: options.sample,
     source_updated_at: options.sourceUpdatedAt, generated_at: options.generatedAt, published_at: null,
     data_min: dataMin, data_max: options.asOf,
     coverage_note: '커뮤니티 사용자가 공유한 답변 완료 신고만 집계합니다. 전국 전체 신고나 미완료 신고를 대표하지 않습니다.',
     population: 'shared_completed_reports',
-    location_missing: facts.filter(fact => !located(fact)).length,
+    location_missing: locationMissing,
     dedupe_policy_version: 'ingest-latest-v1', capabilities: {
       daily_report_dates: capability('supported'), completion_dates: capability('supported'),
       manager_status_cross: capability('supported'), agency_status_cross: capability('supported'),
@@ -311,7 +330,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
         delta_percent: null, delta_reason: !comparisonCovered ? null : priorD ? null : D ? 'new' : 'no_baseline',
       },
       fine_count: countMetric(fine, 'completed_date', comparisonCovered ? priorFine : null, 0, done.length),
-      point_count: countMetric(exactPoints.length, 'report_date', comparisonCovered ? new Set(previousReported.filter(located).map(fact => fact.point_key)).size : null, 0, reported.length),
+      point_count: countMetric(exactPoints.length, 'report_date', comparisonCovered ? previousPointKeys.size : null, 0, reported.length),
       contributor_count: countMetric(new Set(reported.map(fact => fact.contributor_id)).size, 'report_date',
         comparisonCovered ? new Set(previousReported.map(fact => fact.contributor_id)).size : null, 0, reported.length),
       outcomes: result,
