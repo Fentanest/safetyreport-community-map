@@ -1,0 +1,95 @@
+{
+  "map": "http://127.0.0.1:56490/",
+  "choice": "C",
+  "results": [
+    {
+      "name": "anonymous public view renders",
+      "ok": true,
+      "detail": "신고 접수 4"
+    },
+    {
+      "name": "public requests carry no Authorization",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "compare while signed out asks for login, no personal request",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "login goes through Supabase Auth to Kakao (PKCE)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "returned to the map with OAuth params stripped",
+      "ok": true,
+      "detail": "http://127.0.0.1:56490/"
+    },
+    {
+      "name": "compare columns filled (all | mine | diff)",
+      "ok": true,
+      "detail": "[[\"4\",\"2\",\"50.0%\"],[\"4\",\"2\",\"50.0%\"],[\"100.0%\",\"100.0%\",\"0.0%p\"]]"
+    },
+    {
+      "name": "my-analytics answered 200 with private no-store",
+      "ok": true,
+      "detail": "private, no-store, max-age=0"
+    },
+    {
+      "name": "personal request sent the bearer token and the public dataset_version",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "all column equals the public number on screen",
+      "ok": true,
+      "detail": "4 vs 4"
+    },
+    {
+      "name": "personal body has no account identifiers",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "public requests still carry no Authorization",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map session stored under the map-only key",
+      "ok": true,
+      "detail": "cm-compare,cm-map-auth-v1,cm-map-auth-v1-flow-c4e02f003e3f60bfe2ea075099416831-code-verifier,cm-theme,cm-map-auth-v1-flows-code-verifier"
+    },
+    {
+      "name": "logout request uses scope=local",
+      "ok": true,
+      "detail": "http://127.0.0.1:56321/auth/v1/logout?… scope=local"
+    },
+    {
+      "name": "map session removed from this browser",
+      "ok": true,
+      "detail": "cm-theme,cm-compare"
+    },
+    {
+      "name": "public view still shown after logout",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no failed map/API responses",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no console errors on the map (harness Kakao page excluded)",
+      "ok": true,
+      "detail": "Failed to load resource: the server responded with a status of 404 (Not Found) @ http://host.docker.internal:56410/favicon.ico"
+    }
+  ],
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found) @ http://host.docker.internal:56410/favicon.ico"
+  ],
+  "failed": []
+}

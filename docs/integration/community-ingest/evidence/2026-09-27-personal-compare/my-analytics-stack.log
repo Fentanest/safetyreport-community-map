@@ -1,0 +1,15 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map
+
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+ ✓ tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > returns all = the anonymous public numbers and mine = only the verified user, from one version 2420ms
+ ✓ tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > answers 409 for a stale public version and refuses foreign origins 276ms
+ ✓ tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > refuses anonymous callers, keys as bearer, Supabase anonymous and non-Kakao users 476ms
+ ✓ tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > keeps the source RPC service_role-only 406ms
+ ✓ tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > map logout with scope=local ends only the map session; the app upload session keeps working 1326ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  02:18:59
+   Duration  10.11s (tests 98%, transform 1%)
+

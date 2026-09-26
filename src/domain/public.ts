@@ -109,6 +109,16 @@ export interface PublicEntity {
   fine_count: number | null;
 }
 
+/** Region row (region_code as stored by ingest, e.g. '서울 중구'; null = 지역 미상).
+ *  report_count uses the report date; completed/outcomes/fine use the completion date. */
+export interface PublicRegion {
+  region_code: string | null;
+  report_count: number;
+  completed_count: number;
+  outcomes: OutcomeCounts;
+  fine_count: number;
+}
+
 export interface PublicVehicle {
   rank: number;
   rank_item_id: string;
@@ -125,6 +135,8 @@ export interface DashboardData {
   monthly: MonthlyBucket[];
   agencies: PublicEntity[];
   managers: PublicEntity[];
+  /** null = the source did not provide region rows (never replaced by an empty list). */
+  regions: PublicRegion[] | null;
   vehicles: PublicVehicle[];
   vehicle_total_scope_reports: number | null;
   vehicle_identifiable_reports: number | null;

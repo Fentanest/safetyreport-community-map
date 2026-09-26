@@ -1,0 +1,17 @@
+PASS anonymous public view renders — 신고 접수 4
+PASS public requests carry no Authorization
+PASS compare while signed out asks for login, no personal request
+PASS login goes through Supabase Auth to Kakao (PKCE)
+PASS returned to the map with OAuth params stripped — http://127.0.0.1:56490/
+PASS compare columns filled (all | mine | diff) — [["4","2","50.0%"],["4","2","50.0%"],["100.0%","100.0%","0.0%p"]]
+PASS my-analytics answered 200 with private no-store — private, no-store, max-age=0
+PASS personal request sent the bearer token and the public dataset_version
+PASS all column equals the public number on screen — 4 vs 4
+PASS personal body has no account identifiers
+PASS public requests still carry no Authorization
+PASS map session stored under the map-only key — cm-compare,cm-map-auth-v1,cm-map-auth-v1-flow-c4e02f003e3f60bfe2ea075099416831-code-verifier,cm-theme,cm-map-auth-v1-flows-code-verifier
+PASS logout request uses scope=local — http://127.0.0.1:56321/auth/v1/logout?… scope=local
+PASS map session removed from this browser — cm-theme,cm-compare
+PASS public view still shown after logout
+PASS no failed map/API responses
+PASS no console errors on the map (harness Kakao page excluded) — Failed to load resource: the server responded with a status of 404 (Not Found) @ http://host.docker.internal:56410/favicon.ico

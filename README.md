@@ -10,6 +10,14 @@ exporter의 로컬 구현이 있다. 기존 v1 SQL은 보존했다. 현재 운�
 기관·담당자 처리결과 비교, 마스킹 차량 TOP5, 상세 지점 패널, 라이트·다크, 브리핑 모드.
 담당자 전체 성명·정확 좌표·1건 표본 공개는 확정 정책이다. 계정정보와 차량 원번호는 공개하지 않는다.
 
+## 전체 × 내 신고 비교 (2026-09-27)
+같은 기간·지역·기관·담당자 조건에서 전체 통계와 내 신고 통계를 나란히 보는 커뮤니티 지도다. 정본은
+`docs/personal-comparison.md`. 공개 열람은 그대로 비로그인이고, `내 데이터 함께 보기`를 켜고 카카오로 로그인하면 비교 KPI·지역 목록·
+담당자 비교·지도(내 지점/함께 기록한 지점/관심 지역)·월별 추이에 내 값이 붙는다. 개인 자료는 `my-analytics`(verify_jwt, private/no-store)로만
+오고 공개 API·정적 snapshot·공유 URL에 섞이지 않는다. 지도 로그아웃은 이 브라우저 세션만 끝내며(`scope: 'local'`) 앱·서버 자동 업로드는 계속된다.
+데모의 합성 로그인: 헤더 `카카오 로그인 (합성)` 또는 `?me=signed|out|unconfigured|empty|expired|kakao|suspended|error|rate|stale`,
+보기 전환 `?view=map|stats`.
+
 ## 로컬 실행
 
 ```bash
@@ -20,6 +28,8 @@ python3 -m unittest discover -s tests/product -p 'test_*.py' -v
 python3 -m unittest discover -s tests/blueprint -v
 VITE_DATA_MODE=live npm run build
 npm run scan
+# 선택: 합성 로컬 Supabase 스택(tests/integration/*.test.ts 머리말 절차) 위에서 개인 비교·인증 경계 검사
+COMMUNITY_STACK=1 npx vitest run tests/integration/my-analytics-stack.test.ts
 ```
 
 데모 화면은 `http://127.0.0.1:4173/`이다. `?fixture=one`과 `?fixture=empty`로 1건·무자료,
@@ -49,6 +59,7 @@ v2 사실이 적재·검증되기 전에는 API가 준비 상태를 표시한다
 공개 API snapshot 검증 후 Pages 배포를 시도하며, 아직 실행하지 않았다.
 
 ## 설계
+- docs/personal-comparison.md — 전체×내 신고 비교 개편 정본(인증 경계·계산·배치·상태)
 - docs/product-decisions.md — 고정 요구와 이번 결정
 - docs/architecture.md — Pages + 공개 읽기 API + Actions 초기 캐시
 - docs/data-contract.md / metrics-catalog.md / public-api-contract.md — 정확한 계산·응답

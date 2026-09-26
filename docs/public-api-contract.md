@@ -72,3 +72,7 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 지도 점(SOL-06): 신고일 위치와 완료일 위치의 합집합이며 점마다 신고 건수(신고일 기준)와 완료 건수(완료일 기준)를 따로 센다.
 `overview.point_count` 는 신고일 기준 위치 수 그대로다(basis `report_date`) — 완료일만 범위에 든 위치는 지도 점에는 있지만 이 지표에는 없다.
 `location_missing`(SOL-07): 현재 범위의 신고일 또는 완료일 지표에 실제로 들어간 고유 fact 중 좌표 없는 것(비교 기간만 속한 fact 제외, 한 번만).
+
+지역 행(2026-09-27): `dashboard`에 `regions[]`(region_code, report_count=신고일, completed_count·outcomes·fine_count=처리완료일, 최대 300행)를
+추가했다. region_code는 ingest가 저장한 짧은 문자열(예: `서울 중구`)이며 null은 지역 미상. 필드가 없으면 클라이언트는 '미제공'으로 표시하고 빈 목록으로 바꾸지 않는다.
+이 공개 API는 개인 비교를 제공하지 않는다. 로그인 사용자의 비교는 별도 `my-analytics/compare`(docs/personal-comparison.md §3)다.

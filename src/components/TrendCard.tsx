@@ -3,6 +3,7 @@ import type { ComposeOption, EChartsType } from 'echarts/core';
 import type { LineSeriesOption } from 'echarts/charts';
 import type { GridComponentOption, TooltipComponentOption } from 'echarts/components';
 import type { MonthlyBucket } from '../domain/public';
+import type { CompareMonth } from '../domain/personal';
 import { fmtInt, fmtMonth } from './format';
 import Icon from './icons';
 
@@ -25,7 +26,13 @@ async function loadChartInit(): Promise<(el: HTMLElement) => EChartsType> {
   return init;
 }
 
-export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]; theme: 'dark' | 'light' }) {
+export default function TrendCard({ monthly, theme, mine = null }: {
+  monthly: MonthlyBucket[];
+  theme: 'dark' | 'light';
+  /** personal monthly series for the same scope/version (dashed), or null when comparison is off */
+  mine?: CompareMonth[] | null;
+}) {
+  const mineByMonth = new Map((mine ?? []).map((m) => [m.month, m]));
   const hostRef = useRef<HTMLDivElement>(null);
   const [table, setTable] = useState(false);
   const [chartError, setChartError] = useState<string | null>(null);
@@ -92,6 +99,17 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
               lineStyle: { width: 2, color: cyan },
               itemStyle: { color: cyan },
             },
+            ...(mine ? [{
+              name: '내 신고 접수',
+              type: 'line' as const,
+              data: monthly.map((m) => mineByMonth.get(m.month)?.mine_report_count ?? null),
+              connectNulls: false,
+              showSymbol: true,
+              symbol: 'diamond',
+              symbolSize: 7,
+              lineStyle: { width: 2, type: 'dashed' as const, color: brandInk },
+              itemStyle: { color: brandInk },
+            }] : []),
           ],
         };
         chart.setOption(option);
@@ -107,7 +125,8 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
       chart?.dispose();
       chart = null;
     };
-  }, [table, monthly, theme]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table, monthly, theme, mine]);
 
   const last = monthly[monthly.length - 1];
   const prev = monthly[monthly.length - 2];
@@ -134,6 +153,7 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
       <div className="chart-legend">
         <span><i className="dot" style={{ background: 'var(--brand-ink)' }} />신고 접수</span>
         <span><i className="dot" style={{ background: 'var(--cyan)' }} />처리완료</span>
+        {mine && <span><i className="dash" aria-hidden="true" />내 신고 접수(점선)</span>}
         {delta != null && last && <b>{fmtMonth(last.month)} 신고 <strong>{delta >= 0 ? '+' : ''}{delta.toFixed(1)}%</strong><small> 전월 대비(건수)</small></b>}
         {last?.partial && <span className="cm-chip">진행 중 월 포함</span>}
       </div>
@@ -153,7 +173,7 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
         <div className="trend-table">
           <table>
             <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>결측 월은 ‘—’로 표시하고 선을 연결하지 않습니다.</caption>
-            <thead><tr><th scope="col">월</th><th scope="col">신고 접수</th><th scope="col">처리완료</th><th scope="col">과태료</th><th scope="col">데이터 범위</th></tr></thead>
+            <thead><tr><th scope="col">월</th><th scope="col">신고 접수</th><th scope="col">처리완료</th><th scope="col">과태료</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 처리완료</th>}<th scope="col">데이터 범위</th></tr></thead>
             <tbody>
               {monthly.map((m) => (
                 <tr key={m.month}>
@@ -161,6 +181,8 @@ export default function TrendCard({ monthly, theme }: { monthly: MonthlyBucket[]
                   <td>{fmtInt(m.report_count)}</td>
                   <td>{fmtInt(m.completed_count)}</td>
                   <td>{fmtInt(m.fine_count)}</td>
+                  {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_report_count ?? null)}</td>}
+                  {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_completed_count ?? null)}</td>}
                   <td>{m.partial ? '진행 중' : m.coverage_note ?? '완료된 월'}</td>
                 </tr>
               ))}

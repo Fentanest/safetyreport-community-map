@@ -37,6 +37,14 @@ P0 실패는 출시 차단. 검증 불가면 BLOCKED/NOT_RUN, 합격으로 바�
 | REL02 | P0 | live 실패에 demo 자동전환 없음, status sample badge 동작 |
 | REL03 | P0 | Muse 실제 model/URL/행동/screenshot 검수 증거와 최종 commit 일치 |
 | REL04 | P0 | 승인 없는 운영 DB·push·배포 안 함, 미실행 영역 분리 보고 |
+| CMP01 | P0 | 전체 = 같은 scope 공개 수치, 내 신고 ⊆ 전체, 한 스냅숏·같은 dataset_version (docs/personal-comparison.md §3.1) |
+| CMP02 | P0 | 비율 차이 %p·건수 내 비중, 0분모 null+이유, 1건 표시, 지역·기관·담당자·월 합계 일치 |
+| CMP03 | P0 | 소유권은 검증된 사용자에서만(getUser+claims), 비로그인·키 bearer·익명·비카카오 거부, RPC service_role 전용 |
+| CMP04 | P0 | 개인 응답 private/no-store, 공개 API·snapshot·share URL·dist에 개인 필드 없음 |
+| CMP05 | P0 | 지도 로그아웃은 scope=local, 앱·서버 업로드 세션 유지; relay/account API 미호출 |
+| CMP06 | P0 | 공개 열람 비로그인 유지, 개인 API 실패가 공개 화면을 막지 않음 |
+| CMP07 | P0 | 두 열·보기 전환·지역 목록·내 지점 표시·담당자 비교·추이 내 시리즈가 실제 브라우저에서 동작(Muse 증거) |
+| CMP08 | P1 | 모바일 390·라이트·다크·브리핑(내 데이터 기본 숨김)·§6 예외 상태 실제 브라우저 확인 |
 
 테스트 계층: unit(stat/privacy) → schema → API integration(read permissions, consistency) → E2E →
 Muse 실제 시각검수. screenshot baseline 생성 자체는 기존 정답과의 비교가 아니다.

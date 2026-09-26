@@ -19,7 +19,7 @@ export interface AnalyticsRepository {
   allowRequest(request: Request): Promise<boolean>;
 }
 
-class QueryError extends Error {
+export class QueryError extends Error {
   constructor(readonly code: string, readonly status: number) { super(code); }
 }
 
@@ -52,8 +52,10 @@ function errorResponse(code: string, status: number): Response {
   return res;
 }
 
-function parseScope(params: URLSearchParams, state: AnalyticsState): Scope {
-  for (const name of params.keys()) if (!allowed.has(name) || params.getAll(name).length !== 1) throw new QueryError('INVALID_QUERY', 400);
+/** Scope parser shared by the public API and the personal comparison API (same rules, same Scope). */
+export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 'data_min' | 'data_max'>,
+  names: ReadonlySet<string> = allowed): Scope {
+  for (const name of params.keys()) if (!names.has(name) || params.getAll(name).length !== 1) throw new QueryError('INVALID_QUERY', 400);
   const start = params.get('start'), end = params.get('end');
   if (!start || !end || !date.test(start) || !date.test(end)) throw new QueryError('INVALID_QUERY', 400);
   try {
@@ -170,7 +172,7 @@ export function createPublicHandler(repo: AnalyticsRepository) {
       if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
-        vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
+        regions: (data.regions ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
         vehicle_identifiable_reports: data.vehicle_identifiable_reports }, 200, 30);
       if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200, 60);
       if (route === 'map') return json({ ...common, points: data.points }, 200, 30);

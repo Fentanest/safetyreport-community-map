@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Category } from '../domain/public';
 import {
-  CATEGORY_LABEL, PRESETS, REGION_OPTIONS, isValidDate, presetRange, regionLabel,
+  CATEGORY_LABEL, PRESETS, isValidDate, presetRange, regionLabel,
   type DraftFilters,
 } from '../state/filters';
 import { fmtDate } from './format';
@@ -19,6 +19,9 @@ interface Props {
   onShare: () => void;
   onOpenDrawer: () => void;
   dateError: string | null;
+  regionOptions: Array<{ code: string | null; label: string }>;
+  /** personal comparison toggle + view switch (docs/personal-comparison.md §5.1) */
+  extra?: ReactNode;
 }
 
 const CATS: Category[] = ['all', 'traffic', 'parking', 'other'];
@@ -56,6 +59,7 @@ export default function CommandBar(p: Props) {
         <Icon name="pin" size={14} />
         <span>{p.appliedLabel}</span>
       </span>
+      {p.extra}
       <div className="command-end">
         <button className="control control-extra" type="button" onClick={p.onOpenDrawer}>
           <Icon name="filter" />
@@ -102,7 +106,7 @@ export default function CommandBar(p: Props) {
               onChange={(e) => p.onDraft({ ...p.draft, region_code: e.target.value || null })}
               style={{ minHeight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', padding: '6px 10px' }}
             >
-              {REGION_OPTIONS.map((r) => (
+              {p.regionOptions.map((r) => (
                 <option key={r.label} value={r.code ?? ''}>{r.label}</option>
               ))}
             </select>

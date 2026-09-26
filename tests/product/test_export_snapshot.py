@@ -1,6 +1,10 @@
 import copy
 import unittest
 
+import os
+from unittest import mock
+
+from scripts import export_snapshot
 from scripts.export_snapshot import validate_dashboard
 
 
@@ -66,6 +70,42 @@ class ExportProjectionTests(unittest.TestCase):
         data['vehicles'][0]['masked_plate'] = '서울12가3456'
         with self.assertRaises(ValueError):
             validate_dashboard(data, SCOPE, 'v2-test')
+
+    def test_live_dashboard_fields_regions_and_location_missing_are_allowed(self):
+        data = dashboard()
+        data['location_missing'] = 2
+        data['regions'] = [{'region_code': '서울 중구', 'report_count': 1, 'completed_count': 1,
+                            'outcomes': copy.deepcopy(OUTCOMES), 'fine_count': 0}]
+        self.assertEqual(validate_dashboard(data, SCOPE, 'v2-test')['regions'][0]['region_code'], '서울 중구')
+
+    def test_personal_comparison_fields_never_enter_a_snapshot(self):
+        for field in ['mine', 'viewer', 'my_points']:
+            data = dashboard()
+            data[field] = {}
+            with self.assertRaises(ValueError):
+                validate_dashboard(data, SCOPE, 'v2-test')
+        data = dashboard()
+        data['regions'] = [{'region_code': '서울 중구', 'report_count': 1, 'completed_count': 1,
+                            'outcomes': copy.deepcopy(OUTCOMES), 'fine_count': 0, 'mine': {'report_count': 1}}]
+        with self.assertRaises(ValueError):
+            validate_dashboard(data, SCOPE, 'v2-test')
+
+    def test_not_ready_projection_never_writes_a_snapshot(self):
+        meta = {'schema_version': 2, 'dataset_version': 'v2-test', 'sample': False, 'source_updated_at': None,
+                'generated_at': '2026-09-27T00:00:00Z', 'published_at': None, 'data_min': None, 'data_max': None,
+                'coverage_note': 'x', 'dedupe_policy_version': 'x',
+                'capabilities': {'daily_report_dates': {'status': 'missing', 'reason': 'not ready', 'coverage': None}}}
+        env = {'PUBLIC_ANALYTICS_URL': 'https://example.invalid/functions/v1'}
+        with mock.patch.object(export_snapshot, 'get_json', return_value=meta) as get, \
+             mock.patch.object(export_snapshot, 'atomic_json') as write:
+            with mock.patch.dict(os.environ, env, clear=False):
+                os.environ.pop('SNAPSHOT_ALLOW_NOT_READY', None)
+                with self.assertRaises(SystemExit):
+                    export_snapshot.main()
+            with mock.patch.dict(os.environ, env | {'SNAPSHOT_ALLOW_NOT_READY': '1'}):
+                self.assertEqual(export_snapshot.main(), 0)
+            write.assert_not_called()
+            self.assertEqual(get.call_count, 2)  # meta only, never the dashboard
 
 
 if __name__ == '__main__':

@@ -31,3 +31,33 @@
 아직 구현하지 못한 명세 항목: 지역 A/B 비교 슬롯, 최근 증가 지점 목록, `map`의 별도 zoom/resolution·상태 조건, 기관 전체 페이지 탐색과 서버 정렬, 운영 취소 요청의 정적 캐시 긴급 재발행 자동화. 현재 화면이 이 기능을 제공한다고 표시하지 않으며 `docs/public-api-contract.md`에 계약 차이를 적었다.
 
 재현 명령: `npm test` (23개), `python3 -m unittest discover -s tests/product -p 'test_*.py'` (3개), `python3 -m unittest discover -s tests/blueprint` (27개), `VITE_DATA_MODE=live npm run build`, `npm run scan`. 전체 실행 결과는 최종 작업 기록에 남긴다.
+
+## 전체 × 내 신고 비교 개편 · 2026-09-27
+범위: docs/personal-comparison.md. 통합 후보 `ec5a847` → Muse 최종 검수 결함 수정 `a09adc7`(feat/personal-comparison). 합성 fixture와 로컬 합성 Supabase 스택만 사용했다.
+운영 DB·Edge·Auth·Pages에는 적용·배포하지 않았다.
+
+| ID | 상태 | 근거 |
+|---|---|---|
+| CMP01 | PASS_LOCAL | `tests/product/compare.test.ts` 8개 scope에서 전체=공개 overview, 내⊆전체, 내=내 사실만 공개 집계. 스택: 전체=익명 dashboard, 같은 dataset_version, 409(버전 불일치) |
+| CMP02 | PASS_LOCAL | %p/내 비중, 0분모 null+이유, n=1, 지역·담당자·월 합계와 공개 키 일치(compare.test.ts) |
+| CMP03 | PASS_LOCAL | handler 20개 테스트 + 스택 5개: 비로그인·키 bearer·위조 claims·익명·비카카오 거부, viewer id는 검증 토큰만, RPC ACL `{postgres,service_role}` |
+| CMP04 | PASS_LOCAL | private/no-store·Vary, exporter 개인 필드 거부, share URL 검사, dist 스캔(비-anon JWT·relay 참조 차단). 로컬 Kong은 ACAO를 `*`로 덮어써 hosted gateway CORS는 NOT_VERIFIED(핸들러 Origin 403이 실제 통제) |
+| CMP05 | PASS_LOCAL | 스택: 지도 세션 `logout?scope=local` 후 지도 401·앱 ingest 200 accepted, global은 앱 세션을 끊음(대조). 브라우저 E2E: supabase-js가 `scope=local` 호출, 지도 저장 키만 삭제 |
+| CMP06 | PASS_LOCAL | 브라우저 E2E(live build + 로컬 스택)에서 비로그인 공개 화면, 공개 요청 Authorization 없음. 개인 API 오류 fixture에서도 공개 화면 유지(Muse) |
+| CMP07 | PASS_LOCAL(합성) | Muse 구현 검수 `docs/reviews/personal-compare-impl.md`(e3b05fc), 통합본 최종 검수 `docs/reviews/personal-compare-final.md`(ec5a847, 24셀·행동 전수 PASS, 하 3건) → 수정 `a09adc7` → 재검수 `docs/reviews/personal-compare-recheck.md` PASS |
+| CMP08 | PASS_LOCAL(합성) | 동상. 실 Kakao 지도 위 링 표시는 BLOCKED(키 없음) |
+| 운영 인증 | BLOCKED | 운영 Kakao provider 리다이렉트, Pages 변수, `my-analytics` 배포·migration 적용 미실행(승인 필요) |
+| 실데이터 대조 | BLOCKED | 운영 사실 없음. 합성 스택 사실로만 대조 |
+
+재현(`a09adc7`): `npm test`(150 통과·26 skip=스택 전용), `python3 -m unittest discover -s tests/product -p 'test_*.py'`(9),
+`python3 -m unittest discover -s tests/blueprint`(27), `VITE_DATA_MODE=live npm run build && npm run scan`(통과, live dist에 demo chunk 없음).
+스택: `node scripts/integration/compose_supabase.mjs compose --auth ../safetyreport-community-auth` → `supabase start` →
+`supabase migration up --local` → mock_kakao → `functions serve` → `COMMUNITY_STACK=1 npx vitest run tests/integration`(26/26: my-analytics 5 + 기존 ingest 21 회귀, `a09adc7`에서 재실행),
+live build(VITE_* = 로컬 스택)를 127.0.0.1:56490에 preview 후 `node scripts/integration/live_login_e2e.mjs <out> C`(17 PASS).
+증거: `docs/integration/community-ingest/evidence/2026-09-27-personal-compare/`.
+호스트 제약: inotify 한도로 `vite` dev 서버가 ENOSPC — 호스트 설정은 바꾸지 않고 build+preview로 검수했다.
+Muse 호출: 구현 `ses_f214b7118ffexztRXRYUR7fGYp`, 검수·재검수 `ses_f212f5abfffeks1bKCm1JOUAj1` — 두 세션 모두 `opencode export`로
+provider `opencode-go`, model `muse-spark-1.3-contributor`, variant `default`, 각 worktree directory 확인(보고서 본문의 MODEL_UNVERIFIED는 Muse 자기 보고 시점 표기).
+검수 1차 호출은 시작 직후 SIGTERM(원인 불명, inotify ENOSPC 경고 동반)으로 끝나 같은 세션으로 1회 재개했다.
+성능 메모: live 초기 JS gzip 약 126 KB(이전 약 115 KB). 지도 로그인 SDK는 별도 lazy chunk(약 55 KB gzip)로 로그인하거나 저장된 지도 세션이 있을 때만 받는다.
+남은 NOT_RUN: 추이 결측 월 '—' 렌더의 브라우저 확인(단위 로직만), 스크린리더 전체 탐색.

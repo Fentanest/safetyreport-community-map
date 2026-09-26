@@ -35,6 +35,8 @@ jobs:
         run: npm run data:export
         env:
           PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
+          # Before ready=true: publish without a snapshot (never a partial one); the page shows its not-ready notice.
+          SNAPSHOT_ALLOW_NOT_READY: '1'
       - name: Build live Pages artifact
         run: npm run build
         env:
@@ -42,6 +44,9 @@ jobs:
           VITE_BASE_PATH: /
           VITE_PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
           VITE_KAKAO_MAP_JS_KEY: ${{ vars.KAKAO_MAP_JS_KEY }}
+          # Optional map web login (personal comparison). Public values only; empty = login not configured.
+          VITE_SUPABASE_URL: ${{ vars.MAP_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.MAP_SUPABASE_PUBLISHABLE_KEY }}
       - run: npm run scan
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

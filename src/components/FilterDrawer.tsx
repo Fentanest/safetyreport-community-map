@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { CATEGORY_LABEL, REGION_OPTIONS, regionLabel, type DraftFilters } from '../state/filters';
+import { CATEGORY_LABEL, regionLabel, type DraftFilters } from '../state/filters';
 import Icon from './icons';
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
   onClose: () => void;
   onApply: () => void;
   onReset: () => void;
+  regionOptions: Array<{ code: string | null; label: string }>;
 }
 
 export default function FilterDrawer(p: Props) {
@@ -82,7 +83,7 @@ export default function FilterDrawer(p: Props) {
         </label>
         <label>지역
           <select value={p.draft.region_code ?? ''} onChange={(e) => p.onDraft({ ...p.draft, region_code: e.target.value || null })}>
-            {REGION_OPTIONS.map((r) => (
+            {p.regionOptions.map((r) => (
               <option key={r.label} value={r.code ?? ''}>{r.label}</option>
             ))}
           </select>

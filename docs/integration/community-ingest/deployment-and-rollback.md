@@ -30,3 +30,18 @@
 | community-auth | `SAFEAUTH_PUBLIC_SUPABASE_URL`, `SAFEAUTH_PUBLIC_PUBLISHABLE_KEY`, `SAFEAUTH_PUBLIC_PRIVACY_POLICY_URL`, `SAFEAUTH_PUBLIC_OPERATOR_CONTACT`(기존) | Variables |
 | Supabase 함수 secret | `AUTH_RELAY_HASH_PEPPER`, `AUTH_RELAY_ENCRYPTION_KEY`(기존), `ANALYTICS_RATE_SALT`(기존), `AUTH_JWT_ISSUER`, `COMMUNITY_ALLOWED_ORIGINS` | Supabase secrets |
 | Supabase Auth | Kakao provider client id/secret, Redirect URLs(`https://safeauth.worklazy.net/callback.html`, `com.fentanest.mysafetyreport://auth/callback`) | 대시보드 |
+
+## 5. 운영 점검 기록 (2026-09-27, 읽기 전용) · 전체×내 신고 비교 포함 절차
+- 프로젝트 `nxdcxccixoswvqgjeprh`(ap-northeast-2). 원격 migration 이력 없음. `public`/`private` 스키마 덤프(스키마만): 플랫폼 기본값과
+  `public.rls_auto_enable` 이벤트 트리거뿐 → §2 결정표의 **map v2 미적용(신규 설치)** 경로. 공개 구 자료 없음.
+- Edge Functions 배포 0개(`public-analytics`·`community-ingest`·`community-account`·`community-auth-relay`·`my-analytics` 모두 404).
+  Edge secrets: relay용 5개만(`AUTH_BROWSER_ORIGIN`, `AUTH_RELAY_ENABLED`, `AUTH_RELAY_ENCRYPTION_KEY`, `AUTH_RELAY_HASH_PEPPER`, `AUTH_SITE_URL`).
+- 이 프로젝트의 기본 권한은 `public` 새 함수에 anon/authenticated EXECUTE를 준다. 모든 `internal_*` migration은 생성 직후 명시 revoke하며,
+  적용 후 `supabase db dump --linked --schema public`의 GRANT로 anon/authenticated EXECUTE가 없는지 확인한다.
+- migration 적용 방법: 두 저장소 이력을 합친 `compose_supabase.mjs compose` 결과(해시 check 통과본)에서만 `db push`한다(auth 저장소
+  docs/deployment.md §2의 방법 2와 같다). 개별 저장소에서의 push·repair·reset은 여전히 금지. 먼저 `--dry-run`으로 6개 버전만 나오는지 확인.
+- secrets 추가: `ANALYTICS_RATE_SALT`(무작위 생성), `AUTH_JWT_ISSUER=https://nxdcxccixoswvqgjeprh.supabase.co/auth/v1`,
+  `MY_ANALYTICS_ALLOWED_ORIGINS=https://safemap.worklazy.net`. `COMMUNITY_ALLOWED_ORIGINS`는 코드 기본값(safemap, safeauth).
+- 함수 배포는 합성 디렉터리에서 5개(`public-analytics`, `my-analytics`, `community-ingest`, `community-account`, `community-auth-relay`).
+- Pages: `MAP_SUPABASE_URL`, `MAP_SUPABASE_PUBLISHABLE_KEY`(공개 publishable) 저장소 변수. snapshot export는 `ready=true` 전에는 거부하므로
+  지도 Pages 공개는 §1의 6→7단계(실제 카카오 테스트 계정 업로드 후 `ready=true`) 뒤에 실행한다.

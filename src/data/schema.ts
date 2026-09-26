@@ -62,6 +62,11 @@ export const entitySchema = z.strictObject({
   completed_count: count, outcomes, fine_count: nullableCount,
 });
 
+export const regionSchema = z.strictObject({
+  region_code: z.string().max(24).nullable(), report_count: count, completed_count: count,
+  outcomes, fine_count: count,
+});
+
 export const vehicleSchema = z.strictObject({
   rank: z.number().int().min(1).max(5), rank_item_id: z.string().regex(/^r[1-5]$/),
   // Optional short region (kept visible), then the masked number: 경기7*자*6*3, 1*가*4*6.
@@ -97,6 +102,7 @@ export const dashboardResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), sample: z.boolean(), scope: scopeSchema,
   overview: overviewSchema, points: z.array(pointSchema).max(1000), monthly: z.array(monthlySchema),
   agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
+  regions: z.array(regionSchema).max(300).optional(),
   vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,
   vehicle_identifiable_reports: count, location_missing: count.optional(),
 });

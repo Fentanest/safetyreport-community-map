@@ -18,7 +18,9 @@ from zoneinfo import ZoneInfo
 VERSION = re.compile(r'^[A-Za-z0-9._-]{1,120}$')
 MASKED = re.compile(r'^(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)?[0-9]\*[0-9가-힣]\*[0-9]\*[0-9]{1,2}$')
 FORBIDDEN = {'contributor_id', 'snapshot_id', 'vehicle_raw', 'vehicle_canonical', 'raw_plate',
-             'vehicle_hash', 'email', 'phone', 'access_token', 'refresh_token', 'google_sub'}
+             'vehicle_hash', 'email', 'phone', 'access_token', 'refresh_token', 'google_sub',
+             # personal comparison (my-analytics) fields never belong in a public snapshot
+             'mine', 'viewer', 'my_points', 'user_id', 'session_id'}
 
 
 def exact_keys(value: object, keys: set[str], optional: set[str] | None = None) -> dict:
@@ -44,7 +46,8 @@ def validate_public(value: object) -> None:
 def validate_dashboard(value: object, expected_scope: dict, version: str) -> dict:
     top = exact_keys(value, {'schema_version', 'dataset_version', 'sample', 'scope', 'overview',
                              'points', 'monthly', 'agencies', 'managers', 'vehicles',
-                             'vehicle_total_scope_reports', 'vehicle_identifiable_reports'})
+                             'vehicle_total_scope_reports', 'vehicle_identifiable_reports'},
+                     {'location_missing', 'regions'})
     if top['schema_version'] != 2 or top['sample'] is not False or top['dataset_version'] != version:
         raise ValueError('snapshot version or data mode mismatch')
     if top['scope'] != expected_scope:
@@ -83,6 +86,14 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
         for entity in top[name]:
             exact_keys(entity, {'key', 'agency_key', 'manager_key', 'agency_name', 'manager_name', 'completed_count', 'outcomes', 'fine_count'})
             exact_keys(entity['outcomes'], outcome_keys)
+    if 'location_missing' in top and (not isinstance(top['location_missing'], int) or top['location_missing'] < 0):
+        raise ValueError('invalid location_missing')
+    regions = top.get('regions', [])
+    if not isinstance(regions, list) or len(regions) > 300:
+        raise ValueError('region budget exceeded')
+    for region in regions:
+        exact_keys(region, {'region_code', 'report_count', 'completed_count', 'outcomes', 'fine_count'})
+        exact_keys(region['outcomes'], outcome_keys)
     if len(top['vehicles']) > 5:
         raise ValueError('vehicle limit exceeded')
     for item in top['vehicles']:
@@ -137,6 +148,11 @@ def main() -> int:
     if meta['schema_version'] != 2 or meta['sample'] is not False or not isinstance(version, str) or not VERSION.fullmatch(version) or not isinstance(meta['generated_at'], str):
         raise SystemExit('public meta is not a live versioned dataset')
     if meta['capabilities'].get('daily_report_dates', {}).get('status') != 'supported':
+        # Never a partial snapshot. Before the operator switches the projection on (ready=true), a Pages build may
+        # opt in to publishing WITHOUT any snapshot (the page then reads the API and shows its not-ready notice).
+        if os.environ.get('SNAPSHOT_ALLOW_NOT_READY') == '1':
+            print(json.dumps({'snapshot': 'skipped', 'reason': 'public projection not ready'}, ensure_ascii=False))
+            return 0
         raise SystemExit('v2 daily facts are unavailable; refusing a partial snapshot')
     params = urllib.parse.urlencode({k: v for k, v in scope.items() if v is not None} | {'expected_version': version})
     dashboard = validate_dashboard(get_json(base + '/public-analytics/dashboard?' + params), scope, version)
