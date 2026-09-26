@@ -64,5 +64,10 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 meta version이 같은 경우에만 읽는다. 운영에서 v2 사실이 준비되지 않으면 meta capability는 missing,
 집계 경로는 503을 반환한다. 이 코드는 아직 운영 DB·Edge에 배포되지 않았다.
 지도는 현재 bbox로 범위를 좁히고 표시 노드를 1,000개 이하로 묶는다. 별도 `zoom/resolution`과
-result/disposition 조건, entities 서버 정렬, 기관 전체 페이지 탐색은 아직 구현되지 않아
-`INVALID_QUERY` 또는 첫 100행만 제공한다. 운영 연동 전 이 계약 차이를 해소해야 한다.
+result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌려준다.
+기관·담당자 표(2026-09-26 감사 SOL-08): dashboard 의 `agencies`/`managers` 는 상위 100행 요약이고,
+표는 `/entities` 로 **전체**를 조회한다. `/entities` 는 하위호환으로 `q`(기관·성명 부분 일치, 160자 이하),
+`sort`(`completed`·`accepted`·`partial`·`rejected`·`fine`·`acceptRate`), `dir`(`asc`·`desc`)를 받는다. 셋 다 없으면
+예전 순서 그대로이고 응답 필드는 바뀌지 않았다. 다른 경로에 이 인자를 주면 400.
+지도 점(SOL-06): 신고일 위치와 완료일 위치의 합집합이며 점마다 신고 건수(신고일 기준)와 완료 건수(완료일 기준)를 따로 센다.
+`location_missing`(SOL-07): 현재 범위의 신고일 또는 완료일 지표에 실제로 들어간 고유 fact 중 좌표 없는 것(비교 기간만 속한 fact 제외, 한 번만).
