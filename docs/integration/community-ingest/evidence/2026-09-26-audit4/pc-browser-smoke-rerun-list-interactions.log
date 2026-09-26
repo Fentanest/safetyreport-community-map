@@ -1,0 +1,41 @@
+# cmd: timeout 900 npx playwright test specs/list-interactions.spec.ts --project=chromium --project=firefox --reporter=line
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tools/web-tests
+# candidate: cb1305d (ci0926/audit-fix)
+# dirty: 0 tracked changes
+# start: 2026-09-26T17:14:04+09:00
+[WebServer] [2026-09-26 17:14:09] INFO:     Started server process [3693117]
+
+[WebServer] [2026-09-26 17:14:09] INFO:     Waiting for application startup.
+
+[WebServer] [2026-09-26 17:14:09] INFO:     Application startup complete.
+
+[WebServer] [2026-09-26 17:14:09] INFO:     Uvicorn running on http://127.0.0.1:18629 (Press CTRL+C to quit)
+
+
+Running 16 tests using 1 worker
+
+[1/16] [chromium] › specs/list-interactions.spec.ts:20:7 › List Interactions and Modals › advanced search AND/OR filters correctly
+[WebServer] [fixture] blocked: github release request
+
+[2/16] [chromium] › specs/list-interactions.spec.ts:50:7 › List Interactions and Modals › multi-select for status filters correctly
+[3/16] [chromium] › specs/list-interactions.spec.ts:60:7 › List Interactions and Modals › selection persists after pagination
+[4/16] [chromium] › specs/list-interactions.spec.ts:74:7 › List Interactions and Modals › copy report numbers (selected, current page, all)
+[5/16] [chromium] › specs/list-interactions.spec.ts:111:7 › List Interactions and Modals › CSV export matches table headers
+[6/16] [chromium] › specs/list-interactions.spec.ts:118:7 › List Interactions and Modals › crawl selected blocked in fixture mode
+[WebServer] [fixture] blocked: crawl subprocess
+
+[7/16] [chromium] › specs/list-interactions.spec.ts:134:7 › List Interactions and Modals › attachment and text modals open and close
+[8/16] [chromium] › specs/list-interactions.spec.ts:144:7 › List Interactions and Modals › detail modal opens with link and shows key fields
+[9/16] [firefox] › specs/list-interactions.spec.ts:20:7 › List Interactions and Modals › advanced search AND/OR filters correctly
+[10/16] [firefox] › specs/list-interactions.spec.ts:50:7 › List Interactions and Modals › multi-select for status filters correctly
+[11/16] [firefox] › specs/list-interactions.spec.ts:60:7 › List Interactions and Modals › selection persists after pagination
+[12/16] [firefox] › specs/list-interactions.spec.ts:74:7 › List Interactions and Modals › copy report numbers (selected, current page, all)
+[13/16] [firefox] › specs/list-interactions.spec.ts:111:7 › List Interactions and Modals › CSV export matches table headers
+[14/16] [firefox] › specs/list-interactions.spec.ts:118:7 › List Interactions and Modals › crawl selected blocked in fixture mode
+[WebServer] [fixture] blocked: crawl subprocess
+
+[15/16] [firefox] › specs/list-interactions.spec.ts:134:7 › List Interactions and Modals › attachment and text modals open and close
+[16/16] [firefox] › specs/list-interactions.spec.ts:144:7 › List Interactions and Modals › detail modal opens with link and shows key fields
+  16 passed (1.0m)
+# end: 2026-09-26T17:15:06+09:00
+# exit: 0

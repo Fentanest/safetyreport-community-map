@@ -95,3 +95,24 @@ SOL-06 은 2차에서 닫혔다(완료일만 든 범위의 실제 브라우저 �
 | map 단위+tsc+build / 실스택 / Deno 4함수 / compose | 88 passed / 21 / 4 ok / ok |
 | auth 단위 / relay | 38 passed / 24 passed (브라우저 11/11 은 같은 auth 코드로 `audit2`) |
 | 음성 대조(각각 따로) | `neg-r2-01-clear-on-terminate`, `neg-r2-02-no-resume`, `neg-r2-02-no-persist`, `neg-sol04-no-hold-start`, `neg-sol04-no-hold-atomic`, `neg-mobile-sol02-guard-before-recheck`, `neg-r2-03-no-listener` — 모두 목표 단언에서 실패(exit≠0) |
+
+## Sol 3차 재검증(`audit-sol-recheck-03.md`, "수정 후 재검토") 반영
+
+R2-01·R2-03·SOL-02·SOL-05 는 3차에서 닫혔다. 대기 큐 경로의 새 결함을 **모든 자동 시작의 한 경계**(`crawl_manager.launch_pending_crawl()`)로 모아 고쳤다.
+
+| ID | 지적 | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit4/neg-*.log`, 각각 따로) |
+|---|---|---|---|---|
+| R3-01 높음 | 큐를 먼저 비운 뒤 시작 실패 시 항목 유실, 고정 `pending_queue.txt` 덮어쓰기 | 시작에 **성공한 뒤에만** 그 항목을 큐에서 뺌(실패·복원 중이면 그대로). 실행마다 `pending_queue_<uuid>.txt`, 크롤이 끝나면 삭제 | PC `cb1305d` | `test_pending_items_stay_when_the_start_fails_and_each_run_gets_its_own_queue_file`(실제 launch 경로, Popen 만 가짜 — 자식이 읽을 파일 내용을 시작 순간 기록) / `neg-r3-01-remove-before-start.log`, `neg-r3-01-fixed-queue-file.log` |
+| R3-02 높음 | 크롤 완료 훅의 대기 큐 시작이 게이트·초기화 검사를 건너뜀 | 경계 안에서 일반 크롤과 같은 `_check_crawl_allowed()`(게이트 60초 재검증·1회 초기화) — 막히면 시작 0·큐 보존. 완료 훅·복원 뒤 재개 모두 이 경계만 부름 | PC `cb1305d` | `test_crawl_completion_does_not_start_the_queue_while_a_rebuild_is_required`(실제 `run_after_crawl`) / `neg-r3-02-no-gate.log`(검사를 빼면 크롤러 시작 1회) |
+| R3-03 중간 | 큐 파일 저장 실패를 숨기고 "대기열에 넣음" 응답 | 저장(파일 fsync + 원자 교체) 실패 시 메모리 추가를 되돌리고 `RuntimeError` → API 500 문장(대기열 응답 없음) | PC `cb1305d` | `test_a_queue_that_cannot_be_saved_is_reported_not_silently_kept_in_memory`(`crawl_control.enqueue_report` 까지) / `neg-r3-03-swallow-save.log` |
+
+남는 한계(3차 보고서 그대로): 여러 서버 worker 간 같은 큐 파일 동시성은 단일 worker 구성이라 미검증, 크롤 중지의 최대 15초 대기에 따른 프록시 timeout 은 미측정.
+
+### 3차 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit4/`, PC 만 변경)
+후보 PC `cb1305d`. mobile `2debce44`·map 제품 `e284c86`·auth 제품 `5a4d678` 은 audit3 과 같다(그 로그가 유효).
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 | 388 OK(skip 4) / diff_count 0 / 1 OK |
+| PC 브라우저 스모크 | 127 passed, **1 failed** — chromium `list-interactions` 1건: 외부 CDN `cdn.datatables.net` 스크립트가 `net::ERR_NETWORK_CHANGED` 로 받아지지 않아 표 미초기화(제품 서버 `/data/all` 은 200). 원인 `pc-browser-smoke-failure-cause.txt`, 같은 스펙 chromium+firefox 재실행 16/16 passed(`pc-browser-smoke-rerun-list-interactions.log`) |
+| 음성 대조(각각 따로) | `neg-r3-01-remove-before-start`, `neg-r3-01-fixed-queue-file`, `neg-r3-02-no-gate`, `neg-r3-03-swallow-save` — 모두 목표 단언에서 실패 |
