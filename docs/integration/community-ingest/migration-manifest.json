@@ -12,7 +12,8 @@
     "site_url": "http://127.0.0.1:56480/",
     "redirect_urls": [
       "http://127.0.0.1:56480/callback.html",
-      "com.fentanest.mysafetyreport://auth/callback"
+      "com.fentanest.mysafetyreport://auth/callback",
+      "http://127.0.0.1:56490/**"
     ],
     "kakao_mock_url": "http://host.docker.internal:56410",
     "function_env": {
