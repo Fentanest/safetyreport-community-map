@@ -22,7 +22,7 @@ type Sort = 'all' | 'mine';
 
 const rate = (r: PublicRegion) => (r.outcomes.result_known > 0 ? ((r.outcomes.accepted + r.outcomes.partial) / r.outcomes.result_known) * 100 : null);
 
-/** Baseline (Sol). Visual implementation: Muse (docs/personal-comparison.md §5.4). */
+/** Data wiring: Sol · visual implementation: Muse (docs/personal-comparison.md §5.4). */
 export default function RegionList(p: Props) {
   const [expanded, setExpanded] = useState(false);
   const [sort, setSort] = useState<Sort>('all');
@@ -55,7 +55,7 @@ export default function RegionList(p: Props) {
           <span className="region-nums">
             <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용·일부 <b className="cm-number">{fmtPercent(allRate)}</b></span>
             {showMine && (
-              mine ? (
+              mine && (mine.mine.report_count > 0 || mine.mine.completed_count > 0) ? (
                 <span className="mine-col">내 <b className="cm-number">{fmtInt(mine.mine.report_count)}</b>건 · 내 <b className="cm-number">{fmtPercent(mine.mine.accept_rate)}</b> ({fmtPp(mine.accept_rate_pp)})</span>
               ) : (
                 <span className="cm-muted">내 신고 없음</span>

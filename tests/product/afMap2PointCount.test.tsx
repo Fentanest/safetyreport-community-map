@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { aggregateDashboard, type PrivateFact } from '../../server/aggregate';
 import { isEmptyResult } from '../../src/pages/Dashboard';
-import KpiRow from '../../src/components/KpiRow';
+import CompareKpis from '../../src/components/CompareKpis';
 import MapPanel from '../../src/components/MapPanel';
 import type { Scope } from '../../src/domain/public';
 
@@ -50,10 +50,14 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     const data = aggregateDashboard([crossFact], sept, aopts);
     expect(isEmptyResult(data)).toBe(false);
     const bannerText = '현재 필터에 결과가 없습니다';
-    const kpi = renderToStaticMarkup(<KpiRow overview={data.overview} unsupported={false} />);
-    expect(kpi).toContain('신고일 기준');
-    expect(kpi).toContain('0');
-    expect(kpi).toContain('곳');
+    // The comparison table replaced the 6-KPI row (docs/personal-comparison.md §5.1); public column only here.
+    const kpi = renderToStaticMarkup(<CompareKpis overview={data.overview} compareOn={false} unsupported={false}
+      personal={{ status: 'off', data: null, error: null, retry: () => {} }} onSignIn={() => {}}
+      auth={{ status: 'signed_out', displayName: null, synthetic: false, message: null }} />);
+    expect(kpi).toContain('신고일');
+    expect(kpi).toContain('신고 지점');
+    expect(kpi).toMatch(/<b class="cm-number">0<\/b>/);
+    expect(kpi).not.toContain('내 신고');
     const map = renderToStaticMarkup(
       <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="reports"
         onMetric={() => {}} categoryLabel="전체 분류" onApplyView={() => {}} autoRefresh={false}

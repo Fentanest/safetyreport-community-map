@@ -13,7 +13,7 @@ interface Props {
 
 const MODES: ViewMode[] = ['both', 'map', 'stats'];
 
-/** Baseline (Sol). Visual implementation: Muse (docs/personal-comparison.md §5.1–5.2). */
+/** Data wiring: Sol · visual implementation: Muse (docs/personal-comparison.md §5.1–5.2). */
 export default function ViewControls(p: Props) {
   return (
     <div className="view-controls">

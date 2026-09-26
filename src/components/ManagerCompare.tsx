@@ -9,11 +9,14 @@ interface Props {
   onPick: (row: CompareEntityRow) => void;
 }
 
-/** Baseline (Sol). Visual implementation: Muse (docs/personal-comparison.md §4, §5.1). */
+/** Data wiring: Sol · visual implementation: Muse (docs/personal-comparison.md §4, §5.1). */
 export default function ManagerCompare({ personal, onPick }: Props) {
   const [tab, setTab] = useState<'manager' | 'agency'>('manager');
   const data = personal.status === 'ready' ? personal.data : null;
-  const rows = data ? (tab === 'manager' ? data.managers : data.agencies) : [];
+  const [expanded, setExpanded] = useState(false);
+  const all = data ? (tab === 'manager' ? data.managers : data.agencies) : [];
+  const SHORT = 5;
+  const rows = expanded ? all : all.slice(0, SHORT);
   return (
     <section className="cm-panel manager-compare" aria-label="담당자·기관 비교">
       <div className="panel-top">
@@ -22,8 +25,8 @@ export default function ManagerCompare({ personal, onPick }: Props) {
           <span className="subtitle">처리완료일 기준 · 같은 담당자의 전체 결과와 내 결과 · 관측값 비교(평가 아님)</span>
         </div>
         <div className="mini-segments" role="group" aria-label="비교 대상">
-          <button type="button" className={tab === 'manager' ? 'selected' : ''} aria-pressed={tab === 'manager'} onClick={() => setTab('manager')}>담당자</button>
-          <button type="button" className={tab === 'agency' ? 'selected' : ''} aria-pressed={tab === 'agency'} onClick={() => setTab('agency')}>기관</button>
+          <button type="button" className={tab === 'manager' ? 'selected' : ''} aria-pressed={tab === 'manager'} onClick={() => { setTab('manager'); setExpanded(false); }}>담당자</button>
+          <button type="button" className={tab === 'agency' ? 'selected' : ''} aria-pressed={tab === 'agency'} onClick={() => { setTab('agency'); setExpanded(false); }}>기관</button>
         </div>
       </div>
       {!data ? (
@@ -62,6 +65,13 @@ export default function ManagerCompare({ personal, onPick }: Props) {
               ))}
             </tbody>
           </table>
+          {all.length > SHORT && (
+            <div className="compare-more">
+              <button type="button" className="ghost-btn" aria-expanded={expanded} onClick={() => setExpanded(v => !v)}>
+                {expanded ? '접기' : `전체 ${fmtInt(all.length)}${tab === 'manager' ? '명' : '곳'} 보기`}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </section>

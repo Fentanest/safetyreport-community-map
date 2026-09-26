@@ -429,6 +429,62 @@ export default function Dashboard() {
   }, [compareData, entityTab]);
   const regionOpts = regionOptions(data?.regions ?? null, scope.region_code);
 
+  // One instance of each panel; the three view layouts only place them (§5.2). Switching never refetches.
+  const mapPanel = data && (
+    <MapPanel
+      points={shownPoints}
+      totalPoints={data.points.length}
+      selectedKey={selection}
+      onSelect={setSelection}
+      metric={mapMetric}
+      onMetric={setMapMetric}
+      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
+      onApplyView={applyView}
+      autoRefresh={autoRefresh}
+      onAutoRefresh={setAutoRefresh}
+      locationMissing={data.meta.location_missing ?? null}
+      marks={marks}
+      pointFilter={effectiveFilter}
+      onPointFilter={setPointFilter}
+      filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
+    />
+  );
+  const regionList = data && (
+    <RegionList
+      regions={data.regions}
+      compare={showMine ? compareData?.regions ?? null : null}
+      compareOn={showMine}
+      interest={interest}
+      onToggleInterest={flipInterest}
+      activeRegion={scope.region_code}
+      onPickRegion={pickRegion}
+    />
+  );
+  const insightPanel = data && point && (
+    <InsightPanel
+      data={data}
+      point={point}
+      scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
+      onAnalyzePoint={analyzePoint}
+      onPickEntity={pickEntity}
+      toast={showToast}
+      mark={showMine ? marks.get(point.key) ?? null : null}
+      onClose={() => setSelection(null)}
+    />
+  );
+  const compareKpis = data && (
+    <CompareKpis
+      overview={data.overview}
+      personal={personal}
+      compareOn={showMine}
+      auth={auth}
+      onSignIn={signIn}
+      unsupported={unsupported}
+    />
+  );
+  const managerCompare = showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />;
+  const trendCard = data && <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />;
+
   return (
     <>
       <TopBar
@@ -542,159 +598,40 @@ export default function Dashboard() {
                     mineAccept={compareData?.mine.accept_rate ?? null}
                   />
                   <div className="mapmode-grid">
-                    <MapPanel
-                      points={shownPoints}
-                      totalPoints={data.points.length}
-                      selectedKey={selection}
-                      onSelect={setSelection}
-                      metric={mapMetric}
-                      onMetric={setMapMetric}
-                      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
-                      onApplyView={applyView}
-                      autoRefresh={autoRefresh}
-                      onAutoRefresh={setAutoRefresh}
-                      locationMissing={data.meta.location_missing ?? null}
-                      marks={marks}
-                      pointFilter={effectiveFilter}
-                      onPointFilter={setPointFilter}
-                      filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
-                    />
+                    {mapPanel}
                     <div className="mapmode-side">
-                      <RegionList
-                        regions={data.regions}
-                        compare={showMine ? compareData?.regions ?? null : null}
-                        compareOn={showMine}
-                        interest={interest}
-                        onToggleInterest={flipInterest}
-                        activeRegion={scope.region_code}
-                        onPickRegion={pickRegion}
-                      />
-                      {point && (
-                        <InsightPanel
-                          data={data}
-                          point={point}
-                          scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
-                          onAnalyzePoint={analyzePoint}
-                          onPickEntity={pickEntity}
-                          toast={showToast}
-                          mark={showMine ? marks.get(point.key) ?? null : null}
-                          onClose={() => setSelection(null)}
-                        />
-                      )}
+                      {regionList}
+                      {insightPanel}
                     </div>
                   </div>
                 </section>
               ) : view === 'stats' ? (
                 <section className="statsmode" id="mapsection" aria-label="통계 집중 보기">
                   <div className="stats-map">
-                    <MapPanel
-                      points={shownPoints}
-                      totalPoints={data.points.length}
-                      selectedKey={selection}
-                      onSelect={setSelection}
-                      metric={mapMetric}
-                      onMetric={setMapMetric}
-                      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
-                      onApplyView={applyView}
-                      autoRefresh={autoRefresh}
-                      onAutoRefresh={setAutoRefresh}
-                      locationMissing={data.meta.location_missing ?? null}
-                      marks={marks}
-                      pointFilter={effectiveFilter}
-                      onPointFilter={setPointFilter}
-                      filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
-                    />
+                    {mapPanel}
                     <button className="ghost-btn stats-expand" type="button" onClick={() => changeView('both')}>
                       지도 크게 보기
                     </button>
                   </div>
                   <div className="stats-grid">
-                    <CompareKpis
-                      overview={data.overview}
-                      personal={personal}
-                      compareOn={showMine}
-                      auth={auth}
-                      onSignIn={signIn}
-                      unsupported={unsupported}
-                    />
-                    {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
-                    <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />
-                    <RegionList
-                      regions={data.regions}
-                      compare={showMine ? compareData?.regions ?? null : null}
-                      compareOn={showMine}
-                      interest={interest}
-                      onToggleInterest={flipInterest}
-                      activeRegion={scope.region_code}
-                      onPickRegion={pickRegion}
-                    />
-                    {point && (
-                      <InsightPanel
-                        data={data}
-                        point={point}
-                        scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
-                        onAnalyzePoint={analyzePoint}
-                        onPickEntity={pickEntity}
-                        toast={showToast}
-                        mark={showMine ? marks.get(point.key) ?? null : null}
-                        onClose={() => setSelection(null)}
-                      />
-                    )}
+                    {compareKpis}
+                    {managerCompare}
+                    {trendCard}
+                    {regionList}
+                    {insightPanel}
                   </div>
                 </section>
               ) : (
                 <section className="compare-layout" id="mapsection" aria-label="지도와 비교 통계">
                   <div className="layout-main">
-                    <MapPanel
-                      points={shownPoints}
-                      totalPoints={data.points.length}
-                      selectedKey={selection}
-                      onSelect={setSelection}
-                      metric={mapMetric}
-                      onMetric={setMapMetric}
-                      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
-                      onApplyView={applyView}
-                      autoRefresh={autoRefresh}
-                      onAutoRefresh={setAutoRefresh}
-                      locationMissing={data.meta.location_missing ?? null}
-                      marks={marks}
-                      pointFilter={effectiveFilter}
-                      onPointFilter={setPointFilter}
-                      filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
-                    />
-                    <RegionList
-                      regions={data.regions}
-                      compare={showMine ? compareData?.regions ?? null : null}
-                      compareOn={showMine}
-                      interest={interest}
-                      onToggleInterest={flipInterest}
-                      activeRegion={scope.region_code}
-                      onPickRegion={pickRegion}
-                    />
+                    {mapPanel}
+                    {regionList}
                   </div>
                   <div className="layout-side">
-                    {point && (
-                      <InsightPanel
-                        data={data}
-                        point={point}
-                        scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
-                        onAnalyzePoint={analyzePoint}
-                        onPickEntity={pickEntity}
-                        toast={showToast}
-                        mark={showMine ? marks.get(point.key) ?? null : null}
-                        onClose={() => setSelection(null)}
-                      />
-                    )}
-                    <CompareKpis
-                      overview={data.overview}
-                      personal={personal}
-                      compareOn={showMine}
-                      auth={auth}
-                      onSignIn={signIn}
-                      unsupported={unsupported}
-                    />
-                    {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
-                    <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />
+                    {insightPanel}
+                    {compareKpis}
+                    {managerCompare}
+                    {trendCard}
                   </div>
                 </section>
               )}

@@ -169,7 +169,7 @@ button.cm-chip { cursor: pointer; }
 .chart-legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px 16px 0; font-size: 12px; color: var(--muted); }
 .trend-host { height: 220px; margin: 4px 8px 0; }
 .trend-table { margin: 8px 16px 0; overflow: auto; max-height: 220px; border: 1px solid var(--border); border-radius: 10px; }
-.trend-table table, .entity-table table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.trend-table table, table.entity-table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .trend-table th, .trend-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: right; font-variant-numeric: tabular-nums; }
 .trend-table th:first-child, .trend-table td:first-child { text-align: left; }
 .chart-caption, .card-footnote { font-size: 12px; color: var(--muted); padding: 8px 16px 0; margin: 0; }
@@ -261,6 +261,7 @@ body.briefing .briefing-bar { display: flex; }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar { gap: 8px; padding: 0 12px; }
   .brand { min-width: 0; flex: 1; }
+  .brand > span { min-width: 0; overflow: hidden; }
   .brand b { font-size: 16px; overflow: hidden; text-overflow: ellipsis; }
   .brand small { display: none; }
   .brand img { width: 32px; height: 32px; }
@@ -282,7 +283,8 @@ body.briefing .briefing-bar { display: flex; }
   .compare-kpis .compare-table th, .compare-kpis .compare-table td { padding: 8px 6px; font-size: 13px; }
   .compare-kpis .compare-table td b { font-size: 14px; }
   .compare-kpis .compare-table th[scope="row"] span { font-size: 13px; }
-  .compare-kpis .compare-table th[scope="row"] small { font-size: 11px; }
+  .compare-kpis .compare-table th[scope="row"] small { font-size: 12px; }
+  .compare-kpis .compare-table td small { font-size: 12px; }
   /* entity tables: sticky name column + internal scroll keeps compare columns reachable. */
   .table-scroll { max-width: 100%; }
   .entity-table th:first-child, .entity-table td:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; min-width: 30vw; max-width: 42vw; white-space: normal; }
@@ -353,7 +355,8 @@ body.briefing .briefing-bar { display: flex; }
 .compare-table .num { text-align: right; }
 .compare-table th[scope="row"] span { display: block; font-size: 14px; font-weight: 600; }
 .compare-table th[scope="row"] small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
-.compare-table td b { font-size: 16px; font-weight: 700; }
+.compare-table td b { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.compare-table td.diff-col, .compare-table td.diff-col small { white-space: nowrap; }
 .compare-table td small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
 .mine-col { color: var(--brand-ink); }
 td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
@@ -380,7 +383,7 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 .region-pick:disabled { cursor: default; }
 .region-row.active .region-pick { background: var(--hover); box-shadow: inset 3px 0 0 var(--brand-ink); }
 .region-name { font-size: 14px; font-weight: 650; display: flex; gap: 8px; align-items: center; }
-.region-active-tag { font-size: 11px; font-weight: 700; color: var(--brand-ink); border: 1px solid var(--brand-ink); border-radius: 999px; padding: 1px 8px; }
+.region-active-tag { font-size: 12px; font-weight: 700; color: var(--brand-ink); border: 1px solid var(--brand-ink); border-radius: 999px; padding: 1px 8px; }
 .region-nums { display: flex; gap: 4px 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
 .region-nums b { font-weight: 700; }
 .region-star { min-width: 44px; min-height: 44px; padding: 0 8px; background: none; border: 0; border-radius: 10px; cursor: pointer; color: var(--partial); font-size: 20px; line-height: 1; align-self: center; }
@@ -391,7 +394,8 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 
 /* manager/agency compare table. */
 .manager-compare { padding-bottom: 8px; }
-.manager-compare .table-scroll { max-height: 360px; }
+.manager-compare .table-scroll { max-height: none; }
+.manager-compare .compare-more { padding: 8px 16px 0; }
 .manager-compare .entity-table td, .manager-compare .entity-table th { padding: 8px 12px; }
 .manager-compare .mini-btn { min-height: 44px; text-align: left; }
 .manager-compare .table-name { font-size: 14px; }

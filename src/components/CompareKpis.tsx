@@ -65,7 +65,7 @@ function mineMessage(p: PersonalState, auth: AuthSnapshot): string | null {
   return null;
 }
 
-/** Baseline (Sol). Visual implementation: Muse (docs/personal-comparison.md §5.1, §6). */
+/** Data wiring: Sol · visual implementation: Muse (docs/personal-comparison.md §5.1, §6). */
 export default function CompareKpis({ overview, personal, compareOn, auth, onSignIn, unsupported }: Props) {
   const data = personal.status === 'ready' ? personal.data : null;
   const showMine = compareOn;
@@ -103,7 +103,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
                 </td>
               )}
               {showMine && (
-                <td className="num">
+                <td className="num diff-col">
                   {data ? (<><b className="cm-number">{row.diff(data)}</b>
                     <small>{row.diffKind === 'share' ? '내 비중' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과 확인 0건' : data.diff.rate_reason === 'no_all' ? '결과 확인 0건' : '내 − 전체') : ''}</small></>)
                     : <span className="cm-muted">—</span>}

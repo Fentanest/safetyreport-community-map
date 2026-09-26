@@ -9,7 +9,7 @@ interface Props {
   briefing: boolean;
 }
 
-/** Baseline (Sol). Visual implementation: Muse. Never shows an email, id or token. */
+/** Data wiring: Sol · visual implementation: Muse. Never shows an email, id or token. */
 export default function AccountMenu({ auth, onSignIn, onSignOut, briefing }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
