@@ -1,0 +1,43 @@
+# cmd: npm ci --silent >/dev/null 2>&1; timeout 600 npx vitest run --exclude 'tests/integration/**' && npx tsc -b && npm run build
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-map/audit
+# candidate: e7cff5e (HEAD)
+# dirty: 0 tracked changes
+# start: 2026-09-26T20:50:05+09:00
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-map/audit
+
+
+ Test Files  10 passed (10)
+      Tests  88 passed (88)
+   Start at  20:50:10
+   Duration  969ms (transform 50%, tests 24%, import 24%, worker 2%)
+
+  Transform  transforming modules took 2.02s · 50% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+
+> safetyreport-community-map@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 719 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                           0.64 kB │ gzip:   0.47 kB
+dist/assets/family-mark-CvINNr4v.png                     89.43 kB
+dist/assets/index-CPiNSjwj.css                           21.49 kB │ gzip:   4.94 kB
+dist/assets/createSeriesData-CuX3vbNP.js                  3.12 kB │ gzip:   1.28 kB
+dist/assets/core-BxhuX9qF.js                              4.77 kB │ gzip:   2.21 kB
+dist/assets/renderers-DFxm-MiA.js                        33.68 kB │ gzip:  13.05 kB
+dist/assets/customGraphicKeyframeAnimation-CwHvGnCq.js  144.14 kB │ gzip:  49.51 kB
+dist/assets/graphic-C1Gl3Ast.js                         149.00 kB │ gzip:  49.99 kB
+dist/assets/parseGeoJson-CXLMKh0y.js                    244.66 kB │ gzip:  84.53 kB
+dist/assets/charts-C96q6gGT.js                          258.86 kB │ gzip:  84.67 kB
+dist/assets/components-BVaJewAw.js                      258.89 kB │ gzip:  82.91 kB
+dist/assets/index-DSv_hnih.js                           387.52 kB │ gzip: 116.21 kB
+
+✓ built in 908ms
+# end: 2026-09-26T20:50:22+09:00
+# exit: 0

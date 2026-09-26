@@ -1,0 +1,16 @@
+# cmd: npm ci --silent >/dev/null 2>&1; timeout 300 npx vitest run && npx tsc -p tsconfig.json --noEmit
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-auth/audit
+# candidate: 0872fa1 (HEAD)
+# dirty: 0 tracked changes
+# start: 2026-09-26T20:50:22+09:00
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-auth/audit
+
+
+ Test Files  3 passed | 2 skipped (5)
+      Tests  38 passed | 35 skipped (73)
+   Start at  20:50:24
+   Duration  880ms (import 44%, transform 42%, tests 12%, worker 2%)
+
+# end: 2026-09-26T20:50:29+09:00
+# exit: 0

@@ -47,8 +47,8 @@ repo: PC=safetyreport, M=safetyreport-mobile, MAP=community-map, AUTH=community-
 | I06 | trigger 기록되나 identity/revision/hash 불변 | ingest 통합 | T2 | partial — duplicate 불변 필드 검사(실스택), trigger 만 다른 재전송 별도 테스트 없음 |
 | I07 | 릴리즈 산출물 env 누락·mock·우회·비밀 검출 | 빌드 스캔 | T8 | passed(PC 번들 스캔·빌드 거부 규칙, M 빌드 스크립트) |
 | I08 | 실제 카카오·운영 E2E 미실행 분리 보고 | verification-report | Opus | verification-report 에 분리 기재 |
-| J01–J12 | 병렬·머지·정리 | parallel-work-manifest + merge 기록 | Opus | not-run |
-| K01–K12 | 최근 7일 Sol 감사 | audit-* 문서 | Opus, Sol | not-run |
+| J01–J12 | 병렬·머지·정리 | parallel-work-manifest + merge 기록 | Opus | passed(`parallel-work-manifest.json`, `merge-and-cleanup-first.md`·`merge-and-cleanup-final.md` — 로컬 merge commit·worktree/branch 정리 목록, 원격 반영 없음) |
+| K01–K12 | 최근 7일 Sol 감사 | audit-* 문서 | Opus, Sol | passed(`audit-window.md`, `audit-sol-findings.md`, `audit-resolution.md`, `audit-sol-recheck*.md` 1~11차 — 11차 "감사 수정 병합 가능", 운영 전 조건은 `verification-report.md`) |
 | S-01 | 좌표 결측 fact 총계 포함, 지점만 제외 | MAP aggregate + projection | T2 | passed(실스택=`COMMUNITY_STACK=1 npx vitest run tests/integration`(21/21, 로그 evidence/2026-09-26-r5 — 초기화 직후 첫 실행 포함 3회 통과) 통계 포함·지도 제외, location_missing API 노출) |
 | S-02 | 철회·재동의 자동 재공개 없음·reshare·삭제 tombstone 영구 | MAP projection + security | T2, T1 | passed(실스택=`COMMUNITY_STACK=1 npx vitest run tests/integration`(21/21, 로그 evidence/2026-09-26-r5 — 초기화 직후 첫 실행 포함 3회 통과) 철회 제거·재동의 비공개·reshare 재공개·삭제 fence) |
 | S-03 | capture 실패 시 개인 저장 보류 → 다음 수집 재조회 | PC·M capture | T4, T6 | passed(단위 PC·M capture 실패 시 개인 저장 보류) |
