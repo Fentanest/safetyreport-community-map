@@ -20,7 +20,8 @@
       "AUTH_RELAY_LOCAL_STACK": "loopback-only",
       "AUTH_SITE_URL": "http://127.0.0.1:56480/",
       "AUTH_BROWSER_ORIGIN": "http://127.0.0.1:56480",
-      "COMMUNITY_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490"
+      "COMMUNITY_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490",
+      "AUTH_PUBLIC_SUPABASE_URL": "http://127.0.0.1:56321"
     }
   },
   "migrations": [

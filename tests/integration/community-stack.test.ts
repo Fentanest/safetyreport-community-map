@@ -133,6 +133,21 @@ const envelope = (w: Writer, events: unknown[], over: Partial<Json> = {}) => ({ 
 const ingest = (w: Writer, events: unknown[], over: Partial<Json> = {}, token = w.session.access) => ingestRaw(envelope(w, events, over), token);
 
 const ledger = () => count('private.community_ingest_events');
+function rpcSignatures(): { name: string; body: Json }[] {
+  const dummy = (type: string): unknown => ({ uuid: '00000000-0000-4000-8000-000000000000', text: 'x', jsonb: {}, integer: 1,
+    boolean: false, date: '2026-01-01', 'timestamp with time zone': '2026-01-01T00:00:00Z', 'double precision[]': null } as Json)[type] ?? null;
+  const rows = sql(`select p.proname || '|' || coalesce(array_to_string(p.proargnames, ','), '') || '|' ||
+      coalesce((select string_agg(format_type(t, null), ',' order by i) from unnest(p.proargtypes) with ordinality u(t, i)), '')
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname like 'internal\\_%' order by 1;`);
+  const out = rows.split('\n').filter(Boolean).map(line => {
+    const [name, argNames, argTypes] = line.split('|');
+    const names = argNames ? argNames.split(',') : [];
+    const types = argTypes ? argTypes.split(',') : [];
+    return { name, body: Object.fromEntries(names.map((n, i) => [n, dummy(types[i])])) };
+  });
+  expect(out.length).toBeGreaterThanOrEqual(20);
+  return out;
+}
 // What the anonymous public API serves (same SECURITY DEFINER function public-analytics calls), optionally per contributor.
 const publicFacts = (identityLike: string, contributor?: string) => Number(sql(`select count(*) from jsonb_array_elements(
   public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
@@ -206,33 +221,33 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       // no consent (fresh user B may already have one from another test run → revoke first)
       const st = await account('status', s.access);
       if (st.json.consent?.state === 'active') await account('consent-revoke', s.access, { grant_id: st.json.consent.grant_id });
-      let r = await ingest(fakeWriter, [await event(fakeWriter, 'NC-1')]);
+      let r = await ingest(fakeWriter, [await event(fakeWriter, `NC1-${rid()}`)]);
       expect(r.status).toBe(403);
       expect(r.json.error.code).toMatch(/^consent_/);
       // consent but no connection
       fakeWriter.grantId = await consent(s);
-      r = await ingest(fakeWriter, [await event(fakeWriter, 'NC-2')]);
+      r = await ingest(fakeWriter, [await event(fakeWriter, `NC2-${rid()}`)]);
       expect([r.status, r.json.error.code]).toEqual([403, 'connection_unknown']);
       // someone else's connection id → same answer as unknown (no existence leak)
       const other = await writerFor('C');
-      r = await ingest({ ...fakeWriter, connectionId: other.connectionId }, [await event(fakeWriter, 'NC-3')]);
+      r = await ingest({ ...fakeWriter, connectionId: other.connectionId }, [await event(fakeWriter, `NC3-${rid()}`)]);
       expect([r.status, r.json.error.code]).toEqual([403, 'connection_unknown']);
       // A's token with B's (other's) connection+grant in the body
-      r = await ingestRaw(envelope(other, [await event(other, 'NC-4')]), s.access);
+      r = await ingestRaw(envelope(other, [await event(other, `NC4-${rid()}`)]), s.access);
       expect(r.status).toBe(403);
       expect(ledger()).toBe(before);
       // same user, a second session: refused until rebind
       const w = await writerFor('D');
       const second = await kakaoSession('D');
-      r = await ingest(w, [await event(w, 'NC-5')], {}, second.access);
+      r = await ingest(w, [await event(w, `NC5-${rid()}`)], {}, second.access);
       expect([r.status, r.json.error.code]).toEqual([403, 'connection_session_mismatch']);
       const rebind = await account('connections-rebind', second.access, { connection_id: w.connectionId, connection_secret: w.secret });
       expect(rebind.status, JSON.stringify(rebind.json)).toBe(200);
-      r = await ingest(w, [await event(w, 'NC-5b')], {}, second.access);
+      r = await ingest(w, [await event(w, `NC5b-${rid()}`)], {}, second.access);
       expect(r.status, JSON.stringify(r.json)).toBe(200);
       expect(r.json.results[0].status).toBe('accepted');
       // the first session is now refused
-      r = await ingest(w, [await event(w, 'NC-6')]);
+      r = await ingest(w, [await event(w, `NC6-${rid()}`)]);
       expect([r.status, r.json.error.code]).toEqual([403, 'connection_session_mismatch']);
     });
 
@@ -293,7 +308,8 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     it('rate limits the account API per user', async () => {
       const s = await kakaoSession('A');
       const statuses: number[] = [];
-      for (let i = 0; i < 32; i++) statuses.push((await account('status', s.access)).status);
+      // 분당 30회 고정 창: 창 경계를 한 번 넘어도 한 창에 31회 이상 들어가도록 61회까지 보낸다
+      for (let i = 0; i < 61 && !statuses.includes(429); i++) statuses.push((await account('status', s.access)).status);
       expect(statuses).toContain(429);
       sql('delete from private.community_auth_rate_limits;');
     });
@@ -306,19 +322,22 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const bearers: [string, string | undefined][] = [['publishable', undefined], ['anon', keys.ANON_KEY], ['user', w.session.access]];
       for (const [label, token] of bearers) {
         for (const table of ['community_ingest_events', 'community_report_facts', 'community_connections', 'community_consent_grants']) {
+          // 상태와 오류 JSON 을 모두 본다(§20-2): private 는 노출 안 된 스키마, public 에는 그런 표가 없다
           const sel = await call('GET', `/rest/v1/${table}?select=*`, { token, headers: { 'Accept-Profile': 'private' } });
-          expect(sel.status, `${label} select private.${table}`).toBeGreaterThanOrEqual(400);
+          expect([sel.status, sel.json.code], `${label} select private.${table}`).toEqual([406, 'PGRST106']);
           const ins = await call('POST', `/rest/v1/${table}`, { token, body: { id: 1 }, headers: { 'Content-Profile': 'private', Prefer: 'resolution=merge-duplicates' } });
-          expect(ins.status, `${label} insert private.${table}`).toBeGreaterThanOrEqual(400);
-          const pub = await call('GET', `/rest/v1/${table}?select=*`, { token });
-          expect(pub.status, `${label} public.${table}`).toBeGreaterThanOrEqual(400);
+          expect([ins.status, ins.json.code], `${label} insert private.${table}`).toEqual([406, 'PGRST106']);
+          for (const method of ['GET', 'POST', 'PATCH', 'DELETE']) {
+            const pub = await call(method, `/rest/v1/${table}?event_id=eq.00000000-0000-0000-0000-000000000000`, { token, body: method === 'GET' || method === 'DELETE' ? undefined : { x: 1 } });
+            expect([pub.status, pub.json.code], `${label} ${method} public.${table}`).toEqual([404, 'PGRST205']);
+          }
         }
-        for (const fn of ['internal_community_ingest', 'internal_community_manifest', 'internal_community_delete_contributions',
-          'internal_analytics_v2_facts', 'internal_analytics_v2_state', 'internal_community_ingest_rate_limit', 'internal_account_status',
-          'internal_grant_consent', 'internal_revoke_consent', 'internal_register_connection', 'internal_rebind_connection',
-          'internal_revoke_connection', 'internal_activate_snapshot', 'internal_cleanup_expired']) {
-          const r = await call('POST', `/rest/v1/rpc/${fn}`, { token, body: { p_user: w.session.userId, p_session: w.session.sessionId } });
-          expect(r.status, `${label} rpc ${fn}: ${JSON.stringify(r.json).slice(0, 120)}`).toBeGreaterThanOrEqual(400);
+        // 모든 public.internal_* RPC 를 **정확한 시그니처**로 호출 → 실행 권한 거절(42501). 인자가 틀린 404 로는 권한을 증명하지 못한다.
+        for (const fn of rpcSignatures()) {
+          const r = await call('POST', `/rest/v1/rpc/${fn.name}`, { token, body: fn.body });
+          // anon(공개키) 은 401, 사용자 JWT(authenticated)는 403 — 둘 다 PostgreSQL 권한 거절 42501
+          expect([r.status, r.json.code], `${label} rpc ${fn.name}: ${JSON.stringify(r.json).slice(0, 120)}`)
+            .toEqual([label === 'user' ? 403 : 401, '42501']);
         }
         const gql = await call('POST', '/graphql/v1', { token, body: { query: '{ __schema { types { name } } }' } });
         const names = JSON.stringify(gql.json);
@@ -328,6 +347,47 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(sql("select count(*) from information_schema.role_table_grants where table_schema = 'private' and grantee in ('anon','authenticated','PUBLIC');")).toBe('0');
       expect(sql("select count(*) from information_schema.routine_privileges where routine_schema = 'public' and routine_name like 'internal\\_%' and grantee in ('anon','authenticated','PUBLIC');")).toBe('0');
       for (const t of tables) expect(count(t), t).toBe(before[t]);
+    });
+  });
+
+  describe('realtime and storage channels (§14, Sol M-02)', () => {
+    it('a user or anonymous Realtime subscription to private tables receives no change events', async () => {
+      const w = await writerFor('B');
+      const events: Json[] = [];
+      const sockets: WebSocket[] = [];
+      for (const token of [keys.PUBLISHABLE_KEY, w.session.access]) {
+        const ws = new WebSocket(`${API.replace('http', 'ws')}/realtime/v1/websocket?apikey=${keys.PUBLISHABLE_KEY}&vsn=1.0.0`);
+        sockets.push(ws);
+        await new Promise<void>((resolve, reject) => { ws.onopen = () => resolve(); ws.onerror = e => reject(e); });
+        ws.onmessage = m => events.push(JSON.parse(String(m.data)));
+        for (const table of ['community_report_facts', 'community_ingest_events', 'community_connections']) {
+          ws.send(JSON.stringify({ topic: `realtime:private-${table}`, event: 'phx_join', ref: table, join_ref: table,
+            payload: { config: { postgres_changes: [{ event: '*', schema: 'private', table }] }, access_token: token } }));
+        }
+      }
+      await new Promise(r => setTimeout(r, 1500));
+      expect((await ingest(w, [await event(w, `RT-${rid()}`)])).json.results[0].status).toBe('accepted');
+      await new Promise(r => setTimeout(r, 3000));
+      for (const ws of sockets) ws.close();
+      const changes = events.filter(e => e.event === 'postgres_changes');
+      expect(changes, JSON.stringify(changes).slice(0, 300)).toEqual([]);
+      expect(events.some(e => e.event === 'phx_reply' || e.event === 'system'), 'the channel answered (not a dead socket)').toBe(true);
+    }, 30_000);
+
+    it('Storage has no buckets and refuses bucket creation and uploads from clients', async () => {
+      const w = await writerFor('C');
+      const before = Number(sql('select count(*) from storage.buckets;'));
+      for (const token of [undefined, w.session.access]) {
+        const list = await call('GET', '/storage/v1/bucket', { token });
+        expect([list.status, list.json]).toEqual([200, []]);
+        const create = await call('POST', '/storage/v1/bucket', { token, body: { name: `x-${rid()}`, public: true } });
+        expect(create.status).toBeGreaterThanOrEqual(400);
+        expect(create.json.code ?? create.json.error).toBeTruthy();
+        const up = await call('POST', `/storage/v1/object/community/${rid()}.json`, { token, body: '{}' });
+        expect(up.status).toBeGreaterThanOrEqual(400);
+      }
+      expect(Number(sql('select count(*) from storage.buckets;'))).toBe(before);
+      expect(before).toBe(0);
     });
   });
 
@@ -519,7 +579,16 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const before = deadlocks();
       const statuses: number[] = [];
       const codes: string[] = [];
-      const record = (r: { status: number; json: Json }) => { statuses.push(r.status); if (r.json.error?.code) codes.push(r.json.error.code); };
+      const server5xx: string[] = [];
+      const runtime5xx: string[] = [];
+      const record = (r: { status: number; json: Json }) => {
+        statuses.push(r.status);
+        if (r.json.error?.code) codes.push(r.json.error.code);
+        // 제품이 낸 5xx(계약 오류 JSON: error.code)는 실패. 로컬 edge runtime 이 작업자를 재활용하며 끊은 요청의 503
+        // (계약 형식 아님, serve 로그 "connection closed before message completed")은 앱이 재시도하는 일시 장애로 따로 기록한다.
+        if (r.status >= 500 && r.json.error?.code) server5xx.push(JSON.stringify(r.json).slice(0, 200));
+        else if (r.status >= 500) runtime5xx.push(`${r.status} ${JSON.stringify(r.json).slice(0, 120)}`);
+      };
       const nextPolicy = `2026-09-26.${900 + Math.floor(Math.random() * 99)}`;
       try {
         for (let round = 0; round < 3; round++) {
@@ -527,11 +596,13 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
           const a = await writerFor('A');
           const b = await writerFor('C');
           const burst = async (w: Writer, n: number) => { for (let i = 0; i < n; i++) record(await ingest(w, [await event(w, `RC${round}${i}-${rid()}`)])); };
+          const d = await writerFor('D');
           await Promise.all([
-            burst(a, 6), burst(b, 6),
+            burst(a, 6), burst(b, 6), burst(d, 6),
+            (async () => { await new Promise(r => setTimeout(r, 20 * round)); record(await account('contributions-delete', d.session.access, { confirm: 'DELETE_MY_SHARED_REPORTS' })); })(),
             (async () => record(await account('consent-revoke', a.session.access, { grant_id: a.grantId })))(),
             (async () => record((await register(b.session, b.dataset, true)).r))(),
-            (async () => { if (round === 2) sql(`insert into private.community_policies(version, consent_text_sha256) values ('${nextPolicy}', '${'a'.repeat(64)}'); update private.community_policy_current set version = '${nextPolicy}', effective_at = now();`); })(),
+            (async () => { if (round === 2) sql(`insert into private.community_policies(version, consent_text_sha256) values ('${nextPolicy}', '${'a'.repeat(64)}') on conflict (version) do nothing; update private.community_policy_current set version = '${nextPolicy}', effective_at = now();`); })(),
             burst(a, 4),
           ]);
         }
@@ -539,17 +610,33 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
         sql(`update private.community_policy_current set version = '${POLICY}', effective_at = now();`);
       }
       expect(deadlocks() - before).toBe(0);
+      // 삭제와 경쟁한 ingest: 삭제 전에 커밋된 fact 는 삭제되고, 뒤에 온 요청은 폐기된 연결로 거절 → D 의 공개 fact 0
+      expect(publicFacts('%', sql("select id from auth.users where raw_user_meta_data->>'nickname' = '통합테스트D' or raw_user_meta_data->>'name' = '통합테스트D' limit 1;") || '-')).toBe(0);
       expect(codes).not.toContain('busy');
-      expect(statuses.filter(st => st >= 500)).toEqual([]);
+      expect(server5xx).toEqual([]);
+      if (runtime5xx.length) console.warn(`[race] edge runtime transient 5xx (retryable, not product errors): ${runtime5xx.join(' | ')}`);
+      expect(runtime5xx.length, 'runtime transient 5xx should stay rare').toBeLessThanOrEqual(3);
       // every refused request wrote nothing: each ledger row belongs to an accepted-state connection at write time
       expect(count('private.community_ingest_events', "result = 'pending'")).toBe(0);
-    });
+    }, 120_000);
 
-    it('bumps the public dataset version on operator DML too (N-09)', async () => {
+    it('bumps the public dataset version on operator DML and serves the new value over HTTP (N-09, §20-4)', async () => {
+      const w = await writerFor('A');
+      const report = `DML-${rid()}`;
+      expect((await ingest(w, [await event(w, report)])).json.results[0].projection_status).toBe('published');
       const v0 = (await publicMeta()).dataset_version;
-      sql("update private.community_report_facts set manager_name = manager_name where ctid = (select ctid from private.community_report_facts where public_state = 'completed' limit 1);");
+      const otherCount = async () => {
+        const r = await call('GET', `/functions/v1/public-analytics/overview?${SCOPE}&category=other`, { apikey: null });
+        expect(r.status).toBe(200);
+        return { version: r.json.dataset_version as string, n: r.json.overview.report_count.value as number };
+      };
+      const before = await otherCount();
+      sql(`update private.community_report_facts set category = 'other' where source_report_id = '${report}';`);
       const v1 = (await publicMeta()).dataset_version;
       expect(v1).not.toBe(v0);
+      const after = await otherCount();
+      expect(after.version).toBe(v1);
+      expect(after.n).toBe(before.n + 1); // 운영자가 바꾼 값이 새 익명 조회에 그대로 나온다
     });
   });
 });

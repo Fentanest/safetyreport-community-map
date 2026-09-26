@@ -152,7 +152,9 @@ enabled = false
 enabled = false
 
 [storage]
-enabled = false
+# 운영 프로젝트와 같이 Storage API 를 켠다 — 버킷 없음·익명/사용자 업로드 거절을 실제로 시험한다(§14, Sol M-02).
+enabled = true
+file_size_limit = "1MiB"
 
 [analytics]
 enabled = false
