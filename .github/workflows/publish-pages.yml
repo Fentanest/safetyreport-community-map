@@ -35,6 +35,8 @@ jobs:
         run: npm run data:export
         env:
           PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
+          # Before ready=true: publish without a snapshot (never a partial one); the page shows its not-ready notice.
+          SNAPSHOT_ALLOW_NOT_READY: '1'
       - name: Build live Pages artifact
         run: npm run build
         env:

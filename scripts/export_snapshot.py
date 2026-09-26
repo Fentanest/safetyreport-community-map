@@ -148,6 +148,11 @@ def main() -> int:
     if meta['schema_version'] != 2 or meta['sample'] is not False or not isinstance(version, str) or not VERSION.fullmatch(version) or not isinstance(meta['generated_at'], str):
         raise SystemExit('public meta is not a live versioned dataset')
     if meta['capabilities'].get('daily_report_dates', {}).get('status') != 'supported':
+        # Never a partial snapshot. Before the operator switches the projection on (ready=true), a Pages build may
+        # opt in to publishing WITHOUT any snapshot (the page then reads the API and shows its not-ready notice).
+        if os.environ.get('SNAPSHOT_ALLOW_NOT_READY') == '1':
+            print(json.dumps({'snapshot': 'skipped', 'reason': 'public projection not ready'}, ensure_ascii=False))
+            return 0
         raise SystemExit('v2 daily facts are unavailable; refusing a partial snapshot')
     params = urllib.parse.urlencode({k: v for k, v in scope.items() if v is not None} | {'expected_version': version})
     dashboard = validate_dashboard(get_json(base + '/public-analytics/dashboard?' + params), scope, version)
