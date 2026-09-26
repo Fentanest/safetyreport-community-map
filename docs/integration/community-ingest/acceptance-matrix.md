@@ -29,9 +29,9 @@ repo: PC=safetyreport, M=safetyreport-mobile, MAP=community-map, AUTH=community-
 | D04 | 재개·취하·정정 반영(+manifest 정정) | projection + PC·M capture | T2, T4, T6 | passed(실스택=`COMMUNITY_STACK=1 npx vitest run tests/integration`(19/19) 최신 정정 → removed·공개 0) |
 | D05 | ACK 뒤 재시작해도 반영 유실 없음(동기 트랜잭션) | projection | T2 | passed(실스택=`COMMUNITY_STACK=1 npx vitest run tests/integration`(19/19) ACK durable=true, 같은 트랜잭션) |
 | D06–D07 | KST 경계·결측·0분모, 분모 없는 비율 unsupported | MAP `tests/product/aggregate.test.ts` 확장 | T2 | passed(MAP 단위 74) |
-| D08 | 마스킹·원 ID·계정·토큰 노출 스캔 | MAP `npm run scan` + 공개 API 응답 스캔 | T2, T8 | partial — 공개 map 응답에 원 차량번호 없음 확인(실스택). MAP `npm run scan` not-run |
+| D08 | 마스킹·원 ID·계정·토큰 노출 스캔 | MAP `npm run scan` + 공개 API 응답 스캔 | T2, T8 | passed(실스택 공개 응답에 원 차량번호 없음 + MAP `npm run build && npm run scan` PASS, issues 0) |
 | D09 | 익명 공개 지도 정상·capability 설명 | MAP 통합 + 브라우저 | T2, T7 | passed(실스택=`COMMUNITY_STACK=1 npx vitest run tests/integration`(19/19) 익명 overview/map). 브라우저는 T7 |
-| E01–E04 | 빌드 공개 설정 주입·누락 실패·비밀 거부·산출물 스캔 | PC `tests/test_community_config.py` + 빌드 스캔, M 빌드 스크립트 테스트, AUTH/MAP scan | T3, T6, T8 | passed(PC test_community_packaging 3 + 로컬 PyInstaller 번들·스캔·격리 기동, M 빌드 스크립트 거부 6케이스(T6), AUTH scan PASS). MAP scan not-run |
+| E01–E04 | 빌드 공개 설정 주입·누락 실패·비밀 거부·산출물 스캔 | PC `tests/test_community_config.py` + 빌드 스캔, M 빌드 스크립트 테스트, AUTH/MAP scan | T3, T6, T8 | passed(PC test_community_packaging 3 + 로컬 PyInstaller 번들·스캔·격리 기동, M 빌드 스크립트 거부 6케이스(T6), AUTH scan PASS, MAP scan PASS) |
 | E05 | 프로젝트 URL 변경 시 이전 namespace 미전송 | PC·M uploader | T4, T6 | passed(단위 PC·M; M 은 통합에서 namespace 계산 결함 수정) |
 | E06 | callback 직접 접근·취소·만료·다중 탭·딥링크 cold/warm | AUTH browser e2e(기존) + M 딥링크 테스트 | T1, T5 | passed(AUTH 브라우저 E2E 11/11, M 딥링크 단위). iOS 실기기 not-run |
 | E07 | 합성 migration 이력·checksum·중복 검사 | MAP `scripts/integration/compose_supabase.mjs check` 테스트 | T0 | passed(compose_supabase.mjs check) |
