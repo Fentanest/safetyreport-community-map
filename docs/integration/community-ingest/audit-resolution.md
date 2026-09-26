@@ -177,3 +177,23 @@ PyInstaller: 이 환경에 PyInstaller 가 없어 **번들 포함은 미검증**
 |---|---|
 | PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 401 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
 | 음성 대조(각각 따로) | `neg-r6-01-incomplete-search-reported`, `neg-r6-02-first-partial-match`, `neg-r6-03-no-reschedule`, `neg-r6-04-thread-per-request`, `neg-r6-05-no-type-check`, `neg-r6-05-no-finally` — 모두 목표 단언에서 실패 |
+
+## Sol 7차 재검증(`audit-sol-recheck-07.md`, "수정 후 재검토") 반영
+
+| ID | 지적 | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit8/neg-*.log`, 각각 따로) |
+|---|---|---|---|---|
+| R7-01 높음 | 실제 `crawl_titles` 는 `pages_expected` 를 **페이지 목록**으로 주는데 정수와 비교 → 미확인 번호가 있으면 TypeError. 테스트가 경과를 정수로 흉내 내 놓침 | 미확인 번호가 있으면 목록 **전체를 한 번** 받아(`page_range=None`) `list_ok` 가 참일 때만 없음·모호 확정. 초기 실패 경로의 `pages_expected` 도 목록(`[]`)으로 통일·docstring 정정. 테스트는 **실제 `crawl_titles`** + 가짜 목록 HTTP(`_fetch_api_page`)만 사용 | PC `b11da43`·`04a8a77` | `test_the_real_crawler_reports_saved_and_missing_numbers_only`, `test_a_number_on_a_later_page_is_found_and_absent_numbers_are_confirmed_after_all_pages`(2·101쪽, 마지막 쪽 새 번호, 호출 수), `test_a_failed_or_incomplete_list_search_never_marks_a_number_missing`(첫 쪽 예외·오류 응답, 2·3쪽 실패, 빈 정상 목록) / `neg-r7-01-int-page-compare.log`(옛 정수 비교 → 실제 형식에서 TypeError 재현), `neg-r7-01-ignore-list-ok.log` |
+| R7-02 중간 | 작업자의 마지막 확인과 종료 표시 사이 틈 → 그 순간 요청 유실 | 마지막 확인과 `_request_worker_active=False` 를 한 잠금 구간에서 | PC `b11da43` | `test_a_request_right_after_the_worker_decides_to_stop_is_not_lost`(작업자가 잠금을 푸는 순간 요청을 끼워 넣음) / `neg-r7-02-exit-gap.log` |
+| R7-03 중간 | 모호 번호가 알림 없이 사라짐 | 요청 시점에 DB 에서 이미 모호하면 **400 거부**(DB 를 못 읽으면 막지 않음). 목록을 받은 뒤 확정된 없음·모호 번호는 `data/crawl_queue_unresolved.json`(최근 50) + `/api/v1/crawl/status` 추가 필드 `unresolved`·`pending` + WS `crawl_queue_unresolved`. 해석 규칙은 `services/report_number_resolver.py` 로 서버·크롤러 공유 | PC `b11da43`·`04a8a77` | `test_an_already_ambiguous_number_is_refused_when_requested`, 위 테스트의 unresolved 단언 / `neg-r7-03-no-refusal.log`, `neg-r7-03-no-record.log` |
+| R7-04 중간(비용) | 페이지마다 첫 페이지를 다시 받아 호출 2배, 상한 반복 | 한 번의 목록 받기(첫 페이지 1회 + 각 페이지 1회 = 쪽수+1). 탐색 상한 없음(일반 전체 크롤과 같은 비용) — 완전 탐색이면 결과가 확정되므로 같은 번호로 반복 탐색하지 않음. 실패 때만 재시도 간격(최대 30분)으로 반복 | PC `b11da43` | 위 2·101쪽 테스트의 호출 수 단언(`pages + 1`) |
+
+모바일 앱은 `/api/v1/crawl/status` 의 새 필드를 아직 쓰지 않는다(추가 필드라 호환). 운영 목록 API 의 전체 탐색 시간은 미측정.
+
+### 7차 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit8/`, PC 만 변경)
+후보 PC `04a8a77`. mobile `2debce44`·map 제품 `e284c86`·auth 제품 `5a4d678` 은 audit3 과 같다.
+`b11da43` 커밋 직전 전체 단위 테스트에서 `test_community_rebuild.GateAndCommandTest.test_g01_no_crawl_before_confirm` 이 오류(요청 모호성 검사가 표 없는 DB 에서 예외)였는데 명령 연결 실수로 그대로 커밋됐다. `04a8a77` 에서 고친 뒤 아래 결과를 얻었다.
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 404 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
+| 음성 대조(각각 따로) | `neg-r7-01-int-page-compare`(옛 코드가 실제 형식에서 TypeError), `neg-r7-01-ignore-list-ok`, `neg-r7-02-exit-gap`, `neg-r7-03-no-refusal`, `neg-r7-03-no-record` — 모두 실패 |
