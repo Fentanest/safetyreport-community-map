@@ -28,7 +28,7 @@ Gemini 서술은 Opus가 표본 대조한 것만 사실로 옮겼다. 대조하�
 | community-auth | `main` | `558ed6b` | — | 없음 |
 
 - 시작 시 각 repo 의 worktree 는 주 체크아웃 하나뿐이었고 `~/projects/worktree/` 는 비어 있었다. 원격은 모두 `git@github.com:Fentanest/<repo>.git`.
-- 목표 브랜치(로컬): safetyreport·mobile = `dev`(작업 브랜치, `main` 은 릴리즈), map·auth = `main`. push·태그·릴리즈는 하지 않는다.
+- 목표 브랜치(로컬): safetyreport·mobile = `dev`(작업 브랜치, `main` 은 릴리즈), map·auth = `main`. 작업 중 push·태그·릴리즈는 하지 않는다(최종 병합 뒤 사용자 지시로 목표 branch 만 push — `merge-and-cleanup-final.md`).
 - `feat/community-account`(PC·mobile)는 이번 필수 게이트의 K(카카오 인증)를 이루는 기존 구현이다. 이번 통합 브랜치는 이 브랜치 tip 에서 시작하고, 최종 병합으로 `dev` 에 함께 들어간다(근거: 5절). 원래 브랜치는 삭제하지 않는다.
 
 ## 3. 적용 지시문

@@ -2,7 +2,7 @@
 
 근거: GPT-6-Sol 7일 감사 재검증 11차 **"감사 수정 병합 가능"**(`audit-sol-recheck-11.md`). 감사 수정 과정은 `audit-resolution.md`,
 각 회차 실행 로그는 `evidence/2026-09-26-audit…audit11/`, 최종 머지 HEAD 재검사는 `evidence/2026-09-26-final/`.
-원격 push·PR·태그·운영 배포는 하지 않았다.
+병합·정리 시점에는 원격 push 를 하지 않았고, 그 뒤 사용자 지시로 네 목표 branch 를 push 했다(아래 "원격 push"). PR·태그·운영 배포는 하지 않았다.
 
 ## 최종 merge commit (로컬, `--no-ff`)
 
@@ -55,12 +55,25 @@ ignored `.agent-runs/` 와 미추적 Sol 원본 보고서는 먼저 `safetyrepor
 | community-map `ci0926/integration`·`ci0926/audit-fix`·`ci0926/audit-fix-muse` | `467fedc`·`7d09610`·`e11ebb2` |
 | community-auth `ci0926/integration`·`ci0926/audit-fix` | `3be1c39`·`1dddcc4` |
 
-이 문서를 커밋한 `ci0926/final-docs` worktree 는 에이전트 세션의 작업 폴더라 도구 안전 검사가 제거를 막았다. 병합은 했고,
-worktree·branch 제거와 빈 RUN_ID 폴더 `ci-20260926` 의 `rmdir` 은 사용자에게 넘겼다. `~/projects/worktree/` 루트와 다른 작업 폴더는 건드리지 않았다.
+이 문서를 커밋한 `ci0926/final-docs` worktree 는 처음엔 에이전트 세션의 작업 폴더라 도구 안전 검사가 제거를 막았다. 세션 작업 폴더가 바뀐 뒤
+사용자 지시("브랜치 다 정리")로 `git worktree remove`(깨끗한 상태·main 에 병합 확인) → `git branch -d ci0926/final-docs`(tip `0184f3f`) →
+빈 RUN_ID 폴더 `ci-20260926` `rmdir` 까지 마쳤다. `~/projects/worktree/` 루트와 다른 작업 폴더는 건드리지 않았다.
 
 ## 남긴 것(이유)
-- `ci0926/final-docs` worktree·branch 와 폴더 `~/projects/worktree/ci-20260926/community-map/final-docs` — 세션 작업 폴더라 사용자가 지운다
-  (`git -C ~/projects/safetyreport-community-map worktree remove <경로>` → `git branch -d ci0926/final-docs` → 빈 상위 폴더 `rmdir`).
 - `ci0926-int`·`safeauth-local` Docker 데이터 볼륨과 정지된 컨테이너 — 삭제는 되돌릴 수 없어 사용자 판단으로 남김.
 - 로컬 실행 기록 `safetyreport/.agent-runs/ci-20260926/`(git 무시) — 원본 로그·음성 대조·보관본.
 - map 저장소의 도달 불가능한 옛 commit 객체 `804a30b`(감사 R4-04 로 고친 증거 로그가 들어 있던 commit, push 한 적 없음) — 어떤 ref·reflog 도 가리키지 않으며 사용자의 다음 `git gc` 때 사라진다.
+
+## 원격 push (2026-09-26, 사용자 지시)
+fast-forward 만, force·PR·태그 없음. 전: `git fetch` 로 원격이 뒤처지기만(behind 0) 함을 확인, 보낼 commit 의 추가 줄 비밀 패턴 검사
+(PC 5건 = 거부 시험용 가짜 값), 도달 불가 `804a30b` 는 어떤 ref 에도 없어 전송되지 않음. 후: 로컬 = `origin/<branch>`.
+
+| repo | branch | 원격 이동 |
+|---|---|---|
+| safetyreport | `dev` | `cb4b027..823ab38` |
+| safetyreport-mobile | `dev` | `af2ae809..90810843` |
+| safetyreport-community-map | `main` | `a829079..2ce57e9` (이 정정 commit 도 이어서 push) |
+| safetyreport-community-auth | `main` | `558ed6b..0872fa1` |
+
+push 로 도는 workflow 없음: PC `build.yml`·mobile `build-apk.yml` 은 `main` push 만, map·auth `publish-pages.yml` 은 `workflow_dispatch` 만,
+map `product-check`·`blueprint-check`·auth `check` 는 `pull_request`·수동. Actions 목록에 새 실행 없음을 확인했다.

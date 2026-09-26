@@ -9,10 +9,10 @@
 
 | repo | 목표 branch | 작업 시작 HEAD | 1차 merge | 최종 merge | 원격 |
 |---|---|---|---|---|---|
-| safetyreport (PC 서버) | `dev` | `cb4b027` | `4023f64` | `823ab38` | push 안 함 (origin/dev 보다 앞섬) |
-| safetyreport-mobile | `dev` | `af2ae809` | `9bf23e9d` | `90810843` | push 안 함 |
-| safetyreport-community-map | `main` | `a829079` | `ec3142c` | `e7cff5e` + 이 문서 병합 | push 안 함 |
-| safetyreport-community-auth | `main` | `558ed6b` | `c71602d` | `0872fa1` | push 안 함 |
+| safetyreport (PC 서버) | `dev` | `cb4b027` | `4023f64` | `823ab38` | 2026-09-26 `origin/dev` push (`cb4b027..823ab38`) |
+| safetyreport-mobile | `dev` | `af2ae809` | `9bf23e9d` | `90810843` | 2026-09-26 `origin/dev` push (`af2ae809..90810843`) |
+| safetyreport-community-map | `main` | `a829079` | `ec3142c` | `e7cff5e` + 이 문서 병합 `2ce57e9` | 2026-09-26 `origin/main` push (`a829079..2ce57e9`, 이 정정 포함 이후 commit 도 push) |
+| safetyreport-community-auth | `main` | `558ed6b` | `c71602d` | `0872fa1` | 2026-09-26 `origin/main` push (`558ed6b..0872fa1`) |
 
 ## 2. 실행 결과 (최종 코드 기준)
 
@@ -37,7 +37,9 @@
 - **구현됨·로컬 실제 스택 검증됨**: 필수 게이트(PC 관리자 로그인 뒤·모바일 권한 전), 초기화 크롤링, capture/journal/outbox, 업로드(실시간·수동·자정), 중앙 ingest·권한·projection·공개 API, 공유 자료 삭제 두 단계, DB 교환 무결성 보강, 대기 큐 안전성(감사 수정).
 - **실제 provider 미검증(not-run)**: 호스팅 Kakao OAuth, 실제 안전신문고 로그인·크롤(fixture·mock 만), Android/iOS 실기기(권한 순서·딥링크·백그라운드·자정 실행), iOS 빌드, PyInstaller 번들 산출물(이번 감사 추가 모듈 포함 — 정적 import 사슬만 확인).
 - **부분·not-run 수용 항목**: E08(fork/PR 워크플로), I06(trigger 만 다른 재전송 테스트), S-18(IP 헤더 위조), N-03(정책 불변 HTTP) — `acceptance-matrix.md`.
-- **운영 미반영**: 운영 Supabase migration·Edge 배포·인증 설정·Pages/DNS·스토어 배포·원격 push 없음.
+- **원격 push**: 최종 병합 뒤 사용자 지시로 네 목표 branch 를 fast-forward push 했다(force 없음, PR·태그 없음). push 전 보낼 commit 비밀 패턴 검사(PC 5건은 거부 시험용 가짜 값 `sb_secret_abcdefghijklmnop`), 도달 불가 `804a30b` 는 전송 대상 아님.
+  PC·mobile 빌드 workflow 는 `main` push 에서만, map·auth Pages 는 수동 `workflow_dispatch` 라 push 로 빌드·배포가 돌지 않았다(Actions 목록 확인).
+- **운영 미반영**: 운영 Supabase migration·Edge 배포·인증 설정·Pages/DNS·스토어 배포 없음.
 
 ## 5. 운영 전 조건 (Sol 11차 + 통합 검토)
 1. 운영 DB 에 읽기 전용 preflight(`scripts/integration/preflight_counts.sql`), migration 순서 auth `202609260100` → map `202609260200` 와 SHA 대조, `deployment-and-rollback.md` 순서·무삭제 롤백.
