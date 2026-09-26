@@ -71,3 +71,27 @@ auth relay·브라우저 첫 실행은 감사 worktree 에 로컬 스택 접속 
 | 음성 대조 | `neg-pc-sol04-no-crawl-hold.log`(exit 1 기대), `neg-mobile-sol02-guard-before-recheck.log`(exit 1 기대) |
 
 auth relay 첫 실행(스크립트 순서상)은 브라우저 시험용 serve-local 이 mock Kakao 포트 54410 을 잡고 있어 시작하지 못했다(EADDRINUSE, 24 skip). serve-local 을 멈춘 뒤 다시 실행한 결과가 위 24 passed 이고 로그는 그 실행으로 덮었다.
+
+## Sol 2차 재검증(`audit-sol-recheck-02.md`, "수정 후 재검토") 반영
+
+| ID | 지적 | 조치 | commit | 회귀 테스트 / 음성 대조(각각 따로 실행, `evidence/2026-09-26-audit3/neg-*.log`) |
+|---|---|---|---|---|
+| R2-01 높음 | `stop_crawl()` 이 `terminate()` 직후 참조를 지워, 살아 있는 크롤러와 복원이 겹칠 수 있음 | 종료를 기다려(10초 뒤 kill) **끝난 것을 확인한 뒤에만** 참조를 지움. 끝나지 않으면 참조 유지 → `is_crawling`·`hold_for_restore` 가 계속 막음. `clear_process(proc)` 는 같은 프로세스일 때만 지움 | PC `b752efe` | `test_a_stopped_crawler_that_is_still_alive_keeps_blocking_restore`, `test_stop_clears_the_reference_only_after_the_crawler_exits` / `neg-r2-01-clear-on-terminate.log`(옛 동작 → "살아 있으면 참조를 지우지 않는다" 실패) |
+| R2-02 중간 | 복원과 겹쳐 되돌린 대기 큐가 자동 재개되지 않고, 재시작하면 사라짐 | 큐를 `data/crawl_pending_queue.json` 에도 저장(재시작 뒤 복구, 시작 때 자동 크롤은 안 함). hold 해제(쓰기 장벽도 이미 해제) 뒤 한 번 재개 — 복원은 데이터셋을 회전시켜 초기화가 필요할 수 있으므로 일반 크롤 허용 검사(게이트·초기화)를 통과할 때만, 막히면 큐에 남김 | PC `b752efe` | `test_pending_queue_resumes_once_after_restore_and_survives_a_restart` / `neg-r2-02-no-resume.log`, `neg-r2-02-no-persist.log` |
+| SOL-04 테스트 | 첫 음성 대조가 스레드를 풀지 못해 둘째 테스트가 setUp 오류 | 테스트가 `try/finally` 로 스레드를 반드시 풀고 join, 공유 상태 정리(`addCleanup`). 음성 대조를 테스트별로 따로 실행 | PC `b752efe` | `neg-sol04-no-hold-start.log`, `neg-sol04-no-hold-atomic.log`(둘 다 단언 실패) |
+| SOL-02 테스트 | 새 테스트의 `mysafety` 가 ID 만 있어 음성 대조가 SQL 문법 오류로 실패(검출력 미입증) | 정상 제목 열을 가진 혼합 DB 로 다시 작성: 성공 경로(traffic 은 원본, parking 은 merge) + 거부 | mobile `e25b4eb6`·`2debce44` | `neg-mobile-sol02-guard-before-recheck.log` — 옛 가드에서 성공 경로는 통과하고 거부 테스트만 "예외 없이 가져오기 완료"로 실패 |
+| R2-03 낮음 | 실 DB ↔ 데모 DB 전환 뒤 되돌리기 버튼 표시가 옛 DB 기준 | 설정 화면이 provider 를 듣고 모드·데모가 바뀌면 사본 여부를 다시 읽음 | mobile `e25b4eb6` | `test/widgets/settings_revert_button_test.dart`(SettingsScreen 실제 렌더: 실 DB 버튼 보임 → 데모 숨김 → 실 DB 보임 → 확인 대화상자 → 실제 되돌림) / `neg-r2-03-no-listener.log` |
+
+SOL-06 은 2차에서 닫혔다(완료일만 든 범위의 실제 브라우저 화면은 미검증).
+
+### 2차 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit3/`)
+후보: PC `b752efe`, mobile `2debce44`, map 제품 코드 `e284c86`(변경 없음), auth 제품 코드 `5a4d678`(변경 없음).
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 실스택 / 브라우저 스모크 | 385 OK(skip 4) / 1 OK / 128 passed |
+| 서버↔모바일 왕복 | diff_count 0 |
+| mobile 단위 / 실스택 / analyze | 525 passed(3 skipped) / 1 passed / No issues found |
+| map 단위+tsc+build / 실스택 / Deno 4함수 / compose | 88 passed / 21 / 4 ok / ok |
+| auth 단위 / relay | 38 passed / 24 passed (브라우저 11/11 은 같은 auth 코드로 `audit2`) |
+| 음성 대조(각각 따로) | `neg-r2-01-clear-on-terminate`, `neg-r2-02-no-resume`, `neg-r2-02-no-persist`, `neg-sol04-no-hold-start`, `neg-sol04-no-hold-atomic`, `neg-mobile-sol02-guard-before-recheck`, `neg-r2-03-no-listener` — 모두 목표 단언에서 실패(exit≠0) |

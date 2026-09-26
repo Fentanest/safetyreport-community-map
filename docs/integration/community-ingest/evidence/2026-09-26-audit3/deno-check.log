@@ -1,0 +1,11 @@
+# cmd: for f in public-analytics community-ingest community-account community-auth-relay; do DENO_NO_PACKAGE_JSON=1 ~/.local/bin/deno check --no-lock --node-modules-dir=none supabase/functions/$f/index.ts >/dev/null 2>&1 && echo "$f: ok" || { echo "$f: FAIL"; false; }; done
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-map/audit-fix/.integration-stack
+# candidate: f6b1e0d (ci0926/audit-fix)
+# dirty: 1 tracked changes
+# start: 2026-09-26T16:42:32+09:00
+public-analytics: ok
+community-ingest: ok
+community-account: ok
+community-auth-relay: ok
+# end: 2026-09-26T16:42:32+09:00
+# exit: 0

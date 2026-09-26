@@ -1,0 +1,265 @@
+# cmd: timeout 1800 npx playwright test --project=chromium --project=firefox --reporter=line
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tools/web-tests
+# candidate: b752efe (ci0926/audit-fix)
+# dirty: 0 tracked changes
+# start: 2026-09-26T16:42:35+09:00
+[WebServer] [2026-09-26 16:42:40] INFO:     Started server process [3450313]
+
+[WebServer] [2026-09-26 16:42:40] INFO:     Waiting for application startup.
+
+[WebServer] [2026-09-26 16:42:40] INFO:     Application startup complete.
+
+[WebServer] [2026-09-26 16:42:40] INFO:     Uvicorn running on http://127.0.0.1:18629 (Press CTRL+C to quit)
+
+
+Running 128 tests using 1 worker
+
+[1/128] [chromium] › specs/community-delete-message.spec.ts:15:5 › deletion result names every post-delete problem, success only when none
+[2/128] [chromium] › specs/dashboard-cards.spec.ts:16:5 › dashboard cards match api and links
+[WebServer] [fixture] blocked: github release request
+
+[3/128] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 1440
+[4/128] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 390
+[5/128] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 1440
+[6/128] [chromium] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 390
+[7/128] [chromium] › specs/dashboard-cards.spec.ts:102:5 › dashboard shows the last crawl time and cards work from the keyboard
+[8/128] [chromium] › specs/duplicates-manage.spec.ts:11:5 › status tabs filter the groups and mark the current one
+[9/128] [chromium] › specs/duplicates-manage.spec.ts:24:5 › saving a group records a user decision shown in the header
+[10/128] [chromium] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in light
+[11/128] [chromium] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in dark
+[12/128] [chromium] › specs/editor-override.spec.ts:11:5 › edited field shows a badge and the site original, and can be reverted
+[13/128] [chromium] › specs/fixture-smoke.spec.ts:18:5 › unauthenticated navigation redirects to login; AJAX gets 401
+[14/128] [chromium] › specs/fixture-smoke.spec.ts:25:5 › dashboard, list, stats render with fixture data
+[15/128] [chromium] › specs/fixture-smoke.spec.ts:46:5 › fixture mode blocks crawl start instead of spawning crawler
+[WebServer] [fixture] blocked: crawl subprocess
+
+[16/128] [chromium] › specs/fixture-smoke.spec.ts:54:5 › mobile API contract: /api/v1/summary requires key and keeps fields
+[17/128] [chromium] › specs/fixture-smoke.spec.ts:66:5 › accessibility baseline (report only)
+[18/128] [chromium] › specs/job-bar.spec.ts:14:5 › bottom bar shows running, paused and completed jobs and hides when idle
+[19/128] [chromium] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (light 1440)
+[20/128] [chromium] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 1440)
+[21/128] [chromium] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 390)
+[22/128] [chromium] › specs/list-empty-state.spec.ts:11:5 › empty result message is inside the visible table area
+[23/128] [chromium] › specs/list-empty-state.spec.ts:27:5 › search box stays inside the card at 390px
+[24/128] [chromium] › specs/list-interactions.spec.ts:20:7 › List Interactions and Modals › advanced search AND/OR filters correctly
+[25/128] [chromium] › specs/list-interactions.spec.ts:50:7 › List Interactions and Modals › multi-select for status filters correctly
+[26/128] [chromium] › specs/list-interactions.spec.ts:60:7 › List Interactions and Modals › selection persists after pagination
+[27/128] [chromium] › specs/list-interactions.spec.ts:74:7 › List Interactions and Modals › copy report numbers (selected, current page, all)
+[28/128] [chromium] › specs/list-interactions.spec.ts:111:7 › List Interactions and Modals › CSV export matches table headers
+[29/128] [chromium] › specs/list-interactions.spec.ts:118:7 › List Interactions and Modals › crawl selected blocked in fixture mode
+[WebServer] [fixture] blocked: crawl subprocess
+
+[30/128] [chromium] › specs/list-interactions.spec.ts:134:7 › List Interactions and Modals › attachment and text modals open and close
+[31/128] [chromium] › specs/list-interactions.spec.ts:144:7 › List Interactions and Modals › detail modal opens with link and shows key fields
+[32/128] [chromium] › specs/map-page.spec.ts:11:5 › year and category buttons mark the selection and filter by URL
+[33/128] [chromium] › specs/map-page.spec.ts:20:5 › missing address list opens
+[34/128] [chromium] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in light
+[35/128] [chromium] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in dark
+[36/128] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 1440x900
+[WebServer] [2026-09-26 16:44:23] INFO:     127.0.0.1:53666 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:23] INFO:     connection open
+
+[WebServer] [2026-09-26 16:44:24] INFO:     127.0.0.1:53672 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:24] INFO:     connection open
+
+[37/128] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 390x844
+[WebServer] [2026-09-26 16:44:26] INFO:     127.0.0.1:53730 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:26] INFO:     connection open
+
+[WebServer] [2026-09-26 16:44:26] INFO:     127.0.0.1:53740 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:26] INFO:     connection open
+
+[38/128] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 1440x900
+[WebServer] [2026-09-26 16:44:28] INFO:     127.0.0.1:36946 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:28] INFO:     connection open
+
+[WebServer] [2026-09-26 16:44:28] INFO:     127.0.0.1:36950 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:28] INFO:     connection open
+
+[39/128] [chromium] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 390x844
+[WebServer] [2026-09-26 16:44:30] INFO:     127.0.0.1:37016 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:30] INFO:     connection open
+
+[WebServer] [2026-09-26 16:44:30] INFO:     127.0.0.1:37032 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:30] INFO:     connection open
+
+[40/128] [chromium] › specs/ops-pages.spec.ts:59:7 › Ops Pages UI Renewal Checks › Crawl page: crawl start button shows fixture block message
+[WebServer] [2026-09-26 16:44:32] INFO:     127.0.0.1:37080 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:32] INFO:     connection open
+
+[WebServer] [fixture] blocked: crawl subprocess
+
+[41/128] [chromium] › specs/ops-pages.spec.ts:86:7 › Ops Pages UI Renewal Checks › Watchlist page: add and remove updates list
+[42/128] [chromium] › specs/ops-pages.spec.ts:105:7 › Ops Pages UI Renewal Checks › Rating page: target list render and WebSocket log connection
+[WebServer] [2026-09-26 16:44:36] INFO:     127.0.0.1:37196 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:36] INFO:     connection open
+
+[43/128] [chromium] › specs/rating-cause.spec.ts:23:5 › cause counter counts code points and blocks over the limit
+[WebServer] [2026-09-26 16:44:38] INFO:     127.0.0.1:39330 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:38] INFO:     connection open
+
+[44/128] [chromium] › specs/rating-cause.spec.ts:41:5 › submit sends the trimmed cause with ids and score
+[WebServer] [2026-09-26 16:44:39] INFO:     127.0.0.1:39418 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:44:39] INFO:     connection open
+
+[45/128] [chromium] › specs/rating-cause.spec.ts:59:5 › empty cause still submits (old behaviour)
+[WebServer] [2026-09-26 16:44:41] INFO:     127.0.0.1:39468 - "WebSocket /rating/ws/rating_logs" [accepted]
+[WebServer] [2026-09-26 16:44:41] INFO:     connection open
+
+[46/128] [chromium] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in light
+[47/128] [chromium] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in dark
+[48/128] [chromium] › specs/settings-pages.spec.ts:27:5 › a setting survives a save and reload, then is restored
+[49/128] [chromium] › specs/settings-pages.spec.ts:41:5 › API key can be created (name shown as text) and deleted
+[50/128] [chromium] › specs/settings-pages.spec.ts:57:5 › backup download responds
+[51/128] [chromium] › specs/stats-drilldown.spec.ts:17:5 › agency with & # + drills down to exactly its reports
+[52/128] [chromium] › specs/stats-drilldown.spec.ts:40:5 › reports without a law drill down to a non-empty list
+[53/128] [chromium] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1280px
+[54/128] [chromium] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1440px
+[55/128] [chromium] › specs/stats-top.spec.ts:15:5 › filter summary lists the active conditions and offers a reset
+[56/128] [chromium] › specs/stats-top.spec.ts:31:5 › category and grouping tabs mark the selection and survive a reload
+[57/128] [chromium] › specs/stats-top.spec.ts:47:5 › law chip shows the active law
+[58/128] [chromium] › specs/stats-top.spec.ts:55:5 › column panel is collapsed by default and hiding a column updates the count
+[59/128] [chromium] › specs/stats-top.spec.ts:72:5 › summary cards match the mobile overview API for each category
+[60/128] [chromium] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in light theme without new console errors
+[61/128] [chromium] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in dark theme without new console errors
+[62/128] [chromium] › specs/theme-pilot.spec.ts:57:5 › theme switch persists across reload and does not submit forms
+[63/128] [chromium] › specs/theme-pilot.spec.ts:69:5 › narrow viewport keeps sidebar toggle and theme switch reachable
+[64/128] [chromium] › specs/theme-pilot.spec.ts:81:5 › on phones the menu button does not cover an open search panel
+[65/128] [firefox] › specs/community-delete-message.spec.ts:15:5 › deletion result names every post-delete problem, success only when none
+[66/128] [firefox] › specs/dashboard-cards.spec.ts:16:5 › dashboard cards match api and links
+[67/128] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 1440
+[68/128] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in light at 390
+[69/128] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 1440
+[70/128] [firefox] › specs/dashboard-cards.spec.ts:86:9 › no horizontal overflow in dark at 390
+[71/128] [firefox] › specs/dashboard-cards.spec.ts:102:5 › dashboard shows the last crawl time and cards work from the keyboard
+[72/128] [firefox] › specs/duplicates-manage.spec.ts:11:5 › status tabs filter the groups and mark the current one
+[73/128] [firefox] › specs/duplicates-manage.spec.ts:24:5 › saving a group records a user decision shown in the header
+[74/128] [firefox] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in light
+[75/128] [firefox] › specs/duplicates-manage.spec.ts:40:7 › no horizontal overflow at 390px in dark
+[76/128] [firefox] › specs/editor-override.spec.ts:11:5 › edited field shows a badge and the site original, and can be reverted
+[77/128] [firefox] › specs/fixture-smoke.spec.ts:18:5 › unauthenticated navigation redirects to login; AJAX gets 401
+[78/128] [firefox] › specs/fixture-smoke.spec.ts:25:5 › dashboard, list, stats render with fixture data
+[79/128] [firefox] › specs/fixture-smoke.spec.ts:46:5 › fixture mode blocks crawl start instead of spawning crawler
+[WebServer] [fixture] blocked: crawl subprocess
+
+[80/128] [firefox] › specs/fixture-smoke.spec.ts:54:5 › mobile API contract: /api/v1/summary requires key and keeps fields
+[81/128] [firefox] › specs/fixture-smoke.spec.ts:66:5 › accessibility baseline (report only)
+[82/128] [firefox] › specs/job-bar.spec.ts:14:5 › bottom bar shows running, paused and completed jobs and hides when idle
+[83/128] [firefox] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (light 1440)
+[84/128] [firefox] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 1440)
+[85/128] [firefox] › specs/job-bar.spec.ts:38:7 › bottom bar fits and stays clear of the search button (dark 390)
+[86/128] [firefox] › specs/list-empty-state.spec.ts:11:5 › empty result message is inside the visible table area
+[87/128] [firefox] › specs/list-empty-state.spec.ts:27:5 › search box stays inside the card at 390px
+[88/128] [firefox] › specs/list-interactions.spec.ts:20:7 › List Interactions and Modals › advanced search AND/OR filters correctly
+[89/128] [firefox] › specs/list-interactions.spec.ts:50:7 › List Interactions and Modals › multi-select for status filters correctly
+[90/128] [firefox] › specs/list-interactions.spec.ts:60:7 › List Interactions and Modals › selection persists after pagination
+[91/128] [firefox] › specs/list-interactions.spec.ts:74:7 › List Interactions and Modals › copy report numbers (selected, current page, all)
+[92/128] [firefox] › specs/list-interactions.spec.ts:111:7 › List Interactions and Modals › CSV export matches table headers
+[93/128] [firefox] › specs/list-interactions.spec.ts:118:7 › List Interactions and Modals › crawl selected blocked in fixture mode
+[WebServer] [fixture] blocked: crawl subprocess
+
+[94/128] [firefox] › specs/list-interactions.spec.ts:134:7 › List Interactions and Modals › attachment and text modals open and close
+[WebServer] [fixture] blocked: github release request
+
+[95/128] [firefox] › specs/list-interactions.spec.ts:144:7 › List Interactions and Modals › detail modal opens with link and shows key fields
+[96/128] [firefox] › specs/map-page.spec.ts:11:5 › year and category buttons mark the selection and filter by URL
+[97/128] [firefox] › specs/map-page.spec.ts:20:5 › missing address list opens
+[98/128] [firefox] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in light
+[99/128] [firefox] › specs/map-page.spec.ts:29:7 › no horizontal overflow at 390px in dark
+[100/128] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 1440x900
+[WebServer] [2026-09-26 16:48:16] INFO:     127.0.0.1:58270 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:16] INFO:     connection open
+
+[WebServer] [2026-09-26 16:48:17] INFO:     127.0.0.1:58276 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:17] INFO:     connection open
+
+[101/128] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for light at 390x844
+[WebServer] [2026-09-26 16:48:20] INFO:     127.0.0.1:40818 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:20] INFO:     connection open
+
+[WebServer] [2026-09-26 16:48:21] INFO:     127.0.0.1:40834 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:21] INFO:     connection open
+
+[102/128] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 1440x900
+[WebServer] [2026-09-26 16:48:23] INFO:     127.0.0.1:40866 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:23] INFO:     connection open
+
+[WebServer] [2026-09-26 16:48:25] INFO:     127.0.0.1:40882 - "WebSocket /rating/ws/rating_logs" [accepted]
+[WebServer] [2026-09-26 16:48:25] INFO:     connection open
+
+[103/128] [firefox] › specs/ops-pages.spec.ts:30:11 › Ops Pages UI Renewal Checks › No horizontal scroll and no console errors for dark at 390x844
+[WebServer] [2026-09-26 16:48:28] INFO:     127.0.0.1:44758 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:28] INFO:     connection open
+
+[WebServer] [2026-09-26 16:48:29] INFO:     127.0.0.1:44772 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:29] INFO:     connection open
+
+[104/128] [firefox] › specs/ops-pages.spec.ts:59:7 › Ops Pages UI Renewal Checks › Crawl page: crawl start button shows fixture block message
+[WebServer] [2026-09-26 16:48:33] INFO:     127.0.0.1:44806 - "WebSocket /crawl/ws/logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:33] INFO:     connection open
+
+[WebServer] [fixture] blocked: crawl subprocess
+
+[105/128] [firefox] › specs/ops-pages.spec.ts:86:7 › Ops Pages UI Renewal Checks › Watchlist page: add and remove updates list
+[106/128] [firefox] › specs/ops-pages.spec.ts:105:7 › Ops Pages UI Renewal Checks › Rating page: target list render and WebSocket log connection
+[WebServer] [2026-09-26 16:48:50] INFO:     127.0.0.1:60828 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:50] INFO:     connection open
+
+[107/128] [firefox] › specs/rating-cause.spec.ts:23:5 › cause counter counts code points and blocks over the limit
+[WebServer] [2026-09-26 16:48:53] INFO:     127.0.0.1:60870 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:53] INFO:     connection open
+
+[108/128] [firefox] › specs/rating-cause.spec.ts:41:5 › submit sends the trimmed cause with ids and score
+[WebServer] [2026-09-26 16:48:59] INFO:     127.0.0.1:42404 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:48:59] INFO:     connection open
+
+[109/128] [firefox] › specs/rating-cause.spec.ts:59:5 › empty cause still submits (old behaviour)
+[WebServer] [2026-09-26 16:49:05] INFO:     127.0.0.1:42422 - "WebSocket /rating/ws/rating_logs" [accepted]
+
+[WebServer] [2026-09-26 16:49:05] INFO:     connection open
+
+[110/128] [firefox] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in light
+[111/128] [firefox] › specs/settings-pages.spec.ts:13:7 › settings pages fit 390px and have no errors in dark
+[112/128] [firefox] › specs/settings-pages.spec.ts:27:5 › a setting survives a save and reload, then is restored
+[113/128] [firefox] › specs/settings-pages.spec.ts:41:5 › API key can be created (name shown as text) and deleted
+[114/128] [firefox] › specs/settings-pages.spec.ts:57:5 › backup download responds
+[115/128] [firefox] › specs/stats-drilldown.spec.ts:17:5 › agency with & # + drills down to exactly its reports
+[116/128] [firefox] › specs/stats-drilldown.spec.ts:40:5 › reports without a law drill down to a non-empty list
+[117/128] [firefox] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1280px
+[118/128] [firefox] › specs/stats-layout.spec.ts:13:7 › stats tables fit without horizontal scroll at 1440px
+[119/128] [firefox] › specs/stats-top.spec.ts:15:5 › filter summary lists the active conditions and offers a reset
+[120/128] [firefox] › specs/stats-top.spec.ts:31:5 › category and grouping tabs mark the selection and survive a reload
+[121/128] [firefox] › specs/stats-top.spec.ts:47:5 › law chip shows the active law
+[122/128] [firefox] › specs/stats-top.spec.ts:55:5 › column panel is collapsed by default and hiding a column updates the count
+[123/128] [firefox] › specs/stats-top.spec.ts:72:5 › summary cards match the mobile overview API for each category
+[124/128] [firefox] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in light theme without new console errors
+[125/128] [firefox] › specs/theme-pilot.spec.ts:16:7 › pilot screens render in dark theme without new console errors
+[126/128] [firefox] › specs/theme-pilot.spec.ts:57:5 › theme switch persists across reload and does not submit forms
+[127/128] [firefox] › specs/theme-pilot.spec.ts:69:5 › narrow viewport keeps sidebar toggle and theme switch reachable
+[128/128] [firefox] › specs/theme-pilot.spec.ts:81:5 › on phones the menu button does not cover an open search panel
+  128 passed (8.4m)
+# end: 2026-09-26T16:51:01+09:00
+# exit: 0

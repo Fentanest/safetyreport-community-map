@@ -1,0 +1,26 @@
+# cmd: timeout 600 flutter test --no-pub test/storage/server_import_test.dart --plain-name 'mixed old DB'
+# NEGATIVE CONTROL: _refuseUnknownServerColumns 의 표 선택만 재검증 전(상세 표가 하나라도 있으면 merge 전부 생략)으로 되돌림 — 성공 경로는 통과하고 거부 테스트만 실패해야 한다
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix
+# candidate: c52a12c7 (ci0926/audit-fix)
+# dirty: 3 tracked changes
+# start: 2026-09-26T16:37:21+09:00
+00:00 +0: loading /home/better0101/projects/worktree/ci-20260926/safetyreport-mobile/audit-fix/test/storage/server_import_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: mixed old DB imports traffic from source tables and parking from merge (SOL-02 recheck, success path)
+00:00 +1: mixed old DB: an unknown value in the merge table actually read for parking is refused (SOL-02 recheck)
+00:00 +1 -1: mixed old DB: an unknown value in the merge table actually read for parking is refused (SOL-02 recheck) [E]
+  Expected: throws <Instance of 'UnknownColumnsException'> with `message`: contains 'mysafetymerge_parking.미래열(1행)'
+    Actual: <Instance of 'Future<int>'>
+     Which: emitted <2>
+  
+  package:matcher                                    expectLater
+  package:flutter_test/src/widget_tester.dart 507:8  expectLater
+  test/storage/server_import_test.dart 188:11        main.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                         _CustomZone.registerUnaryCallback
+  test/storage/server_import_test.dart 187:45        main.<fn>
+  
+00:00 +1 -1: (tearDownAll)
+00:00 +1 -1: Some tests failed.
+# end: 2026-09-26T16:37:25+09:00
+# exit: 1

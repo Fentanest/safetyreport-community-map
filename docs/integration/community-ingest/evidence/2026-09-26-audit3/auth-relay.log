@@ -1,0 +1,16 @@
+# cmd: SAFEAUTH_STACK=1 timeout 900 npx vitest run tests/relay.integration.test.ts
+# cwd: /home/better0101/projects/worktree/ci-20260926/community-auth/audit-fix
+# candidate: 1dddcc4 (ci0926/audit-fix)
+# dirty: 0 tracked changes
+# start: 2026-09-26T16:42:21+09:00
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/ci-20260926/community-auth/audit-fix
+
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  16:42:22
+   Duration  10.36s (tests 96%, transform 3%, import 1%)
+
+# end: 2026-09-26T16:42:32+09:00
+# exit: 0
