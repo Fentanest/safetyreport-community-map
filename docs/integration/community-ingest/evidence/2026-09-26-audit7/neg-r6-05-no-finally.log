@@ -1,0 +1,77 @@
+# cmd: timeout 300 /home/better0101/projects/safetyreport/.venv/bin/python -m unittest tests.test_storage_exchange.ExchangeRestoreTests.test_a_malformed_report_or_hook_error_still_releases_the_reservation
+# NEGATIVE CONTROL: 완료 훅 예외 때 예약 해제·파일 정리를 건너뛰는 옛 구조 — 실패(exit≠0)가 기대값
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix
+# candidate: 9f1adc6 (ci0926/audit-fix)
+# dirty: 5 tracked changes
+# start: 2026-09-26T18:34:19+09:00
+[2026-09-26 18:34:20,116][INFO|database.py-upgrade_schema:285] >> 테이블 'admin_users' 생성 중...
+[2026-09-26 18:34:20,119][INFO|database.py-upgrade_schema:285] >> 테이블 'api_keys' 생성 중...
+[2026-09-26 18:34:20,121][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety' 생성 중...
+[2026-09-26 18:34:20,123][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_cursor' 생성 중...
+[2026-09-26 18:34:20,124][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_log' 생성 중...
+[2026-09-26 18:34:20,125][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_decision' 생성 중...
+[2026-09-26 18:34:20,127][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_group' 생성 중...
+[2026-09-26 18:34:20,128][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_member' 생성 중...
+[2026-09-26 18:34:20,130][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_entry_value' 생성 중...
+[2026-09-26 18:34:20,132][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_geocode_cache' 생성 중...
+[2026-09-26 18:34:20,135][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_raw_content' 생성 중...
+[2026-09-26 18:34:20,140][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_report_override' 생성 중...
+[2026-09-26 18:34:20,142][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_sync_meta' 생성 중...
+[2026-09-26 18:34:20,144][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_watchlist' 생성 중...
+[2026-09-26 18:34:20,150][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_other' 생성 중...
+[2026-09-26 18:34:20,152][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_parking' 생성 중...
+[2026-09-26 18:34:20,154][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_traffic' 생성 중...
+[2026-09-26 18:34:20,155][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_other' 생성 중...
+[2026-09-26 18:34:20,157][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_parking' 생성 중...
+[2026-09-26 18:34:20,159][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_traffic' 생성 중...
+[2026-09-26 18:34:20,163][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 1 적용
+[2026-09-26 18:34:20,169][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 2 적용
+[2026-09-26 18:34:20,171][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 3 적용
+[2026-09-26 18:34:20,199][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 4 적용
+[2026-09-26 18:34:20,241][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 0개, 멤버 0건 재생성
+[2026-09-26 18:34:20,287][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_traffic synced_at 백필: 12건, 미해결 0건
+[2026-09-26 18:34:20,290][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_parking synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:34:20,294][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_other synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:34:20,297][INFO|database.py-backfill_synced_at:105] >> [migration] synced_at 백필 완료: 총 24건 갱신, merge 재생성 시작
+[2026-09-26 18:34:20,315][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:34:20,345][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 18:34:20,353][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:34:20,377][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+Exception in thread crawl-pending-after:
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/threading.py", line 1082, in _bootstrap_inner
+    self._context.run(self.run)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/usr/lib/python3.14/threading.py", line 1024, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/services/crawl_manager.py", line 460, in _after
+    self.run_after_crawl(proc, log_file)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+RuntimeError: hook failed
+F
+======================================================================
+FAIL: test_a_malformed_report_or_hook_error_still_releases_the_reservation (tests.test_storage_exchange.ExchangeRestoreTests.test_a_malformed_report_or_hook_error_still_releases_the_reservation)
+감사 R6-05: 형식이 틀린 보고(유효한 JSON)나 완료 훅 예외에도 예약이 풀리고 실행 파일이 지워진다.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tests/test_storage_exchange.py", line 903, in test_a_malformed_report_or_hook_error_still_releases_the_reservation
+    self.assertEqual(crawl_manager._reserved, set())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the first set but not the second:
+'SPP-BAD'
+
+----------------------------------------------------------------------
+Ran 1 test in 10.912s
+
+FAILED (failures=1)
+# end: 2026-09-26T18:34:31+09:00
+# exit: 1

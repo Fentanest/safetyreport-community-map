@@ -1,0 +1,72 @@
+# cmd: timeout 300 /home/better0101/projects/safetyreport/.venv/bin/python -m unittest tests.test_storage_exchange.ExchangeRestoreTests.test_an_ambiguous_partial_number_is_never_completed_with_an_arbitrary_report
+# NEGATIVE CONTROL: 재해석이 부분 일치 첫 결과를 쓰는 옛 동작 — 실패(exit≠0)가 기대값
+# cwd: /home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix
+# candidate: 9f1adc6 (ci0926/audit-fix)
+# dirty: 5 tracked changes
+# start: 2026-09-26T18:33:48+09:00
+[2026-09-26 18:33:48,848][INFO|database.py-upgrade_schema:285] >> 테이블 'admin_users' 생성 중...
+[2026-09-26 18:33:48,857][INFO|database.py-upgrade_schema:285] >> 테이블 'api_keys' 생성 중...
+[2026-09-26 18:33:48,859][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety' 생성 중...
+[2026-09-26 18:33:48,861][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_cursor' 생성 중...
+[2026-09-26 18:33:48,863][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_change_log' 생성 중...
+[2026-09-26 18:33:48,864][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_decision' 생성 중...
+[2026-09-26 18:33:48,866][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_group' 생성 중...
+[2026-09-26 18:33:48,868][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_duplicate_member' 생성 중...
+[2026-09-26 18:33:48,869][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_entry_value' 생성 중...
+[2026-09-26 18:33:48,871][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_geocode_cache' 생성 중...
+[2026-09-26 18:33:48,873][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_raw_content' 생성 중...
+[2026-09-26 18:33:48,874][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_report_override' 생성 중...
+[2026-09-26 18:33:48,876][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_sync_meta' 생성 중...
+[2026-09-26 18:33:48,877][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafety_watchlist' 생성 중...
+[2026-09-26 18:33:48,879][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_other' 생성 중...
+[2026-09-26 18:33:48,881][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_parking' 생성 중...
+[2026-09-26 18:33:48,883][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetydetail_traffic' 생성 중...
+[2026-09-26 18:33:48,885][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_other' 생성 중...
+[2026-09-26 18:33:48,887][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_parking' 생성 중...
+[2026-09-26 18:33:48,888][INFO|database.py-upgrade_schema:285] >> 테이블 'mysafetymerge_traffic' 생성 중...
+[2026-09-26 18:33:48,892][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 1 적용
+[2026-09-26 18:33:48,901][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 2 적용
+[2026-09-26 18:33:48,909][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 3 적용
+[2026-09-26 18:33:48,922][INFO|database.py-_apply_versioned_migrations:452] >> [schema] DB 스키마 버전 4 적용
+[2026-09-26 18:33:48,959][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 0개, 멤버 0건 재생성
+[2026-09-26 18:33:48,998][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_traffic synced_at 백필: 12건, 미해결 0건
+[2026-09-26 18:33:49,001][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_parking synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:33:49,005][INFO|database.py-backfill_synced_at:100] >> [migration] mysafetydetail_other synced_at 백필: 6건, 미해결 0건
+[2026-09-26 18:33:49,008][INFO|database.py-backfill_synced_at:105] >> [migration] synced_at 백필 완료: 총 24건 갱신, merge 재생성 시작
+[2026-09-26 18:33:49,025][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:33:49,055][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 18:33:49,065][INFO|database.py-merge_final:736] >> 최종 데이터 병합 완료 (Traffic/Parking/Other 분리)
+[2026-09-26 18:33:49,089][INFO|duplicate_group_service.py-_log_info:53] >> [duplicate] payload exact 중복군 1개, 멤버 2건 재생성
+[2026-09-26 18:33:49,337][INFO|start.py-_run_crawling_process:340] >> 큐 지정 크롤링 모드입니다. 전체 목록 갱신을 건너뜁니다.
+[2026-09-26 18:33:49,339][WARNING|start.py-extract_ids_from_queue:131] >> 큐 신고번호 SPP-의 ID를 찾을 수 없습니다. 목록 크롤링 후 재검색합니다.
+[2026-09-26 18:33:49,339][INFO|start.py-_run_crawling_process:385] >> 미확인 신고번호 1건을 목록 크롤링으로 탐색합니다.
+[2026-09-26 18:33:49,339][INFO|start.py-_run_crawling_process:394] >> 목록 탐색 중... 페이지 1 (남은 미확인: 1건)
+[2026-09-26 18:33:49,339][INFO|start.py-_run_crawling_process:419] >> 신고번호 SPP- → ID 90000001 발견 (페이지 1)
+[2026-09-26 18:33:49,339][INFO|start.py-_run_crawling_process:444] >> 큐 파일에서 1개의 아이템 크롤링 시작.
+[2026-09-26 18:33:49,340][INFO|start.py-_run_crawling_process:458] >> 상세 크롤링 대상 ID: 1 건 (순차 처리)
+[2026-09-26 18:33:49,340][INFO|start.py-_run_crawling_process:463] >> [API 방식] 상세 데이터 추출 시작
+[2026-09-26 18:33:49,508][INFO|start.py-_save_details_as_they_arrive:506] >> 상세 저장 1건 (변경/신규 1건, 실패 0건)
+F
+======================================================================
+FAIL: test_an_ambiguous_partial_number_is_never_completed_with_an_arbitrary_report (tests.test_storage_exchange.ExchangeRestoreTests.test_an_ambiguous_partial_number_is_never_completed_with_an_arbitrary_report)
+감사 R6-02: 목록 탐색 뒤 재해석도 '정확 → 접두어 → 유일한 부분 일치' 규칙 — 여러 건에 걸리면 임의 신고로 처리하지 않는다.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/worktree/ci-20260926/safetyreport/audit-fix/tests/test_storage_exchange.py", line 837, in test_an_ambiguous_partial_number_is_never_completed_with_an_arbitrary_report
+    self.assertEqual(saved, [], "모호한 번호로 어떤 신고도 저장하지 않는다")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['90000001'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'90000001'
+
+- ['90000001']
++ [] : 모호한 번호로 어떤 신고도 저장하지 않는다
+
+----------------------------------------------------------------------
+Ran 1 test in 0.970s
+
+FAILED (failures=1)
+# end: 2026-09-26T18:33:49+09:00
+# exit: 1

@@ -155,3 +155,25 @@ R4-02·R4-03·R4-04 는 5차에서 닫혔다.
 |---|---|
 | PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 396 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
 | 음성 대조(각각 따로) | `neg-r5-01-trust-exit-code`, `neg-r5-01-child-reports-all`, `neg-r5-02-no-request-launch`, `neg-r5-02-no-retry`, `neg-r5-03-broadcast-first`, `neg-r5-04-no-file-cleanup` — 모두 목표 단언에서 실패 |
+
+## Sol 6차 재검증(`audit-sol-recheck-06.md`, "수정 후 재검토") 반영
+
+R5-03·R5-04 는 6차에서 닫혔다.
+
+| ID | 지적 | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit7/neg-*.log`, 각각 따로) |
+|---|---|---|---|---|
+| R6-01 높음 | 목록 탐색 실패·빈 오류 응답·100쪽 상한을 `not_found` 로 확정 | `crawl_titles(progress=…)` 의 총 건수·실패 페이지로 **전 페이지를 성공적으로 훑었을 때만** 확정. 실패·잘림·상한이면 보고하지 않아 큐에 남음 | PC `2f38e71` | `test_a_failed_or_incomplete_list_search_never_marks_a_number_missing`(오류 응답·예외·250쪽) / `neg-r6-01-incomplete-search-reported.log` |
+| R6-02 높음 | 탐색 뒤 재해석이 `LIKE` 첫 결과 → 모호한 번호를 임의 신고로 완료 | 재해석도 정확→`SPP-` 접두→유일한 부분 일치(`_resolve_report_number_detail`). 여러 건이면 저장하지 않고, 완전 탐색 뒤 `ambiguous` 로 보고(오류 로그로 정확한 번호 재요청 안내) | PC `2f38e71` | `test_an_ambiguous_partial_number_is_never_completed_with_an_arbitrary_report` / `neg-r6-02-first-partial-match.log`(임의 신고 저장) |
+| R6-03 중간 | 게이트에 막힌 재시도가 다시 걸리지 않음, 재시작 뒤 타이머 소멸 | 막히거나 시작 못 하고 번호가 남으면 늘어나는 간격으로 다시 걸림. 서버 기동 때(`main.py`, fixture 제외) 남은 번호가 있으면 타이머 하나(곧바로 크롤하지 않음) | PC `2f38e71` | `test_a_blocked_retry_is_rescheduled_and_a_restart_schedules_one` / `neg-r6-03-no-reschedule.log` |
+| R6-04 중간 | 시작 요청마다 스레드 | 작업자 하나로 합치기(`_request_worker_active`/`_request_again`), 작업자를 못 띄우면 예외 대신 재시도 타이머 | PC `2f38e71` | `test_many_launch_requests_use_a_single_worker`(25요청 → 작업자 1·launch 2회) / `neg-r6-04-thread-per-request.log` |
+| R6-05 중간 | 유효한 JSON 의 잘못된 필드 타입에서 `TypeError` → 감시 종료·예약 누수 | 보고 필드가 문자열 목록이 아니면 빈 보고. 감시 전체를 `finally` 로 감싸 예약 해제·실행 파일 정리 보장 | PC `2f38e71` | `test_a_malformed_report_or_hook_error_still_releases_the_reservation` / `neg-r6-05-no-type-check.log`, `neg-r6-05-no-finally.log` |
+
+PyInstaller: 이 환경에 PyInstaller 가 없어 **번들 포함은 미검증**. 정적 import 사슬(`main.py` → `start` → `services.crawl_queue_report`, `services/crawl_manager.py` → 같은 모듈)만 AST 로 확인했다. 영구 실패 번호의 무기한 재시도(최대 30분 간격)와 시도 상한·사용자 알림 부재는 남는 한계다.
+
+### 6차 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit7/`, PC 만 변경)
+후보 PC `2f38e71`. mobile `2debce44`·map 제품 `e284c86`·auth 제품 `5a4d678` 은 audit3 과 같다.
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 401 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
+| 음성 대조(각각 따로) | `neg-r6-01-incomplete-search-reported`, `neg-r6-02-first-partial-match`, `neg-r6-03-no-reschedule`, `neg-r6-04-thread-per-request`, `neg-r6-05-no-type-check`, `neg-r6-05-no-finally` — 모두 목표 단언에서 실패 |
