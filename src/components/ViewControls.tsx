@@ -17,16 +17,22 @@ const MODES: ViewMode[] = ['both', 'map', 'stats'];
 export default function ViewControls(p: Props) {
   return (
     <div className="view-controls">
-      <label className={`compare-toggle${p.compareDisabledReason ? ' disabled' : ''}`} title={p.compareDisabledReason ?? '같은 조건의 내 신고를 나란히 표시합니다.'}>
-        <input
-          type="checkbox" role="switch" checked={p.compareOn && !p.compareDisabledReason}
-          aria-checked={p.compareOn && !p.compareDisabledReason}
-          disabled={!!p.compareDisabledReason}
-          onChange={(e) => p.onCompare(e.target.checked)}
-        />
-        <span>내 데이터 함께 보기</span>
-        {p.briefingHidden && <small className="cm-muted">브리핑 중 숨김</small>}
-      </label>
+      <span className="compare-wrap">
+        <label className={`compare-toggle${p.compareDisabledReason ? ' disabled' : ''}`} title={p.compareDisabledReason ?? '같은 조건의 내 신고를 나란히 표시합니다.'}>
+          <input
+            type="checkbox" role="switch" checked={p.compareOn && !p.compareDisabledReason}
+            aria-checked={p.compareOn && !p.compareDisabledReason}
+            disabled={!!p.compareDisabledReason}
+            onChange={(e) => p.onCompare(e.target.checked)}
+          />
+          <span className="switch" aria-hidden="true" />
+          <span>내 데이터 함께 보기</span>
+          {p.briefingHidden && <small className="cm-muted">브리핑 중 숨김</small>}
+        </label>
+        {p.compareDisabledReason && (
+          <small className="compare-disabled-note" role="note">{p.compareDisabledReason} 공개 화면은 그대로 볼 수 있습니다.</small>
+        )}
+      </span>
       <div className="segments view-switch" role="group" aria-label="보기 전환">
         {MODES.map((mode) => (
           <button key={mode} type="button" className={p.view === mode ? 'selected' : ''} aria-pressed={p.view === mode} onClick={() => p.onView(mode)}>

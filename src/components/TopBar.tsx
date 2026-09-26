@@ -43,18 +43,18 @@ export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp
         </span>
         {account}
         <button
-          className="icon-btn"
+          className="icon-btn theme-btn"
           type="button"
           onClick={() => onTheme(next)}
           aria-label={`테마 전환 (현재 ${THEME_LABEL[theme]}, 다음 ${THEME_LABEL[next]})`}
           title={`테마: ${THEME_LABEL[theme]}`}
         >
           <Icon name={THEME_ICON[theme]} />
-          <span className="cm-muted" style={{ fontSize: 12 }}>{THEME_LABEL[theme]}</span>
+          <span className="cm-muted btn-label" style={{ fontSize: 12 }}>{THEME_LABEL[theme]}</span>
         </button>
-        <button className="quiet-btn" type="button" onClick={onBriefing} aria-pressed={briefing}>
+        <button className="quiet-btn briefing-btn" type="button" onClick={onBriefing} aria-pressed={briefing}>
           <Icon name="expand" />
-          <span>{briefing ? '브리핑 종료' : '브리핑 모드'}</span>
+          <span className="btn-label">{briefing ? '브리핑 종료' : '브리핑 모드'}</span>
         </button>
       </div>
     </header>

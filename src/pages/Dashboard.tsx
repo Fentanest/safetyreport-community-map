@@ -16,13 +16,13 @@ import OutcomeCard from '../components/OutcomeCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable, { type ServerEntityState } from '../components/EntityTable';
 import DataGuide from '../components/DataGuide';
-import { fmtDate } from '../components/format';
+import { fmtDate, fmtInt, fmtPercent } from '../components/format';
 import CompareKpis from '../components/CompareKpis';
 import RegionList from '../components/RegionList';
 import ManagerCompare from '../components/ManagerCompare';
 import AccountMenu from '../components/AccountMenu';
 import ViewControls from '../components/ViewControls';
-import { useMapAuth, usePersonalCompare, type PersonalState } from '../hooks/usePersonal';
+import { useMapAuth, usePersonalCompare, type PersonalState, type PersonalStatus } from '../hooks/usePersonal';
 import { consistentWithPublic } from '../data/personal';
 import {
   readComparePref, readInterest, toggleInterest, viewFromSearch, writeComparePref, writeInterest,
@@ -45,6 +45,35 @@ function initialTheme(): ThemeMode {
 function resolveTheme(t: ThemeMode): 'dark' | 'light' {
   if (t !== 'system') return t;
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+// Map-mode one-line statistics summary (§5.2): the full tables stay in the other views,
+// so this strip shows only R · C · 수용% for all/mine. Display only — no scope change.
+function MapSummary({ reportAll, completedAll, acceptAll, showMine, personalStatus, mineReport, mineCompleted, mineAccept }: {
+  reportAll: number | null;
+  completedAll: number | null;
+  acceptAll: number | null;
+  showMine: boolean;
+  personalStatus: PersonalStatus;
+  mineReport: number | null;
+  mineCompleted: number | null;
+  mineAccept: number | null;
+}) {
+  const mineText = !showMine ? null
+    : personalStatus === 'ready' ? (
+      <>내 R <b className="cm-number mine-col">{fmtInt(mineReport)}</b> · C <b className="cm-number mine-col">{fmtInt(mineCompleted)}</b> · 수용 <b className="cm-number mine-col">{fmtPercent(mineAccept)}</b></>
+    )
+    : personalStatus === 'loading' || personalStatus === 'waiting' ? <span className="cm-muted">내 통계 불러오는 중…</span>
+    : personalStatus === 'signed_out' ? <span className="cm-muted">내 통계는 로그인 후 표시</span>
+    : personalStatus === 'unconfigured' ? <span className="cm-muted">이 배포에는 지도 로그인이 설정되지 않음</span>
+    : <span className="cm-muted">내 통계 표시 불가</span>;
+  return (
+    <p className="map-summary" aria-label="한 줄 통계 요약">
+      <span>전체 R <b className="cm-number">{fmtInt(reportAll)}</b> · C <b className="cm-number">{fmtInt(completedAll)}</b> · 수용 <b className="cm-number">{fmtPercent(acceptAll)}</b></span>
+      {mineText != null && <span className="map-summary-mine">{mineText}</span>}
+      <span className="cm-muted">표시 필터 · 통계 범위 그대로</span>
+    </p>
+  );
 }
 
 // AF-MAP2: empty only when neither indicator has rows and no map point exists, so a
@@ -128,6 +157,10 @@ export default function Dashboard() {
   }, [briefing]);
   useEffect(() => {
     document.body.dataset.view = view;
+    // View changes resize the map card: ask the map adapter to re-measure after paint.
+    // No data is refetched here (loads are keyed on scope/fixture only).
+    const t = window.setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+    return () => window.clearTimeout(t);
   }, [view]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -494,60 +527,177 @@ export default function Dashboard() {
                   <span className="grow">표본 1건 상태 — 행·마커·카드를 모두 유지하고 ‘표본 1건’ 배지를 표시합니다.</span>
                 </div>
               )}
-              <section className={`compare-layout view-${view}`} id="mapsection" aria-label="지도와 비교 통계">
-                <div className="layout-main">
-                  <MapPanel
-                    points={shownPoints}
-                    totalPoints={data.points.length}
-                    selectedKey={selection}
-                    onSelect={setSelection}
-                    metric={mapMetric}
-                    onMetric={setMapMetric}
-                    categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
-                    onApplyView={applyView}
-                    autoRefresh={autoRefresh}
-                    onAutoRefresh={setAutoRefresh}
-                    locationMissing={data.meta.location_missing ?? null}
-                    marks={marks}
-                    pointFilter={effectiveFilter}
-                    onPointFilter={setPointFilter}
-                    filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
+              {/* ── view layouts (docs/personal-comparison.md §5.1–5.2, §5.5). ──
+                  All three modes reuse the same state/props; switching never refetches. */}
+              {view === 'map' ? (
+                <section className="mapmode" id="mapsection" aria-label="지도 집중 보기">
+                  <MapSummary
+                    reportAll={data.overview.report_count.value}
+                    completedAll={data.overview.completed_count.value}
+                    acceptAll={data.overview.accepted_including_partial.value}
+                    showMine={showMine}
+                    personalStatus={personal.status}
+                    mineReport={compareData?.mine.report_count ?? null}
+                    mineCompleted={compareData?.mine.completed_count ?? null}
+                    mineAccept={compareData?.mine.accept_rate ?? null}
                   />
-                  <RegionList
-                    regions={data.regions}
-                    compare={showMine ? compareData?.regions ?? null : null}
-                    compareOn={showMine}
-                    interest={interest}
-                    onToggleInterest={flipInterest}
-                    activeRegion={scope.region_code}
-                    onPickRegion={pickRegion}
-                  />
-                </div>
-                <div className="layout-side">
-                  {point && (
-                    <InsightPanel
-                      data={data}
-                      point={point}
-                      scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
-                      onAnalyzePoint={analyzePoint}
-                      onPickEntity={pickEntity}
-                      toast={showToast}
-                      mark={showMine ? marks.get(point.key) ?? null : null}
-                      onClose={() => setSelection(null)}
+                  <div className="mapmode-grid">
+                    <MapPanel
+                      points={shownPoints}
+                      totalPoints={data.points.length}
+                      selectedKey={selection}
+                      onSelect={setSelection}
+                      metric={mapMetric}
+                      onMetric={setMapMetric}
+                      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
+                      onApplyView={applyView}
+                      autoRefresh={autoRefresh}
+                      onAutoRefresh={setAutoRefresh}
+                      locationMissing={data.meta.location_missing ?? null}
+                      marks={marks}
+                      pointFilter={effectiveFilter}
+                      onPointFilter={setPointFilter}
+                      filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
                     />
-                  )}
-                  <CompareKpis
-                    overview={data.overview}
-                    personal={personal}
-                    compareOn={showMine}
-                    auth={auth}
-                    onSignIn={signIn}
-                    unsupported={unsupported}
-                  />
-                  {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
-                  <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />
-                </div>
-              </section>
+                    <div className="mapmode-side">
+                      <RegionList
+                        regions={data.regions}
+                        compare={showMine ? compareData?.regions ?? null : null}
+                        compareOn={showMine}
+                        interest={interest}
+                        onToggleInterest={flipInterest}
+                        activeRegion={scope.region_code}
+                        onPickRegion={pickRegion}
+                      />
+                      {point && (
+                        <InsightPanel
+                          data={data}
+                          point={point}
+                          scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
+                          onAnalyzePoint={analyzePoint}
+                          onPickEntity={pickEntity}
+                          toast={showToast}
+                          mark={showMine ? marks.get(point.key) ?? null : null}
+                          onClose={() => setSelection(null)}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </section>
+              ) : view === 'stats' ? (
+                <section className="statsmode" id="mapsection" aria-label="통계 집중 보기">
+                  <div className="stats-map">
+                    <MapPanel
+                      points={shownPoints}
+                      totalPoints={data.points.length}
+                      selectedKey={selection}
+                      onSelect={setSelection}
+                      metric={mapMetric}
+                      onMetric={setMapMetric}
+                      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
+                      onApplyView={applyView}
+                      autoRefresh={autoRefresh}
+                      onAutoRefresh={setAutoRefresh}
+                      locationMissing={data.meta.location_missing ?? null}
+                      marks={marks}
+                      pointFilter={effectiveFilter}
+                      onPointFilter={setPointFilter}
+                      filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
+                    />
+                    <button className="ghost-btn stats-expand" type="button" onClick={() => changeView('both')}>
+                      지도 크게 보기
+                    </button>
+                  </div>
+                  <div className="stats-grid">
+                    <CompareKpis
+                      overview={data.overview}
+                      personal={personal}
+                      compareOn={showMine}
+                      auth={auth}
+                      onSignIn={signIn}
+                      unsupported={unsupported}
+                    />
+                    {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
+                    <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />
+                    <RegionList
+                      regions={data.regions}
+                      compare={showMine ? compareData?.regions ?? null : null}
+                      compareOn={showMine}
+                      interest={interest}
+                      onToggleInterest={flipInterest}
+                      activeRegion={scope.region_code}
+                      onPickRegion={pickRegion}
+                    />
+                    {point && (
+                      <InsightPanel
+                        data={data}
+                        point={point}
+                        scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
+                        onAnalyzePoint={analyzePoint}
+                        onPickEntity={pickEntity}
+                        toast={showToast}
+                        mark={showMine ? marks.get(point.key) ?? null : null}
+                        onClose={() => setSelection(null)}
+                      />
+                    )}
+                  </div>
+                </section>
+              ) : (
+                <section className="compare-layout" id="mapsection" aria-label="지도와 비교 통계">
+                  <div className="layout-main">
+                    <MapPanel
+                      points={shownPoints}
+                      totalPoints={data.points.length}
+                      selectedKey={selection}
+                      onSelect={setSelection}
+                      metric={mapMetric}
+                      onMetric={setMapMetric}
+                      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
+                      onApplyView={applyView}
+                      autoRefresh={autoRefresh}
+                      onAutoRefresh={setAutoRefresh}
+                      locationMissing={data.meta.location_missing ?? null}
+                      marks={marks}
+                      pointFilter={effectiveFilter}
+                      onPointFilter={setPointFilter}
+                      filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
+                    />
+                    <RegionList
+                      regions={data.regions}
+                      compare={showMine ? compareData?.regions ?? null : null}
+                      compareOn={showMine}
+                      interest={interest}
+                      onToggleInterest={flipInterest}
+                      activeRegion={scope.region_code}
+                      onPickRegion={pickRegion}
+                    />
+                  </div>
+                  <div className="layout-side">
+                    {point && (
+                      <InsightPanel
+                        data={data}
+                        point={point}
+                        scopeLabel={`${fmtDate(scope.start)} — ${fmtDate(scope.end)} · ${regionLabel(scope.region_code)}`}
+                        onAnalyzePoint={analyzePoint}
+                        onPickEntity={pickEntity}
+                        toast={showToast}
+                        mark={showMine ? marks.get(point.key) ?? null : null}
+                        onClose={() => setSelection(null)}
+                      />
+                    )}
+                    <CompareKpis
+                      overview={data.overview}
+                      personal={personal}
+                      compareOn={showMine}
+                      auth={auth}
+                      onSignIn={signIn}
+                      unsupported={unsupported}
+                    />
+                    {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
+                    <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />
+                  </div>
+                </section>
+              )}
               <section className="analytics-grid" id="analytics" aria-label="하단 분석 카드">
                 <OutcomeCard outcomes={data.overview.outcomes} />
                 <VehicleTop5
