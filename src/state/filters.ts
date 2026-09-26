@@ -38,7 +38,17 @@ export const REGION_OPTIONS: Array<{ code: string | null; label: string }> = [
 ];
 
 export function regionLabel(code: string | null): string {
-  return REGION_OPTIONS.find((r) => r.code === code)?.label ?? (code ? `지역 ${code}` : '대한민국 전국');
+  // Stored ingest codes are already readable ('서울 중구'); legacy numeric codes keep their names.
+  return REGION_OPTIONS.find((r) => r.code === code)?.label ?? (code ? code : '대한민국 전국');
+}
+
+/** Region choices come from the data actually in the source (no invented catalog), plus the current value. */
+export function regionOptions(regions: ReadonlyArray<{ region_code: string | null }> | null, current: string | null): Array<{ code: string | null; label: string }> {
+  const codes = new Set<string>();
+  for (const row of regions ?? []) if (row.region_code) codes.add(row.region_code);
+  if (current) codes.add(current);
+  return [{ code: null, label: '대한민국 전국' },
+    ...[...codes].sort((a, b) => a.localeCompare(b, 'ko')).map(code => ({ code, label: regionLabel(code) }))];
 }
 
 export function isValidDate(s: string): boolean {
@@ -75,7 +85,7 @@ export function draftFromScope(scope: Scope): DraftFilters {
 }
 
 /** URL에는 공개 필터와 선택된 viewport bbox만 보존한다. 차량·계정 식별자는 포함하지 않는다. */
-export function scopeToSearch(scope: Scope, extra?: { fixture?: string | null }): string {
+export function scopeToSearch(scope: Scope, extra?: { fixture?: string | null; view?: string | null; me?: string | null }): string {
   const p = new URLSearchParams();
   p.set('start', scope.start);
   p.set('end', scope.end);
@@ -85,6 +95,10 @@ export function scopeToSearch(scope: Scope, extra?: { fixture?: string | null })
   if (scope.manager_key) p.set('manager_key', scope.manager_key);
   if (scope.bbox) p.set('bbox', scope.bbox.join(','));
   if (extra?.fixture) p.set('fixture', extra.fixture);
+  // panel state only (docs/personal-comparison.md §5.2); never an account or personal-mode flag
+  if (extra?.view && extra.view !== 'both') p.set('view', extra.view);
+  // demo-only synthetic login fixture (explicit test state, not an account)
+  if (extra?.me) p.set('me', extra.me);
   return p.toString();
 }
 

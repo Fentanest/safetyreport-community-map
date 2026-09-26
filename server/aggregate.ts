@@ -1,7 +1,7 @@
 /** Exact private-fact aggregation. This module must run behind the public API only. */
 import type {
   Category, CountMetric, DashboardData, MonthlyBucket, OutcomeCounts,
-  PublicEntity, PublicMeta, PublicPoint, Scope,
+  PublicEntity, PublicMeta, PublicPoint, PublicRegion, Scope,
 } from '../src/domain/public.ts';
 import { maskPlate, parsePlate } from './plate.ts';
 
@@ -102,7 +102,7 @@ function completed(fact: PrivateFact, start: string, end: string): boolean {
   return terminal.has(fact.status) && inRange(fact.completed_date, start, end);
 }
 
-function outcomes(facts: readonly PrivateFact[]): OutcomeCounts {
+export function outcomes(facts: readonly PrivateFact[]): OutcomeCounts {
   let accepted = 0, partial = 0, rejected = 0;
   for (const fact of facts) {
     if (fact.status === 'accepted') accepted++;
@@ -123,7 +123,7 @@ function countMetric(value: number, basis: 'report_date' | 'completed_date', pre
     ...(previous === null ? { delta: null, delta_percent: null, delta_reason: null, note: '비교기간 자료 없음' } : growth(value, previous)) };
 }
 
-function monthKeys(start: string, end: string): string[] {
+export function monthKeys(start: string, end: string): string[] {
   const first = new Date(`${start.slice(0, 7)}-01T00:00:00Z`);
   const last = end.slice(0, 7);
   const months: string[] = [];
@@ -134,7 +134,7 @@ function monthKeys(start: string, end: string): string[] {
   return months;
 }
 
-function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'manager'): PublicEntity[] {
+export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'manager'): PublicEntity[] {
   const groups = new Map<string, PrivateFact[]>();
   for (const fact of facts) {
     const key = kind === 'agency' ? (fact.agency_key || 'agency-unknown') :
@@ -152,10 +152,28 @@ function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'manager'): 
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
 
-type LocatedFact = PrivateFact & { point_key: string; lat: number; lng: number };
-const located = (fact: PrivateFact): fact is LocatedFact => fact.point_key !== null && fact.lat !== null && fact.lng !== null;
+export type LocatedFact = PrivateFact & { point_key: string; lat: number; lng: number };
+export const located = (fact: PrivateFact): fact is LocatedFact => fact.point_key !== null && fact.lat !== null && fact.lng !== null;
 
-function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly PrivateFact[]): PublicPoint[] {
+/** Region rows: report counts on the report-date basis, completion/outcome/fine on the completion-date basis. */
+export function regionRows(reported: readonly PrivateFact[], done: readonly PrivateFact[]): PublicRegion[] {
+  const rows = new Map<string, { code: string | null; reported: number; done: PrivateFact[] }>();
+  const row = (code: string | null) => {
+    const key = code ?? '\u0000unknown';
+    let current = rows.get(key);
+    if (!current) rows.set(key, current = { code, reported: 0, done: [] });
+    return current;
+  };
+  for (const fact of reported) row(fact.region_code).reported++;
+  for (const fact of done) row(fact.region_code).done.push(fact);
+  return [...rows.values()].map(r => ({
+    region_code: r.code, report_count: r.reported, completed_count: r.done.length,
+    outcomes: outcomes(r.done), fine_count: r.done.filter(fact => fact.disposition === 'fine').length,
+  })).sort((a, b) => b.report_count - a.report_count || b.completed_count - a.completed_count ||
+    (a.region_code ?? '\uffff').localeCompare(b.region_code ?? '\uffff', 'ko'));
+}
+
+export function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly PrivateFact[]): PublicPoint[] {
   // SOL-06: points are the union of report-date and completion-date location keys, so a fact whose
   // report date is outside the range but whose completion date is inside still gets its completion
   // point. Per-point report and completion counts use their own date basis independently, keeping
@@ -250,16 +268,34 @@ export interface AggregateOptions {
   dataMin?: string | null;
 }
 
-export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, options: AggregateOptions): DashboardData {
+/** One scope selection shared by the public dashboard and the personal comparison, so both read
+ *  exactly the same population (active facts, scope dimensions, report/completion date bases). */
+export interface ScopeSelection {
+  prev: { start: string; end: string };
+  facts: PrivateFact[];
+  reported: PrivateFact[];
+  done: PrivateFact[];
+  previousReported: PrivateFact[];
+  previousDone: PrivateFact[];
+}
+
+export function selectScope(input: readonly PrivateFact[], scope: Scope): ScopeSelection {
   const length = dayNumber(scope.end) - dayNumber(scope.start) + 1;
   if (length <= 0 || length > 1827) throw new Error('date range exceeds supported bound');
   if (scope.bbox && (scope.bbox[0] > scope.bbox[2] || scope.bbox[1] > scope.bbox[3])) throw new Error('invalid bbox');
   const prev = previousWindow(scope.start, scope.end);
   const facts = activeFacts(input).filter(fact => dimensions(fact, scope));
-  const reported = facts.filter(fact => inRange(fact.report_date, scope.start, scope.end));
-  const done = facts.filter(fact => completed(fact, scope.start, scope.end));
-  const previousReported = facts.filter(fact => inRange(fact.report_date, prev.start, prev.end));
-  const previousDone = facts.filter(fact => completed(fact, prev.start, prev.end));
+  return {
+    prev, facts,
+    reported: facts.filter(fact => inRange(fact.report_date, scope.start, scope.end)),
+    done: facts.filter(fact => completed(fact, scope.start, scope.end)),
+    previousReported: facts.filter(fact => inRange(fact.report_date, prev.start, prev.end)),
+    previousDone: facts.filter(fact => completed(fact, prev.start, prev.end)),
+  };
+}
+
+export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, options: AggregateOptions): DashboardData {
+  const { prev, facts, reported, done, previousReported, previousDone } = selectScope(input, scope);
   const result = outcomes(done), D = result.result_known;
   const priorResult = outcomes(previousDone), priorD = priorResult.result_known;
   const fine = done.filter(fact => fact.disposition === 'fine').length;
@@ -340,6 +376,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       outcomes: result,
     },
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
+    regions: regionRows(reported, done),
     vehicles: vehicles.items, vehicle_total_scope_reports: reported.length,
     vehicle_identifiable_reports: vehicles.identifiable,
   };

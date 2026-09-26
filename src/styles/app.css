@@ -275,3 +275,30 @@ body.briefing .briefing-bar { display: flex; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; scroll-behavior: auto !important; }
 }
+
+/* ── Personal comparison layout: Sol baseline (functional only). Muse owns the visual implementation. ── */
+.compare-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(420px, 1fr); gap: 16px; align-items: start; }
+.layout-main, .layout-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.compare-layout.view-map { grid-template-columns: minmax(0, 1fr); }
+.compare-layout.view-stats { grid-template-columns: minmax(0, 1fr); }
+.compare-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.compare-table th, .compare-table td { padding: 8px 12px; border-top: 1px solid var(--border); text-align: left; vertical-align: top; }
+.compare-table .num { text-align: right; }
+.compare-table small { display: block; color: var(--muted); font-size: 12px; }
+.mine-col { color: var(--brand-ink); }
+.compare-note { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 16px; font-size: 13px; color: var(--text-secondary); }
+.region-rows { list-style: none; margin: 0; padding: 0 16px; }
+.region-row { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--border); }
+.region-pick { flex: 1; text-align: left; background: none; border: 0; padding: 10px 0; cursor: pointer; min-height: 44px; }
+.region-pick small { display: block; color: var(--muted); font-size: 12px; }
+.region-star { min-width: 44px; min-height: 44px; background: none; border: 0; cursor: pointer; color: var(--partial); font-size: 18px; }
+.point-filter { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding: 0 16px 8px; font-size: 13px; }
+.view-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.compare-toggle { display: inline-flex; gap: 6px; align-items: center; min-height: 44px; font-size: 13px; }
+.compare-toggle.disabled { opacity: 0.6; }
+.account-menu { position: relative; }
+.account-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; width: 260px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.account-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); }
+.mine-note { margin: 0; font-size: 13px; color: var(--brand-ink); }
+.chart-legend .dash { display: inline-block; width: 16px; border-top: 2px dashed var(--brand-ink); margin-right: 6px; vertical-align: middle; }
+@media (max-width: 1100px) { .compare-layout { grid-template-columns: minmax(0, 1fr); } }

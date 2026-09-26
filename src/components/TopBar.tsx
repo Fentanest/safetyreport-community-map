@@ -2,6 +2,7 @@ import familyMark from '../../design/assets/family-mark.png';
 import { dataMode } from '../data/client';
 import type { ThemeMode } from '../state/filters';
 import Icon from './icons';
+import type { ReactNode } from 'react';
 
 interface Props {
   theme: ThemeMode;
@@ -10,13 +11,15 @@ interface Props {
   onBriefing: () => void;
   dataStamp: string;
   sample: boolean;
+  /** map web login / account menu (optional feature; public viewing never needs it) */
+  account?: ReactNode;
 }
 
 const THEME_ORDER: ThemeMode[] = ['dark', 'light', 'system'];
 const THEME_LABEL: Record<ThemeMode, string> = { dark: '다크', light: '라이트', system: '시스템' };
 const THEME_ICON = { dark: 'moon', light: 'sun', system: 'auto' } as const;
 
-export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp, sample }: Props) {
+export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp, sample, account }: Props) {
   const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
   const badge = dataMode === 'demo'
     ? { text: 'demo · 합성 데이터', title: '합성 예시 자료입니다. 실제 신고 통계가 아닙니다.' }
@@ -38,6 +41,7 @@ export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp
         <span className="data-stamp" title={dataMode === 'demo' ? '합성 예시 자료의 기준일입니다.' : '데이터 기준일'}>
           데이터 기준 {dataStamp}
         </span>
+        {account}
         <button
           className="icon-btn"
           type="button"

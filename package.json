@@ -12,6 +12,7 @@
     "scan": "python3 scripts/scan_public_dist.py --dir dist"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.117.1",
     "echarts": "6.1.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

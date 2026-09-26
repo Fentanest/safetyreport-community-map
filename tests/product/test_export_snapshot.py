@@ -67,6 +67,25 @@ class ExportProjectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_dashboard(data, SCOPE, 'v2-test')
 
+    def test_live_dashboard_fields_regions_and_location_missing_are_allowed(self):
+        data = dashboard()
+        data['location_missing'] = 2
+        data['regions'] = [{'region_code': '서울 중구', 'report_count': 1, 'completed_count': 1,
+                            'outcomes': copy.deepcopy(OUTCOMES), 'fine_count': 0}]
+        self.assertEqual(validate_dashboard(data, SCOPE, 'v2-test')['regions'][0]['region_code'], '서울 중구')
+
+    def test_personal_comparison_fields_never_enter_a_snapshot(self):
+        for field in ['mine', 'viewer', 'my_points']:
+            data = dashboard()
+            data[field] = {}
+            with self.assertRaises(ValueError):
+                validate_dashboard(data, SCOPE, 'v2-test')
+        data = dashboard()
+        data['regions'] = [{'region_code': '서울 중구', 'report_count': 1, 'completed_count': 1,
+                            'outcomes': copy.deepcopy(OUTCOMES), 'fine_count': 0, 'mine': {'report_count': 1}}]
+        with self.assertRaises(ValueError):
+            validate_dashboard(data, SCOPE, 'v2-test')
+
 
 if __name__ == '__main__':
     unittest.main()

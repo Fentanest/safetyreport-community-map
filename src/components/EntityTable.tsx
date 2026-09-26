@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { PublicEntity } from '../domain/public';
+import type { CompareEntityRow } from '../domain/personal';
 import type { EntitySortKey, SortDir } from '../data/client';
 import type { EntityTab } from '../state/filters';
-import { fmtInt, fmtPercent } from './format';
+import { fmtInt, fmtPercent, fmtPp } from './format';
 
 interface Props {
   agencies: PublicEntity[];
@@ -13,6 +14,8 @@ interface Props {
   // SOL-08: when present, the table browses the full /entities list (server search/sort/page)
   // instead of the dashboard top-100 summary arrays. Null keeps the previous summary behavior (demo).
   server?: ServerEntityState | null;
+  /** personal rows (same keys as the public rows) when comparison is on; adds 내 완료/내 수용·일부/차이 */
+  mine?: Map<string, CompareEntityRow> | null;
 }
 
 export interface ServerEntityState {
@@ -153,14 +156,17 @@ export default function EntityTable(p: Props) {
               ))}
               <th scope="col">처리결과 구성</th>
               <th scope="col">결과 확인 표본</th>
+              {p.mine && <th scope="col" className="num mine-col">내 완료</th>}
+              {p.mine && <th scope="col" className="num mine-col">내 수용·일부 %</th>}
+              {p.mine && <th scope="col" className="num">차이</th>}
             </tr>
           </thead>
           <tbody>
             {server?.loading && shown.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">전체 목록을 불러오는 중입니다…</td></tr>
+              <tr><td colSpan={p.mine ? 12 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">전체 목록을 불러오는 중입니다…</td></tr>
             )}
             {!(server?.loading && shown.length === 0) && shown.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다. 검색어·필터를 확인해 주세요.</td></tr>
+              <tr><td colSpan={p.mine ? 12 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다. 검색어·필터를 확인해 주세요.</td></tr>
             )}
             {shown.map((e) => {
               const d = e.outcomes.result_known;
@@ -191,6 +197,9 @@ export default function EntityTable(p: Props) {
                     </div>
                   </td>
                   <td>{d === 1 ? <span className="sample-one">표본 1건</span> : `${fmtInt(d)}건`}</td>
+                  {p.mine && <td className="num mine-col">{fmtInt(p.mine.get(e.key)?.mine.completed_count ?? 0)}</td>}
+                  {p.mine && <td className="num mine-col">{fmtPercent(p.mine.get(e.key)?.mine.accept_rate ?? null)}</td>}
+                  {p.mine && <td className="num">{fmtPp(p.mine.get(e.key)?.accept_rate_pp ?? null)}</td>}
                 </tr>
               );
             })}

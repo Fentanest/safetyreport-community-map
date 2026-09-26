@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { PublicPoint } from '../domain/public';
 import { createKakaoMap, kakaoKey, type KakaoHandle } from '../lib/kakao';
 import type { MapMetric } from '../state/filters';
+import { POINT_FILTER_LABEL, type PointFilter } from '../state/view';
+import type { PointMark } from '../state/pointMarks';
 import { fmtCoord6, fmtInt } from './format';
 import Icon from './icons';
 
@@ -16,6 +18,24 @@ interface Props {
   autoRefresh: boolean;
   onAutoRefresh: (v: boolean) => void;
   locationMissing?: number | null;
+  /** personal display marks (mine/shared/interest) keyed by point key */
+  marks?: Map<string, PointMark>;
+  pointFilter?: PointFilter;
+  onPointFilter?: (f: PointFilter) => void;
+  /** which display filters can be used now (mine/shared need a ready comparison) */
+  filterAvailable?: Record<PointFilter, boolean>;
+  /** total points before the display filter */
+  totalPoints?: number;
+}
+
+function markLabel(mark: PointMark | undefined): string {
+  if (!mark) return '';
+  const parts: string[] = [];
+  if (mark.mine) parts.push(`내 신고 ${mark.mineCount.toLocaleString('ko-KR')}건 포함`);
+  if (mark.shared) parts.push('함께 기록한 지점');
+  else if (mark.mine) parts.push('나만 기록');
+  if (mark.interest) parts.push('관심 지역');
+  return parts.length ? ` · ${parts.join(' · ')}` : '';
 }
 
 const METRICS: Array<{ id: MapMetric; label: string; legend: string; basis: string }> = [
@@ -86,9 +106,10 @@ export default function MapPanel(p: Props) {
         count: pt.report_count,
         selected: pt.key === p.selectedKey,
         metricValue: metricValue(pt, p.metric),
+        ...p.marks?.get(pt.key),
       })),
     );
-  }, [p.points, p.selectedKey, p.metric, sdkState]);
+  }, [p.points, p.selectedKey, p.metric, sdkState, p.marks]);
 
   useEffect(() => {
     const onResize = () => handleRef.current?.relayout();
@@ -122,6 +143,7 @@ export default function MapPanel(p: Props) {
             key: pt.key, lat: pt.lat, lng: pt.lng,
             label: `${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} · 신고 ${pt.report_count}건`,
             count: pt.report_count, selected: pt.key === p.selectedKey, metricValue: metricValue(pt, p.metric),
+            ...p.marks?.get(pt.key),
           })),
         );
       })
@@ -152,6 +174,17 @@ export default function MapPanel(p: Props) {
           ))}
         </div>
       </div>
+      {p.onPointFilter && (
+        <div className="point-filter" role="group" aria-label="지점 표시 필터 (통계 범위는 바뀌지 않음)">
+          {(['all', 'mine', 'shared', 'interest'] as PointFilter[]).map((f) => (
+            <button key={f} type="button" className={p.pointFilter === f ? 'selected' : ''} aria-pressed={p.pointFilter === f}
+              disabled={!(p.filterAvailable?.[f] ?? f === 'all')} onClick={() => p.onPointFilter!(f)}>
+              {POINT_FILTER_LABEL[f]}
+            </button>
+          ))}
+          <span className="cm-muted">표시 필터 · 통계 범위는 그대로{p.pointFilter && p.pointFilter !== 'all' ? ` · ${fmtInt(p.points.length)} / ${fmtInt(p.totalPoints ?? p.points.length)}곳 표시` : ''}</span>
+        </div>
+      )}
       <div className="map-canvas" role="region" aria-label={sdkState === 'ready' ? 'Kakao 실제 지도' : '지도 대체 영역: 지점 목록으로 동일 탐색 가능'}>
         {kakaoKey() && <div ref={hostRef} className="map-sdk-host" aria-hidden={sdkState !== 'ready'} />}
         {sdkState === 'error' && (
@@ -177,11 +210,11 @@ export default function MapPanel(p: Props) {
                   <button
                     type="button"
                     aria-pressed={pt.key === p.selectedKey}
-                    aria-label={`${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} 신고 ${pt.report_count}건 선택`}
+                    aria-label={`${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} 신고 ${pt.report_count}건${markLabel(p.marks?.get(pt.key))} 선택`}
                     onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}
                   >
                     <b>{pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')}</b>
-                    <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}</small>
+                    <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}{markLabel(p.marks?.get(pt.key))}</small>
                   </button>
                 </li>
               ))}
@@ -226,7 +259,7 @@ export default function MapPanel(p: Props) {
                 <button type="button" aria-pressed={pt.key === p.selectedKey}
                   onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}>
                   <b>{pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')}</b>
-                  <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}</small>
+                  <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}{markLabel(p.marks?.get(pt.key))}</small>
                 </button>
               </li>
             ))}

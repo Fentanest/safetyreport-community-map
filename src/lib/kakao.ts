@@ -14,6 +14,10 @@ export interface KakaoPointInput {
   count: number;
   selected: boolean;
   metricValue: number | null;
+  /** personal display marks (docs/personal-comparison.md §5.3); display only */
+  mine?: boolean;
+  shared?: boolean;
+  interest?: boolean;
 }
 
 export interface KakaoHandle {
@@ -105,7 +109,7 @@ function loadSdk(key: string): Promise<void> {
   return sdkPromise;
 }
 
-function markerDataUrl(count: number, selected: boolean, ratio: number | null): string {
+function markerDataUrl(count: number, selected: boolean, ratio: number | null, mark?: { mine?: boolean; shared?: boolean; interest?: boolean }): string {
   const size = 40;
   const clamped = ratio == null ? 0.35 : Math.max(0.12, Math.min(1, ratio));
   const r = Math.round(13 + 109 * (1 - clamped));
@@ -113,7 +117,9 @@ function markerDataUrl(count: number, selected: boolean, ratio: number | null): 
   const b = 253;
   const ring = selected ? '#F8FAFC' : 'rgba(248,250,252,0.55)';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
-    + `<circle cx="20" cy="20" r="16" fill="rgba(${r},${g},${b},0.92)" stroke="${ring}" stroke-width="${selected ? 3 : 1.5}"/>`
+    + (mark?.shared ? '<circle cx="20" cy="20" r="19" fill="none" stroke="#06B6D4" stroke-width="1.5" stroke-dasharray="3 2"/>' : '')
+    + `<circle cx="20" cy="20" r="16" fill="rgba(${r},${g},${b},0.92)" stroke="${mark?.mine ? '#60a5fa' : ring}" stroke-width="${selected ? 3 : mark?.mine ? 2.5 : 1.5}"/>`
+    + (mark?.interest ? '<text x="33" y="10" font-size="10" fill="#F59E0B">★</text>' : '')
     + `<text x="20" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#0B1220" font-family="system-ui">${count > 999 ? '999+' : String(count)}</text></svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
@@ -154,7 +160,7 @@ export async function createKakaoMap(
       for (const p of points) {
         const pos = new kakao.LatLng(p.lat, p.lng);
         const img = new kakao.MarkerImage(
-          markerDataUrl(p.count, p.selected, p.metricValue ?? p.count / max),
+          markerDataUrl(p.count, p.selected, p.metricValue ?? p.count / max, p),
           new kakao.Size(40, 40),
         );
         const marker = new kakao.Marker({ position: pos, image: img, title: p.label });

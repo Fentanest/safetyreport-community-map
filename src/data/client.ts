@@ -112,13 +112,18 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
 }
 
 export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
-  if (dataMode === 'demo') {
-    const { demoDashboard } = await import('./demo');
+  // Literal env check (not `dataMode`) so live builds drop the demo chunks entirely.
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
     const state = new URLSearchParams(window.location.search).get('fixture');
     if (state === 'offline') throw new PublicApiError('네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
     if (state === 'rate') throw new PublicApiError('요청이 많아 잠시 후 다시 시도해 주세요.', 429, 60);
     if (state === 'stale') throw new PublicApiError('데이터 버전이 변경됐습니다. 다시 조회해 주세요.', 409);
-    return demoDashboard(scope, state === 'one' || state === 'empty' ? state : 'overview');
+    if (state === 'one' || state === 'empty') {
+      const { demoDashboard } = await import('./demo');
+      return demoDashboard(scope, state);
+    }
+    const { demoEngineDashboard } = await import('./demoEngine');
+    return demoEngineDashboard(scope);
   }
   const meta = metaSchema.parse(await read('meta', null, signal));
   if (meta.capabilities.daily_report_dates?.status !== 'supported') {
@@ -134,7 +139,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
   return {
     meta: { ...meta, location_missing: result.location_missing ?? undefined },
     scope, overview: result.overview, points: result.points, monthly: result.monthly,
-    agencies: result.agencies, managers: result.managers, vehicles: result.vehicles,
+    agencies: result.agencies, managers: result.managers, regions: result.regions ?? null, vehicles: result.vehicles,
     vehicle_total_scope_reports: result.vehicle_total_scope_reports,
     vehicle_identifiable_reports: result.vehicle_identifiable_reports,
   };

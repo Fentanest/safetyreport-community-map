@@ -4,3 +4,7 @@ verify_jwt = false
 # User-only per-report ingest: the platform verifies the JWT AND server/ingest/handler.ts calls getUser + checks claims.
 [functions.community-ingest]
 verify_jwt = true
+
+# User-only personal comparison (read-only): platform JWT check AND getUser + claims in server/personalHandler.ts.
+[functions.my-analytics]
+verify_jwt = true

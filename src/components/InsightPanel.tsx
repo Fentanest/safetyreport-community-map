@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { DashboardData, PublicEntity, PublicPoint } from '../domain/public';
+import type { PointMark } from '../state/pointMarks';
 import { fmtCoord6, fmtDate, fmtInt, fmtPercent } from './format';
 import Icon from './icons';
 
@@ -10,6 +11,9 @@ interface Props {
   onAnalyzePoint: (pt: PublicPoint) => void;
   onPickEntity: (kind: 'agency' | 'manager', entity: PublicEntity) => void;
   toast: (msg: string) => void;
+  /** personal display mark of the selected point (comparison on) */
+  mark?: PointMark | null;
+  onClose?: () => void;
 }
 
 type Tab = 'overview' | 'outcome' | 'entities';
@@ -53,6 +57,12 @@ export default function InsightPanel(p: Props) {
         <span className="cm-chip">{p.point?.aggregate ? '여러 지점 집계' : p.point ? '선택 지점' : '선택 범위'}</span>
       </div>
       <h2>{title}</h2>
+      {p.point && p.mark?.mine && (
+        <p className="mine-note" role="note">
+          이 {p.point.aggregate ? '집계 표시 범위' : '지점'}에 내 신고 {fmtInt(p.mark.mineCount)}건 포함 · {p.mark.shared ? '다른 기여자와 함께 기록한 지점' : '나만 기록한 지점'}
+        </p>
+      )}
+      {p.point && p.onClose && <button className="mini-btn" type="button" onClick={p.onClose}>선택 해제</button>}
       <p className="subtitle" style={{ margin: 0 }}>
         {p.scopeLabel}{d?.meta.sample ? ' · 합성 예시 · demo' : ' · 공개 제공 표본'}
       </p>

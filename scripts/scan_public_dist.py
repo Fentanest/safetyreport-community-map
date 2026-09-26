@@ -4,7 +4,23 @@ import argparse, gzip, json, re
 from pathlib import Path
 
 PLATE = re.compile(r'(?:서울|부산|대구|인천|광주|대전|울산|경기|강원|충북|충남|전북|전남|경북|경남|제주|세종)?[0-9]{2,3}[가-힣][0-9]{4}')
-FORBIDDEN = re.compile(r'sb_secret_[A-Za-z0-9_-]+|CM_SECRET_CANARY_NOT_PUBLIC|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_EXPORT_DATABASE_URL|KAKAO_REST_API_KEY|vehicle_canonical|raw_vehicle|refresh_token',re.I)
+FORBIDDEN = re.compile(r'sb_secret_[A-Za-z0-9_-]+|CM_SECRET_CANARY_NOT_PUBLIC|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_EXPORT_DATABASE_URL|KAKAO_REST_API_KEY|vehicle_canonical|raw_vehicle',re.I)
+# Data files must never carry a session field. Script bundles legitimately contain the identifier
+# `refresh_token` (the lazily loaded Supabase Auth client of the optional map login), so for scripts
+# the check is on actual token VALUES instead (TOKEN_JWT below).
+FORBIDDEN_DATA = re.compile(r'refresh_token',re.I)
+SCRIPT_SUFFIXES={'.js','.mjs'}
+TOKEN_JWT = re.compile(r'eyJ[A-Za-z0-9_-]{8,}\.(eyJ[A-Za-z0-9_-]{8,})\.[A-Za-z0-9_-]{8,}')
+# The map never calls the device relay or the account API (docs/personal-comparison.md §2).
+RELAY_OR_ACCOUNT = re.compile(r'community-auth-relay|community-account|safeauth\.worklazy\.net')
+
+def jwt_role(payload_b64: str):
+    import base64
+    try:
+        raw = base64.urlsafe_b64decode(payload_b64 + '=' * (-len(payload_b64) % 4))
+        return json.loads(raw).get('role')
+    except Exception:
+        return 'undecodable'
 PRIVATE_KEYS = {'contributor_id','snapshot_id','vehicle_hash','vehicle_canonical','raw_plate','raw_vehicle','email','phone','google_sub','access_token','refresh_token'}
 TEXT_SUFFIXES={'.html','.js','.mjs','.css','.json','.map','.txt','.csv','.svg','.xml'}
 BLOCK_DIRS={'references','fixtures','.agent-runtime','docs','tests','node_modules','.git'}
@@ -38,6 +54,10 @@ def scan(root: Path) -> list[str]:
             failures.append(f'{rel}: unreadable public text ({type(e).__name__})');continue
         if PLATE.search(text):failures.append(f'{rel}: unmasked plate-like text found')
         if FORBIDDEN.search(text):failures.append(f'{rel}: private marker/secret-like field found')
+        if file.suffix not in SCRIPT_SUFFIXES and FORBIDDEN_DATA.search(text):failures.append(f'{rel}: session field in public data')
+        for m in TOKEN_JWT.finditer(text):
+            if jwt_role(m.group(1)) != 'anon':failures.append(f'{rel}: embedded non-anon JWT (service or user token)')
+        if RELAY_OR_ACCOUNT.search(text):failures.append(f'{rel}: device relay/account endpoint referenced by the map')
         if file.suffix=='.json':
             try:
                 for path in private_keys(json.loads(text)):failures.append(f'{rel}: private JSON field {path}')

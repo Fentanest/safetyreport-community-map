@@ -21,7 +21,8 @@
       "AUTH_SITE_URL": "http://127.0.0.1:56480/",
       "AUTH_BROWSER_ORIGIN": "http://127.0.0.1:56480",
       "COMMUNITY_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490",
-      "AUTH_PUBLIC_SUPABASE_URL": "http://127.0.0.1:56321"
+      "AUTH_PUBLIC_SUPABASE_URL": "http://127.0.0.1:56321",
+      "MY_ANALYTICS_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490"
     }
   },
   "migrations": [
@@ -64,6 +65,16 @@
       "sha256": "041da47a647e17e22b42deef5efaba6ea046bcbd8ba1ad70d91775fa84caf99f",
       "depends_on": [
         "202609240001",
+        "202609260100"
+      ]
+    },
+    {
+      "version": "202609270100",
+      "repo": "map",
+      "path": "supabase/migrations/202609270100_my_analytics.sql",
+      "sha256": "eb576405559a56706a8a9ac0c9d5f22890b7c4dad5d705b70f0cac266b404571",
+      "depends_on": [
+        "202609260200",
         "202609260100"
       ]
     }
@@ -109,6 +120,20 @@
         "server/account.ts",
         "server/adapters.ts",
         "server/crypto.ts"
+      ]
+    },
+    {
+      "name": "my-analytics",
+      "repo": "map",
+      "verify_jwt": true,
+      "shared": [
+        "server/aggregate.ts",
+        "server/compare.ts",
+        "server/plate.ts",
+        "server/personalHandler.ts",
+        "server/publicHandler.ts",
+        "src/domain/personal.ts",
+        "src/domain/public.ts"
       ]
     }
   ]
