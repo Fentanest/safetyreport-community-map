@@ -239,3 +239,25 @@ R7-01·R7-02 는 8차에서 닫혔다.
 | PC 브라우저 스모크 | 127 passed, **1 failed** — firefox `ops-pages` 콘솔 오류: 외부 CDN 웹폰트(Pretendard) 다운로드 실패(`pc-browser-smoke-failure-cause.txt`, r3 와 같은 원인). 같은 스펙 chromium+firefox 재실행 14/14 passed(`pc-browser-smoke-rerun-ops-pages.log`) |
 | mobile 단위 / analyze / 실스택 | 528 passed(3 skipped) / No issues found / 1 passed |
 | 음성 대조(각각 따로) | `neg-r9-01-fixed-queue-name`, `neg-r9-02-drop-on-record-failure`, `neg-r9-04-no-handoff`, `neg-r9-recover-none`, `neg-mobile-r9-03-length-only` — 모두 목표 단언에서 실패 |
+
+## Sol 10차 재검증(`audit-sol-recheck-10.md`, "수정 후 재검토") 반영 — 승인 뒤 추가분 중 위험한 부분 되돌림
+
+9차 승인 뒤 병합 전에 넣은 R9-02·R9-04 의 **기동 회수**와 **직접 실행 자동 인계**가 새 높음 결함을 만들었다(R10-01 이름 접두어만 보고 다른 파일 삭제·읽기 오류 요청 소실, R10-02 사용자가 멈춘 크롤 자동 재시작). 복잡도를 더 올리지 않고 **둘 다 되돌렸다**.
+
+| ID | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit11/neg-*.log`) |
+|---|---|---|---|
+| R10-01 높음 | 기동 회수(`recover_leftover_queue_runs`) 제거 — 기동 때 데이터 폴더의 파일을 찾거나 지우지 않는다 | PC `b4fe1d2` | (코드 제거) |
+| R10-02 높음 | 직접 실행의 처리하지 못한 번호를 대기 큐로 넘기지 않고 재시도 타이머도 걸지 않는다(직접 시작은 사용자가 결과를 보는 일회 실행). 없음·모호 번호만 기록 | PC `b4fe1d2` | `test_direct_runs_keep_their_own_files_and_never_restart_on_their_own` / `neg-r10-02-auto-handoff.log` |
+| R10-03 중간 | 직접 시작이 경쟁에 지거나 막히면 만든 고유 큐 파일을 바로 지움(`_discard_queue_file`) | PC `b4fe1d2` | `test_a_direct_start_that_does_not_start_leaves_no_queue_file`(enqueue_report·enqueue_reports·start_crawl·복원 차단) / `neg-r10-03-no-discard.log` |
+| R10-04 중간 | 기동 회수를 없앴으므로 해당 없음 — 이전 버전 고정 이름 파일은 건드리지 않는다 | — | — |
+| R9-02(최소) | 직접 실행의 없음·모호 기록을 저장하지 못하면 보고 파일을 지우지 않고 남긴다 | PC `b4fe1d2` | 같은 테스트 / `neg-r9-02-delete-on-record-failure.log` |
+
+남는 운영 전 조건: 직접 시작에서 로그인·네트워크 실패로 처리하지 못한 번호는 자동 재시도되지 않는다(크롤 로그로 확인 후 다시 요청 — 기존 동작). R9-04(부분 번호의 전체 목록 조회 비용·실패 안내), R7-04(운영 목록 규모 측정), 모바일 미해결 표시 위젯·실기기 검증, 구앱의 일반 400 문구.
+
+### 되돌림 후 실행 결과 (`evidence/2026-09-26-audit11/`, PC 만 변경)
+후보 PC `b4fe1d2`, mobile `83b57688`(audit10 과 같음 — 그 로그가 유효).
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 409 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
+| 음성 대조(각각 따로) | `neg-r10-02-auto-handoff`, `neg-r10-03-no-discard`, `neg-r9-02-delete-on-record-failure` — 모두 목표 단언에서 실패 |
