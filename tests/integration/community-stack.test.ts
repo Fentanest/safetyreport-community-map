@@ -487,6 +487,33 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(foreign.status).toBe(403); // another user's connection: no keys leak
     });
 
+    it('keeps identical report ids of different users and datasets apart (C05, S-05)', async () => {
+      const report = `SAME-${rid()}`;
+      const a = await writerFor('A');
+      const c = await writerFor('C');
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(c, [await event(c, report, payloadOf('partial_penalty_traffic'))])).json.results[0].status).toBe('accepted');
+      // same user, a second official account (dataset) — its own writer, its own fact
+      const { r: reg, secret } = await register(a.session, datasetKey(`second-${rid()}`));
+      expect(reg.status).toBe(200);
+      const a2: Writer = { ...a, connectionId: reg.json.connection_id, epoch: reg.json.writer_epoch, dataset: '', secret, revision: 0 };
+      expect((await ingest(a2, [await event(a2, report, payloadOf('rejected_none'))])).json.results[0].status).toBe('accepted');
+      expect(count('private.community_report_facts', `source_report_id = '${report}'`)).toBe(3);
+      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}' and contributor_id = '${a.session.userId}' and dataset_key = '${a.dataset}';`)).toBe('accepted');
+      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}' and contributor_id = '${c.session.userId}';`)).toBe('partial');
+    });
+
+    it('removes the fact from the public API when a newer correction says it is no longer final (D04)', async () => {
+      const w = await writerFor('D');
+      const report = `CORR-${rid()}`;
+      expect((await ingest(w, [await event(w, report)])).json.results[0].projection_status).toBe('published');
+      const key = sql(`select source_report_key from private.community_ingest_events where source_report_id = '${report}' limit 1;`);
+      expect(publicFacts(`%:${key}`)).toBe(1);
+      const r = await ingest(w, [await event(w, report, payloadOf('withdrawn_not_eligible'), { event_type: 'status_correction' })]);
+      expect(r.json.results[0]).toMatchObject({ status: 'accepted', projection_status: 'removed' });
+      expect(publicFacts(`%:${key}`)).toBe(0);
+    });
+
     it('races ingest against revoke, takeover and a policy switch without deadlocks or partial writes (S-09)', async () => {
       const deadlocks = () => Number(execFileSync('sh', ['-c', `docker logs ${DB_CONTAINER} 2>&1 | grep -c "deadlock detected" || true`], { encoding: 'utf8' }).trim() || '0');
       const before = deadlocks();

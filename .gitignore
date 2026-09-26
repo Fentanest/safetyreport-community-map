@@ -24,3 +24,6 @@ public/data/
 .integration-stack/
 .integration-paths/
 supabase/.temp/
+
+# agent run logs, prompts and scratch (never tracked)
+.agent-runs/
