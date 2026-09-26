@@ -136,3 +136,22 @@ R2-01·R2-03·SOL-02·SOL-05 는 3차에서 닫혔다. 대기 큐 경로의 새 
 | PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 392 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
 | 음성 대조(각각 따로) | `neg-r4-01-remove-on-start`, `neg-r4-02-no-launch-lock`, `neg-r4-02-user-log-before-start`, `neg-r4-03-no-generation` — 모두 목표 단언에서 실패 |
 | 증거 비밀 검사 | 모든 추적 증거에서 세션 토큰·SSH/DBUS·`env={` 0건(사본 스크립트가 남으면 실패) |
+
+## Sol 5차 재검증(`audit-sol-recheck-05.md`, "수정 후 재검토") 반영
+
+R4-02·R4-03·R4-04 는 5차에서 닫혔다.
+
+| ID | 지적 | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit6/neg-*.log`, 각각 따로) |
+|---|---|---|---|---|
+| R5-01 높음 | `start.py` 는 로그인·조회·저장 실패도 exit 0 — 종료 코드로 번호를 지우면 영구 누락 | 자식이 큐 모드에서 **번호별 결과 보고**(`<큐파일>.done.json`, `services/crawl_queue_report.py` — `processed` 는 상세 저장 성공한 ID 의 큐 번호, `not_found` 는 끝까지 찾아도 없는 번호)를 fsync·원자 교체로 남기고, 부모는 **보고에 있는 번호만** 뺀다. 보고가 없으면(로그인 실패 등) 아무것도 빼지 않음 | PC `9f1adc6` | `test_the_real_crawler_reports_saved_and_missing_numbers_only`(실제 `start._run_crawling_process`: 1건 저장 뒤 스트림 중단 + 없는 번호 / 실제 `start.main()` 로그인·대체 로그인 실패 → 보고 없음), `test_only_numbers_the_child_reports_as_done_leave_the_queue` / `neg-r5-01-trust-exit-code.log`, `neg-r5-01-child-reports-all.log` |
+| R5-02 중간 | 실패 뒤 남은 번호·경쟁에서 `queued` 로 답한 번호를 다시 돌릴 계기 없음 | 남은 번호는 1분부터 두 배(최대 30분) 간격 재시도 타이머, 성공하면 간격 초기화. 번호를 대기 큐에 넣는 쪽(실행 중·시작 경쟁)이 한 번 더 시작을 시도 — 완료 훅이 이미 지나갔어도 시작됨 | PC `9f1adc6` | `test_a_number_queued_after_the_completion_hook_passed_still_starts`, 위 테스트의 재시도 단언 / `neg-r5-02-no-request-launch.log`, `neg-r5-02-no-retry.log` |
+| R5-03 중간 | 시작 알림이 감시 스레드보다 먼저·예외 전파 → 예약 영구 누수 | 감시 스레드를 먼저 붙이고 알림 예외는 기록만. 스레드를 못 띄우면 예약 해제 | PC `9f1adc6` | `test_a_failed_notification_or_preparation_does_not_leak_reservations_or_files` / `neg-r5-03-broadcast-first.log` |
+| R5-04 낮음 | 준비(prepare) 실패 때 번호가 담긴 임시 파일 잔류 | 시작 실패 처리에서 실행 파일(큐·보고·tmp)을 지움 | PC `9f1adc6` | 같은 테스트 / `neg-r5-04-no-file-cleanup.log` |
+
+### 5차 재검증 반영 후 실행 결과 (`evidence/2026-09-26-audit6/`, PC 만 변경)
+후보 PC `9f1adc6`. mobile `2debce44`·map 제품 `e284c86`·auth 제품 `5a4d678` 은 audit3 과 같다.
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 396 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
+| 음성 대조(각각 따로) | `neg-r5-01-trust-exit-code`, `neg-r5-01-child-reports-all`, `neg-r5-02-no-request-launch`, `neg-r5-02-no-retry`, `neg-r5-03-broadcast-first`, `neg-r5-04-no-file-cleanup` — 모두 목표 단언에서 실패 |
