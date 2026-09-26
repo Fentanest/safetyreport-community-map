@@ -1,5 +1,5 @@
-import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate';
-import type { PublicMeta, Scope } from '../src/domain/public';
+import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
+import type { PublicMeta, Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
   dataset_version: string;
@@ -138,11 +138,13 @@ export function createPublicHandler(repo: AnalyticsRepository) {
         dataMin: state.data_min,
       });
       const common = { schema_version: 2, dataset_version: state.dataset_version, sample: false, scope };
-      if (route === 'dashboard') return json({ ...common, overview: data.overview, points: data.points,
+      // location_missing: facts in scope counted in the statistics but not drawn on the map (no coordinates, S-01)
+      if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
+        overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
         vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
         vehicle_identifiable_reports: data.vehicle_identifiable_reports }, 200, 30);
-      if (route === 'overview') return json({ ...common, overview: data.overview }, 200, 60);
+      if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200, 60);
       if (route === 'map') return json({ ...common, points: data.points }, 200, 30);
       if (route === 'series') return json({ ...common, monthly: data.monthly }, 200, 60);
       if (route === 'vehicles/top') return json({ ...common, time_basis: 'report_date',

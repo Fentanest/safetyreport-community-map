@@ -90,7 +90,7 @@ export const vehiclesResponseSchema = z.strictObject({
 });
 export const overviewResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema,
-  sample: z.boolean(), overview: overviewSchema,
+  sample: z.boolean(), overview: overviewSchema, location_missing: count.optional(),
 });
 
 export const dashboardResponseSchema = z.strictObject({
@@ -98,7 +98,7 @@ export const dashboardResponseSchema = z.strictObject({
   overview: overviewSchema, points: z.array(pointSchema).max(1000), monthly: z.array(monthlySchema),
   agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
   vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,
-  vehicle_identifiable_reports: count,
+  vehicle_identifiable_reports: count, location_missing: count.optional(),
 });
 
 export const snapshotManifestSchema = z.strictObject({

@@ -2,8 +2,8 @@
 import type {
   Category, CountMetric, DashboardData, MonthlyBucket, OutcomeCounts,
   PublicEntity, PublicMeta, PublicPoint, Scope,
-} from '../src/domain/public';
-import { maskPlate, parsePlate } from './plate';
+} from '../src/domain/public.ts';
+import { maskPlate, parsePlate } from './plate.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'processing' | 'supplement' |
   'withdrawn' | 'transferred' | 'completed_unknown' | 'other';

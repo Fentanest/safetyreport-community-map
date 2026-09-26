@@ -184,7 +184,8 @@ url = "${st.kakao_mock_url}"
 email_optional = true
 
 ${fnBlocks}`;
-  writeFileSync(join(outDir, 'supabase/config.toml'), config);
+  writeFileSync(join(outDir, 'supabase/config.toml'), config, { mode: 0o600 });  // holds the local mock provider secret
+  chmodSync(join(outDir, 'supabase/config.toml'), 0o600);
   return outDir;
 }
 

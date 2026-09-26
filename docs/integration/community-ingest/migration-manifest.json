@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "note": "Canonical composition of the shared Supabase project history. Owner repo keeps each SQL; nothing is copied back. sha256 null = file added in this work, filled at commit.",
+  "note": "Canonical composition of the shared Supabase project history. Owner repo keeps each SQL; nothing is copied back. sha256 = committed content in the owner repo's integration branch.",
   "staging": {
     "project_id": "ci0926-int",
     "ports": {
@@ -51,7 +51,7 @@
       "version": "202609260100",
       "repo": "auth",
       "path": "supabase/migrations/202609260100_community_account_registry.sql",
-      "sha256": null,
+      "sha256": "4ee66b8a3b13c6f826a7351a25603d2596ba421183cee1686292fb4721f4223d",
       "depends_on": [
         "202608150001"
       ]
@@ -60,7 +60,7 @@
       "version": "202609260200",
       "repo": "map",
       "path": "supabase/migrations/202609260200_community_ingest.sql",
-      "sha256": null,
+      "sha256": "041da47a647e17e22b42deef5efaba6ea046bcbd8ba1ad70d91775fa84caf99f",
       "depends_on": [
         "202609240001",
         "202609260100"
@@ -75,7 +75,8 @@
       "shared": [
         "server/aggregate.ts",
         "server/plate.ts",
-        "server/publicHandler.ts"
+        "server/publicHandler.ts",
+        "src/domain/public.ts"
       ]
     },
     {
@@ -83,7 +84,8 @@
       "repo": "map",
       "verify_jwt": true,
       "shared": [
-        "server/plate.ts"
+        "server/ingest/handler.ts",
+        "server/ingest/observation.ts"
       ]
     },
     {
@@ -103,7 +105,9 @@
       "repo": "auth",
       "verify_jwt": true,
       "shared": [
-        "server/adapters.ts"
+        "server/account.ts",
+        "server/adapters.ts",
+        "server/crypto.ts"
       ]
     }
   ]

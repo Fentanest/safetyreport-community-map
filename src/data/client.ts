@@ -81,7 +81,8 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     throw new PublicApiError('데이터 버전 또는 조회 범위가 바뀌었습니다. 다시 조회해 주세요.', 409);
   }
   return {
-    meta, scope, overview: result.overview, points: result.points, monthly: result.monthly,
+    meta: { ...meta, location_missing: result.location_missing ?? undefined },
+    scope, overview: result.overview, points: result.points, monthly: result.monthly,
     agencies: result.agencies, managers: result.managers, vehicles: result.vehicles,
     vehicle_total_scope_reports: result.vehicle_total_scope_reports,
     vehicle_identifiable_reports: result.vehicle_identifiable_reports,

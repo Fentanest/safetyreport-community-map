@@ -22,4 +22,5 @@ public/data/
 
 # local integration stack (scripts/integration/compose_supabase.mjs)
 .integration-stack/
+.integration-paths/
 supabase/.temp/

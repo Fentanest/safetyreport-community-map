@@ -15,6 +15,7 @@ interface Props {
   onApplyView: (bbox: [number, number, number, number]) => void;
   autoRefresh: boolean;
   onAutoRefresh: (v: boolean) => void;
+  locationMissing?: number | null;
 }
 
 const METRICS: Array<{ id: MapMetric; label: string; legend: string; basis: string }> = [
@@ -135,7 +136,7 @@ export default function MapPanel(p: Props) {
       <div className="panel-top">
         <div>
           <h2>전국 신고 분포</h2>
-          <span className="subtitle">{p.categoryLabel} · 저줌 집계 표시는 원좌표와 다릅니다</span>
+          <span className="subtitle">{p.categoryLabel} · 저줌 집계 표시는 원좌표와 다릅니다{p.locationMissing ? ` · 좌표 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 포함` : ''}</span>
         </div>
         <div className="mini-segments" role="group" aria-label="지도 지표">
           {METRICS.map((m) => (
