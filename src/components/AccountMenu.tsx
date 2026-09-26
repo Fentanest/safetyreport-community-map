@@ -35,8 +35,8 @@ export default function AccountMenu({ auth, onSignIn, onSignOut, briefing }: Pro
   }
   return (
     <div className="account-menu" ref={ref}>
-      <button className="quiet-btn" type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)}>
-        {briefing ? '내 계정' : (auth.displayName ?? '내 계정')}{auth.synthetic ? ' · 합성' : ''}
+      <button className="quiet-btn account-name" type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)}>
+        <span className="account-name-text">{briefing ? '내 계정' : (auth.displayName ?? '내 계정')}{auth.synthetic ? ' · 합성' : ''}</span>
       </button>
       {open && (
         <div className="account-pop" role="menu">

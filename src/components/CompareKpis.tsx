@@ -97,7 +97,9 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
               {showMine && (
                 <td className="num mine-col" aria-busy={personal.status === 'loading' || personal.status === 'waiting'}>
                   {data ? (<><b className="cm-number">{row.mine(data.mine)}</b>{row.mineNote(data.mine) && <small>{row.mineNote(data.mine)}</small>}</>)
-                    : <span className="cm-muted">{personal.status === 'loading' || personal.status === 'waiting' ? '…' : '—'}</span>}
+                    : personal.status === 'loading' || personal.status === 'waiting'
+                      ? <span className="mine-skel" role="status" aria-label="내 신고 불러오는 중" />
+                      : <span className="cm-muted">—</span>}
                 </td>
               )}
               {showMine && (
