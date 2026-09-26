@@ -218,3 +218,24 @@ R7-01·R7-02 는 8차에서 닫혔다.
 | PC 단위 / 서버↔모바일 왕복 / 실스택 / 브라우저 스모크 | 407 OK(skip 4) / diff_count 0 / 1 OK / 128 passed |
 | mobile 단위 / analyze / 실스택 | 527 passed(3 skipped) / No issues found / 1 passed |
 | 음성 대조(각각 따로) | `neg-r8-01-partial-from-incomplete`, `neg-r8-01-initial-partial`, `neg-r8-02-no-mobile-refusal`, `neg-r8-02-no-direct-record`, `neg-r8-03-drop-anyway`, `neg-mobile-r8-02-generic-enqueue-error` — 모두 목표 단언에서 실패 |
+
+## Sol 9차 재검증(`audit-sol-recheck-09.md`, **"감사 수정 병합 가능"**) 뒤 — 병합 후·운영 전 조건 중 코드로 닫을 수 있는 것을 병합 전에 반영
+
+| ID | 조건 | 조치 | commit | 회귀 테스트 / 음성 대조(`evidence/2026-09-26-audit10/neg-*.log`) |
+|---|---|---|---|---|
+| R9-01 | 직접 실행이 고정 큐 파일 이름 → 연속 실행이 결과 보고를 덮음 | 실행마다 `<이름>_<uuid>.txt` | PC `2f925b5` | `test_direct_runs_keep_their_own_report_and_hand_leftovers_to_the_queue` / `neg-r9-01-fixed-queue-name.log` |
+| R9-02 | 직접 실행에서 기록 실패 시 번호가 조회·재시도 어디에도 남지 않음 | 기록 못 한 없음·모호 번호도 대기 큐로 넘겨 다음에 다시 판정. 넘기지 못하면 파일을 남기고, 서버 기동 때 지난 실행이 정리하지 못한 큐·보고 파일을 회수 | PC `2f925b5` | 위 테스트, `test_startup_recovers_leftover_queue_runs` / `neg-r9-02-drop-on-record-failure.log`, `neg-r9-recover-none.log` |
+| R9-03 | 모바일이 미해결 목록을 길이로만 비교(50개 상한에서 갱신 안 됨) | 번호·사유·시각 비교(`CrawlUnresolved.sameList`) | mobile `83b57688` | `test/services/crawl_unresolved_test.dart` 같은 길이·다른 내용 / `neg-mobile-r9-03-length-only.log` |
+| R9-04 | 부분 번호: 목록 실패 시 직접 시작은 결과 없음·재시도 없음 | 직접 실행에서 처리하지 못한 번호(보고 없음 포함)를 대기 큐로 넘겨 늘어나는 간격으로 재시도. 정책: 부분 번호는 목록 전체 성공 확인 뒤에만 처리(정확한 번호는 즉시) | PC `2f925b5` | 위 테스트(보고 없음 → 대기 큐 + 타이머) / `neg-r9-04-no-handoff.log` |
+
+남는 운영 전 조건(코드로 닫지 않음): 운영 목록 규모에서 전체 받기의 시간·호출 수·메모리 측정(R7-04), 크롤 화면 미해결 표시의 위젯·실기기 검증, 구앱은 `/crawl/enqueue` 400 이유를 일반 문구로 보임.
+
+### R9 반영 후 실행 결과 (`evidence/2026-09-26-audit10/`)
+후보 PC `2f925b5`, mobile `83b57688`. map 제품 `e284c86`·auth 제품 `5a4d678` 은 audit3 과 같다.
+
+| 영역 | 결과 |
+|---|---|
+| PC 단위 / 서버↔모바일 왕복 / 실스택 | 409 OK(skip 4) / diff_count 0 / 1 OK |
+| PC 브라우저 스모크 | 127 passed, **1 failed** — firefox `ops-pages` 콘솔 오류: 외부 CDN 웹폰트(Pretendard) 다운로드 실패(`pc-browser-smoke-failure-cause.txt`, r3 와 같은 원인). 같은 스펙 chromium+firefox 재실행 14/14 passed(`pc-browser-smoke-rerun-ops-pages.log`) |
+| mobile 단위 / analyze / 실스택 | 528 passed(3 skipped) / No issues found / 1 passed |
+| 음성 대조(각각 따로) | `neg-r9-01-fixed-queue-name`, `neg-r9-02-drop-on-record-failure`, `neg-r9-04-no-handoff`, `neg-r9-recover-none`, `neg-mobile-r9-03-length-only` — 모두 목표 단언에서 실패 |
