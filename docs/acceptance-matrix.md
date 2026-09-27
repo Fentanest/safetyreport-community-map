@@ -42,7 +42,7 @@ P0 실패는 출시 차단. 검증 불가면 BLOCKED/NOT_RUN, 합격으로 바�
 | CMP03 | P0 | 소유권은 검증된 사용자에서만(getUser+claims), 비로그인·키 bearer·익명·비카카오 거부, RPC service_role 전용 |
 | CMP04 | P0 | 개인 응답 private/no-store, 공개 API·snapshot·share URL·dist에 개인 필드 없음 |
 | CMP05 | P0 | 지도 로그아웃은 scope=local, 앱·서버 업로드 세션 유지; relay/account API 미호출 |
-| CMP06 | P0 | 공개 열람 비로그인 유지, 개인 API 실패가 공개 화면을 막지 않음 |
+| CMP06 | P0 | 지도 열람은 공유자 전용(2026-09-27): 비로그인 401·동의 없음/업로드 없음 403·다른 Origin 403, 안내 화면. 개인 API 실패가 지도 화면을 막지 않음 |
 | CMP07 | P0 | 두 열·보기 전환·지역 목록·내 지점 표시·담당자 비교·추이 내 시리즈가 실제 브라우저에서 동작(Muse 증거) |
 | CMP08 | P1 | 모바일 390·라이트·다크·브리핑(내 데이터 기본 숨김)·§6 예외 상태 실제 브라우저 확인 |
 

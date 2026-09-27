@@ -29,7 +29,7 @@ snapshot IDs, 이메일·전화번호·계정 이름·Google sub·JWT·refresh t
 차량 raw를 HTML hidden, title, data-attribute, tooltip, aria-label, analytics 이벤트, URL query에 넣어도 노출이다.
 
 ## 내 신고 비교(개인 읽기) 경계
-- 공개 API는 Authorization을 받지 않고(CORS 허용 헤더 `Accept`) 요청자가 누구든 같은 응답이다(테스트 고정).
+- 지도 통계 API(`public-analytics`)는 2026-09-27부터 공유자 전용이다: 검증된 카카오 세션 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상인 사람에게만 같은 공개 DTO를 준다(`private, no-store`, 사용자별 횟수 제한). 누가 읽든 내용은 같고, 요청자 정보는 응답에 들어가지 않는다(테스트 고정). `ANALYTICS_ACCESS=public`이면 예전처럼 익명 공개.
 - 개인 응답(`my-analytics`)은 검증된 사용자 본인에게만, `Cache-Control: private, no-store`·`Vary: Authorization`. 계정 id·세션·이메일을 담지 않는다.
 - exporter는 `mine`·`viewer`·`my_points`·`user_id`·`session_id` 필드를 거부하고, share URL에는 비교 모드·계정 상태를 넣지 않는다.
 - 관심 지역·비교 토글은 이 브라우저 localStorage에만(서버 전송 없음). 브리핑 모드는 내 데이터를 기본으로 숨긴다.
@@ -49,7 +49,7 @@ CORS는 HTTP 비브라우저 호출을 막는 인증 수단이 아니다. 반환
 
 ## 삭제와 보존
 공동 지도 기여 철회 → 신규 업로드 차단 → active facts 제외 → aggregate version 교체 → API cache purge →
-Actions의 static snapshot 긴급 재생성. 민감한 상세 차량/담당자 응답은 장기 정적 cache로 배포하지 않는다.
+(정적 snapshot은 지금 만들지 않으므로 재생성 단계 없음— docs/public-api-contract.md §열람 조건)). 민감한 상세 차량/담당자 응답은 장기 정적 cache로 배포하지 않는다.
 공개 파일을 이용자가 저장한 사본까지 원격 회수할 수 있다고 약속하지 않는다.
-static snapshot은 생성시각 표시, API에서 더 최신 삭제 version을 알리면 그 즉시 구본 사용을 중단한다.
-정정·삭제 요청은 실제 운영 문의 경로 확인 후 연결. 가짜 메일/문의 채널을 만들어두지 않는다.
+static snapshot을 다시 쓰게 되면(공개 전환 후) 생성시각 표시, API에서 더 최신 삭제 version을 알리면 그 즉시 구본 사용을 중단한다.
+정정·삭제 요청과 문의는 이 저장소의 공개 Issues(템플릿 `.github/ISSUE_TEMPLATE/`)로 받는다. 공개 게시판이라 개인정보를 적지 말라고 안내하고, 본인 확인은 운영자가 따로 한다. 운영자 삭제는 `internal_community_delete_contributions(user, session)`.

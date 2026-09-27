@@ -1,6 +1,6 @@
 # 공개 읽기 API · 제안 계약
 모든 경로명은 이 프로젝트가 구현해야 할 계약이며 이미 배포돼 있다고 가정하지 않는다.
-base는 환경별 공개 URL. 비로그인 GET, response projection은 fixed allowlist.
+base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽을 수 있는지는 아래 §열람 조건(2026-09-27부터 공유자 전용).
 
 ## 경로
 | 경로 | 용도 |
@@ -54,14 +54,30 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 초기 cache 제안: overview/series 60초, detail/entities/vehicles 30초 이하, meta 30초.
 삭제·version변경 시 invalidation 경로 구현. 헤더만 적어놓고 실제 CDN cache가 생긴다고 가정하지 않는다.
 
+## 열람 조건 (2026-09-27 사용자 결정: 공유자 전용)
+참여하는 사람이 모일 때까지 지도와 통계는 **카카오로 로그인했고, 신고 결과를 한 건 이상 지도에 공유한 사람만** 본다.
+Edge 비밀값 `ANALYTICS_ACCESS`가 정한다(없거나 `public`이 아니면 공유자 전용, `public`이면 예전처럼 익명 공개).
+
+| 단계 | 규칙 |
+|---|---|
+| 신원 | 모든 경로(`meta` 포함)에 `Authorization: Bearer <지도 세션 access token>`. `getUser` + claims(sub·role·aud·iss·session_id·익명 여부) — `server/viewerAuth.ts`(my-analytics와 공용) |
+| 자격 | `internal_analytics_viewer(검증된 user, session)`: 카카오 신원·세션 유효, 활성 기여자(공유 동의 미철회), **지도에 나가는 본인 사실 1건 이상**(`has_public_facts`, 완료·활성 동의 계보) |
+| 응답 | 공개 DTO 그대로. 헤더는 `Cache-Control: private, no-store, max-age=0`, `Vary: Origin, Authorization`, 허용 Origin만 에코(`ANALYTICS_ALLOWED_ORIGINS`, 없으면 `MY_ANALYTICS_ALLOWED_ORIGINS`) |
+| 횟수 제한 | 검증된 사용자별(`ANALYTICS_RATE_SALT`로 가린 버킷) |
+| 오류 | 401 `auth_required`·`session_expired`(`WWW-Authenticate: Bearer`), 403 `kakao_required`·`contributor_required`(동의 없음·철회·정지)·`upload_required`(동의했지만 지도에 올라간 신고 없음)·`origin_forbidden`, 인증 서버 장애 503. 거절 응답에는 통계·버전을 넣지 않는다 |
+| 정적 파일 | Pages에 통계 snapshot(`data/…`)을 만들지 않는다(주소만 알면 받을 수 있으므로). 워크플로가 산출물에 `data/`가 없는지 검사 |
+
+화면: 거절 코드면 대시보드 대신 안내 화면(`src/components/AccessGate.tsx`) — 로그인 버튼, 동의 필요, 업로드 필요, 카카오 필요.
+통계 요청은 지도 세션 토큰을 붙이고 401이면 한 번 갱신 후 다시 보낸다(`src/data/client.ts`). 증거: `scripts/integration/access_gate_e2e.mjs`.
+
 ## 현재 로컬 구현 상태
 
 `server/publicHandler.ts`가 이 경로와 합성 `dashboard` 경로를 고정 라우팅한다. Supabase Edge
 `supabase/functions/public-analytics/index.ts`는 service-role credential을 서버 안에서만 사용해
 `internal_analytics_v2_*` RPC를 호출하고 고정 공개 DTO만 반환한다. base 설정값은
 `https://<project>.supabase.co/functions/v1`이며 브라우저는 그 뒤에 `/public-analytics/...`를 붙인다.
-현재 응답은 철회/버전 무효화 전파를 우선해 `Cache-Control: no-store`다. 공개 정적 snapshot은
-meta version이 같은 경우에만 읽는다. 운영에서 v2 사실이 준비되지 않으면 meta capability는 missing,
+현재 응답은 철회/버전 무효화 전파를 우선해 `Cache-Control: no-store`다(공유자 전용일 때는 `private, no-store`).
+정적 snapshot은 공유자 전용 전환과 함께 쓰지 않는다(위 §열람 조건). 운영에서 v2 사실이 준비되지 않으면 meta capability는 missing,
 집계 경로는 503을 반환한다. 이 코드는 아직 운영 DB·Edge에 배포되지 않았다.
 지도는 현재 bbox로 범위를 좁히고 표시 노드를 1,000개 이하로 묶는다. 별도 `zoom/resolution`과
 result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌려준다.
@@ -83,4 +99,4 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 `overview.fine_amount`(basis, fine_count, confirmed_count, sum_won, mean_won, median_won, zero_count, unconfirmed/undisclosed/conflict/penalty/combined_count, partial).
 월·기관·담당자·지역 행에는 요약 `duration{count, median_days, mean_days}`, `fine_amount{fine_count, confirmed_count, sum_won, mean_won}`. 정의: docs/metrics-catalog.md.
 개별 신고의 금액·기간은 내보내지 않는다. 두 필드는 선택(optional)이라 예전 응답도 schema를 통과한다.
-이 공개 API는 개인 비교를 제공하지 않는다. 로그인 사용자의 비교는 별도 `my-analytics/compare`(docs/personal-comparison.md §3)다.
+이 API는 개인 비교를 제공하지 않는다. 로그인 사용자의 비교는 별도 `my-analytics/compare`(docs/personal-comparison.md §3)다.

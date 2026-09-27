@@ -9,13 +9,14 @@
 ## 1. 목표
 전국 통계 상황판을 **현재 보고 있는 지역·기관·담당자·기간의 전체 통계와 내 신고 통계를 같은 화면에서 나란히 비교하는
 커뮤니티 지도**로 바꾼다. 개인 통계를 마이페이지에 가두지 않는다. `내 데이터 함께 보기`를 켜면
-KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가된다. 끄거나 로그인하지 않으면 지금과 같은 공개 화면이다.
+KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가된다. 끄면 전체 통계만 보인다.
+(2026-09-27부터 지도 자체가 공유자 전용이라, 로그인하지 않으면 통계 대신 로그인 안내가 나온다 — docs/public-api-contract.md §열람 조건.)
 
 ## 2. 인증 경계
 | 항목 | 규칙 |
 |---|---|
-| 공개 열람 | 비로그인. 공개 API(`public-analytics`)는 Authorization을 받지도 쓰지도 않는다(CORS 허용 헤더 `Accept`만) |
-| 지도 웹 로그인 | 선택 기능. 브라우저에서 Supabase Auth 카카오 OAuth(PKCE), 저장 키 `cm-map-auth-v1`. `src/auth/mapAuth.ts` |
+| 지도 열람 | 2026-09-27부터 공유자 전용: 카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상. `public-analytics`도 지도 세션 토큰을 받아 `server/viewerAuth.ts`로 검증한다(`ANALYTICS_ACCESS=public`이면 예전처럼 익명) |
+| 지도 웹 로그인 | 공유자 전용 동안 지도 열람에 필요. 브라우저에서 Supabase Auth 카카오 OAuth(PKCE), 저장 키 `cm-map-auth-v1`. `src/auth/mapAuth.ts` |
 | relay와 구분 | `safeauth.worklazy.net`·`community-auth-relay`는 PC/Docker 서버 기기 연결 중계, `community-account`는 동의·writer 등록 API다. 지도는 둘 다 호출하지 않는다(테스트로 고정) |
 | 소유권 | `my-analytics`가 `getUser(token)` + claims(sub·role·aud·iss·session_id·익명 여부)로 검증한 사용자 id만 쓴다. 요청 파라미터·헤더·로컬 저장값의 id는 받지 않는다 |
 | 로그아웃 | `signOut({ scope: 'local' })`만. 이 브라우저의 지도 세션만 끝난다. `global`/`others`는 앱·서버의 업로드 연결 세션(`bound_session_id`)을 끊으므로 호출 금지(테스트·통합 스택으로 고정) |
@@ -31,7 +32,7 @@ KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가�
   허용 Origin만 `Access-Control-Allow-Origin` 에코(와일드카드 없음).
 - 오류: 401 `auth_required`/`session_expired`, 403 `kakao_required`/`account_ineligible`/`origin_forbidden`, 400 `INVALID_QUERY`,
   409 `DATASET_CHANGED`, 429 `rate_limited`(Retry-After 60), 503 `AGGREGATE_NOT_READY`/`service_unavailable`. 본문에 id·SQL·토큰 없음.
-- 개인 응답은 공개 API·`public/data` 스냅샷·exporter·Service Worker·localStorage에 넣지 않는다. exporter는 `mine`·`viewer`·`my_points`
+- 개인 응답은 공개 API·정적 스냅샷(현재 만들지 않음)·exporter·Service Worker·localStorage에 넣지 않는다. exporter는 `mine`·`viewer`·`my_points`
   필드를 거부한다(`tests/product/test_export_snapshot.py`).
 
 ### 3.1 같은 scope·모집단·게시 버전

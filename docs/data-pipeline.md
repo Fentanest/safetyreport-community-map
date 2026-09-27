@@ -2,7 +2,8 @@
 
 ## 매일 데이터 흐름
 업로드는 수집 직후 실시간 + 지도 탭 수동 + 매일 00:00 KST(PC/server/Android 책임, 지연 가능). 특정 시각에 모든 사용자가 업로드를 마쳤다고 가정하지 않는다.
-Supabase는 완료된 snapshot만 집계에 포함하고 version을 교체한다. Pages 초기 캐시는 daily 04:17 KST 목표로 생성하고
+Supabase는 완료된 snapshot만 집계에 포함하고 version을 교체한다. (2026-09-27 공유자 전용 전환: 정적 snapshot을 만들지 않는다 — docs/public-api-contract.md §열람 조건)
+(공개 전환 뒤 다시 쓸 때의 계획) Pages 초기 캐시는 daily 04:17 KST 목표로 생성하고
 추가 갱신은 workflow_dispatch / 승인된 repository_dispatch 등으로 할 수 있다.
 GitHub Actions cron 기본 UTC를 쓸 경우 `17 19 * * *`가 KST 다음날 04:17이다. 이 스케줄은 정시 보장이 아니며
 지연/공개 레포 60일 비활성 중단을 감시해야 한다. [S08]
@@ -24,6 +25,7 @@ CI cache에는 비공개 data를 섞지 않는다. 위치 cache 쓰기가 필요
 [S05: Kakao Local]
 
 ## 정적 데이터 분할
+(2026-09-27 공유자 전용 전환: 정적 snapshot을 만들지 않는다 — docs/public-api-contract.md §열람 조건)
 first-screen은 최소 meta+overview+map-index. point-details/entities는 공개 API lazy fetch.
 URL은 dataset_version을 포함하고 manifest pointer는 짧은 캐시. API에서 새 version을 알면 stale snapshot 라벨 및 재조회.
 정적 artifact의 차량별 전체 집계/원본은 금지. source maps에 fixture raw가 들어가지 않도록 테스트 포함.

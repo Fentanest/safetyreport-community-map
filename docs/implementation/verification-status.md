@@ -78,3 +78,12 @@ provider `opencode-go`, model `muse-spark-1.3-contributor`, variant `default`, �
 - Muse 호출은 두 번 중간 문장으로 턴을 끝내 같은 세션으로 두 번 재개했다(원인: 포트를 붙인 주소로 열어 카카오 출처 불일치).
 - PC dev 기존 실패: `tests.test_db_backup_regression …restore_from_mobile_db…`는 dev 원본 `9a6662b`에서도 같은 `LegacyDatabaseRefused`로 실패(이번 변경과 무관).
 - 모바일 전체 테스트의 골든 4건 실패도 dev 원본 `82efd333`에서 같게 실패.
+
+## 지도 공유자 전용 전환 · 2026-09-27 (로컬 브랜치 `dev`, push 전)
+
+| 항목 | 구현 | 로컬 검증 | 배포 | 실데이터 |
+|---|---|---|---|---|
+| 열람 조건: 카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상 | `server/viewerAuth.ts`, `publicHandler` PublicAccess, migration `202609280500`, `AccessGate` | 단위(handler 8·client 4), 로컬 스택(익명 401·동의 없음 403·업로드 없음 403·다른 Origin 403), 브라우저 E2E `access_gate_e2e.mjs` 10/10(`docs/integration/community-ingest/evidence/2026-09-27-access-gate/`) | 안 함(push·운영 적용 전) | NOT_RUN |
+| 정적 통계 snapshot 중단 | `publish-pages.yml`에서 export 제거, 산출물 `data/` 없음 검사, 클라이언트 snapshot 읽기 제거 | live 빌드 산출물에 `data/` 없음, dist 스캔 통과 | 안 함 | — |
+
+`upload_required`(동의했지만 올라간 신고 없음) 단계는 단위 테스트까지 확인했고, 로컬 스택 재실행은 다른 세션이 스택을 쓰는 중이라 이후에 한다.

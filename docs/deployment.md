@@ -8,16 +8,18 @@
 | VITE_PUBLIC_ANALYTICS_URL | variable / frontend | 공개 read-only Edge API base |
 | VITE_DATA_MODE | variable | live 또는 명시 demo |
 | VITE_BASE_PATH | variable | `/` 기본 (공개 주소 `https://safemap.worklazy.net/`) |
-| PUBLIC_ANALYTICS_URL | CI variable, snapshot exporter | 현재 구현은 이미 공개 허용된 Edge API만 읽음. 비밀키 불필요 |
+| PUBLIC_ANALYTICS_URL | CI variable | Pages 빌드의 API base. snapshot exporter는 공유자 전용 동안 쓰지 않음. 비밀키 불필요 |
 | SUPABASE_EXPORT_DATABASE_URL | 선택적 후속 direct exporter 전용 | 현재 스크립트는 사용하지 않음. 사용 시 specific safe views SELECT 전용 DSN/TLS 필요 |
 | KAKAO_REST_API_KEY | 선택적 주소 보완 step만 | 현재 스크립트는 사용하지 않음. 브라우저 변수 금지 |
-| ANALYTICS_RATE_SALT | Supabase Edge Function secret | 공개 요청 IP의 1분 rate bucket용 salt. 프런트/CI에 넣지 않음 |
+| ANALYTICS_RATE_SALT | Supabase Edge Function secret | 1분 rate bucket용 salt(공유자 전용이면 사용자별, 공개면 IP별). 프런트/CI에 넣지 않음 |
+| ANALYTICS_ACCESS | Supabase Edge Function secret | 없거나 `public`이 아니면 공유자 전용(기본). `public`이면 예전처럼 익명 공개 |
+| ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | 공유자 전용일 때 `public-analytics` Origin allowlist. 없으면 `MY_ANALYTICS_ALLOWED_ORIGINS` |
 | optional SUPABASE_PUBLISHABLE_KEY | 공개 direct adapter만 | anon/access grants로 제한. 기본 UI는 필요 없음 |
 | service_role/secret | 중앙 Supabase 함수 runtime만 | 관리자 성격. CI readonly 대용으로 사용하지 않음 |
-| VITE_SUPABASE_URL | variable / frontend | 선택. 지도 웹 로그인(내 신고 비교)용 프로젝트 URL. 비우면 로그인 미설정으로 공개 지도만 |
+| VITE_SUPABASE_URL | variable / frontend | 지도 웹 로그인용 프로젝트 URL. 공유자 전용 동안 필수(비우면 아무도 지도를 볼 수 없음) |
 | VITE_SUPABASE_PUBLISHABLE_KEY | variable / frontend | 선택. 공개 publishable(`sb_publishable_…`) 키. secret/service_role 금지(dist 스캔이 비-anon JWT 차단) |
 | MY_ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | `my-analytics` Origin allowlist. 운영 `https://safemap.worklazy.net` |
-| MY_ANALYTICS_ENABLED | Supabase Edge Function secret | `false`면 개인 비교만 503(공개 지도 영향 없음) |
+| MY_ANALYTICS_ENABLED | Supabase Edge Function secret | `false`면 개인 비교만 503(지도 통계 영향 없음) |
 
 환경 파일은 .env.example만 커밋한다. 실제값은 요청받아 채팅에 복사시키지 말고 사용자가 GitHub/Supabase 설정에 입력한다.
 VITE_에 PRIVATE/SECRET/REST/DSN이 들어가면 검증 실패. 단순 환경변수 이름보다 실제 artifact도 검사한다.
@@ -30,13 +32,10 @@ push만으로는 배포되지 않는다(`publish-pages.yml` 수동 실행).
 base 설정을 맞춘다. 날짜·탭은 query 또는 hash routing으로 유지해 deep-link 404를 피한다.
 assets/data 주소에 import.meta.env.BASE_URL 사용. 자동 임의 wildcard redirect에 의존하지 않는다.
 실제 배포 artifact는 dist 하나만; repository root/documentation/reference-image 전체를 upload하지 않는다.
-`product-check.yml`은 검증 전용이다. `publish-pages.yml`은 main의 수동 `workflow_dispatch`만
-받아 public endpoint에서 snapshot export·검사·live 빌드가 모두 성공했을 때만 Pages artifact를
-배포하도록 작성했으나, 현재 운영값과 v2 원천이 없어 실행하지 않았다. 정적 첫 화면 snapshot은
-`PUBLIC_ANALYTICS_URL=https://<project>.supabase.co/functions/v1 npm run data:export`로 **공개 API**에서만
-생성한다. 이 URL은 비밀키가 아니다. `public/data/`는 생성 파일이며 gitignore 대상이다.
-export가 실패하거나 v2 capability가 missing이면 manifest를 갱신하지 않는다. 런타임은 API meta의
-현재 dataset_version과 snapshot version이 일치할 때만 정적 파일을 사용한다.
+`product-check.yml`은 검증 전용이다. `publish-pages.yml`은 main의 수동 `workflow_dispatch`만 받아 검사·live 빌드가
+성공했을 때만 Pages artifact를 배포한다. 2026-09-27부터 지도는 공유자 전용이라 **정적 통계 snapshot을 만들지 않고**,
+산출물에 `data/`가 없는지 검사한다(주소만 알면 받을 수 있는 통계 파일을 두지 않기 위해). 런타임은 모든 통계를
+지도 로그인 토큰과 함께 API에서 읽는다. `npm run data:export`(공개 API에서 snapshot 생성)는 공개로 다시 열 때를 위해 남겨 두었다.
 `publish-pages.yml`의 Pages Actions는 확인한 버전의 전체 commit SHA로 고정했다. 오래된
 `templates/github-pages.yml.example`은 비교용 참고 파일이다.
 
@@ -66,6 +65,6 @@ production deployment는 별도 사용자 승인 후. concurrency와 rollback ru
 2. `supabase functions deploy my-analytics`(verify_jwt=true), secret `MY_ANALYTICS_ALLOWED_ORIGINS`.
 3. Supabase Auth: Kakao provider 리다이렉트 허용에 `https://safemap.worklazy.net/**` 추가(지도 페이지로 돌아오는 PKCE).
 4. Pages 변수 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` 설정 후 `VITE_DATA_MODE=live npm run build && npm run scan`.
-5. smoke: 비로그인 공개 화면 → 로그인 → 비교 켜기 → 전체 열 = 공개 KPI → 로그아웃 → 앱 수동 업로드가 계속 ACK되는지.
-6. 되돌리기: `MY_ANALYTICS_ENABLED=false` 또는 Pages 변수 제거(로그인 미설정 상태로 공개 지도 유지). RPC drop은 선택.
+5. smoke(공유자 전용): 비로그인 → 로그인 안내 화면·API 401 → 공유 신고가 있는 계정으로 로그인 → 지도 → 비교 켜기 → 전체 열 = 지도 KPI → 로그아웃 → 앱 수동 업로드가 계속 ACK되는지. 로컬 증거 스크립트 `scripts/integration/access_gate_e2e.mjs`.
+6. 되돌리기: 개인 비교만 끄려면 `MY_ANALYTICS_ENABLED=false`. 지도 공개 범위를 되돌리려면 `ANALYTICS_ACCESS=public`(익명 공개, 함수 재배포 불필요). RPC drop은 선택.
 로컬 합성 스택 검증 결과는 `docs/integration/community-ingest/evidence/2026-09-27-personal-compare/`. 운영 적용·실카카오는 BLOCKED.

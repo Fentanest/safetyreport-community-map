@@ -10,13 +10,16 @@ safetyreport / safetyreport-mobile (이 작업 밖의 업로더)
                          ├─ versioned aggregates / export-only read model
                          └─ public-analytics Edge API (공개 허용 DTO만)
                                       ↑
-GitHub Actions → safe export view → initial snapshot → GitHub Pages React UI
-                                                     │
-                                                     ├─ Kakao JS SDK (공개 JS key)
-                                                     └─ public-analytics GET (비밀키 없음)
+GitHub Actions → GitHub Pages React UI (통계 파일 없음)
+                     │
+                     ├─ Kakao JS SDK (공개 JS key)
+                     ├─ Supabase Auth 카카오 로그인(PKCE, 지도 전용 세션)
+                     └─ public-analytics GET + Bearer (비밀키 없음, 공유자 전용 검사)
 ```
+2026-09-27부터 지도는 공유자 전용이다(docs/public-api-contract.md §열람 조건). 예전의 "safe export view → initial snapshot"
+경로(Actions가 공개 API에서 통계 JSON을 만들어 Pages에 싣던 것)는 주소만 알면 누구나 받을 수 있어 멈췄다.
 
-선택 기능 `내 데이터 함께 보기`(docs/personal-comparison.md): 브라우저가 Supabase Auth 카카오 로그인(PKCE, 지도 전용 세션)으로
+`내 데이터 함께 보기`(docs/personal-comparison.md): 브라우저가 같은 지도 로그인 세션으로
 `my-analytics` Edge(verify_jwt)에 Bearer로 GET한다. 이 함수는 공개 API와 같은 사실 원천을 한 스냅숏에서 읽어 전체/내 값을 함께 계산하고
 private/no-store로 돌려준다. 공개 API·정적 snapshot 경로와 섞이지 않는다.
 
@@ -39,7 +42,7 @@ Pages에서 브라우저가 비밀키 없는 공개 API를 호출하는 것은 �
 
 ## 4. 데이터 모드
 `demo`: 합성 fixtures 전용; 모든 화면에 예시 배지; production 빌드와 별도.
-`snapshot`: 배포 시점 summary·points 캐시. 값의 dataset_version·time range·scope를 표시.
+`snapshot`: 배포 시점 summary·points 캐시. 값의 dataset_version·time range·scope를 표시. (2026-09-27 공유자 전용 전환: 정적 snapshot을 만들지 않는다 — docs/public-api-contract.md §열람 조건)
 `live`: 같은 공개 API에서 상세 필터 응답. 데이터 실시간 수집을 뜻하지 않는다.
 실제 upstream 없음/키 누락 시 demo로 자동 대체하지 말고 live 기능의 준비 상태를 보여준다.
 
