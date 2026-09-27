@@ -1,159 +1,178 @@
 {
-  "schema": 1,
-  "note": "Canonical composition of the shared Supabase project history. Owner repo keeps each SQL; nothing is copied back. sha256 = committed content in the owner repo's integration branch.",
-  "staging": {
-    "project_id": "ci0926-int",
-    "ports": {
-      "api": 56321,
-      "db": 56322,
-      "shadow": 56320,
-      "inspector": 56383
-    },
-    "site_url": "http://127.0.0.1:56480/",
-    "redirect_urls": [
-      "http://127.0.0.1:56480/callback.html",
-      "com.fentanest.mysafetyreport://auth/callback",
-      "http://127.0.0.1:56490/**"
-    ],
-    "kakao_mock_url": "http://host.docker.internal:56410",
-    "function_env": {
-      "AUTH_RELAY_ENABLED": "true",
-      "AUTH_RELAY_LOCAL_STACK": "loopback-only",
-      "AUTH_SITE_URL": "http://127.0.0.1:56480/",
-      "AUTH_BROWSER_ORIGIN": "http://127.0.0.1:56480",
-      "COMMUNITY_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490",
-      "AUTH_PUBLIC_SUPABASE_URL": "http://127.0.0.1:56321",
-      "MY_ANALYTICS_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490"
-    }
+ "schema": 1,
+ "note": "Canonical composition of the shared Supabase project history. Owner repo keeps each SQL; nothing is copied back. sha256 = committed content in the owner repo's integration branch.",
+ "staging": {
+  "project_id": "ci0926-int",
+  "ports": {
+   "api": 56321,
+   "db": 56322,
+   "shadow": 56320,
+   "inspector": 56383
   },
-  "migrations": [
-    {
-      "version": "202608150001",
-      "repo": "map",
-      "path": "supabase/migrations/202608150001_initial_schema.sql",
-      "sha256": "4588c08acaaa87c7773e86215fce8eae2e3ba44168ae76f0828b14c7ca8c7da6",
-      "depends_on": []
-    },
-    {
-      "version": "202609240001",
-      "repo": "map",
-      "path": "supabase/migrations/202609240001_analytics_v2.sql",
-      "sha256": "809e5cab1b32cf56afc834c80b5fc7e1a7723b965dc68f87ac373a487b93fb33",
-      "depends_on": [
-        "202608150001"
-      ]
-    },
-    {
-      "version": "202609251200",
-      "repo": "auth",
-      "path": "supabase/migrations/202609251200_community_auth_relay.sql",
-      "sha256": "4dca9216f52e9b2a6b7cd2dff898833ec6a8c556649f134db6e5d8029373a03c",
-      "depends_on": []
-    },
-    {
-      "version": "202609260100",
-      "repo": "auth",
-      "path": "supabase/migrations/202609260100_community_account_registry.sql",
-      "sha256": "4ee66b8a3b13c6f826a7351a25603d2596ba421183cee1686292fb4721f4223d",
-      "depends_on": [
-        "202608150001"
-      ]
-    },
-    {
-      "version": "202609260200",
-      "repo": "map",
-      "path": "supabase/migrations/202609260200_community_ingest.sql",
-      "sha256": "041da47a647e17e22b42deef5efaba6ea046bcbd8ba1ad70d91775fa84caf99f",
-      "depends_on": [
-        "202609240001",
-        "202609260100"
-      ]
-    },
-    {
-      "version": "202609270100",
-      "repo": "map",
-      "path": "supabase/migrations/202609270100_my_analytics.sql",
-      "sha256": "eb576405559a56706a8a9ac0c9d5f22890b7c4dad5d705b70f0cac266b404571",
-      "depends_on": [
-        "202609260200",
-        "202609260100"
-      ]
-    },
-    {
-      "version": "202609280100",
-      "repo": "map",
-      "path": "supabase/migrations/202609280100_amount_duration_region.sql",
-      "sha256": "b2dd5e778781356a630b67fbf4d7a32d573e327320d372a8419f2add9d47eaba",
-      "depends_on": [
-        "202609260200",
-        "202609260100"
-      ]
-    }
+  "site_url": "http://127.0.0.1:56480/",
+  "redirect_urls": [
+   "http://127.0.0.1:56480/callback.html",
+   "com.fentanest.mysafetyreport://auth/callback",
+   "http://127.0.0.1:56490/**"
   ],
-  "functions": [
-    {
-      "name": "public-analytics",
-      "repo": "map",
-      "verify_jwt": false,
-      "shared": [
-        "server/aggregate.ts",
-        "server/amount.ts",
-        "server/duration.ts",
-        "server/plate.ts",
-        "server/publicHandler.ts",
-        "server/regions.ts",
-        "contracts/regions/regions-20260701.json",
-        "src/domain/public.ts"
-      ]
-    },
-    {
-      "name": "community-ingest",
-      "repo": "map",
-      "verify_jwt": true,
-      "shared": [
-        "server/ingest/handler.ts",
-        "server/ingest/observation.ts"
-      ]
-    },
-    {
-      "name": "community-auth-relay",
-      "repo": "auth",
-      "verify_jwt": false,
-      "shared": [
-        "server/adapters.ts",
-        "server/config.ts",
-        "server/crypto.ts",
-        "server/protocol.ts",
-        "server/relay.ts"
-      ]
-    },
-    {
-      "name": "community-account",
-      "repo": "auth",
-      "verify_jwt": true,
-      "shared": [
-        "server/account.ts",
-        "server/adapters.ts",
-        "server/crypto.ts"
-      ]
-    },
-    {
-      "name": "my-analytics",
-      "repo": "map",
-      "verify_jwt": true,
-      "shared": [
-        "server/aggregate.ts",
-        "server/amount.ts",
-        "server/compare.ts",
-        "server/duration.ts",
-        "server/personalHandler.ts",
-        "server/plate.ts",
-        "server/publicHandler.ts",
-        "server/regions.ts",
-        "contracts/regions/regions-20260701.json",
-        "src/domain/personal.ts",
-        "src/domain/public.ts"
-      ]
-    }
-  ]
+  "kakao_mock_url": "http://host.docker.internal:56410",
+  "function_env": {
+   "AUTH_RELAY_ENABLED": "true",
+   "AUTH_RELAY_LOCAL_STACK": "loopback-only",
+   "AUTH_SITE_URL": "http://127.0.0.1:56480/",
+   "AUTH_BROWSER_ORIGIN": "http://127.0.0.1:56480",
+   "COMMUNITY_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490",
+   "AUTH_PUBLIC_SUPABASE_URL": "http://127.0.0.1:56321",
+   "MY_ANALYTICS_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490"
+  }
+ },
+ "migrations": [
+  {
+   "version": "202608150001",
+   "repo": "map",
+   "path": "supabase/migrations/202608150001_initial_schema.sql",
+   "sha256": "4588c08acaaa87c7773e86215fce8eae2e3ba44168ae76f0828b14c7ca8c7da6",
+   "depends_on": []
+  },
+  {
+   "version": "202609240001",
+   "repo": "map",
+   "path": "supabase/migrations/202609240001_analytics_v2.sql",
+   "sha256": "809e5cab1b32cf56afc834c80b5fc7e1a7723b965dc68f87ac373a487b93fb33",
+   "depends_on": [
+    "202608150001"
+   ]
+  },
+  {
+   "version": "202609251200",
+   "repo": "auth",
+   "path": "supabase/migrations/202609251200_community_auth_relay.sql",
+   "sha256": "4dca9216f52e9b2a6b7cd2dff898833ec6a8c556649f134db6e5d8029373a03c",
+   "depends_on": []
+  },
+  {
+   "version": "202609260100",
+   "repo": "auth",
+   "path": "supabase/migrations/202609260100_community_account_registry.sql",
+   "sha256": "4ee66b8a3b13c6f826a7351a25603d2596ba421183cee1686292fb4721f4223d",
+   "depends_on": [
+    "202608150001"
+   ]
+  },
+  {
+   "version": "202609260200",
+   "repo": "map",
+   "path": "supabase/migrations/202609260200_community_ingest.sql",
+   "sha256": "041da47a647e17e22b42deef5efaba6ea046bcbd8ba1ad70d91775fa84caf99f",
+   "depends_on": [
+    "202609240001",
+    "202609260100"
+   ]
+  },
+  {
+   "version": "202609270100",
+   "repo": "map",
+   "path": "supabase/migrations/202609270100_my_analytics.sql",
+   "sha256": "eb576405559a56706a8a9ac0c9d5f22890b7c4dad5d705b70f0cac266b404571",
+   "depends_on": [
+    "202609260200",
+    "202609260100"
+   ]
+  },
+  {
+   "version": "202609280100",
+   "repo": "map",
+   "path": "supabase/migrations/202609280100_amount_duration_region.sql",
+   "sha256": "b2dd5e778781356a630b67fbf4d7a32d573e327320d372a8419f2add9d47eaba",
+   "depends_on": [
+    "202609260200",
+    "202609260100"
+   ]
+  },
+  {
+   "version": "202609280200",
+   "repo": "auth",
+   "path": "supabase/migrations/202609280200_policy_2026_09_28_1.sql",
+   "sha256": "12e3349c000236288911ca4e5af32cbf924ea467b62b34c331d2c1671c0cc0d8",
+   "depends_on": [
+    "202609260100"
+   ]
+  },
+  {
+   "version": "202609280300",
+   "repo": "map",
+   "path": "supabase/migrations/202609280300_policy_amount_disclosure.sql",
+   "sha256": "ca5a902e717171b4724d87fe2da06b159a97e459e1f5653e7947257e8e38ed2c",
+   "depends_on": [
+    "202609280100",
+    "202609280200"
+   ]
+  }
+ ],
+ "functions": [
+  {
+   "name": "public-analytics",
+   "repo": "map",
+   "verify_jwt": false,
+   "shared": [
+    "server/aggregate.ts",
+    "server/amount.ts",
+    "server/duration.ts",
+    "server/plate.ts",
+    "server/publicHandler.ts",
+    "server/regions.ts",
+    "contracts/regions/regions-20260701.json",
+    "src/domain/public.ts"
+   ]
+  },
+  {
+   "name": "community-ingest",
+   "repo": "map",
+   "verify_jwt": true,
+   "shared": [
+    "server/ingest/handler.ts",
+    "server/ingest/observation.ts"
+   ]
+  },
+  {
+   "name": "community-auth-relay",
+   "repo": "auth",
+   "verify_jwt": false,
+   "shared": [
+    "server/adapters.ts",
+    "server/config.ts",
+    "server/crypto.ts",
+    "server/protocol.ts",
+    "server/relay.ts"
+   ]
+  },
+  {
+   "name": "community-account",
+   "repo": "auth",
+   "verify_jwt": true,
+   "shared": [
+    "server/account.ts",
+    "server/adapters.ts",
+    "server/crypto.ts"
+   ]
+  },
+  {
+   "name": "my-analytics",
+   "repo": "map",
+   "verify_jwt": true,
+   "shared": [
+    "server/aggregate.ts",
+    "server/amount.ts",
+    "server/compare.ts",
+    "server/duration.ts",
+    "server/personalHandler.ts",
+    "server/plate.ts",
+    "server/publicHandler.ts",
+    "server/regions.ts",
+    "contracts/regions/regions-20260701.json",
+    "src/domain/personal.ts",
+    "src/domain/public.ts"
+   ]
+  }
+ ]
 }

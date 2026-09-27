@@ -23,3 +23,11 @@
   - 로컬 스택 검증에서 Deno import 확장자 누락(부팅 실패)을 발견·수정(`4f6c84f`). live 로그인 E2E 17/17(`bdc7d72` 증거).
   - 최종 재검수: 검수 전용 detached worktree `/home/better0101/projects/safetyreport-community-map-compare-review` @ `ec5a847`.
   - 운영 DB·Edge 배포·Auth 설정·push·Pages 배포는 하지 않았다.
+- 2026-09-27 과태료 금액·답변까지 걸린 기간·행정구역 경계(branch `feat/duration-amount-boundaries`, Sol 역할 = 이 세션의 Claude Opus 5.5).
+  - 기간: `server/duration.ts`(KST 달력일, 답변 cohort, 제외 사유 집계, 중앙값·p90 nearest-rank, 그룹별 원 값 재계산). 공개 overview·월·기관·담당자·지역, 개인 비교(일 차이).
+  - 금액: `server/amount.ts` 분류(confirmed/undisclosed/unconfirmed/conflict/penalty/combined), migration `202609280100`(동의 정책별 금액 공개 표
+    `private.community_policy_disclosures`, 공개 RPC는 허용된 정책의 금액만 값으로 내보냄). 현재 동의문 2026-09-26.1은 등록하지 않음(금액 ‘공개’ 미고지).
+  - 지역: SGIS 경계(2025-06-30)·행안부 코드(2026-07-01)로 `scripts/boundaries/build_boundaries.mjs`가 TopoJSON·코드표 생성(sha256 고정).
+    통계는 법정 시도/시군구 코드, 인천 분할 구는 좌표로, 세종 하나, 전남광주 통합. 필터 두 단계, 지역 목록 단계, 카카오 경계 레이어.
+  - 검증: 단위 191·Python 11·blueprint 27, 로컬 스택 27(금액 공개 게이트 포함), live build 스캔, 실제 카카오 SDK(등록 도메인을 브라우저 resolver로만 로컬에 연결)
+    위 경계 hover·클릭·목록·뒤로·확대·끄기·옛 URL·390 확인. Muse 검수: `docs/tasks/muse-dab-review.md` → `docs/reviews/dab-review.md`.
