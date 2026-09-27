@@ -85,7 +85,9 @@ export const entitySchema = z.strictObject({
 });
 
 export const regionSchema = z.strictObject({
-  region_code: z.string().max(24).nullable(), report_count: count, completed_count: count,
+  level: z.enum(['sido', 'sgg', 'unknown']), region_code: z.string().regex(/^\d{2}(\d{3})?$/).nullable(),
+  name: z.string().max(40), sido_code: z.string().regex(/^\d{2}$/).nullable(),
+  report_count: count, completed_count: count,
   outcomes, fine_count: count, duration: durationBrief, fine_amount: fineBrief,
 });
 

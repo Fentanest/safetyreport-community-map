@@ -46,7 +46,8 @@ export const personalCompareSchema = z.strictObject({
     duration_median_days_diff: dayDiff, duration_mean_days_diff: dayDiff, fine_rate_pp: pp, rate_reason: z.enum(['no_all', 'no_mine']).nullable(),
   }),
   regions: z.array(z.strictObject({
-    region_code: z.string().max(24).nullable(), all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp, duration_median_days_diff: dayDiff,
+    level: z.enum(['sido', 'sgg', 'unknown']), region_code: z.string().regex(/^\d{2}(\d{3})?$/).nullable(),
+    name: z.string().max(40), sido_code: z.string().regex(/^\d{2}$/).nullable(), all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp, duration_median_days_diff: dayDiff,
   })).max(300),
   agencies: z.array(entitySchema).max(50),
   managers: z.array(entitySchema).max(50),

@@ -69,7 +69,10 @@ export interface CompareSide {
 }
 
 export interface CompareRegionRow {
+  level: 'sido' | 'sgg' | 'unknown';
   region_code: string | null;
+  name: string;
+  sido_code: string | null;
   all: CompareSide;
   mine: CompareSide;
   accept_rate_pp: number | null;

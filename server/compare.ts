@@ -1,7 +1,8 @@
 /** Personal comparison: all vs mine over ONE scope selection. Server-only (my-analytics). */
 import {
-  located, monthKeys, outcomes, selectScope, kstDate, type PrivateFact,
+  located, monthKeys, outcomes, regionKeys, selectScope, kstDate, type PrivateFact,
 } from './aggregate.ts';
+import { regionName } from './regions.ts';
 import type { Scope } from '../src/domain/public.ts';
 import { durationSummary } from './duration.ts';
 import type {
@@ -97,18 +98,33 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   const all = summarize(reported, done);
   const mine = summarize(myReported, myDone);
 
-  // Regions: every region present in the scope (the list is short on screen; the client decides).
-  const regionKey = (fact: PrivateFact) => fact.region_code;
-  const regionReported = group(reported, regionKey), regionDone = group(done, regionKey);
-  const regionCodes = new Set<string | null>([...regionReported.keys(), ...regionDone.keys()]);
-  const regions: CompareRegionRow[] = [...regionCodes].map(code => {
-    const r = regionReported.get(code) ?? [], d = regionDone.get(code) ?? [];
-    const a = side(r, d), m = side(r.filter(isMine), d.filter(isMine));
-    return { region_code: code, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
+  // Regions at both levels on official codes (the same grouping as the public rows), each from raw facts.
+  type Bucket = { level: CompareRegionRow['level']; code: string | null; sido: string | null; r: PrivateFact[]; d: PrivateFact[] };
+  const buckets = new Map<string, Bucket>();
+  const bucket = (level: Bucket['level'], code: string | null, sido: string | null) => {
+    const key = `${level}:${code ?? ''}`;
+    let b = buckets.get(key);
+    if (!b) buckets.set(key, b = { level, code, sido, r: [], d: [] });
+    return b;
+  };
+  const place = (fact: PrivateFact, list: 'r' | 'd') => {
+    const k = regionKeys(fact);
+    if (!k.sgg || !k.sido) { bucket('unknown', null, null)[list].push(fact); return; }
+    bucket('sido', k.sido, null)[list].push(fact);
+    bucket('sgg', k.sgg, k.sido)[list].push(fact);
+  };
+  for (const fact of reported) place(fact, 'r');
+  for (const fact of done) place(fact, 'd');
+  const levelOrder = { sido: 0, sgg: 1, unknown: 2 } as const;
+  const regions: CompareRegionRow[] = [...buckets.values()].map(b => {
+    const a = side(b.r, b.d), m = side(b.r.filter(isMine), b.d.filter(isMine));
+    return { level: b.level, region_code: b.code, name: b.code ? regionName(b.code) ?? b.code : '지역 미확인',
+      sido_code: b.sido, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
       partial_rate_pp: minus(m.partial_rate, a.partial_rate),
       duration_median_days_diff: minus(m.duration_median_days, a.duration_median_days) };
-  }).sort((x, y) => y.all.report_count - x.all.report_count || y.all.completed_count - x.all.completed_count ||
-    (x.region_code ?? '￿').localeCompare(y.region_code ?? '￿', 'ko')).slice(0, MAX_COMPARE_REGIONS);
+  }).sort((x, y) => levelOrder[x.level] - levelOrder[y.level] || y.all.report_count - x.all.report_count ||
+    y.all.completed_count - x.all.completed_count || (x.region_code ?? '').localeCompare(y.region_code ?? ''))
+    .slice(0, MAX_COMPARE_REGIONS);
 
   // Agencies/managers the viewer actually dealt with (completion basis, same keys as the public table).
   const entities = (kind: 'agency' | 'manager'): CompareEntityRow[] => {

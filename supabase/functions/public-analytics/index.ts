@@ -36,7 +36,9 @@ const handle = createPublicHandler({
   async getFacts(scope: Scope): Promise<PrivateFact[]> {
     const value = await rpc('internal_analytics_v2_facts', {
       p_start: scope.start, p_end: scope.end, p_category: scope.category,
-      p_region_code: scope.region_code, p_agency_key: scope.agency_key,
+      // Region filtering happens in server/aggregate.ts on official codes (시도 includes its 시군구); the SQL filter
+      // only knows the raw display key, so it is not used here.
+      p_region_code: null, p_agency_key: scope.agency_key,
       p_manager_key: scope.manager_key, p_bbox: scope.bbox,
     });
     if (!Array.isArray(value) || value.length > 100000) throw new Error('analytics source budget exceeded');

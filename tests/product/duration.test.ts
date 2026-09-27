@@ -74,13 +74,15 @@ describe('scope integration', () => {
   });
   it('group medians are recomputed from raw values, not averaged', () => {
     const rows = [
-      fact('2026-09-01', '2026-09-02', { region_code: 'A', agency_key: 'a', agency_name: 'a' }),
-      fact('2026-09-01', '2026-09-03', { region_code: 'A', agency_key: 'a', agency_name: 'a' }),
-      fact('2026-09-01', '2026-09-30', { region_code: 'B', agency_key: 'b', agency_name: 'b' }),
+      fact('2026-09-01', '2026-09-02', { region_code: '서울 중구', agency_key: 'a', agency_name: 'a' }),
+      fact('2026-09-01', '2026-09-03', { region_code: '서울 중구', agency_key: 'a', agency_name: 'a' }),
+      fact('2026-09-01', '2026-09-30', { region_code: '부산 해운대구', agency_key: 'b', agency_name: 'b' }),
     ];
     const data = aggregateDashboard(rows, scope('2026-09-01', '2026-09-30'), opts);
-    const byRegion = Object.fromEntries(data.regions!.map(r => [r.region_code, r.duration!.median_days]));
-    expect(byRegion).toEqual({ A: 1.5, B: 29 });
+    const byRegion = Object.fromEntries(data.regions!.filter(r => r.level === 'sgg').map(r => [r.region_code, r.duration!.median_days]));
+    expect(byRegion).toEqual({ '11140': 1.5, '26350': 29 });
+    // 시도 rows are computed from raw facts too (서울 = [1, 2] → 1.5; 부산 = [29])
+    expect(data.regions!.find(r => r.region_code === '11')!.duration!.median_days).toBe(1.5);
     // overall median of raw [1, 2, 29] is 2, not the mean of group medians (15.25)
     expect(data.overview.processing_duration!.median_days).toBe(2);
     expect(data.agencies.find(a => a.agency_key === 'a')!.duration).toMatchObject({ count: 2, median_days: 1.5 });

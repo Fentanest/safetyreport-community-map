@@ -110,7 +110,7 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
     if not isinstance(regions, list) or len(regions) > 300:
         raise ValueError('region budget exceeded')
     for region in regions:
-        exact_keys(region, {'region_code', 'report_count', 'completed_count', 'outcomes', 'fine_count'}, {'duration', 'fine_amount'})
+        exact_keys(region, {'level', 'region_code', 'name', 'sido_code', 'report_count', 'completed_count', 'outcomes', 'fine_count'}, {'duration', 'fine_amount'})
         brief(region)
         exact_keys(region['outcomes'], outcome_keys)
     if len(top['vehicles']) > 5:

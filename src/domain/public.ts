@@ -161,10 +161,15 @@ export interface PublicEntity {
   fine_amount?: FineAmountBrief | null;
 }
 
-/** Region row (region_code as stored by ingest, e.g. '서울 중구'; null = 지역 미상).
+/** Region row at one level (docs/region-boundaries.md). region_code = official 2026-07-01 법정 code
+ *  (2-digit 시도 or 5-digit 시군구); null with level 'unknown' = 지역 미확인 (kept in every total).
  *  report_count uses the report date; completed/outcomes/fine use the completion date. */
 export interface PublicRegion {
+  level: 'sido' | 'sgg' | 'unknown';
   region_code: string | null;
+  name: string;
+  /** parent 시도 of a 시군구 row */
+  sido_code: string | null;
   report_count: number;
   completed_count: number;
   outcomes: OutcomeCounts;

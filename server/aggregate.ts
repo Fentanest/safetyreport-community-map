@@ -6,6 +6,7 @@ import type {
 import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
 import { fineAmountBrief, fineAmountSummary } from './amount.ts';
+import { regionMatches, regionName, resolveRegion, type RegionRef } from './regions.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'processing' | 'supplement' |
   'withdrawn' | 'transferred' | 'completed_unknown' | 'other';
@@ -97,7 +98,7 @@ function activeFacts(facts: readonly PrivateFact[]): PrivateFact[] {
 
 function dimensions(fact: PrivateFact, scope: Scope): boolean {
   if (scope.category !== 'all' && fact.category !== scope.category) return false;
-  if (scope.region_code && fact.region_code !== scope.region_code) return false;
+  if (scope.region_code && !regionMatches(regionOf(fact), scope.region_code)) return false;
   if (scope.agency_key && fact.agency_key !== scope.agency_key) return false;
   if (scope.manager_key && fact.manager_key !== scope.manager_key) return false;
   if (scope.bbox) {
@@ -166,23 +167,49 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
 export type LocatedFact = PrivateFact & { point_key: string; lat: number; lng: number };
 export const located = (fact: PrivateFact): fact is LocatedFact => fact.point_key !== null && fact.lat !== null && fact.lng !== null;
 
-/** Region rows: report counts on the report-date basis, completion/outcome/fine on the completion-date basis. */
+const regionCache = new WeakMap<PrivateFact, RegionRef | null>();
+/** Official region of a fact (cached per fact object). */
+export function regionOf(fact: PrivateFact): RegionRef | null {
+  let ref = regionCache.get(fact);
+  if (ref === undefined) {
+    ref = resolveRegion(fact.region_code, fact.lat, fact.lng);
+    regionCache.set(fact, ref);
+  }
+  return ref;
+}
+
+/** Group key of a fact at each level (unknown when the region cannot be resolved). */
+export function regionKeys(fact: PrivateFact): { sido: string | null; sgg: string | null } {
+  const ref = regionOf(fact);
+  return { sido: ref?.sido ?? null, sgg: ref?.sgg ?? null };
+}
+
+/** Region rows at both levels, each computed from raw facts (never by adding or averaging child rows).
+ *  Report counts use the report date; completion/outcome/fine/duration/amount use the completion date. */
 export function regionRows(reported: readonly PrivateFact[], done: readonly PrivateFact[]): PublicRegion[] {
-  const rows = new Map<string, { code: string | null; reported: number; done: PrivateFact[] }>();
-  const row = (code: string | null) => {
-    const key = code ?? '\u0000unknown';
+  const rows = new Map<string, { level: PublicRegion['level']; code: string | null; sido: string | null; reported: number; done: PrivateFact[] }>();
+  const row = (level: PublicRegion['level'], code: string | null, sido: string | null) => {
+    const key = `${level}:${code ?? ''}`;
     let current = rows.get(key);
-    if (!current) rows.set(key, current = { code, reported: 0, done: [] });
+    if (!current) rows.set(key, current = { level, code, sido, reported: 0, done: [] });
     return current;
   };
-  for (const fact of reported) row(fact.region_code).reported++;
-  for (const fact of done) row(fact.region_code).done.push(fact);
+  const add = (fact: PrivateFact, apply: (r: { reported: number; done: PrivateFact[] }) => void) => {
+    const k = regionKeys(fact);
+    if (!k.sgg) { apply(row('unknown', null, null)); return; }
+    apply(row('sido', k.sido, null));
+    apply(row('sgg', k.sgg, k.sido));
+  };
+  for (const fact of reported) add(fact, r => { r.reported++; });
+  for (const fact of done) add(fact, r => { r.done.push(fact); });
+  const order = { sido: 0, sgg: 1, unknown: 2 } as const;
   return [...rows.values()].map(r => ({
-    region_code: r.code, report_count: r.reported, completed_count: r.done.length,
+    level: r.level, region_code: r.code, name: r.code ? regionName(r.code) ?? r.code : '지역 미확인', sido_code: r.sido,
+    report_count: r.reported, completed_count: r.done.length,
     outcomes: outcomes(r.done), fine_count: r.done.filter(fact => fact.disposition === 'fine').length,
     duration: durationBrief(r.done), fine_amount: fineAmountBrief(r.done),
-  })).sort((a, b) => b.report_count - a.report_count || b.completed_count - a.completed_count ||
-    (a.region_code ?? '\uffff').localeCompare(b.region_code ?? '\uffff', 'ko'));
+  })).sort((a, b) => order[a.level] - order[b.level] || b.report_count - a.report_count ||
+    b.completed_count - a.completed_count || (a.region_code ?? '').localeCompare(b.region_code ?? ''));
 }
 
 export function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly PrivateFact[]): PublicPoint[] {
@@ -366,7 +393,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       vehicle_top5: capability('supported'),
       fine_amount: { status: 'supported', reason: null, coverage: { eligible: fineAmount.confirmed_count, total: fineAmount.fine_count } },
       processing_duration: { status: 'supported', reason: null, coverage: { eligible: duration.count, total: duration.count + duration.excluded.no_report_date + duration.excluded.reversed } },
-      region_boundaries: capability('missing', '공식 경계 데이터가 없습니다.'),
+      region_boundaries: { status: 'supported', reason: null, coverage: null },
     },
   };
   return {

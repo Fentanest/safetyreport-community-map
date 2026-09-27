@@ -1,4 +1,5 @@
 import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
+import { codeForLegacyKey } from './regions.ts';
 import type { PublicEntity, PublicMeta, Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
@@ -79,7 +80,11 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
       values[0] > values[2] || values[1] > values[3]) throw new QueryError('INVALID_QUERY', 400);
     bbox = values as Scope['bbox'];
   }
-  return { start, end, category: category as Scope['category'], region_code: optional('region_code'),
+  const region = optional('region_code');
+  // Official 2026-07-01 code (2-digit 시도 / 5-digit 시군구); a legacy display key is converted when unambiguous.
+  const regionCode = region === null ? null : codeForLegacyKey(region);
+  if (region !== null && regionCode === null) throw new QueryError('INVALID_QUERY', 400);
+  return { start, end, category: category as Scope['category'], region_code: regionCode,
     agency_key: optional('agency_key'), manager_key: optional('manager_key'), bbox };
 }
 
@@ -97,8 +102,7 @@ function meta(state: AnalyticsState): PublicMeta {
     capabilities: Object.fromEntries([
       'daily_report_dates', 'completion_dates', 'manager_status_cross', 'agency_status_cross', 'vehicle_top5',
       'fine_amount', 'processing_duration', 'region_boundaries',
-    ].map(name => [name, capability(state.ready && !['region_boundaries'].includes(name),
-      ['region_boundaries'].includes(name) ? '해당 원천이 없습니다.' : reason)])),
+    ].map(name => [name, capability(state.ready, reason)])),
   };
 }
 

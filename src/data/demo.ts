@@ -82,11 +82,11 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       { key: 'm3', agency_key: 'a3', manager_key: 'm3', agency_name: '예시 제주 기관', manager_name: '김하늘', completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
     ],
     regions: !available ? null : empty ? [] : one ? [
-      { region_code: '50', report_count: 1, completed_count: 1, outcomes, fine_count: 0 },
+      { level: 'sido', region_code: '50', name: '제주특별자치도', sido_code: null, report_count: 1, completed_count: 1, outcomes, fine_count: 0 },
     ] : [
-      { region_code: '11', report_count: 5, completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 }, fine_count: 1 },
-      { region_code: '26', report_count: 3, completed_count: 2, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 1 }, fine_count: 1 },
-      { region_code: '50', report_count: 1, completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
+      { level: 'sido', region_code: '11', name: '서울특별시', sido_code: null, report_count: 5, completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 }, fine_count: 1 },
+      { level: 'sido', region_code: '26', name: '부산광역시', sido_code: null, report_count: 3, completed_count: 2, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 1 }, fine_count: 1 },
+      { level: 'sido', region_code: '50', name: '제주특별자치도', sido_code: null, report_count: 1, completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
     ],
     vehicles: !available || empty ? [] : one ? [
       { rank: 1, rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 1, percentage: 100 },

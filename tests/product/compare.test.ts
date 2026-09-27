@@ -148,11 +148,19 @@ describe('rows share the public keys and totals', () => {
   const pub = dash(facts, DEMO_SCOPE);
 
   it('region rows sum to the overview on both sides and match public region rows', () => {
-    expect(cmp.regions.reduce((n, r) => n + r.all.report_count, 0)).toBe(cmp.all.report_count);
-    expect(cmp.regions.reduce((n, r) => n + r.mine.report_count, 0)).toBe(cmp.mine.report_count);
-    expect(cmp.regions.reduce((n, r) => n + r.all.completed_count, 0)).toBe(cmp.all.completed_count);
+    // 시도 + 지역 미확인 partition the scope; 시군구 rows partition each 시도
+    const top = cmp.regions.filter(r => r.level !== 'sgg');
+    expect(top.reduce((n, r) => n + r.all.report_count, 0)).toBe(cmp.all.report_count);
+    expect(top.reduce((n, r) => n + r.mine.report_count, 0)).toBe(cmp.mine.report_count);
+    expect(top.reduce((n, r) => n + r.all.completed_count, 0)).toBe(cmp.all.completed_count);
+    for (const sido of cmp.regions.filter(r => r.level === 'sido')) {
+      const kids = cmp.regions.filter(r => r.level === 'sgg' && r.sido_code === sido.region_code);
+      expect(kids.reduce((n, r) => n + r.all.report_count, 0)).toBe(sido.all.report_count);
+    }
+    expect(pub.regions!.length).toBe(cmp.regions.length);
     for (const row of pub.regions!) {
-      const c = cmp.regions.find(r => r.region_code === row.region_code)!;
+      const c = cmp.regions.find(r => r.level === row.level && r.region_code === row.region_code)!;
+      expect(c.name).toBe(row.name);
       expect(c.all.report_count).toBe(row.report_count);
       expect(c.all.completed_count).toBe(row.completed_count);
       expect(c.all.result_known).toBe(row.outcomes.result_known);

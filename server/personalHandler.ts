@@ -119,7 +119,8 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       const scope = parseScope(url.searchParams, { data_min: null, data_max: null }, SCOPE_PARAMS);
       const source = await deps.rpc('internal_my_analytics_source', {
         p_user: uid, p_session: session, p_start: scope.start, p_end: scope.end, p_category: scope.category,
-        p_region_code: scope.region_code, p_agency_key: scope.agency_key, p_manager_key: scope.manager_key,
+        // region is filtered on official codes in server/aggregate.ts (same as the public API)
+        p_region_code: null, p_agency_key: scope.agency_key, p_manager_key: scope.manager_key,
         p_bbox: scope.bbox,
       }) as PersonalSource | null;
       if (!source || typeof source !== 'object' || !source.state || !source.viewer || !Array.isArray(source.facts)) fail('service_unavailable');
