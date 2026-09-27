@@ -57,13 +57,13 @@ export default function FilterDrawer(p: Props) {
       <div className="drawer-backdrop" onClick={p.onClose} aria-hidden="true" />
       <section ref={panelRef} className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
         <div className="drawer-header">
-          <h2 id="drawer-title">분석 조건</h2>
+          <h2 id="drawer-title">조건 선택</h2>
           <button className="icon-btn" type="button" onClick={p.onClose} aria-label="닫기">
             <Icon name="close" />
           </button>
         </div>
         <div className="chip-row" aria-label="적용된 조건">
-          {p.appliedChips.length === 0 && <span className="cm-muted" style={{ fontSize: 13 }}>적용된 추가 조건이 없습니다.</span>}
+          {p.appliedChips.length === 0 && <span className="cm-muted" style={{ fontSize: 13 }}>추가로 고른 조건이 없습니다.</span>}
           {p.appliedChips.map((c) => (
             <span key={c} className="cm-chip">{c}</span>
           ))}
@@ -89,8 +89,7 @@ export default function FilterDrawer(p: Props) {
           </select>
         </label>
         <div className="drawer-notice">
-          신고 지표는 신고일, 처리·처분 지표는 처리완료일을 사용합니다. 표본이 1건인 결과도 숨기지 않습니다.
-          지역과 지도 화면 범위의 교집합 설명은 지도 카드의 ‘이 화면 범위 적용’ 버튼을 확인해 주세요.
+          신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. 1건뿐인 결과도 그대로 보여 드립니다.
           현재 선택: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]}
         </div>
         {p.unsupportedNote && (
@@ -100,7 +99,7 @@ export default function FilterDrawer(p: Props) {
         )}
         <div className="drawer-actions">
           <button className="ghost-btn" type="button" onClick={p.onReset}>초기화</button>
-          <button className="primary-button" type="button" onClick={p.onApply}>조건 적용</button>
+          <button className="primary-button" type="button" onClick={p.onApply}>적용</button>
         </div>
       </section>
     </>

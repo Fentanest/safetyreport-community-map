@@ -69,17 +69,17 @@ export class PersonalApiError extends Error {
 }
 
 const MESSAGE: Record<PersonalErrorCode, string> = {
-  unconfigured: '이 배포에는 지도 로그인이 설정되지 않았습니다.',
-  signed_out: '로그인하면 내 신고와 함께 비교할 수 있습니다.',
-  session_expired: '지도 로그인이 만료되었습니다. 다시 로그인해 주세요. 앱·서버의 자동 업로드 연결에는 영향이 없습니다.',
-  kakao_required: '카카오 계정으로 로그인해야 내 신고를 비교할 수 있습니다.',
-  account_ineligible: '이 계정으로는 내 신고 비교를 사용할 수 없습니다.',
-  DATASET_CHANGED: '공개 데이터가 방금 갱신됐습니다. 다시 조회해 주세요.',
+  unconfigured: '지금은 로그인 기능을 쓸 수 없습니다.',
+  signed_out: '로그인하면 내 신고와 비교할 수 있습니다.',
+  session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.',
+  kakao_required: '카카오 계정으로 로그인해야 내 신고를 볼 수 있습니다.',
+  account_ineligible: '이 계정으로는 내 신고를 볼 수 없습니다.',
+  DATASET_CHANGED: '통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.',
   rate_limited: '요청이 많아 잠시 후 다시 시도해 주세요.',
-  AGGREGATE_NOT_READY: '공개 집계가 아직 준비되지 않았습니다.',
+  AGGREGATE_NOT_READY: '통계가 아직 준비되지 않았습니다.',
   network: '네트워크 연결을 확인한 뒤 다시 시도해 주세요.',
-  invalid_response: '내 신고 비교 응답을 확인할 수 없습니다.',
-  service_unavailable: '내 신고 비교를 불러오지 못했습니다. 공개 통계는 계속 볼 수 있습니다.',
+  invalid_response: '내 신고를 불러오지 못했습니다. 다시 시도해 주세요.',
+  service_unavailable: '내 신고를 불러오지 못했습니다. 전체 통계는 그대로 볼 수 있습니다.',
 };
 
 export const personalError = (code: PersonalErrorCode, retryAfter: number | null = null) =>

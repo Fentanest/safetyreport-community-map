@@ -91,7 +91,7 @@ describe('session-expired guidance (docs/personal-comparison.md §6)', () => {
     const auth = createDemoAuth('?me=expired');
     expect(await auth.refreshToken()).toBeNull();
     expect(auth.snapshot()).toMatchObject({ status: 'signed_out' });
-    expect(auth.snapshot().message).toContain('자동 업로드 연결에는 영향이 없습니다');
+    expect(auth.snapshot().message).toContain('앱의 자동 업로드는 그대로 계속됩니다');
   });
 });
 

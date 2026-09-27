@@ -84,7 +84,7 @@ export function createLiveAuth(): MapAuth {
   const config = authConfig();
   const emitter = new Emitter({
     status: config ? 'signed_out' : 'unconfigured', displayName: null, synthetic: false,
-    message: config ? null : '이 배포에는 지도 로그인이 설정되지 않았습니다. 공개 지도는 그대로 볼 수 있습니다.',
+    message: config ? null : '지금은 로그인 기능을 쓸 수 없습니다. 지도와 통계는 그대로 볼 수 있습니다.',
   });
   let clientPromise: Promise<SupabaseClient> | null = null;
 
@@ -117,10 +117,10 @@ export function createLiveAuth(): MapAuth {
         emitter.set(data.session
           ? { status: 'signed_in', displayName: nickname(data.session.user.user_metadata), message: null }
           : failed
-            ? { status: 'error', message: '카카오 로그인이 취소되었거나 완료되지 않았습니다. 공개 지도는 계속 볼 수 있습니다.' }
+            ? { status: 'error', message: '카카오 로그인이 취소되었거나 끝나지 않았습니다. 지도는 그대로 볼 수 있습니다.' }
             : { status: 'signed_out' });
       })
-      .catch(() => emitter.set({ status: 'error', message: '로그인 상태를 확인하지 못했습니다. 공개 지도는 계속 볼 수 있습니다.' }))
+      .catch(() => emitter.set({ status: 'error', message: '로그인 상태를 확인하지 못했습니다. 지도는 그대로 볼 수 있습니다.' }))
       .finally(() => {
         if (oauthReturn) {
           window.history.replaceState(window.history.state, '', `${window.location.pathname}${stripOAuthParams(window.location.search)}`);
@@ -156,7 +156,7 @@ export function createLiveAuth(): MapAuth {
       if (!config || !clientPromise) return null;
       const { data, error } = await (await client()).auth.refreshSession();
       if (error || !data.session) {
-        emitter.set({ status: 'signed_out', displayName: null, message: '지도 로그인이 만료되었습니다. 다시 로그인해 주세요. 앱·서버의 자동 업로드 연결에는 영향이 없습니다.' });
+        emitter.set({ status: 'signed_out', displayName: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.' });
         return null;
       }
       return data.session.access_token;
@@ -183,8 +183,8 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
     : fixture === 'out' ? 'signed_out'
       : fixture && signedStates.includes(fixture) ? 'signed_in' : stored ? 'signed_in' : 'signed_out';
   const emitter = new Emitter({
-    status: initial, displayName: initial === 'signed_in' ? '합성 사용자' : null, synthetic: true,
-    message: initial === 'unconfigured' ? '이 배포에는 지도 로그인이 설정되지 않았습니다. 공개 지도는 그대로 볼 수 있습니다.' : null,
+    status: initial, displayName: initial === 'signed_in' ? '예시 사용자' : null, synthetic: true,
+    message: initial === 'unconfigured' ? '지금은 로그인 기능을 쓸 수 없습니다. 지도와 통계는 그대로 볼 수 있습니다.' : null,
   });
   return {
     viewer: () => fixture ?? 'signed',
@@ -194,7 +194,7 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
       if (emitter.state.status === 'unconfigured') return;
       try { window.sessionStorage.setItem(DEMO_AUTH_KEY, '1'); } catch { /* ignore */ }
       if (fixture === 'out') fixture = 'signed';
-      emitter.set({ status: 'signed_in', displayName: '합성 사용자', message: null });
+      emitter.set({ status: 'signed_in', displayName: '예시 사용자', message: null });
     },
     async signOut() {
       try { window.sessionStorage.removeItem(DEMO_AUTH_KEY); } catch { /* ignore */ }
@@ -203,7 +203,7 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
     async accessToken() { return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null; },
     async refreshToken() {
       if (fixture === 'expired') {
-        emitter.set({ status: 'signed_out', displayName: null, message: '지도 로그인이 만료되었습니다. 다시 로그인해 주세요. 앱·서버의 자동 업로드 연결에는 영향이 없습니다.' });
+        emitter.set({ status: 'signed_out', displayName: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.' });
         return null;
       }
       return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null;

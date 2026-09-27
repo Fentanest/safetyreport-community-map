@@ -4,6 +4,7 @@ import { aggregateDashboard, type PrivateFact } from '../../server/aggregate';
 import { isEmptyResult } from '../../src/pages/Dashboard';
 import CompareKpis from '../../src/components/CompareKpis';
 import MapPanel from '../../src/components/MapPanel';
+import DataGuide from '../../src/components/DataGuide';
 import type { Scope } from '../../src/domain/public';
 
 // AF-MAP2: August report / September completion with coordinates, viewed in September.
@@ -54,8 +55,8 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     const kpi = renderToStaticMarkup(<CompareKpis overview={data.overview} compareOn={false} unsupported={false}
       personal={{ status: 'off', data: null, error: null, retry: () => {} }} onSignIn={() => {}}
       auth={{ status: 'signed_out', displayName: null, synthetic: false, message: null }} />);
-    expect(kpi).toContain('신고일');
-    expect(kpi).toContain('신고 지점');
+    expect(kpi).toContain('신고한 날 기준');
+    expect(kpi).toContain('신고 장소');
     expect(kpi).toMatch(/<b class="cm-number">0<\/b>/);
     expect(kpi).not.toContain('내 신고');
     const map = renderToStaticMarkup(
@@ -65,7 +66,8 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     );
     // Result screen renders the union point and explains the completion-only locations.
     expect(map).toContain('예시 지점');
-    expect(map).toContain('완료일만 범위에 든 위치도 포함');
+    // The completion-only location rule is explained to users in the guide (plain language).
+    expect(renderToStaticMarkup(<DataGuide data={data} />)).toContain('답변만 받은 신고의 장소도 지도에 함께 표시됩니다');
     // Dashboard renders the empty banner only when isEmptyResult is true.
     const banner = isEmptyResult(data)
       ? `<div class="banner warn"><span class="grow">${bannerText}. 조건을 해제하면 전국 집계를 볼 수 있습니다.</span></div>`

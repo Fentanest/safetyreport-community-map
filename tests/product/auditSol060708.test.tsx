@@ -177,6 +177,6 @@ describe('SOL-08 client and table connection', () => {
       <EntityTable agencies={[]} managers={[]} tab="agency" onTab={() => {}} onPick={() => {}} server={server} />,
     );
     expect(html).toContain('테스트기관-100');
-    expect(html).toContain('2 / 2페이지 · 전체 105건');
+    expect(html).toContain('2 / 2쪽 · 전체 105곳');
   });
 });

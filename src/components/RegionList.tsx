@@ -49,14 +49,14 @@ export default function RegionList(p: Props) {
       <li key={r.region_code ?? 'unknown'} className={`region-row${p.activeRegion === r.region_code ? ' active' : ''}`}>
         <button type="button" className="region-pick" disabled={r.region_code === null}
           aria-pressed={p.activeRegion === r.region_code}
-          title={r.region_code === null ? '지역 미상 행은 조건으로 적용할 수 없습니다.' : `${name} 조건으로 조회`}
+          title={r.region_code === null ? '지역을 알 수 없는 신고입니다' : `${name}만 보기`}
           onClick={() => p.onPickRegion(p.activeRegion === r.region_code ? null : r.region_code)}>
-          <span className="region-name">{name}{p.activeRegion === r.region_code && <span className="region-active-tag">적용 중</span>}</span>
+          <span className="region-name">{name}{p.activeRegion === r.region_code && <span className="region-active-tag">보는 중</span>}</span>
           <span className="region-nums">
-            <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용·일부 <b className="cm-number">{fmtPercent(allRate)}</b></span>
+            <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(allRate)}</b></span>
             {showMine && (
               mine && (mine.mine.report_count > 0 || mine.mine.completed_count > 0) ? (
-                <span className="mine-col">내 <b className="cm-number">{fmtInt(mine.mine.report_count)}</b>건 · 내 <b className="cm-number">{fmtPercent(mine.mine.accept_rate)}</b> ({fmtPp(mine.accept_rate_pp)})</span>
+                <span className="mine-col">내 신고 <b className="cm-number">{fmtInt(mine.mine.report_count)}</b>건 · 내 수용률 <b className="cm-number">{fmtPercent(mine.mine.accept_rate)}</b> ({fmtPp(mine.accept_rate_pp)})</span>
               ) : (
                 <span className="cm-muted">내 신고 없음</span>
               )
@@ -66,7 +66,7 @@ export default function RegionList(p: Props) {
         {r.region_code !== null && (
           <button type="button" className="region-star" aria-pressed={isInterest}
             aria-label={isInterest ? `${name} 관심 지역 해제` : `${name} 관심 지역으로 표시`}
-            title={isInterest ? '관심 지역에서 제외' : '관심 지역으로 표시 (이 브라우저에만 저장)'}
+            title={isInterest ? '관심 지역에서 빼기' : '관심 지역으로 표시 (이 기기에만 저장)'}
             onClick={() => p.onToggleInterest(r.region_code!)}>
             {isInterest ? '★' : '☆'}
           </button>
@@ -80,24 +80,24 @@ export default function RegionList(p: Props) {
       <div className="panel-top">
         <div>
           <h2>지역 목록</h2>
-          <span className="subtitle">신고일 기준 건수 · 수용·일부수용은 처리완료일 기준 · 행을 누르면 지역 조건 적용</span>
+          <span className="subtitle">지역을 누르면 그 지역만 봅니다</span>
         </div>
         {showMine && (
           <div className="mini-segments" role="group" aria-label="지역 정렬">
-            <button type="button" className={sort === 'all' ? 'selected' : ''} aria-pressed={sort === 'all'} onClick={() => setSort('all')}>전체순</button>
-            <button type="button" className={sort === 'mine' ? 'selected' : ''} aria-pressed={sort === 'mine'} onClick={() => setSort('mine')}>내 신고순</button>
+            <button type="button" className={sort === 'all' ? 'selected' : ''} aria-pressed={sort === 'all'} onClick={() => setSort('all')}>전체 많은 순</button>
+            <button type="button" className={sort === 'mine' ? 'selected' : ''} aria-pressed={sort === 'mine'} onClick={() => setSort('mine')}>내 신고 많은 순</button>
           </div>
         )}
       </div>
       {p.regions === null ? (
-        <p className="empty-state">이 데이터 원천은 지역 목록을 제공하지 않습니다.</p>
+        <p className="empty-state">지역별 통계는 아직 준비되지 않았습니다.</p>
       ) : p.regions.length === 0 ? (
-        <p className="empty-state">현재 조건에 지역별 결과가 없습니다.</p>
+        <p className="empty-state">지금 조건에 맞는 지역이 없습니다.</p>
       ) : (
         <>
           {pinned.length > 0 && (
             <>
-              <p className="region-group-label" id="interest-label">관심 지역 · 이 브라우저에만 저장</p>
+              <p className="region-group-label" id="interest-label">관심 지역</p>
               <ul className="region-rows interest" aria-labelledby="interest-label">{pinned.map(r => row(r, true))}</ul>
             </>
           )}
@@ -109,7 +109,7 @@ export default function RegionList(p: Props) {
               </button>
             </div>
           ) : null}
-          <p className="chart-caption">관심 지역(★)은 이 브라우저에만 저장되며 서버로 보내지 않습니다.</p>
+          <p className="chart-caption">★ 관심 지역은 이 기기에만 저장됩니다.</p>
         </>
       )}
     </section>

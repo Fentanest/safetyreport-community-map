@@ -61,17 +61,16 @@ function MapSummary({ reportAll, completedAll, acceptAll, showMine, personalStat
 }) {
   const mineText = !showMine ? null
     : personalStatus === 'ready' ? (
-      <>내 R <b className="cm-number mine-col">{fmtInt(mineReport)}</b> · C <b className="cm-number mine-col">{fmtInt(mineCompleted)}</b> · 수용 <b className="cm-number mine-col">{fmtPercent(mineAccept)}</b></>
+      <>내 신고 <b className="cm-number mine-col">{fmtInt(mineReport)}</b> · 답변 <b className="cm-number mine-col">{fmtInt(mineCompleted)}</b> · 수용률 <b className="cm-number mine-col">{fmtPercent(mineAccept)}</b></>
     )
-    : personalStatus === 'loading' || personalStatus === 'waiting' ? <span className="cm-muted">내 통계 불러오는 중…</span>
-    : personalStatus === 'signed_out' ? <span className="cm-muted">내 통계는 로그인 후 표시</span>
-    : personalStatus === 'unconfigured' ? <span className="cm-muted">이 배포에는 지도 로그인이 설정되지 않음</span>
-    : <span className="cm-muted">내 통계 표시 불가</span>;
+    : personalStatus === 'loading' || personalStatus === 'waiting' ? <span className="cm-muted">내 신고 불러오는 중…</span>
+    : personalStatus === 'signed_out' ? <span className="cm-muted">로그인하면 내 신고도 보입니다</span>
+    : personalStatus === 'unconfigured' ? <span className="cm-muted">지금은 로그인할 수 없습니다</span>
+    : <span className="cm-muted">내 신고를 불러오지 못했습니다</span>;
   return (
-    <p className="map-summary" aria-label="한 줄 통계 요약">
-      <span>전체 R <b className="cm-number">{fmtInt(reportAll)}</b> · C <b className="cm-number">{fmtInt(completedAll)}</b> · 수용 <b className="cm-number">{fmtPercent(acceptAll)}</b></span>
+    <p className="map-summary" aria-label="요약">
+      <span>전체 신고 <b className="cm-number">{fmtInt(reportAll)}</b> · 답변 <b className="cm-number">{fmtInt(completedAll)}</b> · 수용률 <b className="cm-number">{fmtPercent(acceptAll)}</b></span>
       {mineText != null && <span className="map-summary-mine">{mineText}</span>}
-      <span className="cm-muted">표시 필터 · 통계 범위 그대로</span>
     </p>
   );
 }
@@ -193,7 +192,7 @@ export default function Dashboard() {
         if (e instanceof PublicApiError) {
           setApiError({ message: e.message, retryAfter: e.retryAfter });
         } else {
-          setApiError({ message: e instanceof Error ? e.message : '통계 조회에 실패했습니다.', retryAfter: null });
+          setApiError({ message: e instanceof Error ? e.message : '통계를 불러오지 못했습니다.', retryAfter: null });
         }
         setLoadState('error');
       });
@@ -236,7 +235,7 @@ export default function Dashboard() {
       })
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
-        setEntityError(e instanceof Error ? e.message : '전체 목록 조회에 실패했습니다.');
+        setEntityError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
         setEntityLoading(false);
       });
     return () => ac.abort();
@@ -286,7 +285,7 @@ export default function Dashboard() {
     setSelection(null);
     setDateError(null);
     pushUrl(next);
-    showToast('전국 · 전체 분류로 되돌렸습니다.');
+    showToast('처음 상태(전국·전체)로 돌아왔습니다.');
   }, [showToast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const share = useCallback(async () => {
@@ -294,9 +293,9 @@ export default function Dashboard() {
     const url = `${window.location.origin}${window.location.pathname}?${scopeToSearch(scope, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null, view })}`;
     try {
       await navigator.clipboard.writeText(url);
-      showToast('공개 조회 조건 URL을 복사했습니다. 차량·계정정보는 포함되지 않습니다.');
+      showToast('지금 보는 화면의 링크를 복사했습니다.');
     } catch {
-      showToast(`공유 URL: ${url}`);
+      showToast(`링크: ${url}`);
     }
   }, [scope, fixture, view, showToast]);
 
@@ -313,8 +312,8 @@ export default function Dashboard() {
 
   const unsupportedNote = unsupported
     ? dataMode === 'demo'
-      ? '선택 범위의 합성 집계가 준비되지 않았습니다. 초기화하면 기본 예시 범위가 표시됩니다.'
-      : '선택 범위의 집계가 제공되지 않습니다. 데이터 범위와 지원 여부를 확인해 주세요.'
+      ? '이 조건의 예시 자료는 없습니다. 처음 상태로 돌아가면 예시를 볼 수 있습니다.'
+      : '이 조건의 통계는 아직 없습니다. 기간이나 지역을 바꿔 보세요.'
     : null;
 
   const appliedLabel = `${regionLabel(scope.region_code)} · ${CATEGORY_LABEL[scope.category]}`;
@@ -323,8 +322,9 @@ export default function Dashboard() {
     `${fmtDate(scope.start)} — ${fmtDate(scope.end)}`,
     CATEGORY_LABEL[scope.category],
     regionLabel(scope.region_code),
-    ...(scope.agency_key ? [`기관 ${scope.agency_key}`] : []),
-    ...(scope.manager_key ? [`담당 ${scope.manager_key}`] : []),
+    // Names, never internal keys (keys are opaque hashes).
+    ...(scope.agency_key ? [data?.agencies.find((a) => a.agency_key === scope.agency_key)?.agency_name ?? '선택한 기관'] : []),
+    ...(scope.manager_key ? [data?.managers.find((m) => m.manager_key === scope.manager_key)?.manager_name ?? '선택한 담당자'] : []),
   ];
 
   const pickEntity = (kind: EntityTab, entity: PublicEntity) => {
@@ -336,13 +336,13 @@ export default function Dashboard() {
     };
     setScope(next);
     pushUrl(next);
-    showToast(dataMode === 'demo' ? '조건을 적용했습니다. 합성 fixture는 기본 범위 집계만 지원합니다.' : '기관·담당자 조건을 적용했습니다.');
+    showToast(dataMode === 'demo' ? '이 기관·담당자만 보도록 바꿨습니다.' : '이 기관·담당자만 보도록 바꿨습니다.');
   };
 
   const analyzePoint = (pt: PublicPoint) => {
     const bbox: [number, number, number, number] = pt.bbox ?? [pt.lng, pt.lat, pt.lng, pt.lat];
     applyView(bbox);
-    showToast(pt.aggregate ? `${pt.point_count}곳의 집계 표시 범위를 분석 조건으로 적용했습니다.` : '선택 지점의 정확 좌표를 분석 조건으로 적용했습니다.');
+    showToast(pt.aggregate ? `묶인 ${pt.point_count}곳만 보도록 바꿨습니다.` : '이 장소만 보도록 바꿨습니다.');
   };
 
   const applyView = (bbox: [number, number, number, number]) => {
@@ -350,7 +350,7 @@ export default function Dashboard() {
     const next: Scope = { ...scope, bbox };
     setScope(next);
     pushUrl(next);
-    showToast(dataMode === 'demo' ? '화면 범위를 적용했습니다. 합성 fixture에는 이 범위의 집계가 없습니다.' : '화면 범위를 분석 조건으로 적용했습니다.');
+    showToast(dataMode === 'demo' ? '지도에 보이는 지역만 보도록 바꿨습니다.' : '지도에 보이는 지역만 보도록 바꿨습니다.');
   };
 
   const retry = () => {
@@ -368,7 +368,7 @@ export default function Dashboard() {
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
         setApiError({
-          message: e instanceof PublicApiError ? e.message : '통계 조회에 실패했습니다.',
+          message: e instanceof PublicApiError ? e.message : '통계를 불러오지 못했습니다.',
           retryAfter: e instanceof PublicApiError ? e.retryAfter : null,
         });
         setLoadState('error');
@@ -382,14 +382,14 @@ export default function Dashboard() {
 
   // ── personal comparison ────────────────────────────────────────────────────
   const compareDisabledReason = auth.status === 'unconfigured'
-    ? (auth.message ?? '이 배포에는 지도 로그인이 설정되지 않았습니다.') : null;
+    ? (auth.message ?? '지금은 로그인 기능을 쓸 수 없습니다.') : null;
   const briefingHidden = briefing && compareOn && !briefingShowMine;
   const compareActive = compareOn && !compareDisabledReason && !briefingHidden && loadState === 'ready' && !unsupported;
   const rawPersonal = usePersonalCompare(scope, loadState === 'ready' && data ? data.meta.dataset_version : null, compareActive);
   // Never show personal numbers next to public numbers from another scope/version/population.
   const personal: PersonalState = rawPersonal.status === 'ready' && rawPersonal.data && data && !consistentWithPublic(rawPersonal.data, data.overview)
     ? { status: 'error', data: null, retry: rawPersonal.retry,
-      error: { code: 'DATASET_CHANGED', message: '공개 데이터와 내 비교 자료의 기준이 달라 표시하지 않았습니다. 다시 조회해 주세요.', retryAfter: null } }
+      error: { code: 'DATASET_CHANGED', message: '통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', retryAfter: null } }
     : rawPersonal;
   const compareData = personal.status === 'ready' ? personal.data : null;
   const showMine = compareOn && !compareDisabledReason && !briefingHidden;
@@ -409,7 +409,7 @@ export default function Dashboard() {
     setScope(next);
     setDraft(draftFromScope(next));
     pushUrl(next);
-    showToast(code ? `${regionLabel(code)} 조건을 적용했습니다.` : '지역 조건을 해제했습니다.');
+    showToast(code ? `${regionLabel(code)}만 보도록 바꿨습니다.` : '전체 지역으로 돌아왔습니다.');
   };
   const pickCompareEntity = (row: CompareEntityRow) => {
     pickEntity(row.kind, {
@@ -440,7 +440,7 @@ export default function Dashboard() {
       onSelect={setSelection}
       metric={mapMetric}
       onMetric={setMapMetric}
-      categoryLabel={`${CATEGORY_LABEL[scope.category]} 분류`}
+      categoryLabel={scope.category === 'all' ? '모든 신고' : CATEGORY_LABEL[scope.category]}
       onApplyView={applyView}
       autoRefresh={autoRefresh}
       onAutoRefresh={setAutoRefresh}
@@ -501,26 +501,26 @@ export default function Dashboard() {
       <div className="app">
         <Rail active={nav} onNavigate={setNav} onAbout={() => document.getElementById('guide')?.scrollIntoView({ behavior: 'auto' })} />
         <main id="main" data-view={view}>
-          <section className="page-heading" aria-label="상황판 제목">
+          <section className="page-heading" aria-label="소개">
             <div>
-              <div className="overline">COMMUNITY MAP · {dataMode.toUpperCase()}</div>
-              <h1>지금 보는 범위의 신고, <em>전체와 나란히.</em></h1>
+              <div className="overline">나만의 안전신문고 커뮤니티</div>
+              <h1>함께 모은 신고를 <em>지도로 봅니다</em></h1>
             </div>
-            <span className="heading-note">지역·기관·담당자·기간 조건이 전체와 내 신고에 똑같이 적용됩니다.<br /><span>자발적으로 제공된 신고 표본을 분석합니다.</span></span>
+            <span className="heading-note">이용자들이 공유한 안전신문고 신고를 지역·기관·기간별로 볼 수 있습니다.<br /><span>로그인하면 내 신고와 나란히 비교할 수 있습니다.</span></span>
           </section>
 
           {briefing && (
             <div className="banner briefing-bar" role="note">
               <span className="grow">
-                브리핑 모드 — Esc로 종료합니다. 범위·데이터 기준·분모는 계속 표시됩니다.
-                {compareOn && (briefingShowMine ? ' 내 데이터를 표시하고 있습니다.' : ' 발표 화면에서는 내 데이터를 숨깁니다.')}
+                브리핑 모드입니다. Esc를 누르면 끝납니다.
+                {compareOn && (briefingShowMine ? ' 내 신고도 보이는 중입니다.' : ' 여럿이 보는 화면이라 내 신고는 숨겼습니다.')}
               </span>
               {compareOn && !compareDisabledReason && (
                 <button className="ghost-btn" type="button" aria-pressed={briefingShowMine} onClick={() => setBriefingShowMine((v) => !v)}>
-                  {briefingShowMine ? '내 데이터 숨기기' : '내 데이터 표시'}
+                  {briefingShowMine ? '내 신고 숨기기' : '내 신고 보이기'}
                 </button>
               )}
-              <button className="ghost-btn" type="button" onClick={() => setBriefing(false)}>종료 (Esc)</button>
+              <button className="ghost-btn" type="button" onClick={() => setBriefing(false)}>끝내기 (Esc)</button>
             </div>
           )}
 
@@ -552,7 +552,7 @@ export default function Dashboard() {
           {loadState === 'loading' && (
             <section className="kpis" aria-label="불러오는 중">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="skeleton" role="status" aria-label="지표 불러오는 중" />
+                <div key={i} className="skeleton" role="status" aria-label="불러오는 중" />
               ))}
             </section>
           )}
@@ -560,9 +560,8 @@ export default function Dashboard() {
           {loadState === 'error' && (
             <div className="banner error" role="alert">
               <span className="grow">
-                통계 조회에 실패했습니다: {apiError?.message}
-                {apiError?.retryAfter != null && ` (${apiError.retryAfter}초 후 다시 시도)`}
-                가짜 0으로 대체하지 않습니다.
+                {apiError?.message ?? '통계를 불러오지 못했습니다.'}
+                {apiError?.retryAfter != null && ` (${apiError.retryAfter}초 뒤에 다시 시도해 주세요)`}
               </span>
               <button className="ghost-btn" type="button" onClick={retry}>다시 시도</button>
             </div>
@@ -574,21 +573,21 @@ export default function Dashboard() {
                 <div className="banner warn" role="note">
                   <span className="grow">
                     {empty
-                      ? '현재 필터에 결과가 없습니다. 조건을 해제하면 전국 집계를 볼 수 있습니다.'
+                      ? '고른 조건에 맞는 신고가 아직 없습니다.'
                       : unsupportedNote}
                   </span>
-                  <button className="ghost-btn" type="button" onClick={reset}>전국으로 초기화</button>
+                  <button className="ghost-btn" type="button" onClick={reset}>처음 상태로</button>
                 </div>
               )}
               {dataMode === 'demo' && fixture === 'one' && (
                 <div className="banner" role="note">
-                  <span className="grow">표본 1건 상태 — 행·마커·카드를 모두 유지하고 ‘표본 1건’ 배지를 표시합니다.</span>
+                  <span className="grow">예시: 신고가 1건뿐인 경우의 화면입니다.</span>
                 </div>
               )}
               {/* ── view layouts (docs/personal-comparison.md §5.1–5.2, §5.5). ──
                   All three modes reuse the same state/props; switching never refetches. */}
               {view === 'map' ? (
-                <section className="mapmode" id="mapsection" aria-label="지도 집중 보기">
+                <section className="mapmode" id="mapsection" aria-label="지도 크게 보기">
                   <MapSummary
                     reportAll={data.overview.report_count.value}
                     completedAll={data.overview.completed_count.value}
@@ -608,7 +607,7 @@ export default function Dashboard() {
                   </div>
                 </section>
               ) : view === 'stats' ? (
-                <section className="statsmode" id="mapsection" aria-label="통계 집중 보기">
+                <section className="statsmode" id="mapsection" aria-label="통계 크게 보기">
                   <div className="stats-map">
                     {mapPanel}
                     <button className="ghost-btn stats-expand" type="button" onClick={() => changeView('both')}>
@@ -624,7 +623,7 @@ export default function Dashboard() {
                   </div>
                 </section>
               ) : (
-                <section className="compare-layout" id="mapsection" aria-label="지도와 비교 통계">
+                <section className="compare-layout" id="mapsection" aria-label="지도와 통계">
                   <div className="layout-main">
                     {mapPanel}
                     {regionList}
@@ -637,7 +636,7 @@ export default function Dashboard() {
                   </div>
                 </section>
               )}
-              <section className="analytics-grid" id="analytics" aria-label="하단 분석 카드">
+              <section className="analytics-grid" id="analytics" aria-label="처리 결과와 차량">
                 <OutcomeCard outcomes={data.overview.outcomes} />
                 <VehicleTop5
                   vehicles={data.vehicles}
@@ -660,8 +659,8 @@ export default function Dashboard() {
           )}
 
           <footer className="page-footer">
-            <span>나만의 안전신문고 <b>COMMUNITY MAP</b>{dataMode === 'demo' ? ' · demo 합성 데이터' : ' · 공개 제공 표본'}</span>
-            <span>이용자가 제공한 표본 · 데이터 기준과 분모를 함께 확인하세요.</span>
+            <span>나만의 안전신문고 <b>커뮤니티 신고 지도</b>{dataMode === 'demo' ? ' · 예시 데이터' : ''}</span>
+            <span>이용자가 공유한 신고만 모았습니다. 전체 신고를 대표하지는 않습니다.</span>
           </footer>
         </main>
       </div>

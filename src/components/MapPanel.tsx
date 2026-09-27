@@ -4,7 +4,7 @@ import { createKakaoMap, kakaoKey, type KakaoHandle } from '../lib/kakao';
 import type { MapMetric } from '../state/filters';
 import { POINT_FILTER_LABEL, type PointFilter } from '../state/view';
 import type { PointMark } from '../state/pointMarks';
-import { fmtCoord6, fmtInt } from './format';
+import { fmtInt } from './format';
 import Icon from './icons';
 
 interface Props {
@@ -30,17 +30,17 @@ interface Props {
 
 const FILTER_REASON: Record<PointFilter, string> = {
   all: '',
-  mine: '내 데이터 함께 보기를 켜고 로그인하면 사용할 수 있습니다.',
-  shared: '내 데이터 함께 보기를 켜고 로그인하면 사용할 수 있습니다.',
-  interest: '지역 목록에서 ★로 관심 지역을 지정하면 사용할 수 있습니다.',
+  mine: '로그인하고 ‘내 신고와 비교’를 켜면 쓸 수 있습니다.',
+  shared: '로그인하고 ‘내 신고와 비교’를 켜면 쓸 수 있습니다.',
+  interest: '지역 목록에서 ★를 누르면 쓸 수 있습니다.',
 };
 
 /** Visible reason for disabled display filters (a disabled button's tooltip is not reliably shown). */
 function unavailableHint(available: Record<PointFilter, boolean> | undefined): string | null {
   if (!available) return null;
   const parts: string[] = [];
-  if (!available.mine) parts.push('내 지점 필터: 내 데이터 함께 보기 + 로그인');
-  if (!available.interest) parts.push('관심 지역: 지역 목록의 ★로 지정');
+  if (!available.mine) parts.push('내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다');
+  if (!available.interest) parts.push('관심 지역은 지역 목록에서 ★를 누르세요');
   return parts.length ? parts.join(' · ') : null;
 }
 
@@ -48,8 +48,8 @@ function markLabel(mark: PointMark | undefined): string {
   if (!mark) return '';
   const parts: string[] = [];
   if (mark.mine) parts.push(`내 신고 ${mark.mineCount.toLocaleString('ko-KR')}건 포함`);
-  if (mark.shared) parts.push('함께 기록한 지점');
-  else if (mark.mine) parts.push('나만 기록');
+  if (mark.shared) parts.push('다른 사람과 함께 신고한 곳');
+  else if (mark.mine) parts.push('나만 신고한 곳');
   if (mark.interest) parts.push('관심 지역');
   return parts.length ? ` · ${parts.join(' · ')}` : '';
 }
@@ -62,7 +62,7 @@ function MarkBadges({ mark }: { mark: PointMark | undefined }) {
       {mark.mine && (
         <span className="pt-badge mine">
           <i className={mark.shared ? 'ring shared' : 'ring mine'} aria-hidden="true" />
-          내 신고 {mark.mineCount.toLocaleString('ko-KR')}건 · {mark.shared ? '함께 기록한 지점' : '나만 기록한 지점'}
+          내 신고 {mark.mineCount.toLocaleString('ko-KR')}건 · {mark.shared ? '다른 사람과 함께 신고한 곳' : '나만 신고한 곳'}
         </span>
       )}
       {mark.interest && (
@@ -75,9 +75,9 @@ function MarkBadges({ mark }: { mark: PointMark | undefined }) {
 }
 
 const METRICS: Array<{ id: MapMetric; label: string; legend: string; basis: string }> = [
-  { id: 'reports', label: '신고량', legend: '신고량', basis: '신고일 기준 · 분모: 선택 범위 신고 R' },
-  { id: 'acceptance', label: '수용 비중', legend: '수용 · 일부수용 비중', basis: '처리완료일 기준 · 분모 D=결과 확인건' },
-  { id: 'fine', label: '과태료', legend: '과태료 비중', basis: '처리완료일 기준 · 분모 C=처리완료건' },
+  { id: 'reports', label: '신고 수', legend: '신고 수', basis: '신고한 날 기준' },
+  { id: 'acceptance', label: '수용률', legend: '수용률 (일부 수용 포함)', basis: '답변 받은 날 기준 · 결과가 나온 신고 중' },
+  { id: 'fine', label: '과태료', legend: '과태료 부과율', basis: '답변 받은 날 기준 · 답변 완료된 신고 중' },
 ];
 
 function metricValue(p: PublicPoint, m: MapMetric): number | null {
@@ -95,7 +95,7 @@ export default function MapPanel(p: Props) {
   const handleRef = useRef<KakaoHandle | null>(null);
   const [sdkState, setSdkState] = useState<'idle' | 'ready' | 'error'>(kakaoKey() ? 'idle' : 'error');
   const [sdkError, setSdkError] = useState<string | null>(
-    kakaoKey() ? null : 'Kakao JavaScript 키가 설정되지 않아 실제 지도를 불러올 수 없습니다. 아래 지점 목록에서 동일하게 탐색할 수 있습니다.',
+    kakaoKey() ? null : '지도를 불러올 수 없습니다. 아래 목록에서 장소를 확인할 수 있습니다.',
   );
   const [bbox, setBbox] = useState<[number, number, number, number] | null>(null);
   const applyViewRef = useRef(p.onApplyView);
@@ -138,7 +138,7 @@ export default function MapPanel(p: Props) {
         key: pt.key,
         lat: pt.lat,
         lng: pt.lng,
-        label: `${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} · 신고 ${pt.report_count}건`,
+        label: `${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} · 신고 ${pt.report_count}건`,
         count: pt.report_count,
         selected: pt.key === p.selectedKey,
         metricValue: metricValue(pt, p.metric),
@@ -162,7 +162,7 @@ export default function MapPanel(p: Props) {
   const retry = () => {
     if (!kakaoKey()) {
       setSdkState('error');
-      setSdkError('Kakao JavaScript 키가 설정되지 않아 실제 지도를 불러올 수 없습니다. 아래 지점 목록에서 동일하게 탐색할 수 있습니다.');
+      setSdkError('지도를 불러올 수 없습니다. 아래 목록에서 장소를 확인할 수 있습니다.');
       return;
     }
     handleRef.current?.destroy();
@@ -177,7 +177,7 @@ export default function MapPanel(p: Props) {
         handleRef.current.setPoints(
           p.points.map((pt) => ({
             key: pt.key, lat: pt.lat, lng: pt.lng,
-            label: `${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} · 신고 ${pt.report_count}건`,
+            label: `${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} · 신고 ${pt.report_count}건`,
             count: pt.report_count, selected: pt.key === p.selectedKey, metricValue: metricValue(pt, p.metric),
             ...p.marks?.get(pt.key),
           })),
@@ -190,13 +190,13 @@ export default function MapPanel(p: Props) {
   };
 
   return (
-    <article className="cm-panel map-card" aria-label="전국 신고 분포 지도">
+    <article className="cm-panel map-card" aria-label="신고 지도">
       <div className="panel-top">
         <div>
-          <h2>전국 신고 분포</h2>
-          <span className="subtitle">{p.categoryLabel} · 저줌 집계 표시는 원좌표와 다릅니다 · 지도 점에는 완료일만 범위에 든 위치도 포함{p.locationMissing ? ` · 좌표 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 포함` : ''}</span>
+          <h2>신고 지도</h2>
+          <span className="subtitle">{p.categoryLabel} · 지도를 넓게 보면 가까운 장소를 묶어 보여 줍니다{p.locationMissing ? ` · 위치 정보가 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 들어갑니다` : ''}</span>
         </div>
-        <div className="mini-segments" role="group" aria-label="지도 지표">
+        <div className="mini-segments" role="group" aria-label="지도에 표시할 값">
           {METRICS.map((m) => (
             <button
               key={m.id}
@@ -211,7 +211,7 @@ export default function MapPanel(p: Props) {
         </div>
       </div>
       {p.onPointFilter && (
-        <div className="point-filter" role="group" aria-label="지점 표시 필터 (통계 범위는 바뀌지 않음)">
+        <div className="point-filter" role="group" aria-label="지도에 보일 장소 (통계는 바뀌지 않음)">
           {(['all', 'mine', 'shared', 'interest'] as PointFilter[]).map((f) => {
             const available = p.filterAvailable?.[f] ?? f === 'all';
             return (
@@ -222,19 +222,18 @@ export default function MapPanel(p: Props) {
               </button>
             );
           })}
-          <span className="cm-muted">표시 필터 · 통계 범위는 그대로{p.pointFilter && p.pointFilter !== 'all' ? ` · ${fmtInt(p.points.length)} / ${fmtInt(p.totalPoints ?? p.points.length)}곳 표시` : ''}</span>
+          <span className="cm-muted">지도에 보이는 장소만 바뀌고 통계는 그대로입니다{p.pointFilter && p.pointFilter !== 'all' ? ` · ${fmtInt(p.totalPoints ?? p.points.length)}곳 중 ${fmtInt(p.points.length)}곳` : ''}</span>
           {unavailableHint(p.filterAvailable) && <span className="cm-muted point-filter-hint" id="point-filter-hint">{unavailableHint(p.filterAvailable)}</span>}
         </div>
       )}
-      <div className={`map-canvas${sdkState === 'error' ? ' map-fallback-mode' : ''}`} role="region" aria-label={sdkState === 'ready' ? 'Kakao 실제 지도' : '지도 대체 영역: 지점 목록으로 동일 탐색 가능'}>
+      <div className={`map-canvas${sdkState === 'error' ? ' map-fallback-mode' : ''}`} role="region" aria-label={sdkState === 'ready' ? '카카오 지도' : '지도 대신 장소 목록'}>
         {kakaoKey() && <div ref={hostRef} className="map-sdk-host" aria-hidden={sdkState !== 'ready'} />}
         {sdkState === 'error' && (
           <div className="map-fallback">
-            <div className="map-error-card compact" role="alert">
+            <div className="map-error-card compact" role="alert" title={sdkError ?? undefined}>
               <span className="grow">
-                <b>실지도를 불러오지 못했습니다.</b>{' '}
-                <span className="cm-muted">{sdkError}</span>{' '}
-                아래 지점 목록은 지도 마커와 같은 지점·건수이며, 다른 통계 화면은 계속 사용할 수 있습니다.
+                <b>지도를 불러오지 못했습니다.</b>{' '}
+                아래 목록에서 같은 장소를 볼 수 있고, 다른 통계는 그대로 쓸 수 있습니다.
               </span>
               <span className="map-error-actions">
                 <button className="ghost-btn" type="button" onClick={retry}>다시 시도</button>
@@ -242,24 +241,24 @@ export default function MapPanel(p: Props) {
                   className="ghost-btn" type="button"
                   onClick={() => document.getElementById('cm-point-list')?.querySelector('button')?.focus()}
                 >
-                  지점 목록으로 이동
+                  장소 목록 보기
                 </button>
               </span>
             </div>
-            <p className="map-points-note">접근 가능한 대체 수단 — 아래 목록은 지도 마커와 같은 지점·건수입니다. 지도 점에는 완료일만 범위에 든 위치도 포함됩니다. 집계 표시의 중심점은 원좌표가 아닙니다.</p>
-            <ul className="point-list" id="cm-point-list" aria-label="신고 지점 목록">
-              {p.points.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 지점이 없습니다.</li>}
+            <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다.</p>
+            <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
+              {p.points.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
               {p.points.map((pt) => (
                 <li key={pt.key}>
                   <button
                     type="button"
                     aria-pressed={pt.key === p.selectedKey}
-                    aria-label={`${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} 신고 ${pt.report_count}건${markLabel(p.marks?.get(pt.key))} 선택`}
+                    aria-label={`${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} 신고 ${pt.report_count}건${markLabel(p.marks?.get(pt.key))} 선택`}
                     onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}
                   >
-                    <b>{pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')}</b>
+                    <b>{pt.aggregate ? `가까운 ${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')}</b>
                     <MarkBadges mark={p.marks?.get(pt.key)} />
-                    <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}</small>
+                    <small>{`신고 ${fmtInt(pt.report_count)}건`}</small>
                   </button>
                 </li>
               ))}
@@ -268,41 +267,41 @@ export default function MapPanel(p: Props) {
         )}
         {sdkState !== 'error' && (
         <div className="map-top">
-          <span className="map-status">{sdkState === 'ready' ? 'Kakao 실제 지도' : '지점 분포 미리보기'}</span>
+          {sdkState !== 'ready' && <span className="map-status">장소 목록</span>}
           <button
             className="map-apply" type="button"
             disabled={!bbox}
-            title={bbox ? '현재 지도 화면 범위를 분석 조건으로 적용합니다.' : '실지도가 연결되면 화면 범위를 적용할 수 있습니다.'}
+            title={bbox ? '지금 지도에 보이는 지역의 통계만 봅니다' : '지도가 뜨면 쓸 수 있습니다'}
             onClick={() => bbox && p.onApplyView(bbox)}
           >
-            이 화면 범위 적용
+            보이는 지역만 보기
           </button>
         </div>
         )}
       {(p.filterAvailable?.mine || p.filterAvailable?.shared || p.filterAvailable?.interest) && (
-        <p className="legend-marks" aria-label="지점 구분 범례">
+        <p className="legend-marks" aria-label="지도 표시 안내">
           {p.filterAvailable.mine && (
-            <span className="legend-mark" title="내 신고가 포함된 지점입니다">
-              <i className="ring mine" aria-hidden="true" />내 신고 포함(청색 링)
+            <span className="legend-mark" title="내 신고가 있는 곳">
+              <i className="ring mine" aria-hidden="true" />내 신고가 있는 곳
             </span>
           )}
           {p.filterAvailable.shared && (
-            <span className="legend-mark" title="다른 기여자와 함께 기록한 지점입니다">
-              <i className="ring shared" aria-hidden="true" />함께 기록한 지점(점선 링)
+            <span className="legend-mark" title="다른 사람과 함께 신고한 곳">
+              <i className="ring shared" aria-hidden="true" />함께 신고한 곳
             </span>
           )}
           {p.filterAvailable.interest && (
-            <span className="legend-mark" title="관심 지역으로 표시한 지역의 지점입니다">
-              <span className="legend-star" aria-hidden="true">★</span>관심 지역(★)
+            <span className="legend-mark" title="관심 지역으로 표시한 곳">
+              <span className="legend-star" aria-hidden="true">★</span>관심 지역
             </span>
           )}
         </p>
       )}
       {sdkState === 'ready' && (
-          <div className="map-tools" role="group" aria-label="지도 조작">
+          <div className="map-tools" role="group" aria-label="지도 확대·축소">
             <button className="map-button" type="button" aria-label="확대" onClick={() => handleRef.current?.zoomIn()}>+</button>
             <button className="map-button" type="button" aria-label="축소" onClick={() => handleRef.current?.zoomOut()}>−</button>
-            <button className="map-button" type="button" aria-label="전국으로 초기화" onClick={() => handleRef.current?.reset()}><Icon name="focus" /></button>
+            <button className="map-button" type="button" aria-label="전국 보기" onClick={() => handleRef.current?.reset()}><Icon name="focus" /></button>
           </div>
         )}
         {sdkState !== 'error' && (
@@ -314,32 +313,32 @@ export default function MapPanel(p: Props) {
             <span className="cm-muted">높음</span>
             <span className="cm-muted">{active.basis}</span>
             {(p.filterAvailable?.mine || p.filterAvailable?.shared) && (
-              <span className="legend-mark" title="내 신고가 포함된 지점의 마커에 표시됩니다">
-                <i className="ring mine" aria-hidden="true" />내 신고 포함(청색 링)
+              <span className="legend-mark" title="내 신고가 있는 곳">
+                <i className="ring mine" aria-hidden="true" />내 신고가 있는 곳
               </span>
             )}
             {p.filterAvailable?.shared && (
-              <span className="legend-mark" title="다른 기여자와 함께 기록한 지점의 마커에 표시됩니다">
-                <i className="ring shared" aria-hidden="true" />함께 기록한 지점(점선 링)
+              <span className="legend-mark" title="다른 사람과 함께 신고한 곳">
+                <i className="ring shared" aria-hidden="true" />함께 신고한 곳
               </span>
             )}
           </span>
-          <span className="map-demo-label">{sdkState === 'ready' ? 'Kakao ©' : '지도 연결 안 됨 · 지점 목록 제공'}</span>
+          {sdkState !== 'ready' && <span className="map-demo-label">지도 대신 목록으로 보여 드립니다</span>}
         </div>
         )}
       </div>
       {sdkState === 'ready' && (
         <details className="map-point-alternative">
-          <summary>지도 지점 목록으로 탐색 · {fmtInt(p.points.length)}곳</summary>
-          <ul className="point-list" id="cm-point-list" aria-label="신고 지점 목록">
+          <summary>장소 목록으로 보기 · {fmtInt(p.points.length)}곳</summary>
+          <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
             {p.points.map((pt) => (
               <li key={pt.key}>
                 <button type="button" aria-pressed={pt.key === p.selectedKey}
-                  aria-label={`${pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')} 신고 ${pt.report_count}건${markLabel(p.marks?.get(pt.key))} 선택`}
+                  aria-label={`${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} 신고 ${pt.report_count}건${markLabel(p.marks?.get(pt.key))} 선택`}
                   onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}>
-                  <b>{pt.aggregate ? `${pt.point_count}곳 집계 표시` : (pt.address ?? '주소 미상')}</b>
+                  <b>{pt.aggregate ? `가까운 ${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')}</b>
                   <MarkBadges mark={p.marks?.get(pt.key)} />
-                  <small>{pt.aggregate ? `신고 ${fmtInt(pt.report_count)}건 · 표시 중심점(원좌표 아님)` : `신고 ${fmtInt(pt.report_count)}건 · ${fmtCoord6(pt.lat)}, ${fmtCoord6(pt.lng)} · 원좌표 그대로`}</small>
+                  <small>{`신고 ${fmtInt(pt.report_count)}건`}</small>
                 </button>
               </li>
             ))}
@@ -353,9 +352,9 @@ export default function MapPanel(p: Props) {
             onChange={(e) => p.onAutoRefresh(e.target.checked)}
             style={{ width: 20, height: 20 }}
           />
-          화면 범위 자동 갱신{p.autoRefresh ? ' 켜짐' : ' 꺼짐'}
+          지도를 움직이면 통계도 바꾸기
         </label>
-        <span className="cm-muted" style={{ fontSize: 12 }}>{p.autoRefresh ? '지도를 움직이면 화면 범위를 분석 조건으로 적용합니다.' : '지도를 움직여도 전국 KPI는 바뀌지 않습니다. 버튼으로 명시 적용하세요.'}</span>
+        <span className="cm-muted" style={{ fontSize: 12 }}>{p.autoRefresh ? '지도에 보이는 지역의 통계로 바로 바뀝니다.' : '지도를 움직여도 통계는 그대로입니다. ‘보이는 지역만 보기’를 누르면 바뀝니다.'}</span>
       </div>
     </article>
   );

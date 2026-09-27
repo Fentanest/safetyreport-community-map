@@ -1,45 +1,61 @@
 import type { DashboardData } from '../domain/public';
 import { fmtDate } from './format';
 
+/** Plain-language names for features the data source does not provide yet (never show internal keys). */
+const NOT_YET: Record<string, string> = {
+  fine_amount: '과태료 금액',
+  processing_duration: '답변까지 걸린 기간',
+  region_boundaries: '행정구역 경계 지도',
+  vehicle_top5: '많이 신고된 차량',
+  manager_status_cross: '담당자별 처리 결과',
+  agency_status_cross: '기관별 처리 결과',
+  completion_dates: '답변 받은 날 기준 통계',
+  daily_report_dates: '기간별 통계',
+};
+
+function updatedAt(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).format(date);
+}
+
 export default function DataGuide({ data }: { data: DashboardData | null }) {
-  const caps = data ? Object.entries(data.meta.capabilities) : [];
+  const notYet = data
+    ? Object.entries(data.meta.capabilities)
+      .filter(([key, c]) => c.status !== 'supported' && NOT_YET[key])
+      .map(([key]) => NOT_YET[key])
+    : [];
+  const updated = updatedAt(data?.meta.generated_at ?? null);
   return (
-    <section className="cm-panel guide" id="guide" aria-label="데이터 안내">
+    <section className="cm-panel guide" id="guide" aria-label="이용 안내">
       <div className="panel-top" style={{ padding: 0 }}>
         <div>
-          <h2>데이터 안내</h2>
-          <span className="subtitle">표본·집계 기준·공개 범위를 함께 확인하세요</span>
+          <h2>이용 안내</h2>
+          <span className="subtitle">숫자를 읽기 전에 알아 두세요</span>
         </div>
       </div>
       <p style={{ margin: 0 }}>
-        이 화면의 데이터는 이용자가 자발적으로 제공한 신고 표본이며, 전국 모든 신고를 대표하지 않습니다.
-        신고 건수는 위반 확정 건수도 실제 지역 발생률도 아닙니다.
+        이 지도는 나만의 안전신문고 이용자들이 직접 공유한 신고만 모았습니다. 전국의 모든 신고가 아니며,
+        신고 건수가 곧 위반 건수나 실제 발생 건수를 뜻하지는 않습니다.
       </p>
       <ul>
-        <li>신고량 지표는 신고일, 처리·처분 지표는 처리완료일 기준입니다. {data && `${fmtDate(data.scope.start)} — ${fmtDate(data.scope.end)}`}</li>
-        <li>담당자는 전체 성명과 기관을 함께 표시합니다. 동명이인을 이름만으로 합치지 않습니다.</li>
-        <li>차량은 비공개 원번호로 집계한 뒤, 지역명은 그대로 두고 그 뒤 번호의 2·4·6번째 글자를 *로 표시합니다. 원번호·해시는 공개하지 않습니다.</li>
-        <li>좌표는 입력 좌표 그대로이며 격자화·무작위 이동을 하지 않습니다. 저줌 집계 표시는 별도 표기합니다.</li>
-        <li>표본 1건도 공개합니다. 결측은 ‘—’와 사유로 표시하며 0과 구분합니다.</li>
+        <li>신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다.{data && ` 지금 보는 기간: ${fmtDate(data.scope.start)} ~ ${fmtDate(data.scope.end)}`}</li>
+        <li>담당자는 이름과 소속 기관을 함께 보여 드립니다. 이름이 같아도 기관이 다르면 따로 셉니다.</li>
+        <li>차량 번호는 지역명 뒤 2·4·6번째 글자를 *로 가려서 보여 드립니다. 번호 전체는 공개하지 않습니다.</li>
+        <li>장소는 신고에 입력된 위치 그대로 표시합니다. 지도를 넓게 보면 가까운 장소를 묶어 보여 줍니다. 고른 기간에 답변만 받은 신고의 장소도 지도에 함께 표시됩니다.</li>
+        <li>신고가 1건뿐인 결과도 숨기지 않습니다. 알 수 없는 값은 0이 아니라 ‘—’로 표시합니다.</li>
+        <li>내가 공유한 신고를 지도에서 빼려면 나만의 안전신문고 앱의 커뮤니티 설정에서 ‘공유한 자료 삭제 요청’을 누르세요.</li>
       </ul>
-      {data && (
-        <>
-          <div className="cap-list" aria-label="집계 지원 범위">
-            {caps.map(([k, c]) => (
-              <span key={k} className={`cap ${c.status}`} title={c.reason ?? '지원'}>
-                {k}: {c.status === 'supported' ? '지원' : c.status === 'partial' ? '부분' : '미지원'}
-              </span>
-            ))}
-          </div>
-          <p className="cm-muted" style={{ fontSize: 12, margin: 0 }}>
-            {data.meta.coverage_note} · 스키마 v{data.meta.schema_version} · 데이터셋 {data.meta.dataset_version} ·
-            생성 {data.meta.generated_at}{data.meta.source_updated_at ? ` · 원천 갱신 ${data.meta.source_updated_at}` : ' · 원천 갱신 미상'}
-          </p>
-        </>
+      {notYet.length > 0 && (
+        <p className="cm-muted" style={{ fontSize: 13, margin: 0 }}>아직 제공하지 않는 정보: {notYet.join(', ')}</p>
       )}
-      <p className="cm-muted" style={{ fontSize: 12, margin: 0 }}>
-        UI03 실제 Kakao 지도와 live 공개 API 연동은 키·엔드포인트가 없어 BLOCKED입니다. 정정·삭제 요청 채널은 운영 안내를 따릅니다.
-      </p>
+      {data?.meta.sample && (
+        <p className="cm-muted" style={{ fontSize: 13, margin: 0 }}>지금 화면은 실제 신고가 아닌 예시 자료로 만들었습니다.</p>
+      )}
+      {updated && <p className="cm-muted" style={{ fontSize: 13, margin: 0 }}>마지막 갱신: {updated}</p>}
     </section>
   );
 }

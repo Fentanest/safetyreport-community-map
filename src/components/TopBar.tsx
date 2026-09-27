@@ -21,11 +21,10 @@ const THEME_ICON = { dark: 'moon', light: 'sun', system: 'auto' } as const;
 
 export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp, sample, account }: Props) {
   const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
-  const badge = dataMode === 'demo'
-    ? { text: 'demo · 합성 데이터', title: '합성 예시 자료입니다. 실제 신고 통계가 아닙니다.' }
-    : sample
-      ? { text: 'live · 표본', title: '실제 공개 통계의 표본 구간입니다.' }
-      : { text: 'live', title: '실제 공개 통계입니다.' };
+  // Only the demo build needs a badge; the live site is simply the site.
+  const badge = dataMode === 'demo' || sample
+    ? { text: '예시 데이터', title: '실제 신고가 아닌 예시 자료로 만든 화면입니다.' }
+    : null;
   return (
     <header className="topbar">
       <a className="skip-link" href="#main">본문 바로가기</a>
@@ -33,13 +32,13 @@ export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp
         <img src={familyMark} alt="" aria-hidden="true" width={40} height={40} />
         <span>
           <b>커뮤니티 신고 지도</b>
-          <small>나만의 안전신문고 · COMMUNITY MAP</small>
+          <small>나만의 안전신문고</small>
         </span>
       </a>
-      <span className="demo-badge" title={badge.title}>{badge.text}</span>
+      {badge && <span className="demo-badge" title={badge.title}>{badge.text}</span>}
       <div className="header-end">
-        <span className="data-stamp" title={dataMode === 'demo' ? '합성 예시 자료의 기준일입니다.' : '데이터 기준일'}>
-          데이터 기준 {dataStamp}
+        <span className="data-stamp" title="이 날짜까지 공유된 신고를 반영했습니다">
+          {dataStamp} 기준
         </span>
         {account}
         <button
