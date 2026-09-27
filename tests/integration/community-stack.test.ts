@@ -18,8 +18,6 @@ const API = process.env.COMMUNITY_API_URL ?? 'http://127.0.0.1:56321';
 const DB_CONTAINER = process.env.COMMUNITY_DB_CONTAINER ?? 'supabase_db_ci0926-int';
 const MOCK_KAKAO_HOST = process.env.COMMUNITY_MOCK_KAKAO_HOST ?? '172.17.0.1';
 const REDIRECT = 'http://127.0.0.1:56480/callback.html';
-const POLICY = '2026-09-28.1';
-const CONSENT_HASH = readFileSync(new URL('../../contracts/community-ingest/consent/share-consent-2026-09-28.1.sha256', import.meta.url), 'utf8').split(/\s/)[0];
 const vectors = JSON.parse(readFileSync(new URL('../../contracts/community-ingest/vectors/observations.json', import.meta.url), 'utf8'));
 const payloadOf = (name: string) => structuredClone(vectors.cases.find((c: { name: string }) => c.name === name).expected_payload);
 
@@ -46,6 +44,20 @@ async function call(method: string, path: string, { token, body, headers = {}, a
 }
 const account = (action: string, token: string | null, body: Json = {}) =>
   call('POST', `/functions/v1/community-account/${action}`, { token, body: { protocol: 1, ...body } });
+
+// 동의문은 중앙 `policy` 로 받는다(2026-09-27) — 받은 본문의 해시를 직접 계산해 그 버전·해시로 동의한다(앱과 같은 방식).
+// 계약 폴더에 동의문 사본을 두지 않는다. beforeAll 이 채운다.
+let POLICY = '';
+let CONSENT_HASH = '';
+async function loadPolicy() {
+  const s = await kakaoSession('A');
+  const r = await account('policy', s.access);
+  expect(r.status).toBe(200);
+  const p = r.json.policy as { version: string; consent_text_sha256: string; consent_text: string };
+  expect(createHash('sha256').update(p.consent_text, 'utf8').digest('hex')).toBe(p.consent_text_sha256);
+  POLICY = p.version;
+  CONSENT_HASH = p.consent_text_sha256;
+}
 const ingestRaw = (body: unknown, token: string | null, headers?: Record<string, string>) =>
   call('POST', '/functions/v1/community-ingest', { token, body, headers });
 const SCOPE = 'start=2024-01-01&end=2028-12-31';
@@ -220,6 +232,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     sql('delete from private.rate_limits; delete from private.community_auth_rate_limits;');
     // deployment-and-rollback.md step 7: the operator switches the public projection on
     sql('update private.analytics_state set ready = true, published_at = coalesce(published_at, now()) where singleton;');
+    await loadPolicy();
     const warm = await ensureRealtimeReady();
     console.info(`[realtime] control delivery ready after ${warm} ms`);
     // The contributor-only viewer (E, one shared report) is made while publication is on, before any test switches it off.
