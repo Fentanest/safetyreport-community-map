@@ -28,11 +28,13 @@ export interface ViewerCheck {
   kakao: boolean;
   session: boolean;
   contributor: 'active' | 'none' | 'suspended' | 'revoked';
+  /** at least one of the viewer's reports is on the map (completed, active consent lineage) */
+  has_public_facts: boolean;
 }
 
 /**
  * Who may read the map (user decision 2026-09-27). 'contributors': only signed-in Kakao users with an active share
- * consent, until enough people join; every route including meta is closed to anyone else, and responses become
+ * consent AND at least one shared report on the map, until enough people join; every route including meta is closed to anyone else, and responses become
  * private per viewer. 'public': the original anonymous API. Omitting the access config means 'public'.
  */
 export interface PublicAccess extends ViewerAuthDeps {
@@ -70,6 +72,7 @@ const ACCESS_MESSAGES: Record<string, string> = {
   session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
   kakao_required: '카카오 계정으로 로그인해 주세요.',
   contributor_required: '지금은 신고내용 공유에 동의한 사람만 볼 수 있습니다.',
+  upload_required: '지도에 올라간 내 신고가 아직 없습니다. 앱에서 답변 완료 신고를 공유하면 볼 수 있습니다.',
   origin_forbidden: '허용되지 않은 요청입니다.',
 };
 
@@ -204,6 +207,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access?: PublicAc
         if (!v.kakao) return errorResponse('kakao_required', 403);
         if (!v.session) return errorResponse('session_expired', 401);
         if (v.contributor !== 'active') return errorResponse('contributor_required', 403);
+        if (v.has_public_facts !== true) return errorResponse('upload_required', 403);
         viewerId = uid;
       }
       if (!await repo.allowRequest(request, viewerId)) return errorResponse('RATE_LIMITED', 429);

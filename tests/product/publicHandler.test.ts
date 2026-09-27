@@ -87,7 +87,7 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
   const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const token = (claims: Record<string, unknown> = {}) =>
     `${b64({ alg: 'HS256' })}.${b64({ sub: 'viewer-1', role: 'authenticated', aud: 'authenticated', iss: 'https://p.supabase.co/auth/v1', session_id: SESSION, is_anonymous: false, ...claims })}.sig`;
-  type V = { user_ok: boolean; kakao: boolean; session: boolean; contributor: 'active' | 'none' | 'suspended' | 'revoked' };
+  type V = { user_ok: boolean; kakao: boolean; session: boolean; contributor: 'active' | 'none' | 'suspended' | 'revoked'; has_public_facts: boolean };
   function gated(viewer: Partial<V> = {}, over: { getUser?: () => Promise<{ id: string; isAnonymous: boolean } | null> } = {}) {
     const seen: { viewerCalls: Array<[string, string]>; rateIds: Array<string | undefined>; facts: number } = { viewerCalls: [], rateIds: [], facts: 0 };
     const handle = createPublicHandler(makeRepo({
@@ -96,7 +96,7 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
     }), {
       mode: 'contributors', allowedOrigins: [ORIGIN], jwtIssuer: 'https://p.supabase.co/auth/v1',
       getUser: over.getUser ?? (async () => ({ id: 'viewer-1', isAnonymous: false })),
-      viewer: async (uid, session) => { seen.viewerCalls.push([uid, session]); return { user_ok: true, kakao: true, session: true, contributor: 'active', ...viewer }; },
+      viewer: async (uid, session) => { seen.viewerCalls.push([uid, session]); return { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, ...viewer }; },
     });
     return { handle, seen };
   }
@@ -133,6 +133,13 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
       expect((await res.json()).error.code).toBe('contributor_required');
       expect(seen.facts).toBe(0);
     }
+  });
+  it('consented but no report on the map yet is refused with its own reason', async () => {
+    const { handle, seen } = gated({ has_public_facts: false });
+    const res = await handle(req(`dashboard?${q}`));
+    expect(res.status).toBe(403);
+    expect((await res.json()).error.code).toBe('upload_required');
+    expect(seen.facts).toBe(0);
   });
   it('expired, forged, anonymous and non-Kakao sessions are refused', async () => {
     expect((await gated({}, { getUser: async () => null }).handle(req('meta'))).status).toBe(401);

@@ -20,7 +20,7 @@ export class PublicApiError extends Error {
 }
 
 /** Errors that mean "sign in / share first", shown as the access gate instead of a data error. */
-export const ACCESS_CODES = ['auth_required', 'session_expired', 'kakao_required', 'contributor_required'] as const;
+export const ACCESS_CODES = ['auth_required', 'session_expired', 'kakao_required', 'contributor_required', 'upload_required'] as const;
 export type AccessCode = typeof ACCESS_CODES[number];
 export const isAccessError = (e: unknown): e is PublicApiError & { code: AccessCode } =>
   e instanceof PublicApiError && (ACCESS_CODES as readonly string[]).includes(e.code ?? '');
@@ -128,6 +128,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     // contributor-only gate previews (demo only): not signed in / signed in without an active share consent
     if (state === 'login') throw new PublicApiError('카카오 로그인이 필요합니다.', 401, null, 'auth_required');
     if (state === 'noshare') throw new PublicApiError('지금은 신고내용 공유에 동의한 사람만 볼 수 있습니다.', 403, null, 'contributor_required');
+    if (state === 'noupload') throw new PublicApiError('지도에 올라간 내 신고가 아직 없습니다.', 403, null, 'upload_required');
     if (state === 'offline') throw new PublicApiError('네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
     if (state === 'rate') throw new PublicApiError('요청이 많아 잠시 후 다시 시도해 주세요.', 429, 60);
     if (state === 'stale') throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);

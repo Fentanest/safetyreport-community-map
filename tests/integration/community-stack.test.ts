@@ -49,13 +49,15 @@ const account = (action: string, token: string | null, body: Json = {}) =>
 const ingestRaw = (body: unknown, token: string | null, headers?: Record<string, string>) =>
   call('POST', '/functions/v1/community-ingest', { token, body, headers });
 const SCOPE = 'start=2024-01-01&end=2028-12-31';
-// The map is contributor-only (2026-09-27): statistics are read as E, a Kakao user with an active share consent.
+// The map is contributor-only (2026-09-27): statistics are read as E, a Kakao user with an active share consent
+// and one shared report on the map.
 let viewerToken: string | null = null;
 async function viewer(): Promise<string> {
   if (!viewerToken) {
-    const s = await kakaoSession('E');
-    await consent(s);
-    viewerToken = s.access;
+    const w = await writerFor('E');
+    const r = await ingest(w, [await event(w, `VIEW-${rid()}`)]);
+    expect(r.json.results?.[0]?.projection_status, JSON.stringify(r.json)).toBe('published');
+    viewerToken = w.session.access;
   }
   return viewerToken;
 }
@@ -67,7 +69,7 @@ const b64url = (b: Buffer) => b.toString('base64url');
 const rid = () => randomBytes(8).toString('hex'); // source_report_id is ^[0-9A-Za-z_-]{1,40}$
 interface Session { access: string; refresh: string; userId: string; sessionId: string }
 
-async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'): Promise<Session> {
+async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'): Promise<Session> {
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
   const authorize = `${API}/auth/v1/authorize?${new URLSearchParams({ provider: 'kakao', redirect_to: REDIRECT, code_challenge: challenge, code_challenge_method: 's256' })}`;
@@ -123,7 +125,7 @@ async function register(s: Session, dataset: string, takeover = false, mode: 'se
   return { r, secret };
 }
 
-async function writerFor(choice: 'A' | 'B' | 'C' | 'D', login = `int-${randomUUID()}`): Promise<Writer> {
+async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E', login = `int-${randomUUID()}`): Promise<Writer> {
   const session = await kakaoSession(choice);
   const grantId = await consent(session);
   const dataset = datasetKey(login);

@@ -16,9 +16,11 @@ export const ACCOUNTS = {
   B: { id: 920002, nickname: '통합테스트B', email: 'int-b@example.invalid' },
   C: { id: 920003, nickname: '통합테스트C', email: null },
   D: { id: 920004, nickname: '통합테스트D', email: null },
-  // contributor-only map (2026-09-27): E reads the statistics (consents once, never revoked), F never consents
+  // contributor-only map (2026-09-27): E reads the statistics (consents once, shares one report, never revoked),
+  // F never consents
   E: { id: 920005, nickname: '통합테스트E', email: null },
   F: { id: 920006, nickname: '통합테스트F', email: null },
+  G: { id: 920007, nickname: '통합테스트G', email: null }, // consents but never uploads (map needs one shared report)
 };
 
 export function startMockKakao({ host = '127.0.0.1', port = 56410, clientSecret, clientId = 'mock-kakao-client', redirectUri }) {

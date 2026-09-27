@@ -11,8 +11,9 @@ interface Props {
 }
 
 /**
- * Contributor-only map (user decision 2026-09-27): until enough people join, only signed-in Kakao users who share
- * their reports can see it. The server enforces this for every API route; this screen only explains it.
+ * Contributor-only map (user decision 2026-09-27): until enough people join, only signed-in Kakao users who have
+ * shared at least one report (on the map, under an active share consent) can see it. The server enforces this for
+ * every API route; this screen only explains it.
  */
 export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry }: Props) {
   const signedIn = auth.status === 'signed_in';
@@ -23,7 +24,7 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry }:
         <div className="overline">나만의 안전신문고 커뮤니티</div>
         <h1 id="gate-title">지금은 신고를 공유한 분만 볼 수 있어요</h1>
         <p>
-          커뮤니티 신고 지도는 참여하는 분이 모일 때까지 <b>나만의 안전신문고 앱에서 신고내용 공유에 동의한 분</b>께만
+          커뮤니티 신고 지도는 참여하는 분이 모일 때까지 <b>나만의 안전신문고 앱에서 신고 결과를 한 건 이상 공유한 분</b>께만
           먼저 열어 두었습니다. 참여하는 분이 늘면 누구나 볼 수 있게 열 예정입니다.
         </p>
 
@@ -46,6 +47,20 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry }:
             <p className="access-lead" role="alert">카카오 계정으로 로그인해야 볼 수 있습니다.</p>
             <button className="ghost-btn" type="button" onClick={onSignOut}>로그아웃하고 카카오로 다시 로그인</button>
           </>
+        ) : code === 'upload_required' ? (
+          <>
+            <p className="access-lead" role="alert">
+              {auth.displayName ? `${auth.displayName} 계정은` : '이 계정은'} 공유에 동의했지만 지도에 올라간 신고가 아직 없습니다.
+            </p>
+            <p>
+              앱이 답변 완료된 신고를 수집하면 바로, 또는 신고 지도 탭의 ‘지금 업로드’, 매일 0시에 자동으로 올립니다.
+              답변이 완료된 신고가 있는데도 이 화면이 보이면 앱에서 ‘지금 업로드’를 눌러 보세요.
+            </p>
+            <div className="access-actions">
+              <button className="primary-button" type="button" onClick={onRetry}>다시 확인</button>
+              <button className="ghost-btn" type="button" onClick={onSignOut}>다른 계정으로 로그인</button>
+            </div>
+          </>
         ) : (
           <>
             <p className="access-lead" role="alert">
@@ -53,8 +68,8 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry }:
             </p>
             <ol className="access-steps">
               <li>나만의 안전신문고 앱(PC·Docker 또는 모바일)에서 같은 카카오 계정으로 로그인합니다.</li>
-              <li>[필수] 신고내용 공유 동의를 읽고 동의합니다.</li>
-              <li>여기로 돌아와 ‘다시 확인’을 누릅니다.</li>
+              <li>[필수] 신고 결과 공유 동의를 읽고 동의합니다.</li>
+              <li>답변 완료된 신고가 한 건 이상 지도에 올라가면, 여기로 돌아와 ‘다시 확인’을 누릅니다.</li>
             </ol>
             <div className="access-actions">
               <button className="primary-button" type="button" onClick={onRetry}>다시 확인</button>
