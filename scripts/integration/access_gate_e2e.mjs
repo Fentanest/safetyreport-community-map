@@ -7,7 +7,8 @@
 //
 //   PLAYWRIGHT_CORE=/path/to/playwright-core/index.mjs node scripts/integration/access_gate_e2e.mjs <out-dir> [dist-dir]
 // Preconditions as scripts/integration/live_login_e2e.mjs (stack + mock_kakao + functions serve, live build of the
-// local stack served at http://127.0.0.1:56490/). E must already have an active share consent (the stack tests give it one).
+// local stack served at http://127.0.0.1:56490/). E must already have an active share consent and one
+// shared report on the map (the stack tests give it both).
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_CORE ?? 'playwright-core');
