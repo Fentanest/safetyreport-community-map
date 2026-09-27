@@ -23,7 +23,7 @@ export interface CompareSummary {
   fine_count: number;
   /** distinct located report points (신고일 기준) */
   point_count: number;
-  /** (A+P)/D×100, null when D = 0 */
+  /** 수용률 A/D×100 (일부 수용 제외), null when D = 0 */
   accept_rate: number | null;
   /** J/D×100, null when D = 0 */
   reject_rate: number | null;
@@ -50,7 +50,7 @@ export interface CompareSide {
   report_count: number;
   completed_count: number;
   result_known: number;
-  accepted_partial: number;
+  accepted: number;
   rejected: number;
   fine_count: number;
   accept_rate: number | null;

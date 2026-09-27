@@ -57,9 +57,9 @@ export default function ManagerCompare({ personal, onPick }: Props) {
                     </button>
                   </td>
                   <td className="num">{fmtInt(r.all.completed_count)}</td>
-                  <td className="num">{fmtPercent(r.all.accept_rate)}<small>{fmtInt(r.all.accepted_partial)} / {fmtInt(r.all.result_known)}</small></td>
+                  <td className="num">{fmtPercent(r.all.accept_rate)}<small>{fmtInt(r.all.accepted)} / {fmtInt(r.all.result_known)}</small></td>
                   <td className="num mine-col">{fmtInt(r.mine.completed_count)}{r.mine.result_known === 1 && <span className="sample-one">1건</span>}</td>
-                  <td className="num mine-col">{fmtPercent(r.mine.accept_rate)}<small>{fmtInt(r.mine.accepted_partial)} / {fmtInt(r.mine.result_known)}</small></td>
+                  <td className="num mine-col">{fmtPercent(r.mine.accept_rate)}<small>{fmtInt(r.mine.accepted)} / {fmtInt(r.mine.result_known)}</small></td>
                   <td className="num">{fmtPp(r.accept_rate_pp)}</td>
                 </tr>
               ))}

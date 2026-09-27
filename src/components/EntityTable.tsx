@@ -3,7 +3,7 @@ import type { PublicEntity } from '../domain/public';
 import type { CompareEntityRow } from '../domain/personal';
 import type { EntitySortKey, SortDir } from '../data/client';
 import type { EntityTab } from '../state/filters';
-import { fmtInt, fmtPercent, fmtPp } from './format';
+import { acceptRate, fmtInt, fmtPercent, fmtPp } from './format';
 
 interface Props {
   agencies: PublicEntity[];
@@ -47,14 +47,13 @@ const COLUMNS: Array<{ key: SortKey; label: string; num: boolean }> = [
 ];
 
 function val(e: PublicEntity, k: SortKey): number | null {
-  const d = e.outcomes.result_known;
   switch (k) {
     case 'completed': return e.completed_count;
     case 'accepted': return e.outcomes.accepted;
     case 'partial': return e.outcomes.partial;
     case 'rejected': return e.outcomes.rejected;
     case 'fine': return e.fine_count;
-    case 'acceptRate': return d > 0 ? ((e.outcomes.accepted + e.outcomes.partial) / d) * 100 : null;
+    case 'acceptRate': return acceptRate(e.outcomes);
   }
 }
 
@@ -187,7 +186,7 @@ export default function EntityTable(p: Props) {
                   <td className="num">{fmtInt(e.outcomes.accepted)}<small>{fmtPercent(d > 0 ? (e.outcomes.accepted / d) * 100 : null)}</small></td>
                   <td className="num">{fmtInt(e.outcomes.partial)}<small>{fmtPercent(d > 0 ? (e.outcomes.partial / d) * 100 : null)}</small></td>
                   <td className="num">{fmtInt(e.outcomes.rejected)}<small>{fmtPercent(d > 0 ? (e.outcomes.rejected / d) * 100 : null)}</small></td>
-                  <td className="num">{fmtPercent(d > 0 ? ((e.outcomes.accepted + e.outcomes.partial) / d) * 100 : null)}</td>
+                  <td className="num">{fmtPercent(acceptRate(e.outcomes))}</td>
                   <td className="num">{e.fine_count == null ? '—' : fmtInt(e.fine_count)}</td>
                   <td>
                     <div className="stack mini-stack" aria-hidden="true">

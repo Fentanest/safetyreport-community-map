@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { DashboardData, PublicEntity, PublicPoint } from '../domain/public';
 import type { PointMark } from '../state/pointMarks';
-import { fmtCoord6, fmtDate, fmtInt, fmtPercent } from './format';
+import { acceptRate, fmtCoord6, fmtDate, fmtInt, fmtPercent } from './format';
 import Icon from './icons';
 
 interface Props {
@@ -39,11 +39,7 @@ export default function InsightPanel(p: Props) {
 
   const title = p.point ? (p.point.aggregate ? `가까운 ${p.point.point_count}곳 묶음` : (p.point.address ?? '주소 없음')) : '전국';
   const reportN = p.point ? p.point.report_count : (o?.report_count.value ?? null);
-  const accPct = p.point
-    ? p.point.outcomes && p.point.outcomes.result_known > 0
-      ? ((p.point.outcomes.accepted + p.point.outcomes.partial) / p.point.outcomes.result_known) * 100
-      : null
-    : (o?.accepted_including_partial.value ?? null);
+  const accPct = acceptRate(p.point ? p.point.outcomes : o?.outcomes);
   const contrib = o?.contributor_count.value ?? null;
 
   const agencies = d?.agencies ?? [];
