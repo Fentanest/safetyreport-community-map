@@ -37,6 +37,8 @@ describe('all side equals the public numbers for the same scope (same population
     expect(cmp.all.fine_count).toBe(pub.overview.fine_count.value);
     expect(cmp.all.point_count).toBe(pub.overview.point_count.value);
     expect(consistentWithPublic(cmp, pub.overview)).toBe(true);
+    const pd = pub.overview.processing_duration!;
+    expect(cmp.all.duration).toEqual({ count: pd.count, mean_days: pd.mean_days, median_days: pd.median_days, p90_days: pd.p90_days });
     expect(cmp.scope).toEqual(scope);
     expect(personalCompareSchema.safeParse(JSON.parse(JSON.stringify(cmp))).success).toBe(true);
   });
@@ -51,6 +53,10 @@ describe('mine is the viewer subset of the same population', () => {
     expect(cmp.mine.result_known).toBe(onlyMine.outcomes!.result_known);
     expect(cmp.mine.fine_count).toBe(onlyMine.fine_count.value);
     expect(cmp.mine.point_count).toBe(onlyMine.point_count.value);
+    // durations are recomputed from my raw reports; a mean/median may exceed the all side (no subset rule)
+    expect(cmp.mine.duration.count).toBe(onlyMine.processing_duration!.count);
+    expect(cmp.mine.duration.median_days).toBe(onlyMine.processing_duration!.median_days);
+    expect(cmp.mine.duration.count).toBeLessThanOrEqual(cmp.all.duration.count);
     for (const k of ['report_count', 'completed_count', 'result_known', 'fine_count', 'point_count', 'accepted', 'partial', 'rejected'] as const) {
       expect(cmp.mine[k]).toBeLessThanOrEqual(cmp.all[k]);
     }
@@ -79,6 +85,7 @@ describe('differences', () => {
     expect(cmp.diff.accept_rate_pp).toBeCloseTo(cmp.mine.accept_rate! - cmp.all.accept_rate!, 10);
     expect(cmp.diff.reject_rate_pp).toBeCloseTo(cmp.mine.reject_rate! - cmp.all.reject_rate!, 10);
     expect(cmp.diff.partial_rate_pp).toBeCloseTo(cmp.mine.partial_rate! - cmp.all.partial_rate!, 10);
+    expect(cmp.diff.duration_median_days_diff).toBe(cmp.mine.duration.median_days! - cmp.all.duration.median_days!);
     expect(cmp.diff.fine_rate_pp).toBeCloseTo(cmp.mine.fine_rate! - cmp.all.fine_rate!, 10);
     expect(cmp.diff.report_share).toBeCloseTo(cmp.mine.report_count * 100 / cmp.all.report_count, 10);
     expect(cmp.diff.rate_reason).toBeNull();
@@ -141,11 +148,19 @@ describe('rows share the public keys and totals', () => {
   const pub = dash(facts, DEMO_SCOPE);
 
   it('region rows sum to the overview on both sides and match public region rows', () => {
-    expect(cmp.regions.reduce((n, r) => n + r.all.report_count, 0)).toBe(cmp.all.report_count);
-    expect(cmp.regions.reduce((n, r) => n + r.mine.report_count, 0)).toBe(cmp.mine.report_count);
-    expect(cmp.regions.reduce((n, r) => n + r.all.completed_count, 0)).toBe(cmp.all.completed_count);
+    // 시도 + 지역 미확인 partition the scope; 시군구 rows partition each 시도
+    const top = cmp.regions.filter(r => r.level !== 'sgg');
+    expect(top.reduce((n, r) => n + r.all.report_count, 0)).toBe(cmp.all.report_count);
+    expect(top.reduce((n, r) => n + r.mine.report_count, 0)).toBe(cmp.mine.report_count);
+    expect(top.reduce((n, r) => n + r.all.completed_count, 0)).toBe(cmp.all.completed_count);
+    for (const sido of cmp.regions.filter(r => r.level === 'sido')) {
+      const kids = cmp.regions.filter(r => r.level === 'sgg' && r.sido_code === sido.region_code);
+      expect(kids.reduce((n, r) => n + r.all.report_count, 0)).toBe(sido.all.report_count);
+    }
+    expect(pub.regions!.length).toBe(cmp.regions.length);
     for (const row of pub.regions!) {
-      const c = cmp.regions.find(r => r.region_code === row.region_code)!;
+      const c = cmp.regions.find(r => r.level === row.level && r.region_code === row.region_code)!;
+      expect(c.name).toBe(row.name);
       expect(c.all.report_count).toBe(row.report_count);
       expect(c.all.completed_count).toBe(row.completed_count);
       expect(c.all.result_known).toBe(row.outcomes.result_known);

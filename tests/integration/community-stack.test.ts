@@ -18,8 +18,8 @@ const API = process.env.COMMUNITY_API_URL ?? 'http://127.0.0.1:56321';
 const DB_CONTAINER = process.env.COMMUNITY_DB_CONTAINER ?? 'supabase_db_ci0926-int';
 const MOCK_KAKAO_HOST = process.env.COMMUNITY_MOCK_KAKAO_HOST ?? '172.17.0.1';
 const REDIRECT = 'http://127.0.0.1:56480/callback.html';
-const POLICY = '2026-09-26.1';
-const CONSENT_HASH = readFileSync(new URL('../../contracts/community-ingest/consent/share-consent-2026-09-26.1.sha256', import.meta.url), 'utf8').split(/\s/)[0];
+const POLICY = '2026-09-28.1';
+const CONSENT_HASH = readFileSync(new URL('../../contracts/community-ingest/consent/share-consent-2026-09-28.1.sha256', import.meta.url), 'utf8').split(/\s/)[0];
 const vectors = JSON.parse(readFileSync(new URL('../../contracts/community-ingest/vectors/observations.json', import.meta.url), 'utf8'));
 const payloadOf = (name: string) => structuredClone(vectors.cases.find((c: { name: string }) => c.name === name).expected_payload);
 

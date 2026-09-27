@@ -62,6 +62,51 @@ export interface OutcomeCounts {
   result_unknown: number;
 }
 
+/** 답변까지 걸린 기간 (docs/metrics-catalog.md processing_duration). Days, answer-date cohort. */
+export interface DurationSummary {
+  basis: 'completed_date';
+  count: number;
+  mean_days: number | null;
+  median_days: number | null;
+  p90_days: number | null;
+  min_days: number | null;
+  max_days: number | null;
+  excluded: { no_report_date: number; reversed: number };
+  /** answered reports of the report-date period without any answer date (period unknown) */
+  answer_date_missing: number;
+}
+
+/** Compact duration for rows (region, agency, manager, month). */
+export interface DurationBrief {
+  count: number;
+  median_days: number | null;
+  mean_days: number | null;
+}
+
+/** 답변에 적힌 과태료 금액 (docs/metrics-catalog.md fine_amount). Not a paid or legally final amount. */
+export interface FineAmountSummary {
+  basis: 'completed_date';
+  fine_count: number;
+  confirmed_count: number;
+  sum_won: number | null;
+  mean_won: number | null;
+  median_won: number | null;
+  zero_count: number;
+  unconfirmed_count: number;
+  undisclosed_count: number;
+  conflict_count: number;
+  penalty_count: number;
+  combined_count: number;
+  partial: boolean;
+}
+
+export interface FineAmountBrief {
+  fine_count: number;
+  confirmed_count: number;
+  sum_won: number | null;
+  mean_won: number | null;
+}
+
 export interface Overview {
   report_count: CountMetric;
   completed_count: CountMetric;
@@ -70,6 +115,9 @@ export interface Overview {
   point_count: CountMetric;
   contributor_count: CountMetric;
   outcomes: OutcomeCounts | null;
+  /** null = not provided by the source (never replaced by an empty summary) */
+  processing_duration?: DurationSummary | null;
+  fine_amount?: FineAmountSummary | null;
 }
 
 export interface PublicPoint {
@@ -96,6 +144,8 @@ export interface MonthlyBucket {
   outcomes: OutcomeCounts | null;
   partial: boolean;
   coverage_note: string | null;
+  duration?: DurationBrief | null;
+  fine_amount?: FineAmountBrief | null;
 }
 
 export interface PublicEntity {
@@ -107,16 +157,25 @@ export interface PublicEntity {
   completed_count: number;
   outcomes: OutcomeCounts;
   fine_count: number | null;
+  duration?: DurationBrief | null;
+  fine_amount?: FineAmountBrief | null;
 }
 
-/** Region row (region_code as stored by ingest, e.g. '서울 중구'; null = 지역 미상).
+/** Region row at one level (docs/region-boundaries.md). region_code = official 2026-07-01 법정 code
+ *  (2-digit 시도 or 5-digit 시군구); null with level 'unknown' = 지역 미확인 (kept in every total).
  *  report_count uses the report date; completed/outcomes/fine use the completion date. */
 export interface PublicRegion {
+  level: 'sido' | 'sgg' | 'unknown';
   region_code: string | null;
+  name: string;
+  /** parent 시도 of a 시군구 row */
+  sido_code: string | null;
   report_count: number;
   completed_count: number;
   outcomes: OutcomeCounts;
   fine_count: number;
+  duration?: DurationBrief | null;
+  fine_amount?: FineAmountBrief | null;
 }
 
 export interface PublicVehicle {

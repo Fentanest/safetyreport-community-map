@@ -43,6 +43,13 @@ def validate_public(value: object) -> None:
             validate_public(nested)
 
 
+def brief(row: dict) -> None:
+    if row.get('duration') is not None:
+        exact_keys(row['duration'], {'count', 'median_days', 'mean_days'})
+    if row.get('fine_amount') is not None:
+        exact_keys(row['fine_amount'], {'fine_count', 'confirmed_count', 'sum_won', 'mean_won'})
+
+
 def validate_dashboard(value: object, expected_scope: dict, version: str) -> dict:
     top = exact_keys(value, {'schema_version', 'dataset_version', 'sample', 'scope', 'overview',
                              'points', 'monthly', 'agencies', 'managers', 'vehicles',
@@ -54,7 +61,16 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
         raise ValueError('snapshot scope mismatch')
     validate_public(top)
     overview = exact_keys(top['overview'], {'report_count', 'completed_count', 'accepted_including_partial',
-                                           'fine_count', 'point_count', 'contributor_count', 'outcomes'})
+                                           'fine_count', 'point_count', 'contributor_count', 'outcomes'},
+                          {'processing_duration', 'fine_amount'})
+    if overview.get('fine_amount') is not None:
+        exact_keys(overview['fine_amount'], {'basis', 'fine_count', 'confirmed_count', 'sum_won', 'mean_won', 'median_won',
+                                             'zero_count', 'unconfirmed_count', 'undisclosed_count', 'conflict_count',
+                                             'penalty_count', 'combined_count', 'partial'})
+    if overview.get('processing_duration') is not None:
+        dur = exact_keys(overview['processing_duration'], {'basis', 'count', 'mean_days', 'median_days', 'p90_days',
+                                                            'min_days', 'max_days', 'excluded', 'answer_date_missing'})
+        exact_keys(dur['excluded'], {'no_report_date', 'reversed'})
     metric_keys = {'value', 'basis', 'denominator', 'eligible', 'missing', 'previous', 'delta',
                    'delta_percent', 'delta_reason'}
     for name in ['report_count', 'completed_count', 'fine_count', 'point_count', 'contributor_count']:
@@ -77,14 +93,16 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
         raise ValueError('map budget exceeded')
     for month in top['monthly']:
         exact_keys(month, {'month', 'report_count', 'completed_count', 'fine_count',
-                           'outcomes', 'partial', 'coverage_note'})
+                           'outcomes', 'partial', 'coverage_note'}, {'duration', 'fine_amount'})
+        brief(month)
         if month['outcomes'] is not None:
             exact_keys(month['outcomes'], outcome_keys)
     for name in ['agencies', 'managers']:
         if len(top[name]) > 100:
             raise ValueError('entity page budget exceeded')
         for entity in top[name]:
-            exact_keys(entity, {'key', 'agency_key', 'manager_key', 'agency_name', 'manager_name', 'completed_count', 'outcomes', 'fine_count'})
+            exact_keys(entity, {'key', 'agency_key', 'manager_key', 'agency_name', 'manager_name', 'completed_count', 'outcomes', 'fine_count'}, {'duration', 'fine_amount'})
+            brief(entity)
             exact_keys(entity['outcomes'], outcome_keys)
     if 'location_missing' in top and (not isinstance(top['location_missing'], int) or top['location_missing'] < 0):
         raise ValueError('invalid location_missing')
@@ -92,7 +110,13 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
     if not isinstance(regions, list) or len(regions) > 300:
         raise ValueError('region budget exceeded')
     for region in regions:
-        exact_keys(region, {'region_code', 'report_count', 'completed_count', 'outcomes', 'fine_count'})
+        exact_keys(region, {'level', 'region_code', 'name', 'sido_code', 'report_count', 'completed_count', 'outcomes', 'fine_count'}, {'duration', 'fine_amount'})
+        # official 2026-07-01 codes only (docs/region-boundaries.md); unknown rows carry no code
+        code, level = region['region_code'], region['level']
+        if level not in ('sido', 'sgg', 'unknown') or (level == 'unknown') != (code is None) or \
+                (code is not None and not re.fullmatch(r'\d{2}' if level == 'sido' else r'\d{5}', str(code))):
+            raise ValueError('invalid region row')
+        brief(region)
         exact_keys(region['outcomes'], outcome_keys)
     if len(top['vehicles']) > 5:
         raise ValueError('vehicle limit exceeded')

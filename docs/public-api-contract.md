@@ -73,6 +73,14 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 `overview.point_count` 는 신고일 기준 위치 수 그대로다(basis `report_date`) — 완료일만 범위에 든 위치는 지도 점에는 있지만 이 지표에는 없다.
 `location_missing`(SOL-07): 현재 범위의 신고일 또는 완료일 지표에 실제로 들어간 고유 fact 중 좌표 없는 것(비교 기간만 속한 fact 제외, 한 번만).
 
-지역 행(2026-09-27): `dashboard`에 `regions[]`(region_code, report_count=신고일, completed_count·outcomes·fine_count=처리완료일, 최대 300행)를
-추가했다. region_code는 ingest가 저장한 짧은 문자열(예: `서울 중구`)이며 null은 지역 미상. 필드가 없으면 클라이언트는 '미제공'으로 표시하고 빈 목록으로 바꾸지 않는다.
+지역 행(2026-09-27): `dashboard`에 `regions[]`(최대 300행)를 추가했다. 같은 날 공식 코드로 바꿨다:
+`{level: 'sido'|'sgg'|'unknown', region_code: '11'|'11140'|null, name, sido_code, report_count(신고일), completed_count·outcomes·fine_count(처리완료일), duration?, fine_amount?}`.
+`region_code` 조건은 2자리 시도 또는 5자리 시군구(2026-07-01 법정 코드, 시도는 하위 시군구 포함). 옛 표시 키(`서울 중구`)는 모호하지 않으면 변환, 아니면 400.
+지도 점의 `region_code`는 5자리 시군구 코드 또는 null. 규칙·출처: docs/region-boundaries.md.
+필드가 없으면 클라이언트는 '미제공'으로 표시하고 빈 목록으로 바꾸지 않는다.
+
+기간·금액(2026-09-27): `overview.processing_duration`(basis, count, mean/median/p90/min/max_days, excluded{no_report_date, reversed}, answer_date_missing),
+`overview.fine_amount`(basis, fine_count, confirmed_count, sum_won, mean_won, median_won, zero_count, unconfirmed/undisclosed/conflict/penalty/combined_count, partial).
+월·기관·담당자·지역 행에는 요약 `duration{count, median_days, mean_days}`, `fine_amount{fine_count, confirmed_count, sum_won, mean_won}`. 정의: docs/metrics-catalog.md.
+개별 신고의 금액·기간은 내보내지 않는다. 두 필드는 선택(optional)이라 예전 응답도 schema를 통과한다.
 이 공개 API는 개인 비교를 제공하지 않는다. 로그인 사용자의 비교는 별도 `my-analytics/compare`(docs/personal-comparison.md §3)다.

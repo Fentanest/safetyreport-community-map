@@ -15,8 +15,8 @@ const DB_CONTAINER = process.env.COMMUNITY_DB_CONTAINER ?? 'supabase_db_ci0926-i
 const MOCK_KAKAO_HOST = process.env.COMMUNITY_MOCK_KAKAO_HOST ?? '172.17.0.1';
 const REDIRECT = 'http://127.0.0.1:56480/callback.html';
 const MAP_ORIGIN = 'http://127.0.0.1:56490';
-const POLICY = '2026-09-26.1';
-const CONSENT_HASH = readFileSync(new URL('../../contracts/community-ingest/consent/share-consent-2026-09-26.1.sha256', import.meta.url), 'utf8').split(/\s/)[0];
+const POLICY = '2026-09-28.1';
+const CONSENT_HASH = readFileSync(new URL('../../contracts/community-ingest/consent/share-consent-2026-09-28.1.sha256', import.meta.url), 'utf8').split(/\s/)[0];
 const vectors = JSON.parse(readFileSync(new URL('../../contracts/community-ingest/vectors/observations.json', import.meta.url), 'utf8'));
 const payloadOf = (name: string) => structuredClone(vectors.cases.find((c: { name: string }) => c.name === name).expected_payload);
 
@@ -184,5 +184,41 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
     expect((await call('POST', '/auth/v1/logout?scope=global', { token: map2.access })).status).toBe(204);
     const broken = await ingest(app, 1);
     expect(broken.status).not.toBe(200);
+  });
+  it('releases fine amounts only while the current grant of the lineage publishes them (2026-09-28.1 does)', async () => {
+    const a = await writer('A');
+    expect((await ingest(a, 2)).status).toBe(200); // accepted_fine vectors: 40,000원 each
+    const facts = "public.internal_analytics_v2_facts(date '2024-01-01', date '2026-09-27', 'all', null, null, null, null)";
+    const released = () => Number(sql(`select count(*) from jsonb_array_elements(${facts}) e where e->'amount_confirmed_won' <> 'null'::jsonb;`));
+    const stated = Number(sql(`select count(*) from jsonb_array_elements(${facts}) e where (e->>'amount_stated')::boolean;`));
+    expect(sql(`select amounts_public from private.community_policy_disclosures where version = '${POLICY}';`)).toBe('t');
+    expect(stated).toBeGreaterThanOrEqual(2);
+    expect(released()).toBe(stated);
+    // each step reads a scope not asked before, so no cached answer hides the change
+    const offScope = 'start=2024-01-01&end=2026-09-27&category=parking';
+    const onScope = 'start=2024-01-02&end=2026-09-27&category=parking';
+    try {
+      // publication switched off: no value leaves the database, the public side counts them as undisclosed
+      sql(`update private.community_policy_disclosures set amounts_public = false where version = '${POLICY}';`);
+      expect(released()).toBe(0);
+      const off = await call('GET', `/functions/v1/public-analytics/dashboard?${offScope}`, { apikey: null });
+      expect(off.status).toBe(200);
+      expect(off.json.overview.fine_amount).toMatchObject({ confirmed_count: 0, sum_won: null, mean_won: null });
+      expect(off.json.overview.fine_amount.undisclosed_count).toBeGreaterThanOrEqual(2);
+      expect(JSON.stringify(off.json)).not.toMatch(/40000|amount_confirmed_won|amount_public/);
+    } finally {
+      sql(`update private.community_policy_disclosures set amounts_public = true where version = '${POLICY}';`);
+    }
+    expect(released()).toBe(stated);
+    const after = await call('GET', `/functions/v1/public-analytics/dashboard?${onScope}`, { apikey: null });
+    expect(after.status).toBe(200);
+    const fa = after.json.overview.fine_amount;
+    expect(fa.confirmed_count).toBeGreaterThanOrEqual(2);
+    expect(fa.sum_won).toBe(40000 * fa.confirmed_count);
+    const mapA = await kakaoSession('A');
+    const mine = await call('GET', `/functions/v1/my-analytics/compare?${onScope}&expected_version=${after.json.dataset_version}`, { token: mapA.access, headers: { origin: MAP_ORIGIN } });
+    expect(mine.status, JSON.stringify(mine.json)).toBe(200);
+    expect(mine.json.all.fine_amount).toMatchObject({ confirmed_count: fa.confirmed_count, sum_won: fa.sum_won });
+    expect(mine.json.mine.fine_amount.sum_won).toBeLessThanOrEqual(fa.sum_won);
   });
 });

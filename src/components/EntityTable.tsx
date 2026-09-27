@@ -3,7 +3,7 @@ import type { PublicEntity } from '../domain/public';
 import type { CompareEntityRow } from '../domain/personal';
 import type { EntitySortKey, SortDir } from '../data/client';
 import type { EntityTab } from '../state/filters';
-import { acceptRate, fmtInt, fmtPercent, fmtPp } from './format';
+import { acceptRate, fmtDays, fmtInt, fmtPercent, fmtPp, fmtWon } from './format';
 
 interface Props {
   agencies: PublicEntity[];
@@ -155,6 +155,7 @@ export default function EntityTable(p: Props) {
               ))}
               <th scope="col">결과 비율</th>
               <th scope="col">결과가 나온 신고</th>
+              <th scope="col" className="num" title="신고한 날부터 답변 받은 날까지, 중앙값">답변까지</th>
               {p.mine && <th scope="col" className="num mine-col">내 답변</th>}
               {p.mine && <th scope="col" className="num mine-col">내 수용률</th>}
               {p.mine && <th scope="col" className="num mine-col">내 일부수용률</th>}
@@ -163,10 +164,10 @@ export default function EntityTable(p: Props) {
           </thead>
           <tbody>
             {server?.loading && shown.length === 0 && (
-              <tr><td colSpan={p.mine ? 13 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">불러오는 중입니다…</td></tr>
+              <tr><td colSpan={p.mine ? 14 : 10} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">불러오는 중입니다…</td></tr>
             )}
             {!(server?.loading && shown.length === 0) && shown.length === 0 && (
-              <tr><td colSpan={p.mine ? 13 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다.</td></tr>
+              <tr><td colSpan={p.mine ? 14 : 10} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다.</td></tr>
             )}
             {shown.map((e) => {
               const d = e.outcomes.result_known;
@@ -188,7 +189,7 @@ export default function EntityTable(p: Props) {
                   <td className="num">{fmtInt(e.outcomes.partial)}<small>{fmtPercent(d > 0 ? (e.outcomes.partial / d) * 100 : null)}</small></td>
                   <td className="num">{fmtInt(e.outcomes.rejected)}<small>{fmtPercent(d > 0 ? (e.outcomes.rejected / d) * 100 : null)}</small></td>
                   <td className="num">{fmtPercent(acceptRate(e.outcomes))}</td>
-                  <td className="num">{e.fine_count == null ? '—' : fmtInt(e.fine_count)}</td>
+                  <td className="num">{e.fine_count == null ? '—' : fmtInt(e.fine_count)}{e.fine_amount && e.fine_amount.confirmed_count > 0 && <small title="답변에 적힌 과태료 금액 합계(금액이 확인된 것만)">{fmtWon(e.fine_amount.sum_won)}</small>}</td>
                   <td>
                     <div className="stack mini-stack" aria-hidden="true">
                       <i style={{ width: `${d > 0 ? (e.outcomes.accepted / d) * 100 : 0}%`, background: 'var(--accepted)' }} />
@@ -197,6 +198,7 @@ export default function EntityTable(p: Props) {
                     </div>
                   </td>
                   <td>{d === 1 ? <span className="sample-one">1건</span> : `${fmtInt(d)}건`}</td>
+                  <td className="num">{e.duration && e.duration.count > 0 ? fmtDays(e.duration.median_days) : '—'}</td>
                   {p.mine && <td className="num mine-col">{fmtInt(p.mine.get(e.key)?.mine.completed_count ?? 0)}</td>}
                   {p.mine && <td className="num mine-col">{fmtPercent(p.mine.get(e.key)?.mine.accept_rate ?? null)}</td>}
                   {p.mine && <td className="num mine-col">{fmtPercent(p.mine.get(e.key)?.mine.partial_rate ?? null)}</td>}

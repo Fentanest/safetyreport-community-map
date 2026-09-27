@@ -15,11 +15,11 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 | disposition | fine / penalty / warning / none / unknown (SQL·`server/aggregate.ts` 정본. 2026-09-26 문서 정정: 이전 문서의 warning_or_penalty/other 는 코드에 없음) |
 | lat / lng | WGS84 원 double 값. finite·대한민국 서비스 범위 검증. 주소→좌표 재생성으로 원 좌표 덮지 않음 |
 | point_key | 서버 위치 기준 version; 좌표 공개 정밀도와 key 묶음 알고리즘은 별개 |
-| address / region codes | 제공된 위치 표시 주소·행정구역. 주소 없으면 역지오코딩 대기 상태 |
+| address / region codes | 제공된 위치 표시 주소·ingest 지역 키(`서울 중구`). 집계는 2026-07-01 법정 시도/시군구 코드로 다시 맞춘다(docs/region-boundaries.md). 주소 없으면 역지오코딩 대기 상태 |
 | agency_key / agency_name | 검증된 기관 코드 우선. 정규화 규칙 version |
 | manager_key / manager_name | agency_key + name + 가능하면 안정 담당자 식별. 이름 단독 전역 병합 금지 |
 | vehicle_raw | private 원번호(업로드 원문). 공개 전 `parsePlate` 로 정규화(지역 접두어 보존)·마스킹 |
-| amount_confirmed_won / penalty_points | private 저장만(답변에 적힌 확정 금액·벌점). 공개 capability `fine_amount` 는 missing 유지 |
+| amount_kind / amount_confirmed_won / penalty_points | private 저장(답변에 적힌 금액·종류·벌점). 공개 RPC는 **사실의 동의 정책이 금액 공개를 허용할 때만**(`private.community_policy_disclosures.amounts_public`) 금액 값을 내보내고, 아니면 null + `amount_stated`(적혔는지 여부)만. 공개 DTO에는 집계(합계·평균·중앙값·건수)만. 벌점은 내보내지 않는다 |
 | count | fact=1; joint cube면 1 이상의 가중치 |
 
 manager 동명이인이 같은 기관에도 존재할 수 있다. 별도 ID가 없으면 '기관·성명 기준 묶음'임을 표시하고 동일인으로 단정하지 않는다.
@@ -42,10 +42,18 @@ status/처분 구분이 combined뿐이면 warning_or_penalty를 유지하며 금
 rank_item_id는 응답 내부 항목 구분용이며 영속 식별자가 아니다. 차량별 상세좌표/날짜 추적 링크 금지.
 공개 차트 데이터는 count와 eligible/missing denominator를 함께 제공한다. null과 0을 구분한다.
 
+금액 공개 정책(2026-09-27 사용자 승인): 동의문 2026-09-28.1이 ‘무엇이 공개되나요’에 과태료 금액 통계를 적었고,
+map migration `202609280300`이 그 버전을 disclosures에 등록했다(auth `202609280200`이 현재 정책으로 지정).
+2026-09-26.1은 금액을 ‘보내는 항목’으로만 적어 등록하지 않았다. 금액 공개 여부는 사실이 속한 동의 계보의 **현재 유효한 동의**가
+정한다: 새 버전에 직접 동의하면 이전 버전으로 보낸 사실의 금액도 통계에 들어가고(동의문에 적음), 이전 동의만으로는 들어가지 않는다.
+재동의를 자동으로 만들지 않는다. 한 조건에 1건뿐이면 통계가 곧 그 신고의 금액임을 동의문에 적었다.
+
 ## E. capabilities
 meta.capabilities: daily_report_dates, completion_dates, manager_status_cross,
 agency_status_cross, vehicle_top5, fine_amount, processing_duration, region_boundaries.
 각각 supported / missing / partial + reason + coverage.{eligible,total}로 표현한다.
+2026-09-27부터 processing_duration(coverage = 계산된 건수/답변 cohort), fine_amount(coverage = 금액 확인/F), region_boundaries는
+집계 상태(ready)를 따른다. 실제로 계산한 결과가 있는 경로에서만 supported다.
 지원하지 않는 패널은 설명된 준비 상태로 남긴다. 사용자가 요청한 패널 자체를 흔적 없이 삭제하지 않는다.
 
 ## F. fixture 원칙

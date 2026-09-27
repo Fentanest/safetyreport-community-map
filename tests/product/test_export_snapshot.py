@@ -74,9 +74,28 @@ class ExportProjectionTests(unittest.TestCase):
     def test_live_dashboard_fields_regions_and_location_missing_are_allowed(self):
         data = dashboard()
         data['location_missing'] = 2
-        data['regions'] = [{'region_code': '서울 중구', 'report_count': 1, 'completed_count': 1,
-                            'outcomes': copy.deepcopy(OUTCOMES), 'fine_count': 0}]
-        self.assertEqual(validate_dashboard(data, SCOPE, 'v2-test')['regions'][0]['region_code'], '서울 중구')
+        row = {'report_count': 1, 'completed_count': 1, 'outcomes': copy.deepcopy(OUTCOMES), 'fine_count': 0}
+        data['regions'] = [
+            {'level': 'sido', 'region_code': '11', 'name': '서울특별시', 'sido_code': None, **row},
+            {'level': 'sgg', 'region_code': '11140', 'name': '서울 중구', 'sido_code': '11', **row,
+             'duration': {'count': 1, 'median_days': 3, 'mean_days': 3},
+             'fine_amount': {'fine_count': 0, 'confirmed_count': 0, 'sum_won': None, 'mean_won': None}},
+            {'level': 'unknown', 'region_code': None, 'name': '지역 미확인', 'sido_code': None, **row},
+        ]
+        self.assertEqual(validate_dashboard(data, SCOPE, 'v2-test')['regions'][1]['region_code'], '11140')
+
+    def test_region_rows_must_use_official_codes(self):
+        row = {'report_count': 1, 'completed_count': 1, 'outcomes': copy.deepcopy(OUTCOMES), 'fine_count': 0}
+        for bad in [
+            {'level': 'sgg', 'region_code': '서울 중구', 'name': '서울 중구', 'sido_code': '11'},  # legacy display key
+            {'level': 'sido', 'region_code': '11140', 'name': 'x', 'sido_code': None},           # level/code mismatch
+            {'level': 'unknown', 'region_code': '11', 'name': 'x', 'sido_code': None},
+            {'level': 'city', 'region_code': '11', 'name': 'x', 'sido_code': None},
+        ]:
+            data = dashboard()
+            data['regions'] = [{**bad, **row}]
+            with self.assertRaises(ValueError):
+                validate_dashboard(data, SCOPE, 'v2-test')
 
     def test_personal_comparison_fields_never_enter_a_snapshot(self):
         for field in ['mine', 'viewer', 'my_points']:

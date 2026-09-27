@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type DashboardData, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
 import { PublicApiError, dataMode, entitiesAvailable, loadDashboard, loadEntities, type EntitySortKey, type SortDir } from '../data/client';
 import {
-  CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, regionLabel, regionOptions, scopeFromDraft, scopeFromSearch,
+  CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, regionCounts, regionLabel, scopeFromDraft, scopeFromSearch,
   scopeToSearch, validateRange, type DraftFilters, type EntityTab, type MapMetric, type ThemeMode,
 } from '../state/filters';
 import TopBar from '../components/TopBar';
@@ -407,7 +407,8 @@ export default function Dashboard() {
   };
   const flipInterest = (code: string) => setInterest((list) => writeInterest(toggleInterest(list, code)));
   const pickRegion = (code: string | null) => {
-    const next: Scope = { ...scope, region_code: code };
+    // a region replaces the "visible area" condition (both at once would silently narrow to their overlap)
+    const next: Scope = { ...scope, region_code: code, bbox: null };
     setScope(next);
     setDraft(draftFromScope(next));
     pushUrl(next);
@@ -431,7 +432,7 @@ export default function Dashboard() {
     if (!compareData) return null;
     return new Map((entityTab === 'agency' ? compareData.agencies : compareData.managers).map((r) => [r.key, r]));
   }, [compareData, entityTab]);
-  const regionOpts = regionOptions(data?.regions ?? null, scope.region_code);
+  const regionCountMap = useMemo(() => regionCounts(data?.regions ?? null), [data?.regions]);
 
   // One instance of each panel; the three view layouts only place them (§5.2). Switching never refetches.
   const mapPanel = data && (
@@ -451,6 +452,9 @@ export default function Dashboard() {
       pointFilter={effectiveFilter}
       onPointFilter={setPointFilter}
       filterAvailable={{ all: true, mine: !!compareData, shared: !!compareData, interest: interest.length > 0 }}
+      regions={data.regions}
+      activeRegion={scope.region_code}
+      onPickRegion={pickRegion}
     />
   );
   const regionList = data && (
@@ -538,7 +542,7 @@ export default function Dashboard() {
             onShare={share}
             onOpenDrawer={() => setDrawer(true)}
             dateError={dateError}
-            regionOptions={regionOpts}
+            regionCounts={regionCountMap}
             extra={(
               <ViewControls
                 compareOn={compareOn}
@@ -677,7 +681,7 @@ export default function Dashboard() {
         onClose={() => setDrawer(false)}
         onApply={apply}
         onReset={reset}
-        regionOptions={regionOpts}
+        regionCounts={regionCountMap}
       />
       {toast && <div className="toast" role="status" aria-live="polite">{toast}</div>}
     </>

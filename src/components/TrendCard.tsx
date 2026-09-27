@@ -4,7 +4,7 @@ import type { LineSeriesOption } from 'echarts/charts';
 import type { GridComponentOption, TooltipComponentOption } from 'echarts/components';
 import type { MonthlyBucket } from '../domain/public';
 import type { CompareMonth } from '../domain/personal';
-import { fmtInt, fmtMonth } from './format';
+import { fmtDays, fmtFineAmount, fmtInt, fmtMonth } from './format';
 import Icon from './icons';
 
 type TrendOption = ComposeOption<LineSeriesOption | GridComponentOption | TooltipComponentOption>;
@@ -173,7 +173,7 @@ export default function TrendCard({ monthly, theme, mine = null }: {
         <div className="trend-table">
           <table>
             <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>자료가 없는 달은 ‘—’로 표시합니다.</caption>
-            <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 완료</th><th scope="col">과태료</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
+            <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 완료</th><th scope="col">과태료</th><th scope="col">과태료 금액</th><th scope="col">답변까지(중앙값)</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
             <tbody>
               {monthly.map((m) => (
                 <tr key={m.month}>
@@ -181,6 +181,8 @@ export default function TrendCard({ monthly, theme, mine = null }: {
                   <td>{fmtInt(m.report_count)}</td>
                   <td>{fmtInt(m.completed_count)}</td>
                   <td>{fmtInt(m.fine_count)}</td>
+                  <td>{m.fine_amount ? fmtFineAmount(m.fine_amount) : '—'}</td>
+                  <td>{m.duration && m.duration.count > 0 ? fmtDays(m.duration.median_days) : '—'}</td>
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_report_count ?? null)}</td>}
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_completed_count ?? null)}</td>}
                   <td>{m.partial ? '진행 중' : m.coverage_note ?? ''}</td>

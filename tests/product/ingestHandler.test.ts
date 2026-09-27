@@ -19,7 +19,7 @@ async function event(id: string, reportId = 'R1', p = payload, type = 'completed
 }
 const envelope = async (events: unknown[]) => ({ protocol: 1, contract: 'community-ingest-v1', source_app: 'safetyreport',
   source_mode: 'server', connection_id: '11111111-2222-3333-4444-555555555555', consent_grant_id: '66666666-7777-8888-9999-000000000000',
-  policy_version: '2026-09-26.1', client_version: '1.2.3', parser_version: 'pc-parser-1', trigger: 'realtime', events });
+  policy_version: '2026-09-28.1', client_version: '1.2.3', parser_version: 'pc-parser-1', trigger: 'realtime', events });
 
 function setup(rpcResult: (name: string, args: Record<string, unknown>) => unknown = () => ({ results: [] })) {
   const calls: { name: string; args: Record<string, unknown> }[] = [];

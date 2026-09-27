@@ -6,6 +6,7 @@ import {
 } from '../state/filters';
 import { fmtDate } from './format';
 import Icon from './icons';
+import RegionSelect from './RegionSelect';
 
 interface Props {
   draft: DraftFilters;
@@ -19,7 +20,7 @@ interface Props {
   onShare: () => void;
   onOpenDrawer: () => void;
   dateError: string | null;
-  regionOptions: Array<{ code: string | null; label: string }>;
+  regionCounts: Map<string, number>;
   /** personal comparison toggle + view switch (docs/personal-comparison.md §5.1) */
   extra?: ReactNode;
 }
@@ -100,17 +101,11 @@ export default function CommandBar(p: Props) {
               onChange={(e) => p.onDraft({ ...p.draft, end: e.target.value })}
             />
           </label>
-          <label>지역
-            <select
-              value={p.draft.region_code ?? ''}
-              onChange={(e) => p.onDraft({ ...p.draft, region_code: e.target.value || null })}
-              style={{ minHeight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', padding: '6px 10px' }}
-            >
-              {p.regionOptions.map((r) => (
-                <option key={r.label} value={r.code ?? ''}>{r.label}</option>
-              ))}
-            </select>
-          </label>
+          <RegionSelect
+            value={p.draft.region_code} counts={p.regionCounts}
+            onChange={(code) => p.onDraft({ ...p.draft, region_code: code })}
+            selectStyle={{ minHeight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', padding: '6px 10px' }}
+          />
           <button className="primary-button" type="button" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => { p.onApply(); setOpen(false); }}>
             적용
           </button>

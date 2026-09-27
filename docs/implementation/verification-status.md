@@ -61,3 +61,20 @@ provider `opencode-go`, model `muse-spark-1.3-contributor`, variant `default`, �
 검수 1차 호출은 시작 직후 SIGTERM(원인 불명, inotify ENOSPC 경고 동반)으로 끝나 같은 세션으로 1회 재개했다.
 성능 메모: live 초기 JS gzip 약 126 KB(이전 약 115 KB). 지도 로그인 SDK는 별도 lazy chunk(약 55 KB gzip)로 로그인하거나 저장된 지도 세션이 있을 때만 받는다.
 남은 NOT_RUN: 추이 결측 월 '—' 렌더의 브라우저 확인(단위 로직만), 스크린리더 전체 탐색.
+
+## 과태료 금액 · 답변까지 걸린 기간 · 행정구역 경계 · 2026-09-27
+
+| 항목 | 구현 | 로컬 검증 | 배포 | 실데이터 검증 |
+|---|---|---|---|---|
+| processing_duration | 완료 (`server/duration.ts`, 공개·개인·표·추이) | PASS_LOCAL: 단위(KST 달력일·윤년·제외 사유·중앙값/p90·그룹 재계산), 스택 | 아래 운영 반영 기록 | BLOCKED: 운영 사실 0건 |
+| fine_amount | 완료 (`server/amount.ts`, 동의 정책 게이트, 개인 비교) | PASS_LOCAL: 분류·0원/미기재·부분 합산·정밀도, 스택에서 공개 허용 끄기→값 0건·켜기→합계 일치 | 〃 | BLOCKED: 운영 사실 0건 |
+| 동의 2026-09-28.1 | 동의문·auth `202609280200`·map `202609280300`·PC/모바일 필수 버전 | PASS_LOCAL: 스택 27, PC 479(기존 실패 1 — 아래), 모바일 community 262 | 〃 | 앱 배포 뒤 실제 동의 흐름 NOT_RUN |
+| region_boundaries | 완료 (코드표·경계·필터·목록·지도 레이어) | PASS_LOCAL: 지역 단위 9·경계 4, 실제 카카오 SDK에서 hover·클릭·목록·뒤로·확대·끄기·옛 URL·390(Sol), Muse PASS | 〃 | 실제 신고 지역키 분포 대조 BLOCKED |
+
+- Muse 검수: `docs/reviews/dab-review.md`(commit `1566e6a`, 세션 `ses_f1ee4b3fbffeCn82Wwni2OFDzm`, export로 `opencode-go`/`muse-spark-1.3-contributor`/variant default·검수 worktree 확인).
+  판정 PASS. 후속: DAB-01·02(경계 hover 카드·클릭→필터)는 Muse의 합성 mousemove가 폴리곤을 맞혔는지 불확실해 조건부로 적었고,
+  Sol이 실제 포인터 이벤트(Playwright `page.mouse`)로 `경기도 · 신고 50건` 카드와 클릭 뒤 `region_code=41`을 확인했다.
+  DAB-03은 결함 아님: 비교 토글은 의도적으로 `role="switch"`라 checkbox 역할 조회에 안 잡힌다(`getByRole('switch')`). DAB-04는 작업서 예시 오류(`?me=signed`가 맞음).
+- Muse 호출은 두 번 중간 문장으로 턴을 끝내 같은 세션으로 두 번 재개했다(원인: 포트를 붙인 주소로 열어 카카오 출처 불일치).
+- PC dev 기존 실패: `tests.test_db_backup_regression …restore_from_mobile_db…`는 dev 원본 `9a6662b`에서도 같은 `LegacyDatabaseRefused`로 실패(이번 변경과 무관).
+- 모바일 전체 테스트의 골든 4건 실패도 dev 원본 `82efd333`에서 같게 실패.

@@ -37,34 +37,58 @@ const outcomes = z.strictObject({
   accepted: count, partial: count, rejected: count, result_known: count, result_unknown: count,
 });
 
+const durationBrief = z.strictObject({
+  count, median_days: z.number().min(0).nullable(), mean_days: z.number().min(0).nullable(),
+}).nullable().optional();
+const durationSummary = z.strictObject({
+  basis: z.literal('completed_date'), count,
+  mean_days: z.number().min(0).nullable(), median_days: z.number().min(0).nullable(), p90_days: z.number().min(0).nullable(),
+  min_days: z.number().min(0).nullable(), max_days: z.number().min(0).nullable(),
+  excluded: z.strictObject({ no_report_date: count, reversed: count }), answer_date_missing: count,
+}).nullable().optional();
+
+const won = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+const fineBrief = z.strictObject({
+  fine_count: count, confirmed_count: count, sum_won: won.nullable(), mean_won: z.number().min(0).nullable(),
+}).nullable().optional();
+const fineSummary = z.strictObject({
+  basis: z.literal('completed_date'), fine_count: count, confirmed_count: count, sum_won: won.nullable(),
+  mean_won: z.number().min(0).nullable(), median_won: z.number().min(0).nullable(), zero_count: count,
+  unconfirmed_count: count, undisclosed_count: count, conflict_count: count, penalty_count: count, combined_count: count,
+  partial: z.boolean(),
+}).nullable().optional();
+
 export const overviewSchema = z.strictObject({
   report_count: countMetric, completed_count: countMetric, accepted_including_partial: rateMetric,
   fine_count: countMetric, point_count: countMetric, contributor_count: countMetric, outcomes: outcomes.nullable(),
+  processing_duration: durationSummary, fine_amount: fineSummary,
 });
 
 export const pointSchema = z.strictObject({
   key: z.string(), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
   aggregate: z.boolean().optional(), point_count: count.optional(),
   bbox: z.tuple([positive, positive, positive, positive]).optional(),
-  address: z.string().nullable(), region_code: z.string().nullable(), report_count: count,
+  address: z.string().nullable(), region_code: z.string().regex(/^\d{5}$/).nullable(), report_count: count,
   completed_count: nullableCount, outcomes: outcomes.nullable(), fine_count: nullableCount,
 });
 
 export const monthlySchema = z.strictObject({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/), report_count: nullableCount,
   completed_count: nullableCount, fine_count: nullableCount, outcomes: outcomes.nullable(),
-  partial: z.boolean(), coverage_note: z.string().nullable(),
+  partial: z.boolean(), coverage_note: z.string().nullable(), duration: durationBrief, fine_amount: fineBrief,
 });
 
 export const entitySchema = z.strictObject({
   key: z.string(), agency_key: z.string().nullable(), manager_key: z.string().nullable(),
   agency_name: z.string(), manager_name: z.string().nullable(),
-  completed_count: count, outcomes, fine_count: nullableCount,
+  completed_count: count, outcomes, fine_count: nullableCount, duration: durationBrief, fine_amount: fineBrief,
 });
 
 export const regionSchema = z.strictObject({
-  region_code: z.string().max(24).nullable(), report_count: count, completed_count: count,
-  outcomes, fine_count: count,
+  level: z.enum(['sido', 'sgg', 'unknown']), region_code: z.string().regex(/^\d{2}(\d{3})?$/).nullable(),
+  name: z.string().max(40), sido_code: z.string().regex(/^\d{2}$/).nullable(),
+  report_count: count, completed_count: count,
+  outcomes, fine_count: count, duration: durationBrief, fine_amount: fineBrief,
 });
 
 export const vehicleSchema = z.strictObject({

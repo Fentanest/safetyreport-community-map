@@ -73,6 +73,18 @@ export function demoFacts(): PrivateFact[] {
     return `${prefix}${head}${HANGUL[i % HANGUL.length]}${tail}`;
   });
   const facts: PrivateFact[] = [];
+  // Answered fine amounts use their own generator so the rest of the synthetic set stays unchanged.
+  const amountRand = mulberry32(20260928);
+  const amountOf = (disposition: Disposition): Pick<PrivateFact, 'amount_kind' | 'amount_confirmed_won' | 'amount_public' | 'amount_stated'> => {
+    const r = amountRand();
+    if (disposition !== 'fine') return r < 0.04
+      ? { amount_kind: 'penalty', amount_confirmed_won: null, amount_public: true, amount_stated: true }
+      : { amount_kind: 'unknown', amount_confirmed_won: null, amount_public: true, amount_stated: false };
+    if (r < 0.1) return { amount_kind: 'fine', amount_confirmed_won: null, amount_public: true, amount_stated: false }; // 금액이 안 적힌 답변
+    if (r < 0.18) return { amount_kind: 'fine', amount_confirmed_won: null, amount_public: false, amount_stated: true }; // 금액 공개에 동의하지 않은 자료
+    const won = r < 0.2 ? 0 : [40000, 40000, 50000, 50000, 60000, 80000, 100000][Math.floor(amountRand() * 7)];
+    return { amount_kind: 'fine', amount_confirmed_won: won, amount_public: true, amount_stated: true };
+  };
   const add = (index: number, contributor: string, areaIndex: number, spot: number, mine: boolean) => {
     const area = AREAS[areaIndex];
     const report = addDays(DEMO_DATA_MIN, Math.floor(rand() * (SPAN + 1)));
@@ -97,7 +109,7 @@ export function demoFacts(): PrivateFact[] {
       point_key: locatedFact ? `synthetic:${areaIndex}:${spot}` : null, lat: locatedFact ? lat : null, lng: locatedFact ? lng : null,
       address: `${area.sido} ${area.gu} 예시로 ${spot + 1}길`, region_code: area.code,
       agency_key: `a1:synthetic-${areaIndex}`, agency_name: area.agency,
-      manager_key: `m1:synthetic-${areaIndex}-${manager}`, manager_name: manager,
+      manager_key: `m1:synthetic-${areaIndex}-${manager}`, manager_name: manager, ...amountOf(disposition),
     });
   };
   let n = 0;
@@ -111,6 +123,7 @@ export function demoFacts(): PrivateFact[] {
     vehicle_raw: null, point_key: 'synthetic:9:own', lat: 33.4891, lng: 126.4983,
     address: `${area.sido} ${area.gu} 예시로 9길`, region_code: area.code,
     agency_key: 'a1:synthetic-9', agency_name: area.agency, manager_key: `m1:synthetic-9-${area.managers[0]}`, manager_name: area.managers[0],
+    amount_kind: 'fine', amount_confirmed_won: 40000, amount_public: true, amount_stated: true,
   });
   cache = facts;
   return facts;

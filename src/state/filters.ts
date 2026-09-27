@@ -1,4 +1,5 @@
 import { DEFAULT_SCOPE, DEMO_SCOPE, type Category, type Scope } from '../domain/public';
+import { normalizeRegion } from '../data/regions';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type MapMetric = 'reports' | 'acceptance' | 'partial' | 'fine';
@@ -30,25 +31,13 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   other: '기타',
 };
 
-export const REGION_OPTIONS: Array<{ code: string | null; label: string }> = [
-  { code: null, label: '전국' },
-  { code: '11', label: '서울특별시' },
-  { code: '26', label: '부산광역시' },
-  { code: '50', label: '제주특별자치도' },
-];
+export { regionLabel } from '../data/regions';
 
-export function regionLabel(code: string | null): string {
-  // Stored ingest codes are already readable ('서울 중구'); legacy numeric codes keep their names.
-  return REGION_OPTIONS.find((r) => r.code === code)?.label ?? (code ? code : '전국');
-}
-
-/** Region choices come from the data actually in the source (no invented catalog), plus the current value. */
-export function regionOptions(regions: ReadonlyArray<{ region_code: string | null }> | null, current: string | null): Array<{ code: string | null; label: string }> {
-  const codes = new Set<string>();
-  for (const row of regions ?? []) if (row.region_code) codes.add(row.region_code);
-  if (current) codes.add(current);
-  return [{ code: null, label: '전국' },
-    ...[...codes].sort((a, b) => a.localeCompare(b, 'ko')).map(code => ({ code, label: regionLabel(code) }))];
+/** Report counts per official code in the current data, for the 시도/시군구 selector (codes without data still selectable). */
+export function regionCounts(regions: ReadonlyArray<{ region_code: string | null; report_count: number }> | null): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const row of regions ?? []) if (row.region_code) counts.set(row.region_code, row.report_count);
+  return counts;
 }
 
 export function isValidDate(s: string): boolean {
@@ -120,7 +109,8 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
     start: start && isValidDate(start) ? start : fallback.start,
     end: end && isValidDate(end) ? end : fallback.end,
     category: category && (CATEGORIES as string[]).includes(category) ? (category as Category) : fallback.category,
-    region_code: region || null,
+    // official 시도/시군구 code; an old display key ('서울 중구') is converted, anything else is dropped
+    region_code: normalizeRegion(region),
     agency_key: agency || null,
     manager_key: manager || null,
     bbox,

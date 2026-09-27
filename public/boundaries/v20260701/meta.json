@@ -1,0 +1,33 @@
+{
+  "version": "20260701",
+  "levels": {
+    "sido": {
+      "file": "sido.topo.json",
+      "features": 16
+    },
+    "sgg": {
+      "file": "sgg.topo.json",
+      "features": 230
+    }
+  },
+  "codes": "법정 시군구 코드(행정안전부 법정동코드 앞 5자리), 2026-07-01 기준. 일반구는 상위 시로 합침. 세종 36110.",
+  "crs": "WGS84 (EPSG:4326), SGIS UTM-K(EPSG:5179)에서 mapshaper가 .prj로 변환. 표시용으로 2% 단순화(원 좌표·통계 기준 불변).",
+  "sources": [
+    {
+      "name": "국가데이터처(구 통계청) SGIS 「행정구역 통계 및 경계」",
+      "base_date": "2025-06-30",
+      "sha256": "f1cf0f9de453ac7eaacb273f39cee52851183372b9ddfda428a967c3a670b2c6",
+      "url": "https://www.data.go.kr/data/15129688/fileData.do",
+      "license": "공공누리 제1유형(출처표시)"
+    },
+    {
+      "name": "행정안전부 행정기관(행정동) 및 관할구역(법정동) 코드",
+      "effective": "2026-07-01",
+      "sha256": "0b9f143fb6e43657ff72c863ac1412cc4be43e79dce323aac602fb7754663898",
+      "url": "https://www.mois.go.kr/frt/bbs/type001/commonSelectBoardArticle.do?bbsId=BBSMSTR_000000000052&nttId=127039"
+    }
+  ],
+  "attribution": "행정구역 경계: 국가데이터처(구 통계청) 통계지리정보서비스(SGIS) 「행정구역 통계 및 경계」(2025.6.30. 기준), 공공누리 제1유형 — 좌표변환·단순화·행정구역 코드 재부여(행정안전부 2026.7.1. 기준)로 가공함.",
+  "tool": "mapshaper@0.6.121",
+  "simplify": "2%"
+}

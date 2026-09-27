@@ -31,6 +31,23 @@ export interface CompareSummary {
   reject_rate: number | null;
   /** fine/C×100, null when C = 0 */
   fine_rate: number | null;
+  /** 답변까지 걸린 기간(일), answer-date cohort. Averages may exceed the all side — no subset rule. */
+  duration: { count: number; mean_days: number | null; median_days: number | null; p90_days: number | null };
+  /** 답변에 적힌 과태료 금액 (원), completion cohort; only amounts the consent policy publishes are summed. */
+  fine_amount: CompareFineAmount;
+}
+
+export interface CompareFineAmount {
+  fine_count: number;
+  confirmed_count: number;
+  /** exact won; null when no amount is confirmed (never shown as 0원) */
+  sum_won: number | null;
+  mean_won: number | null;
+  median_won: number | null;
+  unconfirmed_count: number;
+  undisclosed_count: number;
+  /** some fines lack a usable amount → the sum covers only part of them */
+  partial: boolean;
 }
 
 export type DiffReason = 'no_all' | 'no_mine' | null;
@@ -45,6 +62,13 @@ export interface CompareDiff {
   partial_rate_pp: number | null;
   reject_rate_pp: number | null;
   fine_rate_pp: number | null;
+  /** mine − all, in days (null when either side has no computable report) */
+  duration_median_days_diff: number | null;
+  duration_mean_days_diff: number | null;
+  /** my share (%) of the confirmed fine-amount sum; null when all has no confirmed amount */
+  fine_amount_sum_share: number | null;
+  /** mine − all mean amount per confirmed fine (원) */
+  fine_amount_mean_won_diff: number | null;
   /** why rate differences are null: all side has no denominator, or mine side has none */
   rate_reason: DiffReason;
 }
@@ -59,14 +83,22 @@ export interface CompareSide {
   fine_count: number;
   accept_rate: number | null;
   partial_rate: number | null;
+  duration_count: number;
+  duration_median_days: number | null;
+  fine_amount_confirmed_count: number;
+  fine_amount_sum_won: number | null;
 }
 
 export interface CompareRegionRow {
+  level: 'sido' | 'sgg' | 'unknown';
   region_code: string | null;
+  name: string;
+  sido_code: string | null;
   all: CompareSide;
   mine: CompareSide;
   accept_rate_pp: number | null;
   partial_rate_pp: number | null;
+  duration_median_days_diff: number | null;
 }
 
 export interface CompareEntityRow {
@@ -80,6 +112,7 @@ export interface CompareEntityRow {
   mine: CompareSide;
   accept_rate_pp: number | null;
   partial_rate_pp: number | null;
+  duration_median_days_diff: number | null;
 }
 
 export interface CompareMonth {
@@ -90,6 +123,8 @@ export interface CompareMonth {
   mine_completed_count: number | null;
   all_accept_rate: number | null;
   mine_accept_rate: number | null;
+  all_duration_median_days: number | null;
+  mine_duration_median_days: number | null;
 }
 
 /** A located point that contains at least one of my reports or completions in the scope. */

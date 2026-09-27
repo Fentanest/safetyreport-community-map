@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { CompareEntityRow } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
-import { fmtInt, fmtPercent, fmtPp } from './format';
+import { fmtDaysDiff, fmtInt, fmtPercent, fmtPp } from './format';
 
 interface Props {
   personal: PersonalState;
@@ -64,7 +64,7 @@ export default function ManagerCompare({ personal, onPick }: Props) {
                   <td className="num mine-col">{fmtInt(r.mine.completed_count)}{r.mine.result_known === 1 && <span className="sample-one">1건</span>}</td>
                   <td className="num mine-col">{fmtPercent(r.mine.accept_rate)}<small>{fmtInt(r.mine.accepted)} / {fmtInt(r.mine.result_known)}</small></td>
                   <td className="num mine-col">{fmtPercent(r.mine.partial_rate)}<small>{fmtInt(r.mine.partial)} / {fmtInt(r.mine.result_known)}</small></td>
-                  <td className="num">수용 {fmtPp(r.accept_rate_pp)}<small>일부 {fmtPp(r.partial_rate_pp)}</small></td>
+                  <td className="num">수용 {fmtPp(r.accept_rate_pp)}<small>일부 {fmtPp(r.partial_rate_pp)}</small><small>답변까지 {fmtDaysDiff(r.duration_median_days_diff)}</small></td>
                 </tr>
               ))}
             </tbody>

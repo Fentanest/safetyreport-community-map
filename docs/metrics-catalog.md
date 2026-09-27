@@ -34,7 +34,30 @@ unknown은 분모를 정의하지 않은 채 버리지 말고 n_missing과 eligi
 | agency_results | 기관별 처리결과 비교 | C,A,P,J,D, rates,F; default C desc, 모든 n≥1 표시 |
 | manager_results | 담당자별 처리결과 비교 | 기관+담당자 scope, 나머지 동등 |
 | category_share | 신고 분류 구성 | 각 category 신고수 / R |
-| region_volume | 지역별 신고 접수 | 선택 지역 코드 기준 R, 건수/비중; 인구비율 아님 |
+| region_volume | 지역별 신고 접수 | 2026-07-01 법정 시도/시군구 코드별 R·C·A/P/J·F(docs/region-boundaries.md). 시도·시군구 행은 각각 원 사실에서 계산, 미확인 행 별도; 인구비율 아님 |
+| processing_duration | 답변까지 걸린 기간 | 아래 §답변까지 걸린 기간 |
+| fine_amount | 답변에 적힌 과태료 금액 | 아래 §답변에 적힌 과태료 금액 |
+
+## 답변까지 걸린 기간 (processing_duration, 2026-09-27 구현 `server/duration.ts`)
+- 모집단: 완료일(답변일) cohort 중 답변이 나온 상태 accepted·partial·rejected·completed_unknown. 이전·취하·보완은 제외(답변 아님).
+- 1건의 값: KST 달력일 `day(completed_date) − day(report_date)`. 같은 날 답변 = 0일. 시각 차이가 아니라 날짜 차이.
+  `completed_date`는 마지막 답변 항목의 날짜(`answers[-1].C_DATE`).
+- 제외(값을 고치지 않고 센다): 신고일 없음 `no_report_date`, 답변일이 신고일보다 앞섬 `reversed`. 답변 상태인데 답변일이 없는 신고는
+  기간에 속하는지 알 수 없어 cohort 밖이며 `answer_date_missing`으로 따로 센다.
+- 요약: n, 평균, 중앙값(짝수 n은 가운데 두 값 평균), p90(nearest-rank: 오름차순 ceil(0.9n)번째), 최솟값, 최댓값.
+  그룹(월·지역·기관·담당자) 중앙값은 그룹의 원 값으로 다시 계산한다(그룹 중앙값의 평균 금지).
+- n=0이면 값은 null이고 capability는 supported(‘계산할 신고 없음’), 미지원으로 표시하지 않는다.
+- 비교: 내 값 − 전체 값(일). 평균은 부분집합이어도 전체보다 클 수 있어 부분집합 검사 대상이 아니다.
+
+## 답변에 적힌 과태료 금액 (fine_amount, 2026-09-27 구현 `server/amount.ts`)
+- 뜻: 답변 문장에 적힌 과태료 금액. 실제 부과·납부·징수 금액이 아니다.
+- 모집단: 완료일 cohort의 과태료 처분 신고(F). 분류: confirmed(처분·종류·상태 일치, 금액 적힘, **동의한 정책이 금액 공개를 허용**),
+  undisclosed(금액이 적혔으나 정책이 공개를 허용하지 않음 — 값은 DB 밖으로 나오지 않음), unconfirmed(금액 안 적힘·파싱 실패),
+  conflict(처분·종류·상태가 서로 맞지 않음), penalty(범칙금), combined(과태료·범칙금이 한데 적혀 나눌 수 없음).
+- 합계·평균·중앙값은 confirmed만. 정확한 원 단위 정수(표시할 때만 평균을 1원 단위로 반올림). confirmed 0건이면 null(‘확인된 금액 없음’), 0원으로 쓰지 않는다.
+  명시적 0원은 실제 0으로 더하고 `zero_count`로 따로 보인다. 범칙금·섞인 금액은 과태료에 더하지 않는다. 위반 유형·법정 범위로 추정하지 않는다.
+- `partial=true`: F 중 일부만 금액이 확인됨(화면 ‘일부만 합산’). capability coverage = {eligible: confirmed_count, total: F}.
+- 비교: 내 합계 ÷ 전체 합계(%, 전체 합계가 0 또는 없으면 null), 평균 차이(원). 부분집합 검사는 건수·합계만.
 
 ## 변화량
 count delta = current-previous.
@@ -57,8 +80,7 @@ previous=0 & current>0 → null + '신규 집계'; both=0 → null + '비교 기
 처분 선택 역시 처분 비중에서 동일 원칙. query response denominator_filter를 같이 반환한다.
 
 ## 추가 구현 권장
-- 처리기간 중앙값·p90: 신고일/완료일이 모두 정상인 완료 cohort; 음수 날짜 제외·n 보고.
-  joint cube이면 duration distribution/샘플이 있어야 한다. 중앙값 평균으로 전체 중앙값을 만들지 않는다.
+- 처리기간: 2026-09-27 구현됨(위 §답변까지 걸린 기간).
 - 일자×요일 신고 calendar: 일별 사실이 있을 때만. 시간대 히트맵은 발생시각 없으면 생성 금지.
 - 지역 A/B 비교: 같은 기간·분모에 나란히 표시. 승자/우열 점수로 요약하지 않는다.
 - 최근 증가 지점: 절대 변화량 우선, %와 n·동일 비교기간 병기. 모집단 발생 위험으로 부르지 않는다.

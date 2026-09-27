@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { CATEGORY_LABEL, regionLabel, type DraftFilters } from '../state/filters';
 import Icon from './icons';
+import RegionSelect from './RegionSelect';
 
 interface Props {
   open: boolean;
@@ -11,7 +12,7 @@ interface Props {
   onClose: () => void;
   onApply: () => void;
   onReset: () => void;
-  regionOptions: Array<{ code: string | null; label: string }>;
+  regionCounts: Map<string, number>;
 }
 
 export default function FilterDrawer(p: Props) {
@@ -81,13 +82,8 @@ export default function FilterDrawer(p: Props) {
             ))}
           </select>
         </label>
-        <label>지역
-          <select value={p.draft.region_code ?? ''} onChange={(e) => p.onDraft({ ...p.draft, region_code: e.target.value || null })}>
-            {p.regionOptions.map((r) => (
-              <option key={r.label} value={r.code ?? ''}>{r.label}</option>
-            ))}
-          </select>
-        </label>
+        <RegionSelect value={p.draft.region_code} counts={p.regionCounts}
+          onChange={(code) => p.onDraft({ ...p.draft, region_code: code })} />
         <div className="drawer-notice">
           신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. 1건뿐인 결과도 그대로 보여 드립니다.
           현재 선택: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]}

@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import type { PublicPoint } from '../domain/public';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PublicPoint, PublicRegion } from '../domain/public';
 import { createKakaoMap, kakaoKey, type KakaoHandle } from '../lib/kakao';
+import { intersects, loadBoundaries, loadBoundaryMeta, type BoundaryFeature, type BoundaryLevel, type BoundaryMeta } from '../lib/boundaries';
+import { regionLabel } from '../data/regions';
 import type { MapMetric } from '../state/filters';
 import { POINT_FILTER_LABEL, type PointFilter } from '../state/view';
 import type { PointMark } from '../state/pointMarks';
@@ -26,6 +28,33 @@ interface Props {
   filterAvailable?: Record<PointFilter, boolean>;
   /** total points before the display filter */
   totalPoints?: number;
+  /** region rows of the current data (boundary fill and hover numbers) */
+  regions?: PublicRegion[] | null;
+  /** region used as a filter now (official code) */
+  activeRegion?: string | null;
+  /** clicking a boundary changes the region condition (explicit, like the region list) */
+  onPickRegion?: (code: string | null) => void;
+}
+
+const BOUNDARY_KEY = 'cm-boundaries';
+function readBoundaryPref(): boolean {
+  try { return window.localStorage.getItem(BOUNDARY_KEY) !== '0'; } catch { return true; }
+}
+function writeBoundaryPref(on: boolean): void {
+  try {
+    if (on) window.localStorage.removeItem(BOUNDARY_KEY);
+    else window.localStorage.setItem(BOUNDARY_KEY, '0');
+  } catch { /* storage blocked: the toggle still works for this page */ }
+}
+/** Kakao map level at or below which 시군구 boundaries replace 시도 (roughly one metropolitan area in view). */
+const SGG_ZOOM = 9;
+const KOREA: [number, number, number, number] = [124.6, 33.0, 131.0, 38.7];
+const parentOf = (code: string): string | null => (code.length === 5 ? code.slice(0, 2) : null);
+function unionBbox(features: readonly BoundaryFeature[]): [number, number, number, number] | null {
+  if (!features.length) return null;
+  return features.reduce<[number, number, number, number]>((b, f) =>
+    [Math.min(b[0], f.bbox[0]), Math.min(b[1], f.bbox[1]), Math.max(b[2], f.bbox[2]), Math.max(b[3], f.bbox[3])],
+  [Infinity, Infinity, -Infinity, -Infinity]);
 }
 
 const FILTER_REASON: Record<PointFilter, string> = {
@@ -100,18 +129,40 @@ export default function MapPanel(p: Props) {
     kakaoKey() ? null : '지도를 불러올 수 없습니다. 아래 목록에서 장소를 확인할 수 있습니다.',
   );
   const [bbox, setBbox] = useState<[number, number, number, number] | null>(null);
+  const [zoom, setZoom] = useState(13);
   const applyViewRef = useRef(p.onApplyView);
   applyViewRef.current = p.onApplyView;
+  // a move made by fitBounds (region picked) must not be applied as a "visible area" filter
+  const skipAutoRef = useRef(false);
+  const [boundaryOn, setBoundaryOn] = useState(readBoundaryPref);
+  const [layers, setLayers] = useState<Partial<Record<BoundaryLevel, BoundaryFeature[]>>>({});
+  const [boundaryError, setBoundaryError] = useState(false);
+  const [boundaryMeta, setBoundaryMeta] = useState<BoundaryMeta | null>(null);
+  const [hover, setHover] = useState<string | null>(null);
+  const pickRef = useRef(p.onPickRegion);
+  pickRef.current = p.onPickRegion;
+  const activeRef = useRef(p.activeRegion ?? null);
+  activeRef.current = p.activeRegion ?? null;
+  const mapOpts = {
+    onSelect: (key: string) => p.onSelect(key),
+    onIdle: (b: [number, number, number, number], z: number, programmatic: boolean) => {
+      if (programmatic) skipAutoRef.current = true;
+      setBbox(b);
+      setZoom(z);
+    },
+    onRegionHover: (code: string | null) => setHover(code),
+    onRegionClick: (code: string) => {
+      const active = activeRef.current;
+      pickRef.current?.(active === code ? parentOf(code) : code);
+    },
+  };
   const active = METRICS.find((m) => m.id === p.metric)!;
 
   useEffect(() => {
     if (!kakaoKey() || !hostRef.current) return;
     let cancelled = false;
     setSdkState('idle');
-    createKakaoMap(hostRef.current, {
-      onSelect: (key) => p.onSelect(key),
-      onIdle: (b) => setBbox(b),
-    })
+    createKakaoMap(hostRef.current, mapOpts)
       .then((h) => {
         if (cancelled) {
           h.destroy();
@@ -155,8 +206,71 @@ export default function MapPanel(p: Props) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // ---- boundary layer (display only; its failure never touches markers or statistics) ----
+  const activeCode = p.activeRegion ?? null;
+  const level: BoundaryLevel = activeCode && activeCode !== '36' ? 'sgg' : zoom <= SGG_ZOOM ? 'sgg' : 'sido';
+  const needed = useMemo(() => {
+    const set = new Set<BoundaryLevel>();
+    if (boundaryOn) set.add(level);
+    if (activeCode) set.add('sgg'); // fitting to a region uses the 시군구 shapes (a 시도 is the union of its 시군구)
+    return [...set];
+  }, [boundaryOn, level, activeCode]);
+  useEffect(() => {
+    if (sdkState !== 'ready') return;
+    let cancelled = false;
+    for (const l of needed) {
+      if (layers[l]) continue;
+      loadBoundaries(l)
+        .then((features) => { if (!cancelled) { setLayers((x) => ({ ...x, [l]: features })); setBoundaryError(false); } })
+        .catch(() => { if (!cancelled) setBoundaryError(true); });
+    }
+    if (boundaryOn && !boundaryMeta) loadBoundaryMeta().then((m) => { if (!cancelled) setBoundaryMeta(m); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [needed, layers, sdkState, boundaryOn, boundaryMeta]);
+
+  const shown = useMemo(() => {
+    const features = layers[level];
+    if (!features) return null;
+    if (level === 'sido') return features;
+    if (activeCode) return features.filter((f) => f.sido === activeCode.slice(0, 2));
+    return bbox ? features.filter((f) => intersects(f.bbox, bbox)) : features;
+  }, [layers, level, activeCode, bbox]);
+  const rowByCode = useMemo(() => new Map((p.regions ?? []).filter((r) => r.region_code).map((r) => [r.region_code!, r])), [p.regions]);
+  useEffect(() => {
+    const h = handleRef.current;
+    if (!h || sdkState !== 'ready') return;
+    if (!boundaryOn || !shown) { h.setBoundaries(null, { selected: null, weight: new Map() }); return; }
+    const counts = shown.map((f) => rowByCode.get(f.code)?.report_count ?? 0);
+    const max = Math.max(1, ...counts);
+    const weight = new Map<string, number>();
+    shown.forEach((f, i) => { if (rowByCode.has(f.code)) weight.set(f.code, counts[i] / max); });
+    h.setBoundaries(shown, { selected: activeCode, weight });
+  }, [boundaryOn, shown, rowByCode, activeCode, sdkState]);
+
+  // Move the map to a newly chosen region (from the list, the filter or a boundary click).
+  const fittedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const h = handleRef.current;
+    if (!h || sdkState !== 'ready' || fittedRef.current === activeCode) return;
+    if (!activeCode) { fittedRef.current = null; h.fitBounds(KOREA); return; }
+    const sgg = layers.sgg;
+    if (!sgg) return; // fitted once the shapes arrive
+    const target = unionBbox(sgg.filter((f) => (activeCode.length === 2 ? f.sido === activeCode : f.code === activeCode)));
+    fittedRef.current = activeCode;
+    if (target) h.fitBounds(target);
+  }, [activeCode, layers.sgg, sdkState]);
+
+  const toggleBoundary = (on: boolean) => {
+    setBoundaryOn(on);
+    writeBoundaryPref(on);
+    if (!on) setHover(null);
+  };
+  const retryBoundary = () => { setBoundaryError(false); setLayers((x) => ({ ...x })); };
+  const hoverRow = hover ? rowByCode.get(hover) : undefined;
+
   useEffect(() => {
     if (!p.autoRefresh || !bbox) return;
+    if (skipAutoRef.current) { skipAutoRef.current = false; return; }
     const timer = window.setTimeout(() => applyViewRef.current(bbox), 300);
     return () => window.clearTimeout(timer);
   }, [p.autoRefresh, bbox]);
@@ -172,7 +286,7 @@ export default function MapPanel(p: Props) {
     setSdkState('idle');
     const el = hostRef.current;
     if (!el) return;
-    createKakaoMap(el, { onSelect: (key) => p.onSelect(key), onIdle: (b) => setBbox(b) })
+    createKakaoMap(el, mapOpts)
       .then((h) => {
         handleRef.current = h;
         setSdkState('ready');
@@ -267,9 +381,17 @@ export default function MapPanel(p: Props) {
             </ul>
           </div>
         )}
+        {sdkState === 'ready' && boundaryOn && hover && (
+          <span className="map-hover" role="status">
+            <b>{regionLabel(hover)}</b>
+            <span>{hoverRow ? `신고 ${fmtInt(hoverRow.report_count)}건` : '이 조건의 신고 없음'}</span>
+            <small>{activeCode === hover ? '누르면 한 단계 위 지역으로' : '누르면 이 지역만 보기'}</small>
+          </span>
+        )}
         {sdkState !== 'error' && (
         <div className="map-top">
           {sdkState !== 'ready' && <span className="map-status">장소 목록</span>}
+
           <button
             className="map-apply" type="button"
             disabled={!bbox}
@@ -356,8 +478,25 @@ export default function MapPanel(p: Props) {
           />
           지도를 움직이면 통계도 바꾸기
         </label>
+        {sdkState === 'ready' && (
+          <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center', fontSize: 13, color: 'var(--muted)' }}>
+            <input type="checkbox" checked={boundaryOn} onChange={(e) => toggleBoundary(e.target.checked)} style={{ width: 20, height: 20 }} />
+            행정구역 경계 보기{boundaryOn ? ` · ${level === 'sido' ? '시도' : '시군구'} 단위` : ''}
+          </label>
+        )}
         <span className="cm-muted" style={{ fontSize: 12 }}>{p.autoRefresh ? '지도에 보이는 지역의 통계로 바로 바뀝니다.' : '지도를 움직여도 통계는 그대로입니다. ‘보이는 지역만 보기’를 누르면 바뀝니다.'}</span>
       </div>
+      {sdkState === 'ready' && boundaryOn && boundaryError && (
+        <p className="boundary-note" role="alert">
+          행정구역 경계선을 불러오지 못했습니다. 지도와 통계는 그대로 쓸 수 있습니다.{' '}
+          <button className="mini-btn" type="button" onClick={retryBoundary}>다시 시도</button>
+        </p>
+      )}
+      {sdkState === 'ready' && boundaryOn && boundaryMeta && (
+        <p className="boundary-note" title={boundaryMeta.attribution}>
+          경계선은 화면 표시용으로 단순화했습니다. 색이 진할수록 신고가 많은 곳이고, 거의 투명한 곳은 이 조건의 신고가 없는 곳입니다. {boundaryMeta.attribution}
+        </p>
+      )}
     </article>
   );
 }

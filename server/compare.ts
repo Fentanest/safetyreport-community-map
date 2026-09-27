@@ -1,8 +1,11 @@
 /** Personal comparison: all vs mine over ONE scope selection. Server-only (my-analytics). */
 import {
-  located, monthKeys, outcomes, selectScope, kstDate, type PrivateFact,
+  located, monthKeys, outcomes, regionKeys, selectScope, kstDate, type PrivateFact,
 } from './aggregate.ts';
+import { regionName } from './regions.ts';
 import type { Scope } from '../src/domain/public.ts';
+import { durationSummary } from './duration.ts';
+import { fineAmountSummary } from './amount.ts';
 import type {
   CompareDiff, CompareEntityRow, CompareMonth, CompareRegionRow, CompareSide, CompareSummary,
   MyPoint, PersonalCompare, ViewerState,
@@ -25,6 +28,9 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     partial_rate: pct(o.partial, o.result_known),
     reject_rate: pct(o.rejected, o.result_known),
     fine_rate: pct(fine, done.length),
+    duration: (({ count, mean_days, median_days, p90_days }) => ({ count, mean_days, median_days, p90_days }))(durationSummary(done)),
+    fine_amount: (({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }) =>
+      ({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }))(fineAmountSummary(done)),
   };
 }
 
@@ -40,18 +46,29 @@ export function diffOf(all: CompareSummary, mine: CompareSummary): CompareDiff {
     partial_rate_pp: minus(mine.partial_rate, all.partial_rate),
     reject_rate_pp: minus(mine.reject_rate, all.reject_rate),
     fine_rate_pp: minus(mine.fine_rate, all.fine_rate),
+    duration_median_days_diff: minus(mine.duration.median_days, all.duration.median_days),
+    duration_mean_days_diff: minus(mine.duration.mean_days, all.duration.mean_days),
+    // Sum share only when all has a positive confirmed sum (an all-0원 total has no meaningful share).
+    fine_amount_sum_share: all.fine_amount.sum_won ? pct(mine.fine_amount.sum_won ?? 0, all.fine_amount.sum_won) : null,
+    fine_amount_mean_won_diff: minus(mine.fine_amount.mean_won, all.fine_amount.mean_won),
     rate_reason: all.result_known === 0 ? 'no_all' : mine.result_known === 0 ? 'no_mine' : null,
   };
 }
 
 function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): CompareSide {
   const o = outcomes(done);
+  const dur = durationSummary(done);
+  const amount = fineAmountSummary(done);
   return {
     report_count: reported.length, completed_count: done.length, result_known: o.result_known,
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
     fine_count: done.filter(fact => fact.disposition === 'fine').length,
     accept_rate: pct(o.accepted, o.result_known),
     partial_rate: pct(o.partial, o.result_known),
+    duration_count: dur.count,
+    duration_median_days: dur.median_days,
+    fine_amount_confirmed_count: amount.confirmed_count,
+    fine_amount_sum_won: amount.sum_won,
   };
 }
 
@@ -90,17 +107,33 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   const all = summarize(reported, done);
   const mine = summarize(myReported, myDone);
 
-  // Regions: every region present in the scope (the list is short on screen; the client decides).
-  const regionKey = (fact: PrivateFact) => fact.region_code;
-  const regionReported = group(reported, regionKey), regionDone = group(done, regionKey);
-  const regionCodes = new Set<string | null>([...regionReported.keys(), ...regionDone.keys()]);
-  const regions: CompareRegionRow[] = [...regionCodes].map(code => {
-    const r = regionReported.get(code) ?? [], d = regionDone.get(code) ?? [];
-    const a = side(r, d), m = side(r.filter(isMine), d.filter(isMine));
-    return { region_code: code, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
-      partial_rate_pp: minus(m.partial_rate, a.partial_rate) };
-  }).sort((x, y) => y.all.report_count - x.all.report_count || y.all.completed_count - x.all.completed_count ||
-    (x.region_code ?? '￿').localeCompare(y.region_code ?? '￿', 'ko')).slice(0, MAX_COMPARE_REGIONS);
+  // Regions at both levels on official codes (the same grouping as the public rows), each from raw facts.
+  type Bucket = { level: CompareRegionRow['level']; code: string | null; sido: string | null; r: PrivateFact[]; d: PrivateFact[] };
+  const buckets = new Map<string, Bucket>();
+  const bucket = (level: Bucket['level'], code: string | null, sido: string | null) => {
+    const key = `${level}:${code ?? ''}`;
+    let b = buckets.get(key);
+    if (!b) buckets.set(key, b = { level, code, sido, r: [], d: [] });
+    return b;
+  };
+  const place = (fact: PrivateFact, list: 'r' | 'd') => {
+    const k = regionKeys(fact);
+    if (!k.sgg || !k.sido) { bucket('unknown', null, null)[list].push(fact); return; }
+    bucket('sido', k.sido, null)[list].push(fact);
+    bucket('sgg', k.sgg, k.sido)[list].push(fact);
+  };
+  for (const fact of reported) place(fact, 'r');
+  for (const fact of done) place(fact, 'd');
+  const levelOrder = { sido: 0, sgg: 1, unknown: 2 } as const;
+  const regions: CompareRegionRow[] = [...buckets.values()].map(b => {
+    const a = side(b.r, b.d), m = side(b.r.filter(isMine), b.d.filter(isMine));
+    return { level: b.level, region_code: b.code, name: b.code ? regionName(b.code) ?? b.code : '지역 미확인',
+      sido_code: b.sido, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
+      partial_rate_pp: minus(m.partial_rate, a.partial_rate),
+      duration_median_days_diff: minus(m.duration_median_days, a.duration_median_days) };
+  }).sort((x, y) => levelOrder[x.level] - levelOrder[y.level] || y.all.report_count - x.all.report_count ||
+    y.all.completed_count - x.all.completed_count || (x.region_code ?? '').localeCompare(y.region_code ?? ''))
+    .slice(0, MAX_COMPARE_REGIONS);
 
   // Agencies/managers the viewer actually dealt with (completion basis, same keys as the public table).
   const entities = (kind: 'agency' | 'manager'): CompareEntityRow[] => {
@@ -117,6 +150,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
         agency_name: first.agency_name || '기관 정보 없음', manager_name: kind === 'manager' ? first.manager_name : null,
         all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
         partial_rate_pp: minus(m.partial_rate, a.partial_rate),
+        duration_median_days_diff: minus(m.duration_median_days, a.duration_median_days),
       };
     }).sort((x, y) => y.mine.completed_count - x.mine.completed_count || y.all.completed_count - x.all.completed_count ||
       x.agency_name.localeCompare(y.agency_name, 'ko') || x.key.localeCompare(y.key)).slice(0, MAX_COMPARE_ROWS);
@@ -126,13 +160,15 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   const monthly: CompareMonth[] = monthKeys(scope.start, scope.end).map(month => {
     const outside = month > options.asOf.slice(0, 7) || (options.dataMin !== null && month < options.dataMin.slice(0, 7));
     if (outside) return { month, all_report_count: null, mine_report_count: null, all_completed_count: null,
-      mine_completed_count: null, all_accept_rate: null, mine_accept_rate: null };
+      mine_completed_count: null, all_accept_rate: null, mine_accept_rate: null,
+      all_duration_median_days: null, mine_duration_median_days: null };
     const r = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
     const d = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
     const a = side(r, d), m = side(r.filter(isMine), d.filter(isMine));
     return { month, all_report_count: a.report_count, mine_report_count: m.report_count,
       all_completed_count: a.completed_count, mine_completed_count: m.completed_count,
-      all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate };
+      all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate,
+      all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days };
   });
 
   // Points with my facts; `shared` = another contributor recorded the same point in this scope.
@@ -143,7 +179,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
     const r = pointReported.get(key) ?? [], d = pointDone.get(key) ?? [];
     const anchor = (r[0] ?? d[0]) as PrivateFact & { lat: number; lng: number };
     return {
-      key: key as string, lat: anchor.lat, lng: anchor.lng, region_code: anchor.region_code,
+      key: key as string, lat: anchor.lat, lng: anchor.lng, region_code: regionKeys(anchor).sgg,
       mine_report_count: r.filter(isMine).length, mine_completed_count: d.filter(isMine).length,
       shared: [...r, ...d].some(fact => !isMine(fact)),
     };
