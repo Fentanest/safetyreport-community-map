@@ -1,0 +1,10 @@
+{
+  "state": "process_exited",
+  "exit_code": 0,
+  "session_ids": [
+    "ses_f1ee4b3fbffeCn82Wwni2OFDzm"
+  ],
+  "job": "/home/better0101/projects/safetyreport-community-map-dab-review/.agent-runtime/jobs/20260927T043530Z-fad91d35",
+  "actual_model_verification": "PENDING: inspect exact session export and result artifacts",
+  "ui_review": "PENDING: process exit is not review approval"
+}

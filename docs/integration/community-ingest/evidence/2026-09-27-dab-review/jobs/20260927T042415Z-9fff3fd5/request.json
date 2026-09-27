@@ -1,0 +1,8 @@
+{
+  "model_requested": "opencode-go/muse-spark-1.3-contributor",
+  "variant_requested": null,
+  "worktree": "/home/better0101/projects/safetyreport-community-map-dab-review",
+  "prompt_file": "/home/better0101/projects/safetyreport-community-map-dab-review/.agent-runtime/muse-dab-review.md",
+  "resume_session": null,
+  "fork": false
+}

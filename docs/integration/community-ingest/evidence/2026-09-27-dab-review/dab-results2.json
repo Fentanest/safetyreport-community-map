@@ -1,0 +1,76 @@
+{
+  "results": [
+    {
+      "name": "filter-selects",
+      "pass": true,
+      "note": "selects=3 labels=분류|시도|시군구"
+    },
+    {
+      "name": "filter-selects",
+      "pass": false,
+      "note": "TimeoutError: locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('select').first()\n    - locator resolved to <select>…</select>\n  - attempting select option action\n    2"
+    },
+    {
+      "name": "region-list",
+      "pass": true,
+      "note": "region-pick buttons=6"
+    },
+    {
+      "name": "region-list-pick",
+      "pass": true,
+      "note": "picked=서울특별시전체 112건 · 수용률 64.7% · 일부수용률 13.7% · 답변까지 22일 bboxAdded=false url=http://safemap.worklazy.net/?start=2025-09-25&end=2026-09-24&category=all&region_code=11"
+    },
+    {
+      "name": "region-sgg-list",
+      "pass": true,
+      "note": "rows=2 sample=서울 중구전체 60건 · 수용률 60.0% · 일부수용률 20.0% · 답변까지 22일|서울 강남구전체 52건 · 수용률 70.2% · 일부수용률 6.4% · 답변까지 22일"
+    },
+    {
+      "name": "region-unknown",
+      "pass": true,
+      "note": "has=true"
+    },
+    {
+      "name": "boundary-hover",
+      "pass": true,
+      "note": "hovered-center; card-check-manual screenshot 54-hover.png"
+    },
+    {
+      "name": "boundary-source-note2",
+      "pass": true,
+      "note": "행정구역 경계: 국가데이터처(구 통계청) 통계지리정보서비스(SGIS) 「행정구역 통계 및 경계」(2025.6.30. 기준), 공공누리 제1유형 — 좌표변환·단순화·행정구역 코드 재부여(행정안전부 2026.7.1. 기준)로 가공함.  지역 목록 시도를 누르면 그 안의 시군구를 봅니다 서울특별시 전체 112건 · 수용률 64"
+    },
+    {
+      "name": "me2-signed",
+      "pass": false,
+      "note": "zeroFake=false 로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    },
+    {
+      "name": "me2-empty",
+      "pass": true,
+      "note": "zeroFake=false 로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    },
+    {
+      "name": "me2-error",
+      "pass": true,
+      "note": "zeroFake=false 로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    },
+    {
+      "name": "zero-won-context",
+      "pass": true,
+      "note": "count=13 sample=\t3,490,000원|평균 56,290원 · 과태료 86건 중 62건 금액 확인(일부만 합산)|과태료 금액은 답변에 적힌 금액입니다. 실제로 내거나 걷힌 금액이 아닙니다. 금액이 적히지 않은 답변을 0원으로 치지 않고, 범칙금이나 과태료와 범칙금이 섞인 금액은 더하지 않습니다. 금액이 적히지 않음 17건. 금액 공개에 동의하지 않은 자료 7건. 범칙금·섞인 금액 7건. 0원으로 적힌 답변 1건 포함.|630,000원"
+    },
+    {
+      "name": "console-clean",
+      "pass": true,
+      "note": "errors=0 failed=0 e= f="
+    },
+    {
+      "name": "kbd-real",
+      "pass": true,
+      "note": "select-operated=true boundary-focused-toggled=true"
+    }
+  ],
+  "errors": [],
+  "failedReq": []
+}

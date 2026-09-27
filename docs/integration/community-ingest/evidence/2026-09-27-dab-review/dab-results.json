@@ -1,0 +1,298 @@
+{
+  "results": [
+    {
+      "name": "kakao-map-present",
+      "pass": true,
+      "note": "window.kakao=YES kakaoreq=200 https://dapi.kakao.com/v2/maps/sdk.js?appkey=e5932698f8514f560335ed7b24ec4da7&autoload=false&libraries=clusterer tiles200=13"
+    },
+    {
+      "name": "matrix-screenshots",
+      "pass": true,
+      "note": "24 shots; overflowX>1: none"
+    },
+    {
+      "name": "stats-rows-present",
+      "pass": true,
+      "note": "{\"hasDuration\":true,\"hasAmount\":true,\"hasAccept\":true,\"hasPartial\":true,\"hasNote\":true,\"won0\":14,\"lines\":[\"수용률\",\"일부수용률\",\"과태료\",\"전체 112건 · 수용률 64.7% · 일부수용률 13.7% · 답변까지 22일\",\"전체 50건 · 수용률 63.0% · 일부수용률 10.9% · 답변까지 20일\",\"전체 37건 · 수용률 62.9% · 일부수용률 11.4% · 답변까지 22일\",\"전체 27건 · 수용률 28.0% · 일부수용률 24.0% · 답변까지 23일\",\"전체 20건 · 수용률 65.0% · 일부수용률 15.0% · 답변까지 21일\",\"전체 17건 · 수용률 56.3% · 일부수용률 12.5% · 답변까지 19일\",\"수용률\",\"일부수용률\",\"불수용률\",\"과태료 부과율\",\"답변까지 걸린 기간\"]}"
+    },
+    {
+      "name": "tables-captured",
+      "pass": true,
+      "note": "tables=2 firstHead=항목\t전체||신고|신고한 날 기준"
+    },
+    {
+      "name": "trend-table",
+      "pass": true,
+      "note": "captured len=1658"
+    },
+    {
+      "name": "region-nav",
+      "pass": false,
+      "note": "no-selects"
+    },
+    {
+      "name": "region-mapclick",
+      "pass": true,
+      "note": "after-click url=http://safemap.worklazy.net/?theme=dark"
+    },
+    {
+      "name": "legacy-region-code",
+      "pass": true,
+      "note": "url=http://safemap.worklazy.net/?region_code=%EB%B6%80%EC%82%B0%20%ED%95%B4%EC%9A%B4%EB%8C%80%EA%B5%AC has해운대=true"
+    },
+    {
+      "name": "legacy-interest",
+      "pass": true,
+      "note": "star중구=true has중구=true ls=[\"서울 중구\"]"
+    },
+    {
+      "name": "bbox-not-added-on-list",
+      "pass": false,
+      "note": "url=http://safemap.worklazy.net/?start=2025-09-25&end=2026-09-24&category=all&bbox=122.40665642850998%2C33.67445709846911%2C133.7428088723989%2C38.732641691325576"
+    },
+    {
+      "name": "bbox-after-drag",
+      "pass": true,
+      "note": "url=http://safemap.worklazy.net/?start=2025-09-25&end=2026-09-24&category=all&bbox=122.40665642850998%2C33.67445709846911%2C133.7428088723989%2C38.732641691325576"
+    },
+    {
+      "name": "boundary-checkbox",
+      "pass": true,
+      "note": "found=true"
+    },
+    {
+      "name": "boundary-persist",
+      "pass": true,
+      "note": "checked-after-reload=true"
+    },
+    {
+      "name": "boundary-source-note",
+      "pass": false,
+      "note": "NO-출처문구"
+    },
+    {
+      "name": "boundary-abort",
+      "pass": true,
+      "note": "retry=true stats=true line=행정구역 경계 보기 · 시도 단위|행정구역 경계선을 불러오지 못했습니다. 지도와 통계는 그대로 쓸 수 있습니다. 다시 시도"
+    },
+    {
+      "name": "me-demo",
+      "pass": true,
+      "note": "has내신고=true zeroFake=false lines=로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    },
+    {
+      "name": "me-empty",
+      "pass": true,
+      "note": "has내신고=true zeroFake=false lines=로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    },
+    {
+      "name": "me-error",
+      "pass": true,
+      "note": "has내신고=true zeroFake=false lines=로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    },
+    {
+      "name": "kbd-mobile",
+      "pass": true,
+      "note": "focusables=96 hScroll=0 btns={\"n\":40,\"small\":0}"
+    },
+    {
+      "name": "kbd-select-operate",
+      "pass": false,
+      "note": "TimeoutError: locator.focus: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('select').first()\n"
+    },
+    {
+      "name": "console-network",
+      "pass": false,
+      "note": "errors=2 warnings=0 failed=2 kakao200=609"
+    }
+  ],
+  "matrix": [
+    {
+      "viewport": "1920x1080",
+      "theme": "dark",
+      "view": "지도+통계",
+      "file": "1920x1080-dark-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1920x1080",
+      "theme": "dark",
+      "view": "지도 크게",
+      "file": "1920x1080-dark-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1920x1080",
+      "theme": "dark",
+      "view": "통계 크게",
+      "file": "1920x1080-dark-통계 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1920x1080",
+      "theme": "light",
+      "view": "지도+통계",
+      "file": "1920x1080-light-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1920x1080",
+      "theme": "light",
+      "view": "지도 크게",
+      "file": "1920x1080-light-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1920x1080",
+      "theme": "light",
+      "view": "통계 크게",
+      "file": "1920x1080-light-통계 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1440x900",
+      "theme": "dark",
+      "view": "지도+통계",
+      "file": "1440x900-dark-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1440x900",
+      "theme": "dark",
+      "view": "지도 크게",
+      "file": "1440x900-dark-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1440x900",
+      "theme": "dark",
+      "view": "통계 크게",
+      "file": "1440x900-dark-통계 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1440x900",
+      "theme": "light",
+      "view": "지도+통계",
+      "file": "1440x900-light-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1440x900",
+      "theme": "light",
+      "view": "지도 크게",
+      "file": "1440x900-light-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "1440x900",
+      "theme": "light",
+      "view": "통계 크게",
+      "file": "1440x900-light-통계 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "2560x1440",
+      "theme": "dark",
+      "view": "지도+통계",
+      "file": "2560x1440-dark-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "2560x1440",
+      "theme": "dark",
+      "view": "지도 크게",
+      "file": "2560x1440-dark-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "2560x1440",
+      "theme": "dark",
+      "view": "통계 크게",
+      "file": "2560x1440-dark-통계 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "2560x1440",
+      "theme": "light",
+      "view": "지도+통계",
+      "file": "2560x1440-light-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "2560x1440",
+      "theme": "light",
+      "view": "지도 크게",
+      "file": "2560x1440-light-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "2560x1440",
+      "theme": "light",
+      "view": "통계 크게",
+      "file": "2560x1440-light-통계 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "390x844",
+      "theme": "dark",
+      "view": "지도+통계",
+      "file": "390x844-dark-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "390x844",
+      "theme": "dark",
+      "view": "지도 크게",
+      "file": "390x844-dark-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "390x844",
+      "theme": "dark",
+      "view": "통계 크게",
+      "file": "390x844-dark-통계 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "390x844",
+      "theme": "light",
+      "view": "지도+통계",
+      "file": "390x844-light-지도plus통계.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "390x844",
+      "theme": "light",
+      "view": "지도 크게",
+      "file": "390x844-light-지도 크게.png",
+      "overflowX": 0
+    },
+    {
+      "viewport": "390x844",
+      "theme": "light",
+      "view": "통계 크게",
+      "file": "390x844-light-통계 크게.png",
+      "overflowX": 0
+    }
+  ],
+  "errors": [
+    "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: net::ERR_FAILED"
+  ],
+  "warnings": [],
+  "failedReq": [
+    "FAIL net::ERR_FAILED http://safemap.worklazy.net/boundaries/v20260701/sido.topo.json",
+    "FAIL net::ERR_FAILED http://safemap.worklazy.net/boundaries/v20260701/meta.json"
+  ],
+  "kakaoSample": [
+    "200 https://dapi.kakao.com/v2/maps/sdk.js?appkey=e5932698f8514f560335ed7b24ec4da7&autoload=false&libraries=clusterer",
+    "200 http://t1.daumcdn.net/mapjsapi/js/main/4.5.26/kakao.js",
+    "200 http://t1.daumcdn.net/mapjsapi/images/transparent.gif",
+    "200 http://t1.daumcdn.net/mapjsapi/js/libs/clusterer/1.1.1/clusterer.js",
+    "200 http://t1.daumcdn.net/mapjsapi/images/bg_tile.png",
+    "200 http://t1.daumcdn.net/mapjsapi/images/m_bi_b.png",
+    "200 http://t1.daumcdn.net/mapjsapi/images/cursor/openhand.cur.ico",
+    "200 http://mts.daumcdn.net/api/v1/tile/PNGSD02/v23_bkf12/latest/13/2/3.png"
+  ]
+}

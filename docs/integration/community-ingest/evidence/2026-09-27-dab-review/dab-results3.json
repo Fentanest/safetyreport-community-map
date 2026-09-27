@@ -1,0 +1,34 @@
+{
+  "results": [
+    {
+      "name": "sido-opts",
+      "pass": true,
+      "note": "n=17 sample=전국,서울특별시 (112),전남광주통합특별시 (12),부산광역시 (37),대구광역시 (20),인천광역시 (27)"
+    },
+    {
+      "name": "sido-pick",
+      "pass": true,
+      "note": "url=http://safemap.worklazy.net/?start=2025-09-25&end=2026-09-24&category=all&region_code=26 boundaryUnit=행정구역 경계 보기 · 시군구 단위"
+    },
+    {
+      "name": "sgg-opts",
+      "pass": false,
+      "note": "n=0 sample="
+    },
+    {
+      "name": "me-signed-diag",
+      "pass": false,
+      "note": "urlKeptMe=true acct=BUTTON:예시 사용자 · 예시|SPAN:예시 사용자 · 예시|SPAN:이용자들이 공유한 안전신문고 신고를 지역·기관·기간별로 볼 수 있습니다.|SPAN:로그인하면 내 신고와 나란히 비교할 수 있습니다. cmpChecked=no-checkbox lines="
+    },
+    {
+      "name": "me-empty-rows",
+      "pass": true,
+      "note": "zeroFake=false lines=로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    },
+    {
+      "name": "me-error-rows",
+      "pass": true,
+      "note": "zeroFake=false lines=로그인하면 내 신고와 나란히 비교할 수 있습니다.|내 신고와 비교|내 신고가 있는 곳|내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다 · 관심 지역은 지역 목록에서 ★를 누르세요"
+    }
+  ]
+}
