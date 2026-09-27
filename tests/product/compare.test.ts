@@ -29,8 +29,10 @@ describe('all side equals the public numbers for the same scope (same population
     expect(cmp.all.report_count).toBe(pub.overview.report_count.value);
     expect(cmp.all.completed_count).toBe(pub.overview.completed_count.value);
     expect(cmp.all.result_known).toBe(pub.overview.outcomes!.result_known);
+    // 수용률 = 수용 ÷ 결과 확인 (일부 수용 제외); the public field accepted_including_partial is a separate metric.
     expect(cmp.all.accepted + cmp.all.partial).toBe(pub.overview.accepted_including_partial.numerator);
-    expect(cmp.all.accept_rate).toBe(pub.overview.accepted_including_partial.value);
+    expect(cmp.all.accepted).toBe(pub.overview.outcomes!.accepted);
+    expect(cmp.all.accept_rate).toBe(pub.overview.outcomes!.result_known ? pub.overview.outcomes!.accepted * 100 / pub.overview.outcomes!.result_known : null);
     expect(cmp.all.fine_count).toBe(pub.overview.fine_count.value);
     expect(cmp.all.point_count).toBe(pub.overview.point_count.value);
     expect(consistentWithPublic(cmp, pub.overview)).toBe(true);
@@ -103,7 +105,27 @@ describe('differences', () => {
     expect(cmp.mine.result_known).toBe(1);
     expect(cmp.mine.accept_rate).toBe(0);
     expect(cmp.mine.reject_rate).toBe(100);
+
     expect(cmp.my_points).toEqual([expect.objectContaining({ key: 'solo:pt', lat: 37.1, lng: 127.1, mine_report_count: 1, shared: false })]);
+  });
+});
+
+describe('수용률 definition', () => {
+  it('counts only full acceptance in 수용률 (partial acceptance excluded)', () => {
+    const base = { ...facts[0], contributor_id: 'rate', report_date: '2026-09-01', completed_date: '2026-09-05',
+      disposition: 'none' as const, point_key: null, lat: null, lng: null };
+    const rows: PrivateFact[] = [
+      { ...base, fact_identity: 'r-a', status: 'accepted' },
+      { ...base, fact_identity: 'r-p', status: 'partial' },
+      { ...base, fact_identity: 'r-j', status: 'rejected' },
+      { ...base, fact_identity: 'r-j2', status: 'rejected' },
+    ];
+    const cmp = aggregateCompare(rows, DEMO_SCOPE, 'rate', opts);
+    expect(cmp.mine.result_known).toBe(4);
+    expect(cmp.mine.accept_rate).toBe(25);
+    expect(cmp.regions[0].mine.accepted).toBe(1);
+    expect(cmp.regions[0].mine.accept_rate).toBe(25);
+    expect(cmp.managers[0].mine.accept_rate).toBe(25);
   });
 });
 

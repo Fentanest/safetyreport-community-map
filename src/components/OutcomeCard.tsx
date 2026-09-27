@@ -1,5 +1,5 @@
 import type { OutcomeCounts } from '../domain/public';
-import { fmtInt, fmtPercent } from './format';
+import { acceptRate, fmtInt, fmtPercent } from './format';
 
 export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts | null }) {
   if (!outcomes) return (
@@ -14,7 +14,7 @@ export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts | nu
     { label: '일부 수용', v: outcomes.partial, color: 'var(--partial)' },
     { label: '불수용', v: outcomes.rejected, color: 'var(--rejected)' },
   ];
-  const top = d > 0 ? ((outcomes.accepted + outcomes.partial) / d) * 100 : null;
+  const top = acceptRate(outcomes);
   return (
     <article className="cm-panel outcome-card" aria-label="처리 결과">
       <div className="panel-top">
@@ -25,7 +25,7 @@ export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts | nu
       </div>
       <div className="outcome-summary">
         <b className="cm-number">{fmtPercent(top)}</b>
-        <small>수용률 (일부 수용 포함)</small>
+        <small>수용률 (일부 수용 제외)</small>
       </div>
       <div className="stack result-stack" role="img" aria-label={`수용 ${outcomes.accepted}건, 일부 수용 ${outcomes.partial}건, 불수용 ${outcomes.rejected}건`}>
         {rows.map((r) => (

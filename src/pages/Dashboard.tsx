@@ -16,7 +16,7 @@ import OutcomeCard from '../components/OutcomeCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable, { type ServerEntityState } from '../components/EntityTable';
 import DataGuide from '../components/DataGuide';
-import { fmtDate, fmtInt, fmtPercent } from '../components/format';
+import { acceptRate, fmtDate, fmtInt, fmtPercent } from '../components/format';
 import CompareKpis from '../components/CompareKpis';
 import RegionList from '../components/RegionList';
 import ManagerCompare from '../components/ManagerCompare';
@@ -591,7 +591,7 @@ export default function Dashboard() {
                   <MapSummary
                     reportAll={data.overview.report_count.value}
                     completedAll={data.overview.completed_count.value}
-                    acceptAll={data.overview.accepted_including_partial.value}
+                    acceptAll={acceptRate(data.overview.outcomes)}
                     showMine={showMine}
                     personalStatus={personal.status}
                     mineReport={compareData?.mine.report_count ?? null}

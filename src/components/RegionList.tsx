@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { PublicRegion } from '../domain/public';
 import type { CompareRegionRow } from '../domain/personal';
 import { regionName } from '../state/view';
-import { fmtInt, fmtPercent, fmtPp } from './format';
+import { acceptRate, fmtInt, fmtPercent, fmtPp } from './format';
 
 interface Props {
   regions: PublicRegion[] | null;
@@ -20,7 +20,7 @@ interface Props {
 
 type Sort = 'all' | 'mine';
 
-const rate = (r: PublicRegion) => (r.outcomes.result_known > 0 ? ((r.outcomes.accepted + r.outcomes.partial) / r.outcomes.result_known) * 100 : null);
+const rate = (r: PublicRegion) => acceptRate(r.outcomes);
 
 /** Data wiring: Sol · visual implementation: Muse (docs/personal-comparison.md §5.4). */
 export default function RegionList(p: Props) {

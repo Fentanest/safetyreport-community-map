@@ -21,7 +21,7 @@ const summarySchema = z.strictObject({
   accept_rate: rate, reject_rate: rate, fine_rate: rate,
 });
 const sideSchema = z.strictObject({
-  report_count: count, completed_count: count, result_known: count, accepted_partial: count,
+  report_count: count, completed_count: count, result_known: count, accepted: count,
   rejected: count, fine_count: count, accept_rate: rate,
 });
 const entitySchema = z.strictObject({

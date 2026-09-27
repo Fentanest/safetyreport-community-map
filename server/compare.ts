@@ -20,7 +20,8 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
     result_known: o.result_known, result_unknown: o.result_unknown,
     fine_count: fine, point_count: points,
-    accept_rate: pct(o.accepted + o.partial, o.result_known),
+    // 수용률 = 수용 ÷ 결과 확인(D). 일부 수용은 포함하지 않는다(2026-09-27 사용자 결정).
+    accept_rate: pct(o.accepted, o.result_known),
     reject_rate: pct(o.rejected, o.result_known),
     fine_rate: pct(fine, done.length),
   };
@@ -45,9 +46,9 @@ function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): C
   const o = outcomes(done);
   return {
     report_count: reported.length, completed_count: done.length, result_known: o.result_known,
-    accepted_partial: o.accepted + o.partial, rejected: o.rejected,
+    accepted: o.accepted, rejected: o.rejected,
     fine_count: done.filter(fact => fact.disposition === 'fine').length,
-    accept_rate: pct(o.accepted + o.partial, o.result_known),
+    accept_rate: pct(o.accepted, o.result_known),
   };
 }
 

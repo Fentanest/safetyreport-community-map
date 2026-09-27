@@ -109,7 +109,8 @@ function entityValue(row: PublicEntity, sort: string): number | null {
     case 'partial': return row.outcomes.partial;
     case 'rejected': return row.outcomes.rejected;
     case 'fine': return row.fine_count;
-    case 'acceptRate': return known > 0 ? ((row.outcomes.accepted + row.outcomes.partial) / known) * 100 : null;
+    // 수용률 = 수용 ÷ 결과 확인 (일부 수용 제외, 화면 표와 같은 정의)
+    case 'acceptRate': return known > 0 ? (row.outcomes.accepted / known) * 100 : null;
     default: return row.completed_count;
   }
 }
