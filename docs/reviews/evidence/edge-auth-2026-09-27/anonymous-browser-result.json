@@ -1,0 +1,18 @@
+{
+  "final": "https://accounts.kakao.com/login/",
+  "authRequests": [
+    {
+      "url": "https://nxdcxccixoswvqgjeprh.supabase.co/auth/v1/authorize",
+      "method": "GET"
+    }
+  ],
+  "analyticsRequests": [],
+  "dashboardCount": 0,
+  "responses": [
+    {
+      "url": "https://nxdcxccixoswvqgjeprh.supabase.co/auth/v1/authorize",
+      "status": 302
+    }
+  ],
+  "errors": []
+}
