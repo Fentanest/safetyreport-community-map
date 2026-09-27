@@ -2,15 +2,13 @@
 - request_mode / policy_version: review only / cm-2026-09-24 + 2026-09-28 사용자 logout correction
   (로그아웃·인증 취소 뒤 로그인 안내에서 자동으로 카카오 인증을 다시 시작하지 않는다.
   로그인은 `카카오로 로그인` 버튼 클릭 때만 시작한다.)
-- 실제 model/provider / 확인 근거: 세션 모델 `muse-spark-1.3-contributor`.
-  호스트 `opencode models` 목록에 `opencode/muse-spark-1.3-contributor-free` 및
-  `opencode-go/muse-spark-1.3-contributor` variant가 등재되어 있음을 확인.
-  세션 내부에서 실제 활성 provider binding을 introspect할 수 없으므로 variant 등재 확인까지만 기록한다.
+- 실제 model/provider / 확인 근거: Sol이 정확한 세션 `ses_f1c728f23ffeeZbkCBYO2DpUgX`의
+  sanitized export에서 `providerID=opencode-go`, `modelID=muse-spark-1.3-contributor`를 확인했다.
 - worktree / commit / dirty: `.../safetyreport-community-map-muse-logout-review` /
   `a53d604c97d2c2f2646daaf3828fff97bb6683f5` (`Keep map login gate idle after local logout`) / clean
   (본 보고서·fixture 증거 추가 전 `git status --short` clean, HEAD == fixed commit).
 - 시작·종료 / URL / data_mode / dataset_version:
-  브라우저 검증 수행済み(선행 턴) / URL `http://127.0.0.1:4174/` (로컬 `vite preview --port 4174`) /
+  브라우저 검증 완료 / URL `http://127.0.0.1:4174/` (로컬 `vite preview --port 4174`) /
   `VITE_DATA_MODE=live` 빌드 + 더미 공개 설정
   (`VITE_BASE_PATH=/`, `VITE_SUPABASE_URL=https://example.supabase.co`,
   `VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_test`,
@@ -30,9 +28,9 @@
 
 | viewport | theme | steps completed | screenshot | console/network | result |
 |---|---|---|---|---|---|
-| 1440×900 | dark (기본) | fixture 로그인 상태 진입 → 계정 메뉴 → `로그아웃` 클릭 → 게이트 대기 1.2s → probe 판독 → `.access-card` 캡처 → `카카오로 로그인` 클릭 | `docs/reviews/screenshots/muse-logout-gate-2026-09-28/after-logout.png` (직접 열람済み) | pageerror 0; 자동 OAuth 호출 0, URL origin 불변; 명시 클릭 후 OAuth 호출 정확히 1 | PASS (fixture 범위) |
-| 1440×900 | dark (기본) | 익명 진입(인증 fixture 없음): 게이트 표시 확인 → 1.5s 대기 중 outbound 집계 → 스크린샷 → Tab 키로 버튼 포커스 → 버튼 클릭(외부 요청은 abort, 카운트만) | `docs/reviews/screenshots/muse-logout-gate-2026-09-28/anonymous-gate-1440x900.png` (직접 열람済み) | pageerror 0; 클릭 전 example.supabase.co/kakao/kauth 요청 0, URL 불변, `.map-card` 0; 클릭 후 outbound 1 | PASS (fixture 범위) |
-| 390×844 | dark (기본) | 위 익명 절차와 동일 | `docs/reviews/screenshots/muse-logout-gate-2026-09-28/anonymous-gate-390x844.png` (직접 열람済み) | pageerror 0; 클릭 전 0 / 클릭 후 1; 가로 스크롤·잘림 없음(시각 확인) | PASS (fixture 범위) |
+| 1440×900 | dark (기본) | fixture 로그인 상태 진입 → 계정 메뉴 → `로그아웃` 클릭 → 게이트 대기 1.2s → probe 판독 → `.access-card` 캡처 → `카카오로 로그인` 클릭 | `docs/reviews/screenshots/muse-logout-gate-2026-09-28/after-logout.png` (직접 열람) | pageerror 0; 자동 OAuth 호출 0, URL origin 불변; 명시 클릭 후 OAuth 호출 정확히 1 | PASS (fixture 범위) |
+| 1440×900 | dark (기본) | 익명 진입(인증 fixture 없음): 게이트 표시 확인 → 1.5s 대기 중 outbound 집계 → 스크린샷 → Tab 키로 버튼 포커스 → 버튼 클릭(외부 요청은 abort, 카운트만) | `docs/reviews/screenshots/muse-logout-gate-2026-09-28/anonymous-gate-1440x900.png` (직접 열람) | pageerror 0; 클릭 전 example.supabase.co/kakao/kauth 요청 0, URL 불변, `.map-card` 0; 클릭 후 outbound 1 | PASS (fixture 범위) |
+| 390×844 | dark (기본) | 위 익명 절차와 동일 | `docs/reviews/screenshots/muse-logout-gate-2026-09-28/anonymous-gate-390x844.png` (직접 열람) | pageerror 0; 클릭 전 0 / 클릭 후 1; 가로 스크롤·잘림 없음(시각 확인) | PASS (fixture 범위) |
 
 원시 결과: `docs/reviews/screenshots/muse-logout-gate-2026-09-28/result.json`
 (브라우저 로그아웃 회귀: 7개 check 전부 true),
@@ -64,7 +62,7 @@ keyboardReachable true, pageErrors []).
 
 ## 최종 판정
 - PASS (fixture 범위): 로그아웃 후 자동 재로그인 없음, 로그인 게이트 명시 클릭 대기 — 1440/390,
-  콘솔·pageerror·네트워크(outbound 카운트) 기준 충족.
+  pageerror·네트워크(outbound 카운트) 기준 충족. 콘솔 메시지는 별도로 수집하지 않았다.
 - NOT_RUN (실제 환경, 별도 승인 필요): 실제 Kakao 세션이 남아 있는 브라우저에서의 로그아웃 후 거동,
-  운영 Pages 배포 URL에서의 게이트 검증, 실제 OAuth往返·실제 계정 로그인·실제 통계 API 연동.
+  운영 Pages 배포 URL에서의 게이트 검증, 실제 OAuth 왕복·실제 계정 로그인·실제 통계 API 연동.
   운영 배포를 테스트한 것으로 표시하지 않는다.
