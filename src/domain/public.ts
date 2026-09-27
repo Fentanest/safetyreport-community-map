@@ -83,6 +83,30 @@ export interface DurationBrief {
   mean_days: number | null;
 }
 
+/** 답변에 적힌 과태료 금액 (docs/metrics-catalog.md fine_amount). Not a paid or legally final amount. */
+export interface FineAmountSummary {
+  basis: 'completed_date';
+  fine_count: number;
+  confirmed_count: number;
+  sum_won: number | null;
+  mean_won: number | null;
+  median_won: number | null;
+  zero_count: number;
+  unconfirmed_count: number;
+  undisclosed_count: number;
+  conflict_count: number;
+  penalty_count: number;
+  combined_count: number;
+  partial: boolean;
+}
+
+export interface FineAmountBrief {
+  fine_count: number;
+  confirmed_count: number;
+  sum_won: number | null;
+  mean_won: number | null;
+}
+
 export interface Overview {
   report_count: CountMetric;
   completed_count: CountMetric;
@@ -93,6 +117,7 @@ export interface Overview {
   outcomes: OutcomeCounts | null;
   /** null = not provided by the source (never replaced by an empty summary) */
   processing_duration?: DurationSummary | null;
+  fine_amount?: FineAmountSummary | null;
 }
 
 export interface PublicPoint {
@@ -120,6 +145,7 @@ export interface MonthlyBucket {
   partial: boolean;
   coverage_note: string | null;
   duration?: DurationBrief | null;
+  fine_amount?: FineAmountBrief | null;
 }
 
 export interface PublicEntity {
@@ -132,6 +158,7 @@ export interface PublicEntity {
   outcomes: OutcomeCounts;
   fine_count: number | null;
   duration?: DurationBrief | null;
+  fine_amount?: FineAmountBrief | null;
 }
 
 /** Region row (region_code as stored by ingest, e.g. '서울 중구'; null = 지역 미상).
@@ -143,6 +170,7 @@ export interface PublicRegion {
   outcomes: OutcomeCounts;
   fine_count: number;
   duration?: DurationBrief | null;
+  fine_amount?: FineAmountBrief | null;
 }
 
 export interface PublicVehicle {

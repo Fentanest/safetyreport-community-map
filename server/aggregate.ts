@@ -5,6 +5,7 @@ import type {
 } from '../src/domain/public.ts';
 import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
+import { fineAmountBrief, fineAmountSummary } from './amount.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'processing' | 'supplement' |
   'withdrawn' | 'transferred' | 'completed_unknown' | 'other';
@@ -30,6 +31,14 @@ export interface PrivateFact {
   agency_name: string | null;
   manager_key: string | null;
   manager_name: string | null;
+  /** 답변에 적힌 금액의 종류(community ingest). Legacy/snapshot sources omit these fields. */
+  amount_kind?: 'fine' | 'penalty' | 'combined' | 'unknown' | null;
+  /** exact won, only when the fact's consent policy publishes amounts (otherwise null from the RPC) */
+  amount_confirmed_won?: number | null;
+  /** the fact's consent policy publishes answered amounts (private.community_policy_disclosures) */
+  amount_public?: boolean;
+  /** the answer stated an amount (existence only) */
+  amount_stated?: boolean;
 }
 
 const terminal = new Set<Status>(['accepted', 'partial', 'rejected', 'withdrawn', 'transferred', 'completed_unknown']);
@@ -150,7 +159,7 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
     manager_name: kind === 'manager' ? rows[0].manager_name : null,
     completed_count: rows.length, outcomes: outcomes(rows),
     fine_count: rows.filter(row => row.disposition === 'fine').length,
-    duration: durationBrief(rows),
+    duration: durationBrief(rows), fine_amount: fineAmountBrief(rows),
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
 
@@ -171,7 +180,7 @@ export function regionRows(reported: readonly PrivateFact[], done: readonly Priv
   return [...rows.values()].map(r => ({
     region_code: r.code, report_count: r.reported, completed_count: r.done.length,
     outcomes: outcomes(r.done), fine_count: r.done.filter(fact => fact.disposition === 'fine').length,
-    duration: durationBrief(r.done),
+    duration: durationBrief(r.done), fine_amount: fineAmountBrief(r.done),
   })).sort((a, b) => b.report_count - a.report_count || b.completed_count - a.completed_count ||
     (a.region_code ?? '\uffff').localeCompare(b.region_code ?? '\uffff', 'ko'));
 }
@@ -301,6 +310,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const { prev, facts, reported, done, previousReported, previousDone } = selectScope(input, scope);
   const result = outcomes(done), D = result.result_known;
   const duration = { ...durationSummary(done), answer_date_missing: answerDateMissing(reported) };
+  const fineAmount = fineAmountSummary(done);
   const priorResult = outcomes(previousDone), priorD = priorResult.result_known;
   const fine = done.filter(fact => fact.disposition === 'fine').length;
   const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
@@ -319,18 +329,18 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const comparisonCovered = dataMin === null || prev.start >= dataMin;
   const months: MonthlyBucket[] = monthKeys(scope.start, scope.end).map(month => {
     if (month > options.asOf.slice(0, 7)) return {
-      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null,
+      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null, fine_amount: null,
       partial: false, coverage_note: '데이터 제공 종료 이후',
     };
     if (dataMin && month < dataMin.slice(0, 7)) return {
-      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null,
+      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null, fine_amount: null,
       partial: false, coverage_note: '데이터 제공 시작 전',
     };
     const monthlyReports = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
     const monthlyDone = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
     return { month, report_count: monthlyReports.length, completed_count: monthlyDone.length,
       fine_count: monthlyDone.filter(fact => fact.disposition === 'fine').length,
-      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone),
+      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone),
       partial: month === options.asOf.slice(0, 7) && scope.end >= options.asOf,
       coverage_note: dataMin && month === dataMin.slice(0, 7) && dataMin.slice(8) !== '01' ? '제공 시작 월(부분)' : null };
   });
@@ -353,7 +363,8 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
     dedupe_policy_version: 'ingest-latest-v1', capabilities: {
       daily_report_dates: capability('supported'), completion_dates: capability('supported'),
       manager_status_cross: capability('supported'), agency_status_cross: capability('supported'),
-      vehicle_top5: capability('supported'), fine_amount: capability('missing', '금액 원천이 없습니다.'),
+      vehicle_top5: capability('supported'),
+      fine_amount: { status: 'supported', reason: null, coverage: { eligible: fineAmount.confirmed_count, total: fineAmount.fine_count } },
       processing_duration: { status: 'supported', reason: null, coverage: { eligible: duration.count, total: duration.count + duration.excluded.no_report_date + duration.excluded.reversed } },
       region_boundaries: capability('missing', '공식 경계 데이터가 없습니다.'),
     },
@@ -380,6 +391,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
         comparisonCovered ? new Set(previousReported.map(fact => fact.contributor_id)).size : null, 0, reported.length),
       outcomes: result,
       processing_duration: duration,
+      fine_amount: fineAmount,
     },
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
     regions: regionRows(reported, done),
