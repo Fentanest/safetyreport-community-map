@@ -74,3 +74,16 @@
 - 동의문 2026-09-28.1 덮어쓰기(사용자 결정, 같은 날): 삭제 요청·문의를 이 저장소 공개 Issues로 안내하도록 문구를 바꾸고 같은 버전을 유지했다.
   auth `202609280400`은 그 버전을 참조하는 동의가 있으면 실패하고 없을 때만 해시를 바꾼다 — 운영 적용 성공(당시 동의 0건), 운영 정책 표 해시 `a775cc34…8670` 확인.
   Issues 템플릿 `.github/ISSUE_TEMPLATE/`(삭제 요청·문의, 공개 게시판이라 개인정보를 적지 말 것). 운영자 삭제 처리는 `internal_community_delete_contributions(user, session)`.
+
+## 8. 운영 반영 기록 (2026-09-27, 동의문 중앙 제공 — 사용자 승인)
+- DB: auth `202609280600_policy_consent_text.sql` 하나만 적용. 지도 dev 의 `202609280700_analytics_viewer`(미승인)는 뺀 임시 manifest·지도 worktree 로
+  합성해 dry-run 목록이 0600 하나인 것을 확인한 뒤 `db push --linked`. 적용 전 운영 동의 0건(2026-09-28.1 포함) 확인 — migration 은 그 버전에 동의가 있으면 실패한다.
+- 결과: `private.community_policy_texts` 본문 3개(2026-09-26.1, 2026-09-28.1 이전 문구 `a775cc34…`, 운영자 새 문구 `ce460475…`),
+  2026-09-28.1 해시 → `ce460475…`. `internal_account_policy()` 가 돌려주는 본문을 DB 안에서 다시 해시해 일치 확인.
+  EXECUTE·SELECT 는 service_role 만(anon·authenticated 없음).
+- Edge Function: `community-account` 재배포(version 3, verify_jwt=true, 새 액션 `policy`). 토큰 없는 `policy`·`status` 401 확인.
+  실제 카카오 계정으로 `policy`·`consent` 는 운영자가 새 dev 빌드로 확인한다.
+- 앱: PC·모바일은 동의문을 번들에 두지 않고 `policy` 로 받는다(각 dev). 이 배포 뒤부터 동의문 변경은 migration(본문 추가·정책 행) + 적용만으로 앱이 새 본문을 보인다.
+- 롤백: `community-account` 이전 배포 재배포, `community_policies` 2026-09-28.1 해시를 `a775cc34…`로 되돌림(트리거 해제 → update → 재설정, 동의가 없을 때만).
+  `community_policy_texts` 는 남겨 둔다(불변).
+
