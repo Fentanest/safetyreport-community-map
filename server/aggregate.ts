@@ -4,6 +4,7 @@ import type {
   PublicEntity, PublicMeta, PublicPoint, PublicRegion, Scope,
 } from '../src/domain/public.ts';
 import { maskPlate, parsePlate } from './plate.ts';
+import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'processing' | 'supplement' |
   'withdrawn' | 'transferred' | 'completed_unknown' | 'other';
@@ -149,6 +150,7 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
     manager_name: kind === 'manager' ? rows[0].manager_name : null,
     completed_count: rows.length, outcomes: outcomes(rows),
     fine_count: rows.filter(row => row.disposition === 'fine').length,
+    duration: durationBrief(rows),
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
 
@@ -169,6 +171,7 @@ export function regionRows(reported: readonly PrivateFact[], done: readonly Priv
   return [...rows.values()].map(r => ({
     region_code: r.code, report_count: r.reported, completed_count: r.done.length,
     outcomes: outcomes(r.done), fine_count: r.done.filter(fact => fact.disposition === 'fine').length,
+    duration: durationBrief(r.done),
   })).sort((a, b) => b.report_count - a.report_count || b.completed_count - a.completed_count ||
     (a.region_code ?? '\uffff').localeCompare(b.region_code ?? '\uffff', 'ko'));
 }
@@ -297,6 +300,7 @@ export function selectScope(input: readonly PrivateFact[], scope: Scope): ScopeS
 export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, options: AggregateOptions): DashboardData {
   const { prev, facts, reported, done, previousReported, previousDone } = selectScope(input, scope);
   const result = outcomes(done), D = result.result_known;
+  const duration = { ...durationSummary(done), answer_date_missing: answerDateMissing(reported) };
   const priorResult = outcomes(previousDone), priorD = priorResult.result_known;
   const fine = done.filter(fact => fact.disposition === 'fine').length;
   const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
@@ -315,18 +319,19 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const comparisonCovered = dataMin === null || prev.start >= dataMin;
   const months: MonthlyBucket[] = monthKeys(scope.start, scope.end).map(month => {
     if (month > options.asOf.slice(0, 7)) return {
-      month, report_count: null, completed_count: null, fine_count: null, outcomes: null,
+      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null,
       partial: false, coverage_note: '데이터 제공 종료 이후',
     };
     if (dataMin && month < dataMin.slice(0, 7)) return {
-      month, report_count: null, completed_count: null, fine_count: null, outcomes: null,
+      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null,
       partial: false, coverage_note: '데이터 제공 시작 전',
     };
     const monthlyReports = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
     const monthlyDone = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
     return { month, report_count: monthlyReports.length, completed_count: monthlyDone.length,
       fine_count: monthlyDone.filter(fact => fact.disposition === 'fine').length,
-      outcomes: outcomes(monthlyDone), partial: month === options.asOf.slice(0, 7) && scope.end >= options.asOf,
+      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone),
+      partial: month === options.asOf.slice(0, 7) && scope.end >= options.asOf,
       coverage_note: dataMin && month === dataMin.slice(0, 7) && dataMin.slice(8) !== '01' ? '제공 시작 월(부분)' : null };
   });
   const capability = (status: 'supported' | 'missing', reason: string | null = null) => ({
@@ -349,7 +354,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       daily_report_dates: capability('supported'), completion_dates: capability('supported'),
       manager_status_cross: capability('supported'), agency_status_cross: capability('supported'),
       vehicle_top5: capability('supported'), fine_amount: capability('missing', '금액 원천이 없습니다.'),
-      processing_duration: capability('missing', '기간 분포 원천이 없습니다.'),
+      processing_duration: { status: 'supported', reason: null, coverage: { eligible: duration.count, total: duration.count + duration.excluded.no_report_date + duration.excluded.reversed } },
       region_boundaries: capability('missing', '공식 경계 데이터가 없습니다.'),
     },
   };
@@ -374,6 +379,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       contributor_count: countMetric(new Set(reported.map(fact => fact.contributor_id)).size, 'report_date',
         comparisonCovered ? new Set(previousReported.map(fact => fact.contributor_id)).size : null, 0, reported.length),
       outcomes: result,
+      processing_duration: duration,
     },
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
     regions: regionRows(reported, done),

@@ -62,6 +62,27 @@ export interface OutcomeCounts {
   result_unknown: number;
 }
 
+/** 답변까지 걸린 기간 (docs/metrics-catalog.md processing_duration). Days, answer-date cohort. */
+export interface DurationSummary {
+  basis: 'completed_date';
+  count: number;
+  mean_days: number | null;
+  median_days: number | null;
+  p90_days: number | null;
+  min_days: number | null;
+  max_days: number | null;
+  excluded: { no_report_date: number; reversed: number };
+  /** answered reports of the report-date period without any answer date (period unknown) */
+  answer_date_missing: number;
+}
+
+/** Compact duration for rows (region, agency, manager, month). */
+export interface DurationBrief {
+  count: number;
+  median_days: number | null;
+  mean_days: number | null;
+}
+
 export interface Overview {
   report_count: CountMetric;
   completed_count: CountMetric;
@@ -70,6 +91,8 @@ export interface Overview {
   point_count: CountMetric;
   contributor_count: CountMetric;
   outcomes: OutcomeCounts | null;
+  /** null = not provided by the source (never replaced by an empty summary) */
+  processing_duration?: DurationSummary | null;
 }
 
 export interface PublicPoint {
@@ -96,6 +119,7 @@ export interface MonthlyBucket {
   outcomes: OutcomeCounts | null;
   partial: boolean;
   coverage_note: string | null;
+  duration?: DurationBrief | null;
 }
 
 export interface PublicEntity {
@@ -107,6 +131,7 @@ export interface PublicEntity {
   completed_count: number;
   outcomes: OutcomeCounts;
   fine_count: number | null;
+  duration?: DurationBrief | null;
 }
 
 /** Region row (region_code as stored by ingest, e.g. '서울 중구'; null = 지역 미상).
@@ -117,6 +142,7 @@ export interface PublicRegion {
   completed_count: number;
   outcomes: OutcomeCounts;
   fine_count: number;
+  duration?: DurationBrief | null;
 }
 
 export interface PublicVehicle {

@@ -97,8 +97,8 @@ function meta(state: AnalyticsState): PublicMeta {
     capabilities: Object.fromEntries([
       'daily_report_dates', 'completion_dates', 'manager_status_cross', 'agency_status_cross', 'vehicle_top5',
       'fine_amount', 'processing_duration', 'region_boundaries',
-    ].map(name => [name, capability(state.ready && !['fine_amount', 'processing_duration', 'region_boundaries'].includes(name),
-      ['fine_amount', 'processing_duration', 'region_boundaries'].includes(name) ? '해당 원천이 없습니다.' : reason)])),
+    ].map(name => [name, capability(state.ready && !['fine_amount', 'region_boundaries'].includes(name),
+      ['fine_amount', 'region_boundaries'].includes(name) ? '해당 원천이 없습니다.' : reason)])),
   };
 }
 

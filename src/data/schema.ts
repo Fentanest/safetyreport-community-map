@@ -37,9 +37,20 @@ const outcomes = z.strictObject({
   accepted: count, partial: count, rejected: count, result_known: count, result_unknown: count,
 });
 
+const durationBrief = z.strictObject({
+  count, median_days: z.number().min(0).nullable(), mean_days: z.number().min(0).nullable(),
+}).nullable().optional();
+const durationSummary = z.strictObject({
+  basis: z.literal('completed_date'), count,
+  mean_days: z.number().min(0).nullable(), median_days: z.number().min(0).nullable(), p90_days: z.number().min(0).nullable(),
+  min_days: z.number().min(0).nullable(), max_days: z.number().min(0).nullable(),
+  excluded: z.strictObject({ no_report_date: count, reversed: count }), answer_date_missing: count,
+}).nullable().optional();
+
 export const overviewSchema = z.strictObject({
   report_count: countMetric, completed_count: countMetric, accepted_including_partial: rateMetric,
   fine_count: countMetric, point_count: countMetric, contributor_count: countMetric, outcomes: outcomes.nullable(),
+  processing_duration: durationSummary,
 });
 
 export const pointSchema = z.strictObject({
@@ -53,18 +64,18 @@ export const pointSchema = z.strictObject({
 export const monthlySchema = z.strictObject({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/), report_count: nullableCount,
   completed_count: nullableCount, fine_count: nullableCount, outcomes: outcomes.nullable(),
-  partial: z.boolean(), coverage_note: z.string().nullable(),
+  partial: z.boolean(), coverage_note: z.string().nullable(), duration: durationBrief,
 });
 
 export const entitySchema = z.strictObject({
   key: z.string(), agency_key: z.string().nullable(), manager_key: z.string().nullable(),
   agency_name: z.string(), manager_name: z.string().nullable(),
-  completed_count: count, outcomes, fine_count: nullableCount,
+  completed_count: count, outcomes, fine_count: nullableCount, duration: durationBrief,
 });
 
 export const regionSchema = z.strictObject({
   region_code: z.string().max(24).nullable(), report_count: count, completed_count: count,
-  outcomes, fine_count: count,
+  outcomes, fine_count: count, duration: durationBrief,
 });
 
 export const vehicleSchema = z.strictObject({
