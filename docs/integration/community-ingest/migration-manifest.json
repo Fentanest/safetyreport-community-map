@@ -78,6 +78,16 @@
         "202609260200",
         "202609260100"
       ]
+    },
+    {
+      "version": "202609280100",
+      "repo": "map",
+      "path": "supabase/migrations/202609280100_amount_duration_region.sql",
+      "sha256": "b2dd5e778781356a630b67fbf4d7a32d573e327320d372a8419f2add9d47eaba",
+      "depends_on": [
+        "202609260200",
+        "202609260100"
+      ]
     }
   ],
   "functions": [
@@ -87,8 +97,12 @@
       "verify_jwt": false,
       "shared": [
         "server/aggregate.ts",
+        "server/amount.ts",
+        "server/duration.ts",
         "server/plate.ts",
         "server/publicHandler.ts",
+        "server/regions.ts",
+        "contracts/regions/regions-20260701.json",
         "src/domain/public.ts"
       ]
     },
@@ -129,10 +143,14 @@
       "verify_jwt": true,
       "shared": [
         "server/aggregate.ts",
+        "server/amount.ts",
         "server/compare.ts",
-        "server/plate.ts",
+        "server/duration.ts",
         "server/personalHandler.ts",
+        "server/plate.ts",
         "server/publicHandler.ts",
+        "server/regions.ts",
+        "contracts/regions/regions-20260701.json",
         "src/domain/personal.ts",
         "src/domain/public.ts"
       ]

@@ -185,4 +185,37 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
     const broken = await ingest(app, 1);
     expect(broken.status).not.toBe(200);
   });
+  it('releases no fine amount beyond the consent policy, and sums only amounts of a disclosing policy', async () => {
+    const a = await writer('A');
+    expect((await ingest(a, 2)).status).toBe(200); // accepted_fine vectors: 40,000원 each
+    const released = () => Number(sql(`select count(*) from jsonb_array_elements(public.internal_analytics_v2_facts(date '2024-01-01', date '2026-09-27', 'all', null, null, null, null)) e where e->'amount_confirmed_won' <> 'null'::jsonb;`));
+    const stated = Number(sql(`select count(*) from jsonb_array_elements(public.internal_analytics_v2_facts(date '2024-01-01', date '2026-09-27', 'all', null, null, null, null)) e where (e->>'amount_stated')::boolean;`));
+    // 2026-09-26.1 lists amounts as sent, not as published: no value leaves the database
+    sql(`delete from private.community_policy_disclosures where version = '${POLICY}';`);
+    expect(released()).toBe(0);
+    expect(stated).toBeGreaterThanOrEqual(2);
+    const pub = await publicDashboard();
+    expect(pub.status).toBe(200);
+    expect(pub.json.overview.fine_amount).toMatchObject({ confirmed_count: 0, sum_won: null, mean_won: null });
+    expect(pub.json.overview.fine_amount.undisclosed_count).toBeGreaterThanOrEqual(2);
+    expect(JSON.stringify(pub.json)).not.toMatch(/40000|amount_confirmed_won|amount_public/);
+    try {
+      // a (hypothetical) policy that publishes amounts: registered explicitly, only in this local test database
+      sql(`insert into private.community_policy_disclosures(version, amounts_public) values ('${POLICY}', true);`);
+      expect(released()).toBe(stated);
+      const scope = 'start=2024-01-01&end=2026-09-27&category=parking'; // another scope: no cached answer
+      const after = await call('GET', `/functions/v1/public-analytics/dashboard?${scope}`, { apikey: null });
+      expect(after.status).toBe(200);
+      const fa = after.json.overview.fine_amount;
+      expect(fa.confirmed_count).toBeGreaterThanOrEqual(2);
+      expect(fa.sum_won).toBe(40000 * fa.confirmed_count);
+      const mapA = await kakaoSession('A');
+      const mine = await call('GET', `/functions/v1/my-analytics/compare?${scope}&expected_version=${after.json.dataset_version}`, { token: mapA.access, headers: { origin: MAP_ORIGIN } });
+      expect(mine.status, JSON.stringify(mine.json)).toBe(200);
+      expect(mine.json.all.fine_amount).toMatchObject({ confirmed_count: fa.confirmed_count, sum_won: fa.sum_won });
+      expect(mine.json.mine.fine_amount.sum_won).toBeLessThanOrEqual(fa.sum_won);
+    } finally {
+      sql(`delete from private.community_policy_disclosures where version = '${POLICY}';`);
+    }
+  });
 });

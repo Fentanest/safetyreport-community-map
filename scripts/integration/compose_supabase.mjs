@@ -103,7 +103,7 @@ function compose(manifest) {
   if (existsSync(outDir)) {
     const marker = join(outDir, '.composed-by-compose_supabase');
     if (!existsSync(marker)) throw new Error(`refusing to overwrite ${outDir}: not a composed staging dir`);
-    for (const d of ['supabase/migrations', 'supabase/functions', 'server']) rmSync(join(outDir, d), { recursive: true, force: true });
+    for (const d of ['supabase/migrations', 'supabase/functions', 'server', 'contracts']) rmSync(join(outDir, d), { recursive: true, force: true });
   }
   mkdirSync(join(outDir, 'supabase/migrations'), { recursive: true });
   writeFileSync(join(outDir, '.composed-by-compose_supabase'), 'integration staging, safe to delete\n');
