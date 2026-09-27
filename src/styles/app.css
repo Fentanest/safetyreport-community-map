@@ -112,6 +112,10 @@ button.cm-chip { cursor: pointer; }
 .map-sdk-host { position: absolute; inset: 0; }
 .map-fallback { position: absolute; inset: 0; overflow: auto; padding: 12px 12px 56px; }
 .map-top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; z-index: 5; }
+.map-top-left { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+/* one-step-up region control beside the map top controls (mirrors the region list crumb). */
+.map-back { min-height: 44px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-weight: 650; font-size: 13px; white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
+.map-back:hover { background: var(--hover); }
 .map-status { font-size: 12px; background: rgba(11, 11, 12, 0.82); color: #f3f3f4; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.18); }
 [data-theme="light"] .map-status { background: rgba(255, 255, 255, 0.88); color: #0f172a; border-color: var(--border); }
 .map-hover { position: absolute; top: 64px; right: 12px; z-index: 3; max-width: calc(100% - 96px); display: inline-flex; flex-direction: column; gap: 2px; font-size: 13px; background: rgba(11, 11, 12, 0.86); color: #f3f3f4; padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.18); pointer-events: none; }
@@ -276,6 +280,9 @@ body.briefing .briefing-bar { display: flex; }
   .heading-note { text-align: left; }
   .analytics-grid { grid-template-columns: minmax(0, 1fr); }
   .map-canvas { min-height: 420px; }
+  /* map top controls wrap instead of clipping: back + apply stay tappable at 390px. */
+  .map-top { flex-wrap: wrap; }
+  .map-back { max-width: calc(100vw - 220px); }
   /* compare toggle + view switch take their own full-width rows under the command bar. */
   .command .view-controls { order: 90; flex-basis: 100%; flex-direction: column; align-items: stretch; border-top: 1px solid var(--border); padding-top: 10px; }
   .command .view-switch { width: 100%; display: flex; }
@@ -428,6 +435,8 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 
 /* fallback mode: compact error banner + flowing list, no giant empty canvas. */
 .map-fallback-mode { min-height: 0 !important; }
+/* fallback has no real map: the top bar flows above the list instead of overlaying it. */
+.map-fallback-mode .map-top { position: static; margin: 12px 12px 0; }
 .map-fallback-mode .map-fallback { position: static; padding: 12px 12px 8px; max-height: 480px; }
 .map-error-card.compact { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; margin: 0 0 8px;
   border: 1px solid var(--border); border-left: 4px solid var(--partial); border-radius: 12px; background: var(--raised); padding: 12px 14px; font-size: 13px; }
