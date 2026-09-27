@@ -80,7 +80,7 @@ export default function TrendCard({ monthly, theme, mine = null }: {
           },
           series: [
             {
-              name: '신고 접수',
+              name: '신고',
               type: 'line',
               data: monthly.map((m) => m.report_count),
               connectNulls: false,
@@ -91,7 +91,7 @@ export default function TrendCard({ monthly, theme, mine = null }: {
               areaStyle: { color: brandInk, opacity: 0.14 },
             },
             {
-              name: '처리완료',
+              name: '답변 완료',
               type: 'line',
               data: monthly.map((m) => m.completed_count),
               connectNulls: false,
@@ -100,7 +100,7 @@ export default function TrendCard({ monthly, theme, mine = null }: {
               itemStyle: { color: cyan },
             },
             ...(mine ? [{
-              name: '내 신고 접수',
+              name: '내 신고',
               type: 'line' as const,
               data: monthly.map((m) => mineByMonth.get(m.month)?.mine_report_count ?? null),
               connectNulls: false,
@@ -115,7 +115,7 @@ export default function TrendCard({ monthly, theme, mine = null }: {
         chart.setOption(option);
       })
       .catch(() => {
-        if (!dead) setChartError('차트 모듈을 불러오지 못했습니다. 표로 보기를 이용해 주세요.');
+        if (!dead) setChartError('그래프를 불러오지 못했습니다. 표로 보기를 눌러 주세요.');
       });
     const onResize = () => chart?.resize();
     window.addEventListener('resize', onResize);
@@ -135,15 +135,15 @@ export default function TrendCard({ monthly, theme, mine = null }: {
     : null;
 
   return (
-    <article className="cm-panel trend-card" aria-label="월별 신고 · 처리 흐름">
+    <article className="cm-panel trend-card" aria-label="월별 신고·답변 추이">
       <div className="panel-top">
         <div>
-          <h2>월별 신고 · 처리 흐름</h2>
-          <span className="subtitle">신고일 / 처리완료일 기준을 구분해 비교</span>
+          <h2>월별 신고·답변 추이</h2>
+          <span className="subtitle">신고는 신고한 달, 답변은 답변 받은 달에 셉니다</span>
         </div>
         <button
           className="icon-btn" type="button"
-          aria-label={table ? '차트로 보기' : '차트 값을 표로 보기'}
+          aria-label={table ? '그래프로 보기' : '표로 보기'}
           aria-pressed={table}
           onClick={() => setTable((v) => !v)}
         >
@@ -151,14 +151,14 @@ export default function TrendCard({ monthly, theme, mine = null }: {
         </button>
       </div>
       <div className="chart-legend">
-        <span><i className="dot" style={{ background: 'var(--brand-ink)' }} />신고 접수</span>
-        <span><i className="dot" style={{ background: 'var(--cyan)' }} />처리완료</span>
-        {mine && <span><i className="dash" aria-hidden="true" />내 신고 접수(점선)</span>}
-        {delta != null && last && <b>{fmtMonth(last.month)} 신고 <strong>{delta >= 0 ? '+' : ''}{delta.toFixed(1)}%</strong><small> 전월 대비(건수)</small></b>}
-        {last?.partial && <span className="cm-chip">진행 중 월 포함</span>}
+        <span><i className="dot" style={{ background: 'var(--brand-ink)' }} />신고</span>
+        <span><i className="dot" style={{ background: 'var(--cyan)' }} />답변 완료</span>
+        {mine && <span><i className="dash" aria-hidden="true" />내 신고(점선)</span>}
+        {delta != null && last && <b>{fmtMonth(last.month)} 신고 <strong>{delta >= 0 ? '+' : ''}{delta.toFixed(1)}%</strong><small> 전월 대비</small></b>}
+        {last?.partial && <span className="cm-chip">이번 달은 진행 중</span>}
       </div>
       {!table && monthly.length > 0 && !chartError && (
-        <div ref={hostRef} className="trend-host" role="img" aria-label={`월별 신고 ${monthly.map((m) => `${fmtMonth(m.month)} ${m.report_count ?? '결측'}건`).join(', ')}`} />
+        <div ref={hostRef} className="trend-host" role="img" aria-label={`월별 신고 ${monthly.map((m) => `${fmtMonth(m.month)} ${m.report_count ?? '자료 없음'}`).join(', ')}`} />
       )}
       {!table && chartError && (
         <div className="empty-state" style={{ margin: '8px 16px 0' }} role="alert">
@@ -167,13 +167,13 @@ export default function TrendCard({ monthly, theme, mine = null }: {
         </div>
       )}
       {!table && monthly.length === 0 && (
-        <div className="empty-state" style={{ margin: '8px 16px 0' }}>월별 집계가 없습니다. 필터를 확인해 주세요.</div>
+        <div className="empty-state" style={{ margin: '8px 16px 0' }}>이 조건에는 월별 자료가 없습니다.</div>
       )}
       {table && (
         <div className="trend-table">
           <table>
-            <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>결측 월은 ‘—’로 표시하고 선을 연결하지 않습니다.</caption>
-            <thead><tr><th scope="col">월</th><th scope="col">신고 접수</th><th scope="col">처리완료</th><th scope="col">과태료</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 처리완료</th>}<th scope="col">데이터 범위</th></tr></thead>
+            <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>자료가 없는 달은 ‘—’로 표시합니다.</caption>
+            <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 완료</th><th scope="col">과태료</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
             <tbody>
               {monthly.map((m) => (
                 <tr key={m.month}>
@@ -183,14 +183,14 @@ export default function TrendCard({ monthly, theme, mine = null }: {
                   <td>{fmtInt(m.fine_count)}</td>
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_report_count ?? null)}</td>}
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_completed_count ?? null)}</td>}
-                  <td>{m.partial ? '진행 중' : m.coverage_note ?? '완료된 월'}</td>
+                  <td>{m.partial ? '진행 중' : m.coverage_note ?? ''}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-      <p className="chart-caption">진행 중인 월은 같은 경과기간과 비교합니다. 비율 변화는 %p, 건수 변화는 %로 구분합니다.</p>
+      <p className="chart-caption">이번 달은 아직 끝나지 않아 다른 달보다 적게 보일 수 있습니다.</p>
     </article>
   );
 }

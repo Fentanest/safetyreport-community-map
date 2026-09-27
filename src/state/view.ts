@@ -7,9 +7,9 @@
 export type ViewMode = 'both' | 'map' | 'stats';
 export type PointFilter = 'all' | 'mine' | 'shared' | 'interest';
 
-export const VIEW_LABEL: Record<ViewMode, string> = { both: '함께 보기', map: '지도 집중', stats: '통계 집중' };
+export const VIEW_LABEL: Record<ViewMode, string> = { both: '지도+통계', map: '지도 크게', stats: '통계 크게' };
 export const POINT_FILTER_LABEL: Record<PointFilter, string> = {
-  all: '전체 지점', mine: '내 신고 포함', shared: '함께 기록한 지점', interest: '관심 지역',
+  all: '전체', mine: '내 신고가 있는 곳', shared: '함께 신고한 곳', interest: '관심 지역',
 };
 
 export function viewFromSearch(search: string): ViewMode {

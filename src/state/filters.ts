@@ -31,7 +31,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 };
 
 export const REGION_OPTIONS: Array<{ code: string | null; label: string }> = [
-  { code: null, label: '대한민국 전국' },
+  { code: null, label: '전국' },
   { code: '11', label: '서울특별시' },
   { code: '26', label: '부산광역시' },
   { code: '50', label: '제주특별자치도' },
@@ -39,7 +39,7 @@ export const REGION_OPTIONS: Array<{ code: string | null; label: string }> = [
 
 export function regionLabel(code: string | null): string {
   // Stored ingest codes are already readable ('서울 중구'); legacy numeric codes keep their names.
-  return REGION_OPTIONS.find((r) => r.code === code)?.label ?? (code ? code : '대한민국 전국');
+  return REGION_OPTIONS.find((r) => r.code === code)?.label ?? (code ? code : '전국');
 }
 
 /** Region choices come from the data actually in the source (no invented catalog), plus the current value. */
@@ -47,7 +47,7 @@ export function regionOptions(regions: ReadonlyArray<{ region_code: string | nul
   const codes = new Set<string>();
   for (const row of regions ?? []) if (row.region_code) codes.add(row.region_code);
   if (current) codes.add(current);
-  return [{ code: null, label: '대한민국 전국' },
+  return [{ code: null, label: '전국' },
     ...[...codes].sort((a, b) => a.localeCompare(b, 'ko')).map(code => ({ code, label: regionLabel(code) }))];
 }
 

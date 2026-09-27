@@ -1,7 +1,7 @@
 import Icon, { type IconName } from './icons';
 
 const ITEMS: Array<{ id: string; label: string; icon: IconName; target: string }> = [
-  { id: 'mapsection', label: '상황판', icon: 'map', target: 'mapsection' },
+  { id: 'mapsection', label: '지도', icon: 'map', target: 'mapsection' },
   { id: 'regions', label: '지역', icon: 'pin', target: 'mapsection' },
   { id: 'entities', label: '기관', icon: 'building', target: 'entities' },
   { id: 'analytics', label: '추이', icon: 'chart', target: 'analytics' },

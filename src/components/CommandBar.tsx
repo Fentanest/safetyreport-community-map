@@ -30,13 +30,13 @@ export default function CommandBar(p: Props) {
   const [open, setOpen] = useState(false);
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   return (
-    <section className="cm-panel command" aria-label="분석 조건">
+    <section className="cm-panel command" aria-label="조건">
       <button
         className="control"
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        title="기간을 선택합니다. 적용을 눌러야 반영됩니다."
+        title="기간을 고른 뒤 ‘적용’을 누르세요"
       >
         <span aria-hidden="true"><Icon name="calendar" /></span>
         <span>{fmtDate(p.draft.start)} — {fmtDate(p.draft.end)}</span>
@@ -55,7 +55,7 @@ export default function CommandBar(p: Props) {
           </button>
         ))}
       </div>
-      <span className="cm-chip" title="현재 적용된 공간 범위">
+      <span className="cm-chip" title="지금 보고 있는 지역">
         <Icon name="pin" size={14} />
         <span>{p.appliedLabel}</span>
       </span>
@@ -65,16 +65,16 @@ export default function CommandBar(p: Props) {
           <Icon name="filter" />
           <span>상세 필터{p.filterCount > 0 ? ` ${p.filterCount}` : ''}</span>
         </button>
-        <button className="icon-btn" type="button" onClick={p.onReset} aria-label="조건 초기화" title="조건 초기화">
+        <button className="icon-btn" type="button" onClick={p.onReset} aria-label="처음 상태로" title="처음 상태로">
           <Icon name="reset" />
         </button>
-        <button className="icon-btn" type="button" onClick={p.onShare} aria-label="조건 공유" title="조건 공유">
+        <button className="icon-btn" type="button" onClick={p.onShare} aria-label="링크 복사" title="지금 보는 화면의 링크 복사">
           <Icon name="share" />
         </button>
       </div>
       {open && (
         <div className="date-pop" role="group" aria-label="기간 선택">
-          <div className="preset-row" role="group" aria-label="기간 프리셋">
+          <div className="preset-row" role="group" aria-label="빠른 기간 선택">
             {PRESETS.map((pr) => (
               <button
                 key={pr.id}
@@ -117,8 +117,8 @@ export default function CommandBar(p: Props) {
           {!isValidDate(p.draft.start) || !isValidDate(p.draft.end) ? null : null}
           {p.dateError && <span className="field-error" role="alert">{p.dateError}</span>}
           <span className="basis-note">
-            신고 지표는 신고일, 처리·처분 지표는 처리완료일 기준입니다. 적용을 누르기 전에는 기존 화면이 바뀌지 않습니다.
-            적용 범위: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]}
+            신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. ‘적용’을 눌러야 화면이 바뀝니다.
+            선택: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]}
           </span>
         </div>
       )}

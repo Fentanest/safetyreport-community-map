@@ -21,28 +21,28 @@ export default function ManagerCompare({ personal, onPick }: Props) {
     <section className="cm-panel manager-compare" aria-label="담당자·기관 비교">
       <div className="panel-top">
         <div>
-          <h2>내가 만난 담당자 · 기관</h2>
-          <span className="subtitle">처리완료일 기준 · 같은 담당자의 전체 결과와 내 결과 · 관측값 비교(평가 아님)</span>
+          <h2>내 신고를 처리한 담당자·기관</h2>
+          <span className="subtitle">같은 담당자의 전체 결과와 내 결과를 나란히 봅니다. 평가가 아닙니다.</span>
         </div>
-        <div className="mini-segments" role="group" aria-label="비교 대상">
+        <div className="mini-segments" role="group" aria-label="담당자 또는 기관">
           <button type="button" className={tab === 'manager' ? 'selected' : ''} aria-pressed={tab === 'manager'} onClick={() => { setTab('manager'); setExpanded(false); }}>담당자</button>
           <button type="button" className={tab === 'agency' ? 'selected' : ''} aria-pressed={tab === 'agency'} onClick={() => { setTab('agency'); setExpanded(false); }}>기관</button>
         </div>
       </div>
       {!data ? (
-        <p className="empty-state">{personal.status === 'loading' || personal.status === 'waiting' ? '불러오는 중…' : '내 데이터 함께 보기를 켜고 로그인하면 표시됩니다.'}</p>
+        <p className="empty-state">{personal.status === 'loading' || personal.status === 'waiting' ? '불러오는 중…' : '로그인하고 ‘내 신고와 비교’를 켜면 보입니다.'}</p>
       ) : rows.length === 0 ? (
-        <p className="empty-state">이 범위에 처리결과를 받은 내 신고가 없습니다.</p>
+        <p className="empty-state">이 조건에서 답변을 받은 내 신고가 없습니다.</p>
       ) : (
         <div className="table-scroll">
           <table className="entity-table compare-entities">
             <thead>
               <tr>
                 <th scope="col">{tab === 'manager' ? '담당자 · 소속기관' : '처리기관'}</th>
-                <th scope="col" className="num">전체 완료</th>
-                <th scope="col" className="num">전체 수용·일부</th>
-                <th scope="col" className="num mine-col">내 완료</th>
-                <th scope="col" className="num mine-col">내 수용·일부</th>
+                <th scope="col" className="num">전체 답변</th>
+                <th scope="col" className="num">전체 수용률</th>
+                <th scope="col" className="num mine-col">내 답변</th>
+                <th scope="col" className="num mine-col">내 수용률</th>
                 <th scope="col" className="num">차이</th>
               </tr>
             </thead>
@@ -50,15 +50,15 @@ export default function ManagerCompare({ personal, onPick }: Props) {
               {rows.map(r => (
                 <tr key={r.key}>
                   <td>
-                    <button type="button" className="mini-btn" title="이 조건으로 지도·표·차트 조회"
+                    <button type="button" className="mini-btn" title="이 담당자·기관만 보기"
                       disabled={!r.agency_key || (r.kind === 'manager' && !r.manager_key)} onClick={() => onPick(r)}>
-                      <span className="table-name">{r.kind === 'manager' ? (r.manager_name ?? '성명 미상') : r.agency_name}</span>
+                      <span className="table-name">{r.kind === 'manager' ? (r.manager_name ?? '이름 없음') : r.agency_name}</span>
                       {r.kind === 'manager' && <small>{r.agency_name}</small>}
                     </button>
                   </td>
                   <td className="num">{fmtInt(r.all.completed_count)}</td>
                   <td className="num">{fmtPercent(r.all.accept_rate)}<small>{fmtInt(r.all.accepted_partial)} / {fmtInt(r.all.result_known)}</small></td>
-                  <td className="num mine-col">{fmtInt(r.mine.completed_count)}{r.mine.result_known === 1 && <span className="sample-one">표본 1건</span>}</td>
+                  <td className="num mine-col">{fmtInt(r.mine.completed_count)}{r.mine.result_known === 1 && <span className="sample-one">1건</span>}</td>
                   <td className="num mine-col">{fmtPercent(r.mine.accept_rate)}<small>{fmtInt(r.mine.accepted_partial)} / {fmtInt(r.mine.result_known)}</small></td>
                   <td className="num">{fmtPp(r.accept_rate_pp)}</td>
                 </tr>

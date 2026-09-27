@@ -54,12 +54,12 @@ async function readSnapshot(scope: Scope, version: string, signal?: AbortSignal)
 
 async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
-  if (!base) throw new PublicApiError('공개 통계 API 주소가 설정되지 않았습니다.');
+  if (!base) throw new PublicApiError('통계 서버에 연결할 수 없습니다.');
   const url = `${base}/public-analytics/${path}${params ? `?${params}` : ''}`;
   const res = await fetch(url, { signal, credentials: 'omit', headers: { Accept: 'application/json' } });
   if (!res.ok) {
     const retry = Number(res.headers.get('retry-after'));
-    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : '통계 조회에 실패했습니다.',
+    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : '통계를 불러오지 못했습니다.',
       res.status, Number.isFinite(retry) && retry > 0 ? retry : null);
   }
   return res.json();
@@ -100,10 +100,10 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
   if (query.dir !== undefined) extra.dir = query.dir;
   const parsed = entitiesResponseSchema.parse(await read('entities', scopeParams(scope, version, extra), signal));
   if (version !== undefined && parsed.dataset_version !== version) {
-    throw new PublicApiError('데이터 버전 또는 조회 범위가 바뀌었습니다. 다시 조회해 주세요.', 409);
+    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
   }
   if (!sameScope(parsed.scope, scope)) {
-    throw new PublicApiError('데이터 버전 또는 조회 범위가 바뀌었습니다. 다시 조회해 주세요.', 409);
+    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
   }
   return {
     datasetVersion: parsed.dataset_version, scope: parsed.scope, items: parsed.items,
@@ -117,7 +117,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     const state = new URLSearchParams(window.location.search).get('fixture');
     if (state === 'offline') throw new PublicApiError('네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
     if (state === 'rate') throw new PublicApiError('요청이 많아 잠시 후 다시 시도해 주세요.', 429, 60);
-    if (state === 'stale') throw new PublicApiError('데이터 버전이 변경됐습니다. 다시 조회해 주세요.', 409);
+    if (state === 'stale') throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
     if (state === 'one' || state === 'empty') {
       const { demoDashboard } = await import('./demo');
       return demoDashboard(scope, state);
@@ -127,14 +127,14 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
   }
   const meta = metaSchema.parse(await read('meta', null, signal));
   if (meta.capabilities.daily_report_dates?.status !== 'supported') {
-    throw new PublicApiError('임의 기간의 공개 집계가 아직 준비되지 않았습니다.', 503);
+    throw new PublicApiError('통계가 아직 준비되지 않았습니다. 잠시 후 다시 확인해 주세요.', 503);
   }
   const q = scopeParams(scope, meta.dataset_version);
   const result = await readSnapshot(scope, meta.dataset_version, signal) ??
     dashboardResponseSchema.parse(await read('dashboard', q, signal));
   if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
       !sameScope(result.scope, scope)) {
-    throw new PublicApiError('데이터 버전 또는 조회 범위가 바뀌었습니다. 다시 조회해 주세요.', 409);
+    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
   }
   return {
     meta: { ...meta, location_missing: result.location_missing ?? undefined },

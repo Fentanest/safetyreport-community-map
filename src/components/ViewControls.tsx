@@ -18,7 +18,7 @@ export default function ViewControls(p: Props) {
   return (
     <div className="view-controls">
       <span className="compare-wrap">
-        <label className={`compare-toggle${p.compareDisabledReason ? ' disabled' : ''}`} title={p.compareDisabledReason ?? '같은 조건의 내 신고를 나란히 표시합니다.'}>
+        <label className={`compare-toggle${p.compareDisabledReason ? ' disabled' : ''}`} title={p.compareDisabledReason ?? '같은 조건으로 내 신고를 함께 보여 드립니다'}>
           <input
             type="checkbox" role="switch" checked={p.compareOn && !p.compareDisabledReason}
             aria-checked={p.compareOn && !p.compareDisabledReason}
@@ -26,8 +26,8 @@ export default function ViewControls(p: Props) {
             onChange={(e) => p.onCompare(e.target.checked)}
           />
           <span className="switch" aria-hidden="true" />
-          <span>내 데이터 함께 보기</span>
-          {p.briefingHidden && <small className="cm-muted">브리핑 중 숨김</small>}
+          <span>내 신고와 비교</span>
+          {p.briefingHidden && <small className="cm-muted">브리핑 중에는 숨김</small>}
         </label>
         {p.compareDisabledReason && (
           <small className="compare-disabled-note" role="note">{p.compareDisabledReason}</small>
