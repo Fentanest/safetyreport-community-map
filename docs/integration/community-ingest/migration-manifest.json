@@ -107,6 +107,16 @@
     "202609280100",
     "202609280200"
    ]
+  },
+  {
+   "version": "202609280400",
+   "repo": "auth",
+   "path": "supabase/migrations/202609280400_policy_2026_09_28_1_text.sql",
+   "sha256": "f9c9c8589bf67ff7b85bb112db92bb25005bfdb99f12ac27fb67f9766b4ca178",
+   "depends_on": [
+    "202609280200",
+    "202609280300"
+   ]
   }
  ],
  "functions": [
