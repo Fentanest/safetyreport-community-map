@@ -1,7 +1,15 @@
 /**
  * Kakao Maps Web SDK adapter (owned by Muse UI worktree).
  * - SDK single-load with timeout; no invented classes (no fake Heatmap/Dark layer).
- * - Markers only; low-zoom points are labelled as aggregated display.
+ * - Client-side grid clustering at far zoom: nearby markers collapse into one
+ *   bubble whose number is the SUM of the members' display counts (report or
+ *   completion counts for the active metric), never the marker node count.
+ *   Zooming in splits clusters back into exact-coordinate markers.
+ *   Why not kakao.maps.MarkerClusterer: its documented `texts`/`calculator`
+ *   callbacks receive only the member-node count, so a summed-count bubble is
+ *   impossible with it. Clustering here uses only documented SDK primitives
+ *   (Marker/MarkerImage/LatLng/LatLngBounds/event), exact source coordinates
+ *   are never moved, and a cluster centroid is display-only.
  * - Attribution/logo must never be covered by floating panels (CSS keeps corners clear).
  * - Without VITE_KAKAO_MAP_JS_KEY the caller renders the failure card + point list.
  * - Boundary polygons (docs/region-boundaries.md) sit under the markers; they are display only.
@@ -20,6 +28,9 @@ export interface KakaoPointInput {
   lat: number;
   lng: number;
   label: string;
+  /** number drawn on the bubble: the display count for the active metric
+   *  (report_count in the report metric, completed_count in completion metrics).
+   *  Inputs with count <= 0 are never drawn (no 0-circles). */
   count: number;
   selected: boolean;
   metricValue: number | null;
@@ -27,6 +38,62 @@ export interface KakaoPointInput {
   mine?: boolean;
   shared?: boolean;
   interest?: boolean;
+}
+
+/**
+ * Client-side grid clustering (pure; unit-tested without the SDK).
+ * - `level` is the Kakao map level (1 = closest, 14 = farthest).
+ * - Far zoom (level >= CLUSTER_LEVEL) groups points that fall in the same
+ *   lat/lng cell; zooming in (level < CLUSTER_LEVEL) always returns singles
+ *   at their exact coordinates.
+ * - A group only becomes a cluster with >= MIN_CLUSTER_SIZE members;
+ *   lone points stay exact markers at every zoom.
+ * - `count` of a cluster is the SUM of member display counts, never the node
+ *   count. Members with count <= 0 are dropped (no 0-circles).
+ * - Cluster lat/lng is the member mean and is display-only; source
+ *   coordinates in `members` are untouched.
+ */
+export const CLUSTER_LEVEL = 8;
+/** grid cell in degrees at the nationwide level 13 (~60px on a 640px+ map). Halves per zoom-in level. */
+export const CLUSTER_CELL_DEG_AT_13 = 0.35;
+export const MIN_CLUSTER_SIZE = 2;
+
+export function clusterCellDeg(level: number): number {
+  return CLUSTER_CELL_DEG_AT_13 * 2 ** (level - 13);
+}
+
+export type ClusterGroup =
+  | { kind: 'single'; point: KakaoPointInput }
+  | { kind: 'cluster'; members: KakaoPointInput[]; lat: number; lng: number; count: number };
+
+export function clusterPoints(points: readonly KakaoPointInput[], level: number): ClusterGroup[] {
+  const live = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.count > 0);
+  if (level < CLUSTER_LEVEL) return live.map((point) => ({ kind: 'single', point }));
+  const cell = clusterCellDeg(level);
+  const cells = new Map<string, KakaoPointInput[]>();
+  for (const p of live) {
+    const key = `${Math.floor(p.lat / cell)}:${Math.floor(p.lng / cell)}`;
+    const list = cells.get(key);
+    if (list) list.push(p);
+    else cells.set(key, [p]);
+  }
+  const out: ClusterGroup[] = [];
+  for (const members of cells.values()) {
+    if (members.length < MIN_CLUSTER_SIZE) {
+      for (const point of members) out.push({ kind: 'single', point });
+      continue;
+    }
+    let lat = 0;
+    let lng = 0;
+    let count = 0;
+    for (const m of members) {
+      lat += m.lat;
+      lng += m.lng;
+      count += m.count;
+    }
+    out.push({ kind: 'cluster', members, lat: lat / members.length, lng: lng / members.length, count });
+  }
+  return out;
 }
 
 export interface KakaoHandle {
@@ -162,6 +229,20 @@ function markerDataUrl(count: number, selected: boolean, ratio: number | null, c
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
+/** Cluster bubble: larger than a point marker with a thick ring so aggregates never read as exact points. */
+function clusterDataUrl(sum: number, hasSelected: boolean, ratio: number | null): string {
+  const size = 52;
+  const clamped = ratio == null ? 0.55 : Math.max(0.2, Math.min(1, ratio));
+  const r = Math.round(13 + 109 * (1 - clamped));
+  const g = Math.round(110 + 70 * clamped);
+  const text = sum > 9999 ? '9999+' : String(sum);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
+    + `<circle cx="26" cy="26" r="22" fill="rgba(${r},${g},253,0.95)" stroke="#F8FAFC" stroke-width="${hasSelected ? 4 : 3}"/>`
+    + `<circle cx="26" cy="26" r="17" fill="none" stroke="rgba(11,18,32,0.35)" stroke-width="1" stroke-dasharray="3 2"/>`
+    + `<text x="26" y="31" text-anchor="middle" font-size="13" font-weight="800" fill="#0B1220" font-family="system-ui">${text}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 export async function createKakaoMap(
   el: HTMLElement,
   opts: {
@@ -184,9 +265,110 @@ export async function createKakaoMap(
   let programmatic = false;
   let hovered: string | null = null;
   let boundaryStyle: BoundaryStyle = { selected: null, weight: new Map() };
+  let lastInputs: KakaoPointInput[] = [];
+  let lastLevel = 13;
+
+  const clearMarkers = () => {
+    for (const m of markers) {
+      try {
+        m.setMap(null);
+      } catch {
+        /* ignore */
+      }
+    }
+    markers = [];
+  };
+
+  /** Draw singles at exact coordinates and far-zoom clusters with summed counts. */
+  const render = () => {
+    if (disposed) return;
+    clearMarkers();
+    let level = lastLevel;
+    try {
+      level = map.getLevel();
+      lastLevel = level;
+    } catch {
+      /* keep last known level */
+    }
+    const groups = clusterPoints(lastInputs, level);
+    const max = Math.max(1, ...groups.map((g) => (g.kind === 'single' ? g.point.count : g.count)));
+    const colors = markColors();
+    for (const g of groups) {
+      if (g.kind === 'single') {
+        const p = g.point;
+        const pos = new kakao.LatLng(p.lat, p.lng);
+        const img = new kakao.MarkerImage(
+          markerDataUrl(p.count, p.selected, p.metricValue ?? p.count / max, colors, p),
+          new kakao.Size(40, 40),
+        );
+        const marker = new kakao.Marker({ position: pos, image: img, title: p.label });
+        kakao.event.addListener(marker, 'click', () => opts.onSelect(p.key));
+        marker.setMap(map);
+        markers.push(marker);
+        continue;
+      }
+      // Cluster bubble: number is the SUM of member display counts (not the node count).
+      // Position is the member mean, display-only; member coordinates stay exact.
+      const values = g.members.map((m) => m.metricValue).filter((v): v is number => v != null);
+      const ratio = values.length ? values.reduce((a, b) => a + b, 0) / values.length / max : g.count / max;
+      const pos = new kakao.LatLng(g.lat, g.lng);
+      const img = new kakao.MarkerImage(
+        clusterDataUrl(g.count, g.members.some((m) => m.selected), ratio),
+        new kakao.Size(52, 52),
+      );
+      const marker = new kakao.Marker({
+        position: pos,
+        image: img,
+        title: `가까운 ${g.members.length}곳 묶음 · 합계 ${g.count.toLocaleString('ko-KR')}건 (눌러서 확대)`,
+      });
+      kakao.event.addListener(marker, 'click', () => zoomToMembers(g.members, g.lat, g.lng));
+      marker.setMap(map);
+      markers.push(marker);
+    }
+  };
+
+  /** User-initiated zoom to a cluster's members (a real user move, so no programmatic flag). */
+  const zoomToMembers = (members: KakaoPointInput[], lat: number, lng: number) => {
+    if (disposed) return;
+    try {
+      let w = Infinity;
+      let s = Infinity;
+      let e = -Infinity;
+      let n = -Infinity;
+      for (const m of members) {
+        if (m.lng < w) w = m.lng;
+        if (m.lat < s) s = m.lat;
+        if (m.lng > e) e = m.lng;
+        if (m.lat > n) n = m.lat;
+      }
+      if (!Number.isFinite(w) || (w === e && s === n)) {
+        map.setCenter(new kakao.LatLng(lat, lng));
+        map.setLevel(Math.max(1, map.getLevel() - 2));
+        return;
+      }
+      const pad = 0.002;
+      map.setBounds(
+        new kakao.LatLngBounds(new kakao.LatLng(s - pad, w - pad), new kakao.LatLng(n + pad, e + pad)),
+        80, 80, 80, 80,
+      );
+    } catch {
+      /* map move unavailable — ignore */
+    }
+  };
 
   const onIdle = () => {
-    if (disposed || !opts.onIdle) return;
+    if (disposed) return;
+    // Re-cluster when the zoom level changed (grid cells depend on the level only).
+    try {
+      const level = map.getLevel();
+      if (level !== lastLevel) {
+        lastLevel = level;
+        render();
+      }
+    } catch {
+      /* level unavailable — ignore */
+    }
+    if (!opts.onIdle) return;
     const moved = programmatic;
     programmatic = false;
     try {
@@ -229,21 +411,8 @@ export async function createKakaoMap(
   return {
     setPoints(points: KakaoPointInput[]) {
       if (disposed) return;
-      for (const m of markers) m.setMap(null);
-      markers = [];
-      const max = Math.max(1, ...points.map((p) => p.count));
-      const colors = markColors();
-      for (const p of points) {
-        const pos = new kakao.LatLng(p.lat, p.lng);
-        const img = new kakao.MarkerImage(
-          markerDataUrl(p.count, p.selected, p.metricValue ?? p.count / max, colors, p),
-          new kakao.Size(40, 40),
-        );
-        const marker = new kakao.Marker({ position: pos, image: img, title: p.label });
-        kakao.event.addListener(marker, 'click', () => opts.onSelect(p.key));
-        marker.setMap(map);
-        markers.push(marker);
-      }
+      lastInputs = points;
+      render();
     },
     setBoundaries(features: BoundaryFeature[] | null, style: BoundaryStyle) {
       if (disposed) return;
@@ -308,14 +477,8 @@ export async function createKakaoMap(
     destroy() {
       disposed = true;
       kakao.event.removeListener(map, 'idle', onIdle);
-      for (const m of markers) {
-        try {
-          m.setMap(null);
-        } catch {
-          /* ignore */
-        }
-      }
-      markers = [];
+      clearMarkers();
+      lastInputs = [];
       clearShapes();
     },
   };

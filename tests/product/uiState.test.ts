@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { demoDashboard } from '../../src/data/demo';
 import { DEMO_SCOPE } from '../../src/domain/public';
 import { fixtureFromSearch, scopeFromSearch, scopeToSearch, validateRange } from '../../src/state/filters';
+import { parseScope, QueryError } from '../../server/publicHandler';
 
 describe('public UI states', () => {
   it('keeps a supported zero-result scope distinct from unavailable data', () => {
@@ -19,9 +20,16 @@ describe('public UI states', () => {
   });
 
   it('preserves an applied public map range through a share URL', () => {
-    const scope = { ...DEMO_SCOPE, bbox: [126.1, 36.1, 127.2, 37.2] as [number, number, number, number] };
+    // The actual nationwide Kakao viewport extends east of the data coordinate envelope.
+    const scope = { ...DEMO_SCOPE,
+      bbox: [123.77469675047854, 33.966923702070346, 135.05661803813996, 38.29007070538058] as [number, number, number, number] };
     expect(scopeFromSearch(scopeToSearch(scope), DEMO_SCOPE)).toEqual(scope);
-    expect(scopeFromSearch('?bbox=1,2,3,4', DEMO_SCOPE).bbox).toBeNull();
+    expect(parseScope(new URLSearchParams(scopeToSearch(scope)), { data_min: null, data_max: null }).bbox).toEqual(scope.bbox);
+    for (const bad of ['181,2,182,4', '1,2,3,91', '1,2,3,', '3,2,1,4', '0x1,2,3,4']) {
+      expect(scopeFromSearch(`?bbox=${bad}`, DEMO_SCOPE).bbox).toBeNull();
+      expect(() => parseScope(new URLSearchParams({ start: scope.start, end: scope.end, bbox: bad }),
+        { data_min: null, data_max: null })).toThrow(QueryError);
+    }
   });
 
   it('rejects calendar-invalid dates rather than accepting normalized dates', () => {

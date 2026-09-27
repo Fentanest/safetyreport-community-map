@@ -1,0 +1,62 @@
+{
+  "browser": "154.0.8037.57",
+  "steps": [
+    {
+      "id": "1920-overview-load",
+      "ok": true,
+      "detail": "http://127.0.0.1:5173/"
+    },
+    {
+      "id": "1920-subtitle-cluster-note",
+      "ok": true,
+      "detail": "모든 신고 · 멀리서 보면 가까운 장소를 묶음으로 보여 줍니다 · 묶음 숫자는 건수 합계 · 위치 정보가 없는 7건은 통계에만 들어갑니다"
+    },
+    {
+      "id": "1920-fallback-mode-no-key",
+      "ok": true,
+      "detail": "no VITE_KAKAO_MAP_JS_KEY in worktree"
+    },
+    {
+      "id": "1920-acceptance-labels",
+      "ok": true,
+      "detail": "서울특별시 중구 예시로 2길 | 완료 24건 | 경기도 수원시 예시로 1길 | 완료 20건 | 서울특별시 중구 예시로 3길 | 완료 21건 | 서울특별시 강남구 예시로 2길 | 완료 18건 | 서울특별시 중구 예시로 1길 | 완료 18건 | 서울특별시 강남구 예시로 1길 | 완료 17건 | 경기도 수원시 예시로 2길 | 완료 17건"
+    },
+    {
+      "id": "backbtn-sgg-label",
+      "ok": true,
+      "detail": "← 서울특별시 / 한 단계 위 지역으로: 서울특별시"
+    },
+    {
+      "id": "backbtn-sgg-click-up",
+      "ok": true,
+      "detail": "http://127.0.0.1:5173/?start=2025-09-25&end=2026-09-24&category=all&region_code=11"
+    },
+    {
+      "id": "backbtn-sido-label",
+      "ok": true,
+      "detail": "← 전국"
+    },
+    {
+      "id": "backbtn-keyboard",
+      "ok": true,
+      "detail": "http://127.0.0.1:5173/?start=2025-09-25&end=2026-09-24&category=all"
+    },
+    {
+      "id": "390-no-page-hscroll",
+      "ok": true,
+      "detail": "overflow=0px"
+    },
+    {
+      "id": "390-backbtn-tap-target",
+      "ok": true,
+      "detail": "height=44px"
+    },
+    {
+      "id": "390-fallback-usable",
+      "ok": true,
+      "detail": "errorCard=true listItems=6"
+    }
+  ],
+  "consoleErrors": [],
+  "failedRequests": []
+}

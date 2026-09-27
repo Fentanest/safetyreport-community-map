@@ -121,6 +121,32 @@ function metricValue(p: PublicPoint, m: MapMetric): number | null {
   return (p.fine_count / (p.completed_count ?? 1)) * 100;
 }
 
+/**
+ * Number drawn on a map bubble for the active metric. Report metric uses the
+ * report date count; every completion metric uses the completion-date count.
+ * API data and stats totals are untouched — this only decides what is drawn.
+ */
+export function displayCount(p: PublicPoint, m: MapMetric): number {
+  return m === 'reports' ? p.report_count : (p.completed_count ?? 0);
+}
+
+/** Points actually drawn: report metric hides completion-only (report 0) places;
+ *  completion metrics draw places with completed_count > 0. Never draws 0-circles. */
+export function visiblePoints(points: readonly PublicPoint[], m: MapMetric): PublicPoint[] {
+  return points.filter((p) => displayCount(p, m) > 0);
+}
+
+/** Basis-accurate bubble/list label: never call a completion count a 신고. */
+export function pointCountLabel(p: PublicPoint, m: MapMetric): string {
+  return m === 'reports' ? `신고 ${fmtInt(p.report_count)}건` : `완료 ${fmtInt(p.completed_count ?? 0)}건`;
+}
+
+export function pointTitle(p: PublicPoint, m: MapMetric): string {
+  const name = p.aggregate ? `${p.point_count}곳 묶음` : (p.address ?? '주소 없음');
+  // Report metric keeps the historical label shape; completion metrics name the basis.
+  return m === 'reports' ? `${name} 신고 ${fmtInt(p.report_count)}건` : `${name} · 완료 ${fmtInt(p.completed_count ?? 0)}건`;
+}
+
 export default function MapPanel(p: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<KakaoHandle | null>(null);
@@ -157,6 +183,13 @@ export default function MapPanel(p: Props) {
     },
   };
   const active = METRICS.find((m) => m.id === p.metric)!;
+  const shownPoints = useMemo(() => visiblePoints(p.points, p.metric), [p.points, p.metric]);
+  const hiddenPoints = p.points.length - shownPoints.length;
+  const hiddenNote = hiddenPoints > 0
+    ? (p.metric === 'reports'
+      ? `신고 0건인 ${fmtInt(hiddenPoints)}곳은 지도에 표시하지 않습니다(완료 지표에서 확인)`
+      : `완료 0건인 ${fmtInt(hiddenPoints)}곳은 지도에 표시하지 않습니다`)
+    : null;
 
   useEffect(() => {
     if (!kakaoKey() || !hostRef.current) return;
@@ -187,18 +220,18 @@ export default function MapPanel(p: Props) {
 
   useEffect(() => {
     handleRef.current?.setPoints(
-      p.points.map((pt) => ({
+      shownPoints.map((pt) => ({
         key: pt.key,
         lat: pt.lat,
         lng: pt.lng,
-        label: `${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} · 신고 ${pt.report_count}건`,
-        count: pt.report_count,
+        label: pointTitle(pt, p.metric),
+        count: displayCount(pt, p.metric),
         selected: pt.key === p.selectedKey,
         metricValue: metricValue(pt, p.metric),
         ...p.marks?.get(pt.key),
       })),
     );
-  }, [p.points, p.selectedKey, p.metric, sdkState, p.marks]);
+  }, [shownPoints, p.selectedKey, p.metric, sdkState, p.marks]);
 
   useEffect(() => {
     const onResize = () => handleRef.current?.relayout();
@@ -291,10 +324,10 @@ export default function MapPanel(p: Props) {
         handleRef.current = h;
         setSdkState('ready');
         handleRef.current.setPoints(
-          p.points.map((pt) => ({
+          visiblePoints(p.points, p.metric).map((pt) => ({
             key: pt.key, lat: pt.lat, lng: pt.lng,
-            label: `${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} · 신고 ${pt.report_count}건`,
-            count: pt.report_count, selected: pt.key === p.selectedKey, metricValue: metricValue(pt, p.metric),
+            label: pointTitle(pt, p.metric),
+            count: displayCount(pt, p.metric), selected: pt.key === p.selectedKey, metricValue: metricValue(pt, p.metric),
             ...p.marks?.get(pt.key),
           })),
         );
@@ -310,7 +343,7 @@ export default function MapPanel(p: Props) {
       <div className="panel-top">
         <div>
           <h2>신고 지도</h2>
-          <span className="subtitle">{p.categoryLabel} · 지도를 넓게 보면 가까운 장소를 묶어 보여 줍니다{p.locationMissing ? ` · 위치 정보가 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 들어갑니다` : ''}</span>
+          <span className="subtitle">{p.categoryLabel} · 멀리서 보면 가까운 장소를 묶음으로 보여 줍니다 · 묶음 숫자는 건수 합계{p.locationMissing ? ` · 위치 정보가 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 들어갑니다` : ''}</span>
         </div>
         <div className="mini-segments" role="group" aria-label="지도에 표시할 값">
           {METRICS.map((m) => (
@@ -361,20 +394,20 @@ export default function MapPanel(p: Props) {
                 </button>
               </span>
             </div>
-            <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다.</p>
+            <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다.{hiddenNote ? ` ${hiddenNote}.` : ''}</p>
             <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
-              {p.points.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
-              {p.points.map((pt) => (
+              {shownPoints.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
+              {shownPoints.map((pt) => (
                 <li key={pt.key}>
                   <button
                     type="button"
                     aria-pressed={pt.key === p.selectedKey}
-                    aria-label={`${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} 신고 ${pt.report_count}건${markLabel(p.marks?.get(pt.key))} 선택`}
+                    aria-label={`${pointTitle(pt, p.metric)}${markLabel(p.marks?.get(pt.key))} 선택`}
                     onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}
                   >
                     <b>{pt.aggregate ? `가까운 ${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')}</b>
                     <MarkBadges mark={p.marks?.get(pt.key)} />
-                    <small>{`신고 ${fmtInt(pt.report_count)}건`}</small>
+                    <small>{pointCountLabel(pt, p.metric)}</small>
                   </button>
                 </li>
               ))}
@@ -388,10 +421,20 @@ export default function MapPanel(p: Props) {
             <small>{activeCode === hover ? '누르면 한 단계 위 지역으로' : '누르면 이 지역만 보기'}</small>
           </span>
         )}
-        {sdkState !== 'error' && (
         <div className="map-top">
-          {sdkState !== 'ready' && <span className="map-status">장소 목록</span>}
-
+          <span className="map-top-left">
+            {sdkState !== 'ready' && <span className="map-status">장소 목록</span>}
+            {activeCode && p.onPickRegion && (
+              <button
+                className="map-back" type="button"
+                aria-label={parentOf(activeCode) ? `한 단계 위 지역으로: ${regionLabel(parentOf(activeCode))}` : '전국으로'}
+                title={parentOf(activeCode) ? `한 단계 위 지역으로: ${regionLabel(parentOf(activeCode))}` : '전국으로'}
+                onClick={() => p.onPickRegion!(parentOf(activeCode))}
+              >
+                ← {parentOf(activeCode) ? regionLabel(parentOf(activeCode)) : '전국'}
+              </button>
+            )}
+          </span>
           <button
             className="map-apply" type="button"
             disabled={!bbox}
@@ -401,7 +444,6 @@ export default function MapPanel(p: Props) {
             보이는 지역만 보기
           </button>
         </div>
-        )}
       {(p.filterAvailable?.mine || p.filterAvailable?.shared || p.filterAvailable?.interest) && (
         <p className="legend-marks" aria-label="지도 표시 안내">
           {p.filterAvailable.mine && (
@@ -453,16 +495,16 @@ export default function MapPanel(p: Props) {
       </div>
       {sdkState === 'ready' && (
         <details className="map-point-alternative">
-          <summary>장소 목록으로 보기 · {fmtInt(p.points.length)}곳</summary>
+          <summary>장소 목록으로 보기 · {fmtInt(shownPoints.length)}곳{hiddenNote ? ` · ${hiddenNote}` : ''}</summary>
           <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
-            {p.points.map((pt) => (
+            {shownPoints.map((pt) => (
               <li key={pt.key}>
                 <button type="button" aria-pressed={pt.key === p.selectedKey}
-                  aria-label={`${pt.aggregate ? `${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')} 신고 ${pt.report_count}건${markLabel(p.marks?.get(pt.key))} 선택`}
+                  aria-label={`${pointTitle(pt, p.metric)}${markLabel(p.marks?.get(pt.key))} 선택`}
                   onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}>
                   <b>{pt.aggregate ? `가까운 ${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')}</b>
                   <MarkBadges mark={p.marks?.get(pt.key)} />
-                  <small>{`신고 ${fmtInt(pt.report_count)}건`}</small>
+                  <small>{pointCountLabel(pt, p.metric)}</small>
                 </button>
               </li>
             ))}
