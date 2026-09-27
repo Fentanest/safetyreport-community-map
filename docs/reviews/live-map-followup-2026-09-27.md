@@ -53,4 +53,25 @@
 - `보이는 지역만 보기`는 기존 운영 Edge가 여전히 이전 bbox parser를 쓰므로 운영 end-to-end는
   새 Edge 배포 후 다시 검사해야 한다. 회귀 테스트에는 실제 운영 Kakao viewport 좌표를 사용했다.
 
-지도 수정 후보의 Git push, Edge 배포, Pages 배포는 별도 승인 전이며 운영에는 아직 반영되지 않았다.
+## 승인 후 운영 배포·재검증 · 2026-09-28
+
+사용자의 별도 승인 후 세 커밋을 [PR #13](https://github.com/Fentanest/safetyreport-community-map/pull/13)으로
+병합했다(main `4e897c4`). PR의 `validate`는 통과했다. 합성한 `public-analytics` 한 함수만
+운영 v6으로 배포했고 `verify_jwt=true`, 활성 상태를 확인했다. 비로그인 `meta`·`dashboard`는 401이다.
+[Pages 배포 run](https://github.com/Fentanest/safetyreport-community-map/actions/runs/36328094953)은
+병합 commit에서 빌드·검사·산출물 업로드·배포까지 성공했다. 운영 HTML의 JS/CSS 이름이 로컬 검증
+빌드와 일치했다.
+
+사용자가 다시 로그인한 운영 도메인의 실제 Kakao 지도에서 다음을 확인했다.
+
+| 동작 | 결과 |
+|---|---|
+| 전국 지도 로드 | dashboard 200, 가까운 지점 묶음 표시, 신고 0 원 없음, pageerror 0 |
+| 묶음 클릭 | 해당 지역 확대 후 더 작은 묶음·개별 지점으로 분리 |
+| `보이는 지역만 보기` | bbox가 URL에 반영되고 dashboard 200; 이전 400 오류 해소 |
+| 시군구→시도→전국 | 지도 위 복귀 버튼이 두 단계 모두 동작, URL 지역 조건도 갱신 |
+| 완료 지표 | 완료일 기준 지점 표시, 0 원 없음 |
+| 390px 운영 화면 | 가로 넘침 0, 복귀 버튼 44px, 지도 컨트롤이 겹치지 않음 |
+
+운영 화면 캡처에는 공유자 전용 통계가 있어 공개 저장소에는 넣지 않았다. 삼성 인터넷에서
+카카오 로그인 완료 후 지도 도메인으로 돌아오는지는 사용자의 실제 기기 재시험 답변을 기다린다.

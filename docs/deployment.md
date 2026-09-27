@@ -62,6 +62,11 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
 `https://safemap.worklazy.net/`이다. 기존 앱·인증 사이트 콜백을 유지한다. 이 주소가
 `localhost:3000`으로 남아 있으면 모바일 OAuth 완료 후 잘못된 주소로 돌아갈 수 있다.
 
+2026-09-28 지도 수정은 main `4e897c4`의 Pages 배포와 `public-analytics` v6으로 운영 적용했다.
+익명 401, 로그인된 dashboard와 화면 범위 요청 200, 지도 묶음·지역 복귀의 실제 브라우저 검증은
+`docs/reviews/live-map-followup-2026-09-27.md`에 기록했다. 삼성 인터넷의 OAuth 완료 복귀는
+실제 기기 재시험 대기 중이다.
+
 ## rollback
 새 build 실패면 배포하지 않음. 배포 후 문제가 생기면 직전 검증 artifact로 rollback(권한 승인 범위),
 다만 삭제 요청으로 폐기된 data version으로 되돌아가면 안 됨. 코드 rollback과 데이터 version은 분리 관리.
