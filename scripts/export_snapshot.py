@@ -111,6 +111,11 @@ def validate_dashboard(value: object, expected_scope: dict, version: str) -> dic
         raise ValueError('region budget exceeded')
     for region in regions:
         exact_keys(region, {'level', 'region_code', 'name', 'sido_code', 'report_count', 'completed_count', 'outcomes', 'fine_count'}, {'duration', 'fine_amount'})
+        # official 2026-07-01 codes only (docs/region-boundaries.md); unknown rows carry no code
+        code, level = region['region_code'], region['level']
+        if level not in ('sido', 'sgg', 'unknown') or (level == 'unknown') != (code is None) or \
+                (code is not None and not re.fullmatch(r'\d{2}' if level == 'sido' else r'\d{5}', str(code))):
+            raise ValueError('invalid region row')
         brief(region)
         exact_keys(region['outcomes'], outcome_keys)
     if len(top['vehicles']) > 5:
