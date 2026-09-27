@@ -122,7 +122,7 @@
    "version": "202609280600",
    "repo": "auth",
    "path": "supabase/migrations/202609280600_policy_consent_text.sql",
-   "sha256": "e49d73c4c911d148423176e7cb5c3b66e57a94b289665e47da469fbba7e4c11d",
+   "sha256": "eb6f584451f3ca7c83d6087e80ec1c99405bcdf541f6fb7ffc99216d7cb7ee68",
    "depends_on": [
     "202609280400",
     "202609260100"
