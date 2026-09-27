@@ -222,6 +222,8 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     sql('update private.analytics_state set ready = true, published_at = coalesce(published_at, now()) where singleton;');
     const warm = await ensureRealtimeReady();
     console.info(`[realtime] control delivery ready after ${warm} ms`);
+    // The contributor-only viewer (E, one shared report) is made while publication is on, before any test switches it off.
+    await viewer();
   }, 120_000);
 
   describe('security matrix (prompt §14)', () => {

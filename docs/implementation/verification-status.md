@@ -86,4 +86,4 @@ provider `opencode-go`, model `muse-spark-1.3-contributor`, variant `default`, �
 | 열람 조건: 카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상 | `server/viewerAuth.ts`, `publicHandler` PublicAccess, migration `202609280700`, `AccessGate` | 단위(handler 8·client 4), 로컬 스택(익명 401·동의 없음 403·업로드 없음 403·다른 Origin 403), 브라우저 E2E `access_gate_e2e.mjs` 10/10(`docs/integration/community-ingest/evidence/2026-09-27-access-gate/`) | 안 함(push·운영 적용 전) | NOT_RUN |
 | 정적 통계 snapshot 중단 | `publish-pages.yml`에서 export 제거, 산출물 `data/` 없음 검사, 클라이언트 snapshot 읽기 제거 | live 빌드 산출물에 `data/` 없음, dist 스캔 통과 | 안 함 | — |
 
-`upload_required`(동의했지만 올라간 신고 없음) 단계는 단위 테스트까지 확인했고, 로컬 스택 재실행은 다른 세션이 스택을 쓰는 중이라 이후에 한다.
+열람 조건을 "공유 신고 1건 이상"으로 좁힌 뒤(migration 번호 `202609280700`, auth `202609280600` 다음) 로컬 스택 28/28(동의했지만 업로드 없음 → 403 `upload_required` 포함), 브라우저 E2E 10/10 재확인.
