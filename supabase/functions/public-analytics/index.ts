@@ -4,8 +4,7 @@ import type { PrivateFact } from '../../../server/aggregate.ts';
 import type { Scope } from '../../../src/domain/public.ts';
 
 // The database client remains inside the Edge runtime; the service key never enters a VITE variable, response,
-// log, or Pages artifact. ANALYTICS_ACCESS decides who may read (user decision 2026-09-27): anything but 'public'
-// means contributor-only — a verified Kakao user with an active share consent (server/publicHandler.ts PublicAccess).
+// log, or Pages artifact. Every read requires a verified Kakao contributor; no runtime public-mode switch.
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const secretMap = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}') as Record<string, string>;
 const serverKey = secretMap.default || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -20,10 +19,8 @@ async function rpc(name: string, args?: Record<string, unknown>): Promise<unknow
   return data;
 }
 
-async function rateBucket(request: Request, viewerId?: string): Promise<string> {
-  // Salted one-minute rate bucket: the verified viewer when known, otherwise the gateway-supplied address.
-  const address = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
-  const encoded = new TextEncoder().encode(viewerId ? `${rateSalt}|user|${viewerId}` : `${rateSalt}|${address.trim()}`);
+async function rateBucket(viewerId: string): Promise<string> {
+  const encoded = new TextEncoder().encode(`${rateSalt}|user|${viewerId}`);
   const digest = await crypto.subtle.digest('SHA-256', encoded);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -45,12 +42,11 @@ const handle = createPublicHandler({
     if (!Array.isArray(value) || value.length > 100000) throw new Error('analytics source budget exceeded');
     return value as PrivateFact[];
   },
-  async allowRequest(request: Request, viewerId?: string): Promise<boolean> {
-    const value = await rpc('internal_analytics_v2_rate_limit', { p_bucket: await rateBucket(request, viewerId) });
+  async allowRequest(_request: Request, viewerId: string): Promise<boolean> {
+    const value = await rpc('internal_analytics_v2_rate_limit', { p_bucket: await rateBucket(viewerId) });
     return value === true;
   },
 }, {
-  mode: Deno.env.get('ANALYTICS_ACCESS') === 'public' ? 'public' : 'contributors',
   allowedOrigins: (Deno.env.get('ANALYTICS_ALLOWED_ORIGINS') || Deno.env.get('MY_ANALYTICS_ALLOWED_ORIGINS') ||
     'https://safemap.worklazy.net').split(',').map(s => s.trim()).filter(Boolean),
   jwtIssuer: Deno.env.get('AUTH_JWT_ISSUER') || null,

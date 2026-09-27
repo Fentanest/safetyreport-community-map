@@ -18,8 +18,8 @@ export interface AnalyticsState {
 export interface AnalyticsRepository {
   getState(): Promise<AnalyticsState>;
   getFacts(scope: Scope): Promise<PrivateFact[]>;
-  /** rate limit: per verified viewer when one is known, otherwise per client address */
-  allowRequest(request: Request, viewerId?: string): Promise<boolean>;
+  /** Rate limit the verified viewer. */
+  allowRequest(request: Request, viewerId: string): Promise<boolean>;
 }
 
 /** Viewer eligibility from the database (internal_analytics_viewer), for the verified user and session only. */
@@ -32,13 +32,8 @@ export interface ViewerCheck {
   has_public_facts: boolean;
 }
 
-/**
- * Who may read the map (user decision 2026-09-27). 'contributors': only signed-in Kakao users with an active share
- * consent AND at least one shared report on the map, until enough people join; every route including meta is closed to anyone else, and responses become
- * private per viewer. 'public': the original anonymous API. Omitting the access config means 'public'.
- */
+/** Every route, including meta, requires a verified Kakao contributor with a shared report. */
 export interface PublicAccess extends ViewerAuthDeps {
-  mode: 'public' | 'contributors';
   allowedOrigins: string[];
   viewer(uid: string, session: string): Promise<ViewerCheck>;
 }
@@ -47,11 +42,6 @@ export class QueryError extends Error {
   constructor(readonly code: string, readonly status: number) { super(code); }
 }
 
-const publicHeaders = {
-  'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Accept', 'Content-Type': 'application/json; charset=utf-8',
-  'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
-};
 type Headers = Record<string, string>;
 const allowed = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox',
@@ -63,7 +53,7 @@ const key = /^[\p{L}\p{N}._:-]{1,160}$/u;
 // client so summary and full-list ordering agree (nulls sort as -Infinity, as in the table).
 const entitySorts = new Set(['completed', 'accepted', 'partial', 'rejected', 'fine', 'acceptRate']);
 
-function json(body: unknown, status = 200, headers: Headers = publicHeaders): Response {
+function json(body: unknown, status: number, headers: Headers): Response {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
@@ -76,7 +66,7 @@ const ACCESS_MESSAGES: Record<string, string> = {
   origin_forbidden: '허용되지 않은 요청입니다.',
 };
 
-function errorWith(code: string, status: number, headers: Headers = publicHeaders): Response {
+function errorWith(code: string, status: number, headers: Headers): Response {
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
     code === 'AGGREGATE_NOT_READY' ? '공개 집계가 아직 준비되지 않았습니다.' :
       code === 'DATASET_CHANGED' ? '데이터 버전이 변경됐습니다. 다시 조회해 주세요.' :
@@ -174,23 +164,21 @@ function routeName(pathname: string): string {
   return index < 0 ? '' : pathname.slice(index + marker.length).replace(/\/+$/, '');
 }
 
-export function createPublicHandler(repo: AnalyticsRepository, access?: PublicAccess) {
-  const gated = access?.mode === 'contributors';
+export function createPublicHandler(repo: AnalyticsRepository, access: PublicAccess) {
   return async (request: Request): Promise<Response> => {
     const origin = request.headers.get('origin');
-    const originAllowed = !gated || (origin !== null && access!.allowedOrigins.includes(origin));
-    // Contributor-only responses depend on the viewer: private, never shared-cacheable, exact origin only.
-    const headers: Headers = gated ? {
+    const originAllowed = origin !== null && access.allowedOrigins.includes(origin);
+    const headers: Headers = {
       'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store, max-age=0',
       Pragma: 'no-cache', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin, Authorization',
       ...(originAllowed && origin ? { 'Access-Control-Allow-Origin': origin } : {}),
-    } : publicHeaders;
+    };
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
     const errorResponse = (code: string, status: number) => errorWith(code, status, headers);
-    if (gated && origin !== null && !originAllowed) return errorResponse('origin_forbidden', 403);
+    if (origin !== null && !originAllowed) return errorResponse('origin_forbidden', 403);
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: gated ? { ...headers, 'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, apikey, accept', 'Access-Control-Max-Age': '600' } : headers });
+      return new Response(null, { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, apikey, accept', 'Access-Control-Max-Age': '600' } });
     }
     if (request.method !== 'GET') return errorResponse('METHOD_NOT_ALLOWED', 405);
     const url = new URL(request.url);
@@ -199,18 +187,14 @@ export function createPublicHandler(repo: AnalyticsRepository, access?: PublicAc
       return errorResponse('NOT_FOUND', 404);
     }
     try {
-      let viewerId: string | undefined;
-      if (gated) {
-        const { uid, session } = await authenticate(request, access!);
-        const v = await access!.viewer(uid, session);
-        if (!v.user_ok) return errorResponse('contributor_required', 403);
-        if (!v.kakao) return errorResponse('kakao_required', 403);
-        if (!v.session) return errorResponse('session_expired', 401);
-        if (v.contributor !== 'active') return errorResponse('contributor_required', 403);
-        if (v.has_public_facts !== true) return errorResponse('upload_required', 403);
-        viewerId = uid;
-      }
-      if (!await repo.allowRequest(request, viewerId)) return errorResponse('RATE_LIMITED', 429);
+      const { uid, session } = await authenticate(request, access);
+      const v = await access.viewer(uid, session);
+      if (!v.user_ok) return errorResponse('contributor_required', 403);
+      if (!v.kakao) return errorResponse('kakao_required', 403);
+      if (!v.session) return errorResponse('session_expired', 401);
+      if (v.contributor !== 'active') return errorResponse('contributor_required', 403);
+      if (v.has_public_facts !== true) return errorResponse('upload_required', 403);
+      if (!await repo.allowRequest(request, uid)) return errorResponse('RATE_LIMITED', 429);
       const state = await repo.getState();
       if (route === 'meta') {
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);

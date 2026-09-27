@@ -94,11 +94,14 @@ function hasStoredSession(): boolean {
 
 export function createLiveAuth(): MapAuth {
   const config = authConfig();
+  const oauthReturn = typeof window !== 'undefined' && /[?&](code|error)=/.test(window.location.search);
+  let checkingInitial = !!config && (oauthReturn || hasStoredSession());
   const emitter = new Emitter({
-    status: config ? 'signed_out' : 'unconfigured', displayName: null, synthetic: false,
+    status: config ? (checkingInitial ? 'loading' : 'signed_out') : 'unconfigured', displayName: null, synthetic: false,
     message: config ? null : '지금은 로그인 기능을 쓸 수 없습니다.',
   });
   let clientPromise: Promise<SupabaseClient> | null = null;
+  let startingOAuth = false;
 
   const client = (): Promise<SupabaseClient> => {
     if (!config) return Promise.reject(new Error('unconfigured'));
@@ -110,6 +113,9 @@ export function createLiveAuth(): MapAuth {
         },
       });
       c.auth.onAuthStateChange((_event, session) => {
+        // INITIAL_SESSION can arrive before an OAuth callback has exchanged its code. A transient null must not
+        // trigger another redirect while getSession() is still checking the callback.
+        if (!session && (checkingInitial || startingOAuth || (oauthReturn && emitter.state.status === 'error'))) return;
         emitter.set(session
           ? { status: 'signed_in', displayName: nickname(session.user.user_metadata), message: null }
           : { status: 'signed_out', displayName: null });
@@ -119,21 +125,20 @@ export function createLiveAuth(): MapAuth {
     return clientPromise;
   };
 
-  const oauthReturn = typeof window !== 'undefined' && /[?&](code|error)=/.test(window.location.search);
-  if (config && (oauthReturn || hasStoredSession())) {
-    emitter.set({ status: 'loading' });
+  if (config && checkingInitial) {
     const failed = new URLSearchParams(window.location.search).get('error');
     client()
       .then(c => c.auth.getSession())
       .then(({ data }) => {
         emitter.set(data.session
           ? { status: 'signed_in', displayName: nickname(data.session.user.user_metadata), message: null }
-          : failed
+          : failed || oauthReturn
             ? { status: 'error', message: '카카오 로그인이 취소되었거나 끝나지 않았습니다. 다시 시도해 주세요.' }
             : { status: 'signed_out' });
       })
       .catch(() => emitter.set({ status: 'error', message: '로그인 상태를 확인하지 못했습니다. 다시 시도해 주세요.' }))
       .finally(() => {
+        checkingInitial = false;
         if (oauthReturn) {
           window.history.replaceState(window.history.state, '', `${window.location.pathname}${stripOAuthParams(window.location.search)}`);
         }
@@ -144,10 +149,18 @@ export function createLiveAuth(): MapAuth {
     snapshot: () => emitter.state,
     subscribe: listener => emitter.subscribe(listener),
     async signIn() {
-      const c = await client();
-      const redirectTo = `${window.location.origin}${window.location.pathname}${stripOAuthParams(window.location.search)}`;
-      const { error } = await c.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo } });
-      if (error) emitter.set({ status: 'error', message: '카카오 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.' });
+      if (startingOAuth) return;
+      startingOAuth = true;
+      emitter.set({ status: 'loading', message: null });
+      try {
+        const c = await client();
+        const redirectTo = `${window.location.origin}${window.location.pathname}${stripOAuthParams(window.location.search)}`;
+        const { error } = await c.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo } });
+        if (error) throw error;
+      } catch {
+        startingOAuth = false;
+        emitter.set({ status: 'error', message: '카카오 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.' });
+      }
     },
     async signOut() {
       if (!config || !clientPromise) {

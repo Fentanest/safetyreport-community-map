@@ -6,6 +6,11 @@ import { entitiesResponseSchema } from '../../src/data/schema';
 import { loadEntities } from '../../src/data/client';
 import EntityTable, { type ServerEntityState } from '../../src/components/EntityTable';
 import type { Scope } from '../../src/domain/public';
+import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
+
+vi.mock('../../src/hooks/usePersonal', () => ({
+  mapAuth: () => ({ settled: async () => undefined, accessToken: async () => 'test-map-session', refreshToken: async () => null }),
+}));
 
 const sept: Scope = {
   start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
@@ -112,9 +117,9 @@ const erepo: AnalyticsRepository = {
   getFacts: async () => entityFacts,
   allowRequest: async () => true,
 };
-const ehandler = createPublicHandler(erepo);
+const ehandler = createPublicHandler(erepo, fixtureAccess());
 const eq = 'start=2026-09-01&end=2026-09-30&category=all';
-const get = (path: string) => ehandler(new Request(`https://example.test/public-analytics/${path}`));
+const get = (path: string) => ehandler(viewerRequest(`https://example.test/public-analytics/${path}`));
 
 describe('SOL-08 full-list entities API', () => {
   it('paginates the full list and reaches past the dashboard top 100', async () => {
@@ -159,7 +164,7 @@ describe('SOL-08 client and table connection', () => {
   });
   it('loads a real handler page through loadEntities and renders it in server-mode table', async () => {
     vi.stubEnv('VITE_PUBLIC_ANALYTICS_URL', 'https://example.test');
-    vi.stubGlobal('fetch', (...args: any[]) => ehandler(new Request(String(args[0]))));
+    vi.stubGlobal('fetch', (...args: any[]) => ehandler(viewerRequest(String(args[0]))));
     const page = await loadEntities(sept,
       { kind: 'agency', q: '테스트기관-100', sort: 'completed', dir: 'asc', page: 1, pageSize: 50 },
       'af-map-entities');

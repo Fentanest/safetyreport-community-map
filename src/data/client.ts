@@ -50,13 +50,14 @@ async function read(path: string, params: URLSearchParams | null, signal?: Abort
   const url = `${base}/public-analytics/${path}${params ? `?${params}` : ''}`;
   const auth = mapAuth();
   await auth.settled();
+  const token = await auth.accessToken();
+  if (!token) throw new PublicApiError('카카오 로그인이 필요합니다.', 401, null, 'auth_required');
   const send = (token: string | null) => fetch(url, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
     headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
-  let token = await auth.accessToken();
   let res = await send(token);
   if (res.status === 401 && token) {
-    token = await auth.refreshToken();
-    if (token) res = await send(token);
+    const refreshed = await auth.refreshToken();
+    if (refreshed) res = await send(refreshed);
   }
   if (!res.ok) {
     const retry = Number(res.headers.get('retry-after'));

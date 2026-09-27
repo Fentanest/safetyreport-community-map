@@ -33,15 +33,15 @@ describe('statistics client while the map is contributor-only', () => {
     expect(init.headers.Authorization).toBe('Bearer token-1');
     expect(init.credentials).toBe('omit');
   });
-  it('without a session sends no Authorization and reports auth_required', async () => {
+  it('without a session refuses to call even a mistakenly public analytics API', async () => {
     auth.current = fakeAuth(null);
-    const fetchMock = vi.fn().mockResolvedValue(refusal(401, 'auth_required'));
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const { loadDashboard, isAccessError } = await import('../../src/data/client');
     const error = await loadDashboard(scope).catch((e: unknown) => e);
     expect(isAccessError(error)).toBe(true);
-    expect(error).toMatchObject({ code: 'auth_required', message: 'server:auth_required' });
-    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBeUndefined();
+    expect(error).toMatchObject({ code: 'auth_required', status: 401 });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
   it('refreshes once after a 401 and retries with the new token', async () => {
     auth.current = fakeAuth('old', 'new');

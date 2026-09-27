@@ -5,18 +5,17 @@
 | 값 | 위치 | 성격 |
 |---|---|---|
 | VITE_KAKAO_MAP_JS_KEY | repo variable 또는 CI frontend env | 공개 JS key. secrets에 저장해도 번들에서는 공개 |
-| VITE_PUBLIC_ANALYTICS_URL | variable / frontend | 공개 read-only Edge API base |
+| VITE_PUBLIC_ANALYTICS_URL | variable / frontend | 사용자 JWT가 필요한 통계 Edge API base |
 | VITE_DATA_MODE | variable | live 또는 명시 demo |
 | VITE_BASE_PATH | variable | `/` 기본 (공개 주소 `https://safemap.worklazy.net/`) |
 | PUBLIC_ANALYTICS_URL | CI variable | Pages 빌드의 API base. snapshot exporter는 공유자 전용 동안 쓰지 않음. 비밀키 불필요 |
 | SUPABASE_EXPORT_DATABASE_URL | 선택적 후속 direct exporter 전용 | 현재 스크립트는 사용하지 않음. 사용 시 specific safe views SELECT 전용 DSN/TLS 필요 |
 | ANALYTICS_RATE_SALT | Supabase Edge Function secret | 1분 rate bucket용 salt(공유자 전용이면 사용자별, 공개면 IP별). 프런트/CI에 넣지 않음 |
-| ANALYTICS_ACCESS | Supabase Edge Function secret | 없거나 `public`이 아니면 공유자 전용(기본). `public`이면 예전처럼 익명 공개 |
 | ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | 공유자 전용일 때 `public-analytics` Origin allowlist. 없으면 `MY_ANALYTICS_ALLOWED_ORIGINS` |
 | optional SUPABASE_PUBLISHABLE_KEY | 공개 direct adapter만 | anon/access grants로 제한. 기본 UI는 필요 없음 |
 | service_role/secret | 중앙 Supabase 함수 runtime만 | 관리자 성격. CI readonly 대용으로 사용하지 않음 |
-| VITE_SUPABASE_URL | variable / frontend | 지도 웹 로그인용 프로젝트 URL. 공유자 전용 동안 필수(비우면 아무도 지도를 볼 수 없음) |
-| VITE_SUPABASE_PUBLISHABLE_KEY | variable / frontend | 선택. 공개 publishable(`sb_publishable_…`) 키. secret/service_role 금지(dist 스캔이 비-anon JWT 차단) |
+| VITE_SUPABASE_URL | variable / frontend | 지도 웹 로그인용 프로젝트 URL. 공유자 전용 Pages 배포에 필수 |
+| VITE_SUPABASE_PUBLISHABLE_KEY | variable / frontend | 지도 웹 로그인용 공개 publishable(`sb_publishable_…`) 키. 공유자 전용 Pages 배포에 필수. secret/service_role 금지(dist 스캔이 비-anon JWT 차단) |
 | MY_ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | `my-analytics` Origin allowlist. 운영 `https://safemap.worklazy.net` |
 | MY_ANALYTICS_ENABLED | Supabase Edge Function secret | `false`면 개인 비교만 503(지도 통계 영향 없음) |
 
@@ -34,7 +33,11 @@ assets/data 주소에 import.meta.env.BASE_URL 사용. 자동 임의 wildcard re
 `product-check.yml`은 검증 전용이다. `publish-pages.yml`은 main의 수동 `workflow_dispatch`만 받아 검사·live 빌드가
 성공했을 때만 Pages artifact를 배포한다. 2026-09-27부터 지도는 공유자 전용이라 **정적 통계 snapshot을 만들지 않고**,
 산출물에 `data/`가 없는지 검사한다(주소만 알면 받을 수 있는 통계 파일을 두지 않기 위해). 런타임은 모든 통계를
-지도 로그인 토큰과 함께 API에서 읽는다. `npm run data:export`(공개 API에서 snapshot 생성)는 공개로 다시 열 때를 위해 남겨 두었다.
+지도 로그인 토큰과 함께 API에서 읽는다. Pages 배포 전에는 익명 `public-analytics/meta`가 401인지 검사하며
+(함수 `auth_required` 또는 Supabase 게이트웨이 `UNAUTHORIZED_NO_AUTH_HEADER`),
+200이면 배포를 중단한다. 이미 배포된 API가 200인 경우 인증 전용 코드와 `verify_jwt=true`로 Edge Function을 재배포해야 한다.
+기존 `ANALYTICS_ACCESS` 값은 새 코드에서 무시한다. 프런트에서 익명 진입을 막아도 API 직접 요청은 서버가 막아야 한다.
+`npm run data:export`(공개 API에서 snapshot 생성)는 공개로 다시 열 때를 위해 남겨 두었다.
 `publish-pages.yml`의 Pages Actions는 확인한 버전의 전체 commit SHA로 고정했다. 오래된
 `templates/github-pages.yml.example`은 비교용 참고 파일이다.
 
@@ -65,5 +68,5 @@ production deployment는 별도 사용자 승인 후. concurrency와 rollback ru
 3. Supabase Auth: Kakao provider 리다이렉트 허용에 `https://safemap.worklazy.net/**` 추가(지도 페이지로 돌아오는 PKCE).
 4. Pages 변수 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` 설정 후 `VITE_DATA_MODE=live npm run build && npm run scan`.
 5. smoke(공유자 전용): 비로그인 → 로그인 안내 화면·API 401 → 공유 신고가 있는 계정으로 로그인 → 지도 → 비교 켜기 → 전체 열 = 지도 KPI → 로그아웃 → 앱 수동 업로드가 계속 ACK되는지. 로컬 증거 스크립트 `scripts/integration/access_gate_e2e.mjs`.
-6. 되돌리기: 개인 비교만 끄려면 `MY_ANALYTICS_ENABLED=false`. 지도 공개 범위를 되돌리려면 `ANALYTICS_ACCESS=public`(익명 공개, 함수 재배포 불필요). RPC drop은 선택.
+6. 되돌리기: 개인 비교만 끄려면 `MY_ANALYTICS_ENABLED=false`. 지도 오류 때는 직전 인증 전용 Edge 배포로 되돌리고 익명 공개 버전으로는 되돌리지 않는다. RPC drop은 선택.
 로컬 합성 스택 검증 결과는 `docs/integration/community-ingest/evidence/2026-09-27-personal-compare/`. 운영 적용·실카카오는 BLOCKED.
