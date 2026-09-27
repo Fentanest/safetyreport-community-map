@@ -36,7 +36,7 @@ Pages에서 브라우저가 비밀키 없는 공개 API를 호출하는 것은 �
 ## 3. 책임
 - Postgres: 소유 snapshot 교체, normalized facts, versioned aggregation, 조건에 맞는 정확한 집계.
 - Edge: 쿼리 파싱/allowlist, query complexity·limit, response DTO projection, 마스킹 검증, cache·rate limit.
-- Actions: 공개 안전한 meta/overview/map preview만 읽어 초기 캐시 생성, missing address 필요 시 제한적 geocode,
+- Actions: 공개 안전한 meta/overview/map preview만 읽어 초기 캐시 생성, 수신한 공식 좌표·주소를 그대로 사용,
   테스트·빌드·artifact scan. raw 차량/사용자 토큰을 Actions로 가져오지 않는다.
 - Browser: 페이지 표시·필터·키보드/터치·공개 캐시·map overlays. 사용자가 request를 변조해도 읽기 범위를 벗어나지 못해야 한다.
 

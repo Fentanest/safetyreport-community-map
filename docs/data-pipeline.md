@@ -11,18 +11,14 @@ GitHub Actions cron 기본 UTC를 쓸 경우 `17 19 * * *`가 KST 다음날 04:1
 ## Actions 순서
 1. safe export connection으로 versioned meta/overview/map preview를 읽는다. SQL connection은 TLS·read-only role.
 2. public projection strict schema 검증, sample=false 확인, 통계 총계 대조.
-3. 주소가 없고 좌표가 valid인 포인트만 optional Kakao reverse geocode. raw report data 전송 금지.
+3. 앱·서버가 전송한 공식 좌표와 주소를 그대로 사용한다. 주소가 없어도 좌표를 바꾸거나 추정하지 않는다.
 4. `data/manifest.json`, `data/<version>/overview.json`, `map-index.json`, dictionaries 등 생성.
-5. build는 sanitized 산출물만 받는다. private DSN/REST key env는 exporter step에만 둔다.
+5. build는 sanitized 산출물만 받는다. private DSN env는 exporter step에만 둔다.
 6. 테스트 → asset/secret/원번호 scan → dist 전용 artifact → 승인된 Pages deployment.
 
-## geocoding
-입력 주소가 정상이면 재호출하지 않는다. 좌표를 주소로 보완하는 일과 위치 좌표를 대체하는 일은 다르다.
-Kakao REST coord2address: x=lng, y=lat, Authorization: KakaoAK secret. region code가 필요하면 coord2regioncode.
-실패/null address는 '주소 확인 중'과 exact coordinate로 표시; 없는 지명을 지어내거나 0,0 좌표로 대체하지 않는다.
-좌표별 cache·재시도·429 budget 적용. persistent cache 보관/재배포 조건과 공급자 약관은 실제 운영 전에 확인한다.
-CI cache에는 비공개 data를 섞지 않는다. 위치 cache 쓰기가 필요해도 exporter DB role의 전역 쓰기를 열지 않는다.
-[S05: Kakao Local]
+## 신고 위치
+안전신문고 상세 응답의 위도·경도를 그대로 받는다. 완료된 보완으로 위치가 바뀌면 새 좌표가 최신 신고 사실을 대체한다.
+주소가 없으면 없는 상태로 표시하며, 지명을 추정하거나 0,0 좌표로 대체하지 않는다.
 
 ## 정적 데이터 분할
 (2026-09-27 공유자 전용 전환: 정적 snapshot을 만들지 않는다 — docs/public-api-contract.md §열람 조건)

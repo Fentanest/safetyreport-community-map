@@ -10,7 +10,6 @@
 | VITE_BASE_PATH | variable | `/` 기본 (공개 주소 `https://safemap.worklazy.net/`) |
 | PUBLIC_ANALYTICS_URL | CI variable | Pages 빌드의 API base. snapshot exporter는 공유자 전용 동안 쓰지 않음. 비밀키 불필요 |
 | SUPABASE_EXPORT_DATABASE_URL | 선택적 후속 direct exporter 전용 | 현재 스크립트는 사용하지 않음. 사용 시 specific safe views SELECT 전용 DSN/TLS 필요 |
-| KAKAO_REST_API_KEY | 선택적 주소 보완 step만 | 현재 스크립트는 사용하지 않음. 브라우저 변수 금지 |
 | ANALYTICS_RATE_SALT | Supabase Edge Function secret | 1분 rate bucket용 salt(공유자 전용이면 사용자별, 공개면 IP별). 프런트/CI에 넣지 않음 |
 | ANALYTICS_ACCESS | Supabase Edge Function secret | 없거나 `public`이 아니면 공유자 전용(기본). `public`이면 예전처럼 익명 공개 |
 | ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | 공유자 전용일 때 `public-analytics` Origin allowlist. 없으면 `MY_ANALYTICS_ALLOWED_ORIGINS` |

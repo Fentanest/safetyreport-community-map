@@ -24,7 +24,6 @@ jobs:
         run: npm run data:export
         env:
           SUPABASE_EXPORT_DATABASE_URL: ${{ secrets.SUPABASE_EXPORT_DATABASE_URL }}
-          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
       - name: Build (public config only)
         run: npm run build
         env:

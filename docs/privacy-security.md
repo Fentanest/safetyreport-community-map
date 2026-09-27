@@ -39,7 +39,7 @@ snapshot IDs, 이메일·전화번호·계정 이름·Google sub·JWT·refresh t
 Pages에는 public API URL·Kakao JavaScript key만 필요하다. Supabase direct-read adapter를 쓰는 경우 publishable key는
 공개 설정이며 read-only는 key 이름이 아니라 grants/RLS/함수 권한으로 강제한다.
 CI export는 특정 safe view의 SELECT 전용 login role/endpoint를 사용한다. SUPABASE_SERVICE_ROLE_KEY를 read-only라고 이름 바꾸지 않는다.
-Kakao REST key는 Actions 또는 중앙 Edge secret. VITE_ 접두어 금지. geocode cache 쓰기가 필요하면 별도 제한 RPC만 허용한다.
+신고 위치는 앱·서버가 공식 상세 응답에서 받은 좌표를 전송한다. 지도 웹앱의 Kakao JavaScript 키는 공개 지도 SDK용이며 서버의 REST 주소 변환 키와 다르다.
 
 ## 공개 artifact
 Vite root는 web 또는 src 기반 제품 빌드만. docs/design reference PNG에는 원본 예시 번호가 있으므로 dist에 복사 금지.

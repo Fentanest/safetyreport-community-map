@@ -13,7 +13,7 @@ def main():
     report={'python':platform.python_version(),'platform':platform.system(),
             'tools':{t:bool(shutil.which(t)) for t in ['git','node','npm','opencode','chromium','google-chrome']},
             'git_head':command(['git','-C',str(root),'rev-parse','HEAD']),
-            'config_present':{k:bool(os.environ.get(k)) for k in ['VITE_KAKAO_MAP_JS_KEY','VITE_PUBLIC_ANALYTICS_URL','SUPABASE_EXPORT_DATABASE_URL','KAKAO_REST_API_KEY']},
+            'config_present':{k:bool(os.environ.get(k)) for k in ['VITE_KAKAO_MAP_JS_KEY','VITE_PUBLIC_ANALYTICS_URL','SUPABASE_EXPORT_DATABASE_URL']},
             'notes':['No model was invoked and no cloud settings were changed.',
                      'Missing keys do not block fixture-based UI implementation.',
                      'Muse actual provider/model ID must be discovered on the user host.']}

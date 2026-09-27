@@ -19,7 +19,7 @@ https://apis.map.kakao.com/web/guide/
 
 ## S05. Kakao Local REST
 https://developers.kakao.com/docs/ko/local/dev-guide
-확인한 용도: coord2address/coord2regioncode, x=longitude y=latitude, REST authentication.
+과거 주소 보완 방안을 검토할 때 확인했다. 현재 신고 위치 파이프라인은 공식 응답의 주소·좌표를 사용하며 Kakao Local REST를 호출하지 않는다.
 
 ## S06. Kakao Maps Web Reference
 https://apis.map.kakao.com/web/documentation/

@@ -1,17 +1,17 @@
 # Kakao 지도 구현 규격
-근거 S04(Kakao Maps Guide), S05(Local), S06(Web API reference).
+근거 S04(Kakao Maps Guide), S06(Web API reference).
 
 ## SDK
-JavaScript key는 공개 클라이언트 키이며 등록 domain에서 사용한다. REST key와 혼용하지 않는다.
+JavaScript key는 공개 클라이언트 키이며 등록 domain에서 사용한다. 신고 좌표를 얻기 위한 REST key는 쓰지 않는다.
 등록 후보: 실제 Pages origin(프로젝트 path 제외), 커스텀 origin, 승인된 localhost 포트.
 스크립트는 https://dapi.kakao.com/v2/maps/sdk.js?appkey=...&autoload=false&libraries=clusterer
 한 번만 load, promise dedupe, kakao.maps.load 후 instance 생성, timeout+retry.
 기본 지도 type은 SDK에서 확인한 ROADMAP, 필요 시 HYBRID. 'DARK' type을 추정하지 않는다.
 
 ## 지리
-Kakao LatLng(lat,lng), Local REST x=lng/y=lat, GeoJSON coordinates=[lng,lat]. 단위/순서 테스트 필수.
+Kakao LatLng(lat,lng), GeoJSON coordinates=[lng,lat]. 단위/순서 테스트 필수.
 전국 bounds에 제주·울릉·독도 표시 위치를 포함하며 시군구 행정코드 기반 집계와 법정동/행정동을 혼동하지 않는다.
-주소 normalizer는 제공 주소를 우선, 없는 주소만 reverse geocode. 정규화가 geocoded 좌표로 원값을 덮지 않음.
+주소 normalizer는 제공 주소만 사용한다. 좌표는 수신한 값 그대로 유지한다.
 
 ## 인터랙션
 idle 이벤트 debounce, pan/zoom/selection은 state source가 하나. query change때 setCenter feedback loop 금지.
