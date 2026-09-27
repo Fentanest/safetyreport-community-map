@@ -20,8 +20,9 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
     result_known: o.result_known, result_unknown: o.result_unknown,
     fine_count: fine, point_count: points,
-    // 수용률 = 수용 ÷ 결과 확인(D). 일부 수용은 포함하지 않는다(2026-09-27 사용자 결정).
+    // 수용률 = 수용 ÷ 결과 확인(D), 일부수용률 = 일부 수용 ÷ D — 따로 보여 준다(2026-09-27 사용자 결정).
     accept_rate: pct(o.accepted, o.result_known),
+    partial_rate: pct(o.partial, o.result_known),
     reject_rate: pct(o.rejected, o.result_known),
     fine_rate: pct(fine, done.length),
   };
@@ -36,6 +37,7 @@ export function diffOf(all: CompareSummary, mine: CompareSummary): CompareDiff {
     fine_share: pct(mine.fine_count, all.fine_count),
     point_share: pct(mine.point_count, all.point_count),
     accept_rate_pp: minus(mine.accept_rate, all.accept_rate),
+    partial_rate_pp: minus(mine.partial_rate, all.partial_rate),
     reject_rate_pp: minus(mine.reject_rate, all.reject_rate),
     fine_rate_pp: minus(mine.fine_rate, all.fine_rate),
     rate_reason: all.result_known === 0 ? 'no_all' : mine.result_known === 0 ? 'no_mine' : null,
@@ -46,9 +48,10 @@ function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): C
   const o = outcomes(done);
   return {
     report_count: reported.length, completed_count: done.length, result_known: o.result_known,
-    accepted: o.accepted, rejected: o.rejected,
+    accepted: o.accepted, partial: o.partial, rejected: o.rejected,
     fine_count: done.filter(fact => fact.disposition === 'fine').length,
     accept_rate: pct(o.accepted, o.result_known),
+    partial_rate: pct(o.partial, o.result_known),
   };
 }
 
@@ -94,7 +97,8 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   const regions: CompareRegionRow[] = [...regionCodes].map(code => {
     const r = regionReported.get(code) ?? [], d = regionDone.get(code) ?? [];
     const a = side(r, d), m = side(r.filter(isMine), d.filter(isMine));
-    return { region_code: code, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate) };
+    return { region_code: code, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
+      partial_rate_pp: minus(m.partial_rate, a.partial_rate) };
   }).sort((x, y) => y.all.report_count - x.all.report_count || y.all.completed_count - x.all.completed_count ||
     (x.region_code ?? '￿').localeCompare(y.region_code ?? '￿', 'ko')).slice(0, MAX_COMPARE_REGIONS);
 
@@ -112,6 +116,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
         kind, key, agency_key: first.agency_key, manager_key: kind === 'manager' ? first.manager_key : null,
         agency_name: first.agency_name || '기관 정보 없음', manager_name: kind === 'manager' ? first.manager_name : null,
         all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
+        partial_rate_pp: minus(m.partial_rate, a.partial_rate),
       };
     }).sort((x, y) => y.mine.completed_count - x.mine.completed_count || y.all.completed_count - x.all.completed_count ||
       x.agency_name.localeCompare(y.agency_name, 'ko') || x.key.localeCompare(y.key)).slice(0, MAX_COMPARE_ROWS);

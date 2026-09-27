@@ -23,8 +23,10 @@ export interface CompareSummary {
   fine_count: number;
   /** distinct located report points (신고일 기준) */
   point_count: number;
-  /** 수용률 A/D×100 (일부 수용 제외), null when D = 0 */
+  /** 수용률 A/D×100, null when D = 0 */
   accept_rate: number | null;
+  /** 일부수용률 P/D×100, null when D = 0 */
+  partial_rate: number | null;
   /** J/D×100, null when D = 0 */
   reject_rate: number | null;
   /** fine/C×100, null when C = 0 */
@@ -40,6 +42,7 @@ export interface CompareDiff {
   fine_share: number | null;
   point_share: number | null;
   accept_rate_pp: number | null;
+  partial_rate_pp: number | null;
   reject_rate_pp: number | null;
   fine_rate_pp: number | null;
   /** why rate differences are null: all side has no denominator, or mine side has none */
@@ -51,9 +54,11 @@ export interface CompareSide {
   completed_count: number;
   result_known: number;
   accepted: number;
+  partial: number;
   rejected: number;
   fine_count: number;
   accept_rate: number | null;
+  partial_rate: number | null;
 }
 
 export interface CompareRegionRow {
@@ -61,6 +66,7 @@ export interface CompareRegionRow {
   all: CompareSide;
   mine: CompareSide;
   accept_rate_pp: number | null;
+  partial_rate_pp: number | null;
 }
 
 export interface CompareEntityRow {
@@ -73,6 +79,7 @@ export interface CompareEntityRow {
   all: CompareSide;
   mine: CompareSide;
   accept_rate_pp: number | null;
+  partial_rate_pp: number | null;
 }
 
 export interface CompareMonth {

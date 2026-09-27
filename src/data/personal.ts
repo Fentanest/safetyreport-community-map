@@ -18,16 +18,16 @@ const share = z.number().min(0).max(100).nullable();
 const summarySchema = z.strictObject({
   report_count: count, completed_count: count, accepted: count, partial: count, rejected: count,
   result_known: count, result_unknown: count, fine_count: count, point_count: count,
-  accept_rate: rate, reject_rate: rate, fine_rate: rate,
+  accept_rate: rate, partial_rate: rate, reject_rate: rate, fine_rate: rate,
 });
 const sideSchema = z.strictObject({
-  report_count: count, completed_count: count, result_known: count, accepted: count,
-  rejected: count, fine_count: count, accept_rate: rate,
+  report_count: count, completed_count: count, result_known: count, accepted: count, partial: count,
+  rejected: count, fine_count: count, accept_rate: rate, partial_rate: rate,
 });
 const entitySchema = z.strictObject({
   kind: z.enum(['agency', 'manager']), key: z.string().max(330), agency_key: z.string().max(160).nullable(),
   manager_key: z.string().max(160).nullable(), agency_name: z.string().max(200), manager_name: z.string().max(160).nullable(),
-  all: sideSchema, mine: sideSchema, accept_rate_pp: pp,
+  all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp,
 });
 
 export const personalCompareSchema = z.strictObject({
@@ -38,10 +38,10 @@ export const personalCompareSchema = z.strictObject({
   all: summarySchema, mine: summarySchema,
   diff: z.strictObject({
     report_share: share, completed_share: share, fine_share: share, point_share: share,
-    accept_rate_pp: pp, reject_rate_pp: pp, fine_rate_pp: pp, rate_reason: z.enum(['no_all', 'no_mine']).nullable(),
+    accept_rate_pp: pp, partial_rate_pp: pp, reject_rate_pp: pp, fine_rate_pp: pp, rate_reason: z.enum(['no_all', 'no_mine']).nullable(),
   }),
   regions: z.array(z.strictObject({
-    region_code: z.string().max(24).nullable(), all: sideSchema, mine: sideSchema, accept_rate_pp: pp,
+    region_code: z.string().max(24).nullable(), all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp,
   })).max(300),
   agencies: z.array(entitySchema).max(50),
   managers: z.array(entitySchema).max(50),

@@ -41,8 +41,10 @@ export default function ManagerCompare({ personal, onPick }: Props) {
                 <th scope="col">{tab === 'manager' ? '담당자 · 소속기관' : '처리기관'}</th>
                 <th scope="col" className="num">전체 답변</th>
                 <th scope="col" className="num">전체 수용률</th>
+                <th scope="col" className="num">전체 일부수용률</th>
                 <th scope="col" className="num mine-col">내 답변</th>
                 <th scope="col" className="num mine-col">내 수용률</th>
+                <th scope="col" className="num mine-col">내 일부수용률</th>
                 <th scope="col" className="num">차이</th>
               </tr>
             </thead>
@@ -58,9 +60,11 @@ export default function ManagerCompare({ personal, onPick }: Props) {
                   </td>
                   <td className="num">{fmtInt(r.all.completed_count)}</td>
                   <td className="num">{fmtPercent(r.all.accept_rate)}<small>{fmtInt(r.all.accepted)} / {fmtInt(r.all.result_known)}</small></td>
+                  <td className="num">{fmtPercent(r.all.partial_rate)}<small>{fmtInt(r.all.partial)} / {fmtInt(r.all.result_known)}</small></td>
                   <td className="num mine-col">{fmtInt(r.mine.completed_count)}{r.mine.result_known === 1 && <span className="sample-one">1건</span>}</td>
                   <td className="num mine-col">{fmtPercent(r.mine.accept_rate)}<small>{fmtInt(r.mine.accepted)} / {fmtInt(r.mine.result_known)}</small></td>
-                  <td className="num">{fmtPp(r.accept_rate_pp)}</td>
+                  <td className="num mine-col">{fmtPercent(r.mine.partial_rate)}<small>{fmtInt(r.mine.partial)} / {fmtInt(r.mine.result_known)}</small></td>
+                  <td className="num">수용 {fmtPp(r.accept_rate_pp)}<small>일부 {fmtPp(r.partial_rate_pp)}</small></td>
                 </tr>
               ))}
             </tbody>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { PublicRegion } from '../domain/public';
 import type { CompareRegionRow } from '../domain/personal';
 import { regionName } from '../state/view';
-import { acceptRate, fmtInt, fmtPercent, fmtPp } from './format';
+import { acceptRate, fmtInt, fmtPercent, fmtPp, partialRate } from './format';
 
 interface Props {
   regions: PublicRegion[] | null;
@@ -53,10 +53,10 @@ export default function RegionList(p: Props) {
           onClick={() => p.onPickRegion(p.activeRegion === r.region_code ? null : r.region_code)}>
           <span className="region-name">{name}{p.activeRegion === r.region_code && <span className="region-active-tag">보는 중</span>}</span>
           <span className="region-nums">
-            <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(allRate)}</b></span>
+            <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(allRate)}</b> · 일부수용률 <b className="cm-number">{fmtPercent(partialRate(r.outcomes))}</b></span>
             {showMine && (
               mine && (mine.mine.report_count > 0 || mine.mine.completed_count > 0) ? (
-                <span className="mine-col">내 신고 <b className="cm-number">{fmtInt(mine.mine.report_count)}</b>건 · 내 수용률 <b className="cm-number">{fmtPercent(mine.mine.accept_rate)}</b> ({fmtPp(mine.accept_rate_pp)})</span>
+                <span className="mine-col">내 신고 <b className="cm-number">{fmtInt(mine.mine.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(mine.mine.accept_rate)}</b> ({fmtPp(mine.accept_rate_pp)}) · 일부수용률 <b className="cm-number">{fmtPercent(mine.mine.partial_rate)}</b> ({fmtPp(mine.partial_rate_pp)})</span>
               ) : (
                 <span className="cm-muted">내 신고 없음</span>
               )
