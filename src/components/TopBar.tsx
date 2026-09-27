@@ -11,7 +11,7 @@ interface Props {
   onBriefing: () => void;
   dataStamp: string;
   sample: boolean;
-  /** map web login / account menu (optional feature; public viewing never needs it) */
+  /** map web login / account menu (needed to read the map while it is contributor-only) */
   account?: ReactNode;
 }
 
@@ -37,9 +37,11 @@ export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp
       </a>
       {badge && <span className="demo-badge" title={badge.title}>{badge.text}</span>}
       <div className="header-end">
-        <span className="data-stamp" title="이 날짜까지 공유된 신고를 반영했습니다">
-          {dataStamp} 기준
-        </span>
+        {dataStamp && (
+          <span className="data-stamp" title="이 날짜까지 공유된 신고를 반영했습니다">
+            {dataStamp} 기준
+          </span>
+        )}
         {account}
         <button
           className="icon-btn theme-btn"

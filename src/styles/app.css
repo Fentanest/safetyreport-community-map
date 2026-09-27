@@ -470,3 +470,16 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
   .compare-layout { grid-template-columns: minmax(0, 1fr); }
   .map-summary-mine { padding-left: 0; border-left: 0; }
 }
+
+/* Contributor-only access gate (components/AccessGate.tsx) */
+.access-gate { align-items: center; padding: 48px 16px 64px; }
+.access-card { width: min(640px, 100%); padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 12px; }
+.access-card h1 { font-size: 24px; line-height: 32px; margin: 0; font-weight: 700; }
+.access-card p { margin: 0; line-height: 1.6; }
+.access-lead { font-weight: 600; }
+.access-card .kakao-login { background: #FEE500; border-color: #FEE500; color: #191600; max-width: 320px; }
+.access-steps { margin: 0; padding-left: 20px; line-height: 1.7; }
+.access-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.access-actions .primary-button { width: auto; }
+.access-foot { font-size: 12px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
+@media (max-width: 480px) { .access-card { padding: 20px 16px; } .access-gate { padding: 24px 0 48px; } }

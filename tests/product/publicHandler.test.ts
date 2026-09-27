@@ -80,3 +80,87 @@ describe('public analytics API boundary', () => {
     expect((await handler(endpoint(`overview?${q}`))).status).toBe(503);
   });
 });
+
+describe('contributor-only access (user decision 2026-09-27)', () => {
+  const ORIGIN = 'https://safemap.worklazy.net';
+  const SESSION = '11111111-2222-4333-8444-555555555555';
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const token = (claims: Record<string, unknown> = {}) =>
+    `${b64({ alg: 'HS256' })}.${b64({ sub: 'viewer-1', role: 'authenticated', aud: 'authenticated', iss: 'https://p.supabase.co/auth/v1', session_id: SESSION, is_anonymous: false, ...claims })}.sig`;
+  type V = { user_ok: boolean; kakao: boolean; session: boolean; contributor: 'active' | 'none' | 'suspended' | 'revoked' };
+  function gated(viewer: Partial<V> = {}, over: { getUser?: () => Promise<{ id: string; isAnonymous: boolean } | null> } = {}) {
+    const seen: { viewerCalls: Array<[string, string]>; rateIds: Array<string | undefined>; facts: number } = { viewerCalls: [], rateIds: [], facts: 0 };
+    const handle = createPublicHandler(makeRepo({
+      getFacts: async () => { seen.facts++; return [fact]; },
+      allowRequest: async (_r, id) => { seen.rateIds.push(id); return true; },
+    }), {
+      mode: 'contributors', allowedOrigins: [ORIGIN], jwtIssuer: 'https://p.supabase.co/auth/v1',
+      getUser: over.getUser ?? (async () => ({ id: 'viewer-1', isAnonymous: false })),
+      viewer: async (uid, session) => { seen.viewerCalls.push([uid, session]); return { user_ok: true, kakao: true, session: true, contributor: 'active', ...viewer }; },
+    });
+    return { handle, seen };
+  }
+  const req = (path: string, auth: string | null = `Bearer ${token()}`, origin: string | null = ORIGIN, method = 'GET') =>
+    new Request(`https://example.supabase.co/functions/v1/public-analytics/${path}`, { method, headers: {
+      ...(auth ? { authorization: auth } : {}), ...(origin ? { origin } : {}) } });
+
+  it('without a sign-in nothing is readable, meta included, and no facts are fetched', async () => {
+    const { handle, seen } = gated();
+    for (const path of ['meta', `dashboard?${q}`, `map?${q}`, `entities?${q}&kind=agency`, `points/public-point-1?${q}`]) {
+      const res = await handle(req(path, null));
+      expect(res.status, path).toBe(401);
+      expect((await res.json()).error.code).toBe('auth_required');
+      expect(res.headers.get('www-authenticate')).toBe('Bearer');
+    }
+    expect(seen.facts).toBe(0);
+  });
+  it('a signed-in contributor reads the same DTO, privately and per viewer', async () => {
+    const { handle, seen } = gated();
+    const res = await handle(req(`dashboard?${q}`));
+    expect(res.status).toBe(200);
+    expect(dashboardResponseSchema.safeParse(await res.json()).success).toBe(true);
+    expect(res.headers.get('cache-control')).toBe('private, no-store, max-age=0');
+    expect(res.headers.get('access-control-allow-origin')).toBe(ORIGIN);
+    expect(res.headers.get('vary')).toContain('Authorization');
+    expect(seen.viewerCalls).toEqual([['viewer-1', SESSION]]); // the verified user and session only
+    expect(seen.rateIds).toEqual(['viewer-1']);
+  });
+  it('signed in but not sharing (never consented, withdrew, suspended) is refused', async () => {
+    for (const contributor of ['none', 'revoked', 'suspended'] as const) {
+      const { handle, seen } = gated({ contributor });
+      const res = await handle(req(`dashboard?${q}`));
+      expect(res.status, contributor).toBe(403);
+      expect((await res.json()).error.code).toBe('contributor_required');
+      expect(seen.facts).toBe(0);
+    }
+  });
+  it('expired, forged, anonymous and non-Kakao sessions are refused', async () => {
+    expect((await gated({}, { getUser: async () => null }).handle(req('meta'))).status).toBe(401);
+    expect((await gated().handle(req('meta', `Bearer ${token({ sub: 'someone-else' })}`))).status).toBe(401);
+    expect((await gated().handle(req('meta', `Bearer ${token({ iss: 'https://evil/auth/v1' })}`))).status).toBe(401);
+    const anon = await gated().handle(req('meta', `Bearer ${token({ is_anonymous: true })}`));
+    expect([anon.status, (await anon.json()).error.code]).toEqual([403, 'kakao_required']);
+    const nonKakao = await gated({ kakao: false }).handle(req('meta'));
+    expect([nonKakao.status, (await nonKakao.json()).error.code]).toEqual([403, 'kakao_required']);
+    expect((await gated({ session: false }).handle(req('meta'))).status).toBe(401);
+    expect((await gated().handle(req('meta', 'Bearer not-a-jwt'))).status).toBe(401);
+  });
+  it('foreign origins are refused; the preflight allows the authorization header for the map origin only', async () => {
+    const { handle } = gated();
+    expect((await handle(req('meta', `Bearer ${token()}`, 'https://evil.example'))).status).toBe(403);
+    const pre = await handle(req('meta', null, ORIGIN, 'OPTIONS'));
+    expect(pre.status).toBe(204);
+    expect(pre.headers.get('access-control-allow-origin')).toBe(ORIGIN);
+    expect(pre.headers.get('access-control-allow-headers')).toContain('authorization');
+  });
+  it('auth service outage is a 503, not a 200 or a login prompt', async () => {
+    const res = await gated({}, { getUser: async () => { throw new Error('down'); } }).handle(req('meta'));
+    expect(res.status).toBe(503);
+  });
+  it('public mode keeps the anonymous API unchanged', async () => {
+    const res = await createPublicHandler(makeRepo(), { mode: 'public', allowedOrigins: [], jwtIssuer: null,
+      getUser: async () => null, viewer: async () => { throw new Error('not called'); } })(endpoint('meta'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+  });
+});

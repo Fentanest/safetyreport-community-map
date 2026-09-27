@@ -1,0 +1,56 @@
+{
+  "map": "http://127.0.0.1:56490/",
+  "results": [
+    {
+      "name": "anonymous visit shows the access gate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "statistics API refused the anonymous page (401, no token sent)",
+      "ok": true,
+      "detail": "[{\"path\":\"meta\",\"status\":401,\"auth\":null}]"
+    },
+    {
+      "name": "signed in without a share consent → \"not sharing\" gate",
+      "ok": true,
+      "detail": "나만의 안전신문고 커뮤니티\n지금은 신고를 공유한 분만 볼 수 있어요\n\n커뮤니티 신고 지도는 참여하는 분이 모일 때까지 나만의 안전신문고 앱에서 "
+    },
+    {
+      "name": "that request carried the token and got 403",
+      "ok": true,
+      "detail": "[{\"path\":\"meta\",\"status\":403,\"auth\":\"bearer\"}]"
+    },
+    {
+      "name": "switching account returns to the login gate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a sharing contributor sees the map",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "every statistics request carried the token and succeeded",
+      "ok": true,
+      "detail": "[{\"path\":\"meta\",\"status\":200,\"auth\":\"bearer\"},{\"path\":\"dashboard\",\"status\":200,\"auth\":\"bearer\"},{\"path\":\"entities\",\"status\":200,\"auth\":\"bearer\"}]"
+    },
+    {
+      "name": "a direct call without the token is refused even from the signed-in page",
+      "ok": true,
+      "detail": "401"
+    },
+    {
+      "name": "the built artifact has no data files",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "errors": []
+}

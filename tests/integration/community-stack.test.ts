@@ -49,14 +49,25 @@ const account = (action: string, token: string | null, body: Json = {}) =>
 const ingestRaw = (body: unknown, token: string | null, headers?: Record<string, string>) =>
   call('POST', '/functions/v1/community-ingest', { token, body, headers });
 const SCOPE = 'start=2024-01-01&end=2028-12-31';
-const publicApi = (route: string) => call('GET', `/functions/v1/public-analytics/${route}${route === 'meta' ? '' : `?${SCOPE}`}`, { apikey: null });
+// The map is contributor-only (2026-09-27): statistics are read as E, a Kakao user with an active share consent.
+let viewerToken: string | null = null;
+async function viewer(): Promise<string> {
+  if (!viewerToken) {
+    const s = await kakaoSession('E');
+    await consent(s);
+    viewerToken = s.access;
+  }
+  return viewerToken;
+}
+const publicApi = async (route: string) =>
+  call('GET', `/functions/v1/public-analytics/${route}${route === 'meta' ? '' : `?${SCOPE}`}`, { apikey: null, token: await viewer() });
 
 // ── sessions ──────────────────────────────────────────────────────────────────
 const b64url = (b: Buffer) => b.toString('base64url');
 const rid = () => randomBytes(8).toString('hex'); // source_report_id is ^[0-9A-Za-z_-]{1,40}$
 interface Session { access: string; refresh: string; userId: string; sessionId: string }
 
-async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D'): Promise<Session> {
+async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'): Promise<Session> {
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
   const authorize = `${API}/auth/v1/authorize?${new URLSearchParams({ provider: 'kakao', redirect_to: REDIRECT, code_challenge: challenge, code_challenge_method: 's256' })}`;
@@ -183,7 +194,7 @@ function rpcSignatures(): { name: string; body: Json }[] {
   expect(out.length).toBeGreaterThanOrEqual(20);
   return out;
 }
-// What the anonymous public API serves (same SECURITY DEFINER function public-analytics calls), optionally per contributor.
+// What the (contributor-only) public API serves (same SECURITY DEFINER function public-analytics calls), optionally per contributor.
 const publicFacts = (identityLike: string, contributor?: string) => Number(sql(`select count(*) from jsonb_array_elements(
   public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
   where e->>'fact_identity' like '${identityLike}'${contributor ? ` and e->>'contributor_id' = '${contributor}'` : ''};`));
@@ -722,7 +733,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect((await ingest(w, [await event(w, report)])).json.results[0].projection_status).toBe('published');
       const v0 = (await publicMeta()).dataset_version;
       const otherCount = async () => {
-        const r = await call('GET', `/functions/v1/public-analytics/overview?${SCOPE}&category=other`, { apikey: null });
+        const r = await call('GET', `/functions/v1/public-analytics/overview?${SCOPE}&category=other`, { apikey: null, token: await viewer() });
         expect(r.status).toBe(200);
         return { version: r.json.dataset_version as string, n: r.json.overview.report_count.value as number };
       };

@@ -1,6 +1,9 @@
 import type { DashboardData } from '../domain/public';
 import { fmtDate } from './format';
 
+/** Deletion requests and questions (public board; user decision 2026-09-27). */
+export const ISSUES_URL = 'https://github.com/Fentanest/safetyreport-community-map/issues';
+
 /** Plain-language names for features the data source does not provide yet (never show internal keys). */
 const NOT_YET: Record<string, string> = {
   fine_amount: '과태료 금액',
@@ -47,7 +50,12 @@ export default function DataGuide({ data }: { data: DashboardData | null }) {
         <li>차량 번호는 지역명 뒤 2·4·6번째 글자를 *로 가려서 보여 드립니다. 번호 전체는 공개하지 않습니다.</li>
         <li>장소는 신고에 입력된 위치 그대로 표시합니다. 지도를 넓게 보면 가까운 장소를 묶어 보여 줍니다. 고른 기간에 답변만 받은 신고의 장소도 지도에 함께 표시됩니다.</li>
         <li>신고가 1건뿐인 결과도 숨기지 않습니다. 알 수 없는 값은 0이 아니라 ‘—’로 표시합니다.</li>
-        <li>공유한 신고를 한꺼번에 지우는 기능은 아직 없습니다. PC·Docker용 나만의 안전신문고의 설정 → 커뮤니티에서 ‘동의 철회’를 누르면 그 동의로 보낸 신고가 지도에서 빠집니다.</li>
+        <li>
+          공유한 신고의 삭제는 <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">문의 게시판(GitHub Issues)</a>에 요청할 수 있습니다.
+          공개 게시판이니 개인정보는 적지 마세요. 공개 지도에서만 빼려면 앱에서 동의를 철회하면 됩니다.
+          PC·Docker는 설정 → ‘신고내용 공유 동의’, 모바일은 설정 → ‘커뮤니티 계정’에서 ‘동의 철회’를 누르면 그 동의로 보낸 신고가 지도에서 바로 빠집니다.
+          철회하면 다시 동의할 때까지 앱을 쓸 수 없습니다.
+        </li>
       </ul>
       {notYet.length > 0 && (
         <p className="cm-muted" style={{ fontSize: 13, margin: 0 }}>아직 제공하지 않는 정보: {notYet.join(', ')}</p>

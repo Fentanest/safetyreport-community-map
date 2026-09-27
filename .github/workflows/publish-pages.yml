@@ -31,12 +31,8 @@ jobs:
       - run: python3 -m unittest discover -s tests/blueprint -v
       - run: python3 -m unittest discover -s tests/product -p 'test_*.py' -v
       - run: npm test
-      - name: Export current sanitized public snapshot
-        run: npm run data:export
-        env:
-          PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
-          # Before ready=true: publish without a snapshot (never a partial one); the page shows its not-ready notice.
-          SNAPSHOT_ALLOW_NOT_READY: '1'
+      # No static data snapshot while the map is contributor-only (2026-09-27): a file on Pages would be readable by
+      # anyone who knows its URL. Every read goes through the API's viewer check (server/publicHandler.ts).
       - name: Build live Pages artifact
         run: npm run build
         env:
@@ -48,6 +44,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.MAP_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.MAP_SUPABASE_PUBLISHABLE_KEY }}
       - run: npm run scan
+      - name: No data files in the Pages artifact (contributor-only)
+        run: test ! -e dist/data
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

@@ -1,10 +1,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.1';
-import { createPublicHandler, type AnalyticsState } from '../../../server/publicHandler.ts';
+import { createPublicHandler, type AnalyticsState, type ViewerCheck } from '../../../server/publicHandler.ts';
 import type { PrivateFact } from '../../../server/aggregate.ts';
 import type { Scope } from '../../../src/domain/public.ts';
 
-// This function is public to call, but its database client remains inside the Edge runtime.
-// The service key never enters a VITE variable, response, log, or Pages artifact.
+// The database client remains inside the Edge runtime; the service key never enters a VITE variable, response,
+// log, or Pages artifact. ANALYTICS_ACCESS decides who may read (user decision 2026-09-27): anything but 'public'
+// means contributor-only — a verified Kakao user with an active share consent (server/publicHandler.ts PublicAccess).
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const secretMap = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}') as Record<string, string>;
 const serverKey = secretMap.default || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -19,10 +20,10 @@ async function rpc(name: string, args?: Record<string, unknown>): Promise<unknow
   return data;
 }
 
-async function rateBucket(request: Request): Promise<string> {
-  // Gateway-supplied address is used only as a salted one-minute rate bucket.
+async function rateBucket(request: Request, viewerId?: string): Promise<string> {
+  // Salted one-minute rate bucket: the verified viewer when known, otherwise the gateway-supplied address.
   const address = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
-  const encoded = new TextEncoder().encode(`${rateSalt}|${address.trim()}`);
+  const encoded = new TextEncoder().encode(viewerId ? `${rateSalt}|user|${viewerId}` : `${rateSalt}|${address.trim()}`);
   const digest = await crypto.subtle.digest('SHA-256', encoded);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -44,9 +45,28 @@ const handle = createPublicHandler({
     if (!Array.isArray(value) || value.length > 100000) throw new Error('analytics source budget exceeded');
     return value as PrivateFact[];
   },
-  async allowRequest(request: Request): Promise<boolean> {
-    const value = await rpc('internal_analytics_v2_rate_limit', { p_bucket: await rateBucket(request) });
+  async allowRequest(request: Request, viewerId?: string): Promise<boolean> {
+    const value = await rpc('internal_analytics_v2_rate_limit', { p_bucket: await rateBucket(request, viewerId) });
     return value === true;
+  },
+}, {
+  mode: Deno.env.get('ANALYTICS_ACCESS') === 'public' ? 'public' : 'contributors',
+  allowedOrigins: (Deno.env.get('ANALYTICS_ALLOWED_ORIGINS') || Deno.env.get('MY_ANALYTICS_ALLOWED_ORIGINS') ||
+    'https://safemap.worklazy.net').split(',').map(s => s.trim()).filter(Boolean),
+  jwtIssuer: Deno.env.get('AUTH_JWT_ISSUER') || null,
+  async getUser(token) {
+    const { data, error } = await db.auth.getUser(token);
+    if (error) {
+      const status = (error as { status?: number }).status ?? 0;
+      if ([400, 401, 403, 404].includes(status)) return null;
+      throw new Error('auth unavailable');
+    }
+    return data.user ? { id: data.user.id, isAnonymous: data.user.is_anonymous === true } : null;
+  },
+  async viewer(uid, session): Promise<ViewerCheck> {
+    const value = await rpc('internal_analytics_viewer', { p_user: uid, p_session: session });
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('viewer state unavailable');
+    return value as ViewerCheck;
   },
 });
 

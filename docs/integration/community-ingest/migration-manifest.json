@@ -117,6 +117,16 @@
     "202609280200",
     "202609280300"
    ]
+  },
+  {
+   "version": "202609280500",
+   "repo": "map",
+   "path": "supabase/migrations/202609280500_analytics_viewer.sql",
+   "sha256": "941257243dc9cf263306ffa20cfc243363c01bf1f08fe5df352336db04d2e1af",
+   "depends_on": [
+    "202609260100",
+    "202609270100"
+   ]
   }
  ],
  "functions": [
@@ -131,6 +141,7 @@
     "server/plate.ts",
     "server/publicHandler.ts",
     "server/regions.ts",
+    "server/viewerAuth.ts",
     "contracts/regions/regions-20260701.json",
     "src/domain/public.ts"
    ]
@@ -179,6 +190,7 @@
     "server/plate.ts",
     "server/publicHandler.ts",
     "server/regions.ts",
+    "server/viewerAuth.ts",
     "contracts/regions/regions-20260701.json",
     "src/domain/personal.ts",
     "src/domain/public.ts"

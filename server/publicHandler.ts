@@ -1,5 +1,6 @@
 import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
 import { codeForLegacyKey } from './regions.ts';
+import { authenticate, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
 import type { PublicEntity, PublicMeta, Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
@@ -17,17 +18,39 @@ export interface AnalyticsState {
 export interface AnalyticsRepository {
   getState(): Promise<AnalyticsState>;
   getFacts(scope: Scope): Promise<PrivateFact[]>;
-  allowRequest(request: Request): Promise<boolean>;
+  /** rate limit: per verified viewer when one is known, otherwise per client address */
+  allowRequest(request: Request, viewerId?: string): Promise<boolean>;
+}
+
+/** Viewer eligibility from the database (internal_analytics_viewer), for the verified user and session only. */
+export interface ViewerCheck {
+  user_ok: boolean;
+  kakao: boolean;
+  session: boolean;
+  contributor: 'active' | 'none' | 'suspended' | 'revoked';
+}
+
+/**
+ * Who may read the map (user decision 2026-09-27). 'contributors': only signed-in Kakao users with an active share
+ * consent, until enough people join; every route including meta is closed to anyone else, and responses become
+ * private per viewer. 'public': the original anonymous API. Omitting the access config means 'public'.
+ */
+export interface PublicAccess extends ViewerAuthDeps {
+  mode: 'public' | 'contributors';
+  allowedOrigins: string[];
+  viewer(uid: string, session: string): Promise<ViewerCheck>;
 }
 
 export class QueryError extends Error {
   constructor(readonly code: string, readonly status: number) { super(code); }
 }
 
-const cors = {
+const publicHeaders = {
   'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Accept', 'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
 };
+type Headers = Record<string, string>;
 const allowed = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox',
   'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir',
@@ -38,18 +61,25 @@ const key = /^[\p{L}\p{N}._:-]{1,160}$/u;
 // client so summary and full-list ordering agree (nulls sort as -Infinity, as in the table).
 const entitySorts = new Set(['completed', 'accepted', 'partial', 'rejected', 'fine', 'acceptRate']);
 
-function json(body: unknown, status = 200, _cache = 0): Response {
-  return new Response(JSON.stringify(body), { status, headers: {
-    ...cors, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
-  } });
+function json(body: unknown, status = 200, headers: Headers = publicHeaders): Response {
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
-function errorResponse(code: string, status: number): Response {
+const ACCESS_MESSAGES: Record<string, string> = {
+  auth_required: '카카오 로그인이 필요합니다.',
+  session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
+  kakao_required: '카카오 계정으로 로그인해 주세요.',
+  contributor_required: '지금은 신고내용 공유에 동의한 사람만 볼 수 있습니다.',
+  origin_forbidden: '허용되지 않은 요청입니다.',
+};
+
+function errorWith(code: string, status: number, headers: Headers = publicHeaders): Response {
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
     code === 'AGGREGATE_NOT_READY' ? '공개 집계가 아직 준비되지 않았습니다.' :
       code === 'DATASET_CHANGED' ? '데이터 버전이 변경됐습니다. 다시 조회해 주세요.' :
-        '요청을 처리할 수 없습니다.' } }, status);
+        ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.' } }, status, headers);
   if (status === 429) res.headers.set('Retry-After', '60');
+  if (status === 401) res.headers.set('WWW-Authenticate', 'Bearer');
   return res;
 }
 
@@ -141,9 +171,24 @@ function routeName(pathname: string): string {
   return index < 0 ? '' : pathname.slice(index + marker.length).replace(/\/+$/, '');
 }
 
-export function createPublicHandler(repo: AnalyticsRepository) {
+export function createPublicHandler(repo: AnalyticsRepository, access?: PublicAccess) {
+  const gated = access?.mode === 'contributors';
   return async (request: Request): Promise<Response> => {
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+    const origin = request.headers.get('origin');
+    const originAllowed = !gated || (origin !== null && access!.allowedOrigins.includes(origin));
+    // Contributor-only responses depend on the viewer: private, never shared-cacheable, exact origin only.
+    const headers: Headers = gated ? {
+      'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store, max-age=0',
+      Pragma: 'no-cache', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin, Authorization',
+      ...(originAllowed && origin ? { 'Access-Control-Allow-Origin': origin } : {}),
+    } : publicHeaders;
+    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
+    const errorResponse = (code: string, status: number) => errorWith(code, status, headers);
+    if (gated && origin !== null && !originAllowed) return errorResponse('origin_forbidden', 403);
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: gated ? { ...headers, 'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, apikey, accept', 'Access-Control-Max-Age': '600' } : headers });
+    }
     if (request.method !== 'GET') return errorResponse('METHOD_NOT_ALLOWED', 405);
     const url = new URL(request.url);
     const route = routeName(url.pathname);
@@ -151,11 +196,21 @@ export function createPublicHandler(repo: AnalyticsRepository) {
       return errorResponse('NOT_FOUND', 404);
     }
     try {
-      if (!await repo.allowRequest(request)) return errorResponse('RATE_LIMITED', 429);
+      let viewerId: string | undefined;
+      if (gated) {
+        const { uid, session } = await authenticate(request, access!);
+        const v = await access!.viewer(uid, session);
+        if (!v.user_ok) return errorResponse('contributor_required', 403);
+        if (!v.kakao) return errorResponse('kakao_required', 403);
+        if (!v.session) return errorResponse('session_expired', 401);
+        if (v.contributor !== 'active') return errorResponse('contributor_required', 403);
+        viewerId = uid;
+      }
+      if (!await repo.allowRequest(request, viewerId)) return errorResponse('RATE_LIMITED', 429);
       const state = await repo.getState();
       if (route === 'meta') {
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
-        return json(meta(state), 200, 30);
+        return json(meta(state), 200);
       }
       if (route !== 'entities' && ['kind', 'page', 'page_size', 'q', 'sort', 'dir'].some(name => url.searchParams.has(name))) {
         throw new QueryError('INVALID_QUERY', 400);
@@ -182,13 +237,13 @@ export function createPublicHandler(repo: AnalyticsRepository) {
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
         regions: (data.regions ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
-        vehicle_identifiable_reports: data.vehicle_identifiable_reports }, 200, 30);
-      if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200, 60);
-      if (route === 'map') return json({ ...common, points: data.points }, 200, 30);
-      if (route === 'series') return json({ ...common, monthly: data.monthly }, 200, 60);
+        vehicle_identifiable_reports: data.vehicle_identifiable_reports }, 200);
+      if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200);
+      if (route === 'map') return json({ ...common, points: data.points }, 200);
+      if (route === 'series') return json({ ...common, monthly: data.monthly }, 200);
       if (route === 'vehicles/top') return json({ ...common, time_basis: 'report_date',
         total_scope_reports: data.vehicle_total_scope_reports, identifiable_reports: data.vehicle_identifiable_reports,
-        items: data.vehicles }, 200, 30);
+        items: data.vehicles }, 200);
       if (route === 'entities') {
         const page = Number(url.searchParams.get('page') || '1'), pageSize = Number(url.searchParams.get('page_size') || '50');
         if (!Number.isInteger(page) || page < 1 || page > 10000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
@@ -208,16 +263,20 @@ export function createPublicHandler(repo: AnalyticsRepository) {
           rows = [...rows].sort(compareEntities(sort, dir));
         }
         return json({ ...common, items: rows.slice((page - 1) * pageSize, page * pageSize),
-          total_rows: rows.length, page, page_size: pageSize }, 200, 30);
+          total_rows: rows.length, page, page_size: pageSize }, 200);
       }
       let pointKey: string;
       try { pointKey = decodeURIComponent(route.slice('points/'.length)); }
       catch { throw new QueryError('INVALID_QUERY', 400); }
       if (!pointKey || pointKey.length > 160) throw new QueryError('INVALID_QUERY', 400);
       const point = data.points.find(row => row.key === pointKey);
-      return point ? json({ ...common, point }, 200, 30) : errorResponse('NOT_FOUND', 404);
+      return point ? json({ ...common, point }, 200) : errorResponse('NOT_FOUND', 404);
     } catch (e) {
       if (e instanceof QueryError) return errorResponse(e.code, e.status);
+      if (e instanceof ViewerAuthError) {
+        return e.code === 'service_unavailable' ? errorResponse('AGGREGATE_NOT_READY', 503)
+          : errorResponse(e.code, e.code === 'kakao_required' ? 403 : 401);
+      }
       return errorResponse('AGGREGATE_NOT_READY', 503);
     }
   };

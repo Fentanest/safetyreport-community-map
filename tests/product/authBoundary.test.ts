@@ -106,7 +106,7 @@ describe('personal client', () => {
   const fakeAuth = (tokens: Array<string | null>) => ({
     snapshot: () => ({ status: 'signed_in' as const, displayName: null, synthetic: false, message: null }),
     subscribe: () => () => {}, signIn: async () => {}, signOut: async () => {},
-    accessToken: async () => 'token-1', refreshToken: vi.fn(async () => tokens.shift() ?? null),
+    accessToken: async () => 'token-1', refreshToken: vi.fn(async () => tokens.shift() ?? null), settled: async () => undefined,
   });
 
   it('sends the bearer token only to my-analytics, uncached, with the public version, and refreshes once on 401', async () => {
@@ -171,10 +171,17 @@ describe('source boundaries', () => {
     for (const file of files) expect(code(file), file).not.toMatch(/scope:\s*['"](global|others)['"]/);
   });
 
-  it('sends Authorization only from the personal client', () => {
+  // Contributor-only map (user decision 2026-09-27): the statistics client also sends the map session token,
+  // still only to the configured analytics base URL, never with cookies.
+  it('sends Authorization only from the two analytics clients, only to the analytics base URL', () => {
     const senders = files.filter((f) => /Authorization/.test(code(f)));
-    expect(senders.map((f) => f.split('/src/')[1])).toEqual(['data/personal.ts']);
-    expect(code(join(__dirname, '../../src/data/client.ts'))).toMatch(/credentials: 'omit'/);
+    expect(senders.map((f) => f.split('/src/')[1]).sort()).toEqual(['data/client.ts', 'data/personal.ts']);
+    for (const f of ['client.ts', 'personal.ts']) {
+      const src = code(join(__dirname, '../../src/data', f));
+      expect(src).toMatch(/credentials: 'omit'/);
+      expect(src).toMatch(/VITE_PUBLIC_ANALYTICS_URL/);
+      expect(src).not.toMatch(/fetch\(\s*['"`]https?:/);
+    }
   });
 
   it('keeps personal comparison out of share URLs', async () => {

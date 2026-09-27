@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type DashboardData, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
-import { PublicApiError, dataMode, entitiesAvailable, loadDashboard, loadEntities, type EntitySortKey, type SortDir } from '../data/client';
+import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadDashboard, loadEntities, type AccessCode, type EntitySortKey, type SortDir } from '../data/client';
+import AccessGate from '../components/AccessGate';
 import {
   CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, regionCounts, regionLabel, scopeFromDraft, scopeFromSearch,
   scopeToSearch, validateRange, type DraftFilters, type EntityTab, type MapMetric, type ThemeMode,
@@ -92,7 +93,7 @@ export default function Dashboard() {
   const [fixture, setFixture] = useState(() => dataMode === 'demo' ? fixtureFromSearch(window.location.search) : 'overview');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('loading');
-  const [apiError, setApiError] = useState<{ message: string; retryAfter: number | null } | null>(null);
+  const [apiError, setApiError] = useState<{ message: string; retryAfter: number | null; code?: string | null } | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(initialTheme);
   const [briefing, setBriefing] = useState(false);
   const [drawer, setDrawer] = useState(false);
@@ -174,8 +175,9 @@ export default function Dashboard() {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  // data load
+  // data load (also after sign-in/out: while the map is contributor-only the API answers per viewer)
   useEffect(() => {
+    if (auth.status === 'loading') return;
     abortRef.current?.abort();
     const ac = new AbortController();
     abortRef.current = ac;
@@ -192,14 +194,14 @@ export default function Dashboard() {
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
         if (e instanceof PublicApiError) {
-          setApiError({ message: e.message, retryAfter: e.retryAfter });
+          setApiError({ message: e.message, retryAfter: e.retryAfter, code: e.code });
         } else {
           setApiError({ message: e instanceof Error ? e.message : '통계를 불러오지 못했습니다.', retryAfter: null });
         }
         setLoadState('error');
       });
     return () => ac.abort();
-  }, [scope, fixture]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scope, fixture, auth.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // back/forward
   useEffect(() => {
@@ -372,6 +374,7 @@ export default function Dashboard() {
         setApiError({
           message: e instanceof PublicApiError ? e.message : '통계를 불러오지 못했습니다.',
           retryAfter: e instanceof PublicApiError ? e.retryAfter : null,
+          code: e instanceof PublicApiError ? e.code : null,
         });
         setLoadState('error');
       });
@@ -492,6 +495,19 @@ export default function Dashboard() {
   );
   const managerCompare = showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />;
   const trendCard = data && <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />;
+
+  const accessCode = loadState === 'error' && apiError?.code && (ACCESS_CODES as readonly string[]).includes(apiError.code)
+    ? apiError.code as AccessCode : null;
+  if (accessCode) {
+    // Contributor-only: nothing of the dashboard renders without a readable response (the server refuses the data).
+    return (
+      <>
+        <TopBar theme={theme} onTheme={setTheme} briefing={false} onBriefing={() => undefined} dataStamp="" sample={false}
+          account={<AccountMenu auth={auth} onSignIn={signIn} onSignOut={signOut} briefing={false} />} />
+        <AccessGate code={accessCode} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={retry} />
+      </>
+    );
+  }
 
   return (
     <>

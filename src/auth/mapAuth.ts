@@ -1,7 +1,8 @@
 /**
- * Map web login (optional). This is NOT the device-connection relay (safeauth / community-auth-relay) and NOT
- * the account API (community-account): it only creates a Supabase Auth session for THIS browser on the map
- * origin so the viewer can read their own comparison. Public viewing never needs it.
+ * Map web login. This is NOT the device-connection relay (safeauth / community-auth-relay) and NOT the account API
+ * (community-account): it only creates a Supabase Auth session for THIS browser on the map origin. While the map is
+ * contributor-only (user decision 2026-09-27) the statistics API needs this session too; the server decides who
+ * may read (server/publicHandler.ts PublicAccess).
  *
  * - Kakao OAuth through Supabase Auth, PKCE, session stored under a map-only storage key.
  * - Sign-out uses scope 'local': only this browser's map session ends. Global/others sign-out would revoke the
@@ -31,6 +32,17 @@ export interface MapAuth {
   accessToken(): Promise<string | null>;
   /** Refresh once after a 401; null when the map session is gone. */
   refreshToken(): Promise<string | null>;
+  /** Resolves once a stored session / OAuth return has been checked (status is no longer 'loading'). */
+  settled(): Promise<void>;
+}
+
+function settledOf(emitter: Emitter): Promise<void> {
+  if (emitter.state.status !== 'loading') return Promise.resolve();
+  return new Promise(resolve => {
+    const stop = emitter.subscribe(s => {
+      if (s.status !== 'loading') { stop(); resolve(); }
+    });
+  });
 }
 
 export const MAP_AUTH_STORAGE_KEY = 'cm-map-auth-v1';
@@ -84,7 +96,7 @@ export function createLiveAuth(): MapAuth {
   const config = authConfig();
   const emitter = new Emitter({
     status: config ? 'signed_out' : 'unconfigured', displayName: null, synthetic: false,
-    message: config ? null : '지금은 로그인 기능을 쓸 수 없습니다. 지도와 통계는 그대로 볼 수 있습니다.',
+    message: config ? null : '지금은 로그인 기능을 쓸 수 없습니다.',
   });
   let clientPromise: Promise<SupabaseClient> | null = null;
 
@@ -107,7 +119,7 @@ export function createLiveAuth(): MapAuth {
     return clientPromise;
   };
 
-  const oauthReturn = /[?&](code|error)=/.test(window.location.search);
+  const oauthReturn = typeof window !== 'undefined' && /[?&](code|error)=/.test(window.location.search);
   if (config && (oauthReturn || hasStoredSession())) {
     emitter.set({ status: 'loading' });
     const failed = new URLSearchParams(window.location.search).get('error');
@@ -117,10 +129,10 @@ export function createLiveAuth(): MapAuth {
         emitter.set(data.session
           ? { status: 'signed_in', displayName: nickname(data.session.user.user_metadata), message: null }
           : failed
-            ? { status: 'error', message: '카카오 로그인이 취소되었거나 끝나지 않았습니다. 지도는 그대로 볼 수 있습니다.' }
+            ? { status: 'error', message: '카카오 로그인이 취소되었거나 끝나지 않았습니다. 다시 시도해 주세요.' }
             : { status: 'signed_out' });
       })
-      .catch(() => emitter.set({ status: 'error', message: '로그인 상태를 확인하지 못했습니다. 지도는 그대로 볼 수 있습니다.' }))
+      .catch(() => emitter.set({ status: 'error', message: '로그인 상태를 확인하지 못했습니다. 다시 시도해 주세요.' }))
       .finally(() => {
         if (oauthReturn) {
           window.history.replaceState(window.history.state, '', `${window.location.pathname}${stripOAuthParams(window.location.search)}`);
@@ -161,6 +173,7 @@ export function createLiveAuth(): MapAuth {
       }
       return data.session.access_token;
     },
+    settled: () => settledOf(emitter),
   };
 }
 
@@ -184,7 +197,7 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
       : fixture && signedStates.includes(fixture) ? 'signed_in' : stored ? 'signed_in' : 'signed_out';
   const emitter = new Emitter({
     status: initial, displayName: initial === 'signed_in' ? '예시 사용자' : null, synthetic: true,
-    message: initial === 'unconfigured' ? '지금은 로그인 기능을 쓸 수 없습니다. 지도와 통계는 그대로 볼 수 있습니다.' : null,
+    message: initial === 'unconfigured' ? '지금은 로그인 기능을 쓸 수 없습니다.' : null,
   });
   return {
     viewer: () => fixture ?? 'signed',
@@ -201,6 +214,7 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
       emitter.set({ status: 'signed_out', displayName: null, message: null });
     },
     async accessToken() { return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null; },
+    settled: () => Promise.resolve(),
     async refreshToken() {
       if (fixture === 'expired') {
         emitter.set({ status: 'signed_out', displayName: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.' });

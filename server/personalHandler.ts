@@ -6,15 +6,14 @@
 import { aggregateCompare } from './compare.ts';
 import type { PrivateFact } from './aggregate.ts';
 import { parseScope, QueryError, type AnalyticsState } from './publicHandler.ts';
+import { authenticate, ViewerAuthError, type ViewerAuthDeps, type ViewerUser } from './viewerAuth.ts';
 import type { ViewerState } from '../src/domain/personal.ts';
 
 export type Rpc = (name: string, args: Record<string, unknown>) => Promise<unknown>;
-export interface PersonalUser { id: string; isAnonymous: boolean }
-export interface PersonalDeps {
+export type PersonalUser = ViewerUser;
+export interface PersonalDeps extends ViewerAuthDeps {
   enabled: boolean;
   allowedOrigins: string[];
-  jwtIssuer: string | null;
-  getUser(accessToken: string): Promise<PersonalUser | null>;
   rpc: Rpc;
   log?(entry: Record<string, string | number>): void;
 }
@@ -29,8 +28,6 @@ export interface PersonalSource {
 const SCOPE_PARAMS: ReadonlySet<string> = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'expected_version',
 ]);
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const BEARER = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/;
 
 const MESSAGES: Record<string, [number, string]> = {
   auth_required: [401, '로그인이 필요합니다.'],
@@ -51,14 +48,6 @@ class Fail extends Error {
   constructor(readonly code: string) { super(code); }
 }
 const fail = (code: string): never => { throw new Fail(code); };
-
-function decodeClaims(token: string): Record<string, unknown> | null {
-  try {
-    const part = token.split('.')[1];
-    const b64 = part.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - part.length % 4) % 4);
-    return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0))));
-  } catch { return null; }
-}
 
 async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -99,18 +88,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       const url = new URL(request.url);
       if (!/\/my-analytics\/compare\/?$/.test(url.pathname)) fail('not_found');
 
-      const m = BEARER.exec(request.headers.get('authorization') || '');
-      if (!m) fail('auth_required');
-      const token = m![1];
-      let user: PersonalUser | null;
-      try { user = await deps.getUser(token); } catch { return error('service_unavailable'); }
-      if (!user) fail('session_expired');
-      const claims = decodeClaims(token);
-      if (!claims || claims.sub !== user!.id || claims.role !== 'authenticated' || claims.aud !== 'authenticated') fail('auth_required');
-      if (deps.jwtIssuer && claims!.iss !== deps.jwtIssuer) fail('auth_required');
-      if (claims!.is_anonymous === true || user!.isAnonymous) fail('kakao_required');
-      const session = typeof claims!.session_id === 'string' && UUID.test(claims!.session_id) ? claims!.session_id : fail('auth_required');
-      const uid = user!.id;
+      const { uid, session } = await authenticate(request, deps);
 
       const bucket = await sha256Hex(`my-analytics|user|${uid}`);
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: bucket, p_limit: 60 }) !== true) fail('rate_limited');
@@ -141,7 +119,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       deps.log?.({ event: 'my_analytics', outcome: 'ok', request_id: rid });
       return respond(200, body);
     } catch (e) {
-      if (e instanceof Fail) return error(e.code);
+      if (e instanceof Fail || e instanceof ViewerAuthError) return error(e.code);
       if (e instanceof QueryError) return error(e.code);
       return error('service_unavailable');
     }

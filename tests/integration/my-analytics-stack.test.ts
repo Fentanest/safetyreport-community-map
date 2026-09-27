@@ -48,7 +48,7 @@ const toSession = (j: Json): Session => {
 };
 
 /** A separate Kakao login = a separate GoTrue session (the app's session and the map's session are distinct). */
-async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D'): Promise<Session> {
+async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'): Promise<Session> {
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
   const step1 = await fetch(`${API}/auth/v1/authorize?${new URLSearchParams({ provider: 'kakao', redirect_to: REDIRECT, code_challenge: challenge, code_challenge_method: 's256' })}`, { redirect: 'manual' });
@@ -97,7 +97,21 @@ async function ingest(w: Writer, n: number, token = w.session.access) {
 const SCOPE = 'start=2024-01-01&end=2026-09-27&category=all';
 const compare = (token: string | null, extra = '', origin = MAP_ORIGIN) =>
   call('GET', `/functions/v1/my-analytics/compare?${SCOPE}${extra}`, { token, headers: { origin } });
-const publicDashboard = () => call('GET', `/functions/v1/public-analytics/dashboard?${SCOPE}`, { apikey: null });
+// The map is contributor-only (2026-09-27): statistics are read as E, a Kakao user with an active share consent.
+let viewerToken: string | null = null;
+async function viewer(): Promise<string> {
+  if (!viewerToken) {
+    const s = await kakaoSession('E');
+    const r = await account('consent', s.access, { policy_version: POLICY, consent_text_sha256: CONSENT_HASH, via: 'safetyreport_server', accepted: true });
+    expect(r.status, JSON.stringify(r.json)).toBe(200);
+    viewerToken = s.access;
+  }
+  return viewerToken;
+}
+const publicGet = async (path: string, token?: string | null, origin?: string) =>
+  call('GET', `/functions/v1/public-analytics/${path}`, { apikey: null, token: token === undefined ? await viewer() : token,
+    headers: origin ? { origin } : {} });
+const publicDashboard = () => publicGet(`dashboard?${SCOPE}`);
 
 describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
   beforeAll(async () => {
@@ -106,7 +120,7 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
     sql('update private.analytics_state set ready = true, published_at = coalesce(published_at, now()), data_max = null, data_min = null where singleton;');
   }, 120_000);
 
-  it('returns all = the anonymous public numbers and mine = only the verified user, from one version', async () => {
+  it('returns all = the public numbers and mine = only the verified user, from one version', async () => {
     const c = await writer('C');
     const d = await writer('D');
     expect((await ingest(c, 2)).status).toBe(200);
@@ -201,7 +215,7 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
       // publication switched off: no value leaves the database, the public side counts them as undisclosed
       sql(`update private.community_policy_disclosures set amounts_public = false where version = '${POLICY}';`);
       expect(released()).toBe(0);
-      const off = await call('GET', `/functions/v1/public-analytics/dashboard?${offScope}`, { apikey: null });
+      const off = await publicGet(`dashboard?${offScope}`);
       expect(off.status).toBe(200);
       expect(off.json.overview.fine_amount).toMatchObject({ confirmed_count: 0, sum_won: null, mean_won: null });
       expect(off.json.overview.fine_amount.undisclosed_count).toBeGreaterThanOrEqual(2);
@@ -210,7 +224,7 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
       sql(`update private.community_policy_disclosures set amounts_public = true where version = '${POLICY}';`);
     }
     expect(released()).toBe(stated);
-    const after = await call('GET', `/functions/v1/public-analytics/dashboard?${onScope}`, { apikey: null });
+    const after = await publicGet(`dashboard?${onScope}`);
     expect(after.status).toBe(200);
     const fa = after.json.overview.fine_amount;
     expect(fa.confirmed_count).toBeGreaterThanOrEqual(2);
@@ -220,5 +234,20 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
     expect(mine.status, JSON.stringify(mine.json)).toBe(200);
     expect(mine.json.all.fine_amount).toMatchObject({ confirmed_count: fa.confirmed_count, sum_won: fa.sum_won });
     expect(mine.json.mine.fine_amount.sum_won).toBeLessThanOrEqual(fa.sum_won);
+  });
+  it('contributor-only map: no sign-in → 401 everywhere; signed in without a share consent → 403; foreign origin → 403', async () => {
+    for (const path of ['meta', `dashboard?${SCOPE}`, `map?${SCOPE}`, `entities?${SCOPE}&kind=agency`]) {
+      const r = await publicGet(path, null);
+      expect([r.status, r.json.error?.code], path).toEqual([401, 'auth_required']);
+    }
+    const f = await kakaoSession('F'); // Kakao sign-in, never consented to share
+    const refused = await publicGet('meta', f.access);
+    expect([refused.status, refused.json.error?.code]).toEqual([403, 'contributor_required']);
+    expect(JSON.stringify(refused.json)).not.toMatch(/dataset_version|report_count/);
+    const ok = await publicGet('meta', undefined, MAP_ORIGIN);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('cache-control')).toBe('private, no-store, max-age=0');
+    expect((await publicGet('meta', undefined, 'https://evil.example')).status).toBe(403);
+    expect((await publicGet('meta', 'not.a.jwt')).status).toBe(401);
   });
 });

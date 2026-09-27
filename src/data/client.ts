@@ -1,7 +1,6 @@
 import type { DashboardData, PublicEntity, Scope } from '../domain/public';
-import {
-  entitiesResponseSchema, metaSchema, dashboardResponseSchema, snapshotManifestSchema,
-} from './schema';
+import { entitiesResponseSchema, metaSchema, dashboardResponseSchema } from './schema';
+import { mapAuth } from '../hooks/usePersonal';
 
 export type DataMode = 'demo' | 'live';
 export const dataMode: DataMode = import.meta.env.VITE_DATA_MODE === 'demo' ? 'demo' : 'live';
@@ -12,11 +11,19 @@ export function entitiesAvailable(): boolean {
 }
 
 export class PublicApiError extends Error {
-  constructor(message: string, readonly status: number | null = null, readonly retryAfter: number | null = null) {
+  constructor(message: string, readonly status: number | null = null, readonly retryAfter: number | null = null,
+    /** server error code, e.g. auth_required / contributor_required while the map is contributor-only */
+    readonly code: string | null = null) {
     super(message);
     this.name = 'PublicApiError';
   }
 }
+
+/** Errors that mean "sign in / share first", shown as the access gate instead of a data error. */
+export const ACCESS_CODES = ['auth_required', 'session_expired', 'kakao_required', 'contributor_required'] as const;
+export type AccessCode = typeof ACCESS_CODES[number];
+export const isAccessError = (e: unknown): e is PublicApiError & { code: AccessCode } =>
+  e instanceof PublicApiError && (ACCESS_CODES as readonly string[]).includes(e.code ?? '');
 
 function scopeParams(scope: Scope, version?: string, extra?: Record<string, string>): URLSearchParams {
   const p = new URLSearchParams({ start: scope.start, end: scope.end, category: scope.category });
@@ -35,32 +42,35 @@ function sameScope(a: Scope, b: Scope): boolean {
     a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox);
 }
 
-async function readSnapshot(scope: Scope, version: string, signal?: AbortSignal) {
-  try {
-    const base = import.meta.env.BASE_URL;
-    const manifestResponse = await fetch(`${base}data/manifest.json`, { signal, cache: 'no-store' });
-    if (!manifestResponse.ok) return null;
-    const manifest = snapshotManifestSchema.parse(await manifestResponse.json());
-    if (manifest.dataset_version !== version || !sameScope(manifest.scope, scope)) return null;
-    const response = await fetch(`${base}data/${encodeURIComponent(version)}/dashboard.json`, { signal, cache: 'no-store' });
-    if (!response.ok) return null;
-    const snapshot = dashboardResponseSchema.parse(await response.json());
-    return snapshot.dataset_version === version && !snapshot.sample && sameScope(snapshot.scope, scope) ? snapshot : null;
-  } catch (error) {
-    if (signal?.aborted) throw error;
-    return null;
-  }
-}
-
+// No static snapshot: while the map is contributor-only every read goes through the API's viewer check, and the
+// Pages artifact carries no data files (publish-pages.yml no longer exports one).
 async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
   if (!base) throw new PublicApiError('통계 서버에 연결할 수 없습니다.');
   const url = `${base}/public-analytics/${path}${params ? `?${params}` : ''}`;
-  const res = await fetch(url, { signal, credentials: 'omit', headers: { Accept: 'application/json' } });
+  const auth = mapAuth();
+  await auth.settled();
+  const send = (token: string | null) => fetch(url, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+  let token = await auth.accessToken();
+  let res = await send(token);
+  if (res.status === 401 && token) {
+    token = await auth.refreshToken();
+    if (token) res = await send(token);
+  }
   if (!res.ok) {
     const retry = Number(res.headers.get('retry-after'));
-    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : '통계를 불러오지 못했습니다.',
-      res.status, Number.isFinite(retry) && retry > 0 ? retry : null);
+    let code: string | null = null;
+    let message: string | null = null;
+    try {
+      const body = (await res.json()) as { error?: { code?: unknown; message?: unknown } };
+      code = typeof body.error?.code === 'string' ? body.error.code : null;
+      message = typeof body.error?.message === 'string' ? body.error.message : null;
+    } catch { /* not JSON */ }
+    const access = (ACCESS_CODES as readonly string[]).includes(code ?? '');
+    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.'
+      : access && message ? message : '통계를 불러오지 못했습니다.',
+      res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code);
   }
   return res.json();
 }
@@ -115,6 +125,9 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
   // Literal env check (not `dataMode`) so live builds drop the demo chunks entirely.
   if (import.meta.env.VITE_DATA_MODE === 'demo') {
     const state = new URLSearchParams(window.location.search).get('fixture');
+    // contributor-only gate previews (demo only): not signed in / signed in without an active share consent
+    if (state === 'login') throw new PublicApiError('카카오 로그인이 필요합니다.', 401, null, 'auth_required');
+    if (state === 'noshare') throw new PublicApiError('지금은 신고내용 공유에 동의한 사람만 볼 수 있습니다.', 403, null, 'contributor_required');
     if (state === 'offline') throw new PublicApiError('네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
     if (state === 'rate') throw new PublicApiError('요청이 많아 잠시 후 다시 시도해 주세요.', 429, 60);
     if (state === 'stale') throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
@@ -130,8 +143,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     throw new PublicApiError('통계가 아직 준비되지 않았습니다. 잠시 후 다시 확인해 주세요.', 503);
   }
   const q = scopeParams(scope, meta.dataset_version);
-  const result = await readSnapshot(scope, meta.dataset_version, signal) ??
-    dashboardResponseSchema.parse(await read('dashboard', q, signal));
+  const result = dashboardResponseSchema.parse(await read('dashboard', q, signal));
   if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
       !sameScope(result.scope, scope)) {
     throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
