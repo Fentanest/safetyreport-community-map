@@ -2,7 +2,7 @@ import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
 import type { AuthSnapshot } from '../auth/mapAuth';
-import { acceptRate, fmtInt, fmtPercent, fmtPp, fmtShare, partialRate } from './format';
+import { acceptRate, fmtDays, fmtDaysDiff, fmtInt, fmtPercent, fmtPp, fmtShare, partialRate } from './format';
 
 interface Props {
   overview: Overview;
@@ -22,7 +22,7 @@ interface Row {
   mine: (m: CompareSummary) => string;
   mineNote: (m: CompareSummary) => string | null;
   diff: (c: PersonalCompare) => string;
-  diffKind: 'share' | 'pp' | 'none';
+  diffKind: 'share' | 'pp' | 'days' | 'none';
 }
 
 const pct = (a: number, d: number) => (d > 0 ? (a / d) * 100 : null);
@@ -55,6 +55,13 @@ function rows(o: Overview): Row[] {
       all: fmtPercent(pct(o.fine_count.value ?? 0, c)), allNote: `${fmtInt(o.fine_count.value)}건`,
       mine: m => fmtPercent(m.fine_rate), mineNote: m => `${fmtInt(m.fine_count)}건`,
       diff: x => fmtPp(x.diff.fine_rate_pp), diffKind: 'pp' },
+    { id: 'duration', label: '답변까지 걸린 기간', basis: '중앙값 · 신고한 날부터 답변 받은 날까지',
+      all: o.processing_duration ? (o.processing_duration.count ? fmtDays(o.processing_duration.median_days) : '계산할 신고 없음') : '—',
+      allNote: o.processing_duration && o.processing_duration.count
+        ? `평균 ${fmtDays(o.processing_duration.mean_days)} · 90%는 ${fmtDays(o.processing_duration.p90_days)} 이내 · ${fmtInt(o.processing_duration.count)}건` : null,
+      mine: m => (m.duration.count ? fmtDays(m.duration.median_days) : '계산할 신고 없음'),
+      mineNote: m => (m.duration.count ? `평균 ${fmtDays(m.duration.mean_days)} · ${fmtInt(m.duration.count)}건` : null),
+      diff: x => fmtDaysDiff(x.diff.duration_median_days_diff), diffKind: 'days' },
     { id: 'points', label: '신고 장소', basis: '서로 다른 장소 수', all: fmtInt(o.point_count.value), allNote: null,
       mine: m => fmtInt(m.point_count), mineNote: () => null, diff: x => fmtShare(x.diff.point_share), diffKind: 'share' },
     { id: 'contributors', label: '참여한 사람', basis: '신고를 공유한 사람 수', all: fmtInt(o.contributor_count.value), allNote: null,
@@ -109,7 +116,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
               {showMine && (
                 <td className="num diff-col">
                   {data ? (<><b className="cm-number">{row.diff(data)}</b>
-                    <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나 − 전체') : ''}</small></>)
+                    <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나 − 전체' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나 − 전체') : ''}</small></>)
                     : <span className="cm-muted">—</span>}
                 </td>
               )}
@@ -117,6 +124,12 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
           ))}
         </tbody>
       </table>
+      {overview.processing_duration && (overview.processing_duration.excluded.no_report_date + overview.processing_duration.excluded.reversed + overview.processing_duration.answer_date_missing) > 0 && (
+        <p className="chart-caption">
+          답변까지 걸린 기간에서 뺀 신고: 날짜가 맞지 않음 {fmtInt(overview.processing_duration.excluded.no_report_date + overview.processing_duration.excluded.reversed)}건
+          {overview.processing_duration.answer_date_missing > 0 && ` · 답변일이 없어 기간을 알 수 없음 ${fmtInt(overview.processing_duration.answer_date_missing)}건`}
+        </p>
+      )}
       {message && (
         <div className="compare-note" role={personal.status === 'error' ? 'alert' : 'note'}>
           <span>{message}{personal.error?.retryAfter ? ` (${personal.error.retryAfter}초 후)` : ''}</span>

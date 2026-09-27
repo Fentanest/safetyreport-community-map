@@ -3,6 +3,7 @@ import {
   located, monthKeys, outcomes, selectScope, kstDate, type PrivateFact,
 } from './aggregate.ts';
 import type { Scope } from '../src/domain/public.ts';
+import { durationSummary } from './duration.ts';
 import type {
   CompareDiff, CompareEntityRow, CompareMonth, CompareRegionRow, CompareSide, CompareSummary,
   MyPoint, PersonalCompare, ViewerState,
@@ -25,6 +26,7 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     partial_rate: pct(o.partial, o.result_known),
     reject_rate: pct(o.rejected, o.result_known),
     fine_rate: pct(fine, done.length),
+    duration: (({ count, mean_days, median_days, p90_days }) => ({ count, mean_days, median_days, p90_days }))(durationSummary(done)),
   };
 }
 
@@ -40,18 +42,23 @@ export function diffOf(all: CompareSummary, mine: CompareSummary): CompareDiff {
     partial_rate_pp: minus(mine.partial_rate, all.partial_rate),
     reject_rate_pp: minus(mine.reject_rate, all.reject_rate),
     fine_rate_pp: minus(mine.fine_rate, all.fine_rate),
+    duration_median_days_diff: minus(mine.duration.median_days, all.duration.median_days),
+    duration_mean_days_diff: minus(mine.duration.mean_days, all.duration.mean_days),
     rate_reason: all.result_known === 0 ? 'no_all' : mine.result_known === 0 ? 'no_mine' : null,
   };
 }
 
 function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): CompareSide {
   const o = outcomes(done);
+  const dur = durationSummary(done);
   return {
     report_count: reported.length, completed_count: done.length, result_known: o.result_known,
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
     fine_count: done.filter(fact => fact.disposition === 'fine').length,
     accept_rate: pct(o.accepted, o.result_known),
     partial_rate: pct(o.partial, o.result_known),
+    duration_count: dur.count,
+    duration_median_days: dur.median_days,
   };
 }
 
@@ -98,7 +105,8 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
     const r = regionReported.get(code) ?? [], d = regionDone.get(code) ?? [];
     const a = side(r, d), m = side(r.filter(isMine), d.filter(isMine));
     return { region_code: code, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
-      partial_rate_pp: minus(m.partial_rate, a.partial_rate) };
+      partial_rate_pp: minus(m.partial_rate, a.partial_rate),
+      duration_median_days_diff: minus(m.duration_median_days, a.duration_median_days) };
   }).sort((x, y) => y.all.report_count - x.all.report_count || y.all.completed_count - x.all.completed_count ||
     (x.region_code ?? '￿').localeCompare(y.region_code ?? '￿', 'ko')).slice(0, MAX_COMPARE_REGIONS);
 
@@ -117,6 +125,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
         agency_name: first.agency_name || '기관 정보 없음', manager_name: kind === 'manager' ? first.manager_name : null,
         all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
         partial_rate_pp: minus(m.partial_rate, a.partial_rate),
+        duration_median_days_diff: minus(m.duration_median_days, a.duration_median_days),
       };
     }).sort((x, y) => y.mine.completed_count - x.mine.completed_count || y.all.completed_count - x.all.completed_count ||
       x.agency_name.localeCompare(y.agency_name, 'ko') || x.key.localeCompare(y.key)).slice(0, MAX_COMPARE_ROWS);
@@ -126,13 +135,15 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   const monthly: CompareMonth[] = monthKeys(scope.start, scope.end).map(month => {
     const outside = month > options.asOf.slice(0, 7) || (options.dataMin !== null && month < options.dataMin.slice(0, 7));
     if (outside) return { month, all_report_count: null, mine_report_count: null, all_completed_count: null,
-      mine_completed_count: null, all_accept_rate: null, mine_accept_rate: null };
+      mine_completed_count: null, all_accept_rate: null, mine_accept_rate: null,
+      all_duration_median_days: null, mine_duration_median_days: null };
     const r = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
     const d = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
     const a = side(r, d), m = side(r.filter(isMine), d.filter(isMine));
     return { month, all_report_count: a.report_count, mine_report_count: m.report_count,
       all_completed_count: a.completed_count, mine_completed_count: m.completed_count,
-      all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate };
+      all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate,
+      all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days };
   });
 
   // Points with my facts; `shared` = another contributor recorded the same point in this scope.

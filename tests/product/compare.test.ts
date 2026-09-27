@@ -37,6 +37,8 @@ describe('all side equals the public numbers for the same scope (same population
     expect(cmp.all.fine_count).toBe(pub.overview.fine_count.value);
     expect(cmp.all.point_count).toBe(pub.overview.point_count.value);
     expect(consistentWithPublic(cmp, pub.overview)).toBe(true);
+    const pd = pub.overview.processing_duration!;
+    expect(cmp.all.duration).toEqual({ count: pd.count, mean_days: pd.mean_days, median_days: pd.median_days, p90_days: pd.p90_days });
     expect(cmp.scope).toEqual(scope);
     expect(personalCompareSchema.safeParse(JSON.parse(JSON.stringify(cmp))).success).toBe(true);
   });
@@ -51,6 +53,10 @@ describe('mine is the viewer subset of the same population', () => {
     expect(cmp.mine.result_known).toBe(onlyMine.outcomes!.result_known);
     expect(cmp.mine.fine_count).toBe(onlyMine.fine_count.value);
     expect(cmp.mine.point_count).toBe(onlyMine.point_count.value);
+    // durations are recomputed from my raw reports; a mean/median may exceed the all side (no subset rule)
+    expect(cmp.mine.duration.count).toBe(onlyMine.processing_duration!.count);
+    expect(cmp.mine.duration.median_days).toBe(onlyMine.processing_duration!.median_days);
+    expect(cmp.mine.duration.count).toBeLessThanOrEqual(cmp.all.duration.count);
     for (const k of ['report_count', 'completed_count', 'result_known', 'fine_count', 'point_count', 'accepted', 'partial', 'rejected'] as const) {
       expect(cmp.mine[k]).toBeLessThanOrEqual(cmp.all[k]);
     }
@@ -79,6 +85,7 @@ describe('differences', () => {
     expect(cmp.diff.accept_rate_pp).toBeCloseTo(cmp.mine.accept_rate! - cmp.all.accept_rate!, 10);
     expect(cmp.diff.reject_rate_pp).toBeCloseTo(cmp.mine.reject_rate! - cmp.all.reject_rate!, 10);
     expect(cmp.diff.partial_rate_pp).toBeCloseTo(cmp.mine.partial_rate! - cmp.all.partial_rate!, 10);
+    expect(cmp.diff.duration_median_days_diff).toBe(cmp.mine.duration.median_days! - cmp.all.duration.median_days!);
     expect(cmp.diff.fine_rate_pp).toBeCloseTo(cmp.mine.fine_rate! - cmp.all.fine_rate!, 10);
     expect(cmp.diff.report_share).toBeCloseTo(cmp.mine.report_count * 100 / cmp.all.report_count, 10);
     expect(cmp.diff.rate_reason).toBeNull();

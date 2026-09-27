@@ -14,20 +14,24 @@ const count = z.number().int().nonnegative();
 const rate = z.number().min(0).max(100).nullable();
 const pp = z.number().min(-100).max(100).nullable();
 const share = z.number().min(0).max(100).nullable();
+const days = z.number().min(0).nullable();
+const dayDiff = z.number().nullable();
 
 const summarySchema = z.strictObject({
   report_count: count, completed_count: count, accepted: count, partial: count, rejected: count,
   result_known: count, result_unknown: count, fine_count: count, point_count: count,
   accept_rate: rate, partial_rate: rate, reject_rate: rate, fine_rate: rate,
+  duration: z.strictObject({ count, mean_days: days, median_days: days, p90_days: days }),
 });
 const sideSchema = z.strictObject({
   report_count: count, completed_count: count, result_known: count, accepted: count, partial: count,
   rejected: count, fine_count: count, accept_rate: rate, partial_rate: rate,
+  duration_count: count, duration_median_days: days,
 });
 const entitySchema = z.strictObject({
   kind: z.enum(['agency', 'manager']), key: z.string().max(330), agency_key: z.string().max(160).nullable(),
   manager_key: z.string().max(160).nullable(), agency_name: z.string().max(200), manager_name: z.string().max(160).nullable(),
-  all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp,
+  all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp, duration_median_days_diff: dayDiff,
 });
 
 export const personalCompareSchema = z.strictObject({
@@ -38,10 +42,11 @@ export const personalCompareSchema = z.strictObject({
   all: summarySchema, mine: summarySchema,
   diff: z.strictObject({
     report_share: share, completed_share: share, fine_share: share, point_share: share,
-    accept_rate_pp: pp, partial_rate_pp: pp, reject_rate_pp: pp, fine_rate_pp: pp, rate_reason: z.enum(['no_all', 'no_mine']).nullable(),
+    accept_rate_pp: pp, partial_rate_pp: pp, reject_rate_pp: pp,
+    duration_median_days_diff: dayDiff, duration_mean_days_diff: dayDiff, fine_rate_pp: pp, rate_reason: z.enum(['no_all', 'no_mine']).nullable(),
   }),
   regions: z.array(z.strictObject({
-    region_code: z.string().max(24).nullable(), all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp,
+    region_code: z.string().max(24).nullable(), all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp, duration_median_days_diff: dayDiff,
   })).max(300),
   agencies: z.array(entitySchema).max(50),
   managers: z.array(entitySchema).max(50),
@@ -50,6 +55,7 @@ export const personalCompareSchema = z.strictObject({
     all_report_count: count.nullable(), mine_report_count: count.nullable(),
     all_completed_count: count.nullable(), mine_completed_count: count.nullable(),
     all_accept_rate: rate, mine_accept_rate: rate,
+    all_duration_median_days: days, mine_duration_median_days: days,
   })).max(80),
   my_points: z.array(z.strictObject({
     key: z.string().max(160), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),

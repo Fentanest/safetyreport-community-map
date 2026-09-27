@@ -31,6 +31,8 @@ export interface CompareSummary {
   reject_rate: number | null;
   /** fine/C×100, null when C = 0 */
   fine_rate: number | null;
+  /** 답변까지 걸린 기간(일), answer-date cohort. Averages may exceed the all side — no subset rule. */
+  duration: { count: number; mean_days: number | null; median_days: number | null; p90_days: number | null };
 }
 
 export type DiffReason = 'no_all' | 'no_mine' | null;
@@ -45,6 +47,9 @@ export interface CompareDiff {
   partial_rate_pp: number | null;
   reject_rate_pp: number | null;
   fine_rate_pp: number | null;
+  /** mine − all, in days (null when either side has no computable report) */
+  duration_median_days_diff: number | null;
+  duration_mean_days_diff: number | null;
   /** why rate differences are null: all side has no denominator, or mine side has none */
   rate_reason: DiffReason;
 }
@@ -59,6 +64,8 @@ export interface CompareSide {
   fine_count: number;
   accept_rate: number | null;
   partial_rate: number | null;
+  duration_count: number;
+  duration_median_days: number | null;
 }
 
 export interface CompareRegionRow {
@@ -67,6 +74,7 @@ export interface CompareRegionRow {
   mine: CompareSide;
   accept_rate_pp: number | null;
   partial_rate_pp: number | null;
+  duration_median_days_diff: number | null;
 }
 
 export interface CompareEntityRow {
@@ -80,6 +88,7 @@ export interface CompareEntityRow {
   mine: CompareSide;
   accept_rate_pp: number | null;
   partial_rate_pp: number | null;
+  duration_median_days_diff: number | null;
 }
 
 export interface CompareMonth {
@@ -90,6 +99,8 @@ export interface CompareMonth {
   mine_completed_count: number | null;
   all_accept_rate: number | null;
   mine_accept_rate: number | null;
+  all_duration_median_days: number | null;
+  mine_duration_median_days: number | null;
 }
 
 /** A located point that contains at least one of my reports or completions in the scope. */
