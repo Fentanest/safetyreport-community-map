@@ -45,3 +45,17 @@
 - 함수 배포는 합성 디렉터리에서 5개(`public-analytics`, `my-analytics`, `community-ingest`, `community-account`, `community-auth-relay`).
 - Pages: `MAP_SUPABASE_URL`, `MAP_SUPABASE_PUBLISHABLE_KEY`(공개 publishable) 저장소 변수. snapshot export는 `ready=true` 전에는 거부하므로
   지도 Pages 공개는 §1의 6→7단계(실제 카카오 테스트 계정 업로드 후 `ready=true`) 뒤에 실행한다.
+
+## 6. 운영 반영 기록 (2026-09-27, 사용자 승인)
+- DB: 합성 디렉터리(해시 check 통과)에서 `db push --linked` — `202608150001`·`202609240001`·`202609251200`·`202609260100`·
+  `202609260200`·`202609270100` 6개 적용(dry-run으로 목록 확인 후). 적용 후 스키마 덤프: `internal_*` 27개 함수 모두 EXECUTE는
+  `service_role`만, private 표와 `public.public_map_points`에 anon/authenticated 권한 없음. `analytics_state.ready=false` 유지.
+- Edge Functions 5개 배포(ACTIVE): `public-analytics`(verify_jwt=false), `my-analytics`(true), `community-ingest`(true),
+  `community-account`(true), `community-auth-relay`(false). secrets: `ANALYTICS_RATE_SALT`, `AUTH_JWT_ISSUER`,
+  `MY_ANALYTICS_ALLOWED_ORIGINS` 추가(사용자 입력), relay 5개 기존.
+- smoke(익명): public `meta` 200, `dashboard` 503(not ready), `my-analytics` 토큰 없음 401, safemap preflight 204(정확한 Origin 에코·
+  private no-store), 다른 Origin 403, `community-ingest`·`community-account/status` 토큰 없음 401. 운영 gateway는 CORS를 `*`로 덮지 않음.
+- Pages: PR #1·#2 병합 후 `community-map-pages` 실행 성공, `https://safemap.worklazy.net/` 200. not-ready 안내 표시, 지도 로그인 버튼
+  노출(로그인 설정 반영), console·4xx/5xx 0. snapshot은 `SNAPSHOT_ALLOW_NOT_READY=1`로 생략(부분 snapshot 없음).
+- 남은 운영 단계: §1의 5(앱 배포)·6(본인 카카오 계정 시험 업로드)·7(`ready=true`). ready 전에는 지도 영역이 그려지지 않아
+  Kakao JS SDK 도메인 등록은 ready 뒤에 확인한다. 실제 카카오 로그인·내 통계 비교는 사용자 계정으로만 확인 가능.

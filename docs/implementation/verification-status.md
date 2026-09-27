@@ -41,12 +41,12 @@
 | CMP01 | PASS_LOCAL | `tests/product/compare.test.ts` 8개 scope에서 전체=공개 overview, 내⊆전체, 내=내 사실만 공개 집계. 스택: 전체=익명 dashboard, 같은 dataset_version, 409(버전 불일치) |
 | CMP02 | PASS_LOCAL | %p/내 비중, 0분모 null+이유, n=1, 지역·담당자·월 합계와 공개 키 일치(compare.test.ts) |
 | CMP03 | PASS_LOCAL | handler 20개 테스트 + 스택 5개: 비로그인·키 bearer·위조 claims·익명·비카카오 거부, viewer id는 검증 토큰만, RPC ACL `{postgres,service_role}` |
-| CMP04 | PASS_LOCAL | private/no-store·Vary, exporter 개인 필드 거부, share URL 검사, dist 스캔(비-anon JWT·relay 참조 차단). 로컬 Kong은 ACAO를 `*`로 덮어써 hosted gateway CORS는 NOT_VERIFIED(핸들러 Origin 403이 실제 통제) |
+| CMP04 | PASS_LOCAL + 운영 preflight | private/no-store·Vary, exporter 개인 필드 거부, share URL 검사, dist 스캔. 운영 gateway: safemap Origin 정확 에코·다른 Origin 403 확인(로컬 Kong의 `*` 덮어쓰기는 운영에 없음) |
 | CMP05 | PASS_LOCAL | 스택: 지도 세션 `logout?scope=local` 후 지도 401·앱 ingest 200 accepted, global은 앱 세션을 끊음(대조). 브라우저 E2E: supabase-js가 `scope=local` 호출, 지도 저장 키만 삭제 |
 | CMP06 | PASS_LOCAL | 브라우저 E2E(live build + 로컬 스택)에서 비로그인 공개 화면, 공개 요청 Authorization 없음. 개인 API 오류 fixture에서도 공개 화면 유지(Muse) |
 | CMP07 | PASS_LOCAL(합성) | Muse 구현 검수 `docs/reviews/personal-compare-impl.md`(e3b05fc), 통합본 최종 검수 `docs/reviews/personal-compare-final.md`(ec5a847, 24셀·행동 전수 PASS, 하 3건) → 수정 `a09adc7` → 재검수 `docs/reviews/personal-compare-recheck.md` PASS |
 | CMP08 | PASS_LOCAL(합성) | 동상. 실 Kakao 지도 위 링 표시는 BLOCKED(키 없음) |
-| 운영 인증 | BLOCKED | 운영 Kakao provider 리다이렉트, Pages 변수, `my-analytics` 배포·migration 적용 미실행(승인 필요) |
+| 운영 인증 | PARTIAL | 2026-09-27 운영 반영: migration 6개·함수 5개·Pages 배포, 익명 smoke 통과(deployment-and-rollback.md §6). 실제 카카오 로그인·내 비교는 `ready=true`와 사용자 계정 확인 전 NOT_RUN |
 | 실데이터 대조 | BLOCKED | 운영 사실 없음. 합성 스택 사실로만 대조 |
 
 재현(`a09adc7`): `npm test`(150 통과·26 skip=스택 전용), `python3 -m unittest discover -s tests/product -p 'test_*.py'`(9),
