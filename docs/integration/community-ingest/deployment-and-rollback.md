@@ -59,3 +59,15 @@
   노출(로그인 설정 반영), console·4xx/5xx 0. snapshot은 `SNAPSHOT_ALLOW_NOT_READY=1`로 생략(부분 snapshot 없음).
 - 남은 운영 단계: §1의 5(앱 배포)·6(본인 카카오 계정 시험 업로드)·7(`ready=true`). ready 전에는 지도 영역이 그려지지 않아
   Kakao JS SDK 도메인 등록은 ready 뒤에 확인한다. 실제 카카오 로그인·내 통계 비교는 사용자 계정으로만 확인 가능.
+
+## 7. 운영 반영 기록 (2026-09-27, 과태료 금액·기간·행정구역·동의 2026-09-28.1)
+- DB: 합성 디렉터리(manifest check 9개 통과)에서 dry-run으로 3개만 나오는 것 확인 후 `db push --linked`:
+  map `202609280100`(금액 projection·disclosures 표), auth `202609280200`(정책 2026-09-28.1 추가·현재 지정), map `202609280300`(2026-09-28.1 금액 공개 등록).
+  스키마 덤프: `internal_analytics_v2_facts` EXECUTE는 service_role만, `private.community_policy_disclosures`는 service_role SELECT만.
+- Edge Functions: `public-analytics`, `my-analytics` 재배포(공유 모듈 amount·duration·regions와 코드표 JSON 포함). 다른 3개는 코드 변경 없음.
+- smoke: meta 200(capabilities 모두 supported — 운영 `analytics_state.ready=true` 상태였음, 이번 작업에서 바꾸지 않음), dashboard 200(사실 0건: 기간 count 0, 금액 fine_count 0, regions 없음),
+  옛 지역 키 `서울 중구` 200, my-analytics 토큰 없음 401.
+- Pages: PR #9 병합(`87798d4`) 후 `community-map-pages` 수동 실행 성공. 실제 도메인에서 카카오 지도·서울 중구 경계 맞춤·새 표 행, console·4xx/5xx 0.
+- auth: PR #1 병합(`ecdbcba`). CI local-stack은 지도 스키마 없이 도는 relay 전용이라 새 정책 migration을 계정 레지스트리와 함께 건너뛰게 했다(적용된 migration은 수정하지 않음).
+- 앱: PC·모바일 dev에 필수 동의 2026-09-28.1 반영(로컬 커밋, push·릴리스 전). 앱을 배포하기 전에는 운영 현재 정책(2026-09-28.1)과 배포된 앱의 필수 버전이 다르면 동의 단계에서 policy_mismatch가 난다 — 운영 동의 0건이라 현재 영향 없음.
+- 롤백: disclosures 행 삭제(금액 즉시 비공개), `community_policy_current`를 2026-09-26.1로 되돌림(정책 행은 지우지 않음), 함수는 이전 배포 재배포.
