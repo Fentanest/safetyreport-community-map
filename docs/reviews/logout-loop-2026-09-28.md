@@ -22,3 +22,16 @@
 - live 설정 `npm run build`와 `npm run scan`: 통과.
 - `node --check scripts/integration/{live_login_e2e,access_gate_e2e,logout_gate_browser}.mjs`: 통과.
 - Python blueprint/product 검사 27 + 11 passed.
+
+## 승인 후 운영 배포
+
+사용자의 별도 승인으로 [PR #15](https://github.com/Fentanest/safetyreport-community-map/pull/15)를
+검사 통과 후 `main`의 `4d89061`에 병합했다.
+[Pages 배포 run](https://github.com/Fentanest/safetyreport-community-map/actions/runs/36331351787)은
+Python·Vitest·live 빌드·공개 산출물 스캔과 실제 배포까지 성공했다. 운영 DB·Edge 함수·Supabase Auth 설정은 변경하지 않았다.
+
+새 익명 Chrome 브라우저에서 운영 URL의 새 JS 자산(`index-Du5zZ5Yl.js`)을 확인했다.
+로그인 안내는 기다리는 동안 그대로 있었고 클릭 전 OAuth·통계 요청은 각각 0건,
+`카카오로 로그인`을 누른 뒤 OAuth 요청은 1건, pageerror는 0이었다.
+사용자가 기존 카카오 로그인 브라우저에서 새로고침 후 로그아웃을 재시험했고,
+노란 `카카오로 로그인` 버튼이 있는 안내 화면에 그대로 머문다고 확인했다.
