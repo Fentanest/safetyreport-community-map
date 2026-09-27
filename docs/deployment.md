@@ -54,9 +54,13 @@ production deployment는 별도 사용자 승인 후. concurrency와 rollback ru
 4. source_version/삭제 전파/429/오류 UI/캐시 지연 확인.
 5. Pages URL/subpath/assets/share-query 검증, browser console/network 확인.
 
-현재 운영 Supabase 키·도메인·v2 사실 데이터가 없어 위 smoke는 미실행이다. 로컬 PostgreSQL 16에서
-기존 migration과 v2 migration을 적용하고 역할 권한·1건 조회·철회 후 version 무효화를 검사했다.
-이 검사는 운영 DB migration 승인이나 실제 Kakao 지도 검증을 대신하지 않는다.
+2026-09-27 로그인된 PC 운영 지도에서 Kakao SDK와 공유 통계 응답을 검증했다
+(`docs/reviews/live-map-followup-2026-09-27.md`). 전국 지도 묶음·복귀·화면 범위 수정 후보의
+운영 배포 검증은 별도다. 기존 로컬 PostgreSQL 16 검사는 운영 검증을 대신하지 않는다.
+
+Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
+`https://safemap.worklazy.net/`이다. 기존 앱·인증 사이트 콜백을 유지한다. 이 주소가
+`localhost:3000`으로 남아 있으면 모바일 OAuth 완료 후 잘못된 주소로 돌아갈 수 있다.
 
 ## rollback
 새 build 실패면 배포하지 않음. 배포 후 문제가 생기면 직전 검증 artifact로 rollback(권한 승인 범위),

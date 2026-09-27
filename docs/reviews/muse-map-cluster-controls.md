@@ -4,7 +4,7 @@
 - commit: (아래 git log 참조) / dirty: 없음(커밋 시점)
 - URL: http://127.0.0.1:5173/ (로컬 dev) / data_mode: demo fixture (`VITE_DATA_MODE=demo`, 로그인 없음)
 - browser: google-chrome 154.0.8037.57 / playwright-core 1.63.0 (script /tmp/opencode/cm-review/review.mjs)
-- model: 표시명과 무관하게 provider/model 미확인 → MODEL_UNVERIFIED로 기록
+- model: Sol이 정확한 세션 `ses_f1cba3a77ffe8tJ74L1gkc2m4L`의 sanitized export에서 `opencode-go/muse-spark-1.3-contributor` 확인
 
 ## 변경 (소유 범위 내: kakao.ts, MapPanel.tsx, app.css + 신규 UI 테스트 2건)
 1. `src/lib/kakao.ts` — far zoom(level ≥ 8) 격자 클러스터링. 버블 숫자는 멤버 표시 건수의 합(SUM), 노드 수가 아님.
@@ -31,8 +31,8 @@
 |---|---|---|---|---|
 | MC-1 | 중(수정됨) | fallback에서 map-top이 오류 카드와 겹침(기존 apply 버튼도 겹쳐 있었음) → fallback에서 상단 바를 흐름 배치로 변경 | 1920-mapcard-backbtn.png(수정 후) | Muse |
 | MC-2 | 경미(수정됨) | 복귀 버튼 aria `서울특별시으로` 조사 오류 → `한 단계 위 지역으로: 서울특별시` | MapPanel.tsx | Muse |
-| MC-3 | **Sol 조치 필요** | `tests/product/afMap2PointCount.test.tsx` 1건 실패: 신고 지표 MapPanel 마크업에서 `예시 지점`(report 0) 기대 — 이번 사용자 요구(신고 지표에서 report 0 미표시)와 정면 충돌. 서버 데이터·통계는 불변. Sol이 해당 assertion을 수용 지표 기준으로 갱신해야 함(파일 소유상 Muse가 수정 금지) | `npm test` Failed Tests 1 | Sol |
-| MC-4 | 참고 | DataGuide 문구 `답변만 받은 신고의 장소도 지도에 함께 표시됩니다`는 이제 완료 지표에서만 성립(신고 지표 숨김). 가이드 문구 조정은 Sol 범위 | — | Sol |
+| MC-3 | **Sol 조치 완료** | `tests/product/afMap2PointCount.test.tsx`를 신고 지표 숨김·완료 지표 표시로 갱신. 전체 `npm test` 216 passed / 28 skipped | Sol 통합 테스트 | Sol |
+| MC-4 | **Sol 조치 완료** | DataGuide의 완료일 전용 지점 안내를 완료 지표 기준으로 수정 | `src/components/DataGuide.tsx` | Sol |
 
 ## 통계·공개 경계
 - 합계 보존: 클러스터 합 = 표시 집합 합과 동일(테스트). 0-circle 없음. n=1 유지(단일점은 항상 exact 마커).

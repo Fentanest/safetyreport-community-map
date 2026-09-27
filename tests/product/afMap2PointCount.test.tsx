@@ -59,15 +59,21 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     expect(kpi).toContain('신고 장소');
     expect(kpi).toMatch(/<b class="cm-number">0<\/b>/);
     expect(kpi).not.toContain('내 신고');
-    const map = renderToStaticMarkup(
+    const reportMap = renderToStaticMarkup(
       <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="reports"
         onMetric={() => {}} categoryLabel="전체 분류" onApplyView={() => {}} autoRefresh={false}
         onAutoRefresh={() => {}} locationMissing={data.meta.location_missing ?? null} />,
     );
-    // Result screen renders the union point and explains the completion-only locations.
-    expect(map).toContain('예시 지점');
-    // The completion-only location rule is explained to users in the guide (plain language).
-    expect(renderToStaticMarkup(<DataGuide data={data} />)).toContain('답변만 받은 신고의 장소도 지도에 함께 표시됩니다');
+    expect(reportMap).not.toContain('예시 지점');
+    expect(reportMap).toContain('신고 0건인 1곳은 지도에 표시하지 않습니다');
+    const completionMap = renderToStaticMarkup(
+      <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="acceptance"
+        onMetric={() => {}} categoryLabel="전체 분류" onApplyView={() => {}} autoRefresh={false}
+        onAutoRefresh={() => {}} locationMissing={data.meta.location_missing ?? null} />,
+    );
+    expect(completionMap).toContain('예시 지점');
+    expect(completionMap).toContain('완료 1건');
+    expect(renderToStaticMarkup(<DataGuide data={data} />)).toContain('답변만 받은 신고의 장소는 완료 지표를 고르면 볼 수 있습니다');
     // Dashboard renders the empty banner only when isEmptyResult is true.
     const banner = isEmptyResult(data)
       ? `<div class="banner warn"><span class="grow">${bannerText}. 조건을 해제하면 전국 집계를 볼 수 있습니다.</span></div>`

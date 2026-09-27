@@ -48,7 +48,7 @@ export default function DataGuide({ data }: { data: DashboardData | null }) {
         <li>신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다.{data && ` 지금 보는 기간: ${fmtDate(data.scope.start)} ~ ${fmtDate(data.scope.end)}`}</li>
         <li>담당자는 이름과 소속 기관을 함께 보여 드립니다. 이름이 같아도 기관이 다르면 따로 셉니다.</li>
         <li>차량 번호는 지역명 뒤 2·4·6번째 글자를 *로 가려서 보여 드립니다. 번호 전체는 공개하지 않습니다.</li>
-        <li>장소는 신고에 입력된 위치 그대로 표시합니다. 지도를 넓게 보면 가까운 장소를 묶어 보여 줍니다. 고른 기간에 답변만 받은 신고의 장소도 지도에 함께 표시됩니다.</li>
+        <li>장소는 신고에 입력된 위치 그대로 표시합니다. 지도를 넓게 보면 가까운 장소를 묶어 보여 줍니다. 고른 기간에 답변만 받은 신고의 장소는 완료 지표를 고르면 볼 수 있습니다.</li>
         <li>신고가 1건뿐인 결과도 숨기지 않습니다. 알 수 없는 값은 0이 아니라 ‘—’로 표시합니다.</li>
         <li>
           공유한 신고의 삭제는 <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">문의 게시판(GitHub Issues)</a>에 요청할 수 있습니다.
