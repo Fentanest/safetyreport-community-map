@@ -1,0 +1,25 @@
+{
+  "browser": "154.0.8037.57",
+  "summary": {
+    "1440x900": {
+      "gateVisible": true,
+      "urlBefore": "http://127.0.0.1:4174/",
+      "urlAfterClick": "chrome-error://chromewebdata/",
+      "mapCards": 0,
+      "preClickOutbound": 0,
+      "postClickOutbound": 1,
+      "keyboardReachable": true,
+      "pageErrors": []
+    },
+    "390x844": {
+      "gateVisible": true,
+      "urlBefore": "http://127.0.0.1:4174/",
+      "urlAfterClick": "chrome-error://chromewebdata/",
+      "mapCards": 0,
+      "preClickOutbound": 0,
+      "postClickOutbound": 1,
+      "keyboardReachable": true,
+      "pageErrors": []
+    }
+  }
+}

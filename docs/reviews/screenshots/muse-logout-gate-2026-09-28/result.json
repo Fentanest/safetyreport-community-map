@@ -1,0 +1,14 @@
+{
+  "browser": "154.0.8037.57",
+  "mode": "live-build/auth-fixture",
+  "checks": {
+    "initialSignedIn": true,
+    "localSignOut": true,
+    "noAutomaticLogin": true,
+    "sessionRemoved": true,
+    "mapHidden": true,
+    "explicitLoginOnly": true,
+    "noPageErrors": true
+  },
+  "pageErrors": []
+}
