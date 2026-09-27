@@ -12,6 +12,18 @@ export interface Scope {
   bbox: [number, number, number, number] | null;
 }
 
+/** A map viewport may extend beyond Korea at nationwide zoom. Keep real geographic bounds intact. */
+export function parseBbox(raw: string): Scope['bbox'] {
+  const parts = raw.split(',');
+  const decimal = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+  if (parts.length !== 4 || parts.some(part => !decimal.test(part.trim()))) return null;
+  const values = parts.map(Number);
+  if (values.some(value => !Number.isFinite(value))) return null;
+  const [west, south, east, north] = values;
+  if (west < -180 || east > 180 || south < -90 || north > 90 || west > east || south > north) return null;
+  return values as NonNullable<Scope['bbox']>;
+}
+
 export interface Capability {
   status: CapabilityState;
   reason: string | null;

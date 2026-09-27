@@ -16,6 +16,9 @@ base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽
 
 공통 query: start/end(ISO date), category, region_code, agency_key, manager_key,
 bbox=minLng,minLat,maxLng,maxLat, expected_version, metric별 result/disposition 조건.
+`bbox`는 실제 지도 화면 좌표를 유지하므로 전국 축척에서 대한민국 외곽까지 확장될 수 있다.
+API와 공유 URL은 유한한 세계 경도(-180~180)·위도(-90~90)와 순서를 검사하며,
+범위 안의 국내 사실만 고른다. 원천 좌표를 자르거나 이동시키지 않는다.
 지도 표시 옵션: zoom/resolution. SQL identifier/raw filter expression을 인자로 받지 않는다.
 region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명시한다. point 선택은 별도의 detail_scope로 main scope를 덮지 않는다.
 
@@ -78,7 +81,7 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 `https://<project>.supabase.co/functions/v1`이며 브라우저는 그 뒤에 `/public-analytics/...`를 붙인다.
 현재 코드의 통계 응답은 철회/버전 무효화 전파를 우선해 `Cache-Control: private, no-store`다.
 정적 snapshot은 공유자 전용 전환과 함께 쓰지 않는다(위 §열람 조건). 운영에서 v2 사실이 준비되지 않으면 meta capability는 missing,
-집계 경로는 503을 반환한다. 현재 인증 전용 수정본은 아직 운영 Edge에 배포되지 않았다(운영 v4 `meta` 익명 200 관측).
+집계 경로는 503을 반환한다. 운영 `public-analytics` v5는 사용자 JWT를 요구하고 익명 `meta`는 401이다.
 지도는 현재 bbox로 범위를 좁히고 표시 노드를 1,000개 이하로 묶는다. 별도 `zoom/resolution`과
 result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌려준다.
 기관·담당자 표(2026-09-26 감사 SOL-08): dashboard 의 `agencies`/`managers` 는 상위 100행 요약이고,

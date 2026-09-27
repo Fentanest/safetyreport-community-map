@@ -1,4 +1,4 @@
-import { DEFAULT_SCOPE, DEMO_SCOPE, type Category, type Scope } from '../domain/public';
+import { DEFAULT_SCOPE, DEMO_SCOPE, parseBbox, type Category, type Scope } from '../domain/public';
 import { normalizeRegion } from '../data/regions';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
@@ -99,11 +99,7 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
   const region = p.get('region_code');
   const agency = p.get('agency_key');
   const manager = p.get('manager_key');
-  const bboxValues = p.get('bbox')?.split(',').map(Number);
-  const bbox = bboxValues?.length === 4 && bboxValues.every(Number.isFinite) &&
-    bboxValues[0] >= 124 && bboxValues[2] <= 132 && bboxValues[1] >= 32 && bboxValues[3] <= 39.5 &&
-    bboxValues[0] <= bboxValues[2] && bboxValues[1] <= bboxValues[3]
-    ? bboxValues as Scope['bbox'] : null;
+  const bbox = p.has('bbox') ? parseBbox(p.get('bbox') ?? '') : null;
   return {
     ...fallback,
     start: start && isValidDate(start) ? start : fallback.start,

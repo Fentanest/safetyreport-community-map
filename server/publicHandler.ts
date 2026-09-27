@@ -1,7 +1,7 @@
 import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
 import { codeForLegacyKey } from './regions.ts';
 import { authenticate, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
-import type { PublicEntity, PublicMeta, Scope } from '../src/domain/public.ts';
+import { parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
   dataset_version: string;
@@ -97,11 +97,8 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   const bboxRaw = params.get('bbox');
   let bbox: Scope['bbox'] = null;
   if (bboxRaw !== null) {
-    const values = bboxRaw.split(',').map(Number);
-    if (values.length !== 4 || values.some(v => !Number.isFinite(v)) ||
-      values[0] < 124 || values[2] > 132 || values[1] < 32 || values[3] > 39.5 ||
-      values[0] > values[2] || values[1] > values[3]) throw new QueryError('INVALID_QUERY', 400);
-    bbox = values as Scope['bbox'];
+    bbox = parseBbox(bboxRaw);
+    if (!bbox) throw new QueryError('INVALID_QUERY', 400);
   }
   // region_code: an official code, or an old display key such as '서울 중구' (letters, digits, single spaces)
   const region = params.get('region_code');
