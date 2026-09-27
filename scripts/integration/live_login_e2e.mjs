@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // LOCAL composed stack only (never production): a real Chrome runs the LIVE-mode map build against the local
 // GoTrue (Kakao = scripts/integration/mock_kakao.mjs), public-analytics and my-analytics.
-// Checks: anonymous visit redirects to Kakao without a statistics request; PKCE login back to the map, OAuth params
+// Checks: anonymous visit stays on the login gate without a statistics request; an explicit click starts PKCE,
+// then login returns to the map with OAuth params
 // stripped, compare columns filled from my-analytics with all = shared numbers, private headers,
-// logout with scope=local, map session storage cleared, Kakao login shown again.
+// logout with scope=local, map session storage cleared, login gate stays put until another explicit click.
 //
 //   PLAYWRIGHT_CORE=/path/to/playwright-core/index.mjs node scripts/integration/live_login_e2e.mjs <out-dir> [choice]
 // Preconditions: stack + mock_kakao + functions serve running; live build served at http://127.0.0.1:56490/ with
@@ -41,12 +42,17 @@ page.on('response', async (r) => {
 
 try {
   await page.goto(MAP, { waitUntil: 'networkidle' });
+  await page.waitForSelector('#gate-title', { timeout: 15000 });
+  check('anonymous visit stays on the login gate until a click',
+    page.url().startsWith(MAP) && !requests.some((r) => r.url.includes('/auth/v1/authorize')));
+  check('anonymous visitor made no statistics request', requests.every((r) => !r.url.includes('/public-analytics/')));
+  await page.screenshot({ path: `${out}/01-map-login-gate.png` });
+  await page.getByRole('button', { name: '카카오로 로그인' }).click();
   await page.waitForURL(/\/oauth\/authorize/, { timeout: 15000 });
   const authorize = new URL(page.url());
-  check('anonymous visit redirects through Supabase Auth to Kakao (PKCE)',
+  check('login button starts Supabase Auth to Kakao (PKCE)',
     requests.some((r) => r.url.includes('/auth/v1/authorize') && r.url.includes('code_challenge')));
-  check('anonymous visitor made no statistics request', requests.every((r) => !r.url.includes('/public-analytics/')));
-  await page.screenshot({ path: `${out}/01-kakao-login.png` });
+  await page.screenshot({ path: `${out}/02-kakao-login.png` });
   // Harness step standing in for the user's consent click on the (mock) Kakao page.
   await page.goto(`http://host.docker.internal:56410/oauth/decide?${new URLSearchParams({ state: authorize.searchParams.get('state'), choice })}`);
   await page.waitForURL((u) => u.origin === new URL(MAP).origin, { timeout: 15000 });
@@ -75,15 +81,18 @@ try {
   await page.screenshot({ path: `${out}/03-compare-signed-in.png`, fullPage: true });
 
   await page.locator('.account-menu > button').click();
+  const oauthBeforeLogout = requests.filter((r) => r.url.includes('/auth/v1/authorize')).length;
   const logoutReq = page.waitForRequest((r) => r.url().includes('/auth/v1/logout'));
   await page.getByRole('menuitem', { name: /로그아웃/ }).click();
   const lr = await logoutReq;
   check('logout request uses scope=local', new URL(lr.url()).searchParams.get('scope') === 'local', lr.url().replace(/\?.*/, '?…') + ' scope=' + new URL(lr.url()).searchParams.get('scope'));
-  await page.waitForURL(/\/oauth\/authorize/, { timeout: 15000 });
+  await page.waitForSelector('#gate-title', { timeout: 15000 });
+  await page.waitForTimeout(1200);
   const storedState = await context.storageState();
   const after = storedState.origins.find((origin) => origin.origin === new URL(MAP).origin)?.localStorage.map((item) => item.name) ?? [];
   check('map session removed from this browser', !after.includes('cm-map-auth-v1'), after.join(','));
-  check('map hidden and Kakao login shown again after logout', page.url().includes('/oauth/authorize'));
+  check('map hidden and login gate remains after logout without a new OAuth request',
+    page.url().startsWith(MAP) && requests.filter((r) => r.url.includes('/auth/v1/authorize')).length === oauthBeforeLogout);
   await page.screenshot({ path: `${out}/04-after-local-logout.png` });
   // The mock Kakao page (harness only) has no favicon; everything on the map/API origins must be clean.
   const relevant = failed.filter((f) => !f.includes('host.docker.internal'));

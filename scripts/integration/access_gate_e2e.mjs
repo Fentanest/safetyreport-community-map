@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // LOCAL composed stack only (never production): the contributor-only map in a real Chrome (user decision 2026-09-27).
-// Checks: anonymous visit → Kakao OAuth redirect and no statistics request from the page;
+// Checks: anonymous visit → stable login gate and no statistics/OAuth request until the user clicks;
 // Kakao sign-in as a user without a share consent (F) → "not sharing" gate; switch account to a sharing user (E)
 // → the map loads and every statistics request carries the map session token; a direct unauthenticated API call
 // from the page is refused; the built artifact has no data files.
@@ -59,11 +59,14 @@ async function login(choice) {
 try {
   await page.goto(MAP, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1500);
-  check('anonymous visit redirects to Kakao login without showing the map', page.url().includes('56410') && await dashboardShown() === 0, page.url().replace(/\?.*/, ''));
+  check('anonymous visit stays on login gate without showing the map',
+    page.url().startsWith(MAP) && await gateTitle() === 1 && await dashboardShown() === 0,
+    page.url().replace(/\?.*/, ''));
+  check('anonymous visit did not start OAuth', !page.url().includes('56410'));
   check('anonymous page made no statistics requests', stats.length === 0, JSON.stringify(stats));
   const anonymous = await fetch(`${API}/public-analytics/meta`, { headers: { Origin: new URL(MAP).origin } });
   check('direct anonymous API request is refused', anonymous.status === 401, String(anonymous.status));
-  await page.screenshot({ path: `${out}/01-kakao-login.png`, fullPage: true });
+  await page.screenshot({ path: `${out}/01-map-login-gate.png`, fullPage: true });
 
   stats.length = 0;
   await login('F');
@@ -73,8 +76,10 @@ try {
   await page.screenshot({ path: `${out}/02-not-sharing-gate.png`, fullPage: true });
 
   await page.getByRole('button', { name: '다른 계정으로 로그인' }).click();
-  await page.waitForURL(/56410/, { timeout: 15000 });
-  check('switching account redirects to Kakao login', page.url().includes('56410') && await gateTitle() === 0);
+  await page.waitForSelector('#gate-title', { timeout: 15000 });
+  await page.waitForTimeout(1200);
+  check('switching account leaves the login gate until another click',
+    page.url().startsWith(MAP) && await gateTitle() === 1);
   stats.length = 0;
   await login('E');
   check('a sharing contributor sees the map', await dashboardShown() === 1 && await gateTitle() === 0);
