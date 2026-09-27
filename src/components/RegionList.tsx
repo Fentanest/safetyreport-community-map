@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { PublicRegion } from '../domain/public';
 import type { CompareRegionRow } from '../domain/personal';
 import { regionName } from '../state/view';
+import { regionLabel } from '../data/regions';
 import { acceptRate, fmtDays, fmtInt, fmtPercent, fmtPp, partialRate } from './format';
 
 interface Props {
@@ -21,36 +22,44 @@ interface Props {
 type Sort = 'all' | 'mine';
 
 const rate = (r: PublicRegion) => acceptRate(r.outcomes);
+const rowKey = (r: { level: string; region_code: string | null }) => `${r.level}:${r.region_code ?? ''}`;
+/** One level at a time: 시도 at 전국, 시군구 inside a chosen 시도 or 시군구 (세종 has no 시군구 level). */
+const levelFor = (active: string | null): 'sido' | 'sgg' => (active && active !== '36' ? 'sgg' : 'sido');
+const parentOf = (code: string): string | null => (code.length === 5 ? code.slice(0, 2) : null);
 
 /** Data wiring: Sol · visual implementation: Muse (docs/personal-comparison.md §5.4). */
 export default function RegionList(p: Props) {
   const [expanded, setExpanded] = useState(false);
   const [sort, setSort] = useState<Sort>('all');
-  const mineByCode = useMemo(() => new Map((p.compare ?? []).map(r => [r.region_code, r])), [p.compare]);
+  const mineByCode = useMemo(() => new Map((p.compare ?? []).map(r => [rowKey(r), r])), [p.compare]);
+  const level = levelFor(p.activeRegion);
   const rowsSorted = useMemo(() => {
-    const list = [...(p.regions ?? [])];
+    // rows of the current level plus 지역 미확인 (kept so the list still adds up to the total)
+    const list = (p.regions ?? []).filter(r => r.level === level || r.level === 'unknown');
     if (sort === 'mine' && p.compare) {
-      list.sort((a, b) => (mineByCode.get(b.region_code)?.mine.report_count ?? 0) - (mineByCode.get(a.region_code)?.mine.report_count ?? 0) ||
+      list.sort((a, b) => (mineByCode.get(rowKey(b))?.mine.report_count ?? 0) - (mineByCode.get(rowKey(a))?.mine.report_count ?? 0) ||
         b.report_count - a.report_count);
     }
     return list;
-  }, [p.regions, p.compare, sort, mineByCode]);
-  const pinned = rowsSorted.filter(r => r.region_code !== null && p.interest.includes(r.region_code));
+  }, [p.regions, p.compare, sort, mineByCode, level]);
+  // interest rows of either level stay on top (a starred 시군구 is visible from 전국 too)
+  const pinned = (p.regions ?? []).filter(r => r.region_code !== null && p.interest.includes(r.region_code));
   const rest = rowsSorted.filter(r => !(r.region_code !== null && p.interest.includes(r.region_code)));
+  const up = p.activeRegion ? parentOf(p.activeRegion) : null;
   const limit = p.initialRows ?? 6;
   const visible = expanded ? rest : rest.slice(0, Math.max(0, limit - Math.min(pinned.length, limit)));
   const showMine = p.compareOn && !!p.compare;
 
   const row = (r: PublicRegion, isInterest: boolean) => {
-    const mine = mineByCode.get(r.region_code);
-    const name = regionName(r.region_code);
+    const mine = mineByCode.get(rowKey(r));
+    const name = r.region_code === null ? regionName(null) : r.name;
     const allRate = rate(r);
     return (
       <li key={r.region_code ?? 'unknown'} className={`region-row${p.activeRegion === r.region_code ? ' active' : ''}`}>
         <button type="button" className="region-pick" disabled={r.region_code === null}
           aria-pressed={p.activeRegion === r.region_code}
           title={r.region_code === null ? '지역을 알 수 없는 신고입니다' : `${name}만 보기`}
-          onClick={() => p.onPickRegion(p.activeRegion === r.region_code ? null : r.region_code)}>
+          onClick={() => p.onPickRegion(p.activeRegion === r.region_code ? (r.region_code ? parentOf(r.region_code) : null) : r.region_code)}>
           <span className="region-name">{name}{p.activeRegion === r.region_code && <span className="region-active-tag">보는 중</span>}</span>
           <span className="region-nums">
             <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(allRate)}</b> · 일부수용률 <b className="cm-number">{fmtPercent(partialRate(r.outcomes))}</b>{r.duration && r.duration.count > 0 && <> · 답변까지 <b className="cm-number">{fmtDays(r.duration.median_days)}</b></>}</span>
@@ -80,7 +89,7 @@ export default function RegionList(p: Props) {
       <div className="panel-top">
         <div>
           <h2>지역 목록</h2>
-          <span className="subtitle">지역을 누르면 그 지역만 봅니다</span>
+          <span className="subtitle">{level === 'sido' ? '시도를 누르면 그 안의 시군구를 봅니다' : '시군구를 누르면 그 지역만 봅니다'}</span>
         </div>
         {showMine && (
           <div className="mini-segments" role="group" aria-label="지역 정렬">
@@ -89,6 +98,14 @@ export default function RegionList(p: Props) {
           </div>
         )}
       </div>
+      {p.activeRegion && (
+        <div className="region-crumb">
+          <button type="button" className="mini-btn" onClick={() => p.onPickRegion(up)}>
+            ← {up ? regionLabel(up) : '전국'} 보기
+          </button>
+          <span>{regionLabel(p.activeRegion)} 보는 중</span>
+        </div>
+      )}
       {p.regions === null ? (
         <p className="empty-state">지역별 통계는 아직 준비되지 않았습니다.</p>
       ) : p.regions.length === 0 ? (
@@ -109,7 +126,7 @@ export default function RegionList(p: Props) {
               </button>
             </div>
           ) : null}
-          <p className="chart-caption">★ 관심 지역은 이 기기에만 저장됩니다.</p>
+          <p className="chart-caption">★ 관심 지역은 이 기기에만 저장됩니다. 지역은 2026년 7월 1일 행정구역 기준이며, 주소로 지역을 알 수 없는 신고는 ‘지역 미확인’으로 따로 셉니다.</p>
         </>
       )}
     </section>

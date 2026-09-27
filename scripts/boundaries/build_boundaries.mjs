@@ -215,6 +215,11 @@ writeFileSync(join(regionsOut, `regions-${VERSION}.json`), JSON.stringify({
   renamed: { '28|남구': '28177', '47|군위군': '27720', '28|동구': '28125' },
   pip: pip.features.map((f) => ({ code: f.properties.code, geometry: f.geometry })),
 }, null, 1) + '\n');
+// Names only (no geometry) for the browser: filter options and labels load without the point-in-polygon data.
+writeFileSync(join(regionsOut, `names-${VERSION}.json`), JSON.stringify({
+  version: VERSION, sido,
+  sgg: lookup.map(({ code, sido: s, name }) => ({ code, sido: s, name })).sort((a, b) => a.code.localeCompare(b.code)),
+}) + '\n');
 console.log(JSON.stringify({ out: outDir, sido: meta.levels.sido.features, sgg: meta.levels.sgg.features,
   incheon_dongs: dongMap.length, work }, null, 1));
 if (!existsSync(join(outDir, 'sgg.topo.json'))) process.exit(7);

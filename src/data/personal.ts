@@ -16,17 +16,23 @@ const pp = z.number().min(-100).max(100).nullable();
 const share = z.number().min(0).max(100).nullable();
 const days = z.number().min(0).nullable();
 const dayDiff = z.number().nullable();
+const won = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 
 const summarySchema = z.strictObject({
   report_count: count, completed_count: count, accepted: count, partial: count, rejected: count,
   result_known: count, result_unknown: count, fine_count: count, point_count: count,
   accept_rate: rate, partial_rate: rate, reject_rate: rate, fine_rate: rate,
   duration: z.strictObject({ count, mean_days: days, median_days: days, p90_days: days }),
+  fine_amount: z.strictObject({
+    fine_count: count, confirmed_count: count, sum_won: won.nullable(), mean_won: z.number().min(0).nullable(),
+    median_won: z.number().min(0).nullable(), unconfirmed_count: count, undisclosed_count: count, partial: z.boolean(),
+  }),
 });
 const sideSchema = z.strictObject({
   report_count: count, completed_count: count, result_known: count, accepted: count, partial: count,
   rejected: count, fine_count: count, accept_rate: rate, partial_rate: rate,
   duration_count: count, duration_median_days: days,
+  fine_amount_confirmed_count: count, fine_amount_sum_won: won.nullable(),
 });
 const entitySchema = z.strictObject({
   kind: z.enum(['agency', 'manager']), key: z.string().max(330), agency_key: z.string().max(160).nullable(),
@@ -43,7 +49,8 @@ export const personalCompareSchema = z.strictObject({
   diff: z.strictObject({
     report_share: share, completed_share: share, fine_share: share, point_share: share,
     accept_rate_pp: pp, partial_rate_pp: pp, reject_rate_pp: pp,
-    duration_median_days_diff: dayDiff, duration_mean_days_diff: dayDiff, fine_rate_pp: pp, rate_reason: z.enum(['no_all', 'no_mine']).nullable(),
+    duration_median_days_diff: dayDiff, duration_mean_days_diff: dayDiff,
+    fine_amount_sum_share: share, fine_amount_mean_won_diff: z.number().nullable(), fine_rate_pp: pp, rate_reason: z.enum(['no_all', 'no_mine']).nullable(),
   }),
   regions: z.array(z.strictObject({
     level: z.enum(['sido', 'sgg', 'unknown']), region_code: z.string().regex(/^\d{2}(\d{3})?$/).nullable(),
@@ -60,7 +67,7 @@ export const personalCompareSchema = z.strictObject({
   })).max(80),
   my_points: z.array(z.strictObject({
     key: z.string().max(160), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
-    region_code: z.string().max(24).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean(),
+    region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean(),
   })).max(1000),
 });
 
@@ -178,5 +185,7 @@ export function consistentWithPublic(c: PersonalCompare, overview: import('../do
     overview.completed_count.value === c.all.completed_count &&
     (overview.outcomes?.result_known ?? null) === c.all.result_known &&
     overview.fine_count.value === c.all.fine_count &&
-    overview.point_count.value === c.all.point_count;
+    overview.point_count.value === c.all.point_count &&
+    (!overview.fine_amount || (overview.fine_amount.confirmed_count === c.all.fine_amount.confirmed_count &&
+      overview.fine_amount.sum_won === c.all.fine_amount.sum_won));
 }

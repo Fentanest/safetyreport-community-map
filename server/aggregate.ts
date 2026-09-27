@@ -228,7 +228,7 @@ export function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly
     const finished = completions.get(key) || [];
     const anchor = rows[0] || finished[0];
     return { key, lat: anchor.lat, lng: anchor.lng, address: anchor.address,
-      region_code: anchor.region_code, report_count: rows.length, completed_count: finished.length,
+      region_code: regionKeys(anchor).sgg, report_count: rows.length, completed_count: finished.length,
       outcomes: outcomes(finished), fine_count: finished.filter(row => row.disposition === 'fine').length };
   }).sort((a, b) => b.report_count - a.report_count || b.completed_count - a.completed_count || a.key.localeCompare(b.key));
 }

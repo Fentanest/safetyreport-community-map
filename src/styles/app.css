@@ -114,6 +114,10 @@ button.cm-chip { cursor: pointer; }
 .map-top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; z-index: 5; }
 .map-status { font-size: 12px; background: rgba(11, 11, 12, 0.82); color: #f3f3f4; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.18); }
 [data-theme="light"] .map-status { background: rgba(255, 255, 255, 0.88); color: #0f172a; border-color: var(--border); }
+.map-hover { position: absolute; top: 64px; right: 12px; z-index: 3; max-width: calc(100% - 96px); display: inline-flex; flex-direction: column; gap: 2px; font-size: 13px; background: rgba(11, 11, 12, 0.86); color: #f3f3f4; padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.18); pointer-events: none; }
+.map-hover small { font-size: 11px; opacity: 0.75; }
+[data-theme="light"] .map-hover { background: rgba(255, 255, 255, 0.92); color: #0f172a; border-color: var(--border); }
+.boundary-note { margin: 0 16px 12px; font-size: 11px; line-height: 1.5; color: var(--muted); }
 .map-apply { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--brand); background: var(--brand); color: #fff; cursor: pointer; font-weight: 650; }
 .map-tools { position: absolute; left: 12px; top: 64px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
 .map-button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
@@ -373,6 +377,8 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 /* region list: short rows, pinned interest group, 44px targets. */
 .region-list { padding-bottom: 12px; }
 .region-group-label { margin: 12px 16px 0; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.02em; }
+.region-crumb { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 16px 0; font-size: 13px; color: var(--muted); }
+.region-select { display: contents; }
 .region-rows { list-style: none; margin: 4px 0 0; padding: 0 8px; }
 .region-rows.interest .region-row { background: var(--raised); border-radius: 10px; }
 .region-row { display: flex; gap: 4px; align-items: stretch; border-top: 1px solid var(--border); }

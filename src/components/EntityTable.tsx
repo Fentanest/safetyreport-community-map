@@ -3,7 +3,7 @@ import type { PublicEntity } from '../domain/public';
 import type { CompareEntityRow } from '../domain/personal';
 import type { EntitySortKey, SortDir } from '../data/client';
 import type { EntityTab } from '../state/filters';
-import { acceptRate, fmtDays, fmtInt, fmtPercent, fmtPp } from './format';
+import { acceptRate, fmtDays, fmtInt, fmtPercent, fmtPp, fmtWon } from './format';
 
 interface Props {
   agencies: PublicEntity[];
@@ -189,7 +189,7 @@ export default function EntityTable(p: Props) {
                   <td className="num">{fmtInt(e.outcomes.partial)}<small>{fmtPercent(d > 0 ? (e.outcomes.partial / d) * 100 : null)}</small></td>
                   <td className="num">{fmtInt(e.outcomes.rejected)}<small>{fmtPercent(d > 0 ? (e.outcomes.rejected / d) * 100 : null)}</small></td>
                   <td className="num">{fmtPercent(acceptRate(e.outcomes))}</td>
-                  <td className="num">{e.fine_count == null ? '—' : fmtInt(e.fine_count)}</td>
+                  <td className="num">{e.fine_count == null ? '—' : fmtInt(e.fine_count)}{e.fine_amount && e.fine_amount.confirmed_count > 0 && <small title="답변에 적힌 과태료 금액 합계(금액이 확인된 것만)">{fmtWon(e.fine_amount.sum_won)}</small>}</td>
                   <td>
                     <div className="stack mini-stack" aria-hidden="true">
                       <i style={{ width: `${d > 0 ? (e.outcomes.accepted / d) * 100 : 0}%`, background: 'var(--accepted)' }} />

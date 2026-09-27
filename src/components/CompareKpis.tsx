@@ -2,7 +2,7 @@ import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
 import type { AuthSnapshot } from '../auth/mapAuth';
-import { acceptRate, fmtDays, fmtDaysDiff, fmtInt, fmtPercent, fmtPp, fmtShare, partialRate } from './format';
+import { acceptRate, fmtDays, fmtDaysDiff, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtShare, fmtWon, fmtWonDiff, partialRate } from './format';
 
 interface Props {
   overview: Overview;
@@ -22,10 +22,18 @@ interface Row {
   mine: (m: CompareSummary) => string;
   mineNote: (m: CompareSummary) => string | null;
   diff: (c: PersonalCompare) => string;
-  diffKind: 'share' | 'pp' | 'days' | 'none';
+  diffKind: 'share' | 'pp' | 'days' | 'won' | 'none';
+  /** optional second line under the difference */
+  diffNote?: (c: PersonalCompare) => string | null;
 }
 
 const pct = (a: number, d: number) => (d > 0 ? (a / d) * 100 : null);
+
+type Amount = { fine_count: number; confirmed_count: number; mean_won: number | null; partial: boolean };
+const amountNote = (a: Amount | null | undefined): string | null =>
+  a && a.confirmed_count > 0
+    ? `평균 ${fmtWon(a.mean_won)} · 과태료 ${fmtInt(a.fine_count)}건 중 ${fmtInt(a.confirmed_count)}건 금액 확인${a.partial ? '(일부만 합산)' : ''}`
+    : a && a.fine_count > 0 ? `과태료 ${fmtInt(a.fine_count)}건 · 금액이 확인된 답변 없음` : null;
 
 function rows(o: Overview): Row[] {
   const out = o.outcomes;
@@ -62,6 +70,11 @@ function rows(o: Overview): Row[] {
       mine: m => (m.duration.count ? fmtDays(m.duration.median_days) : '계산할 신고 없음'),
       mineNote: m => (m.duration.count ? `평균 ${fmtDays(m.duration.mean_days)} · ${fmtInt(m.duration.count)}건` : null),
       diff: x => fmtDaysDiff(x.diff.duration_median_days_diff), diffKind: 'days' },
+    { id: 'amount', label: '답변에 적힌 과태료 금액', basis: '합계 · 금액이 확인된 과태료만',
+      all: fmtFineAmount(o.fine_amount), allNote: amountNote(o.fine_amount),
+      mine: m => fmtFineAmount(m.fine_amount), mineNote: m => amountNote(m.fine_amount),
+      diff: x => fmtShare(x.diff.fine_amount_sum_share), diffKind: 'share',
+      diffNote: x => x.diff.fine_amount_mean_won_diff == null ? null : `평균 ${fmtWonDiff(x.diff.fine_amount_mean_won_diff)}` },
     { id: 'points', label: '신고 장소', basis: '서로 다른 장소 수', all: fmtInt(o.point_count.value), allNote: null,
       mine: m => fmtInt(m.point_count), mineNote: () => null, diff: x => fmtShare(x.diff.point_share), diffKind: 'share' },
     { id: 'contributors', label: '참여한 사람', basis: '신고를 공유한 사람 수', all: fmtInt(o.contributor_count.value), allNote: null,
@@ -116,6 +129,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
               {showMine && (
                 <td className="num diff-col">
                   {data ? (<><b className="cm-number">{row.diff(data)}</b>
+                    {row.diffNote?.(data) && <small>{row.diffNote(data)}</small>}
                     <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나 − 전체' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나 − 전체') : ''}</small></>)
                     : <span className="cm-muted">—</span>}
                 </td>
@@ -128,6 +142,16 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
         <p className="chart-caption">
           답변까지 걸린 기간에서 뺀 신고: 날짜가 맞지 않음 {fmtInt(overview.processing_duration.excluded.no_report_date + overview.processing_duration.excluded.reversed)}건
           {overview.processing_duration.answer_date_missing > 0 && ` · 답변일이 없어 기간을 알 수 없음 ${fmtInt(overview.processing_duration.answer_date_missing)}건`}
+        </p>
+      )}
+      {overview.fine_amount && overview.fine_amount.fine_count > 0 && (
+        <p className="chart-caption">
+          과태료 금액은 답변에 적힌 금액입니다. 실제로 내거나 걷힌 금액이 아닙니다. 금액이 적히지 않은 답변을 0원으로 치지 않고, 범칙금이나 과태료와 범칙금이 섞인 금액은 더하지 않습니다.
+          {overview.fine_amount.unconfirmed_count > 0 && ` 금액이 적히지 않음 ${fmtInt(overview.fine_amount.unconfirmed_count)}건.`}
+          {overview.fine_amount.undisclosed_count > 0 && ` 금액 공개에 동의하지 않은 자료 ${fmtInt(overview.fine_amount.undisclosed_count)}건.`}
+          {overview.fine_amount.conflict_count > 0 && ` 답변 내용이 서로 맞지 않아 뺀 자료 ${fmtInt(overview.fine_amount.conflict_count)}건.`}
+          {overview.fine_amount.penalty_count + overview.fine_amount.combined_count > 0 && ` 범칙금·섞인 금액 ${fmtInt(overview.fine_amount.penalty_count + overview.fine_amount.combined_count)}건.`}
+          {overview.fine_amount.zero_count > 0 && ` 0원으로 적힌 답변 ${fmtInt(overview.fine_amount.zero_count)}건 포함.`}
         </p>
       )}
       {message && (

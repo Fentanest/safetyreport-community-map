@@ -43,7 +43,9 @@ export function markPoints(points: readonly PublicPoint[], myPoints: readonly My
         mineCount = own.mine_report_count;
       }
     }
-    const isInterest = point.region_code !== null && interestSet.has(point.region_code);
+    // interest can be a 시도 (2 digits) or a 시군구 (5 digits); points carry their 시군구 code
+    const isInterest = point.region_code !== null &&
+      (interestSet.has(point.region_code) || interestSet.has(point.region_code.slice(0, 2)));
     marks.set(point.key, mine || isInterest ? { mine, shared, mineCount, interest: isInterest } : EMPTY);
   }
   return marks;

@@ -4,7 +4,16 @@
  * - Markers only; low-zoom points are labelled as aggregated display.
  * - Attribution/logo must never be covered by floating panels (CSS keeps corners clear).
  * - Without VITE_KAKAO_MAP_JS_KEY the caller renders the failure card + point list.
+ * - Boundary polygons (docs/region-boundaries.md) sit under the markers; they are display only.
  */
+import type { BoundaryFeature } from './boundaries';
+
+export interface BoundaryStyle {
+  /** the region currently used as a filter (thick outline) */
+  selected: string | null;
+  /** 0..1 fill strength per code (share of the largest report count shown); missing = no data */
+  weight: Map<string, number>;
+}
 
 export interface KakaoPointInput {
   key: string;
@@ -22,6 +31,10 @@ export interface KakaoPointInput {
 
 export interface KakaoHandle {
   setPoints(points: KakaoPointInput[]): void;
+  /** replace the boundary layer (null clears it) */
+  setBoundaries(features: BoundaryFeature[] | null, style: BoundaryStyle): void;
+  /** move to a region without it counting as a user map move (auto-refresh ignores it) */
+  fitBounds(bbox: [number, number, number, number]): void;
   relayout(): void;
   reset(): void;
   zoomIn(): void;
@@ -39,6 +52,8 @@ declare global {
         Map: new (el: HTMLElement, opts: unknown) => KakaoMapInstance;
         Marker: new (opts: unknown) => KakaoMarkerInstance;
         MarkerImage: new (src: string, size: unknown, opts?: unknown) => unknown;
+        Polygon: new (opts: unknown) => KakaoPolygonInstance;
+        LatLngBounds: new (sw?: unknown, ne?: unknown) => unknown;
         Size: new (w: number, h: number) => unknown;
         event: { addListener(obj: unknown, type: string, cb: () => void): void; removeListener(obj: unknown, type: string, cb: () => void): void };
       };
@@ -53,6 +68,12 @@ interface KakaoMapInstance {
   getLevel(): number;
   getBounds(): { getSouthWest(): { getLat(): number; getLng(): number }; getNorthEast(): { getLat(): number; getLng(): number } };
   relayout(): void;
+  setBounds(bounds: unknown, top?: number, right?: number, bottom?: number, left?: number): void;
+}
+
+interface KakaoPolygonInstance {
+  setMap(m: KakaoMapInstance | null): void;
+  setOptions(opts: unknown): void;
 }
 
 interface KakaoMarkerInstance {
@@ -143,7 +164,13 @@ function markerDataUrl(count: number, selected: boolean, ratio: number | null, c
 
 export async function createKakaoMap(
   el: HTMLElement,
-  opts: { onSelect(key: string): void; onIdle?(bounds: [number, number, number, number]): void },
+  opts: {
+    onSelect(key: string): void;
+    /** `programmatic` is true for moves made by fitBounds (not by the user) */
+    onIdle?(bounds: [number, number, number, number], zoom: number, programmatic: boolean): void;
+    onRegionHover?(code: string | null): void;
+    onRegionClick?(code: string): void;
+  },
 ): Promise<KakaoHandle> {
   const key = kakaoKey();
   if (!key) throw new Error('Kakao JavaScript 키가 설정되지 않았습니다.');
@@ -152,18 +179,49 @@ export async function createKakaoMap(
   const center = new kakao.LatLng(36.35, 127.9);
   const map = new kakao.Map(el, { center, level: 13 });
   let markers: KakaoMarkerInstance[] = [];
+  let shapes: Array<{ code: string; polygons: KakaoPolygonInstance[] }> = [];
   let disposed = false;
+  let programmatic = false;
+  let hovered: string | null = null;
+  let boundaryStyle: BoundaryStyle = { selected: null, weight: new Map() };
 
   const onIdle = () => {
     if (disposed || !opts.onIdle) return;
+    const moved = programmatic;
+    programmatic = false;
     try {
       const b = map.getBounds();
       const sw = b.getSouthWest();
       const ne = b.getNorthEast();
-      opts.onIdle([sw.getLng(), sw.getLat(), ne.getLng(), ne.getLat()]);
+      opts.onIdle([sw.getLng(), sw.getLat(), ne.getLng(), ne.getLat()], map.getLevel(), moved);
     } catch {
       /* bounds unavailable — ignore */
     }
+  };
+
+  const shapeOptions = (code: string) => {
+    const w = boundaryStyle.weight.get(code);
+    const selected = boundaryStyle.selected === code;
+    const hover = hovered === code;
+    // The Kakao base map is light in both app themes, so outlines use fixed dark-enough colors, not theme tokens.
+    return {
+      strokeWeight: selected ? 3 : hover ? 2.5 : 1.5,
+      strokeColor: selected ? '#D97706' : '#1D4ED8',
+      strokeOpacity: selected || hover ? 0.95 : 0.7,
+      fillColor: '#2563EB',
+      // no data → almost clear (never looks like a low value); data → 0.08..0.38 by share
+      fillOpacity: (w == null ? 0.02 : 0.08 + 0.3 * Math.max(0, Math.min(1, w))) + (hover ? 0.12 : 0),
+    };
+  };
+  const restyle = (code: string) => {
+    const shape = shapes.find((x) => x.code === code);
+    if (shape) for (const polygon of shape.polygons) polygon.setOptions(shapeOptions(code));
+  };
+  const clearShapes = () => {
+    for (const shape of shapes) for (const polygon of shape.polygons) {
+      try { polygon.setMap(null); } catch { /* ignore */ }
+    }
+    shapes = [];
   };
   kakao.event.addListener(map, 'idle', onIdle);
   onIdle();
@@ -186,6 +244,49 @@ export async function createKakaoMap(
         marker.setMap(map);
         markers.push(marker);
       }
+    },
+    setBoundaries(features: BoundaryFeature[] | null, style: BoundaryStyle) {
+      if (disposed) return;
+      const same = features && shapes.length === features.length && shapes.every((x, i) => x.code === features[i].code);
+      boundaryStyle = style;
+      if (same) {
+        for (const shape of shapes) restyle(shape.code);
+        return;
+      }
+      clearShapes();
+      hovered = null;
+      for (const f of features ?? []) {
+        const polygons = f.polygons.map((rings) => {
+          const polygon = new kakao.Polygon({
+            map, zIndex: 1,
+            path: rings.map((ring) => ring.map(([lng, lat]) => new kakao.LatLng(lat, lng))),
+            ...shapeOptions(f.code),
+          });
+          kakao.event.addListener(polygon, 'mouseover', () => {
+            const before = hovered;
+            hovered = f.code;
+            if (before && before !== f.code) restyle(before);
+            restyle(f.code);
+            opts.onRegionHover?.(f.code);
+          });
+          kakao.event.addListener(polygon, 'mouseout', () => {
+            if (hovered !== f.code) return;
+            hovered = null;
+            restyle(f.code);
+            opts.onRegionHover?.(null);
+          });
+          kakao.event.addListener(polygon, 'click', () => opts.onRegionClick?.(f.code));
+          return polygon;
+        });
+        shapes.push({ code: f.code, polygons });
+      }
+    },
+    fitBounds([w, s, e, n]) {
+      if (disposed) return;
+      programmatic = true;
+      // if the map does not actually move no idle fires; don't let the flag swallow the next user move
+      window.setTimeout(() => { programmatic = false; }, 1500);
+      map.setBounds(new kakao.LatLngBounds(new kakao.LatLng(s, w), new kakao.LatLng(n, e)), 24, 24, 24, 24);
     },
     relayout() {
       try {
@@ -215,6 +316,7 @@ export async function createKakaoMap(
         }
       }
       markers = [];
+      clearShapes();
     },
   };
 }

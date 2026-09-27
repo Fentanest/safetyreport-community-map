@@ -5,6 +5,7 @@ import {
 import { regionName } from './regions.ts';
 import type { Scope } from '../src/domain/public.ts';
 import { durationSummary } from './duration.ts';
+import { fineAmountSummary } from './amount.ts';
 import type {
   CompareDiff, CompareEntityRow, CompareMonth, CompareRegionRow, CompareSide, CompareSummary,
   MyPoint, PersonalCompare, ViewerState,
@@ -28,6 +29,8 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     reject_rate: pct(o.rejected, o.result_known),
     fine_rate: pct(fine, done.length),
     duration: (({ count, mean_days, median_days, p90_days }) => ({ count, mean_days, median_days, p90_days }))(durationSummary(done)),
+    fine_amount: (({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }) =>
+      ({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }))(fineAmountSummary(done)),
   };
 }
 
@@ -45,6 +48,9 @@ export function diffOf(all: CompareSummary, mine: CompareSummary): CompareDiff {
     fine_rate_pp: minus(mine.fine_rate, all.fine_rate),
     duration_median_days_diff: minus(mine.duration.median_days, all.duration.median_days),
     duration_mean_days_diff: minus(mine.duration.mean_days, all.duration.mean_days),
+    // Sum share only when all has a positive confirmed sum (an all-0원 total has no meaningful share).
+    fine_amount_sum_share: all.fine_amount.sum_won ? pct(mine.fine_amount.sum_won ?? 0, all.fine_amount.sum_won) : null,
+    fine_amount_mean_won_diff: minus(mine.fine_amount.mean_won, all.fine_amount.mean_won),
     rate_reason: all.result_known === 0 ? 'no_all' : mine.result_known === 0 ? 'no_mine' : null,
   };
 }
@@ -52,6 +58,7 @@ export function diffOf(all: CompareSummary, mine: CompareSummary): CompareDiff {
 function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): CompareSide {
   const o = outcomes(done);
   const dur = durationSummary(done);
+  const amount = fineAmountSummary(done);
   return {
     report_count: reported.length, completed_count: done.length, result_known: o.result_known,
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
@@ -60,6 +67,8 @@ function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): C
     partial_rate: pct(o.partial, o.result_known),
     duration_count: dur.count,
     duration_median_days: dur.median_days,
+    fine_amount_confirmed_count: amount.confirmed_count,
+    fine_amount_sum_won: amount.sum_won,
   };
 }
 
@@ -170,7 +179,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
     const r = pointReported.get(key) ?? [], d = pointDone.get(key) ?? [];
     const anchor = (r[0] ?? d[0]) as PrivateFact & { lat: number; lng: number };
     return {
-      key: key as string, lat: anchor.lat, lng: anchor.lng, region_code: anchor.region_code,
+      key: key as string, lat: anchor.lat, lng: anchor.lng, region_code: regionKeys(anchor).sgg,
       mine_report_count: r.filter(isMine).length, mine_completed_count: d.filter(isMine).length,
       shared: [...r, ...d].some(fact => !isMine(fact)),
     };

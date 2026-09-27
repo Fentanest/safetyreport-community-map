@@ -4,6 +4,7 @@
  * - the compare preference and interest regions are per-browser conveniences in localStorage only:
  *   they are never sent to a server and never put in a shared URL.
  */
+import { normalizeRegion, regionLabel } from '../data/regions';
 export type ViewMode = 'both' | 'map' | 'stats';
 export type PointFilter = 'all' | 'mine' | 'shared' | 'interest';
 
@@ -32,14 +33,14 @@ export function writeComparePref(on: boolean): void {
   } catch { /* storage blocked: the toggle still works for this page */ }
 }
 
-/** Region codes only (public values), at most MAX_INTEREST, each ≤ 24 characters. */
+/** Official region codes only (public values), at most MAX_INTEREST; old display keys are converted or dropped. */
 export function sanitizeInterest(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   const out: string[] = [];
   for (const item of value) {
-    if (typeof item !== 'string') continue;
-    const code = item.trim();
-    if (!code || code.length > 24 || out.includes(code)) continue;
+    if (typeof item !== 'string' || item.length > 24) continue;
+    const code = normalizeRegion(item);
+    if (!code || out.includes(code)) continue;
     out.push(code);
     if (out.length >= MAX_INTEREST) break;
   }
@@ -60,13 +61,7 @@ export function toggleInterest(codes: string[], code: string): string[] {
   return codes.includes(code) ? codes.filter(c => c !== code) : sanitizeInterest([...codes, code]);
 }
 
-const SIDO_LABEL: Record<string, string> = {
-  '11': '서울특별시', '26': '부산광역시', '27': '대구광역시', '28': '인천광역시', '29': '광주광역시',
-  '30': '대전광역시', '31': '울산광역시', '36': '세종특별자치시', '41': '경기도', '50': '제주특별자치도',
-};
-
-/** Display label for a stored region code ('서울 중구' stays as is; legacy numeric codes get a name). */
+/** Display label for a region row code (null = 지역 미확인). */
 export function regionName(code: string | null): string {
-  if (code === null) return '지역 미상';
-  return SIDO_LABEL[code] ?? code;
+  return code === null ? '지역 미확인' : regionLabel(code);
 }
