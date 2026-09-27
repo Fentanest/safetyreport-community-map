@@ -25,7 +25,7 @@ export default function OutcomeCard({ outcomes }: { outcomes: OutcomeCounts | nu
       </div>
       <div className="outcome-summary">
         <b className="cm-number">{fmtPercent(top)}</b>
-        <small>수용률 (일부 수용 제외)</small>
+        <small>수용률</small>
       </div>
       <div className="stack result-stack" role="img" aria-label={`수용 ${outcomes.accepted}건, 일부 수용 ${outcomes.partial}건, 불수용 ${outcomes.rejected}건`}>
         {rows.map((r) => (

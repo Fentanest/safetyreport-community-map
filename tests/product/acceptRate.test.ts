@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createPublicHandler, type AnalyticsState } from '../../server/publicHandler';
 import type { PrivateFact } from '../../server/aggregate';
-import { acceptRate } from '../../src/components/format';
+import { acceptRate, partialRate } from '../../src/components/format';
 
 // 수용률 = 수용 ÷ 결과 확인 (일부 수용 제외, 2026-09-27 사용자 결정) — screen and server sort use the same rule.
 const state: AnalyticsState = {
@@ -21,6 +21,8 @@ describe('수용률 excludes partial acceptance', () => {
     expect(acceptRate({ accepted: 1, result_known: 4 })).toBe(25);
     expect(acceptRate({ accepted: 0, result_known: 0 })).toBeNull();
     expect(acceptRate(null)).toBeNull();
+    expect(partialRate({ partial: 3, result_known: 4 })).toBe(75);
+    expect(partialRate({ partial: 0, result_known: 0 })).toBeNull();
   });
 
   it('sorts /entities by the same definition', async () => {

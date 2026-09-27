@@ -2,7 +2,7 @@ import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
 import type { AuthSnapshot } from '../auth/mapAuth';
-import { acceptRate, fmtInt, fmtPercent, fmtPp, fmtShare } from './format';
+import { acceptRate, fmtInt, fmtPercent, fmtPp, fmtShare, partialRate } from './format';
 
 interface Props {
   overview: Overview;
@@ -38,11 +38,15 @@ function rows(o: Overview): Row[] {
       allNote: out ? `결과가 나온 ${fmtInt(d)}건` : null,
       mine: m => fmtInt(m.completed_count), mineNote: m => `결과가 나온 ${fmtInt(m.result_known)}건`,
       diff: x => fmtShare(x.diff.completed_share), diffKind: 'share' },
-    { id: 'accept', label: '수용률', basis: '결과가 나온 신고 중 수용 (일부 수용 제외)',
+    { id: 'accept', label: '수용률', basis: '결과가 나온 신고 중 수용',
       all: fmtPercent(acceptRate(out)),
       allNote: out ? `${fmtInt(out.accepted)} / ${fmtInt(d)}건` : null,
       mine: m => fmtPercent(m.accept_rate), mineNote: m => `${fmtInt(m.accepted)} / ${fmtInt(m.result_known)}건`,
       diff: x => fmtPp(x.diff.accept_rate_pp), diffKind: 'pp' },
+    { id: 'partial', label: '일부수용률', basis: '결과가 나온 신고 중 일부 수용',
+      all: fmtPercent(partialRate(out)), allNote: out ? `${fmtInt(out.partial)} / ${fmtInt(d)}건` : null,
+      mine: m => fmtPercent(m.partial_rate), mineNote: m => `${fmtInt(m.partial)} / ${fmtInt(m.result_known)}건`,
+      diff: x => fmtPp(x.diff.partial_rate_pp), diffKind: 'pp' },
     { id: 'reject', label: '불수용률', basis: '결과가 나온 신고 중',
       all: fmtPercent(out ? pct(out.rejected, d) : null), allNote: out ? `${fmtInt(out.rejected)} / ${fmtInt(d)}건` : null,
       mine: m => fmtPercent(m.reject_rate), mineNote: m => `${fmtInt(m.rejected)} / ${fmtInt(m.result_known)}건`,

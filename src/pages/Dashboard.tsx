@@ -16,7 +16,7 @@ import OutcomeCard from '../components/OutcomeCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable, { type ServerEntityState } from '../components/EntityTable';
 import DataGuide from '../components/DataGuide';
-import { acceptRate, fmtDate, fmtInt, fmtPercent } from '../components/format';
+import { acceptRate, fmtDate, fmtInt, fmtPercent, partialRate } from '../components/format';
 import CompareKpis from '../components/CompareKpis';
 import RegionList from '../components/RegionList';
 import ManagerCompare from '../components/ManagerCompare';
@@ -49,10 +49,12 @@ function resolveTheme(t: ThemeMode): 'dark' | 'light' {
 
 // Map-mode one-line statistics summary (§5.2): the full tables stay in the other views,
 // so this strip shows only R · C · 수용% for all/mine. Display only — no scope change.
-function MapSummary({ reportAll, completedAll, acceptAll, showMine, personalStatus, mineReport, mineCompleted, mineAccept }: {
+function MapSummary({ reportAll, completedAll, acceptAll, partialAll, showMine, personalStatus, mineReport, mineCompleted, mineAccept, minePartial }: {
   reportAll: number | null;
   completedAll: number | null;
   acceptAll: number | null;
+  partialAll: number | null;
+  minePartial: number | null;
   showMine: boolean;
   personalStatus: PersonalStatus;
   mineReport: number | null;
@@ -61,7 +63,7 @@ function MapSummary({ reportAll, completedAll, acceptAll, showMine, personalStat
 }) {
   const mineText = !showMine ? null
     : personalStatus === 'ready' ? (
-      <>내 신고 <b className="cm-number mine-col">{fmtInt(mineReport)}</b> · 답변 <b className="cm-number mine-col">{fmtInt(mineCompleted)}</b> · 수용률 <b className="cm-number mine-col">{fmtPercent(mineAccept)}</b></>
+      <>내 신고 <b className="cm-number mine-col">{fmtInt(mineReport)}</b> · 답변 <b className="cm-number mine-col">{fmtInt(mineCompleted)}</b> · 수용률 <b className="cm-number mine-col">{fmtPercent(mineAccept)}</b> · 일부수용률 <b className="cm-number mine-col">{fmtPercent(minePartial)}</b></>
     )
     : personalStatus === 'loading' || personalStatus === 'waiting' ? <span className="cm-muted">내 신고 불러오는 중…</span>
     : personalStatus === 'signed_out' ? <span className="cm-muted">로그인하면 내 신고도 보입니다</span>
@@ -69,7 +71,7 @@ function MapSummary({ reportAll, completedAll, acceptAll, showMine, personalStat
     : <span className="cm-muted">내 신고를 불러오지 못했습니다</span>;
   return (
     <p className="map-summary" aria-label="요약">
-      <span>전체 신고 <b className="cm-number">{fmtInt(reportAll)}</b> · 답변 <b className="cm-number">{fmtInt(completedAll)}</b> · 수용률 <b className="cm-number">{fmtPercent(acceptAll)}</b></span>
+      <span>전체 신고 <b className="cm-number">{fmtInt(reportAll)}</b> · 답변 <b className="cm-number">{fmtInt(completedAll)}</b> · 수용률 <b className="cm-number">{fmtPercent(acceptAll)}</b> · 일부수용률 <b className="cm-number">{fmtPercent(partialAll)}</b></span>
       {mineText != null && <span className="map-summary-mine">{mineText}</span>}
     </p>
   );
@@ -592,6 +594,8 @@ export default function Dashboard() {
                     reportAll={data.overview.report_count.value}
                     completedAll={data.overview.completed_count.value}
                     acceptAll={acceptRate(data.overview.outcomes)}
+                    partialAll={partialRate(data.overview.outcomes)}
+                    minePartial={compareData?.mine.partial_rate ?? null}
                     showMine={showMine}
                     personalStatus={personal.status}
                     mineReport={compareData?.mine.report_count ?? null}

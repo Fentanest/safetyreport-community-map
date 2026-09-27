@@ -157,15 +157,16 @@ export default function EntityTable(p: Props) {
               <th scope="col">결과가 나온 신고</th>
               {p.mine && <th scope="col" className="num mine-col">내 답변</th>}
               {p.mine && <th scope="col" className="num mine-col">내 수용률</th>}
+              {p.mine && <th scope="col" className="num mine-col">내 일부수용률</th>}
               {p.mine && <th scope="col" className="num">차이</th>}
             </tr>
           </thead>
           <tbody>
             {server?.loading && shown.length === 0 && (
-              <tr><td colSpan={p.mine ? 12 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">불러오는 중입니다…</td></tr>
+              <tr><td colSpan={p.mine ? 13 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">불러오는 중입니다…</td></tr>
             )}
             {!(server?.loading && shown.length === 0) && shown.length === 0 && (
-              <tr><td colSpan={p.mine ? 12 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다.</td></tr>
+              <tr><td colSpan={p.mine ? 13 : 9} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다.</td></tr>
             )}
             {shown.map((e) => {
               const d = e.outcomes.result_known;
@@ -198,7 +199,8 @@ export default function EntityTable(p: Props) {
                   <td>{d === 1 ? <span className="sample-one">1건</span> : `${fmtInt(d)}건`}</td>
                   {p.mine && <td className="num mine-col">{fmtInt(p.mine.get(e.key)?.mine.completed_count ?? 0)}</td>}
                   {p.mine && <td className="num mine-col">{fmtPercent(p.mine.get(e.key)?.mine.accept_rate ?? null)}</td>}
-                  {p.mine && <td className="num">{fmtPp(p.mine.get(e.key)?.accept_rate_pp ?? null)}</td>}
+                  {p.mine && <td className="num mine-col">{fmtPercent(p.mine.get(e.key)?.mine.partial_rate ?? null)}</td>}
+                  {p.mine && <td className="num">수용 {fmtPp(p.mine.get(e.key)?.accept_rate_pp ?? null)}<small>일부 {fmtPp(p.mine.get(e.key)?.partial_rate_pp ?? null)}</small></td>}
                 </tr>
               );
             })}

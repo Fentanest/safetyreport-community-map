@@ -1,7 +1,7 @@
 import { DEFAULT_SCOPE, DEMO_SCOPE, type Category, type Scope } from '../domain/public';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
-export type MapMetric = 'reports' | 'acceptance' | 'fine';
+export type MapMetric = 'reports' | 'acceptance' | 'partial' | 'fine';
 export type EntityTab = 'agency' | 'manager';
 
 export const THEME_KEY = 'cm-theme';

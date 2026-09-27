@@ -31,6 +31,10 @@ export const fmtPp = (v: number | null | undefined): string => {
 export const fmtShare = (v: number | null | undefined): string =>
   v == null || !Number.isFinite(v) ? '—' : `${v.toFixed(1)}%`;
 
-/** 수용률 = 수용 ÷ 결과가 나온 신고(수용+일부 수용+불수용). 일부 수용은 포함하지 않는다(2026-09-27 사용자 결정). */
+/** 수용률 = 수용 ÷ 결과가 나온 신고(수용+일부 수용+불수용). 일부 수용은 일부수용률로 따로 보여 준다(2026-09-27 사용자 결정). */
 export const acceptRate = (o: { accepted: number; result_known: number } | null | undefined): number | null =>
   o && o.result_known > 0 ? (o.accepted / o.result_known) * 100 : null;
+
+/** 일부수용률 = 일부 수용 ÷ 결과가 나온 신고. 수용률과 따로 보여 준다. */
+export const partialRate = (o: { partial: number; result_known: number } | null | undefined): number | null =>
+  o && o.result_known > 0 ? (o.partial / o.result_known) * 100 : null;

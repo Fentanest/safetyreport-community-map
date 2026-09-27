@@ -4,7 +4,7 @@ import { createKakaoMap, kakaoKey, type KakaoHandle } from '../lib/kakao';
 import type { MapMetric } from '../state/filters';
 import { POINT_FILTER_LABEL, type PointFilter } from '../state/view';
 import type { PointMark } from '../state/pointMarks';
-import { acceptRate, fmtInt } from './format';
+import { acceptRate, fmtInt, partialRate } from './format';
 import Icon from './icons';
 
 interface Props {
@@ -76,7 +76,8 @@ function MarkBadges({ mark }: { mark: PointMark | undefined }) {
 
 const METRICS: Array<{ id: MapMetric; label: string; legend: string; basis: string }> = [
   { id: 'reports', label: '신고 수', legend: '신고 수', basis: '신고한 날 기준' },
-  { id: 'acceptance', label: '수용률', legend: '수용률', basis: '답변 받은 날 기준 · 결과가 나온 신고 중 수용 (일부 수용 제외)' },
+  { id: 'acceptance', label: '수용률', legend: '수용률', basis: '답변 받은 날 기준 · 결과가 나온 신고 중 수용' },
+  { id: 'partial', label: '일부수용률', legend: '일부수용률', basis: '답변 받은 날 기준 · 결과가 나온 신고 중 일부 수용' },
   { id: 'fine', label: '과태료', legend: '과태료 부과율', basis: '답변 받은 날 기준 · 답변 완료된 신고 중' },
 ];
 
@@ -86,6 +87,7 @@ function metricValue(p: PublicPoint, m: MapMetric): number | null {
     const o = p.outcomes;
     return acceptRate(o);
   }
+  if (m === 'partial') return partialRate(p.outcomes);
   if (p.fine_count == null || (p.completed_count ?? 0) === 0) return null;
   return (p.fine_count / (p.completed_count ?? 1)) * 100;
 }

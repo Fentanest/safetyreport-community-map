@@ -32,6 +32,7 @@ describe('all side equals the public numbers for the same scope (same population
     // 수용률 = 수용 ÷ 결과 확인 (일부 수용 제외); the public field accepted_including_partial is a separate metric.
     expect(cmp.all.accepted + cmp.all.partial).toBe(pub.overview.accepted_including_partial.numerator);
     expect(cmp.all.accepted).toBe(pub.overview.outcomes!.accepted);
+    expect(cmp.all.partial_rate).toBe(pub.overview.outcomes!.result_known ? pub.overview.outcomes!.partial * 100 / pub.overview.outcomes!.result_known : null);
     expect(cmp.all.accept_rate).toBe(pub.overview.outcomes!.result_known ? pub.overview.outcomes!.accepted * 100 / pub.overview.outcomes!.result_known : null);
     expect(cmp.all.fine_count).toBe(pub.overview.fine_count.value);
     expect(cmp.all.point_count).toBe(pub.overview.point_count.value);
@@ -77,6 +78,7 @@ describe('differences', () => {
     const cmp = aggregateCompare(facts, DEMO_SCOPE, DEMO_VIEWER_ID, opts);
     expect(cmp.diff.accept_rate_pp).toBeCloseTo(cmp.mine.accept_rate! - cmp.all.accept_rate!, 10);
     expect(cmp.diff.reject_rate_pp).toBeCloseTo(cmp.mine.reject_rate! - cmp.all.reject_rate!, 10);
+    expect(cmp.diff.partial_rate_pp).toBeCloseTo(cmp.mine.partial_rate! - cmp.all.partial_rate!, 10);
     expect(cmp.diff.fine_rate_pp).toBeCloseTo(cmp.mine.fine_rate! - cmp.all.fine_rate!, 10);
     expect(cmp.diff.report_share).toBeCloseTo(cmp.mine.report_count * 100 / cmp.all.report_count, 10);
     expect(cmp.diff.rate_reason).toBeNull();
@@ -110,8 +112,8 @@ describe('differences', () => {
   });
 });
 
-describe('수용률 definition', () => {
-  it('counts only full acceptance in 수용률 (partial acceptance excluded)', () => {
+describe('수용률 and 일부수용률 are separate', () => {
+  it('counts only full acceptance in 수용률 and partial acceptance in 일부수용률', () => {
     const base = { ...facts[0], contributor_id: 'rate', report_date: '2026-09-01', completed_date: '2026-09-05',
       disposition: 'none' as const, point_key: null, lat: null, lng: null };
     const rows: PrivateFact[] = [
@@ -126,6 +128,11 @@ describe('수용률 definition', () => {
     expect(cmp.regions[0].mine.accepted).toBe(1);
     expect(cmp.regions[0].mine.accept_rate).toBe(25);
     expect(cmp.managers[0].mine.accept_rate).toBe(25);
+    expect(cmp.mine.partial_rate).toBe(25);
+    expect(cmp.regions[0].mine.partial).toBe(1);
+    expect(cmp.regions[0].mine.partial_rate).toBe(25);
+    expect(cmp.managers[0].mine.partial_rate).toBe(25);
+    expect(cmp.diff.partial_rate_pp).toBe(0);
   });
 });
 
