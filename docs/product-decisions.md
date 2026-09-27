@@ -24,7 +24,7 @@
 - UI: Vite + React + TypeScript + CSS custom property tokens + ECharts + Kakao Maps Web SDK.
   현재 레포에 다른 실제 구현이 생겼다면 무조건 삭제하지 말고 보존·어댑터 비용을 보고한다.
 - 비밀 경계: Pages는 공개 UI. private 원본 집계·차량 마스킹은 Supabase 서버에서 한다.
-- 읽기 모델: 모든 통계는 public-analytics API로 조회한다. 2026-09-27부터 지도는 공유자 전용(카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상)이라 Actions의 초기 snapshot은 만들지 않는다(docs/public-api-contract.md §열람 조건). 참여하는 사람이 모이면 `ANALYTICS_ACCESS=public`으로 다시 연다.
+- 읽기 모델: 모든 통계는 public-analytics API로 조회한다. 지도는 공유자 전용(카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상)이며, 익명 공개 전환 스위치는 두지 않는다. Actions의 초기 snapshot은 만들지 않는다(docs/public-api-contract.md §열람 조건). 2026-09-27 사용자 재확인: 모든 데이터·계정·업로드 함수는 자기 사용자 세션을 검사한다. 로그인 시작 전 `community-auth-relay`만 일회용 capability로 보호하는 예외다.
 - 기간 기본: 전국, 최근 12개월(오늘 포함), KST. 분석 가능 기간의 최소/최대는 meta에서 받는다.
 - 첫 방문 테마: dark. 사용자 저장값 우선. light·system도 제공한다.
 - 지도 색 기본: 신고건수 순차색. 다른 지표 선택 시 독립 범례/분모/기준이 바뀐다.

@@ -1,5 +1,5 @@
 # 공개 읽기 API · 제안 계약
-모든 경로명은 이 프로젝트가 구현해야 할 계약이며 이미 배포돼 있다고 가정하지 않는다.
+모든 경로명은 이 프로젝트의 구현 계약이다. 인증 전용 수정본의 운영 반영 상태는 `docs/reviews/edge-auth-2026-09-27.md`를 따른다.
 base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽을 수 있는지는 아래 §열람 조건(2026-09-27부터 공유자 전용).
 
 ## 경로
@@ -56,7 +56,7 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 
 ## 열람 조건 (2026-09-27 사용자 결정: 공유자 전용)
 참여하는 사람이 모일 때까지 지도와 통계는 **카카오로 로그인했고, 신고 결과를 한 건 이상 지도에 공유한 사람만** 본다.
-Edge 비밀값 `ANALYTICS_ACCESS`가 정한다(없거나 `public`이 아니면 공유자 전용, `public`이면 예전처럼 익명 공개).
+익명 공개 모드는 없다. `public-analytics`는 모든 통계 경로에서 사용자 세션과 공유 자격을 검사한다.
 
 | 단계 | 규칙 |
 |---|---|
@@ -76,9 +76,9 @@ Edge 비밀값 `ANALYTICS_ACCESS`가 정한다(없거나 `public`이 아니면 �
 `supabase/functions/public-analytics/index.ts`는 service-role credential을 서버 안에서만 사용해
 `internal_analytics_v2_*` RPC를 호출하고 고정 공개 DTO만 반환한다. base 설정값은
 `https://<project>.supabase.co/functions/v1`이며 브라우저는 그 뒤에 `/public-analytics/...`를 붙인다.
-현재 응답은 철회/버전 무효화 전파를 우선해 `Cache-Control: no-store`다(공유자 전용일 때는 `private, no-store`).
+현재 코드의 통계 응답은 철회/버전 무효화 전파를 우선해 `Cache-Control: private, no-store`다.
 정적 snapshot은 공유자 전용 전환과 함께 쓰지 않는다(위 §열람 조건). 운영에서 v2 사실이 준비되지 않으면 meta capability는 missing,
-집계 경로는 503을 반환한다. 이 코드는 아직 운영 DB·Edge에 배포되지 않았다.
+집계 경로는 503을 반환한다. 현재 인증 전용 수정본은 아직 운영 Edge에 배포되지 않았다(운영 v4 `meta` 익명 200 관측).
 지도는 현재 bbox로 범위를 좁히고 표시 노드를 1,000개 이하로 묶는다. 별도 `zoom/resolution`과
 result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌려준다.
 기관·담당자 표(2026-09-26 감사 SOL-08): dashboard 의 `agencies`/`managers` 는 상위 100행 요약이고,

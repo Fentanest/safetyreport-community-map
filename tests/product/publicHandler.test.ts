@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createPublicHandler, type AnalyticsRepository, type AnalyticsState } from '../../server/publicHandler';
 import { dashboardResponseSchema, metaSchema, vehiclesResponseSchema } from '../../src/data/schema';
 import type { PrivateFact } from '../../server/aggregate';
+import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
 
 const state: AnalyticsState = {
   dataset_version: 'v2-test', ready: true, source_updated_at: '2026-09-24T00:00:00Z',
@@ -19,7 +20,7 @@ const fact: PrivateFact = {
   agency_name: '<img src=x onerror=alert(1)>', manager_key: 'm1', manager_name: '김하늘',
 };
 function endpoint(path: string) {
-  return new Request(`https://example.supabase.co/functions/v1/public-analytics/${path}`);
+  return viewerRequest(`https://example.supabase.co/functions/v1/public-analytics/${path}`);
 }
 function makeRepo(overrides: Partial<AnalyticsRepository> = {}): AnalyticsRepository {
   return { getState: async () => state, getFacts: async () => [fact],
@@ -29,9 +30,9 @@ const q = 'start=2026-01-01&end=2026-02-28&category=all&expected_version=v2-test
 
 describe('public analytics API boundary', () => {
   it('returns a strict public DTO with exact coordinate, full manager name and one-record rows', async () => {
-    const response = await createPublicHandler(makeRepo())(endpoint(`dashboard?${q}`));
+    const response = await createPublicHandler(makeRepo(), fixtureAccess())(endpoint(`dashboard?${q}`));
     expect(response.status).toBe(200);
-    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('cache-control')).toBe('private, no-store, max-age=0');
     const body = await response.json();
     expect(dashboardResponseSchema.safeParse(body).success).toBe(true);
     expect(body.points[0]).toMatchObject({ lat: 37.566535, lng: 126.9779692, report_count: 1 });
@@ -44,7 +45,7 @@ describe('public analytics API boundary', () => {
     expect(body.points[0].address).toBe('<script>alert(1)</script>');
   });
   it('returns masked vehicles without a stable vehicle ID', async () => {
-    const response = await createPublicHandler(makeRepo())(endpoint(`vehicles/top?${q}`));
+    const response = await createPublicHandler(makeRepo(), fixtureAccess())(endpoint(`vehicles/top?${q}`));
     const body = await response.json();
     expect(vehiclesResponseSchema.safeParse(body).success).toBe(true);
     expect(body.items[0]).toMatchObject({ rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 1 });
@@ -53,7 +54,7 @@ describe('public analytics API boundary', () => {
     let factCalls = 0;
     const repo = makeRepo({ getState: async () => ({ ...state, ready: false, generated_at: null }),
       getFacts: async () => { factCalls++; return [fact]; } });
-    const handler = createPublicHandler(repo);
+    const handler = createPublicHandler(repo, fixtureAccess());
     const metaResponse = await handler(endpoint('meta'));
     const meta = await metaResponse.json();
     expect(metaSchema.safeParse(meta).success).toBe(true);
@@ -62,19 +63,19 @@ describe('public analytics API boundary', () => {
     expect(factCalls).toBe(0);
   });
   it('rejects query abuse, stale versions, and rate limits without private errors', async () => {
-    const handler = createPublicHandler(makeRepo());
+    const handler = createPublicHandler(makeRepo(), fixtureAccess());
     expect((await handler(endpoint(`dashboard?${q}&table=private.report_facts_v2`))).status).toBe(400);
     expect((await handler(endpoint('dashboard?start=2026-02-30&end=2026-03-01'))).status).toBe(400);
     expect((await handler(endpoint(`dashboard?${q}&expected_version=v3`))).status).toBe(400);
     const changed = await handler(endpoint('dashboard?start=2026-01-01&end=2026-02-28&expected_version=v3'));
     expect(changed.status).toBe(409);
-    const limited = await createPublicHandler(makeRepo({ allowRequest: async () => false }))(endpoint('meta'));
+    const limited = await createPublicHandler(makeRepo({ allowRequest: async () => false }), fixtureAccess())(endpoint('meta'));
     expect(limited.status).toBe(429);
     expect(limited.headers.get('retry-after')).toBe('60');
   });
   it('stops serving data immediately after withdrawal invalidates the version', async () => {
     let ready = true;
-    const handler = createPublicHandler(makeRepo({ getState: async () => ({ ...state, ready }) }));
+    const handler = createPublicHandler(makeRepo({ getState: async () => ({ ...state, ready }) }), fixtureAccess());
     expect((await handler(endpoint(`overview?${q}`))).status).toBe(200);
     ready = false;
     expect((await handler(endpoint(`overview?${q}`))).status).toBe(503);
@@ -94,7 +95,7 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
       getFacts: async () => { seen.facts++; return [fact]; },
       allowRequest: async (_r, id) => { seen.rateIds.push(id); return true; },
     }), {
-      mode: 'contributors', allowedOrigins: [ORIGIN], jwtIssuer: 'https://p.supabase.co/auth/v1',
+      allowedOrigins: [ORIGIN], jwtIssuer: 'https://p.supabase.co/auth/v1',
       getUser: over.getUser ?? (async () => ({ id: 'viewer-1', isAnonymous: false })),
       viewer: async (uid, session) => { seen.viewerCalls.push([uid, session]); return { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, ...viewer }; },
     });
@@ -106,12 +107,17 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
 
   it('without a sign-in nothing is readable, meta included, and no facts are fetched', async () => {
     const { handle, seen } = gated();
-    for (const path of ['meta', `dashboard?${q}`, `map?${q}`, `entities?${q}&kind=agency`, `points/public-point-1?${q}`]) {
+    for (const path of ['meta', `dashboard?${q}`, `overview?${q}`, `map?${q}`, `series?${q}`,
+      `entities?${q}&kind=agency`, `vehicles/top?${q}`, `points/public-point-1?${q}`]) {
       const res = await handle(req(path, null));
       expect(res.status, path).toBe(401);
       expect((await res.json()).error.code).toBe('auth_required');
       expect(res.headers.get('www-authenticate')).toBe('Bearer');
     }
+    const keyOnly = await handle(new Request('https://example.supabase.co/functions/v1/public-analytics/meta', {
+      headers: { origin: ORIGIN, apikey: 'sb_publishable_fixture' },
+    }));
+    expect(keyOnly.status).toBe(401);
     expect(seen.facts).toBe(0);
   });
   it('a signed-in contributor reads the same DTO, privately and per viewer', async () => {
@@ -163,11 +169,5 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
   it('auth service outage is a 503, not a 200 or a login prompt', async () => {
     const res = await gated({}, { getUser: async () => { throw new Error('down'); } }).handle(req('meta'));
     expect(res.status).toBe(503);
-  });
-  it('public mode keeps the anonymous API unchanged', async () => {
-    const res = await createPublicHandler(makeRepo(), { mode: 'public', allowedOrigins: [], jwtIssuer: null,
-      getUser: async () => null, viewer: async () => { throw new Error('not called'); } })(endpoint('meta'));
-    expect(res.status).toBe(200);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
   });
 });

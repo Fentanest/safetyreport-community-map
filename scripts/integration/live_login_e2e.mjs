@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // LOCAL composed stack only (never production): a real Chrome runs the LIVE-mode map build against the local
 // GoTrue (Kakao = scripts/integration/mock_kakao.mjs), public-analytics and my-analytics.
-// Checks: anonymous public view, no Authorization on public requests, PKCE login back to the map, OAuth params
-// stripped, compare columns filled from my-analytics with all = public numbers, private headers,
-// logout with scope=local, map session storage cleared, public view kept.
+// Checks: anonymous visit redirects to Kakao without a statistics request; PKCE login back to the map, OAuth params
+// stripped, compare columns filled from my-analytics with all = shared numbers, private headers,
+// logout with scope=local, map session storage cleared, Kakao login shown again.
 //
 //   PLAYWRIGHT_CORE=/path/to/playwright-core/index.mjs node scripts/integration/live_login_e2e.mjs <out-dir> [choice]
 // Preconditions: stack + mock_kakao + functions serve running; live build served at http://127.0.0.1:56490/ with
@@ -41,26 +41,19 @@ page.on('response', async (r) => {
 
 try {
   await page.goto(MAP, { waitUntil: 'networkidle' });
-  const publicReport = await page.locator('.compare-table tbody tr').first().locator('td').first().innerText();
-  check('anonymous public view renders', /\d/.test(publicReport), `신고 접수 ${publicReport.split('\n')[0]}`);
-  check('public requests carry no Authorization', requests.filter((r) => r.url.includes('/public-analytics/')).every((r) => r.auth === null));
-  await page.screenshot({ path: `${out}/01-public-anonymous.png` });
-
-  await page.getByRole('switch').check();
-  await page.waitForTimeout(300);
-  check('compare while signed out asks for login, no personal request', personal.length === 0 &&
-    await page.getByText('카카오로 로그인').first().isVisible());
-  await page.screenshot({ path: `${out}/02-compare-signed-out.png` });
-
-  await page.getByRole('button', { name: /카카오 로그인/ }).first().click();
   await page.waitForURL(/\/oauth\/authorize/, { timeout: 15000 });
   const authorize = new URL(page.url());
-  check('login goes through Supabase Auth to Kakao (PKCE)', requests.some((r) => r.url.includes('/auth/v1/authorize') && r.url.includes('code_challenge')));
+  check('anonymous visit redirects through Supabase Auth to Kakao (PKCE)',
+    requests.some((r) => r.url.includes('/auth/v1/authorize') && r.url.includes('code_challenge')));
+  check('anonymous visitor made no statistics request', requests.every((r) => !r.url.includes('/public-analytics/')));
+  await page.screenshot({ path: `${out}/01-kakao-login.png` });
   // Harness step standing in for the user's consent click on the (mock) Kakao page.
   await page.goto(`http://host.docker.internal:56410/oauth/decide?${new URLSearchParams({ state: authorize.searchParams.get('state'), choice })}`);
   await page.waitForURL((u) => u.origin === new URL(MAP).origin, { timeout: 15000 });
   await page.waitForFunction(() => !/[?&]code=/.test(location.search), null, { timeout: 15000 });
   check('returned to the map with OAuth params stripped', !/code=|state=/.test(page.url()), page.url());
+  await page.waitForSelector('.compare-table tbody tr', { timeout: 20000 });
+  await page.getByRole('switch').check();
   await page.waitForSelector('.compare-table .mine-col b', { timeout: 20000 });
   await page.waitForTimeout(500);
   const rows = await page.locator('.compare-table tbody tr').evaluateAll((trs) => trs.map((tr) => [...tr.querySelectorAll('td')].map((td) => td.innerText.split('\n')[0])));
@@ -74,7 +67,9 @@ try {
   check('all column equals the public number on screen', ok && String(ok.body.all.report_count) === rows[0][0].replace(/,/g, ''),
     `${ok?.body?.all?.report_count} vs ${rows[0][0]}`);
   check('personal body has no account identifiers', ok && !/contributor_id|user_id|session_id|@/.test(JSON.stringify(ok.body)));
-  check('public requests still carry no Authorization', requests.filter((r) => r.url.includes('/public-analytics/')).every((r) => r.auth === null));
+  check('every map statistics request carries the user bearer token',
+    requests.filter((r) => r.url.includes('/public-analytics/')).length > 0 &&
+    requests.filter((r) => r.url.includes('/public-analytics/')).every((r) => r.auth?.startsWith('Bearer ')));
   const stored = await page.evaluate(() => Object.keys(localStorage));
   check('map session stored under the map-only key', stored.includes('cm-map-auth-v1'), stored.join(','));
   await page.screenshot({ path: `${out}/03-compare-signed-in.png`, fullPage: true });
@@ -84,10 +79,11 @@ try {
   await page.getByRole('menuitem', { name: /로그아웃/ }).click();
   const lr = await logoutReq;
   check('logout request uses scope=local', new URL(lr.url()).searchParams.get('scope') === 'local', lr.url().replace(/\?.*/, '?…') + ' scope=' + new URL(lr.url()).searchParams.get('scope'));
-  await page.waitForTimeout(800);
-  const after = await page.evaluate(() => Object.keys(localStorage));
+  await page.waitForURL(/\/oauth\/authorize/, { timeout: 15000 });
+  const storedState = await context.storageState();
+  const after = storedState.origins.find((origin) => origin.origin === new URL(MAP).origin)?.localStorage.map((item) => item.name) ?? [];
   check('map session removed from this browser', !after.includes('cm-map-auth-v1'), after.join(','));
-  check('public view still shown after logout', await page.locator('.compare-table').isVisible() && await page.getByRole('button', { name: /카카오 로그인/ }).first().isVisible());
+  check('map hidden and Kakao login shown again after logout', page.url().includes('/oauth/authorize'));
   await page.screenshot({ path: `${out}/04-after-local-logout.png` });
   // The mock Kakao page (harness only) has no favicon; everything on the map/API origins must be clean.
   const relevant = failed.filter((f) => !f.includes('host.docker.internal'));

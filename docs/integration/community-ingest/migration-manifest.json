@@ -144,7 +144,7 @@
   {
    "name": "public-analytics",
    "repo": "map",
-   "verify_jwt": false,
+   "verify_jwt": true,
    "shared": [
     "server/aggregate.ts",
     "server/amount.ts",

@@ -18,10 +18,15 @@ function installWindow(search = '') {
 
 const signOut = vi.fn(async (_opts?: unknown) => ({ error: null }));
 const signInWithOAuth = vi.fn(async (_opts?: unknown) => ({ data: {}, error: null }));
+const storedSession = { access_token: 'user-jwt', user: { user_metadata: { nickname: '합성', email: 'x@y.z' } } };
+let sessionResult: typeof storedSession | null = storedSession;
+let emitInitialNull = false;
 const createClient = vi.fn((_url: string, _key: string, _opts: unknown) => ({
   auth: {
-    onAuthStateChange: vi.fn(),
-    getSession: vi.fn(async () => ({ data: { session: { access_token: 'user-jwt', user: { user_metadata: { nickname: '합성', email: 'x@y.z' } } } } })),
+    onAuthStateChange: vi.fn((listener: (_event: string, session: null) => void) => {
+      if (emitInitialNull) listener('INITIAL_SESSION', null);
+    }),
+    getSession: vi.fn(async () => ({ data: { session: sessionResult } })),
     refreshSession: vi.fn(async () => ({ data: { session: null }, error: { status: 400 } })),
     signOut, signInWithOAuth,
   },
@@ -30,6 +35,8 @@ vi.mock('@supabase/supabase-js', () => ({ createClient }));
 
 beforeEach(() => {
   store.clear();
+  sessionResult = storedSession;
+  emitInitialNull = false;
   vi.clearAllMocks();
   vi.stubEnv('VITE_SUPABASE_URL', 'https://p.supabase.co');
   vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_test');
@@ -37,7 +44,7 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetModules(); });
 
 describe('map web login (separate from relay and app sessions)', () => {
-  it('does not load the auth SDK for an anonymous visitor', async () => {
+  it('does not load the auth SDK before an anonymous visitor starts login', async () => {
     installWindow('?start=2026-01-01');
     const { createLiveAuth } = await import('../../src/auth/mapAuth');
     const auth = createLiveAuth();
@@ -71,6 +78,19 @@ describe('map web login (separate from relay and app sessions)', () => {
     expect(replaceState.mock.calls[0][2]).toBe('/?start=2026-01-01');
     await auth.signIn();
     expect(signInWithOAuth).toHaveBeenCalledWith({ provider: 'kakao', options: { redirectTo: 'https://safemap.worklazy.net/?start=2026-01-01' } });
+  });
+
+  it('keeps a failed OAuth return on the login screen instead of retrying forever', async () => {
+    installWindow('?code=invalid');
+    sessionResult = null;
+    emitInitialNull = true;
+    const { createLiveAuth } = await import('../../src/auth/mapAuth');
+    const auth = createLiveAuth();
+    const states: string[] = [];
+    auth.subscribe(snapshot => states.push(snapshot.status));
+    await vi.waitFor(() => expect(auth.snapshot().status).toBe('error'));
+    expect(states).not.toContain('signed_out');
+    expect(auth.snapshot().message).toContain('카카오 로그인이 취소되었거나');
   });
 
   it('reports an unconfigured deployment instead of failing the public page', async () => {

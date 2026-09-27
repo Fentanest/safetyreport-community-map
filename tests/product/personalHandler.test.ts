@@ -3,6 +3,7 @@ import { createPersonalHandler, type PersonalDeps, type PersonalSource } from '.
 import { createPublicHandler, type AnalyticsState } from '../../server/publicHandler';
 import { demoFacts, DEMO_AS_OF, DEMO_DATA_MIN, DEMO_VIEWER_ID } from '../../src/data/demoEngine';
 import { personalCompareSchema } from '../../src/data/personal';
+import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
 
 const ORIGIN = 'https://safemap.worklazy.net';
 const SESSION = '11111111-2222-4333-8444-555555555555';
@@ -161,24 +162,30 @@ describe('my-analytics response boundary', () => {
   });
 });
 
-describe('public API stays anonymous and personal-free', () => {
+describe('shared map API stays personal-free after authentication', () => {
   const repo = {
     getState: async () => state,
     getFacts: async () => demoFacts(),
     allowRequest: async () => true,
   };
-  it('ignores Authorization entirely and never returns personal fields', async () => {
-    const handle = createPublicHandler(repo);
+  it('refuses anonymous requests and never returns personal fields to a viewer', async () => {
+    const handle = createPublicHandler(repo, fixtureAccess());
     const url = `https://p.supabase.co/functions/v1/public-analytics/dashboard?start=2025-09-25&end=2026-09-24`;
-    const anon = await (await handle(new Request(url))).text();
-    const withAuth = await (await handle(new Request(url, { headers: { authorization: `Bearer ${token()}` } }))).text();
-    expect(withAuth).toBe(anon);
-    const json = JSON.parse(anon);
-    for (const key of ['mine', 'viewer', 'my_points', 'contributor_id']) expect(anon).not.toContain(`"${key}"`);
+    expect((await handle(new Request(url))).status).toBe(401);
+    const response = await handle(viewerRequest(url));
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    const json = JSON.parse(body);
+    for (const key of ['mine', 'viewer', 'my_points', 'contributor_id']) expect(body).not.toContain(`"${key}"`);
     expect(Array.isArray(json.regions)).toBe(true);
   });
-  it('does not allow the Authorization header cross-origin', async () => {
-    const res = await createPublicHandler(repo)(new Request('https://p.supabase.co/functions/v1/public-analytics/meta', { method: 'OPTIONS' }));
-    expect(res.headers.get('access-control-allow-headers')).toBe('Accept');
+  it('allows the Authorization header only for the map origin', async () => {
+    const handle = createPublicHandler(repo, fixtureAccess());
+    const url = 'https://p.supabase.co/functions/v1/public-analytics/meta';
+    const allowed = await handle(new Request(url, { method: 'OPTIONS', headers: { origin: ORIGIN } }));
+    expect(allowed.headers.get('access-control-allow-headers')).toContain('authorization');
+    expect(allowed.headers.get('access-control-allow-origin')).toBe(ORIGIN);
+    const blocked = await handle(new Request(url, { method: 'OPTIONS', headers: { origin: 'https://evil.example' } }));
+    expect(blocked.status).toBe(403);
   });
 });
