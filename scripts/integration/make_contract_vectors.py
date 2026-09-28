@@ -25,7 +25,7 @@ def base_input(**kw):
         "processing_status": "수용", "penalty_amount": "과태료: 40,000원", "report_date": "2026-09-01",
         "response_date": "2026-09-10", "processing_agency": "서울특별시 중구청", "person_in_charge": "홍길동",
         "car_number": "12가3456", "violation_location": "서울특별시 중구 세종대로 110",
-        "entry_value": "불법주정차신고", "penalty_points": "", "geocode": {"status": "ok", "lat": 37.5662952, "lng": 126.9779451},
+        "entry_value": "불법주정차신고", "penalty_points": "", "violation_law": "", "geocode": {"status": "ok", "lat": 37.5662952, "lng": 126.9779451},
     }
     value.update(kw)
     return value
@@ -38,7 +38,7 @@ def payload(**kw):
         "completed_date": "2026-09-10", "disposition": "fine",
         "location": {"lat": "37.5662952", "lng": "126.9779451", "source": "geocode"},
         "manager_name": "홍길동", "report_date": "2026-09-01", "status": "accepted", "status_raw": "수용",
-        "vehicle_raw": "12가3456",
+        "vehicle_raw": "12가3456", "violation_law": None,
     }
     value.update(kw)
     return value
@@ -118,6 +118,13 @@ OBS = [
         payload(amount={"confirmed_won": None, "kind": "fine", "penalty_points": None}), True),
     ("points_over_cap_rejected", base_input(penalty_amount="범칙금: 30,000원", penalty_points="벌점: 1001점", entry_value="자동차·교통위반"),
         payload(amount={"confirmed_won": 30000, "kind": "penalty", "penalty_points": None}, disposition="penalty", category="traffic"), True),
+    ("violation_law_kept", base_input(processing_status="수용", penalty_amount="범칙금: 60,000원", entry_value="자동차·교통위반 > 신호위반",
+        violation_law="도로교통법 제5조"),
+        payload(disposition="penalty", amount={"confirmed_won": 60000, "kind": "penalty", "penalty_points": None}, category="traffic",
+                violation_law="도로교통법 제5조"), True),
+    ("violation_law_cleaned_and_truncated", base_input(violation_law="  자동차관리법\n 제29조 " + "가" * 60),
+        payload(violation_law=("자동차관리법 제29조 " + "가" * 60)[:60]), True),
+    ("violation_law_missing_input_is_null", base_input(violation_law=None), payload(), True),
     ("quotes_and_backslash", base_input(violation_location='경기도 "수원시" 팔달구 \\ 1'),
         payload(address='경기도 "수원시" 팔달구 \\ 1'), True),
 ]
@@ -160,7 +167,7 @@ def main():
                           "eligible": prev_payload["status"] in {"accepted", "partial", "rejected", "completed_unknown"}}
     (ROOT / "vectors").mkdir(parents=True, exist_ok=True)
     (ROOT / "vectors" / "observations.json").write_text(json.dumps(
-        {"contract": "observation-v1",
+        {"contract": "observation-v2",
          "report_number_transport": {**REPORT_NUMBER_TRANSPORT,
                                      "payload_sha256": sha(by_name[REPORT_NUMBER_TRANSPORT["observation_case"]])},
          "cases": cases, "event_decisions": EVENTS},

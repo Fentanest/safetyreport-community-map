@@ -1,4 +1,4 @@
-import { DEFAULT_SCOPE, DEMO_SCOPE, parseBbox, type Category, type Scope } from '../domain/public';
+import { DEFAULT_SCOPE, DEMO_SCOPE, LAW_NONE, isLawParam, lawKey, parseBbox, type Category, type PublicLaw, type Scope } from '../domain/public';
 import { normalizeRegion } from '../data/regions';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
@@ -21,6 +21,8 @@ export interface DraftFilters {
   end: string;
   category: Category;
   region_code: string | null;
+  /** 위반법규: article key (lawKey), LAW_NONE (법규 미상) or null (전체) */
+  law: string | null;
 }
 
 const CATEGORIES: Category[] = ['all', 'traffic', 'parking', 'other'];
@@ -32,6 +34,30 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 };
 
 export { regionLabel } from '../data/regions';
+
+export const LAW_UNKNOWN_LABEL = '법규 미상';
+
+/** Label of a law filter value or a law row (null row = 법규 미상). */
+export function lawLabel(law: string | null, filter = true): string {
+  if (law === null) return filter ? '모든 법규' : LAW_UNKNOWN_LABEL;
+  return law === LAW_NONE ? LAW_UNKNOWN_LABEL : law;
+}
+
+/** The same 조 단위 key the API filters and echoes (else the echo check would see a different scope). */
+export const normalizeLaw = (law: string | null): string | null => (law === null || law === LAW_NONE ? law : lawKey(law));
+
+/** Filter value of a law row (the 법규 미상 row selects LAW_NONE). */
+export const lawValue = (law: string | null): string => law ?? LAW_NONE;
+
+/** Laws offered by the filter: the rows of the current data (answered reports per law), named laws only,
+ *  most answered first. The current selection is kept even when the data no longer has it. */
+export function lawOptions(rows: ReadonlyArray<Pick<PublicLaw, 'law' | 'completed_count'>> | null, selected: string | null):
+  Array<{ law: string; count: number | null }> {
+  const list = (rows ?? []).filter((r): r is { law: string; completed_count: number } => r.law !== null)
+    .map(r => ({ law: r.law, count: r.completed_count as number | null }));
+  if (selected && selected !== LAW_NONE && !list.some(o => o.law === selected)) list.unshift({ law: selected, count: null });
+  return list;
+}
 
 /** Report counts per official code in the current data, for the 시도/시군구 selector (codes without data still selectable). */
 export function regionCounts(regions: ReadonlyArray<{ region_code: string | null; report_count: number }> | null): Map<string, number> {
@@ -63,6 +89,7 @@ export function scopeFromDraft(draft: DraftFilters, prev: Scope): Scope {
     end: draft.end,
     category: draft.category,
     region_code: draft.region_code,
+    law: normalizeLaw(draft.law),
     agency_key: null,
     manager_key: null,
     bbox: null,
@@ -70,7 +97,7 @@ export function scopeFromDraft(draft: DraftFilters, prev: Scope): Scope {
 }
 
 export function draftFromScope(scope: Scope): DraftFilters {
-  return { start: scope.start, end: scope.end, category: scope.category, region_code: scope.region_code };
+  return { start: scope.start, end: scope.end, category: scope.category, region_code: scope.region_code, law: scope.law ?? null };
 }
 
 /** URL에는 공개 필터와 선택된 viewport bbox만 보존한다. 차량·계정 식별자는 포함하지 않는다. */
@@ -83,6 +110,7 @@ export function scopeToSearch(scope: Scope, extra?: { fixture?: string | null; v
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
   if (scope.manager_key) p.set('manager_key', scope.manager_key);
   if (scope.bbox) p.set('bbox', scope.bbox.join(','));
+  if (scope.law) p.set('law', scope.law);
   if (extra?.fixture) p.set('fixture', extra.fixture);
   // panel state only (docs/personal-comparison.md §5.2); never an account or personal-mode flag
   if (extra?.view && extra.view !== 'both') p.set('view', extra.view);
@@ -100,6 +128,7 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
   const agency = p.get('agency_key');
   const manager = p.get('manager_key');
   const bbox = p.has('bbox') ? parseBbox(p.get('bbox') ?? '') : null;
+  const law = p.get('law');
   return {
     ...fallback,
     start: start && isValidDate(start) ? start : fallback.start,
@@ -110,6 +139,8 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
     agency_key: agency || null,
     manager_key: manager || null,
     bbox,
+    // exact 위반법규 text or '__none__'; anything the API would refuse is dropped
+    law: law !== null && isLawParam(law) ? normalizeLaw(law) : null,
   };
 }
 

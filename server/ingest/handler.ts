@@ -90,9 +90,15 @@ function exactKeys(o: Record<string, unknown>, keys: readonly string[]): boolean
 const nstr = (v: unknown, max: number) => v === null || (typeof v === 'string' && v.length >= 1 && [...v].length <= max);
 const nint = (v: unknown, max: number) => v === null || (Number.isSafeInteger(v) && (v as number) >= 0 && (v as number) <= max);
 
+const OBSERVATION_V1_KEYS = ['address', 'agency_name', 'amount', 'category', 'completed_date', 'disposition', 'location',
+  'manager_name', 'report_date', 'status', 'status_raw', 'vehicle_raw'] as const;
+/** observation-v2 (2026-09-28) adds `violation_law`; v1 (12 keys, old apps) is still accepted. */
+const OBSERVATION_V2_KEYS = [...OBSERVATION_V1_KEYS, 'violation_law'] as const;
+
 export function isObservation(p: unknown): p is Observation {
-  if (!isObj(p) || !exactKeys(p, ['address', 'agency_name', 'amount', 'category', 'completed_date', 'disposition', 'location',
-    'manager_name', 'report_date', 'status', 'status_raw', 'vehicle_raw'])) return false;
+  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS))) return false;
+  // v2: null or 1..60 code points (empty string, over-length and non-strings are schema_invalid like any other field)
+  if (Object.hasOwn(p, 'violation_law') && !nstr(p.violation_law, 60)) return false;
   const a = p.amount, l = p.location;
   return nstr(p.address, 200) && nstr(p.agency_name, 200) && nstr(p.manager_name, 160) && nstr(p.vehicle_raw, 64) &&
     nstr(p.status_raw, 40) &&

@@ -133,6 +133,44 @@ describe('community-ingest handler', () => {
     expect(body.request_id).toMatch(/^ing_/);
   });
 
+  it('accepts observation-v2 (violation_law) and v1 (12 keys, old apps); the hash covers the payload as received', async () => {
+    const law = vectors.cases.find((c: { name: string }) => c.name === 'violation_law_kept');
+    const v2 = setup(() => ({ results: [], dataset_version: 'v' }));
+    const r2 = await v2.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', law.expected_payload)])));
+    expect(r2.status).toBe(200);
+    const ev2 = (v2.calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0];
+    expect(ev2.payload_sha256).toBe(law.payload_sha256);
+    expect((ev2.derived as Record<string, unknown>).violation_law).toBe('도로교통법 제5조');
+
+    const { violation_law: _drop, ...v1Payload } = payload as Record<string, unknown>;
+    expect(Object.keys(v1Payload)).toHaveLength(12);
+    const v1 = setup(() => ({ results: [], dataset_version: 'v' }));
+    const r1 = await v1.handler(post(await envelope([await event('8d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', v1Payload as typeof payload)])));
+    expect(r1.status).toBe(200);
+    const ev1 = (v1.calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0];
+    expect(ev1.payload).toEqual(v1Payload);  // stored as received: no violation_law key added
+    expect(ev1.payload_sha256).toBe(await sha256Hex(canonicalJson(v1Payload)));
+    expect(ev1.payload_sha256).not.toBe(vectors.cases[0].payload_sha256);
+    expect((ev1.derived as Record<string, unknown>).violation_law).toBeNull();
+  });
+
+  it('rejects an empty, over-length or non-string violation_law with 422 schema_invalid and no write', async () => {
+    const { handler, calls } = setup();
+    // a C0 control is refused too: clean() never leaves one, and the text becomes a public filter value
+    for (const bad of ['', '가'.repeat(61), 32, ['도로교통법'], { law: '도로교통법' }, true, '도로교통법\n제32조']) {
+      const p = { ...payload, violation_law: bad } as unknown as typeof payload;
+      const res = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', p)
+        .catch(async () => ({ ...(await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')), payload: p }))])));
+      expect(res.status).toBe(422);
+      expect((await res.json()).error.code).toBe('schema_invalid');
+    }
+    // 60 code points (astral characters count once) is the upper bound and is accepted
+    const edge = { ...payload, violation_law: '𠀀'.repeat(60) };
+    const ok = setup(() => ({ results: [] }));
+    expect((await ok.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', edge)])))).status).toBe(200);
+    expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
+  });
+
   it('marks a status that does not follow its raw label for quarantine instead of trusting the client', async () => {
     const { handler, calls } = setup(() => ({ results: [] }));
     const wrong = { ...payload, status: 'partial' };  // status_raw 수용 → accepted

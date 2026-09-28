@@ -1,4 +1,4 @@
-// community-ingest observation-v1: canonical JSON, value validation, status re-mapping and derived fact columns.
+// community-ingest observation-v1/v2: canonical JSON, value validation, status re-mapping and derived fact columns.
 // Pure functions shared by the Deno Edge entry (supabase/functions/community-ingest) and Node tests.
 // Rules: contracts/community-ingest/{canonical-json,observation}.md. The client hash is never trusted.
 
@@ -22,6 +22,8 @@ export interface Observation {
   disposition: 'fine' | 'warning' | 'penalty' | 'none' | 'unknown';
   location: { lat: string | null; lng: string | null; source: 'geocode' | 'none' };
   manager_name: string | null; report_date: string | null; status: Status; status_raw: string | null; vehicle_raw: string | null;
+  /** 위반법규(법 이름·조항, 1..60 code points). observation-v2 (2026-09-28); absent in v1 payloads (old apps). */
+  violation_law?: string | null;
 }
 
 // --- canonical JSON (keys sorted by UTF-16 code units, no whitespace, strings/ints/null/objects only) ---
@@ -83,6 +85,11 @@ export function validateObservationValues(p: Observation): ValidationError | nul
     }
   }
   if (p.amount.kind === 'unknown' && p.amount.confirmed_won !== null) return { code: 'schema_invalid', reason: 'amount_without_kind' };
+  // clean() replaces C0 controls and DEL with spaces, so a real v2 client never sends them; the text is a public
+  // filter value (observation.md §3, 2026-09-28)
+  if (typeof p.violation_law === 'string' && /[\u0000-\u001f\u007f]/.test(p.violation_law)) {
+    return { code: 'schema_invalid', reason: 'violation_law_not_clean' };
+  }
   return null;
 }
 
@@ -131,6 +138,8 @@ export interface DerivedFact {
   lat_text: string | null; lng_text: string | null; coord_source: 'geocode' | 'none'; address: string | null;
   region_code: string | null; point_key: string | null; agency_key: string | null; agency_name: string | null;
   manager_key: string | null; manager_name: string | null;
+  /** v2 payload value as sent; null for v1 payloads (no key) and for v2 null */
+  violation_law: string | null;
 }
 
 export async function deriveFact(p: Observation): Promise<DerivedFact> {
@@ -149,6 +158,7 @@ export async function deriveFact(p: Observation): Promise<DerivedFact> {
     coord_source: p.location.source, address: p.address, region_code: regionCode(p.address),
     point_key: located ? `v1:${p.location.lat},${p.location.lng}` : null,
     agency_key: agencyKey, agency_name: p.agency_name, manager_key: managerKey, manager_name: p.manager_name,
+    violation_law: p.violation_law ?? null,
   };
 }
 

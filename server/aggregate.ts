@@ -1,8 +1,9 @@
 /** Exact private-fact aggregation. This module must run behind the public API only. */
 import type {
   Category, CountMetric, DashboardData, MonthlyBucket, OutcomeCounts,
-  PublicEntity, PublicMeta, PublicPoint, PublicRegion, Scope,
+  PublicEntity, PublicLaw, PublicMeta, PublicPoint, PublicRegion, Scope,
 } from '../src/domain/public.ts';
+import { LAW_NONE, lawKey } from '../src/domain/public.ts';
 import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
 import { fineAmountBrief, fineAmountSummary } from './amount.ts';
@@ -40,6 +41,8 @@ export interface PrivateFact {
   amount_public?: boolean;
   /** the answer stated an amount (existence only) */
   amount_stated?: boolean;
+  /** 위반법규 (observation-v2), only when the fact's consent policy publishes it; null/absent = 법규 미상 */
+  violation_law?: string | null;
 }
 
 const terminal = new Set<Status>(['accepted', 'partial', 'rejected', 'withdrawn', 'transferred', 'completed_unknown']);
@@ -101,6 +104,11 @@ function dimensions(fact: PrivateFact, scope: Scope): boolean {
   if (scope.region_code && !regionMatches(regionOf(fact), scope.region_code)) return false;
   if (scope.agency_key && fact.agency_key !== scope.agency_key) return false;
   if (scope.manager_key && fact.manager_key !== scope.manager_key) return false;
+  if (scope.law) {
+    // 조 단위 key on both sides (a parameter with a paragraph selects its article)
+    const law = lawKey(fact.violation_law);
+    if (scope.law === LAW_NONE ? law !== null : law !== lawKey(scope.law)) return false;
+  }
   if (scope.bbox) {
     const [minLng, minLat, maxLng, maxLat] = scope.bbox;
     if (fact.lat === null || fact.lng === null) return false;  // a viewport filter can only keep located facts
@@ -162,6 +170,32 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
     fine_count: rows.filter(row => row.disposition === 'fine').length,
     duration: durationBrief(rows), fine_amount: fineAmountBrief(rows),
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
+}
+
+/** 위반법규별 현황 (docs/metrics-catalog.md law_results): one row per article key (lawKey, 항 dropped) plus one 법규 미상 row, each
+ *  computed from the completion-date cohort's raw facts. Sorted by C desc, then law (법규 미상 last on ties). */
+export function lawRows(done: readonly PrivateFact[]): PublicLaw[] {
+  const groups = new Map<string | null, PrivateFact[]>();
+  for (const fact of done) {
+    const law = lawKey(fact.violation_law);  // 조 단위: the stored text (with 항) never leaves as a row name
+    const rows = groups.get(law);
+    if (rows) rows.push(fact);
+    else groups.set(law, [fact]);
+  }
+  return [...groups].map(([law, rows]) => {
+    const result = outcomes(rows);
+    const fine = rows.filter(row => row.disposition === 'fine').length;
+    return {
+      law, completed_count: rows.length, outcomes: result,
+      accept_rate: result.result_known ? result.accepted * 100 / result.result_known : null,
+      partial_rate: result.result_known ? result.partial * 100 / result.result_known : null,
+      fine_count: fine, fine_rate: rows.length ? fine * 100 / rows.length : null,
+      penalty_count: rows.filter(row => row.disposition === 'penalty').length,
+      warning_count: rows.filter(row => row.disposition === 'warning').length,
+      fine_amount: fineAmountBrief(rows),
+    };
+  }).sort((a, b) => b.completed_count - a.completed_count ||
+    (a.law === null ? 1 : 0) - (b.law === null ? 1 : 0) || (a.law ?? '').localeCompare(b.law ?? '', 'ko'));
 }
 
 export type LocatedFact = PrivateFact & { point_key: string; lat: number; lng: number };
@@ -394,6 +428,9 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       fine_amount: { status: 'supported', reason: null, coverage: { eligible: fineAmount.confirmed_count, total: fineAmount.fine_count } },
       processing_duration: { status: 'supported', reason: null, coverage: { eligible: duration.count, total: duration.count + duration.excluded.no_report_date + duration.excluded.reversed } },
       region_boundaries: { status: 'supported', reason: null, coverage: null },
+      // coverage = answered reports with a published law / C (the rest are 법규 미상)
+      violation_law: { status: 'supported', reason: null,
+        coverage: { eligible: done.filter(fact => lawKey(fact.violation_law) !== null).length, total: done.length } },
     },
   };
   return {
@@ -421,7 +458,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       fine_amount: fineAmount,
     },
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
-    regions: regionRows(reported, done),
+    regions: regionRows(reported, done), laws: lawRows(done),
     vehicles: vehicles.items, vehicle_total_scope_reports: reported.length,
     vehicle_identifiable_reports: vehicles.identifiable,
   };

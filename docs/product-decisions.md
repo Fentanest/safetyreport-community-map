@@ -38,7 +38,7 @@
   이름 그대로의 별도 지표로 남겨 두며 화면의 수용률로 쓰지 않는다.
 - 화면에는 일반 이용자 말만 쓴다(docs/personal-comparison.md §5.7).
 
-## 2026-09-28 신고번호·소유 이전
+<## 2026-09-28 신고번호·소유 이전
 
 - 안전신문고 신고번호는 별도 private 이벤트 필드로 수집한다. Observation 해시는 유지하고 공개 API에는 번호를 내보내지 않는다.
 - 다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 Observation payload 가 **완전히 같을 때만** 나중에 올린 계정으로 이전한다(상태 포함 하나라도 다르면 비재시도 `cross_account_mismatch` 거절). `status_only` 예외는 없다. 이전 감사 기록은 private에 남으며 reason 은 `identical` 만 허용한다.
@@ -54,6 +54,18 @@
 - 서버는 payload 가 적격이 아니거나 event_type 이 `status_correction` 인 이벤트를 이벤트 단위로 재시도 불가 `rejected:non_final_not_accepted`(durable=false)로 거절한다.
   배치의 나머지 이벤트는 정상 처리한다(요청 전체 422가 아님). `status_correction` 이름은 구버전 앱이 이벤트별 거절을 받도록 인식만 유지한다.
 - 답변 완료로 올라간 신고가 나중에 비종결 상태로 돌아가면(드묾) 중앙은 마지막 답변 상태를 유지한다. 중앙 fact 는 바뀌지 않는다.
+
+## 2026-09-28 사용자 결정 · 위반법규 공개
+- 앱(PC·모바일)이 답변 처리내용에서 **법 이름·조항만** 뽑아 `violation_law`로 보낸다(observation-v2). 처리내용 원문은 보내지 않는다.
+- 공개는 동의문 **2026-09-28.2**부터다(‘위반법규’ 행 추가). 그 버전(또는 그 뒤 버전)이 현재 동의인 계보의 사실만 법규를 내보낸다
+  (`community_policy_disclosures.violation_law_public`). 금액 공개(amounts_public)도 2026-09-28.2에서 그대로 유지한다.
+- **조 단위로 묶는다**(같은 날 사용자 결정): 키 `{법이름} 제{N}조[의{M}]` — 항은 버리고 `조의M`은 유지, 공백 차이 흡수, 형식 밖 값은 trim 한 원문.
+  지도 서버 집계에서만 적용(`lawKey`), 계약·ingest·저장 원문·SQL·앱은 그대로.
+- 지도: 위반법규 필터(조 단위 키 + ‘법규 미상’)와 ‘위반법규별 현황’ 표(답변 완료·수용률·일부수용률·과태료 부과율·답변에 적힌 과태료 금액·범칙금·경고).
+- 구 자료: 위반법규가 없는 기존 사실(v1 업로드)은 ‘법규 미상’으로 보인다. 서버는 v1 payload도 계속 받는다.
+  **배포 때 운영자가 중앙 공유 자료를 초기화하고 앱이 새로 올린다**(이 작업에서는 하지 않음 — 운영 승인 경계).
+- 배포 순서: 중앙 SQL(auth `202609281000` 정책·본문 → map `202609281100`) → Edge Functions(`community-ingest`, `public-analytics`, `my-analytics`)
+  → 앱(지도 Pages, PC, 모바일). docs/integration/community-ingest/deployment-and-rollback.md §9.
 
 ## 제외·보류
 차량 실번호 검색·차량의 이동경로·연속 추적·원본 민원 본문/첨부/신고자 프로필·공무원 우열 점수·실시간인 척하는 ticker는 제외.

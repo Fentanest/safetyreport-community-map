@@ -87,3 +87,18 @@
 - 롤백: `community-account` 이전 배포 재배포, `community_policies` 2026-09-28.1 해시를 `a775cc34…`로 되돌림(트리거 해제 → update → 재설정, 동의가 없을 때만).
   `community_policy_texts` 는 남겨 둔다(불변).
 
+## 9. 위반법규(observation-v2)·동의 2026-09-28.2 배포 순서 (2026-09-28, 운영 반영 전 — 사용자 승인 필요)
+1. **중앙 SQL**(합성 디렉터리, `compose_supabase.mjs check` 통과본, dry-run으로 목록 확인): auth `202609281000_policy_2026_09_28_2`(동의문 본문·정책 행·현재 지정)
+   → map `202609281100_violation_law`(fact 열, disclosures `violation_law_public` 열과 2026-09-28.2 행, `internal_community_ingest`·`internal_analytics_v2_facts` 교체).
+   map은 auth 정책 행을 외래키로 참조하므로 순서가 반대면 실패한다. 한 합성 이력에 같은 버전 둘을 둘 수 없어 map은 `…1100`이다.
+   아직 운영에 없는 이전 버전(예: `202609280700`)이 dry-run 목록에 섞이면 따로 승인받는다.
+   SQL만 먼저 올라가도 안전하다: 구 Edge 함수는 derived에 `violation_law`를 넣지 않아 null로 저장되고, 사실 JSON의 새 키는 구 함수가 무시한다.
+2. **Edge Functions**: `community-ingest`(v1·v2 둘 다 받음), `public-analytics`·`my-analytics`(`law` 인자, `laws[]`, `scope.law`).
+   이 단계 뒤부터 **구 지도 Pages는 새 응답을 strict schema로 거절**해 ‘통계를 불러오지 못했습니다’가 뜬다 — 3단계를 바로 이어서 한다.
+3. **앱**: 지도 Pages(`VITE_DATA_MODE=live npm run build && npm run scan`) → PC·모바일(v2 payload·동의 2026-09-28.2). 2단계 전에 v2 앱이 올리면
+   구 ingest가 13키 payload를 `schema_invalid`로 거절한다(앱은 journal에 남겨 재시도).
+4. 운영자: 중앙 공유 자료 초기화 후 앱이 새로 올린다(사용자 결정, 별도 절차·승인). 초기화 전 사실은 ‘법규 미상’으로 보인다.
+- 롤백: Edge 함수 이전 배포 재배포(구 지도 Pages와 함께), SQL은 새 migration으로만 — `202609281100` 헤더의 되돌리기 순서
+  (함수 본문 재실행 → 2026-09-28.2 disclosures 행 삭제 → 두 열 drop). `community_policy_current`는 auth 절차로 2026-09-28.1로 되돌린다.
+- 로컬 검증(2026-09-28): 합성 순서 14개를 일회용 로컬 Postgres(supabase/postgres 17.6.1.171, 네트워크 없음)에 적용 성공,
+  v2 ingest insert/update·v1 null·28.1 계보 법규 null·28.2 계보 법규 공개·길이 check·권한(service_role만) 확인. 운영 적용 아님.

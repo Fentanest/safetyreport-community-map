@@ -25,21 +25,23 @@ export type AccessCode = typeof ACCESS_CODES[number];
 export const isAccessError = (e: unknown): e is PublicApiError & { code: AccessCode } =>
   e instanceof PublicApiError && (ACCESS_CODES as readonly string[]).includes(e.code ?? '');
 
-function scopeParams(scope: Scope, version?: string, extra?: Record<string, string>): URLSearchParams {
+export function scopeParams(scope: Scope, version?: string, extra?: Record<string, string>): URLSearchParams {
   const p = new URLSearchParams({ start: scope.start, end: scope.end, category: scope.category });
   if (scope.region_code) p.set('region_code', scope.region_code);
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
   if (scope.manager_key) p.set('manager_key', scope.manager_key);
   if (scope.bbox) p.set('bbox', scope.bbox.join(','));
+  if (scope.law) p.set('law', scope.law);
   if (version) p.set('expected_version', version);
   for (const [key, value] of Object.entries(extra || {})) p.set(key, value);
   return p;
 }
 
-function sameScope(a: Scope, b: Scope): boolean {
+export function sameScope(a: Scope, b: Scope): boolean {
   return a.start === b.start && a.end === b.end && a.category === b.category &&
     a.region_code === b.region_code && a.agency_key === b.agency_key &&
-    a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox);
+    a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox) &&
+    (a.law ?? null) === (b.law ?? null);
 }
 
 // No static snapshot: while the map is contributor-only every read goes through the API's viewer check, and the
@@ -153,7 +155,8 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
   return {
     meta: { ...meta, location_missing: result.location_missing ?? undefined },
     scope, overview: result.overview, points: result.points, monthly: result.monthly,
-    agencies: result.agencies, managers: result.managers, regions: result.regions ?? null, vehicles: result.vehicles,
+    agencies: result.agencies, managers: result.managers, regions: result.regions ?? null, laws: result.laws ?? null,
+    vehicles: result.vehicles,
     vehicle_total_scope_reports: result.vehicle_total_scope_reports,
     vehicle_identifiable_reports: result.vehicle_identifiable_reports,
   };

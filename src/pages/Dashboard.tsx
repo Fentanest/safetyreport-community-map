@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type DashboardData, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
+import { type DashboardData, type PublicEntity, type PublicLaw, type PublicPoint, type Scope } from '../domain/public';
 import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadDashboard, loadEntities, type AccessCode, type EntitySortKey, type SortDir } from '../data/client';
 import AccessGate from '../components/AccessGate';
 import {
-  CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, regionCounts, regionLabel, scopeFromDraft, scopeFromSearch,
-  scopeToSearch, validateRange, type DraftFilters, type EntityTab, type MapMetric, type ThemeMode,
+  CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, lawLabel, lawOptions, regionCounts, regionLabel, scopeFromDraft,
+  scopeFromSearch, scopeToSearch, validateRange, type DraftFilters, type EntityTab, type MapMetric, type ThemeMode,
 } from '../state/filters';
 import TopBar from '../components/TopBar';
 import Rail from '../components/Rail';
@@ -16,6 +16,7 @@ import TrendCard from '../components/TrendCard';
 import OutcomeCard from '../components/OutcomeCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable, { type ServerEntityState } from '../components/EntityTable';
+import LawTable from '../components/LawTable';
 import DataGuide from '../components/DataGuide';
 import { acceptRate, fmtDate, fmtInt, fmtPercent, partialRate } from '../components/format';
 import CompareKpis from '../components/CompareKpis';
@@ -92,6 +93,8 @@ export default function Dashboard() {
   const [draft, setDraft] = useState<DraftFilters>(() => draftFromScope(scopeFromSearch(window.location.search, baseScope(dataMode))));
   const [fixture, setFixture] = useState(() => dataMode === 'demo' ? fixtureFromSearch(window.location.search) : 'overview');
   const [data, setData] = useState<DashboardData | null>(null);
+  // laws offered by the filter: the law rows of the last load WITHOUT a law filter (a filtered load only has its own row)
+  const [lawCatalog, setLawCatalog] = useState<PublicLaw[] | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('loading');
   const [apiError, setApiError] = useState<{ message: string; retryAfter: number | null; code?: string | null } | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(initialTheme);
@@ -188,6 +191,7 @@ export default function Dashboard() {
       .then((d) => {
         if (ac.signal.aborted) return;
         setData(d);
+        if (!scope.law) setLawCatalog(d.laws);
         setLoadState('ready');
         setSelection((sel) => (sel && d.points.some((pt) => pt.key === sel) ? sel : null));
       })
@@ -320,12 +324,14 @@ export default function Dashboard() {
       : '이 조건의 통계는 아직 없습니다. 기간이나 지역을 바꿔 보세요.'
     : null;
 
-  const appliedLabel = `${regionLabel(scope.region_code)} · ${CATEGORY_LABEL[scope.category]}`;
-  const filterCount = (scope.agency_key ? 1 : 0) + (scope.manager_key ? 1 : 0) + (scope.region_code ? 1 : 0) + (scope.category !== 'all' ? 1 : 0);
+  const appliedLabel = `${regionLabel(scope.region_code)} · ${CATEGORY_LABEL[scope.category]}${scope.law ? ` · ${lawLabel(scope.law)}` : ''}`;
+  const filterCount = (scope.agency_key ? 1 : 0) + (scope.manager_key ? 1 : 0) + (scope.region_code ? 1 : 0) + (scope.category !== 'all' ? 1 : 0) +
+    (scope.law ? 1 : 0);
   const appliedChips = [
     `${fmtDate(scope.start)} — ${fmtDate(scope.end)}`,
     CATEGORY_LABEL[scope.category],
     regionLabel(scope.region_code),
+    ...(scope.law ? [lawLabel(scope.law)] : []),
     // Names, never internal keys (keys are opaque hashes).
     ...(scope.agency_key ? [data?.agencies.find((a) => a.agency_key === scope.agency_key)?.agency_name ?? '선택한 기관'] : []),
     ...(scope.manager_key ? [data?.managers.find((m) => m.manager_key === scope.manager_key)?.manager_name ?? '선택한 담당자'] : []),
@@ -367,6 +373,7 @@ export default function Dashboard() {
       .then((d) => {
         if (ac.signal.aborted) return;
         setData(d);
+        if (!scope.law) setLawCatalog(d.laws);
         setLoadState('ready');
       })
       .catch((e: unknown) => {
@@ -417,6 +424,13 @@ export default function Dashboard() {
     pushUrl(next);
     showToast(code ? `${regionLabel(code)}만 보도록 바꿨습니다.` : '전체 지역으로 돌아왔습니다.');
   };
+  const pickLaw = (law: string | null) => {
+    const next: Scope = { ...scope, law };
+    setScope(next);
+    setDraft(draftFromScope(next));
+    pushUrl(next);
+    showToast(law ? `${lawLabel(law)}만 보도록 바꿨습니다.` : '모든 법규를 다시 봅니다.');
+  };
   const pickCompareEntity = (row: CompareEntityRow) => {
     pickEntity(row.kind, {
       key: row.key, agency_key: row.agency_key, manager_key: row.manager_key, agency_name: row.agency_name,
@@ -436,6 +450,7 @@ export default function Dashboard() {
     return new Map((entityTab === 'agency' ? compareData.agencies : compareData.managers).map((r) => [r.key, r]));
   }, [compareData, entityTab]);
   const regionCountMap = useMemo(() => regionCounts(data?.regions ?? null), [data?.regions]);
+  const lawChoices = useMemo(() => lawOptions(lawCatalog, draft.law), [lawCatalog, draft.law]);
 
   // One instance of each panel; the three view layouts only place them (§5.2). Switching never refetches.
   const mapPanel = data && (
@@ -669,6 +684,7 @@ export default function Dashboard() {
                   toast={showToast}
                 />
               </section>
+              <LawTable laws={data.laws} activeLaw={scope.law} onPickLaw={pickLaw} />
               <EntityTable
                 agencies={data.agencies}
                 managers={data.managers}
@@ -698,6 +714,7 @@ export default function Dashboard() {
         onApply={apply}
         onReset={reset}
         regionCounts={regionCountMap}
+        lawOptions={lawChoices}
       />
       {toast && <div className="toast" role="status" aria-live="polite">{toast}</div>}
     </>

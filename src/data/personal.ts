@@ -102,7 +102,8 @@ export const personalError = (code: PersonalErrorCode, retryAfter: number | null
 export function sameScope(a: Scope, b: Scope): boolean {
   return a.start === b.start && a.end === b.end && a.category === b.category &&
     a.region_code === b.region_code && a.agency_key === b.agency_key &&
-    a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox);
+    a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox) &&
+    (a.law ?? null) === (b.law ?? null);
 }
 
 /** Accepts only a response for exactly this scope and published version (same population as the public view). */
@@ -121,6 +122,7 @@ export function compareParams(scope: Scope, version: string): URLSearchParams {
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
   if (scope.manager_key) p.set('manager_key', scope.manager_key);
   if (scope.bbox) p.set('bbox', scope.bbox.join(','));
+  if (scope.law) p.set('law', scope.law);
   return p;
 }
 

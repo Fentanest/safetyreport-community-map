@@ -10,6 +10,41 @@ export interface Scope {
   agency_key: string | null;
   manager_key: string | null;
   bbox: [number, number, number, number] | null;
+  /** 위반법규 article key (lawKey: `{법} 제N조[의M]`, 항 dropped); LAW_NONE selects facts without a law (법규 미상); null = all laws */
+  law: string | null;
+}
+
+/** Scope value that selects facts whose violation law is unknown (null). Never a real law text. */
+export const LAW_NONE = '__none__';
+/** Filter parameter bound: a stored law is ≤ 60 code points, and its article key can be one longer
+ *  ('도로교통법제32조' → '도로교통법 제32조'), so parameters allow some room. The ingest bound stays 60. */
+export const LAW_MAX_CODE_POINTS = 80;
+
+/** Characters the upload rule clean() never leaves in a text (C0 controls, DEL); the ingest refuses them. */
+export const LAW_FORBIDDEN = /[\u0000-\u001f\u007f]/;
+
+/** 조 단위 key (user decision 2026-09-28): `{법이름} 제{N}조[의{M}]`. The parser writes
+ *  `{법이름} 제{N}조[의{M}][제{K}항|{K}항]` (safetyreport services/parser.py); the paragraph (항) is dropped,
+ *  `조의M` is a different article and is kept, whitespace differences and leading zeros are absorbed.
+ *  A value outside that form is kept as its trimmed text (never dropped); null or blank → null (법규 미상). */
+// law name as the parser captures it: Hangul, '·' and spaces, ending in 법 (「…법」 or 도로교통법)
+const LAW_ARTICLE = /^([가-힣·\s]{1,60}?법)\s*제\s*0*(\d+)\s*조(?:\s*의\s*0*(\d+))?(?:\s*제?\s*\d{1,3}\s*항)?$/u;
+export function lawKey(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  const text = raw.trim();
+  if (!text) return null;
+  const m = LAW_ARTICLE.exec(text);
+  if (!m) return text;
+  const name = m[1].replace(/\s+/g, '');
+  return `${name} 제${m[2]}조${m[3] ? `의${m[3]}` : ''}`;
+}
+
+/** A law filter value: LAW_NONE, or a law text / article key (1..80 code points without C0 controls or DEL).
+ *  Outer spaces are allowed: clean() truncates after trimming, so a stored law may end with a space. */
+export function isLawParam(value: string): boolean {
+  if (value === LAW_NONE) return true;
+  const n = [...value].length;
+  return n >= 1 && n <= LAW_MAX_CODE_POINTS && !LAW_FORBIDDEN.test(value);
 }
 
 /** A map viewport may extend beyond Korea at nationwide zoom. Keep real geographic bounds intact. */
@@ -190,6 +225,27 @@ export interface PublicRegion {
   fine_amount?: FineAmountBrief | null;
 }
 
+/** 위반법규별 현황 row (docs/metrics-catalog.md law_results). Completion-date cohort of the scope, same facts and
+ *  denominators as the rest of the dashboard. law null = 법규 미상 (not stated, v1 upload or not published). */
+export interface PublicLaw {
+  law: string | null;
+  /** C: answered reports whose completion date is in the range */
+  completed_count: number;
+  outcomes: OutcomeCounts;
+  /** A/D×100, null when D = 0 */
+  accept_rate: number | null;
+  /** P/D×100, null when D = 0 (shown separately from accept_rate) */
+  partial_rate: number | null;
+  /** F: 과태료 처분 */
+  fine_count: number;
+  /** F/C×100, null when C = 0 */
+  fine_rate: number | null;
+  penalty_count: number;
+  warning_count: number;
+  /** answered fine amounts, confirmed and published only (same masking as every other amount) */
+  fine_amount: FineAmountBrief;
+}
+
 export interface PublicVehicle {
   rank: number;
   rank_item_id: string;
@@ -208,6 +264,8 @@ export interface DashboardData {
   managers: PublicEntity[];
   /** null = the source did not provide region rows (never replaced by an empty list). */
   regions: PublicRegion[] | null;
+  /** 위반법규별 현황; null = the source did not provide law rows (never replaced by an empty list) */
+  laws: PublicLaw[] | null;
   vehicles: PublicVehicle[];
   vehicle_total_scope_reports: number | null;
   vehicle_identifiable_reports: number | null;
@@ -215,7 +273,7 @@ export interface DashboardData {
 
 export const DEMO_SCOPE: Scope = {
   start: '2025-09-25', end: '2026-09-24', category: 'all', region_code: null,
-  agency_key: null, manager_key: null, bbox: null,
+  agency_key: null, manager_key: null, bbox: null, law: null,
 };
 
 function recentTwelveMonths(): Pick<Scope, 'start' | 'end'> {

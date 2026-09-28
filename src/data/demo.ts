@@ -12,7 +12,7 @@ const unavailable = (basis: 'report_date' | 'completed_date'): CountMetric => ({
 
 export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' = 'overview'): DashboardData {
   const supported = scope.category === 'all' && !scope.region_code &&
-    !scope.agency_key && !scope.manager_key && !scope.bbox &&
+    !scope.agency_key && !scope.manager_key && !scope.bbox && !scope.law &&
     scope.start === DEMO_SCOPE.start && scope.end === DEMO_SCOPE.end;
   const one = state === 'one';
   const empty = state === 'empty';
@@ -42,7 +42,7 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       coverage_note: '합성 예시 자료입니다. 실제 신고 통계가 아닙니다.', dedupe_policy_version: 'fixture-v1',
       capabilities: Object.fromEntries([
         'daily_report_dates', 'completion_dates', 'manager_status_cross', 'agency_status_cross',
-        'vehicle_top5', 'region_boundaries', 'fine_amount', 'processing_duration',
+        'vehicle_top5', 'region_boundaries', 'fine_amount', 'processing_duration', 'violation_law',
       ].map(key => [key, capability(available && !['region_boundaries', 'fine_amount', 'processing_duration'].includes(key) ? 'supported' : 'missing',
         ['region_boundaries', 'fine_amount', 'processing_duration'].includes(key) ? '합성 fixture에 해당 원천이 없습니다.' : missingReason)])),
     },
@@ -87,6 +87,18 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       { level: 'sido', region_code: '11', name: '서울특별시', sido_code: null, report_count: 5, completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 }, fine_count: 1 },
       { level: 'sido', region_code: '26', name: '부산광역시', sido_code: null, report_count: 3, completed_count: 2, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 1 }, fine_count: 1 },
       { level: 'sido', region_code: '50', name: '제주특별자치도', sido_code: null, report_count: 1, completed_count: 1, outcomes: { accepted: 1, partial: 0, rejected: 0, result_known: 1, result_unknown: 0 }, fine_count: 0 },
+    ],
+    // same C/A/P/J/F as the overview above: rows add up to the totals
+    laws: !available ? null : empty ? [] : one ? [
+      { law: '도로교통법 제32조', completed_count: 1, outcomes, accept_rate: 100, partial_rate: 0, fine_count: 0, fine_rate: 0,
+        penalty_count: 0, warning_count: 0, fine_amount: { fine_count: 0, confirmed_count: 0, sum_won: null, mean_won: null } },
+    ] : [
+      { law: '도로교통법 제32조', completed_count: 4, outcomes: { accepted: 2, partial: 1, rejected: 1, result_known: 4, result_unknown: 0 },
+        accept_rate: 50, partial_rate: 25, fine_count: 1, fine_rate: 25, penalty_count: 0, warning_count: 1,
+        fine_amount: { fine_count: 1, confirmed_count: 0, sum_won: null, mean_won: null } },
+      { law: null, completed_count: 3, outcomes: { accepted: 2, partial: 0, rejected: 0, result_known: 2, result_unknown: 1 },
+        accept_rate: 100, partial_rate: 0, fine_count: 1, fine_rate: 100 / 3, penalty_count: 0, warning_count: 0,
+        fine_amount: { fine_count: 1, confirmed_count: 0, sum_won: null, mean_won: null } },
     ],
     vehicles: !available || empty ? [] : one ? [
       { rank: 1, rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 1, percentage: 100 },

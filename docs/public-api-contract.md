@@ -102,4 +102,10 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 `overview.fine_amount`(basis, fine_count, confirmed_count, sum_won, mean_won, median_won, zero_count, unconfirmed/undisclosed/conflict/penalty/combined_count, partial).
 월·기관·담당자·지역 행에는 요약 `duration{count, median_days, mean_days}`, `fine_amount{fine_count, confirmed_count, sum_won, mean_won}`. 정의: docs/metrics-catalog.md.
 개별 신고의 금액·기간은 내보내지 않는다. 두 필드는 선택(optional)이라 예전 응답도 schema를 통과한다.
+위반법규(2026-09-28): 공통 query `law` = 위반법규(1..80 코드포인트, C0 제어문자·DEL 불가) 또는 `__none__`(법규 미상 = null).
+서버가 **조 단위 키**(`lawKey`, 항 제외)로 바꿔 비교하고 `scope.law`로 그 키를 되돌려 준다(없으면 null). 빈 값·공백뿐·81자 이상·제어문자·반복 인자는 400. 필터는 `server/aggregate.ts`에서 적용한다(SQL 인자 없음, 지역과 같음) —
+신고일·처리완료일 지표, 지도 점, 기관·담당자·지역·월·차량 모두 같은 법규로 좁혀진다. `dashboard`에 `laws[]`(최대 300행, 행 = 조 단위 키):
+`{law|null, completed_count, outcomes, accept_rate, partial_rate, fine_count, fine_rate, penalty_count, warning_count, fine_amount{fine_count, confirmed_count, sum_won, mean_won}}`,
+처리완료일 기준, 답변 많은 순 → 법규 이름 순(법규 미상은 같은 건수에서 뒤). meta capability `violation_law`(coverage = 법규 있는 답변/C). 정의: docs/metrics-catalog.md §위반법규별 현황.
+`laws`는 선택(optional) 필드라 예전 응답도 schema를 통과한다. `my-analytics/compare`도 같은 `law`를 받는다(같은 parser).
 이 API는 개인 비교를 제공하지 않는다. 로그인 사용자의 비교는 별도 `my-analytics/compare`(docs/personal-comparison.md §3)다.
