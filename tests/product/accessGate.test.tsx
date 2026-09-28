@@ -29,6 +29,8 @@ describe('AccessGate viewer threshold (user decision 2026-09-28)', () => {
         progress={{ required: 10, current: null }} />,
     );
     expect(html).toContain('10건 이상');
+    expect(html).toContain('지도에 올라간 신고 건수를 확인할 수 없어 아직 볼 수 없습니다.');
+    expect(html).not.toContain('신고가이라');
     expect(html).not.toContain('지금 null건');
   });
 });

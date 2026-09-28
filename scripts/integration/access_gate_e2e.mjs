@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 // LOCAL composed stack only (never production): the contributor-only map in a real Chrome (user decision 2026-09-27).
 // Checks: anonymous visit → stable login gate and no statistics/OAuth request until the user clicks;
-// Kakao sign-in as a user without a share consent (F) → "not sharing" gate; switch account to a sharing user (E)
-// → the map loads and every statistics request carries the map session token; a direct unauthenticated API call
+// Kakao sign-in as a user without a share consent (F) → "not sharing" gate; H with nine distinct reports
+// → upload_required with required/current progress; E with ten distinct reports → the map loads.
+// Every statistics request carries the map session token; a direct unauthenticated API call
 // from the page is refused; the built artifact has no data files.
 //
 //   PLAYWRIGHT_CORE=/path/to/playwright-core/index.mjs node scripts/integration/access_gate_e2e.mjs <out-dir> [dist-dir]
 // Preconditions as scripts/integration/live_login_e2e.mjs (stack + mock_kakao + functions serve, live build of the
-// local stack served at http://127.0.0.1:56490/). E must already have an active share consent and one
-// shared report on the map (the stack tests give it both).
+// local stack served at http://127.0.0.1:56490/). Run community-stack.test.ts on the composed stack first:
+// its H fixture has exactly nine distinct public reports (including a duplicate in a second dataset), and E has ten.
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_CORE ?? 'playwright-core');
@@ -38,8 +39,12 @@ page.on('response', (r) => {
   errors.push(`${r.status()} ${u.replace(/\?.*/, '')}`);
 });
 page.on('response', (r) => {
-  if (r.url().includes('/public-analytics/')) stats.push({ path: new URL(r.url()).pathname.split('/public-analytics/')[1], status: r.status(), auth: r.request().headers().authorization ? 'bearer' : null });
+  if (r.url().includes('/public-analytics/')) stats.push({
+    path: new URL(r.url()).pathname.split('/public-analytics/')[1], status: r.status(),
+    auth: r.request().headers().authorization ? 'bearer' : null, body: r.json().catch(() => null),
+  });
 });
+const statsSummary = () => JSON.stringify(stats.map(({ path, status, auth }) => ({ path, status, auth })));
 
 const gateTitle = () => page.locator('#gate-title').count();
 const dashboardShown = () => page.locator('.compare-table').count();
@@ -63,7 +68,7 @@ try {
     page.url().startsWith(MAP) && await gateTitle() === 1 && await dashboardShown() === 0,
     page.url().replace(/\?.*/, ''));
   check('anonymous visit did not start OAuth', !page.url().includes('56410'));
-  check('anonymous page made no statistics requests', stats.length === 0, JSON.stringify(stats));
+  check('anonymous page made no statistics requests', stats.length === 0, statsSummary());
   const anonymous = await fetch(`${API}/public-analytics/meta`, { headers: { Origin: new URL(MAP).origin } });
   check('direct anonymous API request is refused', anonymous.status === 401, String(anonymous.status));
   await page.screenshot({ path: `${out}/01-map-login-gate.png`, fullPage: true });
@@ -72,7 +77,7 @@ try {
   await login('F');
   const text = await page.locator('.access-card').innerText().catch(() => '');
   check('signed in without a share consent → "not sharing" gate', /동의하지 않았거나/.test(text) && await dashboardShown() === 0, text.slice(0, 80));
-  check('that request carried the token and got 403', stats.some((s) => s.status === 403 && s.auth === 'bearer'), JSON.stringify(stats));
+  check('that request carried the token and got 403', stats.some((s) => s.status === 403 && s.auth === 'bearer'), statsSummary());
   await page.screenshot({ path: `${out}/02-not-sharing-gate.png`, fullPage: true });
 
   await page.getByRole('button', { name: '다른 계정으로 로그인' }).click();
@@ -81,11 +86,24 @@ try {
   check('switching account leaves the login gate until another click',
     page.url().startsWith(MAP) && await gateTitle() === 1);
   stats.length = 0;
+  await login('H');
+  const shortText = await page.locator('.access-card').innerText().catch(() => '');
+  check('nine distinct reports show the upload gate and progress',
+    /지금 9건 \/ 10건 공유됨/.test(shortText) && await dashboardShown() === 0, shortText.slice(0, 160));
+  const shortBodies = await Promise.all(stats.filter((s) => s.status === 403 && s.auth === 'bearer').map((s) => s.body));
+  check('nine reports are refused with required 10 and current 9',
+    shortBodies.some((body) => body?.error?.code === 'upload_required' &&
+      body.error.details?.required === 10 && body.error.details?.current === 9), statsSummary());
+  await page.screenshot({ path: `${out}/03-nine-report-gate.png`, fullPage: true });
+
+  await page.getByRole('button', { name: '다른 계정으로 로그인' }).click();
+  await page.waitForSelector('#gate-title', { timeout: 15000 });
+  stats.length = 0;
   await login('E');
-  check('a sharing contributor sees the map', await dashboardShown() === 1 && await gateTitle() === 0);
+  check('a contributor with ten distinct reports sees the map', await dashboardShown() === 1 && await gateTitle() === 0);
   check('every statistics request carried the token and succeeded',
-    stats.length > 0 && stats.every((s) => s.auth === 'bearer' && s.status === 200), JSON.stringify(stats));
-  await page.screenshot({ path: `${out}/03-contributor-map.png` });
+    stats.length > 0 && stats.every((s) => s.auth === 'bearer' && s.status === 200), statsSummary());
+  await page.screenshot({ path: `${out}/04-ten-report-map.png` });
 
   const direct = await page.evaluate(async (api) => (await fetch(`${api}/public-analytics/meta`, { credentials: 'omit' })).status, API);
   check('a direct call without the token is refused even from the signed-in page', direct === 401, String(direct));

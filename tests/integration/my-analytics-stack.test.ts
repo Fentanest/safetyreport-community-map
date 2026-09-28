@@ -46,7 +46,7 @@ const toSession = (j: Json): Session => {
 };
 
 /** A separate Kakao login = a separate GoTrue session (the app's session and the map's session are distinct). */
-async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'): Promise<Session> {
+async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'I'): Promise<Session> {
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
   const step1 = await fetch(`${API}/auth/v1/authorize?${new URLSearchParams({ provider: 'kakao', redirect_to: REDIRECT, code_challenge: challenge, code_challenge_method: 's256' })}`, { redirect: 'manual' });
@@ -80,7 +80,7 @@ async function loadPolicy() {
 }
 
 interface Writer { session: Session; connectionId: string; epoch: number; grantId: string; revision: number }
-async function writer(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'G'): Promise<Writer> {
+async function writer(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'G' | 'I'): Promise<Writer> {
   const session = await kakaoSession(choice);
   const st = await account('status', session.access);
   const grant = await account('consent', session.access, { policy_version: POLICY, consent_text_sha256: CONSENT_HASH, via: 'safetyreport_server', accepted: true });
@@ -109,13 +109,16 @@ async function ingest(w: Writer, n: number, token = w.session.access) {
 const SCOPE = 'start=2024-01-01&end=2026-09-27&category=all';
 const compare = (token: string | null, extra = '', origin = MAP_ORIGIN) =>
   call('GET', `/functions/v1/my-analytics/compare?${SCOPE}${extra}`, { token, headers: { origin } });
-// The map is contributor-only (2026-09-27): statistics are read as E, a Kakao user with an active share consent
-// and one shared report on the map.
+// The map is contributor-only (2026-09-28): statistics are read as E, a Kakao user with an active share consent
+// and at least 10 distinct publicly-listed reports on the map.
 let viewerToken: string | null = null;
 async function viewer(): Promise<string> {
   if (!viewerToken) {
     const w = await writer('E');
-    expect((await ingest(w, 1)).status).toBe(200);
+    const uploaded = await ingest(w, 10);
+    expect(uploaded.status, JSON.stringify(uploaded.json)).toBe(200);
+    expect(uploaded.json.results).toHaveLength(10);
+    expect(uploaded.json.results.every((result: Json) => result.projection_status === 'published')).toBe(true);
     viewerToken = w.session.access;
   }
   return viewerToken;
@@ -254,7 +257,7 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
     expect(mine.json.all.fine_amount).toMatchObject({ confirmed_count: fa.confirmed_count, sum_won: fa.sum_won });
     expect(mine.json.mine.fine_amount.sum_won).toBeLessThanOrEqual(fa.sum_won);
   });
-  it('contributor-only map: no sign-in → 401 everywhere; no consent or no shared report → 403; foreign origin → 403', async () => {
+  it('contributor-only map: no sign-in → 401; no consent, zero or nine reports → 403; ten reports → 200', async () => {
     for (const path of ['meta', `dashboard?${SCOPE}`, `map?${SCOPE}`, `entities?${SCOPE}&kind=agency`]) {
       const r = await publicGet(path, null);
       expect([r.status, r.json.error?.code], path).toEqual([401, 'auth_required']);
@@ -263,9 +266,24 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
     const refused = await publicGet('meta', f.access);
     expect([refused.status, refused.json.error?.code]).toEqual([403, 'contributor_required']);
     expect(JSON.stringify(refused.json)).not.toMatch(/dataset_version|report_count/);
-    const g = await writer('G'); // consented, connected, but nothing uploaded yet
-    const noUpload = await publicGet('meta', g.session.access);
+    // I belongs to this suite only. Clear its local contributions so repeated runs still test exactly 9 → 10.
+    const prior = await kakaoSession('I');
+    const cleared = await account('contributions-delete', prior.access, { confirm: 'DELETE_MY_SHARED_REPORTS' });
+    expect(cleared.status, JSON.stringify(cleared.json)).toBe(200);
+    const i = await writer('I');
+    const noUpload = await publicGet('meta', i.session.access);
     expect([noUpload.status, noUpload.json.error?.code]).toEqual([403, 'upload_required']);
+    expect(noUpload.json.error.details).toEqual({ required: 10, current: 0 });
+    const nine = await ingest(i, 9);
+    expect(nine.status, JSON.stringify(nine.json)).toBe(200);
+    expect(nine.json.results).toHaveLength(9);
+    expect(nine.json.results.every((result: Json) => result.projection_status === 'published')).toBe(true);
+    const short = await publicGet('meta', i.session.access);
+    expect([short.status, short.json.error?.code]).toEqual([403, 'upload_required']);
+    expect(short.json.error.details).toEqual({ required: 10, current: 9 });
+    const tenth = await ingest(i, 1);
+    expect(tenth.json.results?.[0]?.projection_status, JSON.stringify(tenth.json)).toBe('published');
+    expect((await publicGet('meta', i.session.access)).status).toBe(200);
     const ok = await publicGet('meta', undefined, MAP_ORIGIN);
     expect(ok.status).toBe(200);
     expect(ok.headers.get('cache-control')).toBe('private, no-store, max-age=0');

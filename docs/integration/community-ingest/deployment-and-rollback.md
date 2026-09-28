@@ -118,3 +118,20 @@
   배포 번들에 위반법규 표·별점 UI 포함. auth 사이트는 화면 변경이 없어 재배포하지 않음.
 - 앱: PC·모바일 dev(observation-v4, 필수 동의 2026-09-28.3). 기존 동의(2026-09-28.1)는 outdated → 앱에서 재동의 필요. 실제 카카오 계정 업로드·지도 확인은 운영자 몫.
 - 롤백: §9·§10 의 순서(함수 이전 배포 재배포와 구 Pages 함께, SQL 은 새 migration 으로만, current 정책은 auth 절차로 되돌림).
+
+## 12. 지도 열람 10건 기준 배포 순서 (2026-09-28, 준비 절차 · 운영 미적용)
+
+1. **새 `public-analytics` Edge Function과 지도 Pages를 함께 배포한다.** 새 Edge는 모든 통계 경로에서
+   `public_fact_count >= 10`을 검사한다. 이 시점의 구 SQL(`202609280700`)은 그 키를 돌려주지 않으므로
+   새 Edge는 `upload_required`와 `{required: 10, current: null}`로 거부한다(fail closed). 일시적인 열람 중단은
+   있지만 1~9건 계정이 구 Edge를 통해 통계를 읽는 정책 공백은 없다. 구 Pages는 새 Edge의 `details`가 붙은
+   오류 응답을 strict 스키마로 거절할 수 있으므로 두 배포를 같은 단계에서 진행한다.
+2. **그다음 중앙 SQL `202609281900_viewer_threshold.sql`을 적용한다.** 합성 이력의 manifest check와
+   dry-run을 확인한 뒤 진행한다. 이 SQL이 사용자별 공개 `report_identity` 고유 수를 `public_fact_count`로
+   반환하면 새 Edge에서 9건은 403(`upload_required`, `required=10`, `current=9`), 10건은 200이 된다.
+3. 실제 카카오 시험 계정으로 거부 화면의 `지금 9건 / 10건` 안내와 10건 지도 진입을 확인한다.
+   `my-analytics`·`community-ingest`·PC·모바일 앱은 이 변경으로 재배포하지 않는다.
+
+되돌릴 때도 접근 기준이 낮은 구 Edge만 먼저 올리지 않는다. 새 Edge를 유지한 채 SQL을 새 migration으로
+되돌리면 건수 키가 사라져 모든 지도 조회가 거부된다. 지도 Pages와 Edge의 버전 호환을 함께 확인하고,
+10건 정책을 유지할 수 있는 구성으로 복구한다. 이 절은 절차 기록이며 운영 적용 기록이 아니다.

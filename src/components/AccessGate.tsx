@@ -52,8 +52,10 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
         ) : code === 'upload_required' ? (
           <>
             <p className="access-lead" role="alert">
-              {auth.displayName ? `${auth.displayName} 계정은` : '이 계정은'} 지도에 올라간 신고가
-              {progress?.current != null ? ` 지금 ${progress.current}건` : ''}이라 아직 볼 수 없습니다.
+              {auth.displayName ? `${auth.displayName} 계정은` : '이 계정은'}{' '}
+              {progress?.current != null
+                ? `지도에 올라간 신고가 지금 ${progress.current}건이라 아직 볼 수 없습니다.`
+                : '지도에 올라간 신고 건수를 확인할 수 없어 아직 볼 수 없습니다.'}
               {progress?.required != null ? ` ${progress.required}건 이상이면 볼 수 있습니다.` : ' 열 건 이상이면 볼 수 있습니다.'}
             </p>
             {progress?.current != null && progress?.required != null && (

@@ -86,5 +86,8 @@
   구버전 SQL 응답(키 없음)이면 안전하게 거부한다(fail closed).
 - 거부(`upload_required`, 코드는 그대로)에는 `{required: 10, current: N|null}`을 담아 안내 화면이
   "지금 N건 / 10건" 진행을 보여 줄 수 있다. `current`가 null이면 건수 없이 요건만 안내한다.
-- 배포 순서: 중앙 SQL(map `202609281900`) → Edge Functions(`public-analytics`) → 지도 Pages.
-  `my-analytics`·ingest·앱은 바꿀 것이 없어 재배포하지 않는다( 동작상 그대로 ).
+- 배포 순서: 새 Edge Function(`public-analytics`)과 지도 Pages를 함께 반영 → 중앙 SQL(map `202609281900`).
+  새 Edge는 SQL 반영 전 `public_fact_count` 키가 없는 응답을 `upload_required`로 거부한다(fail closed). 따라서
+  SQL 적용 전에는 일시적으로 지도 열람이 막히지만 1~9건 계정이 구 Edge를 통해 지도를 보는 정책 공백은 없다.
+  구 Pages의 strict 오류 스키마는 새 Edge의 `details` 응답을 거절할 수 있으므로 Pages와 Edge를 한 배포 단계로 묶는다.
+  `my-analytics`·ingest·앱은 바꿀 것이 없어 재배포하지 않는다.
