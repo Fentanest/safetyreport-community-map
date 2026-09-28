@@ -14,8 +14,11 @@
 // (0600) and are never printed.
 import { createHash, randomBytes } from 'node:crypto';
 import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const require = createRequire(import.meta.url);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -47,28 +50,86 @@ function load() {
   return manifest;
 }
 
-// Every static relative import reachable from a function's index.ts — value imports,
-// `import type`/`export type` (the Deno module graph follows type-only edges too) and
-// `with { type: 'json' }` JSON imports — must resolve to a file that compose stages
-// (the index itself or an entry of functions[].shared). Otherwise `supabase start`
-// fails at the Edge bundle step with "failed to read file". Conversely a shared entry
-// nothing imports is dead weight and fails as well, so staged == import closure.
-function relativeImportSpecs(source) {
-  const specs = new Set();
-  for (const re of [/from\s*['"](\.[^'"]+)['"]/g, /import\s*['"](\.[^'"]+)['"]/g, /import\s*\(\s*['"](\.[^'"]+)['"]\s*\)/g]) {
-    re.lastIndex = 0;
-    let m;
-    while ((m = re.exec(source))) specs.add(m[1]);
+// Every relative import reachable from a function's index.ts must resolve to a file
+// that compose stages (a file inside the function directory, or an entry of
+// functions[].shared). Otherwise `supabase start` fails at the Edge bundle step with
+// "failed to read file". Conversely a shared entry nothing imports is dead weight and
+// fails as well, so (shared entries) == (import closure outside the function directory).
+//
+// Import extraction uses the `typescript` package already in devDependencies
+// (createSourceFile + AST walk), never regular expressions, so imports mentioned only
+// in comments or string literals are not mistaken for real ones:
+// - `import`/`export ... from './x'` — value or `import type`. Type-only edges are
+//   included on purpose: the Deno-based Edge bundler resolves the full module graph
+//   (including type-only edges) before type-stripping, so a missing file can still fail
+//   the bundle step. This matches the staged type-only chain in community-account
+//   (server/relay.ts, server/config.ts) that REVIEW6's parser run confirmed necessary.
+// - dynamic `import('./x')`, including the two-argument form `import('./x', { with: ... })`
+//   — only the first argument is a module specifier; the import-attributes argument is ignored.
+// - JSON modules (`import data from './d.json' with { type: 'json' }`) are plain
+//   ImportDeclarations, so they are covered too. `import ... = require('./x')` as well.
+let tsMod = null;
+function loadTs(problems) {
+  if (!tsMod) {
+    try {
+      tsMod = require('typescript');
+    } catch {
+      problems.push("import-closure check needs the 'typescript' devDependency (run npm install)");
+      return null;
+    }
   }
+  return tsMod;
+}
+
+function relativeImportSpecs(ts, source, filename) {
+  const specs = new Set();
+  const add = s => { if (typeof s === 'string' && s.startsWith('.')) specs.add(s); };
+  const sf = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true);
+  const visit = node => {
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      const ms = node.moduleSpecifier;
+      if (ms && ts.isStringLiteral(ms)) add(ms.text);
+    } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      const first = node.arguments && node.arguments[0];
+      if (first && ts.isStringLiteral(first)) add(first.text);
+    } else if (ts.isImportEqualsDeclaration(node)) {
+      const ref = node.moduleReference;
+      if (ref && ts.isExternalModuleReference(ref) && ref.expression && ts.isStringLiteral(ref.expression)) {
+        add(ref.expression.text);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
   return specs;
 }
 
+// compose() copies the WHOLE function directory plus fn.shared, so the staged set must
+// be exactly that. An import of another file inside the same function directory is
+// therefore fine and must not be reported.
+function functionDirFiles(root, fnName) {
+  const base = join(root, 'supabase/functions', fnName);
+  const out = [];
+  const walk = dir => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === '.git') continue;
+      const abs = join(dir, e.name);
+      if (e.isDirectory()) walk(abs);
+      else if (e.isFile()) out.push(relative(root, abs));
+    }
+  };
+  if (existsSync(base) && statSync(base).isDirectory()) walk(base);
+  return out;
+}
+
 function checkStagingCoverage(manifest, problems) {
+  const ts = loadTs(problems);
+  if (!ts) return;
   for (const fn of manifest.functions) {
     const root = roots[fn.repo];
     if (!root || !existsSync(join(root, 'supabase/functions', fn.name, 'index.ts'))) continue;
     const entry = `supabase/functions/${fn.name}/index.ts`;
-    const staged = new Set([entry, ...(fn.shared || [])]);
+    const staged = new Set([entry, ...functionDirFiles(root, fn.name), ...(fn.shared || [])]);
     const seen = new Set([entry]);
     const queue = [entry];
     while (queue.length) {
@@ -76,7 +137,8 @@ function checkStagingCoverage(manifest, problems) {
       if (!/\.(ts|tsx|js|jsx|mjs|cjs|json)$/.test(rel)) continue;
       let source;
       try { source = readFileSync(join(root, rel), 'utf8'); } catch { continue; }
-      for (const spec of relativeImportSpecs(source)) {
+      if (rel.endsWith('.json')) continue; // data file: staged for content, never an import source
+      for (const spec of relativeImportSpecs(ts, source, rel)) {
         let target = resolve(join(root, dirname(rel)), spec);
         if (statSync(target, { throwIfNoEntry: false })?.isDirectory()) target = join(target, 'index.ts');
         const targetRel = relative(root, target);
@@ -93,8 +155,8 @@ function checkStagingCoverage(manifest, problems) {
         } else if (!seen.has(targetRel)) { seen.add(targetRel); queue.push(targetRel); }
       }
     }
-    for (const rel of staged) {
-      if (rel !== entry && !seen.has(rel)) problems.push(`function ${fn.name}: staged ${rel} is not imported — remove it from functions[${fn.name}].shared`);
+    for (const rel of fn.shared || []) {
+      if (!seen.has(rel)) problems.push(`function ${fn.name}: staged ${rel} is not imported — remove it from functions[${fn.name}].shared`);
     }
   }
 }

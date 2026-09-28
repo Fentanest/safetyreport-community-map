@@ -96,4 +96,87 @@ export const handle = (d = data, r = resolve, _c: Cfg | null = null) => new Resp
     expect(r.stderr).toContain('server/unused.ts');
     expect(r.stderr).toContain('is not imported');
   });
+
+  it('ignores fake imports inside comments and string literals', () => {
+    // The old regex check mistook `from './removed.ts'` in a comment or a string for a
+    // real import. The AST check must pass with only the real closure staged.
+    const handler = [
+      `import data from '../shared/reg/data.json' with { type: 'json' };`,
+      `import { resolve } from '../shared/reg/resolve.ts';`,
+      `import type { Cfg } from '../shared/reg/types.ts';`,
+      `// from './removed.ts'`,
+      `// import './removed2.ts';`,
+      `/* export * from './removed3.ts'; import './removed4.ts'; */`,
+      `const s1 = "import x from './fake.ts'";`,
+      `const s2 = 'from "./fake2.ts"';`,
+      `const s3 = 'import("./fake3.ts")';`,
+      `export const handle = (d = data, r = resolve, _c: Cfg | null = null) => new Response(String(d) + String(r) + s1 + s2 + s3);`,
+    ].join('\n');
+    const { check } = fixture(
+      ['server/handler.ts', 'shared/reg/data.json', 'shared/reg/resolve.ts', 'shared/reg/types.ts'],
+      { 'server/handler.ts': handler },
+    );
+    const r = check();
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('manifest check ok');
+  });
+
+  it('detects a two-argument dynamic import (import attributes as second argument)', () => {
+    const handler = [
+      `export const handle = async () => {`,
+      `  const lazy = await import('../shared/reg/lazy.ts', { with: { type: 'json' } });`,
+      `  return new Response(String(lazy));`,
+      `};`,
+    ].join('\n');
+    const missing = fixture(['server/handler.ts'], {
+      'server/handler.ts': handler,
+      'shared/reg/lazy.ts': `export const lazy = 1;`,
+    });
+    const fail = missing.check();
+    expect(fail.status).toBe(1);
+    expect(fail.stderr).toContain('shared/reg/lazy.ts');
+    expect(fail.stderr).toContain('is not staged');
+
+    const staged = fixture(
+      ['server/handler.ts', 'shared/reg/lazy.ts'],
+      { 'server/handler.ts': handler, 'shared/reg/lazy.ts': `export const lazy = 1;` },
+    );
+    expect(staged.check().status).toBe(0);
+  });
+
+  it('allows imports of other files inside the same function directory', () => {
+    // compose() copies the whole function directory, so './helper.ts' must not fail even
+    // though it is not listed in shared. The shared closure behind the helper still applies.
+    const index = [
+      `import { help } from './helper.ts';`,
+      `Deno.serve(() => help());`,
+    ].join('\n');
+    const helper = [
+      `import data from '../../../shared/reg/data.json' with { type: 'json' };`,
+      `export const help = () => new Response(String(data));`,
+    ].join('\n');
+    const { check } = fixture(
+      ['shared/reg/data.json'],
+      {
+        'supabase/functions/demo/index.ts': index,
+        'supabase/functions/demo/helper.ts': helper,
+        'shared/reg/data.json': '{"v":1}',
+      },
+    );
+    const r = check();
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('manifest check ok');
+  });
+
+  it('still fails when a JSON import target is missing', () => {
+    const handler = [
+      `import data from '../shared/reg/data.json' with { type: 'json' };`,
+      `export const handle = () => new Response(String(data));`,
+    ].join('\n');
+    const { check } = fixture(['server/handler.ts'], { 'server/handler.ts': handler });
+    const r = check();
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('shared/reg/data.json');
+    expect(r.stderr).toContain('is not staged');
+  });
 });
