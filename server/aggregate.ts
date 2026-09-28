@@ -3,7 +3,7 @@ import type {
   Category, CountMetric, DashboardData, MonthlyBucket, OutcomeCounts,
   PublicEntity, PublicLaw, PublicMeta, PublicPoint, PublicRegion, Scope,
 } from '../src/domain/public.ts';
-import { LAW_NONE } from '../src/domain/public.ts';
+import { LAW_NONE, lawKey } from '../src/domain/public.ts';
 import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
 import { fineAmountBrief, fineAmountSummary } from './amount.ts';
@@ -105,8 +105,9 @@ function dimensions(fact: PrivateFact, scope: Scope): boolean {
   if (scope.agency_key && fact.agency_key !== scope.agency_key) return false;
   if (scope.manager_key && fact.manager_key !== scope.manager_key) return false;
   if (scope.law) {
-    const law = fact.violation_law ?? null;
-    if (scope.law === LAW_NONE ? law !== null : law !== scope.law) return false;
+    // 조 단위 key on both sides (a parameter with a paragraph selects its article)
+    const law = lawKey(fact.violation_law);
+    if (scope.law === LAW_NONE ? law !== null : law !== lawKey(scope.law)) return false;
   }
   if (scope.bbox) {
     const [minLng, minLat, maxLng, maxLat] = scope.bbox;
@@ -171,12 +172,12 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
 
-/** 위반법규별 현황 (docs/metrics-catalog.md law_results): one row per exact law text plus one 법규 미상 row, each
+/** 위반법규별 현황 (docs/metrics-catalog.md law_results): one row per article key (lawKey, 항 dropped) plus one 법규 미상 row, each
  *  computed from the completion-date cohort's raw facts. Sorted by C desc, then law (법규 미상 last on ties). */
 export function lawRows(done: readonly PrivateFact[]): PublicLaw[] {
   const groups = new Map<string | null, PrivateFact[]>();
   for (const fact of done) {
-    const law = fact.violation_law ?? null;
+    const law = lawKey(fact.violation_law);  // 조 단위: the stored text (with 항) never leaves as a row name
     const rows = groups.get(law);
     if (rows) rows.push(fact);
     else groups.set(law, [fact]);
@@ -429,7 +430,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       region_boundaries: { status: 'supported', reason: null, coverage: null },
       // coverage = answered reports with a published law / C (the rest are 법규 미상)
       violation_law: { status: 'supported', reason: null,
-        coverage: { eligible: done.filter(fact => (fact.violation_law ?? null) !== null).length, total: done.length } },
+        coverage: { eligible: done.filter(fact => lawKey(fact.violation_law) !== null).length, total: done.length } },
     },
   };
   return {

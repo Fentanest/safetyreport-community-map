@@ -1,4 +1,4 @@
-import { DEFAULT_SCOPE, DEMO_SCOPE, LAW_NONE, isLawParam, parseBbox, type Category, type PublicLaw, type Scope } from '../domain/public';
+import { DEFAULT_SCOPE, DEMO_SCOPE, LAW_NONE, isLawParam, lawKey, parseBbox, type Category, type PublicLaw, type Scope } from '../domain/public';
 import { normalizeRegion } from '../data/regions';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
@@ -21,7 +21,7 @@ export interface DraftFilters {
   end: string;
   category: Category;
   region_code: string | null;
-  /** 위반법규: exact text, LAW_NONE (법규 미상) or null (전체) */
+  /** 위반법규: article key (lawKey), LAW_NONE (법규 미상) or null (전체) */
   law: string | null;
 }
 
@@ -42,6 +42,9 @@ export function lawLabel(law: string | null, filter = true): string {
   if (law === null) return filter ? '모든 법규' : LAW_UNKNOWN_LABEL;
   return law === LAW_NONE ? LAW_UNKNOWN_LABEL : law;
 }
+
+/** The same 조 단위 key the API filters and echoes (else the echo check would see a different scope). */
+export const normalizeLaw = (law: string | null): string | null => (law === null || law === LAW_NONE ? law : lawKey(law));
 
 /** Filter value of a law row (the 법규 미상 row selects LAW_NONE). */
 export const lawValue = (law: string | null): string => law ?? LAW_NONE;
@@ -86,7 +89,7 @@ export function scopeFromDraft(draft: DraftFilters, prev: Scope): Scope {
     end: draft.end,
     category: draft.category,
     region_code: draft.region_code,
-    law: draft.law,
+    law: normalizeLaw(draft.law),
     agency_key: null,
     manager_key: null,
     bbox: null,
@@ -137,7 +140,7 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
     manager_key: manager || null,
     bbox,
     // exact 위반법규 text or '__none__'; anything the API would refuse is dropped
-    law: law !== null && isLawParam(law) ? law : null,
+    law: law !== null && isLawParam(law) ? normalizeLaw(law) : null,
   };
 }
 

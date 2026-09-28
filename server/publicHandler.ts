@@ -1,7 +1,7 @@
 import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
 import { codeForLegacyKey } from './regions.ts';
 import { authenticate, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
-import { isLawParam, parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
+import { isLawParam, LAW_NONE, lawKey, parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
   dataset_version: string;
@@ -109,8 +109,11 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   const regionCode = region === null ? null : codeForLegacyKey(region);
   if (region !== null && regionCode === null) throw new QueryError('INVALID_QUERY', 400);
   // law: exact 위반법규 text (1..60 code points, no control characters or outer spaces) or '__none__' (법규 미상)
-  const law = params.get('law');
-  if (law !== null && !isLawParam(law)) throw new QueryError('INVALID_QUERY', 400);
+  const rawLaw = params.get('law');
+  if (rawLaw !== null && !isLawParam(rawLaw)) throw new QueryError('INVALID_QUERY', 400);
+  // echoed and filtered as the 조 단위 key: '도로교통법 제32조제1항' selects (and echoes) '도로교통법 제32조'
+  const law = rawLaw === null || rawLaw === LAW_NONE ? rawLaw : lawKey(rawLaw);
+  if (rawLaw !== null && law === null) throw new QueryError('INVALID_QUERY', 400);
   return { start, end, category: category as Scope['category'], region_code: regionCode,
     agency_key: optional('agency_key'), manager_key: optional('manager_key'), bbox, law };
 }

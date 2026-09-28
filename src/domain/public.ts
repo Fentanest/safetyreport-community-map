@@ -10,18 +10,36 @@ export interface Scope {
   agency_key: string | null;
   manager_key: string | null;
   bbox: [number, number, number, number] | null;
-  /** 위반법규 exact match (observation-v2); LAW_NONE selects facts without a law (법규 미상); null = all laws */
+  /** 위반법규 article key (lawKey: `{법} 제N조[의M]`, 항 dropped); LAW_NONE selects facts without a law (법규 미상); null = all laws */
   law: string | null;
 }
 
 /** Scope value that selects facts whose violation law is unknown (null). Never a real law text. */
 export const LAW_NONE = '__none__';
-export const LAW_MAX_CODE_POINTS = 60;
+/** Filter parameter bound: a stored law is ≤ 60 code points, and its article key can be one longer
+ *  ('도로교통법제32조' → '도로교통법 제32조'), so parameters allow some room. The ingest bound stays 60. */
+export const LAW_MAX_CODE_POINTS = 80;
 
 /** Characters the upload rule clean() never leaves in a text (C0 controls, DEL); the ingest refuses them. */
 export const LAW_FORBIDDEN = /[\u0000-\u001f\u007f]/;
 
-/** A law filter value: LAW_NONE, or any storable law text (1..60 code points without C0 controls or DEL).
+/** 조 단위 key (user decision 2026-09-28): `{법이름} 제{N}조[의{M}]`. The parser writes
+ *  `{법이름} 제{N}조[의{M}][제{K}항|{K}항]` (safetyreport services/parser.py); the paragraph (항) is dropped,
+ *  `조의M` is a different article and is kept, whitespace differences and leading zeros are absorbed.
+ *  A value outside that form is kept as its trimmed text (never dropped); null or blank → null (법규 미상). */
+// law name as the parser captures it: Hangul, '·' and spaces, ending in 법 (「…법」 or 도로교통법)
+const LAW_ARTICLE = /^([가-힣·\s]{1,60}?법)\s*제\s*0*(\d+)\s*조(?:\s*의\s*0*(\d+))?(?:\s*제?\s*\d{1,3}\s*항)?$/u;
+export function lawKey(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  const text = raw.trim();
+  if (!text) return null;
+  const m = LAW_ARTICLE.exec(text);
+  if (!m) return text;
+  const name = m[1].replace(/\s+/g, '');
+  return `${name} 제${m[2]}조${m[3] ? `의${m[3]}` : ''}`;
+}
+
+/** A law filter value: LAW_NONE, or a law text / article key (1..80 code points without C0 controls or DEL).
  *  Outer spaces are allowed: clean() truncates after trimming, so a stored law may end with a space. */
 export function isLawParam(value: string): boolean {
   if (value === LAW_NONE) return true;
