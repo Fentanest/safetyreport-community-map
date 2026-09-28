@@ -1,6 +1,6 @@
 // 합성 검사 스크립트는 인증 저장소 경로를 반드시 받는다(감사 SOL-09) — 정리된 임시 worktree 를 기본값으로 읽지 않는다.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -66,7 +66,9 @@ export const handle = (d = data, r = resolve, _c: Cfg | null = null) => new Resp
     writeFileSync(manifestPath, JSON.stringify(manifest));
     const check = (args: string[] = []) =>
       run(['check', '--auth', auth, '--manifest', manifestPath, ...args], { SR_MAP_REPO: map, SR_AUTH_REPO: auth });
-    return { check };
+    const compose = (out: string) =>
+      run(['compose', '--auth', auth, '--manifest', manifestPath, '--out', out], { SR_MAP_REPO: map, SR_AUTH_REPO: auth });
+    return { check, compose };
   };
 
   it('fails when a transitive import (json with-attribute, resolver, type-only) is not staged', () => {
@@ -144,9 +146,29 @@ export const handle = (d = data, r = resolve, _c: Cfg | null = null) => new Resp
     expect(staged.check().status).toBe(0);
   });
 
+  it('tracks a fixed template-literal dynamic import', () => {
+    // TypeScript parses import(`./module.ts`) as NoSubstitutionTemplateLiteral,
+    // even though it is just as statically resolvable as a quoted string.
+    const handler = [
+      `export const handle = async () => {`,
+      '  const lazy = await import(`../shared/reg/lazy.ts`);',
+      `  return new Response(String(lazy));`,
+      `};`,
+    ].join('\n');
+    const extra = { 'server/handler.ts': handler, 'shared/reg/lazy.ts': `export const lazy = 1;` };
+    const missing = fixture(['server/handler.ts'], extra);
+    const fail = missing.check();
+    expect(fail.status).toBe(1);
+    expect(fail.stderr).toContain('shared/reg/lazy.ts');
+    expect(fail.stderr).toContain('is not staged');
+
+    const staged = fixture(['server/handler.ts', 'shared/reg/lazy.ts'], extra);
+    expect(staged.check().status).toBe(0);
+  });
+
   it('allows imports of other files inside the same function directory', () => {
-    // compose() copies the whole function directory, so './helper.ts' must not fail even
-    // though it is not listed in shared. The shared closure behind the helper still applies.
+    // compose() copies included files in the function directory, so './helper.ts'
+    // needs no shared entry. The shared closure behind the helper still applies.
     const index = [
       `import { help } from './helper.ts';`,
       `Deno.serve(() => help());`,
@@ -166,6 +188,29 @@ export const handle = (d = data, r = resolve, _c: Cfg | null = null) => new Resp
     const r = check();
     expect(r.status).toBe(0);
     expect(r.stdout).toContain('manifest check ok');
+  });
+
+  it('uses the same function-file filter as compose, including names containing node_modules', () => {
+    // copyTree filters the full path, so a regular-looking file with this substring
+    // is not copied either. An import must fail coverage instead of passing check.
+    const excluded = fixture([], {
+      'supabase/functions/demo/index.ts': `import { help } from './node_modules-helper.ts';\nDeno.serve(() => help());`,
+      'supabase/functions/demo/node_modules-helper.ts': `export const help = () => new Response('ok');`,
+    });
+    const fail = excluded.check();
+    expect(fail.status).toBe(1);
+    expect(fail.stderr).toContain('node_modules-helper.ts');
+    expect(fail.stderr).toContain('is not staged');
+
+    const included = fixture([], {
+      'supabase/functions/demo/index.ts': `import { help } from './helper.ts';\nDeno.serve(() => help());`,
+      'supabase/functions/demo/helper.ts': `export const help = () => new Response('ok');`,
+    });
+    expect(included.check().status).toBe(0);
+    const out = join(mkdtempSync(join(tmpdir(), 'sr-fix-out-')), 'staged');
+    const result = included.compose(out);
+    expect(result.status).toBe(0);
+    expect(existsSync(join(out, 'supabase/functions/demo/helper.ts'))).toBe(true);
   });
 
   it('still fails when a JSON import target is missing', () => {

@@ -64,8 +64,10 @@ function load() {
 //   (including type-only edges) before type-stripping, so a missing file can still fail
 //   the bundle step. This matches the staged type-only chain in community-account
 //   (server/relay.ts, server/config.ts) that REVIEW6's parser run confirmed necessary.
-// - dynamic `import('./x')`, including the two-argument form `import('./x', { with: ... })`
-//   — only the first argument is a module specifier; the import-attributes argument is ignored.
+// - dynamic `import('./x')` and `import(`./x`)`, including the two-argument form
+//   `import('./x', { with: ... })` — only the first argument is a module specifier;
+//   the import-attributes argument is ignored. A template with interpolation has no
+//   fixed target, so this manifest-based check cannot resolve it statically.
 // - JSON modules (`import data from './d.json' with { type: 'json' }`) are plain
 //   ImportDeclarations, so they are covered too. `import ... = require('./x')` as well.
 let tsMod = null;
@@ -91,7 +93,9 @@ function relativeImportSpecs(ts, source, filename) {
       if (ms && ts.isStringLiteral(ms)) add(ms.text);
     } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
       const first = node.arguments && node.arguments[0];
-      if (first && ts.isStringLiteral(first)) add(first.text);
+      // NoSubstitutionTemplateLiteral is a fixed module specifier too. Checking only
+      // StringLiteral silently misses valid import(`./module.ts`) expressions.
+      if (first && (ts.isStringLiteral(first) || ts.isNoSubstitutionTemplateLiteral(first))) add(first.text);
     } else if (ts.isImportEqualsDeclaration(node)) {
       const ref = node.moduleReference;
       if (ref && ts.isExternalModuleReference(ref) && ref.expression && ts.isStringLiteral(ref.expression)) {
@@ -104,21 +108,25 @@ function relativeImportSpecs(ts, source, filename) {
   return specs;
 }
 
-// compose() copies the WHOLE function directory plus fn.shared, so the staged set must
-// be exactly that. An import of another file inside the same function directory is
-// therefore fine and must not be reported.
+// Keep the predicate shared with copyTree: fs.cp's filter sees the full source path,
+// including files whose NAME merely contains "node_modules". Those files are omitted
+// by compose too, even though they are not inside a node_modules directory.
+const copiedByCopyTree = source => !/node_modules|\.git(\/|$)/.test(source);
+
+// compose() copies the filtered function directory plus fn.shared. An import of an
+// included file inside the function directory is fine without a shared entry.
 function functionDirFiles(root, fnName) {
   const base = join(root, 'supabase/functions', fnName);
   const out = [];
   const walk = dir => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (e.name === 'node_modules' || e.name === '.git') continue;
       const abs = join(dir, e.name);
+      if (!copiedByCopyTree(abs)) continue;
       if (e.isDirectory()) walk(abs);
       else if (e.isFile()) out.push(relative(root, abs));
     }
   };
-  if (existsSync(base) && statSync(base).isDirectory()) walk(base);
+  if (copiedByCopyTree(base) && existsSync(base) && statSync(base).isDirectory()) walk(base);
   return out;
 }
 
@@ -129,7 +137,11 @@ function checkStagingCoverage(manifest, problems) {
     const root = roots[fn.repo];
     if (!root || !existsSync(join(root, 'supabase/functions', fn.name, 'index.ts'))) continue;
     const entry = `supabase/functions/${fn.name}/index.ts`;
-    const staged = new Set([entry, ...functionDirFiles(root, fn.name), ...(fn.shared || [])]);
+    const staged = new Set([...functionDirFiles(root, fn.name), ...(fn.shared || [])]);
+    if (!staged.has(entry)) {
+      problems.push(`function ${fn.name}: index.ts is excluded by the compose copy filter`);
+      continue;
+    }
     const seen = new Set([entry]);
     const queue = [entry];
     while (queue.length) {
@@ -210,7 +222,7 @@ function check(manifest) {
 }
 
 function copyTree(src, dst) {
-  cpSync(src, dst, { recursive: true, filter: s => !/node_modules|\.git(\/|$)/.test(s) });
+  cpSync(src, dst, { recursive: true, filter: copiedByCopyTree });
 }
 
 function compose(manifest) {
