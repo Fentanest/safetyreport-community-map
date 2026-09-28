@@ -135,3 +135,9 @@
 되돌릴 때도 접근 기준이 낮은 구 Edge만 먼저 올리지 않는다. 새 Edge를 유지한 채 SQL을 새 migration으로
 되돌리면 건수 키가 사라져 모든 지도 조회가 거부된다. 지도 Pages와 Edge의 버전 호환을 함께 확인하고,
 10건 정책을 유지할 수 있는 구성으로 복구한다. 이 절은 절차 기록이며 운영 적용 기록이 아니다.
+
+## 13. 운영 반영 기록 (2026-09-28, 사용자 승인) — 지도 열람 공개 신고 10건 이상
+- 순서(§12): 사용자가 Edge `public-analytics`(v8)·`my-analytics`(v6)를 합성 디렉터리(지도 main `7bb1419` + auth main)에서 재배포 → `community-map-pages` 수동 실행(성공) → `db push --linked`로 `202609281900_viewer_threshold` 1개 적용.
+- 확인: dry-run `upToDate`, `internal_analytics_viewer` 존재·anon/authenticated/PUBLIC EXECUTE 0건, 익명 `public-analytics/meta` 401, `https://safemap.worklazy.net/` 200, 배포 번들에 10건 안내·건수 미상 문구 포함(‘한 건 이상’ 문구 없음).
+- 로컬 검증: 별도 스택(`rsc0928-int`)에 migration 23개 적용, `community-stack` 33/33(9건 403 `required:10,current:9`, 10건 200, 두 dataset 같은 신고 1건). `my-analytics-stack` 6/7 — 무토큰 401 의 `auth_required` 코드 누락은 main 과 같은 기존 결함.
+- 롤백: Edge 두 함수 이전 배포 재배포와 구 Pages 를 함께, SQL 은 새 migration 으로 `internal_analytics_viewer` 를 이전 본문으로 재정의.
