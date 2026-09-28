@@ -174,7 +174,7 @@
    "repo": "map",
    "path": "supabase/migrations/202609281200_owner_transfer_violation_law_merge.sql",
    "sha256": "50046c14d4f7829aa20c399dbec836fe5fa6aa6a9c0ceff14fdd9eb1cea27c86",
-    "depends_on": [
+   "depends_on": [
     "202609280800",
     "202609281100"
    ]
@@ -195,6 +195,15 @@
    "sha256": "96bcf9ff65d8e81fb90c74cf46019dfa96f8bef48b4ccafd6422396d365fcdb1",
    "depends_on": [
     "202609281300"
+   ]
+  },
+  {
+   "version": "202609281500",
+   "repo": "map",
+   "path": "supabase/migrations/202609281500_report_identity.sql",
+   "sha256": "33a8e5cc50a3ccf18bf3b2e96bc31ec34b4f8977e0eb8c766960dae8c3859bf4",
+   "depends_on": [
+    "202609281400"
    ]
   }
  ],

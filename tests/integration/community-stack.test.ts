@@ -725,41 +725,98 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(await overviewReports()).toBe(base + 1);
     });
 
-    it('accepts divergent outcomes per account without moving the public representative', async () => {
+    it('elects the latest distinct answer as the public representative, then applies scope filters', async () => {
       const report = `DIV-${rid()}`;
       const a = await writerFor('A');
       const b = await writerFor('B');
       const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const repField = (field: string) => sql(`select ${field} from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      const agencyKeyOf = (name: string) => `a1:${createHash('sha256').update(name.normalize('NFC')).digest('hex').slice(0, 24)}`;
+      const nameA = payloadOf('accepted_fine').agency_name as string;
+      const payloadB = { ...payloadOf('partial_penalty_traffic'), agency_name: '부산광역시 해운대구청' };
+      const nameB = payloadB.agency_name as string;
       expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
       // B의 실제 결과가 다르면(수용 vs 일부수용) B 기여도 별도 관측으로 보존하고 정상 수신한다
-      expect((await ingest(b, [await event(b, report, payloadOf('partial_penalty_traffic'))])).json.results[0].status).toBe('accepted');
+      expect((await ingest(b, [await event(b, report, payloadB)])).json.results[0].status).toBe('accepted');
       expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
       expect(sql(`select status from private.community_report_facts where source_report_key='${key}' and contributor_id='${a.session.userId}';`)).toBe('accepted');
       expect(sql(`select status from private.community_report_facts where source_report_key='${key}' and contributor_id='${b.session.userId}';`)).toBe('partial');
-      // 공개 대표는 최초 기여(A)로 안정 유지 — 단순 최신 업로드 계정 우선으로 갈아치우지 않는다
-      expect(sql(`select contributor_id from jsonb_array_elements(
-        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
-        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`)).toBe(a.session.userId);
+      // 공개 대표는 최신의 서로 다른 답변(B) — 최초 기여(A) 고정이 아니다(REVIEW2 높음-2).
+      // 같은 답변의 단순 재전송은 대표를 뒤집지 않는다(아래 no_change 확인).
+      expect(repField('contributor_id')).toBe(b.session.userId);
+      expect(repField('status')).toBe('partial');
+      // A가 같은 답변을 다시 보내도(no_change) 대표는 그대로다.
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('no_change');
+      expect(repField('contributor_id')).toBe(b.session.userId);
+      // 범위 필터는 확정된 대표에 적용된다: 옛 기관 필터에서는 0건, 새 기관 필터에서는 같은 대표 1건.
+      const repWithAgency = (agencyKey: string | null) => sql(`select count(*) from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, '${agencyKey}', null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect(repWithAgency(agencyKeyOf(nameB))).toBe('1');
+      if (agencyKeyOf(nameA) !== agencyKeyOf(nameB)) expect(repWithAgency(agencyKeyOf(nameA))).toBe('0');
     });
 
-    it('accepts any report_number from another account and keeps the first fact (no identity gate)', async () => {
+    it('isolates different report_numbers into separate public identities (no cross-number merge)', async () => {
       const a = await writerFor('A');
       const b = await writerFor('B');
-      for (const [kind, change] of [
-        ['number', { report_number: 'SPP-2609-8000002' }],
-        ['legacy', { report_number: null }],
-      ] as const) {
-        const report = `NUM-${kind}-${rid()}`;
+      const repsOf = (key: string) => sql(`select count(*) from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      const identitiesOf = (key: string) => sql(`select string_agg(distinct e->>'report_identity', ',' order by e->>'report_identity') from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      // 같은 번호: B 기여도 정상 수신, 전체 고유 1건
+      {
+        const report = `NUM-same-${rid()}`;
         const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
         expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
-        // 이전 모델은 report_identity_mismatch로 거절했지만, 이제 B 기여도 정상 수신한다
-        const next = await event(b, report, payloadOf('accepted_fine'), change);
+        expect((await ingest(b, [await event(b, report)])).json.results[0].status).toBe('accepted');
+        expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+        expect(repsOf(key)).toBe('1');
+      }
+      // 번호 없는 구버전 관측: 번호 그룹에 붙는다(와일드카드) — 전체 고유 1건 유지
+      {
+        const report = `NUM-legacy-${rid()}`;
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+        const next = await event(b, report, payloadOf('accepted_fine'), { report_number: null });
         expect((await ingest(b, [next])).json.results[0].status).toBe('accepted');
         expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
-        expect(sql(`select count(*) from jsonb_array_elements(
-          public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
-          where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`)).toBe('1');
+        expect(repsOf(key)).toBe('1');
       }
+      // 둘 다 번호가 있는데 다르면: 격리 — 서로 다른 실제 신고이므로 공개 2건 (REVIEW2 높음-1)
+      {
+        const report = `NUM-split-${rid()}`;
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+        const next = await event(b, report, payloadOf('accepted_fine'), { report_number: 'SPP-2609-8000002' });
+        expect((await ingest(b, [next])).json.results[0].status).toBe('accepted');
+        expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+        expect(repsOf(key)).toBe('2');
+        expect(identitiesOf(key).split(',')).toHaveLength(2);
+      }
+    });
+
+    it('preserves a stored agency code when an older app version re-observes without the key', async () => {
+      // REVIEW2 높음-4: v1/v2 payload 에는 source_agency_code 키가 없다 — 키 부재가 명시적 NULL 이 아니다.
+      const w = await writerFor('D');
+      const report = `CODE-${rid()}`;
+      const key = sql(`select source_report_key from private.community_ingest_events where source_report_id = '${report}' limit 1;`);
+      const storedCode = () => sql(`select coalesce(source_agency_code, '<null>') from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const v3 = { ...payloadOf('accepted_fine'), source_agency_code: 'B410002' };
+      expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v1 키셋(violation_law·source_agency_code 없음)으로 더 높은 revision 을 보내도 코드는 유지된다.
+      const { source_agency_code: _dropCode, violation_law: _dropLaw, ...v1 } = payloadOf('accepted_fine');
+      expect((await ingest(w, [await event(w, report, v1)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v3 명시적 null(키 있음)은 코드를 지운다.
+      expect((await ingest(w, [await event(w, report, payloadOf('accepted_fine'))])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('<null>');
+      expect(key).not.toBe('');
     });
 
     it('keeps the other account contribution when one account deletes its own (tombstone independence)', async () => {
