@@ -1,7 +1,7 @@
 import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
 import { codeForLegacyKey } from './regions.ts';
 import { authenticate, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
-import { parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
+import { isLawParam, parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
   dataset_version: string;
@@ -44,7 +44,7 @@ export class QueryError extends Error {
 
 type Headers = Record<string, string>;
 const allowed = new Set([
-  'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox',
+  'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
   'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir',
 ]);
 const date = /^\d{4}-\d{2}-\d{2}$/;
@@ -108,8 +108,11 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   // Official 2026-07-01 code (2-digit 시도 / 5-digit 시군구); a legacy display key is converted when unambiguous.
   const regionCode = region === null ? null : codeForLegacyKey(region);
   if (region !== null && regionCode === null) throw new QueryError('INVALID_QUERY', 400);
+  // law: exact 위반법규 text (1..60 code points, no control characters or outer spaces) or '__none__' (법규 미상)
+  const law = params.get('law');
+  if (law !== null && !isLawParam(law)) throw new QueryError('INVALID_QUERY', 400);
   return { start, end, category: category as Scope['category'], region_code: regionCode,
-    agency_key: optional('agency_key'), manager_key: optional('manager_key'), bbox };
+    agency_key: optional('agency_key'), manager_key: optional('manager_key'), bbox, law };
 }
 
 function meta(state: AnalyticsState): PublicMeta {
@@ -125,7 +128,7 @@ function meta(state: AnalyticsState): PublicMeta {
     coverage_note: state.coverage_note, dedupe_policy_version: state.dedupe_policy_version,
     capabilities: Object.fromEntries([
       'daily_report_dates', 'completion_dates', 'manager_status_cross', 'agency_status_cross', 'vehicle_top5',
-      'fine_amount', 'processing_duration', 'region_boundaries',
+      'fine_amount', 'processing_duration', 'region_boundaries', 'violation_law',
     ].map(name => [name, capability(state.ready, reason)])),
   };
 }
@@ -221,7 +224,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
-        regions: (data.regions ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
+        regions: (data.regions ?? []).slice(0, 300), laws: (data.laws ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
         vehicle_identifiable_reports: data.vehicle_identifiable_reports }, 200);
       if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200);
       if (route === 'map') return json({ ...common, points: data.points }, 200);

@@ -12,7 +12,7 @@ const base: PrivateFact = {
   manager_key: 'manager-1', manager_name: '김하늘',
 };
 const scope = (start: string, end: string): Scope => ({
-  start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null,
+  start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null,
 });
 const options = { datasetVersion: 'test-v2', sourceUpdatedAt: null, generatedAt: '2026-09-24T00:00:00Z', asOf: '2026-09-24', sample: true };
 const aggregate = (facts: PrivateFact[], start = '2026-01-01', end = '2026-02-28') =>
@@ -160,7 +160,7 @@ describe('community ingest facts without coordinates (S-01)', () => {
   });
   it('a viewport filter keeps only located facts', () => {
     const facts = [fact(1), fact(2, { lat: null, lng: null, point_key: null })];
-    const data = aggregateDashboard(facts, { start: '2026-01-01', end: '2026-02-28', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: [124, 32, 132, 39.5] },
+    const data = aggregateDashboard(facts, { start: '2026-01-01', end: '2026-02-28', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: [124, 32, 132, 39.5], law: null },
       { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-03-01T00:00:00Z', asOf: '2026-02-28', sample: false });
     expect(data.overview.report_count.value).toBe(1);
   });

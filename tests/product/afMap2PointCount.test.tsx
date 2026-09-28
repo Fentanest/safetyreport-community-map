@@ -11,7 +11,7 @@ import type { Scope } from '../../src/domain/public';
 // Real aggregation input, no mocks.
 const sept: Scope = {
   start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
-  agency_key: null, manager_key: null, bbox: null,
+  agency_key: null, manager_key: null, bbox: null, law: null,
 };
 const aopts = {
   datasetVersion: 'af-map2-test', sourceUpdatedAt: null,

@@ -85,6 +85,19 @@ export function demoFacts(): PrivateFact[] {
     const won = r < 0.2 ? 0 : [40000, 40000, 50000, 50000, 60000, 80000, 100000][Math.floor(amountRand() * 7)];
     return { amount_kind: 'fine', amount_confirmed_won: won, amount_public: true, amount_stated: true };
   };
+  // Synthetic 위반법규 (law name + article, as the parser extracts it) from their own generator so every other synthetic
+  // value stays unchanged; about one in eight answers has no law (법규 미상).
+  const lawRand = mulberry32(20260929);
+  const LAWS: Record<'traffic' | 'parking' | 'other', readonly string[]> = {
+    parking: ['도로교통법 제32조', '도로교통법 제32조', '도로교통법 제33조', '도로교통법 제34조', '주차장법 제29조'],
+    traffic: ['도로교통법 제5조', '도로교통법 제5조', '도로교통법 제13조', '도로교통법 제25조', '도로교통법 제27조', '도로교통법 제38조'],
+    other: ['도로교통법 제49조', '자동차관리법 제10조', '도로교통법 제35조'],
+  };
+  const lawOf = (category: 'traffic' | 'parking' | 'other'): string | null => {
+    const r = lawRand();
+    const list = LAWS[category];
+    return r < 0.12 ? null : list[Math.floor(lawRand() * list.length)];
+  };
   const add = (index: number, contributor: string, areaIndex: number, spot: number, mine: boolean) => {
     const area = AREAS[areaIndex];
     const report = addDays(DEMO_DATA_MIN, Math.floor(rand() * (SPAN + 1)));
@@ -102,14 +115,16 @@ export function demoFacts(): PrivateFact[] {
     const lat = +(area.lat + (spot - 1) * 0.0071 + (spot === 2 ? 0.0033 : 0)).toFixed(6);
     const lng = +(area.lng + (spot - 1) * 0.0093).toFixed(6);
     const manager = area.managers[spot % area.managers.length];
+    const category = pick(['traffic', 'traffic', 'parking', 'parking', 'other'] as const);
     facts.push({
       fact_identity: `synthetic-${index}`, contributor_id: contributor, snapshot_id: 'synthetic', snapshot_generation: 1,
-      report_date: report, completed_date: completed, category: pick(['traffic', 'traffic', 'parking', 'parking', 'other'] as const),
+      report_date: report, completed_date: completed, category,
       status: finalStatus, disposition, vehicle_raw: rand() < 0.85 ? pick(vehicles) : null,
       point_key: locatedFact ? `synthetic:${areaIndex}:${spot}` : null, lat: locatedFact ? lat : null, lng: locatedFact ? lng : null,
       address: `${area.sido} ${area.gu} 예시로 ${spot + 1}길`, region_code: area.code,
       agency_key: `a1:synthetic-${areaIndex}`, agency_name: area.agency,
       manager_key: `m1:synthetic-${areaIndex}-${manager}`, manager_name: manager, ...amountOf(disposition),
+      violation_law: lawOf(category),
     });
   };
   let n = 0;
@@ -124,6 +139,7 @@ export function demoFacts(): PrivateFact[] {
     address: `${area.sido} ${area.gu} 예시로 9길`, region_code: area.code,
     agency_key: 'a1:synthetic-9', agency_name: area.agency, manager_key: `m1:synthetic-9-${area.managers[0]}`, manager_name: area.managers[0],
     amount_kind: 'fine', amount_confirmed_won: 40000, amount_public: true, amount_stated: true,
+    violation_law: '도로교통법 제32조',
   });
   cache = facts;
   return facts;

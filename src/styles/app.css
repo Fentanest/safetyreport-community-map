@@ -199,6 +199,12 @@ button.cm-chip { cursor: pointer; }
 .dup-note { font-size: 11px; color: var(--muted); }
 
 .entities { padding-bottom: 12px; }
+/* 위반법규별 현황: same table primitives as the entity table; the active law row carries an inset brand bar + text tag. */
+.laws { padding-bottom: 12px; }
+.law-table tr.active td { background: linear-gradient(var(--hover), var(--hover)), var(--surface); }
+.law-table tr.active td:first-child { box-shadow: inset 3px 0 0 var(--brand-ink); }
+.law-table .law-unknown { color: var(--muted); font-style: normal; }
+.law-table td:first-child .mini-btn[aria-pressed="true"] { border-color: var(--brand-ink); }
 .entity-toolbar { display: flex; gap: 8px; align-items: center; padding: 10px 16px 0; flex-wrap: wrap; }
 .entity-toolbar input[type="search"] { min-height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); padding: 8px 12px; min-width: 200px; }
 .table-scroll { overflow: auto; margin: 8px 0 0; border-top: 1px solid var(--border); max-height: 420px; }
@@ -288,7 +294,8 @@ body.briefing .briefing-bar { display: flex; }
   .command .view-switch { width: 100%; display: flex; }
   .command .view-switch button { flex: 1; min-height: 44px; padding: 10px 4px; white-space: nowrap; }
   /* tall card headers stack instead of squeezing on narrow screens. */
-  .map-card .panel-top, .region-list .panel-top, .entities .panel-top, .manager-compare .panel-top { flex-direction: column; align-items: stretch; gap: 8px; }
+  .map-card .panel-top, .region-list .panel-top, .entities .panel-top, .laws .panel-top, .manager-compare .panel-top { flex-direction: column; align-items: stretch; gap: 8px; }
+  .laws .panel-top .cm-chip { align-self: flex-start; }
   .map-card .mini-segments, .region-list .mini-segments, .entities .mini-segments, .manager-compare .mini-segments { align-self: flex-start; }
   /* compare KPI table: 3 columns fixed, no page-level horizontal scroll. */
   .compare-kpis .compare-table th, .compare-kpis .compare-table td { padding: 8px 6px; font-size: 13px; }

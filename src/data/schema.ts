@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isLawParam } from '../domain/public';
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const count = z.number().int().nonnegative();
@@ -10,6 +11,8 @@ export const scopeSchema = z.strictObject({
   start: date, end: date, category: z.enum(['all', 'traffic', 'parking', 'other']),
   region_code: z.string().nullable(), agency_key: z.string().nullable(),
   manager_key: z.string().nullable(), bbox: z.tuple([positive, positive, positive, positive]).nullable(),
+  // 위반법규 exact text or '__none__' (법규 미상); null = all laws
+  law: z.string().min(1).max(120).refine(isLawParam).nullable(),
 });
 
 const capability = z.strictObject({
@@ -91,6 +94,17 @@ export const regionSchema = z.strictObject({
   outcomes, fine_count: count, duration: durationBrief, fine_amount: fineBrief,
 });
 
+const rate = z.number().min(0).max(100).nullable();
+export const lawSchema = z.strictObject({
+  // row text is displayed as text only; no refine here so one odd stored value cannot break the whole dashboard
+  law: z.string().min(1).max(120).nullable(),
+  completed_count: count, outcomes, accept_rate: rate, partial_rate: rate,
+  fine_count: count, fine_rate: rate, penalty_count: count, warning_count: count,
+  fine_amount: z.strictObject({
+    fine_count: count, confirmed_count: count, sum_won: won.nullable(), mean_won: z.number().min(0).nullable(),
+  }),
+});
+
 export const vehicleSchema = z.strictObject({
   rank: z.number().int().min(1).max(5), rank_item_id: z.string().regex(/^r[1-5]$/),
   // Optional short region (kept visible), then the masked number: 경기7*자*6*3, 1*가*4*6.
@@ -127,6 +141,7 @@ export const dashboardResponseSchema = z.strictObject({
   overview: overviewSchema, points: z.array(pointSchema).max(1000), monthly: z.array(monthlySchema),
   agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
   regions: z.array(regionSchema).max(300).optional(),
+  laws: z.array(lawSchema).max(300).optional(),
   vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,
   vehicle_identifiable_reports: count, location_missing: count.optional(),
 });
