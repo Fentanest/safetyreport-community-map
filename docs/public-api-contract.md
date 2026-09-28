@@ -109,3 +109,6 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 처리완료일 기준, 답변 많은 순 → 법규 이름 순(법규 미상은 같은 건수에서 뒤). meta capability `violation_law`(coverage = 법규 있는 답변/C). 정의: docs/metrics-catalog.md §위반법규별 현황.
 `laws`는 선택(optional) 필드라 예전 응답도 schema를 통과한다. `my-analytics/compare`도 같은 `law`를 받는다(같은 parser).
 이 API는 개인 비교를 제공하지 않는다. 로그인 사용자의 비교는 별도 `my-analytics/compare`(docs/personal-comparison.md §3)다.
+
+## 숫자 별점 공개(2026-09-28)
+공개 fact projection의 `rating`은 정책 공개 플래그가 참인 계보에서만 1..5이고, 그 밖은 null이다. API는 숫자 자체를 행 단위로 외부에 보내지 않고 완료일 cohort의 `rating: {count, mean}` 집계만 반환한다. .1/.2 동의만으로는 공개하지 않는다. 기관·담당자·지역·법규·월·개인 비교는 같은 필터와 분모를 쓴다. 별점사유는 payload·DB fact·API에 없다.

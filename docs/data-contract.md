@@ -67,3 +67,6 @@ agency_status_cross, vehicle_top5, fine_amount, processing_duration, region_boun
 ## F. fixture 원칙
 합성 fixture는 sample=true를 강제하고 private raw facts는 tests/fixtures 또는 docs 외부 빌드입력에만 둔다.
 prod output에는 fixtures/원번호를 복사하지 않는다. 1건·0분모·동명이인·마스크충돌·완료일결측·월 경계·연말·중복재전송 포함.
+
+
+숫자 별점 공개 정책(2026-09-28 사용자 결정): 동의문 2026-09-28.3에 처리 만족도 숫자 별점과 평균·건수를 명시했다. AUTH `202609281700`이 현행 정책을 .3으로 전환하고 MAP `202609281800`이 private fact의 정수 1..5 열과 `rating_public` disclosure를 추가한다. .1/.2만 현재 동의인 계보의 공개 projection에서는 별점이 null이다. .3에 재동의한 계보는 과거 공유 사실의 별점도 공개할 수 있다. 별점사유는 전송하지 않는다.

@@ -30,6 +30,8 @@ export interface Observation {
   /** 원문 기관코드(TEXT, 7자리 영숫자·선행 0 보존). observation-v3 (2026-09-28); absent in v1/v2 payloads.
    *  신규 형식도 원문 그대로 보존한다(서버는 7자리 영숫자만 기관 해석에 사용). */
   source_agency_code?: string | null;
+  /** 공식 상세의 숫자 별점. v4; 별점사유는 전송하지 않는다. */
+  rating?: number | null;
 }
 
 // --- canonical JSON (keys sorted by UTF-16 code units, no whitespace, strings/ints/null/objects only) ---
@@ -160,6 +162,7 @@ export interface DerivedFact {
   /** v3 source agency code as sent (verbatim, may be a novel format); null for v1/v2 payloads (no key) and for v3 null.
    *  Stored only — not published by the public projection (consent scope open, 2026-09-28). */
   source_agency_code: string | null;
+  rating: number | null;
 }
 
 export async function deriveFact(p: Observation): Promise<DerivedFact> {
@@ -189,6 +192,7 @@ export async function deriveFact(p: Observation): Promise<DerivedFact> {
     agency_key: agencyKey, agency_name: p.agency_name, agency_current_name: agencyCurrentName,
     manager_key: managerKey, manager_name: p.manager_name,
     violation_law: p.violation_law ?? null, source_agency_code: p.source_agency_code ?? null,
+    rating: p.rating ?? null,
   };
 }
 

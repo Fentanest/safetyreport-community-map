@@ -171,7 +171,7 @@ describe('community-ingest handler', () => {
     expect(ev3.payload_sha256).toBe(code.payload_sha256);
     expect((ev3.derived as Record<string, unknown>).source_agency_code).toBe('B410002');
 
-    const { violation_law: _drop, source_agency_code: _drop2, ...v1Payload } = payload as Record<string, unknown>;
+    const { violation_law: _drop, source_agency_code: _drop2, rating: _drop3, ...v1Payload } = payload as Record<string, unknown>;
     expect(Object.keys(v1Payload)).toHaveLength(12);
     const v1 = setup(() => ({ results: [], dataset_version: 'v' }));
     const r1 = await v1.handler(post(await envelope([await event('8d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', v1Payload as typeof payload)])));
@@ -182,6 +182,22 @@ describe('community-ingest handler', () => {
     expect(ev1.payload_sha256).not.toBe(vectors.cases[0].payload_sha256);
     expect((ev1.derived as Record<string, unknown>).violation_law).toBeNull();
     expect((ev1.derived as Record<string, unknown>).source_agency_code).toBeNull();
+  });
+
+  it('accepts only numeric 1..5 rating, keeps old payloads compatible, and never accepts a reason field', async () => {
+    const { handler, calls } = setup();
+    const id = '7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f';
+    const rated = { ...payload, rating: 4 };
+    expect((await handler(post(await envelope([await event(id, 'R1', rated)])))).status).toBe(200);
+    const received = (calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0];
+    expect((received.derived as Record<string, unknown>).rating).toBe(4);
+    for (const rating of [0, 6, 3.5, '5', true]) {
+      const bad = { ...payload, rating };
+      expect((await handler(post(await envelope([{ ...(await event(id)), payload: bad, payload_sha256: 'a'.repeat(64) }])))).status).toBe(422);
+    }
+    expect((await handler(post(await envelope([await event(id, 'R1', { ...rated, rating_reason: '비공개' })])))).status).toBe(422);
+    const { rating: _old, ...v3 } = rated;
+    expect((await handler(post(await envelope([await event(id, 'R1', v3)])))).status).toBe(200);
   });
 
   it('rejects an empty, over-length or non-string source_agency_code with 422 schema_invalid and no write', async () => {

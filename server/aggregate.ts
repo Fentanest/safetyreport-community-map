@@ -45,6 +45,8 @@ export interface PrivateFact {
   amount_stated?: boolean;
   /** 위반법규 (observation-v2), only when the fact's consent policy publishes it; null/absent = 법규 미상 */
   violation_law?: string | null;
+  /** 1..5 numeric satisfaction rating, null when absent or not disclosed by consent. */
+  rating?: number | null;
 /** true for the single publicly-counted row of an identity (same report shared by several accounts).
  *  Absent on legacy rows — treated as true. Personal scope still receives every listed row. */
   is_representative?: boolean | null;
@@ -173,6 +175,12 @@ export function outcomes(facts: readonly PrivateFact[]): OutcomeCounts {
   return { accepted, partial, rejected, result_known, result_unknown: facts.length - result_known };
 }
 
+export function ratingSummary(facts: readonly PrivateFact[]): { count: number; mean: number | null } {
+  const values = facts.map(fact => fact.rating).filter((n): n is number =>
+    typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 5);
+  return { count: values.length, mean: values.length ? values.reduce((sum, n) => sum + n, 0) / values.length : null };
+}
+
 export function growth(current: number, previous: number) {
   if (previous === 0) return { delta: current, delta_percent: null, delta_reason: current > 0 ? 'new' as const : 'no_baseline' as const };
   return { delta: current - previous, delta_percent: (current - previous) * 100 / previous, delta_reason: null };
@@ -209,7 +217,7 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
     manager_name: kind === 'manager' ? rows[0].manager_name : null,
     completed_count: rows.length, outcomes: outcomes(rows),
     fine_count: rows.filter(row => row.disposition === 'fine').length,
-    duration: durationBrief(rows), fine_amount: fineAmountBrief(rows),
+    duration: durationBrief(rows), fine_amount: fineAmountBrief(rows), rating: ratingSummary(rows),
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
 
@@ -233,7 +241,7 @@ export function lawRows(done: readonly PrivateFact[]): PublicLaw[] {
       fine_count: fine, fine_rate: rows.length ? fine * 100 / rows.length : null,
       penalty_count: rows.filter(row => row.disposition === 'penalty').length,
       warning_count: rows.filter(row => row.disposition === 'warning').length,
-      fine_amount: fineAmountBrief(rows),
+      fine_amount: fineAmountBrief(rows), rating: ratingSummary(rows),
     };
   }).sort((a, b) => b.completed_count - a.completed_count ||
     (a.law === null ? 1 : 0) - (b.law === null ? 1 : 0) || (a.law ?? '').localeCompare(b.law ?? '', 'ko'));
@@ -282,7 +290,7 @@ export function regionRows(reported: readonly PrivateFact[], done: readonly Priv
     level: r.level, region_code: r.code, name: r.code ? regionName(r.code) ?? r.code : '지역 미확인', sido_code: r.sido,
     report_count: r.reported, completed_count: r.done.length,
     outcomes: outcomes(r.done), fine_count: r.done.filter(fact => fact.disposition === 'fine').length,
-    duration: durationBrief(r.done), fine_amount: fineAmountBrief(r.done),
+    duration: durationBrief(r.done), fine_amount: fineAmountBrief(r.done), rating: ratingSummary(r.done),
   })).sort((a, b) => order[a.level] - order[b.level] || b.report_count - a.report_count ||
     b.completed_count - a.completed_count || (a.region_code ?? '').localeCompare(b.region_code ?? ''));
 }
@@ -445,7 +453,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
     const monthlyDone = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
     return { month, report_count: monthlyReports.length, completed_count: monthlyDone.length,
       fine_count: monthlyDone.filter(fact => fact.disposition === 'fine').length,
-      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone),
+      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone), rating: ratingSummary(monthlyDone),
       partial: month === options.asOf.slice(0, 7) && scope.end >= options.asOf,
       coverage_note: dataMin && month === dataMin.slice(0, 7) && dataMin.slice(8) !== '01' ? '제공 시작 월(부분)' : null };
   });
@@ -475,6 +483,8 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       // coverage = answered reports with a published law / C (the rest are 법규 미상)
       violation_law: { status: 'supported', reason: null,
         coverage: { eligible: done.filter(fact => lawKey(fact.violation_law) !== null).length, total: done.length } },
+      rating: { status: 'supported', reason: null,
+        coverage: { eligible: ratingSummary(done).count, total: done.length } },
     },
   };
   return {
@@ -500,6 +510,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       outcomes: result,
       processing_duration: duration,
       fine_amount: fineAmount,
+      rating: ratingSummary(done),
     },
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
     regions: regionRows(reported, done), laws: lawRows(done),

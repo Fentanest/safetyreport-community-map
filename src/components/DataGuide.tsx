@@ -7,6 +7,7 @@ export const ISSUES_URL = 'https://github.com/Fentanest/safetyreport-community-m
 /** Plain-language names for features the data source does not provide yet (never show internal keys). */
 const NOT_YET: Record<string, string> = {
   fine_amount: '과태료 금액',
+  rating: '답변 만족도 별점',
   processing_duration: '답변까지 걸린 기간',
   region_boundaries: '행정구역 경계 지도',
   vehicle_top5: '많이 신고된 차량',
@@ -50,6 +51,7 @@ export default function DataGuide({ data }: { data: DashboardData | null }) {
         <li>차량 번호는 지역명 뒤 2·4·6번째 글자를 *로 가려서 보여 드립니다. 번호 전체는 공개하지 않습니다.</li>
         <li>장소는 신고에 입력된 위치 그대로 표시합니다. 지도를 넓게 보면 가까운 장소를 묶어 보여 줍니다. 고른 기간에 답변만 받은 신고의 장소는 완료 지표를 고르면 볼 수 있습니다.</li>
         <li>신고가 1건뿐인 결과도 숨기지 않습니다. 알 수 없는 값은 0이 아니라 ‘—’로 표시합니다.</li>
+        <li>평균 별점은 공개에 동의한 1~5점 숫자만 합산해 별점 건수로 나눕니다. 별점이 없는 신고는 분모에서 빼고, 사유 글은 받지 않습니다.</li>
         <li>
           공유한 신고의 삭제는 <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">문의 게시판(GitHub Issues)</a>에 요청할 수 있습니다.
           공개 게시판이니 개인정보는 적지 마세요. 공개 지도에서만 빼려면 앱에서 동의를 철회하면 됩니다.

@@ -210,9 +210,28 @@
    "version": "202609281600",
    "repo": "map",
    "path": "supabase/migrations/202609281600_answer_recency.sql",
-   "sha256": "802b358acd644256fc79b3852d34f8ad2f9e942a37cea80514fbc05e8e6fb04d",
+   "sha256": "fc1c53897b2ec1c47d9d91ecdb9cf594f6acf111fd4a97e80713b85a13c020bc",
    "depends_on": [
     "202609281500"
+   ]
+  },
+  {
+   "version": "202609281700",
+   "repo": "auth",
+   "path": "supabase/migrations/202609281700_policy_2026_09_28_3.sql",
+   "sha256": "f82e193e745eed6e347234787496cb5b86758d27880c4954992b2cf84bfcfc55",
+   "depends_on": [
+    "202609281000"
+   ]
+  },
+  {
+   "version": "202609281800",
+   "repo": "map",
+   "path": "supabase/migrations/202609281800_rating.sql",
+   "sha256": "dd80a12e2b35b1298d4ff6daa409630bbeabbd091de2135d1abe8b36cba28df0",
+   "depends_on": [
+    "202609281600",
+    "202609281700"
    ]
   }
  ],

@@ -25,7 +25,7 @@ def base_input(**kw):
         "processing_status": "수용", "penalty_amount": "과태료: 40,000원", "report_date": "2026-09-01",
         "response_date": "2026-09-10", "processing_agency": "서울특별시 중구청", "person_in_charge": "홍길동",
         "car_number": "12가3456", "violation_location": "서울특별시 중구 세종대로 110",
-        "entry_value": "불법주정차신고", "penalty_points": "", "violation_law": "", "agency_code": None,
+        "entry_value": "불법주정차신고", "penalty_points": "", "violation_law": "", "agency_code": None, "rating": None,
         "geocode": {"status": "ok", "lat": 37.5662952, "lng": 126.9779451},
     }
     value.update(kw)
@@ -39,7 +39,7 @@ def payload(**kw):
         "completed_date": "2026-09-10", "disposition": "fine",
         "location": {"lat": "37.5662952", "lng": "126.9779451", "source": "geocode"},
         "manager_name": "홍길동", "report_date": "2026-09-01", "status": "accepted", "status_raw": "수용",
-        "vehicle_raw": "12가3456", "violation_law": None, "source_agency_code": None,
+        "vehicle_raw": "12가3456", "violation_law": None, "source_agency_code": None, "rating": None,
     }
     value.update(kw)
     return value
@@ -126,6 +126,9 @@ OBS = [
     ("violation_law_cleaned_and_truncated", base_input(violation_law="  자동차관리법\n 제29조 " + "가" * 60),
         payload(violation_law=("자동차관리법 제29조 " + "가" * 60)[:60]), True),
     ("violation_law_missing_input_is_null", base_input(violation_law=None), payload(), True),
+    ("rating_five", base_input(rating=5), payload(rating=5), True),
+    ("rating_zero_is_null", base_input(rating=0), payload(), True),
+    ("rating_changed", base_input(rating=3), payload(rating=3), True),
     ("agency_code_kept", base_input(agency_code="B410002"),
         payload(source_agency_code="B410002"), True),
     ("agency_code_novel_format_preserved", base_input(agency_code="X-12"),
@@ -142,6 +145,10 @@ EVENTS = [
      "observation": "accepted_fine", "expect": None},
     {"name": "changed_eligible_creates_completed", "prev": {"observation": "accepted_fine"},
      "observation": "partial_penalty_traffic", "expect": "completed_observation"},
+    {"name": "rating_later_creates_completed", "prev": {"observation": "accepted_fine"},
+     "observation": "rating_five", "expect": "completed_observation"},
+    {"name": "rating_changed_creates_completed", "prev": {"observation": "rating_five"},
+     "observation": "rating_changed", "expect": "completed_observation"},
     # 2026-09-28: no status_correction is issued any more; a non-eligible observation is never an event,
     # even right after a shared eligible one. The central fact keeps its last answered state.
     {"name": "withdrawn_after_shared_creates_nothing", "prev": {"observation": "accepted_fine"},
@@ -173,7 +180,7 @@ def main():
                           "eligible": prev_payload["status"] in {"accepted", "partial", "rejected", "completed_unknown"}}
     (ROOT / "vectors").mkdir(parents=True, exist_ok=True)
     (ROOT / "vectors" / "observations.json").write_text(json.dumps(
-        {"contract": "observation-v3",
+        {"contract": "observation-v4",
          "report_number_transport": {**REPORT_NUMBER_TRANSPORT,
                                      "payload_sha256": sha(by_name[REPORT_NUMBER_TRANSPORT["observation_case"]])},
          "cases": cases, "event_decisions": EVENTS},

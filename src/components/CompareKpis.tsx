@@ -2,7 +2,7 @@ import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
 import type { AuthSnapshot } from '../auth/mapAuth';
-import { acceptRate, fmtDays, fmtDaysDiff, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtShare, fmtWon, fmtWonDiff, partialRate } from './format';
+import { acceptRate, fmtDays, fmtDaysDiff, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtRating, fmtShare, fmtWon, fmtWonDiff, partialRate } from './format';
 
 interface Props {
   overview: Overview;
@@ -75,6 +75,10 @@ function rows(o: Overview): Row[] {
       mine: m => fmtFineAmount(m.fine_amount), mineNote: m => amountNote(m.fine_amount),
       diff: x => fmtShare(x.diff.fine_amount_sum_share), diffKind: 'share',
       diffNote: x => x.diff.fine_amount_mean_won_diff == null ? null : `평균 ${fmtWonDiff(x.diff.fine_amount_mean_won_diff)}` },
+    { id: 'rating', label: '답변 만족도 별점', basis: '답변 받은 날 기준 · 공개 동의한 숫자 별점만',
+      all: fmtRating(o.rating), allNote: null,
+      mine: m => fmtRating(m.rating), mineNote: () => null,
+      diff: () => '—', diffKind: 'none' },
     { id: 'points', label: '신고 장소', basis: '서로 다른 장소 수', all: fmtInt(o.point_count.value), allNote: null,
       mine: m => fmtInt(m.point_count), mineNote: () => null, diff: x => fmtShare(x.diff.point_share), diffKind: 'share' },
     { id: 'contributors', label: '참여한 사람', basis: '신고를 공유한 사람 수', all: fmtInt(o.contributor_count.value), allNote: null,

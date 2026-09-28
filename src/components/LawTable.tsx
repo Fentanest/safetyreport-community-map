@@ -1,6 +1,6 @@
 import type { PublicLaw } from '../domain/public';
 import { lawLabel, lawValue } from '../state/filters';
-import { fmtFineAmount, fmtInt, fmtPercent, fmtWon } from './format';
+import { fmtFineAmount, fmtInt, fmtPercent, fmtWon, fmtRating } from './format';
 
 interface Props {
   /** null = the source did not provide law rows (shown as not ready, never as an empty list) */
@@ -43,6 +43,7 @@ export default function LawTable(p: Props) {
                 <th scope="col" className="num" title="답변에 적힌 과태료 금액 합계(금액이 확인되고 공개에 동의한 것만)">답변에 적힌 과태료 금액</th>
                 <th scope="col" className="num">범칙금</th>
                 <th scope="col" className="num">경고</th>
+                <th scope="col" className="num" title="공개에 동의한 숫자 별점만 집계">평균 별점 · 건수</th>
               </tr>
             </thead>
             <tbody>
@@ -83,6 +84,7 @@ export default function LawTable(p: Props) {
                     </td>
                     <td className="num">{fmtInt(r.penalty_count)}</td>
                     <td className="num">{fmtInt(r.warning_count)}</td>
+                    <td className="num">{fmtRating(r.rating)}</td>
                   </tr>
                 );
               })}

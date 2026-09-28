@@ -60,11 +60,12 @@ const fineSummary = z.strictObject({
   unconfirmed_count: count, undisclosed_count: count, conflict_count: count, penalty_count: count, combined_count: count,
   partial: z.boolean(),
 }).nullable().optional();
+const rating = z.strictObject({ count, mean: z.number().min(1).max(5).nullable() }).nullable().optional();
 
 export const overviewSchema = z.strictObject({
   report_count: countMetric, completed_count: countMetric, accepted_including_partial: rateMetric,
   fine_count: countMetric, point_count: countMetric, contributor_count: countMetric, outcomes: outcomes.nullable(),
-  processing_duration: durationSummary, fine_amount: fineSummary,
+  processing_duration: durationSummary, fine_amount: fineSummary, rating,
 });
 
 export const pointSchema = z.strictObject({
@@ -78,20 +79,20 @@ export const pointSchema = z.strictObject({
 export const monthlySchema = z.strictObject({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/), report_count: nullableCount,
   completed_count: nullableCount, fine_count: nullableCount, outcomes: outcomes.nullable(),
-  partial: z.boolean(), coverage_note: z.string().nullable(), duration: durationBrief, fine_amount: fineBrief,
+  partial: z.boolean(), coverage_note: z.string().nullable(), duration: durationBrief, fine_amount: fineBrief, rating,
 });
 
 export const entitySchema = z.strictObject({
   key: z.string(), agency_key: z.string().nullable(), manager_key: z.string().nullable(),
   agency_name: z.string(), manager_name: z.string().nullable(),
-  completed_count: count, outcomes, fine_count: nullableCount, duration: durationBrief, fine_amount: fineBrief,
+  completed_count: count, outcomes, fine_count: nullableCount, duration: durationBrief, fine_amount: fineBrief, rating,
 });
 
 export const regionSchema = z.strictObject({
   level: z.enum(['sido', 'sgg', 'unknown']), region_code: z.string().regex(/^\d{2}(\d{3})?$/).nullable(),
   name: z.string().max(40), sido_code: z.string().regex(/^\d{2}$/).nullable(),
   report_count: count, completed_count: count,
-  outcomes, fine_count: count, duration: durationBrief, fine_amount: fineBrief,
+  outcomes, fine_count: count, duration: durationBrief, fine_amount: fineBrief, rating,
 });
 
 const rate = z.number().min(0).max(100).nullable();
@@ -103,6 +104,7 @@ export const lawSchema = z.strictObject({
   fine_amount: z.strictObject({
     fine_count: count, confirmed_count: count, sum_won: won.nullable(), mean_won: z.number().min(0).nullable(),
   }),
+  rating,
 });
 
 export const vehicleSchema = z.strictObject({

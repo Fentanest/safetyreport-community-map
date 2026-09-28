@@ -1,6 +1,6 @@
 /** Personal comparison: all vs mine over ONE scope selection. Server-only (my-analytics). */
 import {
-  located, monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, selectScope, kstDate, type PrivateFact,
+  located, monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, selectScope, kstDate, ratingSummary, type PrivateFact,
 } from './aggregate.ts';
 import { regionName } from './regions.ts';
 import type { Scope } from '../src/domain/public.ts';
@@ -31,6 +31,7 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     duration: (({ count, mean_days, median_days, p90_days }) => ({ count, mean_days, median_days, p90_days }))(durationSummary(done)),
     fine_amount: (({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }) =>
       ({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }))(fineAmountSummary(done)),
+    rating: ratingSummary(done),
   };
 }
 
@@ -69,6 +70,7 @@ function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): C
     duration_median_days: dur.median_days,
     fine_amount_confirmed_count: amount.confirmed_count,
     fine_amount_sum_won: amount.sum_won,
+    rating: ratingSummary(done),
   };
 }
 
@@ -178,7 +180,8 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
     return { month, all_report_count: a.report_count, mine_report_count: m.report_count,
       all_completed_count: a.completed_count, mine_completed_count: m.completed_count,
       all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate,
-      all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days };
+      all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days,
+      all_rating: a.rating, mine_rating: m.rating };
   });
 
   // Points with my facts; `shared` = another contributor recorded the same point in this scope

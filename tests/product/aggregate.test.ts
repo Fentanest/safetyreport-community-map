@@ -22,6 +22,18 @@ const fact = (id: number, patch: Partial<PrivateFact> = {}): PrivateFact => ({
 });
 
 describe('report and completion axes', () => {
+  it('uses only disclosed numeric ratings as the average denominator across public rows', () => {
+    const data = aggregate([
+      fact(1, { rating: 5, violation_law: '도로교통법 제5조' }),
+      fact(2, { rating: 1, violation_law: '도로교통법 제5조' }),
+      fact(3, { rating: null, violation_law: '도로교통법 제5조' }),
+    ]);
+    expect(data.overview.rating).toEqual({ count: 2, mean: 3 });
+    expect(data.agencies[0].rating).toEqual({ count: 2, mean: 3 });
+    expect(data.managers[0].rating).toEqual({ count: 2, mean: 3 });
+    expect(data.laws?.[0].rating).toEqual({ count: 2, mean: 3 });
+    expect(data.monthly[1].rating).toEqual({ count: 2, mean: 3 });
+  });
   it('puts a January report and February completion in different monthly buckets', () => {
     const data = aggregate([base]);
     expect(data.monthly.map(row => [row.month, row.report_count, row.completed_count])).toEqual([
@@ -185,4 +197,3 @@ describe('community ingest facts without coordinates (S-01)', () => {
     expect(data.overview.report_count.value).toBe(1);
   });
 });
-

@@ -96,9 +96,11 @@ const OBSERVATION_V1_KEYS = ['address', 'agency_name', 'amount', 'category', 'co
 const OBSERVATION_V2_KEYS = [...OBSERVATION_V1_KEYS, 'violation_law'] as const;
 /** observation-v3 (2026-09-28) adds `source_agency_code` (원문 기관코드, null 가능); v1/v2 still accepted. */
 const OBSERVATION_V3_KEYS = [...OBSERVATION_V2_KEYS, 'source_agency_code'] as const;
+const OBSERVATION_V4_KEYS = [...OBSERVATION_V3_KEYS, 'rating'] as const;
 
 export function isObservation(p: unknown): p is Observation {
-  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS) || exactKeys(p, OBSERVATION_V3_KEYS))) return false;
+  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS) || exactKeys(p, OBSERVATION_V3_KEYS) || exactKeys(p, OBSERVATION_V4_KEYS))) return false;
+  if (Object.hasOwn(p, 'rating') && !(p.rating === null || (Number.isInteger(p.rating) && (p.rating as number) >= 1 && (p.rating as number) <= 5))) return false;
   // v2: null or 1..60 code points (empty string and non-strings are schema_invalid like any other field)
   if (Object.hasOwn(p, 'violation_law') && !nstr(p.violation_law, 60)) return false;
   // v3: null or a non-empty string, kept verbatim (only 7 alphanumerics feed the resolver; the rest stays unresolved).

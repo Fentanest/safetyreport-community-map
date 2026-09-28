@@ -1,51 +1,16 @@
--- Answer recency for representative election + scope-independent identity numbers
--- + agency-code/name consistency for keyless payloads (REVIEW3, 2026-09-28).
---
--- R1 (REVIEW3 신규-높음-1, REVIEW2 높음-2 부분): 대표는 '서버가 가장 나중에
--- 수신한 서로 다른 답변'이다. 기존 answer_first_seen = min(first_accepted_at)
--- 은 UPDATE 로 새 답변이 와도 first_accepted_at 이 그대로라 B의 옛 결과가
--- 대표로 남았다. 새 컬럼 answer_accepted_at(답변 수신 시각)을 둔다:
---   - INSERT: clock_timestamp()
---   - 실제 내용 변경(sha 바뀜): clock_timestamp()
---   - 동일 내용-no_change / stale_ignored / sha 같은 reshare(동의 갱신 등
---     grant 만 바뀜): 유지 → 단순 재전송·재공유가 대표를 뒤집지 않는다.
--- 대표 선출 순서: 그룹의 answer_time(max(answer_accepted_at)) DESC,
---   completed_date(답변일) DESC NULLS LAST, first_accepted_at ASC,
---   contributor_id ASC. 수신 시각이 1순위(서버가 관측한 사실 진행 순서로
---   단조·전체 순서), 답변일은 동시 수신 tie-break 로 문서화한다.
--- 기존 행은 answer_accepted_at = first_accepted_at 으로 백필한다(이 migration
--- 이전 이력의 대표 선정은 기존과 동일, 이후 갱신부터 정확).
---
--- R2 (REVIEW3 신규-중간-3): 번호 없는 관측의 report_identity 는 조회 범위와
--- 무관하게 확정한다. 기존 key_number 윈도 함수는 날짜·동의 필터가 끝난 행만
--- 봐서 같은 관측도 조회 기간에 따라 다른 identity 에 붙었다. 이제 키 번호는
--- 날짜 창 없이(동의 유효 행 전체 이력에서) 확정한다: 먼저 날짜 창 안의 키
--- 집합을 구하고(scoped), 그 키들의 번호를 전체 이력에서 구한다(key_numbers).
--- 동의 철회 행의 번호는 쓰지 않는다(공개 출력에 철회 자료를 반영하지 않음) —
--- 이 점만 조회(동의 상태)에 따라 달라질 수 있고 문서화한다.
---
--- R3 (REVIEW3 신규-중간-4, REVIEW2 높음-4 부분): 키 없는 payload(v1/v2)가
--- 기관명이 바뀐 새 답변을 보내면 옛 기관코드를 붙이지 않는다. 키가 없을 때
--- 기관명이 기존 fact 와 같으면 보존(같은 기관의 새 답변), 다르면 NULL(새
--- 기관 답변에 옛 코드 부착 금지). 키가 있으면(명시적 null 포함) 그대로 쓴다.
--- REVIEW4 중간: 같은 기관명 갱신은 기관 키·현행명·담당자 키도 보존한다(코드 없는
--- derived 의 기관명 해시(a1:)로 덮으면 승계 기관의 inst: 통계가 갈라진다).
--- 담당자명이 바뀌었으면 보존된 기관 키로 manager_key 를 재계산한다.
---
--- R4 (REVIEW3 신규-높음-2): resolver 양방향 해석(shared 스냅샷, 1815198 →
--- 같은 institution)으로 신규 수신 행은 자동 연결된다. 1500 이후에 들어와
--- 옛 키로 남은 행이 있으면 아래 백필이 같은 키로 묶는다(멱등).
---
--- No app contract change: projection JSON 키는 그대로(first_accepted_at 유지,
--- answer_accepted_at 는 내부용). Rollback: re-run 202609281500's functions,
--- then `alter table private.community_report_facts drop column answer_accepted_at`.
+-- observation-v4 numeric rating and consent disclosure (2026-09-28).
+-- Owner: safetyreport-community-map. Depends on 202609281600 and AUTH 202609281700.
+-- The old .1/.2 lineages have rating_public=false; .3 consent activates this disclosure.
+-- Rollback: restore 1600 functions, delete the .3 disclosure row, drop rating_public and rating.
 begin;
+
 alter table private.community_report_facts
-    add column answer_accepted_at timestamptz not null default now();
--- REVIEW4 높음: ADD COLUMN 기본값 now()로 채운 뒤 WHERE 없이 전 행을 덮는다.
--- WHERE(answer_accepted_at IS NOT DISTINCT FROM first_accepted_at)로 고르면
--- 일반 기존 행은 migration 시각이 남아 대표 순서가 바뀐다.
-update private.community_report_facts set answer_accepted_at = first_accepted_at;
+    add column rating integer check (rating between 1 and 5);
+alter table private.community_policy_disclosures
+    add column rating_public boolean not null default false;
+insert into private.community_policy_disclosures(version, amounts_public, violation_law_public, rating_public)
+values ('2026-09-28.3', true, true, true);
+
 create or replace function public.internal_community_ingest(
     p_user uuid, p_session uuid, p_request_id text, p_envelope jsonb, p_events jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = '' as $$
@@ -207,7 +172,7 @@ begin
                 latest_receipt_id, consent_grant_id, writer_epoch, source_revision, payload_sha256, report_number, public_state,
                 report_date, completed_date, category, status, disposition, amount_kind, amount_confirmed_won, penalty_points,
                 vehicle_raw, lat, lng, lat_text, lng_text, coord_source, address, region_code, point_key, agency_key,
-                agency_name, agency_current_name, manager_key, manager_name, violation_law, source_agency_code,
+                agency_name, agency_current_name, manager_key, manager_name, violation_law, source_agency_code, rating,
                 answer_accepted_at)
             values (p_user, v_conn.dataset_key, v_key, e->>'source_report_id', v_receipt, v_grant.grant_id, v_epoch, v_rev,
                 e->>'payload_sha256', e->>'report_number', d->>'public_state', (d->>'report_date')::date, (d->>'completed_date')::date,
@@ -216,7 +181,7 @@ begin
                 (d->>'lng')::double precision, d->>'lat_text', d->>'lng_text', d->>'coord_source', d->>'address',
                 d->>'region_code', d->>'point_key', d->>'agency_key', d->>'agency_name', d->>'agency_current_name',
                 d->>'manager_key', d->>'manager_name',
-                d->>'violation_law', d->>'source_agency_code',
+                d->>'violation_law', d->>'source_agency_code', (d->>'rating')::integer,
                 clock_timestamp());
             v_result := 'accepted';
         elsif (v_epoch, v_rev) > (v_fact.writer_epoch, v_fact.source_revision) then
@@ -269,6 +234,7 @@ begin
                                                             || '|' || normalize((d->>'manager_name'), NFC), 'sha256'), 'hex'), 1, 24) end
                                               else d->>'manager_key' end,
                     manager_name = d->>'manager_name', violation_law = d->>'violation_law',
+                    rating = case when (e->'payload') ? 'rating' then (d->>'rating')::integer else v_fact.rating end,
                     -- REVIEW3 R3: v1/v2 payload 에는 source_agency_code 키가 없다.
                     -- 키가 있을 때만(명시적 NULL 포함) 쓰고, 키가 없을 때는 기관명이
                     -- 같으면 보존(같은 기관의 새 답변), 다르면 NULL(새 기관 답변에
@@ -354,7 +320,11 @@ begin
                exists(select 1 from private.community_consent_grants g0
                         join private.community_consent_grants g on g.lineage_id = g0.lineage_id and g.revoked_at is null
                         join private.community_policy_disclosures d on d.version = g.policy_version and d.violation_law_public
-                       where g0.grant_id = f.consent_grant_id) as law_public
+                       where g0.grant_id = f.consent_grant_id) as law_public,
+               exists(select 1 from private.community_consent_grants g0
+                        join private.community_consent_grants g on g.lineage_id = g0.lineage_id and g.revoked_at is null
+                        join private.community_policy_disclosures d on d.version = g.policy_version and d.rating_public
+                       where g0.grant_id = f.consent_grant_id) as rating_public
           from private.community_report_facts f
           join private.contributor_profiles c on c.user_id = f.contributor_id and c.status = 'active'
          where f.public_state = 'completed'
@@ -423,7 +393,8 @@ begin
         'amount_stated', amount_confirmed_won is not null,
         -- 위반법규 (observation-v2): exact text for the law filter and the per-law table; null = 법규 미상
         -- (v1 payload, not extracted, or the lineage's policy does not publish it)
-        'violation_law', case when law_public then violation_law else null end
+        'violation_law', case when law_public then violation_law else null end,
+        'rating', case when rating_public then rating else null end
     )), '[]'::jsonb) into v_count, v_rows from ranked
      where (p_category = 'all' or category = p_category)
        and (p_region_code is null or region_code = p_region_code)
@@ -437,23 +408,5 @@ $$;
 
 revoke all on function public.internal_analytics_v2_facts(date, date, text, text, text, text, double precision[]) from public, anon, authenticated;
 grant execute on function public.internal_analytics_v2_facts(date, date, text, text, text, text, double precision[]) to service_role;
-
--- 3) Backfill the one verified 1:1 link (registry seed 2026-09-28.1:
--- 1812314 광주광역시경찰청 → 1815198 광주경찰청, institution ag-gwangju-police-hq)
--- so pre-migration facts join the same institution key without waiting for
--- re-observation. Idempotent re-run of the 1500 backfill: catches rows that
--- arrived with the old key between 1500 and this migration. manager_key
--- follows the same rule as deriveFact (m1:sha256(agency_key|NFC(manager_name))[:24]).
--- first_accepted_at and answer_accepted_at are untouched, so representative
--- election does not move.
-update private.community_report_facts
-   set agency_key = 'inst:ag-gwangju-police-hq',
-       agency_current_name = '광주경찰청',
-       manager_key = case when manager_name is null then manager_key
-                          else 'm1:' || substring(encode(extensions.digest('inst:ag-gwangju-police-hq' || '|' || manager_name, 'sha256'), 'hex'), 1, 24) end,
-       updated_at = now()
- where source_agency_code in ('1812314', '1815198')
-   and (agency_key is distinct from 'inst:ag-gwangju-police-hq'
-        or agency_current_name is distinct from '광주경찰청');
 
 commit;
