@@ -149,7 +149,7 @@ async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E', login = `int-${ran
 async function event(w: Writer, reportId: string, payload: Json = payloadOf('accepted_fine'), opts: Partial<Json> = {}) {
   w.revision += 1;
   return { event_id: randomUUID(), event_type: 'completed_observation', source_system: 'safetyreport', source_report_id: reportId,
-    source_revision: w.revision, writer_epoch: w.epoch, captured_at: new Date().toISOString(), payload,
+    report_number: 'SPP-2609-8000001', source_revision: w.revision, writer_epoch: w.epoch, captured_at: new Date().toISOString(), payload,
     payload_sha256: await sha256Hex(canonicalJson(payload)), ...opts };
 }
 const envelope = (w: Writer, events: unknown[], over: Partial<Json> = {}) => ({ protocol: 1, contract: 'community-ingest-v1',
@@ -382,11 +382,12 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     it('blocks direct REST/RPC/GraphQL access to private data and leaves row counts unchanged', async () => {
       const w = await writerFor('B');
       const tables = ['private.community_ingest_events', 'private.community_report_facts', 'private.community_connections',
-        'private.community_consent_grants', 'private.community_fact_tombstones', 'private.community_deletion_fences'];
+        'private.community_consent_grants', 'private.community_fact_tombstones', 'private.community_deletion_fences',
+        'private.community_owner_transfer_audit'];
       const before = Object.fromEntries(tables.map(t => [t, count(t)]));
       const bearers: [string, string | undefined][] = [['publishable', undefined], ['anon', keys.ANON_KEY], ['user', w.session.access]];
       for (const [label, token] of bearers) {
-        for (const table of ['community_ingest_events', 'community_report_facts', 'community_connections', 'community_consent_grants']) {
+        for (const table of ['community_ingest_events', 'community_report_facts', 'community_connections', 'community_consent_grants', 'community_owner_transfer_audit']) {
           // 상태와 오류 JSON 을 모두 본다(§20-2): private 는 노출 안 된 스키마, public 에는 그런 표가 없다
           const sel = await call('GET', `/rest/v1/${table}?select=*`, { token, headers: { 'Accept-Profile': 'private' } });
           expect([sel.status, sel.json.code], `${label} select private.${table}`).toEqual([406, 'PGRST106']);
@@ -665,20 +666,86 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(foreign.status).toBe(403); // another user's connection: no keys leak
     });
 
-    it('keeps identical report ids of different users and datasets apart (C05, S-05)', async () => {
+    it('rejects a cross-account mismatch while preserving same-account second datasets', async () => {
       const report = `SAME-${rid()}`;
       const a = await writerFor('A');
       const c = await writerFor('C');
       expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
-      expect((await ingest(c, [await event(c, report, payloadOf('partial_penalty_traffic'))])).json.results[0].status).toBe('accepted');
+      expect((await ingest(c, [await event(c, report, payloadOf('partial_penalty_traffic'))])).json.results[0])
+        .toMatchObject({ status: 'rejected', error: { code: 'cross_account_mismatch', retryable: false } });
       // same user, a second official account (dataset) — its own writer, its own fact
       const { r: reg, secret } = await register(a.session, datasetKey(`second-${rid()}`));
       expect(reg.status).toBe(200);
       const a2: Writer = { ...a, connectionId: reg.json.connection_id, epoch: reg.json.writer_epoch, dataset: '', secret, revision: 0 };
       expect((await ingest(a2, [await event(a2, report, payloadOf('rejected_none'))])).json.results[0].status).toBe('accepted');
-      expect(count('private.community_report_facts', `source_report_id = '${report}'`)).toBe(3);
+      expect(count('private.community_report_facts', `source_report_id = '${report}'`)).toBe(2);
       expect(sql(`select status from private.community_report_facts where source_report_id = '${report}' and contributor_id = '${a.session.userId}' and dataset_key = '${a.dataset}';`)).toBe('accepted');
-      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}' and contributor_id = '${c.session.userId}';`)).toBe('partial');
+      expect(count('private.community_report_facts', `source_report_id = '${report}' and contributor_id = '${c.session.userId}'`)).toBe(0);
+    });
+
+    it('transfers identical and status-only facts, shrinks the old manifest and keeps one public owner', async () => {
+      const report = `XFER-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const c = await writerFor('C');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      const oldGeneration = Number(sql(`select generation from private.community_manifest_generations where contributor_id='${a.session.userId}' and dataset_key='${a.dataset}';`));
+      const identical = await ingest(b, [await event(b, report)]);
+      expect(identical.json.results[0]).toMatchObject({ status: 'transferred', durable: true, projection_status: 'published' });
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(1);
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(0);
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(1);
+      expect(sql(`select count(distinct e->>'contributor_id') from jsonb_array_elements(public.internal_analytics_v2_facts(date '2024-01-01',date '2028-12-31','all',null,null,null,null)) e where e->>'fact_identity' like '%:${key}';`)).toBe('1');
+      expect(Number(sql(`select generation from private.community_manifest_generations where contributor_id='${a.session.userId}' and dataset_key='${a.dataset}';`))).toBeGreaterThan(oldGeneration);
+      expect(count('private.community_fact_tombstones', `contributor_id='${a.session.userId}' and source_report_key='${key}'`)).toBe(0);
+      const partial = { ...payloadOf('accepted_fine'), status: 'partial', status_raw: '일부수용' };
+      const changed = await ingest(c, [await event(c, report, partial)]);
+      expect(changed.json.results[0].status).toBe('transferred');
+      expect(publicFacts(`%:${key}`)).toBe(1);
+      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('status_only');
+      expect((await account('consent-revoke', b.session.access, { grant_id: b.grantId })).status).toBe(200);
+      expect(publicFacts(`%:${key}`, c.session.userId)).toBe(1); // former owner's revocation cannot hide new lineage
+      expect((await ingest(a, [await event(a, report, partial)])).json.results[0].status).toBe('transferred');
+      expect(publicFacts(`%:${key}`)).toBe(1); // no tombstone on the former owner
+      expect((await account('contributions-delete', a.session.access, { confirm: 'DELETE_MY_SHARED_REPORTS' })).status).toBe(200);
+      expect(publicFacts(`%:${key}`)).toBe(0);
+      expect((await ingest(c, [await event(c, report, partial)])).json.results[0].status).toBe('accepted');
+      expect(publicFacts(`%:${key}`)).toBe(1);
+      const publicRow = sql(`select public.internal_analytics_v2_facts(date '2024-01-01',date '2028-12-31','all',null,null,null,null)::text;`);
+      expect(publicRow).not.toContain('SPP-2609-8000001');
+    });
+
+    it('refuses number, legacy and other-field mismatches without a second fact', async () => {
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      for (const [kind, change, code] of [
+        ['number', { report_number: 'SPP-2609-8000002' }, 'report_identity_mismatch'],
+        ['legacy', { report_number: null }, 'report_identity_mismatch'],
+        ['address', {}, 'cross_account_mismatch'],
+      ] as const) {
+        const report = `DENY-${rid()}`;
+        const first = await event(a, report, payloadOf('accepted_fine'), kind === 'legacy' ? { report_number: null } : {});
+        expect((await ingest(a, [first])).json.results[0].status).toBe('accepted');
+        const payload = payloadOf('accepted_fine');
+        if (kind === 'address') payload.address = '서울특별시 중구 다른 주소';
+        const next = await event(b, report, payload, change);
+        const rejected = await ingest(b, [next]);
+        expect(rejected.json.results[0]).toMatchObject({ status: 'rejected', durable: false, error: { code, retryable: false } });
+        expect((await ingest(b, [next])).json.results[0]).toMatchObject({ status: 'rejected', durable: false, error: { code } });
+        expect(count('private.community_report_facts', `source_report_id='${report}'`)).toBe(1);
+      }
+    });
+
+    it('serializes concurrent owners of one report', async () => {
+      const report = `RACE-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const [left, right] = await Promise.all([
+        ingest(a, [await event(a, report)]), ingest(b, [await event(b, report)]),
+      ]);
+      expect([left.json.results[0].status, right.json.results[0].status].sort()).toEqual(['accepted', 'transferred']);
+      expect(count('private.community_report_facts', `source_report_id='${report}'`)).toBe(1);
     });
 
     it('removes the fact from the public API when a newer correction says it is no longer final (D04)', async () => {

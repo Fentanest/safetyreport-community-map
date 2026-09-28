@@ -53,6 +53,8 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/;
 const COORD = /^-?\d{1,3}\.\d{1,17}$/;
 const REPORT_ID = /^[0-9A-Za-z_-]{1,40}$/;
+// Both YYMM and YYMMDD middle groups occur in the upstream clients' fixtures.
+const REPORT_NUMBER = /^SPP-[0-9]{4,6}-[0-9]{6,8}$/;
 const POLICY = /^[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]{1,3}$/;
 const TRIGGERS = new Set(['realtime', 'manual', 'midnight', 'recovery', 'rebuild', 'reshare']);
 const EVENT_TYPES = new Set(['completed_observation', 'status_correction', 'location_supplement', 'reshare']);
@@ -194,9 +196,12 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         const raw = item as Record<string, unknown>;
         const evKeys = ['event_id', 'event_type', 'source_system', 'source_report_id', 'source_revision', 'writer_epoch',
           'captured_at', 'payload', 'payload_sha256'];
-        if (!exactKeys(raw, evKeys) || typeof raw.event_id !== 'string' || !UUID4.test(raw.event_id) ||
+        if (!(exactKeys(raw, evKeys) || exactKeys(raw, [...evKeys, 'report_number'])) ||
+            typeof raw.event_id !== 'string' || !UUID4.test(raw.event_id) ||
             seen.has(raw.event_id) || !EVENT_TYPES.has(raw.event_type as string) || raw.source_system !== 'safetyreport' ||
             typeof raw.source_report_id !== 'string' || !REPORT_ID.test(raw.source_report_id) ||
+            !(raw.report_number === undefined || raw.report_number === null ||
+              (typeof raw.report_number === 'string' && REPORT_NUMBER.test(raw.report_number))) ||
             !Number.isSafeInteger(raw.source_revision) || (raw.source_revision as number) < 1 ||
             !Number.isSafeInteger(raw.writer_epoch) || (raw.writer_epoch as number) < 1 ||
             typeof raw.captured_at !== 'string' || !INSTANT.test(raw.captured_at) || Number.isNaN(Date.parse(raw.captured_at)) ||
@@ -214,6 +219,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         const typeError = validateEventType(raw.event_type as EventType, b.trigger as string, payload);
         if (typeError) fail(typeError.code, undefined, typeError.reason);
         events.push({ event_id: raw.event_id, event_type: raw.event_type, source_report_id: raw.source_report_id,
+          report_number: raw.report_number ?? null,
           source_report_key: await sourceReportKey(raw.source_report_id as string), source_revision: raw.source_revision,
           writer_epoch: raw.writer_epoch, captured_at: raw.captured_at, payload, payload_sha256: hash,
           quarantine_reason: mapStatus(payload.status_raw) === payload.status ? null : 'status_mapping_mismatch',

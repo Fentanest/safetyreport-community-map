@@ -138,6 +138,16 @@
     "202609270100",
     "202609280600"
    ]
+  },
+  {
+   "version": "202609280800",
+   "repo": "map",
+   "path": "supabase/migrations/202609280800_report_owner_transfer.sql",
+   "sha256": "dc7bc2714185983735222e22d1a23149a9758dfbb9eaf8bfb37f023e865d0106",
+   "depends_on": [
+    "202609260200",
+    "202609280700"
+   ]
   }
  ],
  "functions": [

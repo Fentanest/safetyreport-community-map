@@ -38,6 +38,13 @@
   이름 그대로의 별도 지표로 남겨 두며 화면의 수용률로 쓰지 않는다.
 - 화면에는 일반 이용자 말만 쓴다(docs/personal-comparison.md §5.7).
 
+## 2026-09-28 신고번호·소유 이전
+
+- 안전신문고 신고번호는 별도 private 이벤트 필드로 수집한다. Observation 해시는 유지하고 공개 API에는 번호를 내보내지 않는다.
+- 다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 처리상태(`status_raw`, `status`) 외 Observation 전체가 같을 때만 나중에 올린 계정으로 이전한다. 그 밖은 비재시도 거절하고 한 건으로 합치지 않는다. 이전 감사 기록은 private에 남긴다.
+- 참여자 수의 동일인 추정·계정 병합은 드롭했다. `contributor_count`는 현재 공개 fact를 가진 계정 수 그대로다.
+- 레거시 NULL 번호는 기존 소유자의 재수집으로 백필될 때까지 이전할 수 없다. 처리상태 동반 변경 필드의 예외는 승인 없이 추가하지 않는다. 조사와 검증 계획: [report-owner-transfer-plan.md](integration/community-ingest/report-owner-transfer-plan.md).
+
 ## 제외·보류
 차량 실번호 검색·차량의 이동경로·연속 추적·원본 민원 본문/첨부/신고자 프로필·공무원 우열 점수·실시간인 척하는 ticker는 제외.
 다중 로그인 제공자, 입금·과태료 실제 납부 추정, 없는 historical backlog 재구성도 제외.

@@ -14,7 +14,8 @@ const vectors = JSON.parse(readFileSync(new URL('../../contracts/community-inges
 const payload = vectors.cases[0].expected_payload;
 
 async function event(id: string, reportId = 'R1', p = payload, type = 'completed_observation') {
-  return { event_id: id, event_type: type, source_system: 'safetyreport', source_report_id: reportId, source_revision: 1,
+  return { event_id: id, event_type: type, source_system: 'safetyreport', source_report_id: reportId,
+    report_number: 'SPP-2609-8000001', source_revision: 1,
     writer_epoch: 3, captured_at: '2026-09-26T01:02:03.004Z', payload: p, payload_sha256: await sha256Hex(canonicalJson(p)) };
 }
 const envelope = async (events: unknown[]) => ({ protocol: 1, contract: 'community-ingest-v1', source_app: 'safetyreport',
@@ -23,16 +24,28 @@ const envelope = async (events: unknown[]) => ({ protocol: 1, contract: 'communi
 
 function setup(rpcResult: (name: string, args: Record<string, unknown>) => unknown = () => ({ results: [] })) {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
+  const logs: Record<string, string | number>[] = [];
   const handler = createIngestHandler({ enabled: true, jwtIssuer: null, allowedOrigins: ['https://safemap.worklazy.net'],
     getUser: async t => (t.includes(b64(claims)) ? { id: UID, isAnonymous: false } : null),
+    log: entry => logs.push(entry),
     rpc: async (name, args) => { calls.push({ name, args }); return name.endsWith('rate_limit') ? true : rpcResult(name, args); } });
-  return { handler, calls };
+  return { handler, calls, logs };
 }
 const post = (body: unknown, token: string | null = jwt(claims), path = '/functions/v1/community-ingest') =>
   new Request(`https://p.supabase.co${path}`, { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body),
     headers: { 'content-type': 'application/json', apikey: 'sb_publishable_x', ...(token ? { authorization: `Bearer ${token}` } : {}) } });
 
 describe('community-ingest handler', () => {
+  it('keeps the private report number out of ACK and structured logs', async () => {
+    const { handler, calls, logs } = setup(() => ({ results: [] }));
+    const ev = await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f');
+    const response = await handler(post(await envelope([ev])));
+    expect(response.status).toBe(200);
+    expect(JSON.stringify(await response.json())).not.toContain(ev.report_number);
+    expect(JSON.stringify(logs)).not.toContain(ev.report_number);
+    expect((calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0].report_number)
+      .toBe(ev.report_number);
+  });
   it('requires a user JWT (publishable key alone or as bearer is refused)', async () => {
     const { handler, calls } = setup();
     expect((await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')]), null))).status).toBe(401);
@@ -80,12 +93,16 @@ describe('community-ingest handler', () => {
     const e = await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f');
     expect((await handler(post({ ...(await envelope([e])), user_id: UID }))).status).toBe(422);
     expect((await handler(post(await envelope([{ ...e, payload_sha256: 'a'.repeat(64) }])))).status).toBe(422);
+    expect((await handler(post(await envelope([{ ...e, report_number: 'SPP-1' }])))).status).toBe(422);
+    expect((await handler(post(await envelope([{ ...e, report_number: 'SPP-231120-1234567' }])))).status).toBe(200);
+    const { report_number: _legacyNumber, ...legacyEvent } = e;
+    expect((await handler(post(await envelope([legacyEvent])))).status).toBe(200);
     const e2 = await event('8d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f');
     expect((await handler(post(await envelope([e, e2])))).status).toBe(422);  // same report twice (S-11-B)
     const withdrawn = { ...payload, status: 'withdrawn', status_raw: '취하', completed_date: null };
     expect((await handler(post(await envelope([await event('9d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R2', withdrawn)])))).status).toBe(422);
     expect((await handler(post(await envelope(Array.from({ length: 21 }, () => e))))).status).toBe(422);
-    expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
+    expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(2); // six-digit and legacy events
   });
 
   it('passes server-computed keys, hashes and derived columns; the user comes from the token', async () => {
