@@ -174,3 +174,13 @@
 - 롤백: Edge 이전 배포 재배포와 구 Pages를 함께, SQL은 새 migration으로 singleton 버전을
   `2026-09-29.1`로 되돌린 뒤 재계산 스크립트로 파생값을 되돌린다. 이 절은 절차 기록이며
   운영 적용 기록이 아니다.
+
+## 15. 배포 명령 주의 (2026-09-29 운영 반영에서 확인)
+- `community-ingest` 는 registry(약 8.3MB JSON)를 담으므로 `supabase functions deploy ... --use-api` 가 원본 자산 업로드에서
+  `413 request entity too large` 로 실패한다. `--use-api` 없이 로컬 Docker 번들로 배포한다(2026-09-29: script size 1.5MB, v4 성공).
+  registry 를 담지 않는 다른 함수는 `--use-api` 로도 배포된다.
+- 재계산 스크립트의 service role 키는 화면에 찍지 않고 CLI 로 불러온다:
+  `export SUPABASE_SERVICE_ROLE_KEY="$(npx supabase projects api-keys --project-ref nxdcxccixoswvqgjeprh -o json | python3 -c 'import json,sys; print(next(k["api_key"] for k in json.load(sys.stdin) if k["name"]=="service_role"))')"`
+- 2026-09-29 기록: migration `202609290100`·`202609290200` 적용, `my-analytics` v7(`--use-api`), `community-ingest` v4(Docker 번들).
+  SQL 적용과 ingest 재배포 사이에 새로 들어온 사실은 없었다(2,868건 모두 `2026-09-28.1`, 마지막 갱신 2026-09-28 14:19 UTC).
+  저장 사실 재계산(`recompute-agency-keys.mjs`)은 운영자가 dry-run 확인 후 apply 한다.
