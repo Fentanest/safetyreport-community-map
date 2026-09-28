@@ -15,6 +15,9 @@ describe('official region codes (2026-07-01)', () => {
     expect(resolveRegion('광주 북구')?.sido).toBe('12');                        // 전남광주통합특별시
     expect(resolveRegion('전남 순천시')?.sido).toBe('12');
     expect(resolveRegion('강원도 춘천시')).toEqual({ sgg: '51110', sido: '51' });
+    // REVIEW2 높음-3: 폐지된 청원군 주소는 현행 청주시에 귀속된다(공유 registry 2014_cheongju, 단일 후계).
+    expect(resolveRegion('충북 청원군')).toEqual({ sgg: '43110', sido: '43' });
+    expect(regionName('43110')).toBe('충북 청주시');
   });
   it('세종 is one unit whatever the second token', () => {
     expect(resolveRegion('세종 조치원읍')).toEqual({ sgg: '36110', sido: '36' });
@@ -55,7 +58,7 @@ describe('official region codes (2026-07-01)', () => {
     }
   });
   it('the browser catalog agrees with the server table', () => {
-    for (const key of ['서울 중구', '인천 남구', '경북 군위군', '광주 북구', '세종 조치원읍', '제주 제주시']) {
+    for (const key of ['서울 중구', '인천 남구', '경북 군위군', '광주 북구', '세종 조치원읍', '제주 제주시', '충북 청원군']) {
       expect(normalizeRegion(key)).toBe(codeForLegacyKey(key));
     }
     expect(normalizeRegion('인천 중구')).toBeNull();

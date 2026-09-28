@@ -20,7 +20,8 @@ describe('agency-region-registry vectors (shared)', () => {
         ? resolveAgency(c.input.code ?? null, c.input.name ?? null, c.input.answered_at ?? null, links, registryVersion)
         : resolveRegionGap(c.input.code ?? null, c.input.date ?? null, events, registryVersion);
       for (const [key, want] of Object.entries(c.expected)) {
-        expect((got as Record<string, unknown>)[key], `${c.name} · ${key}`).toEqual(want);
+        // NOTE 2026-09-28: `tsc -b` 차단을 풀기 위한 캐스트(동작 동일, vitest 는 통과하던 코드).
+        expect((got as unknown as Record<string, unknown>)[key], `${c.name} · ${key}`).toEqual(want);
       }
     });
   }

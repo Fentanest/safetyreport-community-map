@@ -5,7 +5,9 @@
  * coordinates. Statistics are grouped by the CURRENT (2026-07-01) 법정 시군구 code, 5 digits, and its 시도 (2 digits):
  * - explicit table lookup (시도 + 시군구 name), never a string-prefix guess on codes;
  * - 세종 is one unit (36110) whatever the second token (its keys hold a 동/읍/road name);
- * - renamed/moved units follow the official history (인천 남구 → 미추홀구, 경북 군위군 → 대구 군위군, 인천 동구 → 제물포구);
+ * - renamed/moved units follow the official history (인천 남구 → 미추홀구, 경북 군위군 → 대구 군위군, 인천 동구 → 제물포구,
+ *   충북 청원군 → 청주시 — shared registry event 2014_cheongju, merge_parent with the single
+ *   successor 4311000000: past facts count in today's 청주시 total, never split by ratio);
  * - split districts (인천 중구, 인천 서구) are assigned by the report's own coordinates inside the new districts'
  *   display polygons; without coordinates they stay 지역 미확인 (null) — never distributed by ratio;
  * - anything else unmatched is 지역 미확인 (null) and stays in every total.

@@ -1,6 +1,9 @@
 // community-ingest observation-v1/v2/v3: canonical JSON, value validation, status re-mapping and derived fact columns.
 // Pure functions shared by the Deno Edge entry (supabase/functions/community-ingest) and Node tests.
 // Rules: contracts/community-ingest/{canonical-json,observation}.md. The client hash is never trusted.
+import agencyLinks from '../../shared/agency-region-registry/data/agency_links.json' with { type: 'json' };
+import agencyManifest from '../../shared/agency-region-registry/manifest.json' with { type: 'json' };
+import { displayAgency, resolveAgency } from '../../shared/agency-region-registry/resolvers/resolve.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'completed_unknown' | 'withdrawn' | 'transferred' |
   'processing' | 'supplement' | 'other';
@@ -144,6 +147,8 @@ export interface DerivedFact {
   penalty_points: number | null; vehicle_raw: string | null; lat: number | null; lng: number | null;
   lat_text: string | null; lng_text: string | null; coord_source: 'geocode' | 'none'; address: string | null;
   region_code: string | null; point_key: string | null; agency_key: string | null; agency_name: string | null;
+  /** 현행 기관 표시명(확인된 1:1 승계만, registry as_of 기준). 미확정이면 원문 기관명과 같다. */
+  agency_current_name: string | null;
   manager_key: string | null; manager_name: string | null;
   /** v2 payload value as sent; null for v1 payloads (no key) and for v2 null */
   violation_law: string | null;
@@ -153,7 +158,16 @@ export interface DerivedFact {
 }
 
 export async function deriveFact(p: Observation): Promise<DerivedFact> {
-  const agencyKey = p.agency_name ? `a1:${(await sha256Hex(p.agency_name.normalize('NFC'))).slice(0, 24)}` : null;
+  // REVIEW2 높음-3: 받은 원문 기관코드를 검증된 registry resolver 로 현행 통계에 연결한다.
+  // 확인된 1:1 승계면 통계 키를 기관 ID 로 묶고(개명 전후가 한 기관으로 집계),
+  // 미확정·코드 없음이면 기존 기관명 해시 키를 그대로 쓴다(기존 통계 불변).
+  const links = (agencyLinks as { links: Array<Record<string, string>> }).links;
+  const manifest = agencyManifest as { registry_version: string; as_of_date: string };
+  const resolution = resolveAgency(p.source_agency_code ?? null, p.agency_name, manifest.as_of_date, links, manifest.registry_version);
+  const agencyKey = resolution.resolution_status === 'resolved' && resolution.institution_id
+    ? `inst:${resolution.institution_id}`
+    : p.agency_name ? `a1:${(await sha256Hex(p.agency_name.normalize('NFC'))).slice(0, 24)}` : null;
+  const agencyCurrentName = displayAgency(p.agency_name, resolution) ?? p.agency_name;
   const managerKey = p.manager_name
     ? `m1:${(await sha256Hex(`${agencyKey ?? 'agency-unknown'}|${p.manager_name.normalize('NFC')}`)).slice(0, 24)}`
     : null;
@@ -167,7 +181,8 @@ export async function deriveFact(p: Observation): Promise<DerivedFact> {
     lat_text: located ? p.location.lat : null, lng_text: located ? p.location.lng : null,
     coord_source: p.location.source, address: p.address, region_code: regionCode(p.address),
     point_key: located ? `v1:${p.location.lat},${p.location.lng}` : null,
-    agency_key: agencyKey, agency_name: p.agency_name, manager_key: managerKey, manager_name: p.manager_name,
+    agency_key: agencyKey, agency_name: p.agency_name, agency_current_name: agencyCurrentName,
+    manager_key: managerKey, manager_name: p.manager_name,
     violation_law: p.violation_law ?? null, source_agency_code: p.source_agency_code ?? null,
   };
 }

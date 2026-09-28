@@ -31,6 +31,8 @@ export interface PrivateFact {
   region_code: string | null;
   agency_key: string | null;
   agency_name: string | null;
+  /** 현행 기관 표시명(확인된 1:1 승계만, ingest 확정값). null 이면 agency_name 원문을 쓴다. */
+  agency_current_name?: string | null;
   manager_key: string | null;
   manager_name: string | null;
   /** 답변에 적힌 금액의 종류(community ingest). Legacy/snapshot sources omit these fields. */
@@ -50,6 +52,12 @@ export interface PrivateFact {
   contribution_count?: number | null;
   /** identity without the dataset part (same report from PC·mobile·restores shares it) */
   source_report_key?: string | null;
+  /** report identity: source_report_key + authoritative report_number grouping (2026-09-28).
+   *  Both numbers present and different → separate identities; a missing number joins the
+   *  key's first numbered group, else the legacy group. Absent on legacy rows. */
+  report_identity?: string | null;
+  /** the representative contribution's authoritative report number (null = legacy) */
+  report_number?: string | null;
   /** when this contribution row was first stored (elects the per-account representative) */
   first_accepted_at?: string | null;
 }
@@ -120,7 +128,7 @@ export function representatives(facts: readonly PrivateFact[]): PrivateFact[] {
 export function ownRepresentatives(facts: readonly PrivateFact[]): PrivateFact[] {
   const best = new Map<string, PrivateFact>();
   for (const fact of facts) {
-    const key = fact.source_report_key ?? fact.fact_identity;
+    const key = `${fact.contributor_id}\u0000${fact.report_identity ?? fact.source_report_key ?? fact.fact_identity}`;
     const old = best.get(key);
     // earliest contribution wins; a dated row beats an undated one; ties keep input order
     if (!old) best.set(key, fact);
@@ -197,7 +205,7 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
   }
   return [...groups].map(([key, rows]) => ({
     key, agency_key: rows[0].agency_key, manager_key: kind === 'manager' ? rows[0].manager_key : null,
-    agency_name: rows[0].agency_name || '기관 정보 없음',
+    agency_name: rows[0].agency_current_name || rows[0].agency_name || '기관 정보 없음',
     manager_name: kind === 'manager' ? rows[0].manager_name : null,
     completed_count: rows.length, outcomes: outcomes(rows),
     fine_count: rows.filter(row => row.disposition === 'fine').length,
