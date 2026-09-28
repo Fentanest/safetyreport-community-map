@@ -758,6 +758,83 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       if (agencyKeyOf(nameA) !== agencyKeyOf(nameB)) expect(repWithAgency(agencyKeyOf(nameA))).toBe('0');
     });
 
+    it('moves the representative when the first contributor sends a newer answer (REVIEW3 높음-1)', async () => {
+      // A→B→A(새 답변): 대표는 B에 머물지 않고 A로 이동한다. 단순 재전송은 안 뒤집는다.
+      const report = `UPD-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const repField = (field: string) => sql(`select ${field} from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      const payloadB = { ...payloadOf('partial_penalty_traffic'), agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(b, [await event(b, report, payloadB)])).json.results[0].status).toBe('accepted');
+      expect(repField('contributor_id')).toBe(b.session.userId);
+      // A가 새 처리 결과(답변일도 새로움)로 갱신하면 대표가 A로 이동한다.
+      const newer = { ...payloadOf('accepted_fine'), completed_date: '2026-09-12' };
+      expect((await ingest(a, [await event(a, report, newer)])).json.results[0].status).toBe('accepted');
+      expect(repField('contributor_id')).toBe(a.session.userId);
+      expect(repField('completed_date')).toBe('2026-09-12');
+      // 같은 답변 재전송(no_change)은 대표를 움직이지 않는다.
+      expect((await ingest(a, [await event(a, report, newer)])).json.results[0].status).toBe('no_change');
+      expect(repField('contributor_id')).toBe(a.session.userId);
+      expect((await ingest(b, [await event(b, report, payloadB)])).json.results[0].status).toBe('no_change');
+      expect(repField('contributor_id')).toBe(a.session.userId);
+    });
+
+    it('resolves pre- and post-change agency codes to one institution key in any arrival order (REVIEW3 높음-2)', async () => {
+      // 승계 전 코드로 먼저 와도, 후 코드로 먼저 와도 같은 현행 기관 키로 묶인다(신규 수신 행 포함).
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const oldCode = { ...payloadOf('accepted_fine'), source_agency_code: '1812314', agency_name: '광주광역시경찰청' };
+      const newCode = { ...payloadOf('accepted_fine'), source_agency_code: '1815198', agency_name: '광주경찰청' };
+      const keysOf = (report: string) => sql(`select string_agg(distinct agency_key, ',' order by agency_key)
+        from private.community_report_facts where source_report_id = '${report}';`);
+      const namesOf = (report: string) => sql(`select string_agg(distinct agency_current_name, ',' order by agency_current_name)
+        from private.community_report_facts where source_report_id = '${report}';`);
+      const repsOf = (report: string) => {
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        return sql(`select count(*) from jsonb_array_elements(
+          public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+          where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      };
+      const r1 = `SUC-old-first-${rid()}`;
+      expect((await ingest(a, [await event(a, r1, oldCode)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(b, [await event(b, r1, newCode)])).json.results[0].status).toBe('accepted');
+      expect(keysOf(r1)).toBe('inst:ag-gwangju-police-hq');
+      expect(namesOf(r1)).toBe('광주경찰청');
+      expect(repsOf(r1)).toBe('1');
+      const r2 = `SUC-new-first-${rid()}`;
+      expect((await ingest(b, [await event(b, r2, newCode)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(a, [await event(a, r2, oldCode)])).json.results[0].status).toBe('accepted');
+      expect(keysOf(r2)).toBe('inst:ag-gwangju-police-hq');
+      expect(namesOf(r2)).toBe('광주경찰청');
+      expect(repsOf(r2)).toBe('1');
+    });
+
+    it('keeps a numberless observation on its identity whatever period is queried (REVIEW3 중간-3)', async () => {
+      // 번호 있는 관측(09-01/09-10)과 번호 없는 관측(09-21/09-22): 좁은 창(09-20~09-25,
+      // 이전 창 09-14~09-25 — A의 날짜는 완전히 밖)에서도 번호 없는 관측은 같은 report_identity 에 붙는다.
+      const report = `WIN-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const idOf = (start: string, end: string) => sql(`select string_agg(distinct e->>'report_identity', ',' order by e->>'report_identity')
+        from jsonb_array_elements(
+          public.internal_analytics_v2_facts(date '${start}', date '${end}', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      const later = { ...payloadOf('accepted_fine'), report_date: '2026-09-21', completed_date: '2026-09-22' };
+      const next = await event(b, report, later, { report_number: null });
+      expect((await ingest(b, [next])).json.results[0].status).toBe('accepted');
+      const wide = idOf('2024-01-01', '2028-12-31');
+      const narrow = idOf('2026-09-20', '2026-09-25');
+      expect(narrow).not.toBe('');
+      expect(narrow).toBe(wide);
+      expect(wide).toContain('SPP-2609-8000001');
+    });
+
     it('isolates different report_numbers into separate public identities (no cross-number merge)', async () => {
       const a = await writerFor('A');
       const b = await writerFor('B');
@@ -817,6 +894,29 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect((await ingest(w, [await event(w, report, payloadOf('accepted_fine'))])).json.results[0].status).toBe('accepted');
       expect(storedCode()).toBe('<null>');
       expect(key).not.toBe('');
+    });
+
+    it('does not attach a stored agency code to a renamed answer from an older app (REVIEW3 중간-4)', async () => {
+      // v3 저장 뒤 v1(키 없음)이 기관명이 바뀐 답변을 보내면 옛 코드를 붙이지 않는다.
+      const w = await writerFor('D');
+      const report = `CODE-rename-${rid()}`;
+      const storedCode = () => sql(`select coalesce(source_agency_code, '<null>') from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const storedAgency = () => sql(`select agency_name from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const v3 = { ...payloadOf('accepted_fine'), source_agency_code: 'B410002' };
+      expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v1 + 같은 기관명 + 다른 답변 → 코드 보존.
+      const { source_agency_code: _d1, violation_law: _d2, ...v1base } = payloadOf('accepted_fine');
+      const v1same = { ...v1base, status: 'partial', status_raw: '일부수용' };
+      expect((await ingest(w, [await event(w, report, v1same)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v1 + 바뀐 기관명 → 옛 코드 미부착(NULL).
+      const v1renamed = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(w, [await event(w, report, v1renamed)])).json.results[0].status).toBe('accepted');
+      expect(storedAgency()).toBe('부산광역시 해운대구청');
+      expect(storedCode()).toBe('<null>');
     });
 
     it('keeps the other account contribution when one account deletes its own (tombstone independence)', async () => {

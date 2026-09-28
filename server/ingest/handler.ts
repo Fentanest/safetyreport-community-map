@@ -99,10 +99,13 @@ const OBSERVATION_V3_KEYS = [...OBSERVATION_V2_KEYS, 'source_agency_code'] as co
 
 export function isObservation(p: unknown): p is Observation {
   if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS) || exactKeys(p, OBSERVATION_V3_KEYS))) return false;
-  // v2: null or 1..60 code points (empty string, over-length and non-strings are schema_invalid like any other field)
+  // v2: null or 1..60 code points (empty string and non-strings are schema_invalid like any other field)
   if (Object.hasOwn(p, 'violation_law') && !nstr(p.violation_law, 60)) return false;
-  // v3: null or 1..32 code points, kept verbatim (only 7 alphanumerics feed the resolver; the rest stays unresolved)
-  if (Object.hasOwn(p, 'source_agency_code') && !nstr(p.source_agency_code, 32)) return false;
+  // v3: null or a non-empty string, kept verbatim (only 7 alphanumerics feed the resolver; the rest stays unresolved).
+  // Over-length (>32 code points) is a named value error (source_agency_code_too_long), not a silent null —
+  // the length gate lives in validateObservationValues so the reason is explicit.
+  if (Object.hasOwn(p, 'source_agency_code') &&
+      !(p.source_agency_code === null || (typeof p.source_agency_code === 'string' && p.source_agency_code.length >= 1))) return false;
   const a = p.amount, l = p.location;
   return nstr(p.address, 200) && nstr(p.agency_name, 200) && nstr(p.manager_name, 160) && nstr(p.vehicle_raw, 64) &&
     nstr(p.status_raw, 40) &&

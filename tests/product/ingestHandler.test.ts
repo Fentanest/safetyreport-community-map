@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createIngestHandler } from '../../server/ingest/handler';
-import { canonicalJson, sha256Hex } from '../../server/ingest/observation';
+import { canonicalJson, sha256Hex, validateObservationValues } from '../../server/ingest/observation';
 
 const UID = '6f37df54-911b-4c37-8020-a0b45a84591d';
 const SID = '0b1c2d3e-4f50-4a61-8b72-9c8d7e6f5a4b';
@@ -198,6 +198,13 @@ describe('community-ingest handler', () => {
     const ok = setup(() => ({ results: [] }));
     expect((await ok.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', novel)])))).status).toBe(200);
     expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
+  });
+
+  it('names an over-length agency code source_agency_code_too_long (never silently nulled — REVIEW3 낮음-1)', async () => {
+    // PC·mobile block it locally with blocked:source_agency_code_too_long; the edge names the same reason.
+    expect(validateObservationValues({ ...payload, source_agency_code: 'A'.repeat(33) })).toEqual(
+      { code: 'schema_invalid', reason: 'source_agency_code_too_long' });
+    expect(validateObservationValues({ ...payload, source_agency_code: 'A'.repeat(32) })).toBeNull();
   });
 
   it('rejects an empty, over-length or non-string violation_law with 422 schema_invalid and no write', async () => {

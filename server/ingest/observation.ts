@@ -97,6 +97,11 @@ export function validateObservationValues(p: Observation): ValidationError | nul
     return { code: 'schema_invalid', reason: 'violation_law_not_clean' };
   }
   // v3: the source agency code travels verbatim (only 7 alphanumerics feed the resolver); C0 controls and DEL are rejected.
+  // Over-length codes are an explicit schema error (never silently nulled): PC·mobile block them locally with
+  // blocked:source_agency_code_too_long and the edge rejects them as schema_invalid (contract observation.md §3).
+  if (typeof p.source_agency_code === 'string' && [...p.source_agency_code].length > 32) {
+    return { code: 'schema_invalid', reason: 'source_agency_code_too_long' };
+  }
   if (typeof p.source_agency_code === 'string' && [...p.source_agency_code].some(c => { const n = c.codePointAt(0)!; return n < 32 || n === 127; })) {
     return { code: 'schema_invalid', reason: 'source_agency_code_not_clean' };
   }

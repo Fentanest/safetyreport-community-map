@@ -66,3 +66,24 @@ describe('server value rules beyond the schema', () => {
     expect(await sourceReportKey('R1')).toBe(await sha256Hex('safetyreport|R1'));
   });
 });
+
+describe('verified succession resolves from either code (REVIEW3 높음-2)', () => {
+  const ok = read('observations.json').cases[0].expected_payload as Observation;
+  it('pre- and post-change codes share one institution key in any arrival order', async () => {
+    const before = await deriveFact({ ...ok, source_agency_code: '1812314', agency_name: '광주광역시경찰청' });
+    const after = await deriveFact({ ...ok, source_agency_code: '1815198', agency_name: '광주경찰청' });
+    expect(before.agency_key).toBe('inst:ag-gwangju-police-hq');
+    expect(after.agency_key).toBe('inst:ag-gwangju-police-hq');
+    expect(before.agency_current_name).toBe('광주경찰청');
+    expect(after.agency_current_name).toBe('광주경찰청');
+    // 원문 기관명은 그대로 보존된다.
+    expect(before.agency_name).toBe('광주광역시경찰청');
+    expect(after.agency_name).toBe('광주경찰청');
+    expect(after.source_agency_code).toBe('1815198');
+  });
+  it('an unknown code keeps the name-hash key (existing stats unchanged)', async () => {
+    const d = await deriveFact({ ...ok, source_agency_code: '9999999', agency_name: '어딘가구청' });
+    expect(d.agency_key).toBe(`a1:${(await sha256Hex('어딘가구청')).slice(0, 24)}`);
+    expect(d.agency_current_name).toBe('어딘가구청');
+  });
+});
