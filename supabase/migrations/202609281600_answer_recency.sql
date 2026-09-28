@@ -450,7 +450,7 @@ update private.community_report_facts
    set agency_key = 'inst:ag-gwangju-police-hq',
        agency_current_name = '광주경찰청',
        manager_key = case when manager_name is null then manager_key
-                          else 'm1:' || substring(encode(extensions.digest('inst:ag-gwangju-police-hq' || '|' || manager_name, 'sha256'), 'hex'), 1, 24) end,
+                          else 'm1:' || substring(encode(extensions.digest('inst:ag-gwangju-police-hq' || '|' || normalize(manager_name, NFC), 'sha256'), 'hex'), 1, 24) end,
        updated_at = now()
  where source_agency_code in ('1812314', '1815198')
    and (agency_key is distinct from 'inst:ag-gwangju-police-hq'

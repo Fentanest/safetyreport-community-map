@@ -259,4 +259,23 @@ describe('account contributions (2026-09-28 account rule)', () => {
     expect(b.agencies).toHaveLength(1);
     expect(b.agencies[0].mine.completed_count).toBe(1);
   });
+
+  it('counts one rating per own identity and excludes missing ratings from both averages', () => {
+    const rated: PrivateFact[] = [
+      { ...shared[0], rating: 5 },
+      { ...shared[1], rating: 4 },
+      // The later copy is the same account and identity; it must not add another rating.
+      { ...shared[2], rating: 1 },
+      row({ fact_identity: 'db:null', source_report_key: 'null', contributor_id: 'viewer-b',
+        is_representative: true, rating: null }),
+      row({ fact_identity: 'db:second', source_report_key: 'second', contributor_id: 'viewer-b',
+        is_representative: true, rating: 2 }),
+    ];
+    const cmp = aggregateCompare(rated, DEMO_SCOPE, 'viewer-b', opts);
+    const pub = dash(rated, DEMO_SCOPE);
+    expect(cmp.all.rating).toEqual({ count: 2, mean: 3.5 });
+    expect(cmp.all.rating).toEqual(pub.overview.rating);
+    expect(cmp.mine.rating).toEqual({ count: 2, mean: 3 });
+    expect(cmp.mine.completed_count).toBe(3);
+  });
 });
