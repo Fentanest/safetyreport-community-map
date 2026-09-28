@@ -16,3 +16,9 @@
 - ADR-201 (2026-09-26, ADR-101 대체): 기여 계정은 카카오로 연결한 Supabase Auth 사용자, 신고내용 공유 동의는 필수 진입 조건·중앙 grant 정본.
   업로드는 한 이벤트 = 한 신고 관측(`community-ingest`), 실시간·지도 탭 수동·매일 00:00 KST. 구 snapshot 업로드와 02~03시 설계는 폐기.
   공개 소스는 ingest fact 만(구 active snapshot v2 자료가 있으면 migration 이 중단 — 운영자 결정). 근거: `docs/integration/community-ingest/plan-final.md`.
+- ADR-202 (2026-09-29): 기관 registry 2026-09-29.1(공식 전체자료 대조). ingest 는
+  source_agency_code 로 현행명·agency_key 를 계산한다(새 스냅샷: 현존 색인·폐지 전달·경계 링크·기관 ID).
+  확인 코드는 기관 ID 키(inst:)로 묶고, 1:다 분기는 (구) 보존, 미확정은 기존 기관명 해시(a1:)를 유지한다.
+  저장된 사실의 파생값은 migration 202609290100(버전 컬럼+singleton+트리거)과
+  scripts/recompute-agency-keys.mjs(dry-run 먼저, REVIEW4 보존 규칙 포함)로 재계산한다.
+  원문 코드·기관명·신고 identity·집계 건수는 바뀌지 않는다.
