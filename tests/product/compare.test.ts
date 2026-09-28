@@ -260,6 +260,15 @@ describe('account contributions (2026-09-28 account rule)', () => {
     expect(b.agencies[0].mine.completed_count).toBe(1);
   });
 
+  it('shows the registry current name for agency and manager comparisons', () => {
+    const facts = shared.map(fact => ({ ...fact,
+      agency_current_name: '부산광역시 해운대구청',
+    }));
+    const result = aggregateCompare(facts, DEMO_SCOPE, 'viewer-b', opts);
+    expect(result.agencies[0].agency_name).toBe('부산광역시 해운대구청');
+    expect(result.managers[0].agency_name).toBe('부산광역시 해운대구청');
+  });
+
   it('counts one rating per own identity and excludes missing ratings from both averages', () => {
     const rated: PrivateFact[] = [
       { ...shared[0], rating: 5 },

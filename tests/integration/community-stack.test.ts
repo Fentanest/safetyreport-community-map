@@ -836,13 +836,13 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect((await ingest(a, [await event(a, r1, oldCode)])).json.results[0].status).toBe('accepted');
       expect((await ingest(b, [await event(b, r1, newCode)])).json.results[0].status).toBe('accepted');
       expect(keysOf(r1)).toBe('inst:ag-gwangju-police-hq');
-      expect(namesOf(r1)).toBe('광주경찰청');
+      expect(namesOf(r1)).toBe('경찰청 광주경찰청 광주동부경찰서');
       expect(repsOf(r1)).toBe('1');
       const r2 = `SUC-new-first-${rid()}`;
       expect((await ingest(b, [await event(b, r2, newCode)])).json.results[0].status).toBe('accepted');
       expect((await ingest(a, [await event(a, r2, oldCode)])).json.results[0].status).toBe('accepted');
       expect(keysOf(r2)).toBe('inst:ag-gwangju-police-hq');
-      expect(namesOf(r2)).toBe('광주경찰청');
+      expect(namesOf(r2)).toBe('경찰청 광주경찰청 광주동부경찰서');
       expect(repsOf(r2)).toBe('1');
     });
 
@@ -963,14 +963,14 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const v3 = { ...payloadOf('accepted_fine'), source_agency_code: '1812314', agency_name: '광주광역시경찰청' };
       expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
       expect(stored('agency_key')).toBe('inst:ag-gwangju-police-hq');
-      expect(stored('agency_current_name')).toBe('광주경찰청');
+      expect(stored('agency_current_name')).toBe('경찰청 광주경찰청 광주동부경찰서');
       // v1 + 같은 기관명 + 다른 답변 → 코드·기관 키·현행명 모두 보존.
       const { source_agency_code: _k1, violation_law: _k2, rating: _k3, ...v1base } = payloadOf('accepted_fine');
       const v1same = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '광주광역시경찰청' };
       expect((await ingest(w, [await event(w, report, v1same)])).json.results[0].status).toBe('accepted');
       expect(stored('source_agency_code')).toBe('1812314');
       expect(stored('agency_key')).toBe('inst:ag-gwangju-police-hq');
-      expect(stored('agency_current_name')).toBe('광주경찰청');
+      expect(stored('agency_current_name')).toBe('경찰청 광주경찰청 광주동부경찰서');
       // v1 + 바뀐 기관명 → 코드는 NULL, 키는 새 derived(옛 inst: 미부착).
       const v1renamed = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '부산광역시 해운대구청' };
       expect((await ingest(w, [await event(w, report, v1renamed)])).json.results[0].status).toBe('accepted');

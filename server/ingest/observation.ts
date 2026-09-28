@@ -1,9 +1,28 @@
 // community-ingest observation-v1/v2/v3: canonical JSON, value validation, status re-mapping and derived fact columns.
 // Pure functions shared by the Deno Edge entry (supabase/functions/community-ingest) and Node tests.
 // Rules: contracts/community-ingest/{canonical-json,observation}.md. The client hash is never trusted.
+import agencyIndex from '../../shared/agency-region-registry/data/agency_index.json' with { type: 'json' };
+import agencyInstitutions from '../../shared/agency-region-registry/data/agency_institutions.json' with { type: 'json' };
+import agencyLegacy from '../../shared/agency-region-registry/data/agency_legacy.json' with { type: 'json' };
 import agencyLinks from '../../shared/agency-region-registry/data/agency_links.json' with { type: 'json' };
 import agencyManifest from '../../shared/agency-region-registry/manifest.json' with { type: 'json' };
-import { displayAgency, resolveAgency } from '../../shared/agency-region-registry/resolvers/resolve.ts';
+import { displayAgency, resolveAgency, type AgencySnapshot } from '../../shared/agency-region-registry/resolvers/resolve.ts';
+
+const agencySnap: AgencySnapshot = (() => {
+  const rows = (agencyIndex as { rows: Array<Array<string | null>> }).rows;
+  const index: Record<string, Array<string | null>> = {};
+  for (const row of rows) index[row[0] as string] = row.slice(1);
+  const manifest = agencyManifest as { registry_version: string; as_of_date: string };
+  return {
+    links: (agencyLinks as unknown as { links: Array<Record<string, string>> }).links,
+    index,
+    forward: (agencyLegacy as { forward: Record<string, string> }).forward,
+    multi: (agencyLegacy as { multi: Record<string, string> }).multi,
+    institutions: (agencyInstitutions as { institutions: Record<string, string> }).institutions,
+    registryVersion: manifest.registry_version,
+    asOfDate: manifest.as_of_date,
+  };
+})();
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'completed_unknown' | 'withdrawn' | 'transferred' |
   'processing' | 'supplement' | 'other';
@@ -162,18 +181,18 @@ export interface DerivedFact {
   /** v3 source agency code as sent (verbatim, may be a novel format); null for v1/v2 payloads (no key) and for v3 null.
    *  Stored only — not published by the public projection (consent scope open, 2026-09-28). */
   source_agency_code: string | null;
+  /** 파생 계산에 쓴 registry 버전. 서버 singleton 과 다르면 재계산 대상(2026-09-29). */
+  agency_registry_version: string | null;
   rating: number | null;
 }
 
 export async function deriveFact(p: Observation): Promise<DerivedFact> {
-  // REVIEW2 높음-3: 받은 원문 기관코드를 검증된 registry resolver 로 현행 통계에 연결한다.
-  // 확인된 1:1 승계면 통계 키를 기관 ID 로 묶고(개명 전후가 한 기관으로 집계),
-  // 미확정·코드 없음이면 기존 기관명 해시 키를 그대로 쓴다(기존 통계 불변).
-  const links = (agencyLinks as { links: Array<Record<string, string>> }).links;
-  const manifest = agencyManifest as { registry_version: string; as_of_date: string };
-  const resolution = resolveAgency(p.source_agency_code ?? null, p.agency_name, manifest.as_of_date, links, manifest.registry_version);
-  const agencyKey = resolution.resolution_status === 'resolved' && resolution.institution_id
-    ? `inst:${resolution.institution_id}`
+  // 받은 원문 기관코드를 검증된 registry resolver 로 현행 통계에 연결한다(2026-09-29 전체자료 색인).
+  // 확인된 코드(현존·승계·별칭 유일)는 기관 ID 키로 묶고(개명 전후·하위부서가 한 기관으로 집계),
+  // (구) 분기·미확정·코드 없음이면 기존 기관명 해시 키를 그대로 쓴다(기존 통계 불변).
+  const resolution = resolveAgency(p.source_agency_code ?? null, p.agency_name, agencySnap.asOfDate, agencySnap);
+  const agencyKey = resolution.institution_id !== null
+    ? resolution.agency_stat_key
     : p.agency_name ? `a1:${(await sha256Hex(p.agency_name.normalize('NFC'))).slice(0, 24)}` : null;
   const agencyCurrentName = displayAgency(p.agency_name, resolution) ?? p.agency_name;
   const managerKey = p.manager_name
@@ -192,6 +211,7 @@ export async function deriveFact(p: Observation): Promise<DerivedFact> {
     agency_key: agencyKey, agency_name: p.agency_name, agency_current_name: agencyCurrentName,
     manager_key: managerKey, manager_name: p.manager_name,
     violation_law: p.violation_law ?? null, source_agency_code: p.source_agency_code ?? null,
+    agency_registry_version: agencySnap.registryVersion,
     rating: p.rating ?? null,
   };
 }
