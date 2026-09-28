@@ -87,7 +87,7 @@
 - 롤백: `community-account` 이전 배포 재배포, `community_policies` 2026-09-28.1 해시를 `a775cc34…`로 되돌림(트리거 해제 → update → 재설정, 동의가 없을 때만).
   `community_policy_texts` 는 남겨 둔다(불변).
 
-## 9. 위반법규(observation-v2)·동의 2026-09-28.2 배포 순서 (2026-09-28, 운영 반영 전 — 사용자 승인 필요)
+## 9. 위반법규(observation-v2)·동의 2026-09-28.2 배포 순서 (2026-09-28 — §11 에서 운영 반영)
 1. **중앙 SQL**(합성 디렉터리, `compose_supabase.mjs check` 통과본, dry-run으로 목록 확인): auth `202609281000_policy_2026_09_28_2`(동의문 본문·정책 행·현재 지정)
    → map `202609281100_violation_law`(fact 열, disclosures `violation_law_public` 열과 2026-09-28.2 행, `internal_community_ingest`·`internal_analytics_v2_facts` 교체).
    map은 auth 정책 행을 외래키로 참조하므로 순서가 반대면 실패한다. 한 합성 이력에 같은 버전 둘을 둘 수 없어 map은 `…1100`이다.
@@ -104,5 +104,17 @@
   v2 ingest insert/update·v1 null·28.1 계보 법규 null·28.2 계보 법규 공개·길이 check·권한(service_role만) 확인. 운영 적용 아님.
 
 
-## 10. 숫자 별점(observation-v4)·동의 2026-09-28.3 (운영 미반영)
+## 10. 숫자 별점(observation-v4)·동의 2026-09-28.3 (§11 에서 운영 반영)
 로컬 합성 확인 순서: AUTH `202609281700_policy_2026_09_28_3.sql` → MAP `202609281800_rating.sql` → MAP Edge 함수·공개 API → PC·모바일 v4 캡처. 기존 .1/.2 동의는 별점 공개 플래그가 거짓이고 새 동의가 필요하다. 이전 세대 앱의 v1/v2/v3 관측은 계속 수신하며 숫자 별점이 없으면 null이다. 장애 시 current 정책을 .2로 돌리고 1600 함수 정의로 되돌린 뒤 rating disclosure/열을 제거한다. 미배포 migration이므로 실제 운영 적용·push·배포는 별도 승인 경계에 남긴다.
+
+## 11. 운영 반영 기록 (2026-09-28, 사용자 승인) — 위반법규·답변 완료만·계정별 기여·기관코드·별점
+- 사전: 사용자 지시로 운영 공유 자료 초기화(`community_report_facts`·`community_ingest_events` 1,991건씩 삭제 → 0, 계정·연결·동의·정책 유지).
+- DB: 지도 main `6a14127` + auth main `4d68420` 합성 디렉터리(manifest check 22개 통과)에서 dry-run 목록이 새 10개
+  (`202609280800`~`202609281800`, auth `…1000`·`…1700` 포함)뿐인 것을 확인한 뒤 사용자가 `db push --linked` 실행. 적용 후 dry-run `upToDate`.
+  확인: `community_policy_current`=2026-09-28.3, disclosures 3행, `public.internal_*` 에 anon/authenticated/PUBLIC EXECUTE 0건.
+- Edge Functions 5개 재배포(합성 디렉터리, `--use-api`): public-analytics v7·my-analytics v5·community-ingest v3·community-account v4(verify_jwt=true),
+  community-auth-relay v3(false). 새 secret 없음.
+- smoke(익명): 다섯 경로 토큰 없음 401(참여자 전용), safemap preflight 204. Pages `community-map-pages` 수동 실행 성공, `https://safemap.worklazy.net/` 200,
+  배포 번들에 위반법규 표·별점 UI 포함. auth 사이트는 화면 변경이 없어 재배포하지 않음.
+- 앱: PC·모바일 dev(observation-v4, 필수 동의 2026-09-28.3). 기존 동의(2026-09-28.1)는 outdated → 앱에서 재동의 필요. 실제 카카오 계정 업로드·지도 확인은 운영자 몫.
+- 롤백: §9·§10 의 순서(함수 이전 배포 재배포와 구 Pages 함께, SQL 은 새 migration 으로만, current 정책은 auth 절차로 되돌림).
