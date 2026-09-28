@@ -22,3 +22,5 @@
   저장된 사실의 파생값은 migration 202609290100(버전 컬럼+singleton+트리거)과
   scripts/recompute-agency-keys.mjs(dry-run 먼저, REVIEW4 보존 규칙 포함)로 재계산한다.
   원문 코드·기관명·신고 identity·집계 건수는 바뀌지 않는다.
+  2026-09-29 검수 반영: 일반 UPDATE는 registry 버전을 찍지 않는다. 재계산은 모든 구버전 행을
+  배치 순회해 파생값과 버전을 함께 기록한다. 기관·담당자 비교 이름은 저장된 현행명 우선으로 표시한다.

@@ -247,7 +247,7 @@
    "version": "202609290100",
    "repo": "map",
    "path": "supabase/migrations/202609290100_agency_registry_recompute.sql",
-   "sha256": "4022000e1758fced2a4694e88f336bb9484399ab54f4f41cdb3b417c99422a4b",
+   "sha256": "866d7d0f8b5b29a617fab44d57eed7dbf9f687a417d3232d26e9cc09acf15141",
    "depends_on": [
     "202609281900"
    ]

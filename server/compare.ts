@@ -157,7 +157,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
       const a = side([], rows), m = side([], byMineKey.get(key) ?? []);
       return {
         kind, key, agency_key: first.agency_key, manager_key: kind === 'manager' ? first.manager_key : null,
-        agency_name: first.agency_name || '기관 정보 없음', manager_name: kind === 'manager' ? first.manager_name : null,
+        agency_name: first.agency_current_name || first.agency_name || '기관 정보 없음', manager_name: kind === 'manager' ? first.manager_name : null,
         all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
         partial_rate_pp: minus(m.partial_rate, a.partial_rate),
         duration_median_days_diff: minus(m.duration_median_days, a.duration_median_days),

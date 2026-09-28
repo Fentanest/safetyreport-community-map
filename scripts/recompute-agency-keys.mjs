@@ -13,14 +13,16 @@
 //   (unique alias hit) → take the fresh triple. This never regresses an
 //   inst: key back to a1: (the REVIEW4 split bug).
 // - manager_key always follows the final agency_key with the ingest hash rule.
-// - The DB trigger stamps agency_registry_version from the singleton on every
-//   write, so updated rows automatically carry the current version.
+// - The DB trigger stamps derived-value updates; version-only updates explicitly
+//   set agency_registry_version. Ordinary writes leave stale rows stale.
 //
 // Usage (service role; reads + writes private.community_report_facts).
 // Node 22 type-stripping runs the edge's own TypeScript (no duplicate logic):
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
 //     node --experimental-strip-types --no-warnings scripts/recompute-agency-keys.mjs --dry-run [--limit=N]
 //   node --experimental-strip-types --no-warnings scripts/recompute-agency-keys.mjs --apply [--limit=N]
+// --limit is the batch size (default 5000), not a total-row cap. Both modes
+// continue until every stale row has been visited.
 //
 // Pure planning (planUpdates) is unit-tested in tests/product/recomputeAgencyKeys.test.ts
 // without any database.
@@ -93,51 +95,44 @@ async function main() {
   const dryRun = !args.includes('--apply');
   const limitArg = args.find((a) => a.startsWith('--limit='));
   const limit = limitArg ? Number(limitArg.split('=')[1]) : 5000;
+  if (!Number.isSafeInteger(limit) || limit < 1) throw new Error('--limit must be a positive integer');
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY required');
   const db = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
-  // Stale = version column behind the bundled snapshot (NULL counts as stale).
-  const { data, error } = await db
-    .from('community_report_facts')
-    .select('contributor_id,dataset_key,source_report_key,source_agency_code,agency_name,agency_current_name,agency_key,manager_name,manager_key,agency_registry_version')
-    .schema('private')
-    .or(`agency_registry_version.is.null,agency_registry_version.neq.${CURRENT_VERSION}`)
-    .limit(limit);
-  if (error) throw error;
+  const { data: state, error: stateError } = await db.schema('private')
+    .from('community_registry_state').select('version').eq('id', 1).single();
+  if (stateError) throw stateError;
+  if (state.version !== CURRENT_VERSION) {
+    throw new Error(`Database registry ${state.version} differs from bundle ${CURRENT_VERSION}`);
+  }
+  let scanned = 0;
   let changed = 0;
   let kept = 0;
-  for (const fact of data ?? []) {
-    const plan = await planUpdate(fact);
-    if (!plan.changed && fact.agency_registry_version === CURRENT_VERSION) continue;
-    if (!plan.changed) {
-      kept++;
-      if (!dryRun) {
-        // Content same but version stale: stamp only (trigger does it).
-        const { error: upErr } = await db
-          .schema('private')
-          .from('community_report_facts')
-          .update({ updated_at: new Date().toISOString() })
-          .match({
-            contributor_id: fact.contributor_id,
-            dataset_key: fact.dataset_key,
-            source_report_key: fact.source_report_key,
-          });
-        if (upErr) throw upErr;
-      }
-      continue;
-    }
-    changed++;
-    if (!dryRun) {
-      const { error: upErr } = await db
-        .schema('private')
-        .from('community_report_facts')
+  let offset = 0;
+  while (true) {
+    // In apply mode updated rows leave the stale set, so always take its first page.
+    // Dry-run leaves it unchanged and advances through the ordered pages.
+    const { data, error } = await db
+      .schema('private').from('community_report_facts')
+      .select('contributor_id,dataset_key,source_report_key,source_agency_code,agency_name,agency_current_name,agency_key,manager_name,manager_key,agency_registry_version')
+      .or(`agency_registry_version.is.null,agency_registry_version.neq.${CURRENT_VERSION}`)
+      .order('contributor_id').order('dataset_key').order('source_report_key')
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    if (!data?.length) break;
+    scanned += data.length;
+    for (const fact of data) {
+      const plan = await planUpdate(fact);
+      if (plan.changed) changed++;
+      else kept++;
+      if (dryRun) continue;
+      const { error: upErr } = await db.schema('private').from('community_report_facts')
         .update({
-          agency_key: plan.next.agency_key,
-          agency_current_name: plan.next.agency_current_name,
-          manager_key: plan.next.manager_key,
+          ...(plan.changed ? plan.next : {}),
+          agency_registry_version: CURRENT_VERSION,
         })
         .match({
           contributor_id: fact.contributor_id,
@@ -146,16 +141,12 @@ async function main() {
         });
       if (upErr) throw upErr;
     }
+    if (dryRun) offset += data.length;
   }
-  console.log(
-    JSON.stringify({
-      mode: dryRun ? 'dry-run' : 'apply',
-      scanned: (data ?? []).length,
-      changed,
-      versionStampOnly: kept,
-      registryVersion: CURRENT_VERSION,
-    }),
-  );
+  console.log(JSON.stringify({
+    mode: dryRun ? 'dry-run' : 'apply', scanned, changed,
+    versionStampOnly: kept, registryVersion: CURRENT_VERSION,
+  }));
 }
 
 const invokedDirectly =

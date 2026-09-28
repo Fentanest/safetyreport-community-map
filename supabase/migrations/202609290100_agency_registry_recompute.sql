@@ -10,9 +10,8 @@
 --    Backfilled to '2026-09-28.1' (the seed-only snapshot every existing row was
 --    derived with). NULL after this migration means "not yet stamped".
 -- 2) private.community_registry_state singleton (one row): the authoritative
---    server registry version. A BEFORE trigger stamps every fact write with it,
---    so new ingests and recompute updates always carry the current version even
---    though internal_community_ingest itself is untouched.
+--    server registry version. A BEFORE trigger stamps inserts and derived-value
+--    updates only. Ordinary updates cannot mark stale projections as current.
 -- 3) Recompute itself runs OUTSIDE SQL in scripts/recompute-agency-keys.mjs
 --    (same deriveFact code as the edge): it selects rows whose version is stale,
 --    recomputes the derived triple locally, and updates only those three columns
@@ -45,6 +44,7 @@ $$;
 
 drop trigger if exists community_report_facts_registry_version on private.community_report_facts;
 create trigger community_report_facts_registry_version
-    before insert or update on private.community_report_facts
+    before insert or update of agency_key, agency_current_name, manager_key
+    on private.community_report_facts
     for each row execute function private.community_stamp_registry_version();
 commit;
