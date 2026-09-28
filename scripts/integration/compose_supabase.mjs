@@ -14,8 +14,11 @@
 // (0600) and are never printed.
 import { createHash, randomBytes } from 'node:crypto';
 import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const require = createRequire(import.meta.url);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -45,6 +48,129 @@ function load() {
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
   for (const k of ['staging', 'migrations', 'functions']) if (!manifest[k]) throw new Error(`manifest missing ${k}`);
   return manifest;
+}
+
+// Every relative import reachable from a function's index.ts must resolve to a file
+// that compose stages (a file inside the function directory, or an entry of
+// functions[].shared). Otherwise `supabase start` fails at the Edge bundle step with
+// "failed to read file". Conversely a shared entry nothing imports is dead weight and
+// fails as well, so (shared entries) == (import closure outside the function directory).
+//
+// Import extraction uses the `typescript` package already in devDependencies
+// (createSourceFile + AST walk), never regular expressions, so imports mentioned only
+// in comments or string literals are not mistaken for real ones:
+// - `import`/`export ... from './x'` — value or `import type`. Type-only edges are
+//   included on purpose: the Deno-based Edge bundler resolves the full module graph
+//   (including type-only edges) before type-stripping, so a missing file can still fail
+//   the bundle step. This matches the staged type-only chain in community-account
+//   (server/relay.ts, server/config.ts) that REVIEW6's parser run confirmed necessary.
+// - dynamic `import('./x')` and `import(`./x`)`, including the two-argument form
+//   `import('./x', { with: ... })` — only the first argument is a module specifier;
+//   the import-attributes argument is ignored. A template with interpolation has no
+//   fixed target, so this manifest-based check cannot resolve it statically.
+// - JSON modules (`import data from './d.json' with { type: 'json' }`) are plain
+//   ImportDeclarations, so they are covered too. `import ... = require('./x')` as well.
+let tsMod = null;
+function loadTs(problems) {
+  if (!tsMod) {
+    try {
+      tsMod = require('typescript');
+    } catch {
+      problems.push("import-closure check needs the 'typescript' devDependency (run npm install)");
+      return null;
+    }
+  }
+  return tsMod;
+}
+
+function relativeImportSpecs(ts, source, filename) {
+  const specs = new Set();
+  const add = s => { if (typeof s === 'string' && s.startsWith('.')) specs.add(s); };
+  const sf = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true);
+  const visit = node => {
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      const ms = node.moduleSpecifier;
+      if (ms && ts.isStringLiteral(ms)) add(ms.text);
+    } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      const first = node.arguments && node.arguments[0];
+      // NoSubstitutionTemplateLiteral is a fixed module specifier too. Checking only
+      // StringLiteral silently misses valid import(`./module.ts`) expressions.
+      if (first && (ts.isStringLiteral(first) || ts.isNoSubstitutionTemplateLiteral(first))) add(first.text);
+    } else if (ts.isImportEqualsDeclaration(node)) {
+      const ref = node.moduleReference;
+      if (ref && ts.isExternalModuleReference(ref) && ref.expression && ts.isStringLiteral(ref.expression)) {
+        add(ref.expression.text);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return specs;
+}
+
+// Keep the predicate shared with copyTree: fs.cp's filter sees the full source path,
+// including files whose NAME merely contains "node_modules". Those files are omitted
+// by compose too, even though they are not inside a node_modules directory.
+const copiedByCopyTree = source => !/node_modules|\.git(\/|$)/.test(source);
+
+// compose() copies the filtered function directory plus fn.shared. An import of an
+// included file inside the function directory is fine without a shared entry.
+function functionDirFiles(root, fnName) {
+  const base = join(root, 'supabase/functions', fnName);
+  const out = [];
+  const walk = dir => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const abs = join(dir, e.name);
+      if (!copiedByCopyTree(abs)) continue;
+      if (e.isDirectory()) walk(abs);
+      else if (e.isFile()) out.push(relative(root, abs));
+    }
+  };
+  if (copiedByCopyTree(base) && existsSync(base) && statSync(base).isDirectory()) walk(base);
+  return out;
+}
+
+function checkStagingCoverage(manifest, problems) {
+  const ts = loadTs(problems);
+  if (!ts) return;
+  for (const fn of manifest.functions) {
+    const root = roots[fn.repo];
+    if (!root || !existsSync(join(root, 'supabase/functions', fn.name, 'index.ts'))) continue;
+    const entry = `supabase/functions/${fn.name}/index.ts`;
+    const staged = new Set([...functionDirFiles(root, fn.name), ...(fn.shared || [])]);
+    if (!staged.has(entry)) {
+      problems.push(`function ${fn.name}: index.ts is excluded by the compose copy filter`);
+      continue;
+    }
+    const seen = new Set([entry]);
+    const queue = [entry];
+    while (queue.length) {
+      const rel = queue.shift();
+      if (!/\.(ts|tsx|js|jsx|mjs|cjs|json)$/.test(rel)) continue;
+      let source;
+      try { source = readFileSync(join(root, rel), 'utf8'); } catch { continue; }
+      if (rel.endsWith('.json')) continue; // data file: staged for content, never an import source
+      for (const spec of relativeImportSpecs(ts, source, rel)) {
+        let target = resolve(join(root, dirname(rel)), spec);
+        if (statSync(target, { throwIfNoEntry: false })?.isDirectory()) target = join(target, 'index.ts');
+        const targetRel = relative(root, target);
+        if (targetRel === '' || targetRel.startsWith('..')) {
+          problems.push(`function ${fn.name}: import escapes ${fn.repo} repo (${rel} -> ${spec})`);
+          continue;
+        }
+        if (!existsSync(target) || !statSync(target).isFile()) {
+          problems.push(`function ${fn.name}: unresolvable relative import ${spec} (from ${rel})`);
+          continue;
+        }
+        if (!staged.has(targetRel)) {
+          problems.push(`function ${fn.name}: import ${targetRel} (from ${rel}) is not staged — add it to functions[${fn.name}].shared`);
+        } else if (!seen.has(targetRel)) { seen.add(targetRel); queue.push(targetRel); }
+      }
+    }
+    for (const rel of fn.shared || []) {
+      if (!seen.has(rel)) problems.push(`function ${fn.name}: staged ${rel} is not imported — remove it from functions[${fn.name}].shared`);
+    }
+  }
 }
 
 function check(manifest) {
@@ -91,11 +217,12 @@ function check(manifest) {
       shared.set(rel, { repo: fn.repo, digest });
     }
   }
+  checkStagingCoverage(manifest, problems);
   return problems;
 }
 
 function copyTree(src, dst) {
-  cpSync(src, dst, { recursive: true, filter: s => !/node_modules|\.git(\/|$)/.test(s) });
+  cpSync(src, dst, { recursive: true, filter: copiedByCopyTree });
 }
 
 function compose(manifest) {

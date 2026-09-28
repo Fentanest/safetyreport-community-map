@@ -136,17 +136,24 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
   it('returns all = the public numbers and mine = only the verified user, from one version', async () => {
     const c = await writer('C');
     const d = await writer('D');
+    const mapC = await kakaoSession('C');
+    const mapD = await kakaoSession('D');
+    // Both suites share one stack DB and the fixed mock Kakao identities, so earlier suites may
+    // already hold C/D contributions. Record the priors and assert per-user deltas (+2 for C, +3 for D).
+    const mineCount = (uid: string) => Number(sql(`select count(*) from jsonb_array_elements(public.internal_analytics_v2_facts(date '2024-01-01', date '2026-09-27', 'all', null, null, null, null)) e where e->>'contributor_id' = '${uid}' and (e->>'report_date')::date between '2024-01-01' and '2026-09-27';`));
+    const cPrior = mineCount(mapC.userId);
+    const dPrior = mineCount(mapD.userId);
     expect((await ingest(c, 2)).status).toBe(200);
     expect((await ingest(d, 3)).status).toBe(200);
     const pub = await publicDashboard();
     expect(pub.status).toBe(200);
-    const mapC = await kakaoSession('C');
     const r = await compare(mapC.access, `&expected_version=${pub.json.dataset_version}`);
     expect(r.status, JSON.stringify(r.json)).toBe(200);
     expect(r.json.dataset_version).toBe(pub.json.dataset_version);
     expect(r.json.all.report_count).toBe(pub.json.overview.report_count.value);
     expect(r.json.all.completed_count).toBe(pub.json.overview.completed_count.value);
-    const cFacts = Number(sql(`select count(*) from jsonb_array_elements(public.internal_analytics_v2_facts(date '2024-01-01', date '2026-09-27', 'all', null, null, null, null)) e where e->>'contributor_id' = '${mapC.userId}' and (e->>'report_date')::date between '2024-01-01' and '2026-09-27';`));
+    const cFacts = mineCount(mapC.userId);
+    expect(cFacts).toBe(cPrior + 2);
     expect(r.json.mine.report_count).toBe(cFacts);
     expect(r.json.mine.report_count).toBeGreaterThanOrEqual(2);
     expect(JSON.stringify(r.json)).not.toContain(mapC.userId);
@@ -155,10 +162,9 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
     // The local Kong gateway rewrites Access-Control-Allow-Origin to '*' for every function; the handler's own
     // origin allowlist (403 below) is the enforced control. Hosted gateway CORS is recorded as NOT verified.
     expect([MAP_ORIGIN, '*']).toContain(r.headers.get('access-control-allow-origin'));
-    const mapD = await kakaoSession('D');
     const rd = await compare(mapD.access);
     expect(rd.json.all).toEqual(r.json.all);
-    expect(rd.json.mine.report_count).not.toBe(r.json.mine.report_count);
+    expect(rd.json.mine.report_count).toBe(dPrior + 3);
   });
 
   it('answers 409 for a stale public version and refuses foreign origins', async () => {

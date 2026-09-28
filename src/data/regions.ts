@@ -47,7 +47,7 @@ const LEGACY_SIDO: Record<string, string> = {
   광주: '12', 전남: '12', 광주광역시: '12', 전라남도: '12', 강원도: '51', 전라북도: '52', 제주도: '50',
   세종시: '36', 서울시: '11', 부산시: '26', 대구시: '27', 인천시: '28', 대전시: '30', 울산시: '31',
 };
-const RENAMED: Record<string, string> = { '28|남구': '28177', '47|군위군': '27720', '28|동구': '28125' };
+const RENAMED: Record<string, string> = { '28|남구': '28177', '47|군위군': '27720', '28|동구': '28125', '43|청원군': '43110' };
 /** Split districts cannot be resolved without coordinates: an old key for them is dropped, never guessed. */
 const SPLIT = new Set(['28|중구', '28|서구']);
 

@@ -140,6 +140,16 @@
    ]
   },
   {
+   "version": "202609280800",
+   "repo": "map",
+   "path": "supabase/migrations/202609280800_report_owner_transfer.sql",
+   "sha256": "4acd049c5255b9454f7a1955cd214537fd0746549b452e7a0afcbc652bcf072e",
+   "depends_on": [
+    "202609260200",
+    "202609280700"
+   ]
+  },
+  {
    "version": "202609281000",
    "repo": "auth",
    "path": "supabase/migrations/202609281000_policy_2026_09_28_2.sql",
@@ -157,6 +167,71 @@
     "202609260200",
     "202609280300",
     "202609281000"
+   ]
+  },
+  {
+   "version": "202609281200",
+   "repo": "map",
+   "path": "supabase/migrations/202609281200_owner_transfer_violation_law_merge.sql",
+   "sha256": "50046c14d4f7829aa20c399dbec836fe5fa6aa6a9c0ceff14fdd9eb1cea27c86",
+   "depends_on": [
+    "202609280800",
+    "202609281100"
+   ]
+  },
+  {
+   "version": "202609281300",
+   "repo": "map",
+   "path": "supabase/migrations/202609281300_account_contributions.sql",
+   "sha256": "625bb3f7893232dca426e2bd9e1b17e8e42238868ab4e09a2578455a507ad71c",
+   "depends_on": [
+    "202609281200"
+   ]
+  },
+  {
+   "version": "202609281400",
+   "repo": "map",
+   "path": "supabase/migrations/202609281400_source_agency_code.sql",
+   "sha256": "96bcf9ff65d8e81fb90c74cf46019dfa96f8bef48b4ccafd6422396d365fcdb1",
+   "depends_on": [
+    "202609281300"
+   ]
+  },
+  {
+   "version": "202609281500",
+   "repo": "map",
+   "path": "supabase/migrations/202609281500_report_identity.sql",
+   "sha256": "33a8e5cc50a3ccf18bf3b2e96bc31ec34b4f8977e0eb8c766960dae8c3859bf4",
+   "depends_on": [
+    "202609281400"
+   ]
+  },
+  {
+   "version": "202609281600",
+   "repo": "map",
+   "path": "supabase/migrations/202609281600_answer_recency.sql",
+   "sha256": "1f0305408253950f24c980498959ff8214113bccbc1f22cf6bc114eed9a5f926",
+   "depends_on": [
+    "202609281500"
+   ]
+  },
+  {
+   "version": "202609281700",
+   "repo": "auth",
+   "path": "supabase/migrations/202609281700_policy_2026_09_28_3.sql",
+   "sha256": "f82e193e745eed6e347234787496cb5b86758d27880c4954992b2cf84bfcfc55",
+   "depends_on": [
+    "202609281000"
+   ]
+  },
+  {
+   "version": "202609281800",
+   "repo": "map",
+   "path": "supabase/migrations/202609281800_rating.sql",
+   "sha256": "dd80a12e2b35b1298d4ff6daa409630bbeabbd091de2135d1abe8b36cba28df0",
+   "depends_on": [
+    "202609281600",
+    "202609281700"
    ]
   }
  ],
@@ -177,15 +252,18 @@
     "src/domain/public.ts"
    ]
   },
-  {
-   "name": "community-ingest",
-   "repo": "map",
-   "verify_jwt": true,
-   "shared": [
-    "server/ingest/handler.ts",
-    "server/ingest/observation.ts"
-   ]
-  },
+   {
+    "name": "community-ingest",
+    "repo": "map",
+    "verify_jwt": true,
+    "shared": [
+     "server/ingest/handler.ts",
+     "server/ingest/observation.ts",
+     "shared/agency-region-registry/data/agency_links.json",
+     "shared/agency-region-registry/manifest.json",
+     "shared/agency-region-registry/resolvers/resolve.ts"
+    ]
+   },
   {
    "name": "community-auth-relay",
    "repo": "auth",
@@ -198,16 +276,19 @@
     "server/relay.ts"
    ]
   },
-  {
-   "name": "community-account",
-   "repo": "auth",
-   "verify_jwt": true,
-   "shared": [
-    "server/account.ts",
-    "server/adapters.ts",
-    "server/crypto.ts"
-   ]
-  },
+   {
+    "name": "community-account",
+    "repo": "auth",
+    "verify_jwt": true,
+    "shared": [
+     "server/account.ts",
+     "server/adapters.ts",
+     "server/config.ts",
+     "server/crypto.ts",
+     "server/protocol.ts",
+     "server/relay.ts"
+    ]
+   },
   {
    "name": "my-analytics",
    "repo": "map",

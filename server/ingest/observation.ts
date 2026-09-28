@@ -1,6 +1,9 @@
-// community-ingest observation-v1/v2: canonical JSON, value validation, status re-mapping and derived fact columns.
+// community-ingest observation-v1/v2/v3: canonical JSON, value validation, status re-mapping and derived fact columns.
 // Pure functions shared by the Deno Edge entry (supabase/functions/community-ingest) and Node tests.
 // Rules: contracts/community-ingest/{canonical-json,observation}.md. The client hash is never trusted.
+import agencyLinks from '../../shared/agency-region-registry/data/agency_links.json' with { type: 'json' };
+import agencyManifest from '../../shared/agency-region-registry/manifest.json' with { type: 'json' };
+import { displayAgency, resolveAgency } from '../../shared/agency-region-registry/resolvers/resolve.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'completed_unknown' | 'withdrawn' | 'transferred' |
   'processing' | 'supplement' | 'other';
@@ -24,6 +27,11 @@ export interface Observation {
   manager_name: string | null; report_date: string | null; status: Status; status_raw: string | null; vehicle_raw: string | null;
   /** 위반법규(법 이름·조항, 1..60 code points). observation-v2 (2026-09-28); absent in v1 payloads (old apps). */
   violation_law?: string | null;
+  /** 원문 기관코드(TEXT, 7자리 영숫자·선행 0 보존). observation-v3 (2026-09-28); absent in v1/v2 payloads.
+   *  신규 형식도 원문 그대로 보존한다(서버는 7자리 영숫자만 기관 해석에 사용). */
+  source_agency_code?: string | null;
+  /** 공식 상세의 숫자 별점. v4; 별점사유는 전송하지 않는다. */
+  rating?: number | null;
 }
 
 // --- canonical JSON (keys sorted by UTF-16 code units, no whitespace, strings/ints/null/objects only) ---
@@ -90,17 +98,32 @@ export function validateObservationValues(p: Observation): ValidationError | nul
   if (typeof p.violation_law === 'string' && /[\u0000-\u001f\u007f]/.test(p.violation_law)) {
     return { code: 'schema_invalid', reason: 'violation_law_not_clean' };
   }
+  // v3: the source agency code travels verbatim (only 7 alphanumerics feed the resolver); C0 controls and DEL are rejected.
+  // Over-length codes are an explicit schema error (never silently nulled): PC·mobile block them locally with
+  // blocked:source_agency_code_too_long and the edge rejects them as schema_invalid (contract observation.md §3).
+  if (typeof p.source_agency_code === 'string' && [...p.source_agency_code].length > 32) {
+    return { code: 'schema_invalid', reason: 'source_agency_code_too_long' };
+  }
+  if (typeof p.source_agency_code === 'string' && [...p.source_agency_code].some(c => { const n = c.codePointAt(0)!; return n < 32 || n === 127; })) {
+    return { code: 'schema_invalid', reason: 'source_agency_code_not_clean' };
+  }
   return null;
 }
 
 export type EventType = 'completed_observation' | 'status_correction' | 'location_supplement' | 'reshare';
 
+/** 2026-09-28: only final-answer observations are accepted. A non-eligible payload — or a legacy
+ *  `status_correction` event of any payload — must not fail the whole request; it is rejected per
+ *  event (`non_final_not_accepted`, durable=false) so the rest of the batch still processes.
+ *  `status_correction` stays a known event type only so old clients get per-event rejections. */
+export const NON_FINAL_REJECTION = 'non_final_not_accepted';
+
+export function nonFinalRejection(type: EventType, p: Observation): typeof NON_FINAL_REJECTION | null {
+  if (!ELIGIBLE.has(p.status) || type === 'status_correction') return NON_FINAL_REJECTION;
+  return null;
+}
+
 export function validateEventType(type: EventType, trigger: string, p: Observation): ValidationError | null {
-  const eligible = ELIGIBLE.has(p.status);
-  if ((type === 'completed_observation' || type === 'location_supplement' || type === 'reshare') && !eligible) {
-    return { code: 'event_type_mismatch', reason: `${type}_requires_final_answer` };
-  }
-  if (type === 'status_correction' && eligible) return { code: 'event_type_mismatch', reason: 'correction_requires_non_final' };
   if (type === 'location_supplement' && p.location.source !== 'geocode') {
     return { code: 'event_type_mismatch', reason: 'supplement_requires_location' };
   }
@@ -131,13 +154,28 @@ export interface DerivedFact {
   penalty_points: number | null; vehicle_raw: string | null; lat: number | null; lng: number | null;
   lat_text: string | null; lng_text: string | null; coord_source: 'geocode' | 'none'; address: string | null;
   region_code: string | null; point_key: string | null; agency_key: string | null; agency_name: string | null;
+  /** 현행 기관 표시명(확인된 1:1 승계만, registry as_of 기준). 미확정이면 원문 기관명과 같다. */
+  agency_current_name: string | null;
   manager_key: string | null; manager_name: string | null;
   /** v2 payload value as sent; null for v1 payloads (no key) and for v2 null */
   violation_law: string | null;
+  /** v3 source agency code as sent (verbatim, may be a novel format); null for v1/v2 payloads (no key) and for v3 null.
+   *  Stored only — not published by the public projection (consent scope open, 2026-09-28). */
+  source_agency_code: string | null;
+  rating: number | null;
 }
 
 export async function deriveFact(p: Observation): Promise<DerivedFact> {
-  const agencyKey = p.agency_name ? `a1:${(await sha256Hex(p.agency_name.normalize('NFC'))).slice(0, 24)}` : null;
+  // REVIEW2 높음-3: 받은 원문 기관코드를 검증된 registry resolver 로 현행 통계에 연결한다.
+  // 확인된 1:1 승계면 통계 키를 기관 ID 로 묶고(개명 전후가 한 기관으로 집계),
+  // 미확정·코드 없음이면 기존 기관명 해시 키를 그대로 쓴다(기존 통계 불변).
+  const links = (agencyLinks as { links: Array<Record<string, string>> }).links;
+  const manifest = agencyManifest as { registry_version: string; as_of_date: string };
+  const resolution = resolveAgency(p.source_agency_code ?? null, p.agency_name, manifest.as_of_date, links, manifest.registry_version);
+  const agencyKey = resolution.resolution_status === 'resolved' && resolution.institution_id
+    ? `inst:${resolution.institution_id}`
+    : p.agency_name ? `a1:${(await sha256Hex(p.agency_name.normalize('NFC'))).slice(0, 24)}` : null;
+  const agencyCurrentName = displayAgency(p.agency_name, resolution) ?? p.agency_name;
   const managerKey = p.manager_name
     ? `m1:${(await sha256Hex(`${agencyKey ?? 'agency-unknown'}|${p.manager_name.normalize('NFC')}`)).slice(0, 24)}`
     : null;
@@ -151,8 +189,10 @@ export async function deriveFact(p: Observation): Promise<DerivedFact> {
     lat_text: located ? p.location.lat : null, lng_text: located ? p.location.lng : null,
     coord_source: p.location.source, address: p.address, region_code: regionCode(p.address),
     point_key: located ? `v1:${p.location.lat},${p.location.lng}` : null,
-    agency_key: agencyKey, agency_name: p.agency_name, manager_key: managerKey, manager_name: p.manager_name,
-    violation_law: p.violation_law ?? null,
+    agency_key: agencyKey, agency_name: p.agency_name, agency_current_name: agencyCurrentName,
+    manager_key: managerKey, manager_name: p.manager_name,
+    violation_law: p.violation_law ?? null, source_agency_code: p.source_agency_code ?? null,
+    rating: p.rating ?? null,
   };
 }
 

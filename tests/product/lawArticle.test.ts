@@ -103,7 +103,7 @@ describe('rows and filter by article', () => {
 
 const state: AnalyticsState = {
   dataset_version: 'v-art', ready: true, source_updated_at: '2026-09-28T00:00:00Z', generated_at: '2026-09-28T01:00:00Z',
-  published_at: null, data_min: '2026-01-01', data_max: '2026-09-30', coverage_note: 'synthetic test', dedupe_policy_version: 'ingest-latest-v1',
+  published_at: null, data_min: '2026-01-01', data_max: '2026-09-30', coverage_note: 'synthetic test', dedupe_policy_version: 'contribution-dedupe-v1',
 };
 const base = 'start=2026-09-01&end=2026-09-30&category=all';
 

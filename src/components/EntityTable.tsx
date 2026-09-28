@@ -3,7 +3,7 @@ import type { PublicEntity } from '../domain/public';
 import type { CompareEntityRow } from '../domain/personal';
 import type { EntitySortKey, SortDir } from '../data/client';
 import type { EntityTab } from '../state/filters';
-import { acceptRate, fmtDays, fmtInt, fmtPercent, fmtPp, fmtWon } from './format';
+import { acceptRate, fmtDays, fmtInt, fmtPercent, fmtPp, fmtWon, fmtRating } from './format';
 
 interface Props {
   agencies: PublicEntity[];
@@ -156,6 +156,7 @@ export default function EntityTable(p: Props) {
               <th scope="col">결과 비율</th>
               <th scope="col">결과가 나온 신고</th>
               <th scope="col" className="num" title="신고한 날부터 답변 받은 날까지, 중앙값">답변까지</th>
+              <th scope="col" className="num" title="공개에 동의한 숫자 별점만, 별점 건수로 나눈 평균">평균 별점 · 건수</th>
               {p.mine && <th scope="col" className="num mine-col">내 답변</th>}
               {p.mine && <th scope="col" className="num mine-col">내 수용률</th>}
               {p.mine && <th scope="col" className="num mine-col">내 일부수용률</th>}
@@ -164,10 +165,10 @@ export default function EntityTable(p: Props) {
           </thead>
           <tbody>
             {server?.loading && shown.length === 0 && (
-              <tr><td colSpan={p.mine ? 14 : 10} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">불러오는 중입니다…</td></tr>
+              <tr><td colSpan={p.mine ? 15 : 11} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }} role="status">불러오는 중입니다…</td></tr>
             )}
             {!(server?.loading && shown.length === 0) && shown.length === 0 && (
-              <tr><td colSpan={p.mine ? 14 : 10} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다.</td></tr>
+              <tr><td colSpan={p.mine ? 15 : 11} style={{ textAlign: 'center', color: 'var(--muted)', padding: 24 }}>조건에 맞는 기관·담당자가 없습니다.</td></tr>
             )}
             {shown.map((e) => {
               const d = e.outcomes.result_known;
@@ -199,6 +200,7 @@ export default function EntityTable(p: Props) {
                   </td>
                   <td>{d === 1 ? <span className="sample-one">1건</span> : `${fmtInt(d)}건`}</td>
                   <td className="num">{e.duration && e.duration.count > 0 ? fmtDays(e.duration.median_days) : '—'}</td>
+                  <td className="num">{fmtRating(e.rating)}</td>
                   {p.mine && <td className="num mine-col">{fmtInt(p.mine.get(e.key)?.mine.completed_count ?? 0)}</td>}
                   {p.mine && <td className="num mine-col">{fmtPercent(p.mine.get(e.key)?.mine.accept_rate ?? null)}</td>}
                   {p.mine && <td className="num mine-col">{fmtPercent(p.mine.get(e.key)?.mine.partial_rate ?? null)}</td>}

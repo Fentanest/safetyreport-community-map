@@ -102,3 +102,7 @@
   (함수 본문 재실행 → 2026-09-28.2 disclosures 행 삭제 → 두 열 drop). `community_policy_current`는 auth 절차로 2026-09-28.1로 되돌린다.
 - 로컬 검증(2026-09-28): 합성 순서 14개를 일회용 로컬 Postgres(supabase/postgres 17.6.1.171, 네트워크 없음)에 적용 성공,
   v2 ingest insert/update·v1 null·28.1 계보 법규 null·28.2 계보 법규 공개·길이 check·권한(service_role만) 확인. 운영 적용 아님.
+
+
+## 10. 숫자 별점(observation-v4)·동의 2026-09-28.3 (운영 미반영)
+로컬 합성 확인 순서: AUTH `202609281700_policy_2026_09_28_3.sql` → MAP `202609281800_rating.sql` → MAP Edge 함수·공개 API → PC·모바일 v4 캡처. 기존 .1/.2 동의는 별점 공개 플래그가 거짓이고 새 동의가 필요하다. 이전 세대 앱의 v1/v2/v3 관측은 계속 수신하며 숫자 별점이 없으면 null이다. 장애 시 current 정책을 .2로 돌리고 1600 함수 정의로 되돌린 뒤 rating disclosure/열을 제거한다. 미배포 migration이므로 실제 운영 적용·push·배포는 별도 승인 경계에 남긴다.

@@ -25,7 +25,8 @@ def base_input(**kw):
         "processing_status": "수용", "penalty_amount": "과태료: 40,000원", "report_date": "2026-09-01",
         "response_date": "2026-09-10", "processing_agency": "서울특별시 중구청", "person_in_charge": "홍길동",
         "car_number": "12가3456", "violation_location": "서울특별시 중구 세종대로 110",
-        "entry_value": "불법주정차신고", "penalty_points": "", "violation_law": "", "geocode": {"status": "ok", "lat": 37.5662952, "lng": 126.9779451},
+        "entry_value": "불법주정차신고", "penalty_points": "", "violation_law": "", "agency_code": None, "rating": None,
+        "geocode": {"status": "ok", "lat": 37.5662952, "lng": 126.9779451},
     }
     value.update(kw)
     return value
@@ -38,7 +39,7 @@ def payload(**kw):
         "completed_date": "2026-09-10", "disposition": "fine",
         "location": {"lat": "37.5662952", "lng": "126.9779451", "source": "geocode"},
         "manager_name": "홍길동", "report_date": "2026-09-01", "status": "accepted", "status_raw": "수용",
-        "vehicle_raw": "12가3456", "violation_law": None,
+        "vehicle_raw": "12가3456", "violation_law": None, "source_agency_code": None, "rating": None,
     }
     value.update(kw)
     return value
@@ -125,6 +126,14 @@ OBS = [
     ("violation_law_cleaned_and_truncated", base_input(violation_law="  자동차관리법\n 제29조 " + "가" * 60),
         payload(violation_law=("자동차관리법 제29조 " + "가" * 60)[:60]), True),
     ("violation_law_missing_input_is_null", base_input(violation_law=None), payload(), True),
+    ("rating_five", base_input(rating=5), payload(rating=5), True),
+    ("rating_zero_is_null", base_input(rating=0), payload(), True),
+    ("rating_changed", base_input(rating=3), payload(rating=3), True),
+    ("agency_code_kept", base_input(agency_code="B410002"),
+        payload(source_agency_code="B410002"), True),
+    ("agency_code_novel_format_preserved", base_input(agency_code="X-12"),
+        payload(source_agency_code="X-12"), True),
+    ("agency_code_missing_is_null", base_input(agency_code=None), payload(), True),
     ("quotes_and_backslash", base_input(violation_location='경기도 "수원시" 팔달구 \\ 1'),
         payload(address='경기도 "수원시" 팔달구 \\ 1'), True),
 ]
@@ -136,21 +145,25 @@ EVENTS = [
      "observation": "accepted_fine", "expect": None},
     {"name": "changed_eligible_creates_completed", "prev": {"observation": "accepted_fine"},
      "observation": "partial_penalty_traffic", "expect": "completed_observation"},
-    {"name": "withdrawn_after_shared_creates_correction", "prev": {"observation": "accepted_fine"},
-     "observation": "withdrawn_not_eligible", "expect": "status_correction"},
+    {"name": "rating_later_creates_completed", "prev": {"observation": "accepted_fine"},
+     "observation": "rating_five", "expect": "completed_observation"},
+    {"name": "rating_changed_creates_completed", "prev": {"observation": "rating_five"},
+     "observation": "rating_changed", "expect": "completed_observation"},
+    # 2026-09-28: no status_correction is issued any more; a non-eligible observation is never an event,
+    # even right after a shared eligible one. The central fact keeps its last answered state.
+    {"name": "withdrawn_after_shared_creates_nothing", "prev": {"observation": "accepted_fine"},
+     "observation": "withdrawn_not_eligible", "expect": None},
     {"name": "not_eligible_never_shared_creates_nothing", "prev": None,
      "observation": "processing_not_eligible", "expect": None},
-    {"name": "not_eligible_after_correction_creates_nothing", "prev": {"observation": "withdrawn_not_eligible"},
+    {"name": "not_eligible_after_not_eligible_creates_nothing", "prev": {"observation": "withdrawn_not_eligible"},
      "observation": "transferred_not_eligible", "expect": None},
-    {"name": "eligible_again_after_correction", "prev": {"observation": "withdrawn_not_eligible"},
+    {"name": "eligible_after_not_eligible_creates_completed", "prev": {"observation": "withdrawn_not_eligible"},
      "observation": "accepted_fine", "expect": "completed_observation"},
-    {"name": "server_known_completed_then_withdrawn", "prev": None, "server_completed": True,
-     "observation": "withdrawn_not_eligible", "expect": "status_correction"},
-    {"name": "server_known_completed_same_eligible_is_sent", "prev": None, "server_completed": True,
-     "observation": "accepted_fine", "expect": "completed_observation"},
-    {"name": "server_unknown_not_eligible_creates_nothing", "prev": None, "server_completed": False,
-     "observation": "withdrawn_not_eligible", "expect": None},
 ]
+
+# The report number travels outside the Observation: the same payload hash must hold with and without it.
+REPORT_NUMBER_TRANSPORT = {"source_report_id": "40871819", "report_number": "SPP-2609-8000001",
+                           "observation_case": "accepted_fine"}
 
 
 def main():
@@ -161,14 +174,16 @@ def main():
         cases.append({"name": name, "input": inp, "expected_payload": exp, "eligible": eligible,
                       "canonical_json": canonical(exp), "payload_sha256": sha(exp)})
     for ev in EVENTS:
-        ev.setdefault("server_completed", False)
         if ev["prev"]:
             prev_payload = by_name[ev["prev"]["observation"]]
             ev["prev"] = {"payload_sha256": sha(prev_payload),
                           "eligible": prev_payload["status"] in {"accepted", "partial", "rejected", "completed_unknown"}}
     (ROOT / "vectors").mkdir(parents=True, exist_ok=True)
     (ROOT / "vectors" / "observations.json").write_text(json.dumps(
-        {"contract": "observation-v2", "cases": cases, "event_decisions": EVENTS},
+        {"contract": "observation-v4",
+         "report_number_transport": {**REPORT_NUMBER_TRANSPORT,
+                                     "payload_sha256": sha(by_name[REPORT_NUMBER_TRANSPORT["observation_case"]])},
+         "cases": cases, "event_decisions": EVENTS},
         ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     canon = [
         {"name": "sorted_nested", "value": {"b": 1, "a": {"d": None, "c": "x"}}},

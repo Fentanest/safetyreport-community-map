@@ -11,6 +11,7 @@
 
 ## 무엇을 언제 보내나
 - 앱이 안전신문고 상세 응답을 받은 순간, 사용자 수정 전 값으로 공유 DTO(`observation-v1`)를 확정해 앱 쪽 `community.db` journal 에 먼저 저장한다.
+- 2026-09-28부터 신고번호 `STTEMNT_NO`는 Observation 해시 밖의 private `report_number` 이벤트 필드로 전송한다. 새 앱은 번호가 늦게 확보되면 같은 해시여도 백필 이벤트를 만든다. 형식·계정 간 소유 이전·거절 규칙은 `docs/integration/community-ingest/report-owner-transfer-plan.md`에 있다.
 - 전송은 한 서비스(`request_community_upload(trigger)`), 세 진입점: **수집 직후 실시간**, **신고 지도 탭의 [지금 업로드]**, **매일 00:00 Asia/Seoul**(앱 종료·절전·네트워크 상태에 따라 지연될 수 있고 다음 실행 기회에 이어서 전송).
 - 한 이벤트 = 한 신고 관측. 개인 DB 전체를 읽어 보내는 snapshot 업로드, 수동·자정 업로드를 위한 재크롤링은 하지 않는다.
 - 이번 업데이트는 사용자 확인 뒤 **1회 초기화 크롤링**으로 과거 완료 신고의 공유 사본을 새로 확보한다(`rebuild.md`).
@@ -23,3 +24,4 @@
 ## 중앙
 - `community-ingest`(사용자 전용 Edge): JWT(getUser+claims)·writer 연결·동의 grant·정책 버전을 저장 트랜잭션 안에서 다시 확인하고 이벤트별 durable ACK 를 돌려준다.
 - 공개 지도는 ingest 로 모인 신고별 최신 fact 를 투영한다. 저장 완료(`accepted`)와 지도 반영(`published`)은 ACK 에서 구분된다.
+- 계정 간 같은 신고가 검증되어 이전되면 `transferred` 성공 ACK를, 신고번호·내용이 맞지 않으면 비재시도 거절 ACK를 돌려준다. 신고번호는 공개 API/DTO에 포함하지 않는다.

@@ -154,6 +154,9 @@ export interface FineAmountBrief {
   mean_won: number | null;
 }
 
+/** Numeric response satisfaction only. Count is the denominator of mean; no free-text reason. */
+export interface RatingBrief { count: number; mean: number | null }
+
 export interface Overview {
   report_count: CountMetric;
   completed_count: CountMetric;
@@ -165,6 +168,7 @@ export interface Overview {
   /** null = not provided by the source (never replaced by an empty summary) */
   processing_duration?: DurationSummary | null;
   fine_amount?: FineAmountSummary | null;
+  rating?: RatingBrief | null;
 }
 
 export interface PublicPoint {
@@ -193,6 +197,7 @@ export interface MonthlyBucket {
   coverage_note: string | null;
   duration?: DurationBrief | null;
   fine_amount?: FineAmountBrief | null;
+  rating?: RatingBrief | null;
 }
 
 export interface PublicEntity {
@@ -206,6 +211,7 @@ export interface PublicEntity {
   fine_count: number | null;
   duration?: DurationBrief | null;
   fine_amount?: FineAmountBrief | null;
+  rating?: RatingBrief | null;
 }
 
 /** Region row at one level (docs/region-boundaries.md). region_code = official 2026-07-01 법정 code
@@ -223,6 +229,7 @@ export interface PublicRegion {
   fine_count: number;
   duration?: DurationBrief | null;
   fine_amount?: FineAmountBrief | null;
+  rating?: RatingBrief | null;
 }
 
 /** 위반법규별 현황 row (docs/metrics-catalog.md law_results). Completion-date cohort of the scope, same facts and
@@ -244,6 +251,7 @@ export interface PublicLaw {
   warning_count: number;
   /** answered fine amounts, confirmed and published only (same masking as every other amount) */
   fine_amount: FineAmountBrief;
+  rating?: RatingBrief | null;
 }
 
 export interface PublicVehicle {

@@ -129,6 +129,7 @@ export function demoFacts(): PrivateFact[] {
       agency_key: `a1:synthetic-${areaIndex}`, agency_name: area.agency,
       manager_key: `m1:synthetic-${areaIndex}-${manager}`, manager_name: manager, ...amountOf(disposition),
       violation_law: lawOf(category),
+      rating: index % 4 === 0 ? null : 1 + (index % 5), // fixed synthetic values; do not consume the generator sequence
     });
   };
   let n = 0;

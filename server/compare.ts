@@ -1,6 +1,6 @@
 /** Personal comparison: all vs mine over ONE scope selection. Server-only (my-analytics). */
 import {
-  located, monthKeys, outcomes, regionKeys, selectScope, kstDate, type PrivateFact,
+  located, monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, selectScope, kstDate, ratingSummary, type PrivateFact,
 } from './aggregate.ts';
 import { regionName } from './regions.ts';
 import type { Scope } from '../src/domain/public.ts';
@@ -31,6 +31,7 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     duration: (({ count, mean_days, median_days, p90_days }) => ({ count, mean_days, median_days, p90_days }))(durationSummary(done)),
     fine_amount: (({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }) =>
       ({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }))(fineAmountSummary(done)),
+    rating: ratingSummary(done),
   };
 }
 
@@ -69,6 +70,7 @@ function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): C
     duration_median_days: dur.median_days,
     fine_amount_confirmed_count: amount.confirmed_count,
     fine_amount_sum_won: amount.sum_won,
+    rating: ratingSummary(done),
   };
 }
 
@@ -100,23 +102,28 @@ export interface CompareOptions {
  */
 export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, viewerId: string, options: CompareOptions): PersonalCompare {
   if (!viewerId) throw new Error('viewer required');
-  const { reported, done } = selectScope(input, scope);
+  // Global side counts each shared identity once (representative rows); the personal side sees
+  // every listed row so each account's own contribution is counted in its personal scope.
+  const { reported, done } = selectScope(representatives(input), scope);
+  const mineSel = selectScope(input, scope);
   const isMine = (fact: PrivateFact) => fact.contributor_id === viewerId;
-  const myReported = reported.filter(isMine);
-  const myDone = done.filter(isMine);
+  // Personal counts collapse the viewer's own second-dataset/restored rows to one per identity.
+  const myReported = ownRepresentatives(mineSel.reported.filter(isMine));
+  const myDone = ownRepresentatives(mineSel.done.filter(isMine));
   const all = summarize(reported, done);
   const mine = summarize(myReported, myDone);
 
   // Regions at both levels on official codes (the same grouping as the public rows), each from raw facts.
-  type Bucket = { level: CompareRegionRow['level']; code: string | null; sido: string | null; r: PrivateFact[]; d: PrivateFact[] };
+  type Bucket = { level: CompareRegionRow['level']; code: string | null; sido: string | null;
+    r: PrivateFact[]; d: PrivateFact[]; mr: PrivateFact[]; md: PrivateFact[] };
   const buckets = new Map<string, Bucket>();
   const bucket = (level: Bucket['level'], code: string | null, sido: string | null) => {
     const key = `${level}:${code ?? ''}`;
     let b = buckets.get(key);
-    if (!b) buckets.set(key, b = { level, code, sido, r: [], d: [] });
+    if (!b) buckets.set(key, b = { level, code, sido, r: [], d: [], mr: [], md: [] });
     return b;
   };
-  const place = (fact: PrivateFact, list: 'r' | 'd') => {
+  const place = (fact: PrivateFact, list: 'r' | 'd' | 'mr' | 'md') => {
     const k = regionKeys(fact);
     if (!k.sgg || !k.sido) { bucket('unknown', null, null)[list].push(fact); return; }
     bucket('sido', k.sido, null)[list].push(fact);
@@ -124,9 +131,11 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   };
   for (const fact of reported) place(fact, 'r');
   for (const fact of done) place(fact, 'd');
+  for (const fact of myReported) place(fact, 'mr');
+  for (const fact of myDone) place(fact, 'md');
   const levelOrder = { sido: 0, sgg: 1, unknown: 2 } as const;
   const regions: CompareRegionRow[] = [...buckets.values()].map(b => {
-    const a = side(b.r, b.d), m = side(b.r.filter(isMine), b.d.filter(isMine));
+    const a = side(b.r, b.d), m = side(b.mr, b.md);
     return { level: b.level, region_code: b.code, name: b.code ? regionName(b.code) ?? b.code : '지역 미확인',
       sido_code: b.sido, all: a, mine: m, accept_rate_pp: minus(m.accept_rate, a.accept_rate),
       partial_rate_pp: minus(m.partial_rate, a.partial_rate),
@@ -140,11 +149,12 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
     const keyOf = (fact: PrivateFact) => kind === 'agency' ? (fact.agency_key || 'agency-unknown')
       : `${fact.agency_key || 'agency-unknown'}:${fact.manager_key || 'manager-unknown'}`;
     const byKey = group(done, keyOf);
-    const mineKeys = new Set(myDone.map(keyOf));
+    const byMineKey = group(myDone, keyOf);
+    const mineKeys = new Set(byMineKey.keys());
     return [...mineKeys].map(key => {
       const rows = byKey.get(key) ?? [];
-      const first = rows[0];
-      const a = side([], rows), m = side([], rows.filter(isMine));
+      const first = rows[0] ?? byMineKey.get(key)![0];
+      const a = side([], rows), m = side([], byMineKey.get(key) ?? []);
       return {
         kind, key, agency_key: first.agency_key, manager_key: kind === 'manager' ? first.manager_key : null,
         agency_name: first.agency_name || '기관 정보 없음', manager_name: kind === 'manager' ? first.manager_name : null,
@@ -164,24 +174,32 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
       all_duration_median_days: null, mine_duration_median_days: null };
     const r = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
     const d = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
-    const a = side(r, d), m = side(r.filter(isMine), d.filter(isMine));
+    const mr = myReported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
+    const md = myDone.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
+    const a = side(r, d), m = side(mr, md);
     return { month, all_report_count: a.report_count, mine_report_count: m.report_count,
       all_completed_count: a.completed_count, mine_completed_count: m.completed_count,
       all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate,
-      all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days };
+      all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days,
+      all_rating: a.rating, mine_rating: m.rating };
   });
 
-  // Points with my facts; `shared` = another contributor recorded the same point in this scope.
+  // Points with my facts; `shared` = another contributor recorded the same point in this scope
+  // (checked against every listed row, not only representatives).
   const pointReported = group(reported.filter(located), fact => fact.point_key);
   const pointDone = group(done.filter(located), fact => fact.point_key);
+  const fullReported = group(mineSel.reported.filter(located), fact => fact.point_key);
+  const fullDone = group(mineSel.done.filter(located), fact => fact.point_key);
   const myPointKeys = new Set([...myReported, ...myDone].filter(located).map(fact => fact.point_key));
   const my_points: MyPoint[] = [...myPointKeys].map(key => {
     const r = pointReported.get(key) ?? [], d = pointDone.get(key) ?? [];
-    const anchor = (r[0] ?? d[0]) as PrivateFact & { lat: number; lng: number };
+    const mineR = group(myReported.filter(located), fact => fact.point_key).get(key) ?? [];
+    const mineD = group(myDone.filter(located), fact => fact.point_key).get(key) ?? [];
+    const anchor = (r[0] ?? d[0] ?? mineR[0] ?? mineD[0]) as PrivateFact & { lat: number; lng: number };
     return {
       key: key as string, lat: anchor.lat, lng: anchor.lng, region_code: regionKeys(anchor).sgg,
-      mine_report_count: r.filter(isMine).length, mine_completed_count: d.filter(isMine).length,
-      shared: [...r, ...d].some(fact => !isMine(fact)),
+      mine_report_count: mineR.length, mine_completed_count: mineD.length,
+      shared: [...(fullReported.get(key) ?? []), ...(fullDone.get(key) ?? [])].some(fact => !isMine(fact)),
     };
   }).sort((x, y) => y.mine_report_count - x.mine_report_count || x.key.localeCompare(y.key)).slice(0, MAX_MY_POINTS);
 

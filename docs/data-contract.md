@@ -6,7 +6,7 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 개별 report fact 또는 아래 차원을 보존한 joint cube가 필요하다.
 | 의미 | 타입/규칙 |
 |---|---|
-| fact_identity | private 중복 제거 키. 공개 금지. 신고번호 수집 여부는 upstream 계약에서 별도 결정 |
+| fact_identity | private 중복 제거 키. 공개 금지. 계정 간 이전은 링크 ID와 private `report_number`가 모두 같고 처리상태 외 Observation이 같을 때만 |
 | contributor_id / snapshot_id | private. community ingest 는 신고별 최신 fact(`snapshot_id='ingest-v1'`), 구 snapshot 경로는 공개 소스에서 제외(가드) |
 | report_date | KST ISO date, null 허용하되 신고일 지표 제외 수 보고 |
 | completed_date | 확인된 처리완료일 KST date, null은 결측. 업로드일로 대체 금지 |
@@ -19,6 +19,7 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 | agency_key / agency_name | 검증된 기관 코드 우선. 정규화 규칙 version |
 | manager_key / manager_name | agency_key + name + 가능하면 안정 담당자 식별. 이름 단독 전역 병합 금지 |
 | vehicle_raw | private 원번호(업로드 원문). 공개 전 `parsePlate` 로 정규화(지역 접두어 보존)·마스킹 |
+| report_number | private `STTEMNT_NO`/신고번호. 공개 API·DTO·로그에서 제외. NULL 레거시는 계정 간 이전 불가 |
 | amount_kind / amount_confirmed_won / penalty_points | private 저장(답변에 적힌 금액·종류·벌점). 공개 RPC는 **사실의 동의 정책이 금액 공개를 허용할 때만**(`private.community_policy_disclosures.amounts_public`) 금액 값을 내보내고, 아니면 null + `amount_stated`(적혔는지 여부)만. 공개 DTO에는 집계(합계·평균·중앙값·건수)만. 벌점은 내보내지 않는다 |
 | violation_law | 위반법규(법 이름·조항, 예: `도로교통법 제32조`) text 1..60자 또는 null. observation-v2(2026-09-28)의 payload 값을 그대로 저장(`private.community_report_facts.violation_law`, map `202609281100`). v1 payload(구 앱)는 null. 공개 RPC는 **사실의 동의 계보가 위반법규 공개를 허용할 때만**(`community_policy_disclosures.violation_law_public`) 값을 내보내고, 아니면 null(=법규 미상) |
 | count | fact=1; joint cube면 1 이상의 가중치 |
@@ -33,7 +34,7 @@ status/처분 구분이 combined뿐이면 warning_or_penalty를 유지하며 금
 
 ## C. 중복 제거 단위
 같은 기여자·같은 공식 계정(dataset_key)·같은 신고는 fact 하나(`(writer_epoch, source_revision)` 순서, 같은 event_id 는 멱등). 좌표 없는 fact 는 통계에 포함하고 지도 지점에서만 제외한다.
-서로 다른 계정의 동일 신고인지 판정할 실제 키가 없으면 전역 완전 중복 제거를 주장하지 않는다.
+서로 다른 계정은 링크 ID와 private 신고번호가 모두 같고 처리상태 외 Observation이 같은 경우에만 나중 업로드한 계정으로 fact를 이전한다. 레거시 NULL 번호·내용 불일치는 합치지 않고 새 공개 fact 생성을 거절한다. 기존에 이미 생긴 다중 소유 행은 자동 정리하지 않는다.
 복수 신고자가 같은 차량/위치에 신고한 건은 별도 신고일 수 있다. 좌표+차량+날짜만 같다는 이유로 임의 삭제 금지.
 `dedupe_policy_version`과 `coverage_note`를 meta에 넣는다.
 
@@ -66,3 +67,6 @@ agency_status_cross, vehicle_top5, fine_amount, processing_duration, region_boun
 ## F. fixture 원칙
 합성 fixture는 sample=true를 강제하고 private raw facts는 tests/fixtures 또는 docs 외부 빌드입력에만 둔다.
 prod output에는 fixtures/원번호를 복사하지 않는다. 1건·0분모·동명이인·마스크충돌·완료일결측·월 경계·연말·중복재전송 포함.
+
+
+숫자 별점 공개 정책(2026-09-28 사용자 결정): 동의문 2026-09-28.3에 처리 만족도 숫자 별점과 평균·건수를 명시했다. AUTH `202609281700`이 현행 정책을 .3으로 전환하고 MAP `202609281800`이 private fact의 정수 1..5 열과 `rating_public` disclosure를 추가한다. .1/.2만 현재 동의인 계보의 공개 projection에서는 별점이 null이다. .3에 재동의한 계보는 과거 공유 사실의 별점도 공개할 수 있다. 별점사유는 전송하지 않는다.

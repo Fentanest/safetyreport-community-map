@@ -7,6 +7,10 @@ export const fmtPct1 = (v: number | null | undefined): string =>
 export const fmtPercent = (v: number | null | undefined): string =>
   v == null || !Number.isFinite(v) ? '—' : `${v.toFixed(1)}%`;
 
+/** Mean of disclosed numeric satisfaction scores and its denominator. */
+export const fmtRating = (r: { count: number; mean: number | null } | null | undefined): string =>
+  r && r.count > 0 && r.mean !== null ? `${r.mean.toFixed(1)}점 · ${r.count.toLocaleString('ko-KR')}건` : '—';
+
 export const fmtDate = (iso: string): string => {
   const [y, m, d] = iso.split('-');
   return `${y}.${m}.${d}`;

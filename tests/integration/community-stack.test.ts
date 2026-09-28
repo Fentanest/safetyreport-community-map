@@ -137,7 +137,7 @@ async function register(s: Session, dataset: string, takeover = false, mode: 'se
   return { r, secret };
 }
 
-async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E', login = `int-${randomUUID()}`): Promise<Writer> {
+async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G', login = `int-${randomUUID()}`): Promise<Writer> {
   const session = await kakaoSession(choice);
   const grantId = await consent(session);
   const dataset = datasetKey(login);
@@ -149,7 +149,7 @@ async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E', login = `int-${ran
 async function event(w: Writer, reportId: string, payload: Json = payloadOf('accepted_fine'), opts: Partial<Json> = {}) {
   w.revision += 1;
   return { event_id: randomUUID(), event_type: 'completed_observation', source_system: 'safetyreport', source_report_id: reportId,
-    source_revision: w.revision, writer_epoch: w.epoch, captured_at: new Date().toISOString(), payload,
+    report_number: 'SPP-2609-8000001', source_revision: w.revision, writer_epoch: w.epoch, captured_at: new Date().toISOString(), payload,
     payload_sha256: await sha256Hex(canonicalJson(payload)), ...opts };
 }
 const envelope = (w: Writer, events: unknown[], over: Partial<Json> = {}) => ({ protocol: 1, contract: 'community-ingest-v1',
@@ -382,11 +382,12 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     it('blocks direct REST/RPC/GraphQL access to private data and leaves row counts unchanged', async () => {
       const w = await writerFor('B');
       const tables = ['private.community_ingest_events', 'private.community_report_facts', 'private.community_connections',
-        'private.community_consent_grants', 'private.community_fact_tombstones', 'private.community_deletion_fences'];
+        'private.community_consent_grants', 'private.community_fact_tombstones', 'private.community_deletion_fences',
+        'private.community_owner_transfer_audit'];
       const before = Object.fromEntries(tables.map(t => [t, count(t)]));
       const bearers: [string, string | undefined][] = [['publishable', undefined], ['anon', keys.ANON_KEY], ['user', w.session.access]];
       for (const [label, token] of bearers) {
-        for (const table of ['community_ingest_events', 'community_report_facts', 'community_connections', 'community_consent_grants']) {
+        for (const table of ['community_ingest_events', 'community_report_facts', 'community_connections', 'community_consent_grants', 'community_owner_transfer_audit']) {
           // 상태와 오류 JSON 을 모두 본다(§20-2): private 는 노출 안 된 스키마, public 에는 그런 표가 없다
           const sel = await call('GET', `/rest/v1/${table}?select=*`, { token, headers: { 'Accept-Profile': 'private' } });
           expect([sel.status, sel.json.code], `${label} select private.${table}`).toEqual([406, 'PGRST106']);
@@ -558,11 +559,13 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(again.json.results[0].status).toBe('no_change');
       const newer = await ingest(w, [await event(w, report, payloadOf('partial_penalty_traffic'))]);
       expect(newer.json.results[0].status).toBe('accepted');
-      // an older revision arriving late (offline backlog) must not roll the fact back
+      // 2026-09-28: a legacy status_correction arriving late is rejected per event (not stale_ignored);
+      // the central fact keeps its last answered state.
       const stale = await event(w, report, payloadOf('withdrawn_not_eligible'), { source_revision: 1, event_type: 'status_correction' });
       const r = await ingest(w, [stale]);
       expect(r.status, JSON.stringify(r.json)).toBe(200);
-      expect(r.json.results[0].status).toBe('stale_ignored');
+      expect(r.json.results[0]).toMatchObject({ status: 'rejected', durable: false,
+        error: { code: 'non_final_not_accepted', retryable: false } });
       expect(sql(`select status from private.community_report_facts where source_report_id = '${report}';`)).toBe('partial');
     });
 
@@ -665,31 +668,342 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(foreign.status).toBe(403); // another user's connection: no keys leak
     });
 
-    it('keeps identical report ids of different users and datasets apart (C05, S-05)', async () => {
-      const report = `SAME-${rid()}`;
+    it('counts one shared report once globally while each account keeps its contribution (2026-09-28 account rule)', async () => {
+      // | 순서 | A 내 신고 | B 내 신고 | 전체 고유 신고 |
+      // | A가 R 최초 업로드 | 1 | 0 | 1 |
+      // | A가 R의 현행기관명 변경본 업로드 | 1 | 0 | 1 |
+      // | B가 R의 현행기관명 변경본 업로드 | 1 | 1 | 1 |
+      // | B가 같은 내용을 재전송 | 1 | 1 | 1 |
+      const report = `SHR-${rid()}`;
       const a = await writerFor('A');
-      const c = await writerFor('C');
+      const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const rep = () => Number(sql(`select count(*) from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`));
+      const contrib = () => sql(`select e->>'contribution_count' from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      const overviewReports = async () => {
+        const r = await publicApi('overview');
+        expect(r.status, JSON.stringify(r.json)).toBe(200);
+        return Number(r.json.overview?.report_count?.value);
+      };
+      const base = await overviewReports();
+      // A 최초 업로드: A=1, B=0, 전체=1
       expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
-      expect((await ingest(c, [await event(c, report, payloadOf('partial_penalty_traffic'))])).json.results[0].status).toBe('accepted');
-      // same user, a second official account (dataset) — its own writer, its own fact
-      const { r: reg, secret } = await register(a.session, datasetKey(`second-${rid()}`));
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1);
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(0);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
+      // A가 현행기관명만 바꾼 재업로드: 정상 수신, counts unchanged, A fact preserved (no new fact)
+      const renamed = { ...payloadOf('accepted_fine'), agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(a, [await event(a, report, renamed)])).json.results[0].status).toBe('accepted');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(1);
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
+      // B가 같은 신고의 이름 변경본 제출: B도 정상 수신(accepted — 이전 모델의 transferred/cross_account_mismatch 대체)
+      expect((await ingest(b, [await event(b, report, renamed)])).json.results[0].status).toBe('accepted');
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1); // A 기여 보존
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(1); // B 기여 연결
+      expect(rep()).toBe(1); // 전체 고유 1건
+      expect(contrib()).toBe('2');
+      expect(await overviewReports()).toBe(base + 1);
+      // B 재전송: idempotent(no_change), counts unchanged
+      expect((await ingest(b, [await event(b, report, renamed)])).json.results[0].status).toBe('no_change');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
+      // 같은 계정의 두 번째 dataset(PC·모바일·복원본)도 신고 횟수를 늘리지 않는다
+      const { r: reg } = await register(a.session, datasetKey(`second-${rid()}`));
       expect(reg.status).toBe(200);
-      const a2: Writer = { ...a, connectionId: reg.json.connection_id, epoch: reg.json.writer_epoch, dataset: '', secret, revision: 0 };
+      const a2: Writer = { ...a, connectionId: reg.json.connection_id, epoch: reg.json.writer_epoch, dataset: '', revision: 0 };
       expect((await ingest(a2, [await event(a2, report, payloadOf('rejected_none'))])).json.results[0].status).toBe('accepted');
-      expect(count('private.community_report_facts', `source_report_id = '${report}'`)).toBe(3);
-      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}' and contributor_id = '${a.session.userId}' and dataset_key = '${a.dataset}';`)).toBe('accepted');
-      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}' and contributor_id = '${c.session.userId}';`)).toBe('partial');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(3);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
     });
 
-    it('removes the fact from the public API when a newer correction says it is no longer final (D04)', async () => {
+    it('elects the latest distinct answer as the public representative, then applies scope filters', async () => {
+      const report = `DIV-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const repField = (field: string) => sql(`select e->>'${field}' from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      const agencyKeyOf = (name: string) => `a1:${createHash('sha256').update(name.normalize('NFC')).digest('hex').slice(0, 24)}`;
+      const nameA = payloadOf('accepted_fine').agency_name as string;
+      const payloadB = { ...payloadOf('partial_penalty_traffic'), agency_name: '부산광역시 해운대구청' };
+      const nameB = payloadB.agency_name as string;
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      // B의 실제 결과가 다르면(수용 vs 일부수용) B 기여도 별도 관측으로 보존하고 정상 수신한다
+      expect((await ingest(b, [await event(b, report, payloadB)])).json.results[0].status).toBe('accepted');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+      expect(sql(`select status from private.community_report_facts where source_report_key='${key}' and contributor_id='${a.session.userId}';`)).toBe('accepted');
+      expect(sql(`select status from private.community_report_facts where source_report_key='${key}' and contributor_id='${b.session.userId}';`)).toBe('partial');
+      // 공개 대표는 최신의 서로 다른 답변(B) — 최초 기여(A) 고정이 아니다(REVIEW2 높음-2).
+      // 같은 답변의 단순 재전송은 대표를 뒤집지 않는다(아래 no_change 확인).
+      expect(repField('contributor_id')).toBe(b.session.userId);
+      expect(repField('status')).toBe('partial');
+      // A가 같은 답변을 다시 보내도(no_change) 대표는 그대로다.
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('no_change');
+      expect(repField('contributor_id')).toBe(b.session.userId);
+      // 범위 필터는 확정된 대표에 적용된다: 옛 기관 필터에서는 0건, 새 기관 필터에서는 같은 대표 1건.
+      const repWithAgency = (agencyKey: string | null) => sql(`select count(*) from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, '${agencyKey}', null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect(repWithAgency(agencyKeyOf(nameB))).toBe('1');
+      if (agencyKeyOf(nameA) !== agencyKeyOf(nameB)) expect(repWithAgency(agencyKeyOf(nameA))).toBe('0');
+    });
+
+    it('moves the representative when the first contributor sends a newer answer (REVIEW3 높음-1)', async () => {
+      // A→B→A(새 답변): 대표는 B에 머물지 않고 A로 이동한다. 단순 재전송은 안 뒤집는다.
+      const report = `UPD-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const repField = (field: string) => sql(`select e->>'${field}' from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      const payloadB = { ...payloadOf('partial_penalty_traffic'), agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(b, [await event(b, report, payloadB)])).json.results[0].status).toBe('accepted');
+      expect(repField('contributor_id')).toBe(b.session.userId);
+      // A가 새 처리 결과(답변일도 새로움)로 갱신하면 대표가 A로 이동한다.
+      const newer = { ...payloadOf('accepted_fine'), completed_date: '2026-09-12' };
+      expect((await ingest(a, [await event(a, report, newer)])).json.results[0].status).toBe('accepted');
+      expect(repField('contributor_id')).toBe(a.session.userId);
+      expect(repField('completed_date')).toBe('2026-09-12');
+      // 같은 답변 재전송(no_change)은 대표를 움직이지 않는다.
+      expect((await ingest(a, [await event(a, report, newer)])).json.results[0].status).toBe('no_change');
+      expect(repField('contributor_id')).toBe(a.session.userId);
+      expect((await ingest(b, [await event(b, report, payloadB)])).json.results[0].status).toBe('no_change');
+      expect(repField('contributor_id')).toBe(a.session.userId);
+    });
+
+    it('resolves pre- and post-change agency codes to one institution key in any arrival order (REVIEW3 높음-2)', async () => {
+      // 승계 전 코드로 먼저 와도, 후 코드로 먼저 와도 같은 현행 기관 키로 묶인다(신규 수신 행 포함).
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const oldCode = { ...payloadOf('accepted_fine'), source_agency_code: '1812314', agency_name: '광주광역시경찰청' };
+      const newCode = { ...payloadOf('accepted_fine'), source_agency_code: '1815198', agency_name: '광주경찰청' };
+      const keysOf = (report: string) => sql(`select string_agg(distinct agency_key, ',' order by agency_key)
+        from private.community_report_facts where source_report_id = '${report}';`);
+      const namesOf = (report: string) => sql(`select string_agg(distinct agency_current_name, ',' order by agency_current_name)
+        from private.community_report_facts where source_report_id = '${report}';`);
+      const repsOf = (report: string) => {
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        return sql(`select count(*) from jsonb_array_elements(
+          public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+          where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      };
+      const r1 = `SUC-old-first-${rid()}`;
+      expect((await ingest(a, [await event(a, r1, oldCode)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(b, [await event(b, r1, newCode)])).json.results[0].status).toBe('accepted');
+      expect(keysOf(r1)).toBe('inst:ag-gwangju-police-hq');
+      expect(namesOf(r1)).toBe('광주경찰청');
+      expect(repsOf(r1)).toBe('1');
+      const r2 = `SUC-new-first-${rid()}`;
+      expect((await ingest(b, [await event(b, r2, newCode)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(a, [await event(a, r2, oldCode)])).json.results[0].status).toBe('accepted');
+      expect(keysOf(r2)).toBe('inst:ag-gwangju-police-hq');
+      expect(namesOf(r2)).toBe('광주경찰청');
+      expect(repsOf(r2)).toBe('1');
+    });
+
+    it('keeps a numberless observation on its identity whatever period is queried (REVIEW3 중간-3)', async () => {
+      // 번호 있는 관측(09-01/09-10)과 번호 없는 관측(09-21/09-22): 좁은 창(09-20~09-25,
+      // 이전 창 09-14~09-25 — A의 날짜는 완전히 밖)에서도 번호 없는 관측은 같은 report_identity 에 붙는다.
+      const report = `WIN-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const idOf = (start: string, end: string) => sql(`select string_agg(distinct e->>'report_identity', ',' order by e->>'report_identity')
+        from jsonb_array_elements(
+          public.internal_analytics_v2_facts(date '${start}', date '${end}', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      const later = { ...payloadOf('accepted_fine'), report_date: '2026-09-21', completed_date: '2026-09-22' };
+      const next = await event(b, report, later, { report_number: null });
+      expect((await ingest(b, [next])).json.results[0].status).toBe('accepted');
+      const wide = idOf('2024-01-01', '2028-12-31');
+      const narrow = idOf('2026-09-20', '2026-09-25');
+      expect(narrow).not.toBe('');
+      expect(narrow).toBe(wide);
+      expect(wide).toContain('SPP-2609-8000001');
+    });
+
+    it('isolates different report_numbers into separate public identities (no cross-number merge)', async () => {
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const repsOf = (key: string) => sql(`select count(*) from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      const identitiesOf = (key: string) => sql(`select string_agg(distinct e->>'report_identity', ',' order by e->>'report_identity') from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      // 같은 번호: B 기여도 정상 수신, 전체 고유 1건
+      {
+        const report = `NUM-same-${rid()}`;
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+        expect((await ingest(b, [await event(b, report)])).json.results[0].status).toBe('accepted');
+        expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+        expect(repsOf(key)).toBe('1');
+      }
+      // 번호 없는 구버전 관측: 번호 그룹에 붙는다(와일드카드) — 전체 고유 1건 유지
+      {
+        const report = `NUM-legacy-${rid()}`;
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+        const next = await event(b, report, payloadOf('accepted_fine'), { report_number: null });
+        expect((await ingest(b, [next])).json.results[0].status).toBe('accepted');
+        expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+        expect(repsOf(key)).toBe('1');
+      }
+      // 둘 다 번호가 있는데 다르면: 격리 — 서로 다른 실제 신고이므로 공개 2건 (REVIEW2 높음-1)
+      {
+        const report = `NUM-split-${rid()}`;
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+        const next = await event(b, report, payloadOf('accepted_fine'), { report_number: 'SPP-2609-8000002' });
+        expect((await ingest(b, [next])).json.results[0].status).toBe('accepted');
+        expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+        expect(repsOf(key)).toBe('2');
+        expect(identitiesOf(key).split(',')).toHaveLength(2);
+      }
+    });
+
+    it('preserves a stored agency code when an older app version re-observes without the key', async () => {
+      // REVIEW2 높음-4: v1/v2 payload 에는 source_agency_code 키가 없다 — 키 부재가 명시적 NULL 이 아니다.
+      const w = await writerFor('D');
+      const report = `CODE-${rid()}`;
+      const key = () => sql(`select source_report_key from private.community_ingest_events where source_report_id = '${report}' limit 1;`);
+      const storedCode = () => sql(`select coalesce(source_agency_code, '<null>') from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const v3 = { ...payloadOf('accepted_fine'), source_agency_code: 'B410002' };
+      expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v1 키셋(violation_law·source_agency_code 없음)으로 더 높은 revision 을 보내도 코드는 유지된다.
+      const { source_agency_code: _dropCode, violation_law: _dropLaw, rating: _dropRating, ...v1 } = payloadOf('accepted_fine');
+      expect((await ingest(w, [await event(w, report, v1)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v3 명시적 null(키 있음)은 코드를 지운다.
+      expect((await ingest(w, [await event(w, report, payloadOf('accepted_fine'))])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('<null>');
+      expect(key()).not.toBe('');
+    });
+
+    it('does not attach a stored agency code to a renamed answer from an older app (REVIEW3 중간-4)', async () => {
+      // v3 저장 뒤 v1(키 없음)이 기관명이 바뀐 답변을 보내면 옛 코드를 붙이지 않는다.
+      const w = await writerFor('D');
+      const report = `CODE-rename-${rid()}`;
+      const storedCode = () => sql(`select coalesce(source_agency_code, '<null>') from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const storedAgency = () => sql(`select agency_name from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const v3 = { ...payloadOf('accepted_fine'), source_agency_code: 'B410002' };
+      expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v1 + 같은 기관명 + 다른 답변 → 코드 보존.
+      const { source_agency_code: _d1, violation_law: _d2, rating: _d3, ...v1base } = payloadOf('accepted_fine');
+      const v1same = { ...v1base, status: 'partial', status_raw: '일부수용' };
+      expect((await ingest(w, [await event(w, report, v1same)])).json.results[0].status).toBe('accepted');
+      expect(storedCode()).toBe('B410002');
+      // v1 + 바뀐 기관명 → 옛 코드 미부착(NULL).
+      const v1renamed = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(w, [await event(w, report, v1renamed)])).json.results[0].status).toBe('accepted');
+      expect(storedAgency()).toBe('부산광역시 해운대구청');
+      expect(storedCode()).toBe('<null>');
+    });
+
+    it('keeps the institution key when an older app re-observes the same agency without the key (REVIEW4)', async () => {
+      // 승계 코드(v3)로 저장된 뒤 v1(키 없음)이 같은 기관명의 새 답변을 보내면
+      // 코드뿐 아니라 기관 키·현행명도 보존된다 — derived 기관명 해시(a1:)로
+      // 덮으면 inst: 통계가 갈라지는 회귀(REVIEW4 중간-2).
+      const w = await writerFor('D');
+      const report = `CODE-keepkey-${rid()}`;
+      const stored = (col: string) => sql(`select coalesce(${col}, '<null>') from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const v3 = { ...payloadOf('accepted_fine'), source_agency_code: '1812314', agency_name: '광주광역시경찰청' };
+      expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
+      expect(stored('agency_key')).toBe('inst:ag-gwangju-police-hq');
+      expect(stored('agency_current_name')).toBe('광주경찰청');
+      // v1 + 같은 기관명 + 다른 답변 → 코드·기관 키·현행명 모두 보존.
+      const { source_agency_code: _k1, violation_law: _k2, rating: _k3, ...v1base } = payloadOf('accepted_fine');
+      const v1same = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '광주광역시경찰청' };
+      expect((await ingest(w, [await event(w, report, v1same)])).json.results[0].status).toBe('accepted');
+      expect(stored('source_agency_code')).toBe('1812314');
+      expect(stored('agency_key')).toBe('inst:ag-gwangju-police-hq');
+      expect(stored('agency_current_name')).toBe('광주경찰청');
+      // v1 + 바뀐 기관명 → 코드는 NULL, 키는 새 derived(옛 inst: 미부착).
+      const v1renamed = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(w, [await event(w, report, v1renamed)])).json.results[0].status).toBe('accepted');
+      expect(stored('source_agency_code')).toBe('<null>');
+      expect(stored('agency_key')).not.toBe('inst:ag-gwangju-police-hq');
+    });
+
+    it('keeps the other account contribution when one account deletes its own (tombstone independence)', async () => {
+      // A의 공유 삭제/철회는 A의 관계만 처리한다. B가 유효하게 공유한 관계는 유지되고 전체 대표는 B로 승계된다.
+      const report = `DEL-${rid()}`;
+      const f = await writerFor('F');
+      const g = await writerFor('G');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const repContributor = () => sql(`select e->>'contributor_id' from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect((await ingest(f, [await event(f, report)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(g, [await event(g, report)])).json.results[0].status).toBe('accepted');
+      expect(repContributor()).toBe(f.session.userId);
+      expect((await account('contributions-delete', f.session.access, { confirm: 'DELETE_MY_SHARED_REPORTS' })).status).toBe(200);
+      expect(publicFacts(`%:${key}`, f.session.userId)).toBe(0);
+      expect(publicFacts(`%:${key}`, g.session.userId)).toBe(1);
+      expect(publicFacts(`%:${key}`)).toBe(1); // 전체 고유 1건 유지
+      expect(repContributor()).toBe(g.session.userId); // 대표가 G로 승계
+      // G의 기여는 그대로 유효하다: 재전송도 정상 처리된다
+      expect((await ingest(g, [await event(g, report)])).json.results[0].status).toBe('no_change');
+    });
+
+    it('serializes concurrent contributions of one report without duplicates', async () => {      const report = `RACE-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const [left, right] = await Promise.all([
+        ingest(a, [await event(a, report)]), ingest(b, [await event(b, report)]),
+      ]);
+      // 둘 다 accepted: 한 요청의 일부 실패로 잘못 ACK하지 않고, 계정 연결이 중복 생성되지 않는다
+      expect([left.json.results[0].status, right.json.results[0].status].sort()).toEqual(['accepted', 'accepted']);
+      expect(count('private.community_report_facts', `source_report_id='${report}'`)).toBe(2);
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1);
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(1);
+    });
+
+    it('keeps the last answered state when a legacy correction says it is no longer final (2026-09-28: no corrections)', async () => {
       const w = await writerFor('D');
       const report = `CORR-${rid()}`;
       expect((await ingest(w, [await event(w, report)])).json.results[0].projection_status).toBe('published');
       const key = sql(`select source_report_key from private.community_ingest_events where source_report_id = '${report}' limit 1;`);
       expect(publicFacts(`%:${key}`)).toBe(1);
       const r = await ingest(w, [await event(w, report, payloadOf('withdrawn_not_eligible'), { event_type: 'status_correction' })]);
-      expect(r.json.results[0]).toMatchObject({ status: 'accepted', projection_status: 'removed' });
-      expect(publicFacts(`%:${key}`)).toBe(0);
+      expect(r.json.results[0]).toMatchObject({ status: 'rejected', durable: false,
+        error: { code: 'non_final_not_accepted', retryable: false } });
+      expect(publicFacts(`%:${key}`)).toBe(1);
+      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}';`)).toBe('accepted');
+    });
+
+    it('rejects a non-final event per event while the rest of an old-client batch still processes', async () => {
+      const w = await writerFor('D');
+      const good = await event(w, `MIX-${rid()}`);
+      const bad = await event(w, `MIX-${rid()}`, payloadOf('processing_not_eligible'));
+      const r = await ingest(w, [good, bad]);
+      expect(r.status, JSON.stringify(r.json)).toBe(200);
+      expect(r.json.results[0]).toMatchObject({ status: 'accepted', durable: true });
+      expect(r.json.results[1]).toMatchObject({ status: 'rejected', durable: false,
+        error: { code: 'non_final_not_accepted', retryable: false } });
+      expect(count('private.community_report_facts', `source_report_id = '${good.source_report_id}'`)).toBe(1);
+      expect(count('private.community_report_facts', `source_report_id = '${bad.source_report_id}'`)).toBe(0);
     });
 
     it('races ingest against revoke, takeover and a policy switch without deadlocks or partial writes (S-09)', async () => {

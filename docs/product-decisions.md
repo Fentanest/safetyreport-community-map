@@ -38,6 +38,24 @@
   이름 그대로의 별도 지표로 남겨 두며 화면의 수용률로 쓰지 않는다.
 - 화면에는 일반 이용자 말만 쓴다(docs/personal-comparison.md §5.7).
 
+<## 2026-09-28 신고번호·소유 이전 → 같은 날 계정별 기여 규칙으로 대체
+
+- ~~다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 Observation payload 가 **완전히 같을 때만** 나중에 올린 계정으로 이전한다~~ — 사용자 규칙(계정별 기여)으로 대체되어 소유 이전을 하지 않는다. A 의 fact·연결은 보존하고 B 에도 연결한다(B 의 내 신고·개인 통계에 1건). 전체 지도·기관·담당자·공개 통계는 고유 신고 1건(대표행만 집계, `contribution-dedupe-v1`).
+- 같은 신고의 타 계정 업로드는 payload·신고번호가 달라도 정상 수신(`accepted`)한다. `transferred`·`cross_account_mismatch`·`report_identity_mismatch`·`ambiguous_existing_owners`는 폐기(구버전 앱이 받아도 무해하도록 문서에만 유지). 이전 감사 표는 역사 기록으로 남기고 새로 쓰지 않는다.
+- 같은 계정의 PC·모바일·두 번째 dataset·복원본 업로드는 개인 집계에서도 identity당 1건으로 collapse 된다.
+- 대표 선출: 공개 목록 중 `first_accepted_at`이 가장 이른 행(동점시 contributor_id 순). 실제 결과가 계정마다 다르면 각 관측을 보존하고 대표는 최초 기여로 유지한다. 한 계정의 삭제/철회는 그 계정만 처리하고 대표는 유효 기여로 승계된다.
+- 아래 2026-09-28 신고번호 수집 문단 중 이전 관련 내용은 위 규칙으로 대체된다. 신고번호 private 수집·해시 제외·공개 비노출은 유지한다.
+
+## 2026-09-28 답변 완료만 중앙 수집 (같은 날 확정)
+
+- 답변 완료된 신고만 중앙에 올린다. 적격 = status ∈ {accepted, partial, rejected, completed_unknown}(수용/일부수용/불수용/답변완료·기타).
+  처리중·보완요청·취하·이송·other 는 앱이 올리지도, 서버가 받지도 않는다.
+- 앱은 `status_correction` 이벤트를 발급하지 않는다. 적격이 아닌 관측은 이벤트 없음(기존 로컬 `detail_status` 기록만).
+  로컬 outbox 에 이미 남아 있는 미전송 `status_correction` 행은 보내지 않고 `blocked:deprecated_status_correction` 으로 보존한다(PC·모바일 동일, drop 하지 않음).
+- 서버는 payload 가 적격이 아니거나 event_type 이 `status_correction` 인 이벤트를 이벤트 단위로 재시도 불가 `rejected:non_final_not_accepted`(durable=false)로 거절한다.
+  배치의 나머지 이벤트는 정상 처리한다(요청 전체 422가 아님). `status_correction` 이름은 구버전 앱이 이벤트별 거절을 받도록 인식만 유지한다.
+- 답변 완료로 올라간 신고가 나중에 비종결 상태로 돌아가면(드묾) 중앙은 마지막 답변 상태를 유지한다. 중앙 fact 는 바뀌지 않는다.
+
 ## 2026-09-28 사용자 결정 · 위반법규 공개
 - 앱(PC·모바일)이 답변 처리내용에서 **법 이름·조항만** 뽑아 `violation_law`로 보낸다(observation-v2). 처리내용 원문은 보내지 않는다.
 - 공개는 동의문 **2026-09-28.2**부터다(‘위반법규’ 행 추가). 그 버전(또는 그 뒤 버전)이 현재 동의인 계보의 사실만 법규를 내보낸다

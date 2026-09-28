@@ -10,6 +10,7 @@ import type { Scope } from './public.ts';
 
 /** Counts and rates of one side (all or mine) for the current scope. */
 export interface CompareSummary {
+  rating?: { count: number; mean: number | null };
   /** 신고일 기준 */
   report_count: number;
   /** 처리완료일 기준 */
@@ -74,6 +75,7 @@ export interface CompareDiff {
 }
 
 export interface CompareSide {
+  rating?: { count: number; mean: number | null };
   report_count: number;
   completed_count: number;
   result_known: number;
@@ -125,6 +127,8 @@ export interface CompareMonth {
   mine_accept_rate: number | null;
   all_duration_median_days: number | null;
   mine_duration_median_days: number | null;
+  all_rating?: { count: number; mean: number | null };
+  mine_rating?: { count: number; mean: number | null };
 }
 
 /** A located point that contains at least one of my reports or completions in the scope. */

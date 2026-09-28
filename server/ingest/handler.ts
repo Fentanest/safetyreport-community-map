@@ -5,7 +5,7 @@
 // No admin-key fallback, no IP-header trust, no logging of bodies, tokens, ids or payloads.
 
 import {
-  canonicalJson, deriveFact, type EventType, mapStatus, type Observation, sha256Hex, sourceReportKey,
+  canonicalJson, deriveFact, type EventType, mapStatus, nonFinalRejection, type Observation, sha256Hex, sourceReportKey,
   validateEventType, validateObservationValues,
 } from './observation.ts';
 
@@ -53,6 +53,8 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/;
 const COORD = /^-?\d{1,3}\.\d{1,17}$/;
 const REPORT_ID = /^[0-9A-Za-z_-]{1,40}$/;
+// Both YYMM and YYMMDD middle groups occur in the upstream clients' fixtures.
+const REPORT_NUMBER = /^SPP-[0-9]{4,6}-[0-9]{6,8}$/;
 const POLICY = /^[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]{1,3}$/;
 const TRIGGERS = new Set(['realtime', 'manual', 'midnight', 'recovery', 'rebuild', 'reshare']);
 const EVENT_TYPES = new Set(['completed_observation', 'status_correction', 'location_supplement', 'reshare']);
@@ -92,11 +94,20 @@ const OBSERVATION_V1_KEYS = ['address', 'agency_name', 'amount', 'category', 'co
   'manager_name', 'report_date', 'status', 'status_raw', 'vehicle_raw'] as const;
 /** observation-v2 (2026-09-28) adds `violation_law`; v1 (12 keys, old apps) is still accepted. */
 const OBSERVATION_V2_KEYS = [...OBSERVATION_V1_KEYS, 'violation_law'] as const;
+/** observation-v3 (2026-09-28) adds `source_agency_code` (원문 기관코드, null 가능); v1/v2 still accepted. */
+const OBSERVATION_V3_KEYS = [...OBSERVATION_V2_KEYS, 'source_agency_code'] as const;
+const OBSERVATION_V4_KEYS = [...OBSERVATION_V3_KEYS, 'rating'] as const;
 
 export function isObservation(p: unknown): p is Observation {
-  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS))) return false;
-  // v2: null or 1..60 code points (empty string, over-length and non-strings are schema_invalid like any other field)
+  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS) || exactKeys(p, OBSERVATION_V3_KEYS) || exactKeys(p, OBSERVATION_V4_KEYS))) return false;
+  if (Object.hasOwn(p, 'rating') && !(p.rating === null || (Number.isInteger(p.rating) && (p.rating as number) >= 1 && (p.rating as number) <= 5))) return false;
+  // v2: null or 1..60 code points (empty string and non-strings are schema_invalid like any other field)
   if (Object.hasOwn(p, 'violation_law') && !nstr(p.violation_law, 60)) return false;
+  // v3: null or a non-empty string, kept verbatim (only 7 alphanumerics feed the resolver; the rest stays unresolved).
+  // Over-length (>32 code points) is a named value error (source_agency_code_too_long), not a silent null —
+  // the length gate lives in validateObservationValues so the reason is explicit.
+  if (Object.hasOwn(p, 'source_agency_code') &&
+      !(p.source_agency_code === null || (typeof p.source_agency_code === 'string' && p.source_agency_code.length >= 1))) return false;
   const a = p.amount, l = p.location;
   return nstr(p.address, 200) && nstr(p.agency_name, 200) && nstr(p.manager_name, 160) && nstr(p.vehicle_raw, 64) &&
     nstr(p.status_raw, 40) &&
@@ -200,9 +211,12 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         const raw = item as Record<string, unknown>;
         const evKeys = ['event_id', 'event_type', 'source_system', 'source_report_id', 'source_revision', 'writer_epoch',
           'captured_at', 'payload', 'payload_sha256'];
-        if (!exactKeys(raw, evKeys) || typeof raw.event_id !== 'string' || !UUID4.test(raw.event_id) ||
+        if (!(exactKeys(raw, evKeys) || exactKeys(raw, [...evKeys, 'report_number'])) ||
+            typeof raw.event_id !== 'string' || !UUID4.test(raw.event_id) ||
             seen.has(raw.event_id) || !EVENT_TYPES.has(raw.event_type as string) || raw.source_system !== 'safetyreport' ||
             typeof raw.source_report_id !== 'string' || !REPORT_ID.test(raw.source_report_id) ||
+            !(raw.report_number === undefined || raw.report_number === null ||
+              (typeof raw.report_number === 'string' && REPORT_NUMBER.test(raw.report_number))) ||
             !Number.isSafeInteger(raw.source_revision) || (raw.source_revision as number) < 1 ||
             !Number.isSafeInteger(raw.writer_epoch) || (raw.writer_epoch as number) < 1 ||
             typeof raw.captured_at !== 'string' || !INSTANT.test(raw.captured_at) || Number.isNaN(Date.parse(raw.captured_at)) ||
@@ -217,12 +231,20 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         if (hash !== raw.payload_sha256) fail('payload_hash_mismatch');
         const valueError = validateObservationValues(payload);
         if (valueError) fail(valueError.code, undefined, valueError.reason);
-        const typeError = validateEventType(raw.event_type as EventType, b.trigger as string, payload);
-        if (typeError) fail(typeError.code, undefined, typeError.reason);
+        // Non-final payloads and legacy status_correction events are recognised (no 422) and rejected
+        // per event by the SQL ingest function, so the rest of the batch still processes (Sol 2026-09-28:
+        // a legacy/non-final event must not fail the whole batch — skip the type check for it).
+        const rejectionCode = nonFinalRejection(raw.event_type as EventType, payload);
+        if (!rejectionCode) {
+          const typeError = validateEventType(raw.event_type as EventType, b.trigger as string, payload);
+          if (typeError) fail(typeError.code, undefined, typeError.reason);
+        }
         events.push({ event_id: raw.event_id, event_type: raw.event_type, source_report_id: raw.source_report_id,
+          report_number: raw.report_number ?? null,
           source_report_key: await sourceReportKey(raw.source_report_id as string), source_revision: raw.source_revision,
           writer_epoch: raw.writer_epoch, captured_at: raw.captured_at, payload, payload_sha256: hash,
           quarantine_reason: mapStatus(payload.status_raw) === payload.status ? null : 'status_mapping_mismatch',
+          rejection_code: rejectionCode,
           derived: await deriveFact(payload) });
       }
       const result = await deps.rpc('internal_community_ingest', { p_user: uid, p_session: session, p_request_id: rid,

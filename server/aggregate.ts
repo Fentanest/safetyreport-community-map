@@ -31,6 +31,8 @@ export interface PrivateFact {
   region_code: string | null;
   agency_key: string | null;
   agency_name: string | null;
+  /** 현행 기관 표시명(확인된 1:1 승계만, ingest 확정값). null 이면 agency_name 원문을 쓴다. */
+  agency_current_name?: string | null;
   manager_key: string | null;
   manager_name: string | null;
   /** 답변에 적힌 금액의 종류(community ingest). Legacy/snapshot sources omit these fields. */
@@ -43,6 +45,23 @@ export interface PrivateFact {
   amount_stated?: boolean;
   /** 위반법규 (observation-v2), only when the fact's consent policy publishes it; null/absent = 법규 미상 */
   violation_law?: string | null;
+  /** 1..5 numeric satisfaction rating, null when absent or not disclosed by consent. */
+  rating?: number | null;
+/** true for the single publicly-counted row of an identity (same report shared by several accounts).
+ *  Absent on legacy rows — treated as true. Personal scope still receives every listed row. */
+  is_representative?: boolean | null;
+  /** listed contribution rows for the same identity (accounts), representative row carries the total */
+  contribution_count?: number | null;
+  /** identity without the dataset part (same report from PC·mobile·restores shares it) */
+  source_report_key?: string | null;
+  /** report identity: source_report_key + authoritative report_number grouping (2026-09-28).
+   *  Both numbers present and different → separate identities; a missing number joins the
+   *  key's first numbered group, else the legacy group. Absent on legacy rows. */
+  report_identity?: string | null;
+  /** the representative contribution's authoritative report number (null = legacy) */
+  report_number?: string | null;
+  /** when this contribution row was first stored (elects the per-account representative) */
+  first_accepted_at?: string | null;
 }
 
 const terminal = new Set<Status>(['accepted', 'partial', 'rejected', 'withdrawn', 'transferred', 'completed_unknown']);
@@ -99,6 +118,30 @@ function activeFacts(facts: readonly PrivateFact[]): PrivateFact[] {
   return [...latest.values()];
 }
 
+/** Global scope counts each shared identity once: only the representative row elected by
+ *  internal_analytics_v2_facts (earliest contribution among publicly-listed rows). Rows without
+ *  the flag (legacy snapshots) count as before. Personal (mine) counts filter the full input. */
+export function representatives(facts: readonly PrivateFact[]): PrivateFact[] {
+  return facts.filter(fact => fact.is_representative !== false);
+}
+
+/** One row per identity: the same account's PC·mobile·second-dataset·restored rows collapse to the
+ *  earliest contribution. Legacy rows without identity fields collapse by fact_identity. */
+export function ownRepresentatives(facts: readonly PrivateFact[]): PrivateFact[] {
+  const best = new Map<string, PrivateFact>();
+  for (const fact of facts) {
+    const key = `${fact.contributor_id}\u0000${fact.report_identity ?? fact.source_report_key ?? fact.fact_identity}`;
+    const old = best.get(key);
+    // earliest contribution wins; a dated row beats an undated one; ties keep input order
+    if (!old) best.set(key, fact);
+    else {
+      const next = fact.first_accepted_at ?? null, current = old.first_accepted_at ?? null;
+      if (next !== null && (current === null || next < current)) best.set(key, fact);
+    }
+  }
+  return [...best.values()];
+}
+
 function dimensions(fact: PrivateFact, scope: Scope): boolean {
   if (scope.category !== 'all' && fact.category !== scope.category) return false;
   if (scope.region_code && !regionMatches(regionOf(fact), scope.region_code)) return false;
@@ -130,6 +173,12 @@ export function outcomes(facts: readonly PrivateFact[]): OutcomeCounts {
   }
   const result_known = accepted + partial + rejected;
   return { accepted, partial, rejected, result_known, result_unknown: facts.length - result_known };
+}
+
+export function ratingSummary(facts: readonly PrivateFact[]): { count: number; mean: number | null } {
+  const values = facts.map(fact => fact.rating).filter((n): n is number =>
+    typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 5);
+  return { count: values.length, mean: values.length ? values.reduce((sum, n) => sum + n, 0) / values.length : null };
 }
 
 export function growth(current: number, previous: number) {
@@ -164,11 +213,11 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
   }
   return [...groups].map(([key, rows]) => ({
     key, agency_key: rows[0].agency_key, manager_key: kind === 'manager' ? rows[0].manager_key : null,
-    agency_name: rows[0].agency_name || '기관 정보 없음',
+    agency_name: rows[0].agency_current_name || rows[0].agency_name || '기관 정보 없음',
     manager_name: kind === 'manager' ? rows[0].manager_name : null,
     completed_count: rows.length, outcomes: outcomes(rows),
     fine_count: rows.filter(row => row.disposition === 'fine').length,
-    duration: durationBrief(rows), fine_amount: fineAmountBrief(rows),
+    duration: durationBrief(rows), fine_amount: fineAmountBrief(rows), rating: ratingSummary(rows),
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
 
@@ -192,7 +241,7 @@ export function lawRows(done: readonly PrivateFact[]): PublicLaw[] {
       fine_count: fine, fine_rate: rows.length ? fine * 100 / rows.length : null,
       penalty_count: rows.filter(row => row.disposition === 'penalty').length,
       warning_count: rows.filter(row => row.disposition === 'warning').length,
-      fine_amount: fineAmountBrief(rows),
+      fine_amount: fineAmountBrief(rows), rating: ratingSummary(rows),
     };
   }).sort((a, b) => b.completed_count - a.completed_count ||
     (a.law === null ? 1 : 0) - (b.law === null ? 1 : 0) || (a.law ?? '').localeCompare(b.law ?? '', 'ko'));
@@ -241,7 +290,7 @@ export function regionRows(reported: readonly PrivateFact[], done: readonly Priv
     level: r.level, region_code: r.code, name: r.code ? regionName(r.code) ?? r.code : '지역 미확인', sido_code: r.sido,
     report_count: r.reported, completed_count: r.done.length,
     outcomes: outcomes(r.done), fine_count: r.done.filter(fact => fact.disposition === 'fine').length,
-    duration: durationBrief(r.done), fine_amount: fineAmountBrief(r.done),
+    duration: durationBrief(r.done), fine_amount: fineAmountBrief(r.done), rating: ratingSummary(r.done),
   })).sort((a, b) => order[a.level] - order[b.level] || b.report_count - a.report_count ||
     b.completed_count - a.completed_count || (a.region_code ?? '').localeCompare(b.region_code ?? ''));
 }
@@ -368,7 +417,10 @@ export function selectScope(input: readonly PrivateFact[], scope: Scope): ScopeS
 }
 
 export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, options: AggregateOptions): DashboardData {
-  const { prev, facts, reported, done, previousReported, previousDone } = selectScope(input, scope);
+  const { prev, facts, reported, done, previousReported, previousDone } = selectScope(representatives(input), scope);
+  // contributor_count keeps its meaning (accounts with a listed fact in scope on the report-date basis),
+  // counted over every listed row — representatives alone would hide co-contributors.
+  const full = selectScope(input, scope);
   const result = outcomes(done), D = result.result_known;
   const duration = { ...durationSummary(done), answer_date_missing: answerDateMissing(reported) };
   const fineAmount = fineAmountSummary(done);
@@ -401,7 +453,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
     const monthlyDone = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
     return { month, report_count: monthlyReports.length, completed_count: monthlyDone.length,
       fine_count: monthlyDone.filter(fact => fact.disposition === 'fine').length,
-      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone),
+      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone), rating: ratingSummary(monthlyDone),
       partial: month === options.asOf.slice(0, 7) && scope.end >= options.asOf,
       coverage_note: dataMin && month === dataMin.slice(0, 7) && dataMin.slice(8) !== '01' ? '제공 시작 월(부분)' : null };
   });
@@ -421,7 +473,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
     coverage_note: '커뮤니티 사용자가 공유한 답변 완료 신고만 집계합니다. 전국 전체 신고나 미완료 신고를 대표하지 않습니다.',
     population: 'shared_completed_reports',
     location_missing: locationMissing,
-    dedupe_policy_version: 'ingest-latest-v1', capabilities: {
+    dedupe_policy_version: 'contribution-dedupe-v1', capabilities: {
       daily_report_dates: capability('supported'), completion_dates: capability('supported'),
       manager_status_cross: capability('supported'), agency_status_cross: capability('supported'),
       vehicle_top5: capability('supported'),
@@ -431,6 +483,8 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       // coverage = answered reports with a published law / C (the rest are 법규 미상)
       violation_law: { status: 'supported', reason: null,
         coverage: { eligible: done.filter(fact => lawKey(fact.violation_law) !== null).length, total: done.length } },
+      rating: { status: 'supported', reason: null,
+        coverage: { eligible: ratingSummary(done).count, total: done.length } },
     },
   };
   return {
@@ -451,11 +505,12 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       },
       fine_count: countMetric(fine, 'completed_date', comparisonCovered ? priorFine : null, 0, done.length),
       point_count: countMetric(reportedPointKeys.size, 'report_date', comparisonCovered ? previousReportedPointKeys.size : null, 0, reported.length),
-      contributor_count: countMetric(new Set(reported.map(fact => fact.contributor_id)).size, 'report_date',
-        comparisonCovered ? new Set(previousReported.map(fact => fact.contributor_id)).size : null, 0, reported.length),
+      contributor_count: countMetric(new Set(full.reported.map(fact => fact.contributor_id)).size, 'report_date',
+        comparisonCovered ? new Set(full.previousReported.map(fact => fact.contributor_id)).size : null, 0, full.reported.length),
       outcomes: result,
       processing_duration: duration,
       fine_amount: fineAmount,
+      rating: ratingSummary(done),
     },
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
     regions: regionRows(reported, done), laws: lawRows(done),

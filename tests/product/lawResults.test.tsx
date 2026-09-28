@@ -57,16 +57,19 @@ describe('per-law rows (docs/metrics-catalog.md law_results)', () => {
       accept_rate: 50, partial_rate: 25, fine_count: 3, fine_rate: 60, penalty_count: 0, warning_count: 1,
       // the withheld 90,000 never enters: 2 of 3 fines confirmed, 40,000 + 60,000
       fine_amount: { fine_count: 3, confirmed_count: 2, sum_won: 100000, mean_won: 50000 },
+      rating: { count: 0, mean: null },
     });
     expect(l5).toEqual({
       law: L5, completed_count: 3, outcomes: { accepted: 1, partial: 0, rejected: 2, result_known: 3, result_unknown: 0 },
       accept_rate: 100 / 3, partial_rate: 0, fine_count: 0, fine_rate: 0, penalty_count: 1, warning_count: 0,
       fine_amount: { fine_count: 0, confirmed_count: 0, sum_won: null, mean_won: null },
+      rating: { count: 0, mean: null },
     });
     expect(none).toEqual({
       law: null, completed_count: 3, outcomes: { accepted: 1, partial: 1, rejected: 1, result_known: 3, result_unknown: 0 },
       accept_rate: 100 / 3, partial_rate: 100 / 3, fine_count: 1, fine_rate: 100 / 3, penalty_count: 0, warning_count: 1,
       fine_amount: { fine_count: 1, confirmed_count: 0, sum_won: null, mean_won: null },  // no amount written: never 0원
+      rating: { count: 0, mean: null },
     });
     expect(l34).toMatchObject({ completed_count: 1, accept_rate: 100, fine_rate: 100,
       fine_amount: { fine_count: 1, confirmed_count: 1, sum_won: 0, mean_won: 0 } });           // explicit 0원 is a real 0
@@ -106,7 +109,7 @@ describe('per-law rows (docs/metrics-catalog.md law_results)', () => {
 
 const state: AnalyticsState = {
   dataset_version: 'v2-law', ready: true, source_updated_at: '2026-09-28T00:00:00Z', generated_at: '2026-09-28T01:00:00Z',
-  published_at: null, data_min: '2026-01-01', data_max: '2026-09-30', coverage_note: 'synthetic test', dedupe_policy_version: 'ingest-latest-v1',
+  published_at: null, data_min: '2026-01-01', data_max: '2026-09-30', coverage_note: 'synthetic test', dedupe_policy_version: 'contribution-dedupe-v1',
 };
 const repo = (): AnalyticsRepository => ({ getState: async () => state, getFacts: async () => facts, allowRequest: async () => true });
 const endpoint = (path: string) => viewerRequest(`https://example.supabase.co/functions/v1/public-analytics/${path}`);
