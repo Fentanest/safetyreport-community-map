@@ -210,7 +210,7 @@
    "version": "202609281600",
    "repo": "map",
    "path": "supabase/migrations/202609281600_answer_recency.sql",
-   "sha256": "67c22925501e3b03c534ef3a9ad729558b4f921d3253f4c045f77a5f17eefe56",
+   "sha256": "802b358acd644256fc79b3852d34f8ad2f9e942a37cea80514fbc05e8e6fb04d",
    "depends_on": [
     "202609281500"
    ]

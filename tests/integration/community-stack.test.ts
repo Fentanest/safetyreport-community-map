@@ -919,6 +919,32 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(storedCode()).toBe('<null>');
     });
 
+    it('keeps the institution key when an older app re-observes the same agency without the key (REVIEW4)', async () => {
+      // 승계 코드(v3)로 저장된 뒤 v1(키 없음)이 같은 기관명의 새 답변을 보내면
+      // 코드뿐 아니라 기관 키·현행명도 보존된다 — derived 기관명 해시(a1:)로
+      // 덮으면 inst: 통계가 갈라지는 회귀(REVIEW4 중간-2).
+      const w = await writerFor('D');
+      const report = `CODE-keepkey-${rid()}`;
+      const stored = (col: string) => sql(`select coalesce(${col}, '<null>') from private.community_report_facts
+        where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
+      const v3 = { ...payloadOf('accepted_fine'), source_agency_code: '1812314', agency_name: '광주광역시경찰청' };
+      expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
+      expect(stored('agency_key')).toBe('inst:ag-gwangju-police-hq');
+      expect(stored('agency_current_name')).toBe('광주경찰청');
+      // v1 + 같은 기관명 + 다른 답변 → 코드·기관 키·현행명 모두 보존.
+      const { source_agency_code: _k1, violation_law: _k2, ...v1base } = payloadOf('accepted_fine');
+      const v1same = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '광주광역시경찰청' };
+      expect((await ingest(w, [await event(w, report, v1same)])).json.results[0].status).toBe('accepted');
+      expect(stored('source_agency_code')).toBe('1812314');
+      expect(stored('agency_key')).toBe('inst:ag-gwangju-police-hq');
+      expect(stored('agency_current_name')).toBe('광주경찰청');
+      // v1 + 바뀐 기관명 → 코드는 NULL, 키는 새 derived(옛 inst: 미부착).
+      const v1renamed = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(w, [await event(w, report, v1renamed)])).json.results[0].status).toBe('accepted');
+      expect(stored('source_agency_code')).toBe('<null>');
+      expect(stored('agency_key')).not.toBe('inst:ag-gwangju-police-hq');
+    });
+
     it('keeps the other account contribution when one account deletes its own (tombstone independence)', async () => {
       // A의 공유 삭제/철회는 A의 관계만 처리한다. B가 유효하게 공유한 관계는 유지되고 전체 대표는 B로 승계된다.
       const report = `DEL-${rid()}`;

@@ -5,8 +5,8 @@
 -- 수신한 서로 다른 답변'이다. 기존 answer_first_seen = min(first_accepted_at)
 -- 은 UPDATE 로 새 답변이 와도 first_accepted_at 이 그대로라 B의 옛 결과가
 -- 대표로 남았다. 새 컬럼 answer_accepted_at(답변 수신 시각)을 둔다:
---   - INSERT: now()
---   - 실제 내용 변경(sha 바뀜): now()
+--   - INSERT: clock_timestamp()
+--   - 실제 내용 변경(sha 바뀜): clock_timestamp()
 --   - 동일 내용-no_change / stale_ignored / sha 같은 reshare(동의 갱신 등
 --     grant 만 바뀜): 유지 → 단순 재전송·재공유가 대표를 뒤집지 않는다.
 -- 대표 선출 순서: 그룹의 answer_time(max(answer_accepted_at)) DESC,
@@ -28,6 +28,9 @@
 -- 기관명이 바뀐 새 답변을 보내면 옛 기관코드를 붙이지 않는다. 키가 없을 때
 -- 기관명이 기존 fact 와 같으면 보존(같은 기관의 새 답변), 다르면 NULL(새
 -- 기관 답변에 옛 코드 부착 금지). 키가 있으면(명시적 null 포함) 그대로 쓴다.
+-- REVIEW4 중간: 같은 기관명 갱신은 기관 키·현행명·담당자 키도 보존한다(코드 없는
+-- derived 의 기관명 해시(a1:)로 덮으면 승계 기관의 inst: 통계가 갈라진다).
+-- 담당자명이 바뀌었으면 보존된 기관 키로 manager_key 를 재계산한다.
 --
 -- R4 (REVIEW3 신규-높음-2): resolver 양방향 해석(shared 스냅샷, 1815198 →
 -- 같은 institution)으로 신규 수신 행은 자동 연결된다. 1500 이후에 들어와
@@ -39,8 +42,10 @@
 begin;
 alter table private.community_report_facts
     add column answer_accepted_at timestamptz not null default now();
-update private.community_report_facts set answer_accepted_at = first_accepted_at
- where answer_accepted_at is not distinct from first_accepted_at;
+-- REVIEW4 높음: ADD COLUMN 기본값 now()로 채운 뒤 WHERE 없이 전 행을 덮는다.
+-- WHERE(answer_accepted_at IS NOT DISTINCT FROM first_accepted_at)로 고르면
+-- 일반 기존 행은 migration 시각이 남아 대표 순서가 바뀐다.
+update private.community_report_facts set answer_accepted_at = first_accepted_at;
 create or replace function public.internal_community_ingest(
     p_user uuid, p_session uuid, p_request_id text, p_envelope jsonb, p_events jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = '' as $$
@@ -212,7 +217,7 @@ begin
                 d->>'region_code', d->>'point_key', d->>'agency_key', d->>'agency_name', d->>'agency_current_name',
                 d->>'manager_key', d->>'manager_name',
                 d->>'violation_law', d->>'source_agency_code',
-                now());
+                clock_timestamp());
             v_result := 'accepted';
         elsif (v_epoch, v_rev) > (v_fact.writer_epoch, v_fact.source_revision) then
             -- A fact accepted under a lineage the USER revoked stays under that (hidden) grant unless this event is an
@@ -236,9 +241,33 @@ begin
                     vehicle_raw = d->>'vehicle_raw', lat = (d->>'lat')::double precision, lng = (d->>'lng')::double precision,
                     lat_text = d->>'lat_text', lng_text = d->>'lng_text', coord_source = d->>'coord_source',
                     address = d->>'address', region_code = d->>'region_code', point_key = d->>'point_key',
-                    agency_key = d->>'agency_key', agency_name = d->>'agency_name',
-                    agency_current_name = d->>'agency_current_name',
-                    manager_key = d->>'manager_key',
+                    -- REVIEW4 중간: 키 없는 payload(v1/v2)의 같은 기관명 갱신은
+                    -- 저장된 기관 키·현행명도 보존한다. derived(d)는 코드가 없어
+                    -- 기관명 해시(a1:)라서 그대로 덮으면 승계 기관의 inst: 통계가
+                    -- a1:로 갈라진다. 키가 있거나(명시 null 포함) 기관명이 다르면
+                    -- d 값을 쓴다(개명 답변에 옛 키 부착 금지).
+                    agency_key = case when (e->'payload') ? 'source_agency_code'
+                                              then d->>'agency_key'
+                                              when d->>'agency_name' is not distinct from v_fact.agency_name
+                                              then v_fact.agency_key
+                                              else d->>'agency_key' end,
+                    agency_name = d->>'agency_name',
+                    agency_current_name = case when (e->'payload') ? 'source_agency_code'
+                                              then d->>'agency_current_name'
+                                              when d->>'agency_name' is not distinct from v_fact.agency_name
+                                              then v_fact.agency_current_name
+                                              else d->>'agency_current_name' end,
+                    manager_key = case when (e->'payload') ? 'source_agency_code'
+                                              then d->>'manager_key'
+                                              when d->>'agency_name' is not distinct from v_fact.agency_name
+                                              then case when d->>'manager_name' is not distinct from v_fact.manager_name
+                                                        then v_fact.manager_key
+                                                        when d->>'manager_name' is null
+                                                        then null
+                                                        else 'm1:' || substring(encode(extensions.digest(
+                                                            coalesce(v_fact.agency_key, 'agency-unknown')
+                                                            || '|' || d->>'manager_name', 'sha256'), 'hex'), 1, 24) end
+                                              else d->>'manager_key' end,
                     manager_name = d->>'manager_name', violation_law = d->>'violation_law',
                     -- REVIEW3 R3: v1/v2 payload 에는 source_agency_code 키가 없다.
                     -- 키가 있을 때만(명시적 NULL 포함) 쓰고, 키가 없을 때는 기관명이
@@ -252,7 +281,7 @@ begin
                     -- REVIEW3 R1: 대표 선출용 답변 수신 시각. 내용이 실제로 바뀔
                     -- 때만 갱신한다(grant 만 바뀌는 reshare·no_change 는 유지).
                     answer_accepted_at = case when v_fact.payload_sha256 is not distinct from e->>'payload_sha256'
-                                              then v_fact.answer_accepted_at else now() end,
+                                              then v_fact.answer_accepted_at else clock_timestamp() end,
                     updated_at = now()
                  where contributor_id = p_user and dataset_key = v_conn.dataset_key and source_report_key = v_key;
                 v_result := 'accepted';
