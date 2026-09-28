@@ -51,7 +51,8 @@ map migration `202609280300`이 그 버전을 disclosures에 등록했다(auth `
 
 위반법규 공개 정책(2026-09-28 사용자 결정): 동의문 2026-09-28.2가 ‘다른 이용자에게 어떤 정보가 보이나요?’에 위반법규를 적었고,
 auth `202609281000`이 그 정책을 현재로 지정, map `202609281100`이 disclosures에 `('2026-09-28.2', amounts_public=true, violation_law_public=true)`를 등록했다.
-2026-09-28.1 이하는 위반법규를 적지 않아 `violation_law_public=false`다. 공개 DTO에는 법규 원문(필터 값·표의 행 이름)과 법규별 집계만 나간다.
+2026-09-28.1 이하는 위반법규를 적지 않아 `violation_law_public=false`다. 공개 DTO에는 법규의 **조 단위 키**(`{법이름} 제{N}조[의{M}]`, 항 제외 — 필터 값·표의 행 이름)와 법규별 집계만 나간다.
+항까지 붙은 저장 원문은 private에 그대로 두고 공개 응답에는 내보내지 않는다(docs/metrics-catalog.md §위반법규별 현황).
 처리내용 원문은 앱이 보내지 않는다(contracts/community-ingest/observation.md). ingest는 C0 제어문자·DEL이 든 법규를 422로 거절한다(clean()이 남기지 않는 문자, 공개 필터 값 보호).
 
 ## E. capabilities

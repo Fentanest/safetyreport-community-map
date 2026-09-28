@@ -90,13 +90,17 @@ export function demoFacts(): PrivateFact[] {
   const lawRand = mulberry32(20260929);
   const LAWS: Record<'traffic' | 'parking' | 'other', readonly string[]> = {
     parking: ['도로교통법 제32조', '도로교통법 제32조', '도로교통법 제33조', '도로교통법 제34조', '주차장법 제29조'],
-    traffic: ['도로교통법 제5조', '도로교통법 제5조', '도로교통법 제13조', '도로교통법 제25조', '도로교통법 제27조', '도로교통법 제38조'],
+    traffic: ['도로교통법 제5조', '도로교통법 제5조', '도로교통법 제5조의2', '도로교통법 제13조', '도로교통법 제25조', '도로교통법 제27조', '도로교통법 제38조'],
     other: ['도로교통법 제49조', '자동차관리법 제10조', '도로교통법 제35조'],
   };
   const lawOf = (category: 'traffic' | 'parking' | 'other'): string | null => {
     const r = lawRand();
     const list = LAWS[category];
-    return r < 0.12 ? null : list[Math.floor(lawRand() * list.length)];
+    if (r < 0.12) return null;
+    const law = list[Math.floor(lawRand() * list.length)];
+    // some answers name the paragraph too (parser forms '제32조제1항' / '제32조 1항'); the table groups them by article
+    const q = lawRand();
+    return q < 0.12 ? `${law}제1항` : q < 0.18 ? `${law} 2항` : law;
   };
   const add = (index: number, contributor: string, areaIndex: number, spot: number, mine: boolean) => {
     const area = AREAS[areaIndex];

@@ -137,10 +137,11 @@ describe('public API law parameter', () => {
   });
   it('refuses an empty, over-long, control-character or repeated law and still refuses unknown parameters', async () => {
     const handler = createPublicHandler(repo(), fixtureAccess());
-    for (const bad of ['law=', `law=${'가'.repeat(61)}`, 'law=%E6%B3%95%0A1', `law=a&law=b`, 'violation_law=a']) {
+    // 80 code points is the parameter bound (an article key can be one longer than its ≤ 60 stored text); blank is refused
+    for (const bad of ['law=', 'law=%20%20', `law=${'가'.repeat(81)}`, 'law=%E6%B3%95%0A1', `law=a&law=b`, 'violation_law=a']) {
       expect((await handler(endpoint(`dashboard?${base}&${bad}`))).status).toBe(400);
     }
-    expect((await handler(endpoint(`dashboard?${base}&law=${encodeURIComponent('𠀀'.repeat(60))}`))).status).toBe(200);
+    expect((await handler(endpoint(`dashboard?${base}&law=${encodeURIComponent('𠀀'.repeat(80))}`))).status).toBe(200);
     const meta = await (await handler(endpoint('meta'))).json();
     expect(metaSchema.safeParse(meta).success).toBe(true);
     expect(meta.capabilities.violation_law.status).toBe('supported');
@@ -154,7 +155,7 @@ describe('public API law parameter', () => {
 
 describe('law filter UI state', () => {
   it('round-trips through the draft, the share URL and the API parameters', () => {
-    for (const law of [L32, LAW_NONE, '주차장법 제29조 ', null]) {
+    for (const law of [L32, LAW_NONE, '주차장법 제29조', '형식 밖 법규', null]) {
       const s = scopeFromDraft({ ...draftFromScope(DEMO_SCOPE), law }, { ...DEMO_SCOPE, agency_key: 'a1' });
       expect(s.law).toBe(law);
       expect(s.agency_key).toBeNull();
@@ -168,7 +169,10 @@ describe('law filter UI state', () => {
       expect(samePersonalScope(s, { ...s, law: law === L5 ? null : L5 })).toBe(false);
     }
     // anything the API would refuse is dropped from a pasted URL instead of failing the page
-    expect(scopeFromSearch(`?law=${'가'.repeat(61)}`, DEMO_SCOPE).law).toBeNull();
+    expect(scopeFromSearch(`?law=${'가'.repeat(81)}`, DEMO_SCOPE).law).toBeNull();
+    // a pasted or drafted law with a paragraph becomes its article key, the same value the API echoes
+    expect(scopeFromSearch(`?law=${encodeURIComponent('도로교통법 제32조제1항')}`, DEMO_SCOPE).law).toBe(L32);
+    expect(scopeFromDraft({ ...draftFromScope(DEMO_SCOPE), law: ' 도로교통법  제32조 2항 ' }, DEMO_SCOPE).law).toBe(L32);
     expect(scopeFromSearch('?law=', DEMO_SCOPE).law).toBeNull();
   });
   it('labels and options: 법규 미상 row, named laws only, and a kept selection', () => {
