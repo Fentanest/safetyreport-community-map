@@ -99,8 +99,20 @@ describe('community-ingest handler', () => {
     expect((await handler(post(await envelope([legacyEvent])))).status).toBe(200);
     const e2 = await event('8d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f');
     expect((await handler(post(await envelope([e, e2])))).status).toBe(422);  // same report twice (S-11-B)
+    // 2026-09-28: a non-final payload is recognised (no 422) and marked for per-event rejection,
+    // so the rest of the batch still processes.
     const withdrawn = { ...payload, status: 'withdrawn', status_raw: '취하', completed_date: null };
-    expect((await handler(post(await envelope([await event('9d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R2', withdrawn)])))).status).toBe(422);
+    const { handler: h2, calls: c2 } = setup(() => ({ results: [] }));
+    const wr = await h2(post(await envelope([await event('9d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R2', withdrawn)])));
+    expect(wr.status).toBe(200);
+    expect((c2.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0].rejection_code)
+      .toBe('non_final_not_accepted');
+    // a legacy status_correction name is recognised the same way (per-event rejection, not 422).
+    const { handler: h3, calls: c3 } = setup(() => ({ results: [] }));
+    const cr = await h3(post(await envelope([await event('ad9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R3', withdrawn, 'status_correction')])));
+    expect(cr.status).toBe(200);
+    expect((c3.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0].rejection_code)
+      .toBe('non_final_not_accepted');
     expect((await handler(post(await envelope(Array.from({ length: 21 }, () => e))))).status).toBe(422);
     expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(2); // six-digit and legacy events
   });
@@ -116,6 +128,7 @@ describe('community-ingest handler', () => {
     expect(ev.payload_sha256).toBe(vectors.cases[0].payload_sha256);
     expect((ev.derived as Record<string, unknown>).point_key).toBe('v1:37.5662952,126.9779451');
     expect(ev.quarantine_reason).toBeNull();
+    expect(ev.rejection_code).toBeNull();
     const body = await res.json();
     expect(body.request_id).toMatch(/^ing_/);
   });

@@ -5,7 +5,7 @@
 // No admin-key fallback, no IP-header trust, no logging of bodies, tokens, ids or payloads.
 
 import {
-  canonicalJson, deriveFact, type EventType, mapStatus, type Observation, sha256Hex, sourceReportKey,
+  canonicalJson, deriveFact, type EventType, mapStatus, nonFinalRejection, type Observation, sha256Hex, sourceReportKey,
   validateEventType, validateObservationValues,
 } from './observation.ts';
 
@@ -218,11 +218,15 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         if (valueError) fail(valueError.code, undefined, valueError.reason);
         const typeError = validateEventType(raw.event_type as EventType, b.trigger as string, payload);
         if (typeError) fail(typeError.code, undefined, typeError.reason);
+        // Non-final payloads and legacy status_correction events are recognised (no 422) and rejected
+        // per event by the SQL ingest function, so the rest of the batch still processes.
+        const rejectionCode = nonFinalRejection(raw.event_type as EventType, payload);
         events.push({ event_id: raw.event_id, event_type: raw.event_type, source_report_id: raw.source_report_id,
           report_number: raw.report_number ?? null,
           source_report_key: await sourceReportKey(raw.source_report_id as string), source_revision: raw.source_revision,
           writer_epoch: raw.writer_epoch, captured_at: raw.captured_at, payload, payload_sha256: hash,
           quarantine_reason: mapStatus(payload.status_raw) === payload.status ? null : 'status_mapping_mismatch',
+          rejection_code: rejectionCode,
           derived: await deriveFact(payload) });
       }
       const result = await deps.rpc('internal_community_ingest', { p_user: uid, p_session: session, p_request_id: rid,

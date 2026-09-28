@@ -1,12 +1,29 @@
 # 2026-09-28 신고번호 및 소유 이전 결정·검증 계획
+<!-- 2026-09-28 개정: 답변 완료만 수집, 이전은 완전 동일만. 아래 "개정 전" 문단은 효력을 잃었다. -->
 
-## 확정 계획
+## 확정 계획 (2026-09-28 개정)
 
 1. PC 제목 `신고번호`, 모바일 `Report.reportNumber`를 별도 private event `report_number`로 전송한다. `source_report_id`(링크 ID)는 기존 그대로다. Observation JSON과 `payload_sha256`은 바꾸지 않는다. 서버 형식 검사 후 private events/facts에 저장한다. 공개 RPC/DTO는 번호 열을 선택하지 않는다.
-2. 새 migration에서 기존 연결 잠금 뒤, fact 접근 전 신고 키 advisory transaction lock을 건다. 동일 링크 ID의 다른 계정 fact가 있으면 신고번호 두 개가 같고, Observation에서 `status_raw`와 `status`를 뺀 값이 동일할 때만 이전한다. 이전은 한 트랜잭션에서 A fact 삭제·B fact 삽입·private 감사 기록으로 수행한다. A 톰스톤은 만들지 않는다. 기존 manifest 트리거가 A 축소와 B 추가를 기록한다. 같은 계정 갱신 규칙은 그대로다.
-3. 조건 불일치면 비재시도 `rejected` ACK(`report_identity_mismatch`, `cross_account_mismatch`, 다수 기존 소유자는 `ambiguous_existing_owners`)로 차단한다. PC·모바일 outbox는 blocked로 보존하고 이유를 표시한다. `transferred`는 receipt가 있는 성공 ACK다.
-4. 과거 fact의 신고번호는 NULL로 남긴다. 기존 소유자가 다시 상세를 수집해 번호를 백필하기 전에는 다른 계정으로 자동 이전하지 않는다. 로컬 최신 journal의 번호가 NULL이고 새 번호가 생기면 해시가 같아도 새 이벤트를 발급한다. 로컬에 상세 재수집이 없는 행은 자동 백필되지 않는다.
-5. 참여 계정의 동일인 추정·병합은 하지 않는다. contributor_count는 현재 공개 fact를 가진 서로 다른 계정의 수다. 이전 전후 두 fact가 모두 공개 가능한 상태라면 총 신고 건수는 1로 유지되고 기여자는 A에서 B로 바뀐다. 상태 변경으로 공개 적격이 달라지면 그 상태 의미에 따라 공개 건수도 달라진다.
+2. 앱은 답변 완료(eligible: accepted/partial/rejected/completed_unknown) 관측만 이벤트로 만든다. 적격이 아닌 관측(처리중·보완요청·취하·이송·other)은 이벤트 없음 — `status_correction` 발급 없음, 로컬 `detail_status` 기록만. 로컬 prev 합성에 `server_completed` 를 쓰지 않는다(표 자체는 manifest 신선도 증명용으로 유지).
+   로컬 outbox 잔여 미전송 `status_correction` 행은 보내지 않고 `blocked:deprecated_status_correction` 으로 보존한다(PC·모바일 동일).
+3. 서버(TS 핸들러 + SQL ingest 함수 양쪽)는 payload 가 적격이 아니거나 event_type 이 `status_correction` 인 이벤트를
+   이벤트 단위로 재시도 불가 `rejected:non_final_not_accepted`(durable=false)로 거절한다. 구버전 앱 배치의 나머지 이벤트는 정상 처리한다.
+   `status_correction` 이름은 구버전 인식용으로만 유지한다. 답변 완료로 올라간 신고가 나중에 비종결 상태로 돌아가면(드묾) 중앙은 마지막 답변 상태를 유지한다.
+4. 새 migration에서 기존 연결 잠금 뒤, fact 접근 전 신고 키 advisory transaction lock을 건다. 동일 링크 ID의 다른 계정 fact가 있으면 신고번호 두 개가 같고, Observation payload 가 **완전히 같을 때만**(상태 포함, `status_only` 예외 없음) 이전한다. 이전은 한 트랜잭션에서 A fact 삭제·B fact 삽입·private 감사 기록(`reason='identical'` 만 허용)으로 수행한다. A 톰스톤은 만들지 않는다. 기존 manifest 트리거가 A 축소와 B 추가를 기록한다. 같은 계정 갱신 규칙은 그대로다.
+5. 조건 불일치면 비재시도 `rejected` ACK(`report_identity_mismatch`, `cross_account_mismatch`, 다수 기존 소유자는 `ambiguous_existing_owners`)로 차단한다. PC·모바일 outbox는 blocked로 보존하고 이유를 표시한다. `transferred`는 receipt가 있는 성공 ACK다.
+6. 과거 fact의 신고번호는 NULL로 남긴다. 기존 소유자가 다시 상세를 수집해 번호를 백필하기 전에는 다른 계정으로 자동 이전하지 않는다. 로컬 최신 journal의 번호가 NULL이고 새 번호가 생기면 해시가 같아도 새 이벤트를 발급한다. 로컬에 상세 재수집이 없는 행은 자동 백필되지 않는다.
+7. 참여 계정의 동일인 추정·병합은 하지 않는다. contributor_count는 현재 공개 fact를 가진 서로 다른 계정의 수다. 이전 전후 두 fact가 모두 공개 가능한 상태라면 총 신고 건수는 1로 유지되고 기여자는 A에서 B로 바뀐다.
+
+## 개정 전 계획 (효력 없음 — 2026-09-28 결정으로 대체됨)
+
+> 이하 문단은 개정 전 기록으로 남긴다. `status_correction` 발급, `server_completed` prev 합성, 처리상태 동반 변경 예외(`status_only`)는
+> 더는 유효하지 않다.
+
+1. ~~PC 제목 `신고번호`, 모바일 `Report.reportNumber`를 별도 private event `report_number`로 전송한다.~~ (유지 — 위 1항)
+2. ~~새 migration에서 기존 연결 잠금 뒤, fact 접근 전 신고 키 advisory transaction lock을 건다. 동일 링크 ID의 다른 계정 fact가 있으면 신고번호 두 개가 같고, Observation에서 `status_raw`와 `status`를 뺀 값이 동일할 때만 이전한다.~~ → 완전 동일만 이전(위 4항).
+3. ~~조건 불일치면 비재시도 `rejected` ACK(`report_identity_mismatch`, `cross_account_mismatch`, 다수 기존 소유자는 `ambiguous_existing_owners`)로 차단한다.~~ (유지 — 위 5항)
+4. ~~과거 fact의 신고번호는 NULL로 남긴다.~~ (유지 — 위 6항)
+5. ~~참여 계정의 동일인 추정·병합은 하지 않는다.~~ (유지 — 위 7항)
 
 ## 신고번호 형식 근거
 
@@ -16,17 +33,17 @@
 - 이 worktree에는 요청서가 언급한 `pc/testresults` 디렉터리가 없다. 운영 원본 자료에는 접근하지 않았다.
 - 따라서 중앙 검사식은 `^SPP-[0-9]{4,6}-[0-9]{6,8}$`이다. 현재 확인되지 않은 중간 5자리와 끝 6·8자리도 역사적 패턴보다 좁히지 않으려고 허용한다. 새로운 공식 형식이 발견되면 근거를 추가해 migration과 계약을 확장한다. 값이 없으면 NULL이다.
 
-## 처리상태 동반 변경 조사
+## 처리상태 동반 변경 조사 (개정 전 기록 — `status_only` 예외는 2026-09-28 결정으로 폐지됨)
 
-| 필드 | 코드/fixture 근거 | 현재 이전 예외 |
-|---|---|---|
-| `status_raw`, `status` | `observation.md` 상태 표: 원문 상태와 파생 상태가 함께 바뀜 | 허용 |
-| `completed_date` | PC `community_capture.py`, 모바일 `observation_rules.dart`: eligible일 때만 답변일 사용. 처리중→완료면 NULL→날짜 | 불허 |
-| `disposition`, `amount` | PC `community_capture.py`: 불수용이면 `none`; 범칙금/과태료 답변이면 처분·금액 변함. `observations.json`의 accepted/partial/rejected 사례도 서로 다름 | 불허 |
-| `manager_name`, `agency_name` | 상세 파서가 각각 별도 필드에서 가져오며 상태 변화와 동시 변동하는 실제 paired 기록은 이 worktree에 없음 | 불허 |
-| `address`, `location`, `vehicle_raw`, `report_date`, `category` | 서로 다른 공식/파생 입력. 처리상태 변화에 따른 동일성 근거 없음 | 불허 |
+| 필드 | 코드/fixture 근거 | 개정 전 이전 예외 | 개정 후 |
+|---|---|---|---|
+| `status_raw`, `status` | `observation.md` 상태 표: 원문 상태와 파생 상태가 함께 바뀜 | 허용했음 | 불허 — 하나라도 다르면 `cross_account_mismatch` 거절 |
+| `completed_date` | PC `community_capture.py`, 모바일 `observation_rules.dart`: eligible일 때만 답변일 사용. 처리중→완료면 NULL→날짜 | 불허 | 불허 |
+| `disposition`, `amount` | PC `community_capture.py`: 불수용이면 `none`; 범칙금/과태료 답변이면 처분·금액 변함. `observations.json`의 accepted/partial/rejected 사례도 서로 다름 | 불허 | 불허 |
+| `manager_name`, `agency_name` | 상세 파서가 각각 별도 필드에서 가져오며 상태 변화와 동시 변동하는 실제 paired 기록은 이 worktree에 없음 | 불허 | 불허 |
+| `address`, `location`, `vehicle_raw`, `report_date`, `category` | 서로 다른 공식/파생 입력. 처리상태 변화에 따른 동일성 근거 없음 | 불허 | 불허 |
 
-`completed_date`/처분/금액 때문에 처리중→답변완료 같은 전환은 현재 자동 이전에 실패할 수 있다. 사용자 승인 전 예외를 넓히지 않는다. 로컬 fixture는 실데이터의 동반 변경 빈도를 입증하지 않는다.
+개정 후에는 처리상태를 포함한 어떤 필드 차이도 자동 이전에 실패한다. 사용자 승인 전 예외를 넓히지 않는다.
 
 ## 해시·호환·배포 순서
 
@@ -34,4 +51,5 @@
 
 ## 검증 범위
 
-단위: 번호 형식/해시 독립/캡처 백필/성공·비재시도 ACK/공개 비노출. 로컬 실스택: 동일·처리상태만 다른 이전, 필드·번호 불일치, 레거시 NULL, 동시 A/B, manifest 축소, 공개 수·기여자, 삭제/철회. 실제 운영 계정·DB 검증은 이 작업 범위 밖이다.
+단위: 번호 형식/해시 독립/캡처 백필(적격만)/성공·비재시도 ACK(`non_final_not_accepted`·`cross_account_mismatch` 포함)/공개 비노출.
+로컬 실스택: 완전 동일 이전, 상태만 다른 이전 거절, 비적격·구버전 correction 거절(배치 나머지 정상 처리), 필드·번호 불일치, 레거시 NULL, 동시 A/B, manifest 축소, 공개 수·기여자, 삭제/철회. 실제 운영 계정·DB 검증은 이 작업 범위 밖이다.

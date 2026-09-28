@@ -15,7 +15,7 @@ create table private.community_owner_transfer_audit (
     from_dataset_key text not null, to_dataset_key text not null,
     source_report_key text not null, report_number text not null,
     receipt_id uuid not null,
-    reason text not null check (reason in ('identical','status_only')),
+    reason text not null check (reason in ('identical')),
     transferred_at timestamptz not null default clock_timestamp()
 );
 alter table private.community_owner_transfer_audit enable row level security;
@@ -156,6 +156,18 @@ begin
             continue;
         end if;
         v_max_rev := greatest(v_max_rev, v_rev);
+        -- 2026-09-28: only final-answer observations are stored. A non-eligible payload or a legacy
+        -- status_correction event is rejected per event (durable=false) so the rest of the batch still
+        -- processes. The central fact keeps its last answered state.
+        if (e->'payload'->>'status') not in ('accepted','partial','rejected','completed_unknown')
+           or e->>'event_type' = 'status_correction' then
+            update private.community_ingest_events set result = 'rejected', rejection_reason = 'non_final_not_accepted'
+             where receipt_id = v_receipt;
+            v_results := v_results || jsonb_build_object('event_id', v_event_id, 'status', 'rejected',
+                'durable', false, 'receipt_id', null, 'projection_status', 'not_applicable',
+                'error', jsonb_build_object('code', 'non_final_not_accepted', 'retryable', false));
+            continue;
+        end if;
         if e->>'quarantine_reason' is not null then
             update private.community_ingest_events set result = 'quarantined' where receipt_id = v_receipt;
             v_results := v_results || jsonb_build_object('event_id', v_event_id, 'status', 'quarantined', 'durable', true,
@@ -183,10 +195,11 @@ begin
                        or v_other.report_number is null or e->>'report_number' is null
                        or v_other.report_number <> e->>'report_number' then
                         v_reject_code := 'report_identity_mismatch';
-                    elsif v_other_payload is null or
-                          (v_other_payload - 'status' - 'status_raw') <> ((e->'payload') - 'status' - 'status_raw') then
-                        v_reject_code := 'cross_account_mismatch';
-                    end if;
+                    -- 2026-09-28: transfer only when the Observation payload is fully identical
+                    -- (status included). No status_only exception.
+                    elsif v_other_payload is null or v_other_payload <> (e->'payload') then
+                         v_reject_code := 'cross_account_mismatch';
+                     end if;
                 end if;
                 if v_reject_code is not null then
                     update private.community_ingest_events set result = 'rejected', rejection_reason = v_reject_code
@@ -218,8 +231,7 @@ begin
                 insert into private.community_owner_transfer_audit(from_contributor_id, to_contributor_id,
                     from_dataset_key, to_dataset_key, source_report_key, report_number, receipt_id, reason)
                 values (v_other.contributor_id, p_user, v_other.dataset_key, v_conn.dataset_key, v_key,
-                    e->>'report_number', v_receipt,
-                    case when v_other_payload = e->'payload' then 'identical' else 'status_only' end);
+                    e->>'report_number', v_receipt, 'identical');
             end if;
         elsif (v_epoch, v_rev) > (v_fact.writer_epoch, v_fact.source_revision) then
             -- A fact accepted under a lineage the USER revoked stays under that (hidden) grant unless this event is an

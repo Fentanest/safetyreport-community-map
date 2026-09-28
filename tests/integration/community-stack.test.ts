@@ -559,11 +559,13 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(again.json.results[0].status).toBe('no_change');
       const newer = await ingest(w, [await event(w, report, payloadOf('partial_penalty_traffic'))]);
       expect(newer.json.results[0].status).toBe('accepted');
-      // an older revision arriving late (offline backlog) must not roll the fact back
+      // 2026-09-28: a legacy status_correction arriving late is rejected per event (not stale_ignored);
+      // the central fact keeps its last answered state.
       const stale = await event(w, report, payloadOf('withdrawn_not_eligible'), { source_revision: 1, event_type: 'status_correction' });
       const r = await ingest(w, [stale]);
       expect(r.status, JSON.stringify(r.json)).toBe(200);
-      expect(r.json.results[0].status).toBe('stale_ignored');
+      expect(r.json.results[0]).toMatchObject({ status: 'rejected', durable: false,
+        error: { code: 'non_final_not_accepted', retryable: false } });
       expect(sql(`select status from private.community_report_facts where source_report_id = '${report}';`)).toBe('partial');
     });
 
@@ -683,7 +685,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(count('private.community_report_facts', `source_report_id = '${report}' and contributor_id = '${c.session.userId}'`)).toBe(0);
     });
 
-    it('transfers identical and status-only facts, shrinks the old manifest and keeps one public owner', async () => {
+    it('transfers identical facts, rejects any differing payload, shrinks the old manifest and keeps one public owner', async () => {
       const report = `XFER-${rid()}`;
       const a = await writerFor('A');
       const b = await writerFor('B');
@@ -699,18 +701,24 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(sql(`select count(distinct e->>'contributor_id') from jsonb_array_elements(public.internal_analytics_v2_facts(date '2024-01-01',date '2028-12-31','all',null,null,null,null)) e where e->>'fact_identity' like '%:${key}';`)).toBe('1');
       expect(Number(sql(`select generation from private.community_manifest_generations where contributor_id='${a.session.userId}' and dataset_key='${a.dataset}';`))).toBeGreaterThan(oldGeneration);
       expect(count('private.community_fact_tombstones', `contributor_id='${a.session.userId}' and source_report_key='${key}'`)).toBe(0);
+      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('identical');
+      // 2026-09-28: no status_only exception — a payload differing in any field (status included) is rejected.
       const partial = { ...payloadOf('accepted_fine'), status: 'partial', status_raw: '일부수용' };
       const changed = await ingest(c, [await event(c, report, partial)]);
-      expect(changed.json.results[0].status).toBe('transferred');
+      expect(changed.json.results[0]).toMatchObject({ status: 'rejected', durable: false,
+        error: { code: 'cross_account_mismatch', retryable: false } });
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(1);
       expect(publicFacts(`%:${key}`)).toBe(1);
-      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('status_only');
+      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('identical');
       expect((await account('consent-revoke', b.session.access, { grant_id: b.grantId })).status).toBe(200);
-      expect(publicFacts(`%:${key}`, c.session.userId)).toBe(1); // former owner's revocation cannot hide new lineage
-      expect((await ingest(a, [await event(a, report, partial)])).json.results[0].status).toBe('transferred');
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(0); // revoked lineage stays hidden
+      // the first owner re-uploads the identical payload: it transfers back under the active lineage
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('transferred');
       expect(publicFacts(`%:${key}`)).toBe(1); // no tombstone on the former owner
+      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('identical');
       expect((await account('contributions-delete', a.session.access, { confirm: 'DELETE_MY_SHARED_REPORTS' })).status).toBe(200);
       expect(publicFacts(`%:${key}`)).toBe(0);
-      expect((await ingest(c, [await event(c, report, partial)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(c, [await event(c, report)])).json.results[0].status).toBe('accepted');
       expect(publicFacts(`%:${key}`)).toBe(1);
       const publicRow = sql(`select public.internal_analytics_v2_facts(date '2024-01-01',date '2028-12-31','all',null,null,null,null)::text;`);
       expect(publicRow).not.toContain('SPP-2609-8000001');
@@ -748,15 +756,30 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(count('private.community_report_facts', `source_report_id='${report}'`)).toBe(1);
     });
 
-    it('removes the fact from the public API when a newer correction says it is no longer final (D04)', async () => {
+    it('keeps the last answered state when a legacy correction says it is no longer final (2026-09-28: no corrections)', async () => {
       const w = await writerFor('D');
       const report = `CORR-${rid()}`;
       expect((await ingest(w, [await event(w, report)])).json.results[0].projection_status).toBe('published');
       const key = sql(`select source_report_key from private.community_ingest_events where source_report_id = '${report}' limit 1;`);
       expect(publicFacts(`%:${key}`)).toBe(1);
       const r = await ingest(w, [await event(w, report, payloadOf('withdrawn_not_eligible'), { event_type: 'status_correction' })]);
-      expect(r.json.results[0]).toMatchObject({ status: 'accepted', projection_status: 'removed' });
-      expect(publicFacts(`%:${key}`)).toBe(0);
+      expect(r.json.results[0]).toMatchObject({ status: 'rejected', durable: false,
+        error: { code: 'non_final_not_accepted', retryable: false } });
+      expect(publicFacts(`%:${key}`)).toBe(1);
+      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}';`)).toBe('accepted');
+    });
+
+    it('rejects a non-final event per event while the rest of an old-client batch still processes', async () => {
+      const w = await writerFor('D');
+      const good = await event(w, `MIX-${rid()}`);
+      const bad = await event(w, `MIX-${rid()}`, payloadOf('processing_not_eligible'));
+      const r = await ingest(w, [good, bad]);
+      expect(r.status, JSON.stringify(r.json)).toBe(200);
+      expect(r.json.results[0]).toMatchObject({ status: 'accepted', durable: true });
+      expect(r.json.results[1]).toMatchObject({ status: 'rejected', durable: false,
+        error: { code: 'non_final_not_accepted', retryable: false } });
+      expect(count('private.community_report_facts', `source_report_id = '${good.source_report_id}'`)).toBe(1);
+      expect(count('private.community_report_facts', `source_report_id = '${bad.source_report_id}'`)).toBe(0);
     });
 
     it('races ingest against revoke, takeover and a policy switch without deadlocks or partial writes (S-09)', async () => {

@@ -88,12 +88,18 @@ export function validateObservationValues(p: Observation): ValidationError | nul
 
 export type EventType = 'completed_observation' | 'status_correction' | 'location_supplement' | 'reshare';
 
+/** 2026-09-28: only final-answer observations are accepted. A non-eligible payload — or a legacy
+ *  `status_correction` event of any payload — must not fail the whole request; it is rejected per
+ *  event (`non_final_not_accepted`, durable=false) so the rest of the batch still processes.
+ *  `status_correction` stays a known event type only so old clients get per-event rejections. */
+export const NON_FINAL_REJECTION = 'non_final_not_accepted';
+
+export function nonFinalRejection(type: EventType, p: Observation): typeof NON_FINAL_REJECTION | null {
+  if (!ELIGIBLE.has(p.status) || type === 'status_correction') return NON_FINAL_REJECTION;
+  return null;
+}
+
 export function validateEventType(type: EventType, trigger: string, p: Observation): ValidationError | null {
-  const eligible = ELIGIBLE.has(p.status);
-  if ((type === 'completed_observation' || type === 'location_supplement' || type === 'reshare') && !eligible) {
-    return { code: 'event_type_mismatch', reason: `${type}_requires_final_answer` };
-  }
-  if (type === 'status_correction' && eligible) return { code: 'event_type_mismatch', reason: 'correction_requires_non_final' };
   if (type === 'location_supplement' && p.location.source !== 'geocode') {
     return { code: 'event_type_mismatch', reason: 'supplement_requires_location' };
   }

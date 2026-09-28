@@ -41,9 +41,19 @@
 ## 2026-09-28 신고번호·소유 이전
 
 - 안전신문고 신고번호는 별도 private 이벤트 필드로 수집한다. Observation 해시는 유지하고 공개 API에는 번호를 내보내지 않는다.
-- 다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 처리상태(`status_raw`, `status`) 외 Observation 전체가 같을 때만 나중에 올린 계정으로 이전한다. 그 밖은 비재시도 거절하고 한 건으로 합치지 않는다. 이전 감사 기록은 private에 남긴다.
+- 다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 Observation payload 가 **완전히 같을 때만** 나중에 올린 계정으로 이전한다(상태 포함 하나라도 다르면 비재시도 `cross_account_mismatch` 거절). `status_only` 예외는 없다. 이전 감사 기록은 private에 남으며 reason 은 `identical` 만 허용한다.
 - 참여자 수의 동일인 추정·계정 병합은 드롭했다. `contributor_count`는 현재 공개 fact를 가진 계정 수 그대로다.
-- 레거시 NULL 번호는 기존 소유자의 재수집으로 백필될 때까지 이전할 수 없다. 처리상태 동반 변경 필드의 예외는 승인 없이 추가하지 않는다. 조사와 검증 계획: [report-owner-transfer-plan.md](integration/community-ingest/report-owner-transfer-plan.md).
+- 레거시 NULL 번호는 기존 소유자의 재수집으로 백필될 때까지 이전할 수 없다. 조사와 검증 계획: [report-owner-transfer-plan.md](integration/community-ingest/report-owner-transfer-plan.md).
+
+## 2026-09-28 답변 완료만 중앙 수집 (같은 날 확정)
+
+- 답변 완료된 신고만 중앙에 올린다. 적격 = status ∈ {accepted, partial, rejected, completed_unknown}(수용/일부수용/불수용/답변완료·기타).
+  처리중·보완요청·취하·이송·other 는 앱이 올리지도, 서버가 받지도 않는다.
+- 앱은 `status_correction` 이벤트를 발급하지 않는다. 적격이 아닌 관측은 이벤트 없음(기존 로컬 `detail_status` 기록만).
+  로컬 outbox 에 이미 남아 있는 미전송 `status_correction` 행은 보내지 않고 `blocked:deprecated_status_correction` 으로 보존한다(PC·모바일 동일, drop 하지 않음).
+- 서버는 payload 가 적격이 아니거나 event_type 이 `status_correction` 인 이벤트를 이벤트 단위로 재시도 불가 `rejected:non_final_not_accepted`(durable=false)로 거절한다.
+  배치의 나머지 이벤트는 정상 처리한다(요청 전체 422가 아님). `status_correction` 이름은 구버전 앱이 이벤트별 거절을 받도록 인식만 유지한다.
+- 답변 완료로 올라간 신고가 나중에 비종결 상태로 돌아가면(드묾) 중앙은 마지막 답변 상태를 유지한다. 중앙 fact 는 바뀌지 않는다.
 
 ## 제외·보류
 차량 실번호 검색·차량의 이동경로·연속 추적·원본 민원 본문/첨부/신고자 프로필·공무원 우열 점수·실시간인 척하는 ticker는 제외.

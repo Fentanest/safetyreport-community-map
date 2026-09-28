@@ -2,7 +2,7 @@
 // and eligibility for every vector in contracts/community-ingest/vectors (the same files Python and Dart read).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { canonicalJson, canonicalCoordinate, deriveFact, ELIGIBLE, mapStatus, sha256Hex, sourceReportKey,
+import { canonicalJson, canonicalCoordinate, deriveFact, ELIGIBLE, mapStatus, nonFinalRejection, sha256Hex, sourceReportKey,
   validateEventType, validateObservationValues, type Observation } from '../../server/ingest/observation';
 
 const V = new URL('../../contracts/community-ingest/vectors/', import.meta.url);
@@ -50,8 +50,13 @@ describe('server value rules beyond the schema', () => {
   });
   it('event types must match eligibility and the reshare trigger', () => {
     const notDone = { ...ok, status: 'withdrawn', status_raw: '취하', completed_date: null } as Observation;
-    expect(validateEventType('completed_observation', 'realtime', notDone)?.code).toBe('event_type_mismatch');
-    expect(validateEventType('status_correction', 'realtime', ok)?.code).toBe('event_type_mismatch');
+    // 2026-09-28: non-final payloads and legacy status_correction are per-event rejections, not 422.
+    expect(nonFinalRejection('completed_observation', notDone)).toBe('non_final_not_accepted');
+    expect(nonFinalRejection('status_correction', notDone)).toBe('non_final_not_accepted');
+    expect(nonFinalRejection('status_correction', ok)).toBe('non_final_not_accepted');
+    expect(nonFinalRejection('completed_observation', ok)).toBeNull();
+    expect(nonFinalRejection('reshare', ok)).toBeNull();
+    expect(validateEventType('completed_observation', 'realtime', notDone)).toBeNull();
     expect(validateEventType('reshare', 'manual', ok)?.code).toBe('event_type_mismatch');
     expect(validateEventType('reshare', 'reshare', ok)).toBeNull();
     expect(validateEventType('location_supplement', 'manual', { ...ok, location: { lat: null, lng: null, source: 'none' } })?.code)
