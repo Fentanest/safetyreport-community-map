@@ -1,4 +1,4 @@
-// community-ingest observation-v1/v2: canonical JSON, value validation, status re-mapping and derived fact columns.
+// community-ingest observation-v1/v2/v3: canonical JSON, value validation, status re-mapping and derived fact columns.
 // Pure functions shared by the Deno Edge entry (supabase/functions/community-ingest) and Node tests.
 // Rules: contracts/community-ingest/{canonical-json,observation}.md. The client hash is never trusted.
 
@@ -24,6 +24,9 @@ export interface Observation {
   manager_name: string | null; report_date: string | null; status: Status; status_raw: string | null; vehicle_raw: string | null;
   /** 위반법규(법 이름·조항, 1..60 code points). observation-v2 (2026-09-28); absent in v1 payloads (old apps). */
   violation_law?: string | null;
+  /** 원문 기관코드(TEXT, 7자리 영숫자·선행 0 보존). observation-v3 (2026-09-28); absent in v1/v2 payloads.
+   *  신규 형식도 원문 그대로 보존한다(서버는 7자리 영숫자만 기관 해석에 사용). */
+  source_agency_code?: string | null;
 }
 
 // --- canonical JSON (keys sorted by UTF-16 code units, no whitespace, strings/ints/null/objects only) ---
@@ -90,6 +93,10 @@ export function validateObservationValues(p: Observation): ValidationError | nul
   if (typeof p.violation_law === 'string' && /[\u0000-\u001f\u007f]/.test(p.violation_law)) {
     return { code: 'schema_invalid', reason: 'violation_law_not_clean' };
   }
+  // v3: the source agency code travels verbatim (only 7 alphanumerics feed the resolver); C0 controls and DEL are rejected.
+  if (typeof p.source_agency_code === 'string' && [...p.source_agency_code].some(c => { const n = c.codePointAt(0)!; return n < 32 || n === 127; })) {
+    return { code: 'schema_invalid', reason: 'source_agency_code_not_clean' };
+  }
   return null;
 }
 
@@ -140,6 +147,9 @@ export interface DerivedFact {
   manager_key: string | null; manager_name: string | null;
   /** v2 payload value as sent; null for v1 payloads (no key) and for v2 null */
   violation_law: string | null;
+  /** v3 source agency code as sent (verbatim, may be a novel format); null for v1/v2 payloads (no key) and for v3 null.
+   *  Stored only — not published by the public projection (consent scope open, 2026-09-28). */
+  source_agency_code: string | null;
 }
 
 export async function deriveFact(p: Observation): Promise<DerivedFact> {
@@ -158,7 +168,7 @@ export async function deriveFact(p: Observation): Promise<DerivedFact> {
     coord_source: p.location.source, address: p.address, region_code: regionCode(p.address),
     point_key: located ? `v1:${p.location.lat},${p.location.lng}` : null,
     agency_key: agencyKey, agency_name: p.agency_name, manager_key: managerKey, manager_name: p.manager_name,
-    violation_law: p.violation_law ?? null,
+    violation_law: p.violation_law ?? null, source_agency_code: p.source_agency_code ?? null,
   };
 }
 

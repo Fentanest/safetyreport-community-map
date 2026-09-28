@@ -153,7 +153,7 @@ describe('community-ingest handler', () => {
     expect(body.request_id).toMatch(/^ing_/);
   });
 
-  it('accepts observation-v2 (violation_law) and v1 (12 keys, old apps); the hash covers the payload as received', async () => {
+  it('accepts observation-v3 (source_agency_code), v2 and v1 (12 keys, old apps); the hash covers the payload as received', async () => {
     const law = vectors.cases.find((c: { name: string }) => c.name === 'violation_law_kept');
     const v2 = setup(() => ({ results: [], dataset_version: 'v' }));
     const r2 = await v2.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', law.expected_payload)])));
@@ -162,16 +162,42 @@ describe('community-ingest handler', () => {
     expect(ev2.payload_sha256).toBe(law.payload_sha256);
     expect((ev2.derived as Record<string, unknown>).violation_law).toBe('도로교통법 제5조');
 
-    const { violation_law: _drop, ...v1Payload } = payload as Record<string, unknown>;
+    // v3: the source agency code travels verbatim into derived columns and storage
+    const code = vectors.cases.find((c: { name: string }) => c.name === 'agency_code_kept');
+    const v3 = setup(() => ({ results: [], dataset_version: 'v' }));
+    const r3 = await v3.handler(post(await envelope([await event('9d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', code.expected_payload)])));
+    expect(r3.status).toBe(200);
+    const ev3 = (v3.calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0];
+    expect(ev3.payload_sha256).toBe(code.payload_sha256);
+    expect((ev3.derived as Record<string, unknown>).source_agency_code).toBe('B410002');
+
+    const { violation_law: _drop, source_agency_code: _drop2, ...v1Payload } = payload as Record<string, unknown>;
     expect(Object.keys(v1Payload)).toHaveLength(12);
     const v1 = setup(() => ({ results: [], dataset_version: 'v' }));
     const r1 = await v1.handler(post(await envelope([await event('8d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', v1Payload as typeof payload)])));
     expect(r1.status).toBe(200);
     const ev1 = (v1.calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[])[0];
-    expect(ev1.payload).toEqual(v1Payload);  // stored as received: no violation_law key added
+    expect(ev1.payload).toEqual(v1Payload);  // stored as received: no violation_law/source_agency_code keys added
     expect(ev1.payload_sha256).toBe(await sha256Hex(canonicalJson(v1Payload)));
     expect(ev1.payload_sha256).not.toBe(vectors.cases[0].payload_sha256);
     expect((ev1.derived as Record<string, unknown>).violation_law).toBeNull();
+    expect((ev1.derived as Record<string, unknown>).source_agency_code).toBeNull();
+  });
+
+  it('rejects an empty, over-length or non-string source_agency_code with 422 schema_invalid and no write', async () => {
+    const { handler, calls } = setup();
+    for (const bad of ['', 'A'.repeat(33), 410002, ['B410002'], { code: 'B410002' }, true, 'B410002\x00']) {
+      const p = { ...payload, source_agency_code: bad } as unknown as typeof payload;
+      const res = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', p)
+        .catch(async () => ({ ...(await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')), payload: p }))])));
+      expect(res.status).toBe(422);
+      expect((await res.json()).error.code).toBe('schema_invalid');
+    }
+    // a novel (non-7-alnum) format travels verbatim — the server stores it, the resolver leaves it unresolved
+    const novel = { ...payload, source_agency_code: 'X-12' };
+    const ok = setup(() => ({ results: [] }));
+    expect((await ok.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', novel)])))).status).toBe(200);
+    expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
   });
 
   it('rejects an empty, over-length or non-string violation_law with 422 schema_invalid and no write', async () => {

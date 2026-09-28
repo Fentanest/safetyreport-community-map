@@ -72,3 +72,27 @@ Sol 샌드박스 밖에서 같은 worktree를 다시 검사했다. 운영 DB·�
 (아래 표는 실행 후 기입 — 현재 미실행 항목은 "미실행"으로 둔다. SQL 실스택 검증은 이 환경에
 Postgres 바이너리·이미지가 없고 Docker 네트워크 사용이 금지되어 수행하지 못했다.
 `community-stack.test.ts` 기여 5건은 합성 스택에서 실행해야 하며, 통과를 주장하지 않는다.)
+
+| 위치 | 실행 명령 | 종료 코드 | 결과 |
+|---|---|---:|---|
+| community-map | `npm test -- --run` | 0 | 271 passed, 33 skipped (기여 집계·v3·registry 테스트 포함) |
+| community-map | `npx tsc ... tests/integration/community-stack.test.ts` | 0 | 기여 5건 교체 후 컴파일 |
+| community-map | `npm run scan` / `VITE_DATA_MODE=live npm run build` | 0 | 통과 / 빌드 성공 |
+| community-map | `python3 -m unittest discover -s tests/product -p 'test_*.py'` | 0 | OK(집계 tsc 검사 포함) |
+| community-map | `python3 -m unittest discover -s tests/blueprint` | 0 | OK |
+| community-map | `sha256sum -c MANIFEST.sha256` | 0 | 정본 해시 일치(observation-v3) |
+| community-map | `node scripts/integration/compose_supabase.mjs check --auth ...` | 0 | 18 migrations(1300·1400 포함), 5 functions |
+| pc | `SAFETYREPORT_DATA_DIR=$(mktemp -d) .venv/bin/python -m unittest discover -s tests -p "test_*.py"` | 0 | 533 passed (5 skipped) |
+| pc | `scripts/dev/db_roundtrip_check.py --mobile-repo <mobile-worktree> --summary-only` | 0 | diff_count 0 (처리기관코드 왕복 포함) |
+| pc | `scripts/dev/logic_parity_check.py --mobile-repo <mobile-worktree> --summary-only` | 0 | diff_count 0 (48 combinations) |
+| pc·mobile | `sha256sum -c MANIFEST.sha256` (`contracts/community-ingest`) | 0 | 사본 해시 일치(observation-v3) |
+| pc·mobile·map | `python3 scripts/agency_registry/check.py --repos <3 worktrees> --run-tests` | 0 | 12 files identical + PC 벡터 7 passed |
+| mobile | `flutter test` (전체) | 0 | 773 passed, ~14 skipped |
+| 세 레포 | `git diff --check` | 0 | 공백 오류 없음(커밋 전 확인) |
+
+## BLOCKED·미실행 (이번 개정)
+
+- SQL 실스택(`COMMUNITY_STACK=1`): Postgres 바이너리·이미지 없음 + Docker 네트워크 금지로 미실행.
+  `community-stack.test.ts` 기여 5건(A/B 집계표·결과 상이·번호 무관·동시·삭제 승계)과 `202609281300/1400` 적용 검증은 합성 스택 보유 환경에서 실행해야 한다.
+  마이그레이션 파일은 정적 검토(0800/1100 대비 diff 최소)를 마쳤고, 집계 의미는 단위 테스트 271건으로 검증했다.
+- 실기기·실로그인·운영 배포: 수행하지 않았고 통과를 주장하지 않는다.

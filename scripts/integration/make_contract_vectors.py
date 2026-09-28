@@ -25,7 +25,8 @@ def base_input(**kw):
         "processing_status": "수용", "penalty_amount": "과태료: 40,000원", "report_date": "2026-09-01",
         "response_date": "2026-09-10", "processing_agency": "서울특별시 중구청", "person_in_charge": "홍길동",
         "car_number": "12가3456", "violation_location": "서울특별시 중구 세종대로 110",
-        "entry_value": "불법주정차신고", "penalty_points": "", "violation_law": "", "geocode": {"status": "ok", "lat": 37.5662952, "lng": 126.9779451},
+        "entry_value": "불법주정차신고", "penalty_points": "", "violation_law": "", "agency_code": None,
+        "geocode": {"status": "ok", "lat": 37.5662952, "lng": 126.9779451},
     }
     value.update(kw)
     return value
@@ -38,7 +39,7 @@ def payload(**kw):
         "completed_date": "2026-09-10", "disposition": "fine",
         "location": {"lat": "37.5662952", "lng": "126.9779451", "source": "geocode"},
         "manager_name": "홍길동", "report_date": "2026-09-01", "status": "accepted", "status_raw": "수용",
-        "vehicle_raw": "12가3456", "violation_law": None,
+        "vehicle_raw": "12가3456", "violation_law": None, "source_agency_code": None,
     }
     value.update(kw)
     return value
@@ -125,6 +126,11 @@ OBS = [
     ("violation_law_cleaned_and_truncated", base_input(violation_law="  자동차관리법\n 제29조 " + "가" * 60),
         payload(violation_law=("자동차관리법 제29조 " + "가" * 60)[:60]), True),
     ("violation_law_missing_input_is_null", base_input(violation_law=None), payload(), True),
+    ("agency_code_kept", base_input(agency_code="B410002"),
+        payload(source_agency_code="B410002"), True),
+    ("agency_code_novel_format_preserved", base_input(agency_code="X-12"),
+        payload(source_agency_code="X-12"), True),
+    ("agency_code_missing_is_null", base_input(agency_code=None), payload(), True),
     ("quotes_and_backslash", base_input(violation_location='경기도 "수원시" 팔달구 \\ 1'),
         payload(address='경기도 "수원시" 팔달구 \\ 1'), True),
 ]
@@ -167,7 +173,7 @@ def main():
                           "eligible": prev_payload["status"] in {"accepted", "partial", "rejected", "completed_unknown"}}
     (ROOT / "vectors").mkdir(parents=True, exist_ok=True)
     (ROOT / "vectors" / "observations.json").write_text(json.dumps(
-        {"contract": "observation-v2",
+        {"contract": "observation-v3",
          "report_number_transport": {**REPORT_NUMBER_TRANSPORT,
                                      "payload_sha256": sha(by_name[REPORT_NUMBER_TRANSPORT["observation_case"]])},
          "cases": cases, "event_decisions": EVENTS},

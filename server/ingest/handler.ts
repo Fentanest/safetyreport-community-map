@@ -94,11 +94,15 @@ const OBSERVATION_V1_KEYS = ['address', 'agency_name', 'amount', 'category', 'co
   'manager_name', 'report_date', 'status', 'status_raw', 'vehicle_raw'] as const;
 /** observation-v2 (2026-09-28) adds `violation_law`; v1 (12 keys, old apps) is still accepted. */
 const OBSERVATION_V2_KEYS = [...OBSERVATION_V1_KEYS, 'violation_law'] as const;
+/** observation-v3 (2026-09-28) adds `source_agency_code` (원문 기관코드, null 가능); v1/v2 still accepted. */
+const OBSERVATION_V3_KEYS = [...OBSERVATION_V2_KEYS, 'source_agency_code'] as const;
 
 export function isObservation(p: unknown): p is Observation {
-  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS))) return false;
+  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS) || exactKeys(p, OBSERVATION_V3_KEYS))) return false;
   // v2: null or 1..60 code points (empty string, over-length and non-strings are schema_invalid like any other field)
   if (Object.hasOwn(p, 'violation_law') && !nstr(p.violation_law, 60)) return false;
+  // v3: null or 1..32 code points, kept verbatim (only 7 alphanumerics feed the resolver; the rest stays unresolved)
+  if (Object.hasOwn(p, 'source_agency_code') && !nstr(p.source_agency_code, 32)) return false;
   const a = p.amount, l = p.location;
   return nstr(p.address, 200) && nstr(p.agency_name, 200) && nstr(p.manager_name, 160) && nstr(p.vehicle_raw, 64) &&
     nstr(p.status_raw, 40) &&
