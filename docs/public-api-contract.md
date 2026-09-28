@@ -57,20 +57,20 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 초기 cache 제안: overview/series 60초, detail/entities/vehicles 30초 이하, meta 30초.
 삭제·version변경 시 invalidation 경로 구현. 헤더만 적어놓고 실제 CDN cache가 생긴다고 가정하지 않는다.
 
-## 열람 조건 (2026-09-27 사용자 결정: 공유자 전용)
-참여하는 사람이 모일 때까지 지도와 통계는 **카카오로 로그인했고, 신고 결과를 한 건 이상 지도에 공유한 사람만** 본다.
+## 열람 조건 (2026-09-28 사용자 결정: 10건 이상 공유자 전용)
+참여하는 사람이 모일 때까지 지도와 통계는 **카카오로 로그인했고, 신고 결과를 열 건 이상 지도에 공유한 사람만** 본다.
 익명 공개 모드는 없다. `public-analytics`는 모든 통계 경로에서 사용자 세션과 공유 자격을 검사한다.
 
 | 단계 | 규칙 |
 |---|---|
 | 신원 | 모든 경로(`meta` 포함)에 `Authorization: Bearer <지도 세션 access token>`. `getUser` + claims(sub·role·aud·iss·session_id·익명 여부) — `server/viewerAuth.ts`(my-analytics와 공용) |
-| 자격 | `internal_analytics_viewer(검증된 user, session)`: 카카오 신원·세션 유효, 활성 기여자(공유 동의 미철회), **지도에 나가는 본인 사실 1건 이상**(`has_public_facts`, 완료·활성 동의 계보) |
+| 자격 | `internal_analytics_viewer(검증된 user, session)`: 카카오 신원·세션 유효, 활성 기여자(공유 동의 미철회), **지도에 나가는 본인 고유 신고 10건 이상**(`public_fact_count`, 완료·활성 동의 계보, 같은 신고의 여러 dataset은 1건 — `report_identity` 기준). 10건 비교는 Edge 코드 상수 `MAP_VIEWER_MIN_REPORTS`에서 하며 구버전 SQL 응답(키 없음)은 거부한다. 개인 비교(`my-analytics`)의 `has_public_facts`는 1건 기준 그대로다 |
 | 응답 | 공개 DTO 그대로. 헤더는 `Cache-Control: private, no-store, max-age=0`, `Vary: Origin, Authorization`, 허용 Origin만 에코(`ANALYTICS_ALLOWED_ORIGINS`, 없으면 `MY_ANALYTICS_ALLOWED_ORIGINS`) |
 | 횟수 제한 | 검증된 사용자별(`ANALYTICS_RATE_SALT`로 가린 버킷) |
-| 오류 | 401 `auth_required`·`session_expired`(`WWW-Authenticate: Bearer`), 403 `kakao_required`·`contributor_required`(동의 없음·철회·정지)·`upload_required`(동의했지만 지도에 올라간 신고 없음)·`origin_forbidden`, 인증 서버 장애 503. 거절 응답에는 통계·버전을 넣지 않는다 |
+| 오류 | 401 `auth_required`·`session_expired`(`WWW-Authenticate: Bearer`), 403 `kakao_required`·`contributor_required`(동의 없음·철회·정지)·`upload_required`(10건 미만 — `details: {required: 10, current: N|null}`, 건수 모름은 null)·`origin_forbidden`, 인증 서버 장애 503. 거절 응답에는 통계·버전을 넣지 않는다 |
 | 정적 파일 | Pages에 통계 snapshot(`data/…`)을 만들지 않는다(주소만 알면 받을 수 있으므로). 워크플로가 산출물에 `data/`가 없는지 검사 |
 
-화면: 거절 코드면 대시보드 대신 안내 화면(`src/components/AccessGate.tsx`) — 로그인 버튼, 동의 필요, 업로드 필요, 카카오 필요.
+화면: 거절 코드면 대시보드 대신 안내 화면(`src/components/AccessGate.tsx`) — 로그인 버튼, 동의 필요, 업로드 필요(지금 N건 / 10건 진행 표시), 카카오 필요.
 통계 요청은 지도 세션 토큰을 붙이고 401이면 한 번 갱신 후 다시 보낸다(`src/data/client.ts`). 증거: `scripts/integration/access_gate_e2e.mjs`.
 
 ## 현재 로컬 구현 상태

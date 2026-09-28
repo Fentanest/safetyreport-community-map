@@ -29,7 +29,7 @@ snapshot IDs, 이메일·전화번호·계정 이름·Google sub·JWT·refresh t
 차량 raw를 HTML hidden, title, data-attribute, tooltip, aria-label, analytics 이벤트, URL query에 넣어도 노출이다.
 
 ## 내 신고 비교(개인 읽기) 경계
-- 지도 통계 API(`public-analytics`)는 공유자 전용이다: 검증된 카카오 세션 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상인 사람에게만 같은 공개 DTO를 준다(`private, no-store`, 사용자별 횟수 제한). 누가 읽든 내용은 같고, 요청자 정보는 응답에 들어가지 않는다(테스트 고정). 익명 공개 전환 스위치는 없다.
+- 지도 통계 API(`public-analytics`)는 공유자 전용이다: 검증된 카카오 세션 + 공유 동의 + 지도에 올라간 본인 고유 신고 10건 이상인 사람에게만 같은 공개 DTO를 준다(2026-09-28 사용자 결정으로 1건에서 상향, `private, no-store`, 사용자별 횟수 제한). 누가 읽든 내용은 같고, 요청자 정보는 응답에 들어가지 않는다(테스트 고정). 익명 공개 전환 스위치는 없다.
 - 개인 응답(`my-analytics`)은 검증된 사용자 본인에게만, `Cache-Control: private, no-store`·`Vary: Authorization`. 계정 id·세션·이메일을 담지 않는다.
 - exporter는 `mine`·`viewer`·`my_points`·`user_id`·`session_id` 필드를 거부하고, share URL에는 비교 모드·계정 상태를 넣지 않는다.
 - 관심 지역·비교 토글은 이 브라우저 localStorage에만(서버 전송 없음). 브리핑 모드는 내 데이터를 기본으로 숨긴다.

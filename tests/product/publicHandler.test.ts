@@ -88,7 +88,7 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
   const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const token = (claims: Record<string, unknown> = {}) =>
     `${b64({ alg: 'HS256' })}.${b64({ sub: 'viewer-1', role: 'authenticated', aud: 'authenticated', iss: 'https://p.supabase.co/auth/v1', session_id: SESSION, is_anonymous: false, ...claims })}.sig`;
-  type V = { user_ok: boolean; kakao: boolean; session: boolean; contributor: 'active' | 'none' | 'suspended' | 'revoked'; has_public_facts: boolean };
+  type V = { user_ok: boolean; kakao: boolean; session: boolean; contributor: 'active' | 'none' | 'suspended' | 'revoked'; has_public_facts: boolean; public_fact_count?: number | null };
   function gated(viewer: Partial<V> = {}, over: { getUser?: () => Promise<{ id: string; isAnonymous: boolean } | null> } = {}) {
     const seen: { viewerCalls: Array<[string, string]>; rateIds: Array<string | undefined>; facts: number } = { viewerCalls: [], rateIds: [], facts: 0 };
     const handle = createPublicHandler(makeRepo({
@@ -97,7 +97,7 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
     }), {
       allowedOrigins: [ORIGIN], jwtIssuer: 'https://p.supabase.co/auth/v1',
       getUser: over.getUser ?? (async () => ({ id: 'viewer-1', isAnonymous: false })),
-      viewer: async (uid, session) => { seen.viewerCalls.push([uid, session]); return { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, ...viewer }; },
+      viewer: async (uid, session) => { seen.viewerCalls.push([uid, session]); return { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, public_fact_count: 10, ...viewer }; },
     });
     return { handle, seen };
   }
@@ -141,11 +141,43 @@ describe('contributor-only access (user decision 2026-09-27)', () => {
     }
   });
   it('consented but no report on the map yet is refused with its own reason', async () => {
-    const { handle, seen } = gated({ has_public_facts: false });
+    const { handle, seen } = gated({ has_public_facts: false, public_fact_count: 0 });
     const res = await handle(req(`dashboard?${q}`));
     expect(res.status).toBe(403);
-    expect((await res.json()).error.code).toBe('upload_required');
+    const body = await res.json();
+    expect(body.error.code).toBe('upload_required');
+    expect(body.error.details).toEqual({ required: 10, current: 0 });
     expect(seen.facts).toBe(0);
+  });
+  it('viewer threshold (user decision 2026-09-28): 9 refused with progress, 10 allowed', async () => {
+    const short = await gated({ public_fact_count: 9 }).handle(req(`dashboard?${q}`));
+    expect(short.status).toBe(403);
+    const shortBody = await short.json();
+    expect(shortBody.error.code).toBe('upload_required');
+    expect(shortBody.error.details).toEqual({ required: 10, current: 9 });
+    // the refusal carries no statistics or version
+    expect(JSON.stringify(shortBody)).not.toContain('v2-test');
+    const enough = await gated({ public_fact_count: 10 }).handle(req(`dashboard?${q}`));
+    expect(enough.status).toBe(200);
+    expect(dashboardResponseSchema.safeParse(await enough.json()).success).toBe(true);
+  });
+  it('pre-threshold database without the count key fail-closes to upload_required', async () => {
+    for (const count of [undefined, null]) {
+      const { handle, seen } = gated({ has_public_facts: true, public_fact_count: count });
+      const res = await handle(req(`dashboard?${q}`));
+      expect(res.status, String(count)).toBe(403);
+      const body = await res.json();
+      expect(body.error.code).toBe('upload_required');
+      expect(body.error.details).toEqual({ required: 10, current: null });
+      expect(seen.facts).toBe(0);
+    }
+  });
+  it('suspended or withdrawn accounts stay contributor_required even with 10 reports', async () => {
+    for (const contributor of ['none', 'revoked', 'suspended'] as const) {
+      const res = await gated({ contributor, public_fact_count: 10 }).handle(req(`dashboard?${q}`));
+      expect(res.status, contributor).toBe(403);
+      expect((await res.json()).error.code).toBe('contributor_required');
+    }
   });
   it('expired, forged, anonymous and non-Kakao sessions are refused', async () => {
     expect((await gated({}, { getUser: async () => null }).handle(req('meta'))).status).toBe(401);

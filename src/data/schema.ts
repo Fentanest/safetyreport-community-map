@@ -152,3 +152,20 @@ export const snapshotManifestSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string().regex(/^[A-Za-z0-9._-]{1,120}$/),
   scope: scopeSchema, generated_at: z.string(),
 });
+
+// Access refusal envelope (contributor-only map). The error code stays stable ('upload_required' etc.);
+// `details` is present only on upload_required so the UI can show threshold progress ("now N of 10").
+// `current` is null when the database did not report a usable count (pre-threshold SQL) — the UI then
+// shows the requirement without a number. Strict: unknown error shapes fall back to code-only handling.
+export const accessErrorDetailsSchema = z.strictObject({
+  required: z.number().int().positive(),
+  current: z.number().int().nonnegative().nullable(),
+});
+
+export const errorResponseSchema = z.strictObject({
+  error: z.strictObject({
+    code: z.string(), message: z.string(), details: accessErrorDetailsSchema.optional(),
+  }),
+});
+
+export type AccessErrorDetails = z.infer<typeof accessErrorDetailsSchema>;

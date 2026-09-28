@@ -233,6 +233,15 @@
     "202609281600",
     "202609281700"
    ]
+  },
+  {
+   "version": "202609281900",
+   "repo": "map",
+   "path": "supabase/migrations/202609281900_viewer_threshold.sql",
+   "sha256": "50fdda7c4a4d2affa2fd75d8abd9c7dc7e30c6a3ac34b5c54cb9e8123baefe66",
+   "depends_on": [
+    "202609281800"
+   ]
   }
  ],
  "functions": [

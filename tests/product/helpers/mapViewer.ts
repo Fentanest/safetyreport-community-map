@@ -15,7 +15,8 @@ export function fixtureAccess(uid = 'fixture-viewer'): PublicAccess {
   return {
     allowedOrigins: [TEST_MAP_ORIGIN], jwtIssuer: ISSUER,
     getUser: async token => token === viewerToken(uid) ? { id: uid, isAnonymous: false } : null,
-    viewer: async () => ({ user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true }),
+    // eligible contributor fixture: active share consent with 10 publicly-listed reports (2026-09-28 threshold)
+    viewer: async () => ({ user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, public_fact_count: 10 }),
   };
 }
 

@@ -61,14 +61,17 @@ async function loadPolicy() {
 const ingestRaw = (body: unknown, token: string | null, headers?: Record<string, string>) =>
   call('POST', '/functions/v1/community-ingest', { token, body, headers });
 const SCOPE = 'start=2024-01-01&end=2028-12-31';
-// The map is contributor-only (2026-09-27): statistics are read as E, a Kakao user with an active share consent
-// and one shared report on the map.
+// The map is contributor-only (2026-09-28): statistics are read as E, a Kakao user with an active share consent
+// and at least 10 distinct publicly-listed reports on the map.
 let viewerToken: string | null = null;
 async function viewer(): Promise<string> {
   if (!viewerToken) {
     const w = await writerFor('E');
-    const r = await ingest(w, [await event(w, `VIEW-${rid()}`)]);
-    expect(r.json.results?.[0]?.projection_status, JSON.stringify(r.json)).toBe('published');
+    const events = await Promise.all(Array.from({ length: 10 }, () => event(w, `VIEW-${rid()}`)));
+    const r = await ingest(w, events);
+    expect(r.status, JSON.stringify(r.json)).toBe(200);
+    expect(r.json.results, JSON.stringify(r.json)).toHaveLength(10);
+    expect(r.json.results.every((result: Json) => result.projection_status === 'published')).toBe(true);
     viewerToken = w.session.access;
   }
   return viewerToken;
@@ -81,7 +84,7 @@ const b64url = (b: Buffer) => b.toString('base64url');
 const rid = () => randomBytes(8).toString('hex'); // source_report_id is ^[0-9A-Za-z_-]{1,40}$
 interface Session { access: string; refresh: string; userId: string; sessionId: string }
 
-async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'): Promise<Session> {
+async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H'): Promise<Session> {
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
   const authorize = `${API}/auth/v1/authorize?${new URLSearchParams({ provider: 'kakao', redirect_to: REDIRECT, code_challenge: challenge, code_challenge_method: 's256' })}`;
@@ -137,7 +140,7 @@ async function register(s: Session, dataset: string, takeover = false, mode: 'se
   return { r, secret };
 }
 
-async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G', login = `int-${randomUUID()}`): Promise<Writer> {
+async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H', login = `int-${randomUUID()}`): Promise<Writer> {
   const session = await kakaoSession(choice);
   const grantId = await consent(session);
   const dataset = datasetKey(login);
@@ -235,9 +238,39 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     await loadPolicy();
     const warm = await ensureRealtimeReady();
     console.info(`[realtime] control delivery ready after ${warm} ms`);
-    // The contributor-only viewer (E, one shared report) is made while publication is on, before any test switches it off.
+    // The contributor-only viewer (E, 10 distinct reports) is made while publication is on, before any test switches it off.
     await viewer();
   }, 120_000);
+
+  it('requires 10 distinct public reports for map access and counts a second dataset only once', async () => {
+    // H is dedicated to the 9-report browser gate. Clear only this local fixture so reruns stay deterministic.
+    const prior = await kakaoSession('H');
+    const cleared = await account('contributions-delete', prior.access, { confirm: 'DELETE_MY_SHARED_REPORTS' });
+    expect(cleared.status, JSON.stringify(cleared.json)).toBe(200);
+    const w = await writerFor('H');
+    const reports = Array.from({ length: 9 }, () => `LIMIT-${rid()}`);
+    const events = await Promise.all(reports.map(report => event(w, report)));
+    const upload = await ingest(w, events);
+    expect(upload.status, JSON.stringify(upload.json)).toBe(200);
+    expect(upload.json.results).toHaveLength(9);
+    expect(upload.json.results.every((result: Json) => result.projection_status === 'published')).toBe(true);
+    const denied = await call('GET', '/functions/v1/public-analytics/meta', { apikey: null, token: w.session.access });
+    expect([denied.status, denied.json.error?.code]).toEqual([403, 'upload_required']);
+    expect(denied.json.error.details).toEqual({ required: 10, current: 9 });
+    // A duplicate of one report under a second dataset creates a second fact row, but not a tenth identity.
+    const { r: reg } = await register(w.session, datasetKey(`limit-second-${rid()}`));
+    expect(reg.status, JSON.stringify(reg.json)).toBe(200);
+    const second: Writer = { ...w, connectionId: reg.json.connection_id, epoch: reg.json.writer_epoch, revision: 0 };
+    const duplicate = await ingest(second, [await event(second, reports[0])]);
+    expect(duplicate.json.results?.[0]?.projection_status, JSON.stringify(duplicate.json)).toBe('published');
+    const duplicatedKey = createHash('sha256').update(`safetyreport|${reports[0]}`).digest('hex');
+    expect(count('private.community_report_facts', `contributor_id='${w.session.userId}' and source_report_key='${duplicatedKey}'`)).toBe(2);
+    const stillDenied = await call('GET', '/functions/v1/public-analytics/meta', { apikey: null, token: w.session.access });
+    expect([stillDenied.status, stillDenied.json.error?.code]).toEqual([403, 'upload_required']);
+    expect(stillDenied.json.error.details).toEqual({ required: 10, current: 9 });
+    const allowed = await call('GET', '/functions/v1/public-analytics/meta', { apikey: null, token: await viewer() });
+    expect(allowed.status, JSON.stringify(allowed.json)).toBe(200);
+  });
 
   describe('security matrix (prompt §14)', () => {
     it('refuses URL + publishable key only, publishable key as bearer, forged/other-project/expired JWTs, legacy keys', async () => {

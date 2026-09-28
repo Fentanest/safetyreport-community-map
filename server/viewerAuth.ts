@@ -17,6 +17,32 @@ export class ViewerAuthError extends Error {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BEARER = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/;
 
+/**
+ * Map viewer threshold (user decision 2026-09-28): the community map opens only to participants who
+ * share 10 or more publicly-listed reports. A code constant on purpose — never overridden by an
+ * environment variable, so a misconfigured deployment cannot silently lower the bar.
+ */
+export const MAP_VIEWER_MIN_REPORTS = 10;
+
+export interface MapViewerEligibility {
+  /** verified contributor with enough publicly-listed reports */
+  ok: boolean;
+  /** the viewer's public_fact_count when the database reported a usable number, else null (unknown) */
+  current: number | null;
+  required: number;
+}
+
+/**
+ * Map-only gate over the internal_analytics_viewer result. Fail closed: a response from an older
+ * database without the public_fact_count key (or a non-numeric/negative value) never opens the map.
+ * Personal comparison (my-analytics) does not use this — its has_public_facts semantics are unchanged.
+ */
+export function mapViewerEligibility(viewer: { public_fact_count?: unknown }): MapViewerEligibility {
+  const raw = viewer.public_fact_count;
+  const current = typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : null;
+  return { ok: current !== null && current >= MAP_VIEWER_MIN_REPORTS, current, required: MAP_VIEWER_MIN_REPORTS };
+}
+
 function decodeClaims(token: string): Record<string, unknown> | null {
   try {
     const part = token.split('.')[1];

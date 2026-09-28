@@ -24,7 +24,7 @@
 - UI: Vite + React + TypeScript + CSS custom property tokens + ECharts + Kakao Maps Web SDK.
   현재 레포에 다른 실제 구현이 생겼다면 무조건 삭제하지 말고 보존·어댑터 비용을 보고한다.
 - 비밀 경계: Pages는 공개 UI. private 원본 집계·차량 마스킹은 Supabase 서버에서 한다.
-- 읽기 모델: 모든 통계는 public-analytics API로 조회한다. 지도는 공유자 전용(카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상)이며, 익명 공개 전환 스위치는 두지 않는다. Actions의 초기 snapshot은 만들지 않는다(docs/public-api-contract.md §열람 조건). 2026-09-27 사용자 재확인: 모든 데이터·계정·업로드 함수는 자기 사용자 세션을 검사한다. 로그인 시작 전 `community-auth-relay`만 일회용 capability로 보호하는 예외다.
+- 읽기 모델: 모든 통계는 public-analytics API로 조회한다. 지도는 공유자 전용(카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 10건 이상 — 2026-09-28 결정으로 1건에서 상향, 아래 §10건 결정)이며, 익명 공개 전환 스위치는 두지 않는다. Actions의 초기 snapshot은 만들지 않는다(docs/public-api-contract.md §열람 조건). 2026-09-27 사용자 재확인: 모든 데이터·계정·업로드 함수는 자기 사용자 세션을 검사한다. 로그인 시작 전 `community-auth-relay`만 일회용 capability로 보호하는 예외다.
 - 기간 기본: 전국, 최근 12개월(오늘 포함), KST. 분석 가능 기간의 최소/최대는 meta에서 받는다.
 - 첫 방문 테마: dark. 사용자 저장값 우선. light·system도 제공한다.
 - 지도 색 기본: 신고건수 순차색. 다른 지표 선택 시 독립 범례/분모/기준이 바뀐다.
@@ -72,3 +72,22 @@
 차량 실번호 검색·차량의 이동경로·연속 추적·원본 민원 본문/첨부/신고자 프로필·공무원 우열 점수·실시간인 척하는 ticker는 제외.
 다중 로그인 제공자, 입금·과태료 실제 납부 추정, 없는 historical backlog 재구성도 제외.
 지점별 1건은 숨기지 않는다. 다만 원천 필드 결측은 결측으로 표시하며 품질 오류를 정상 숫자로 바꾸지 않는다.
+
+## 2026-09-28 사용자 결정 · 지도 열람 자격 10건 (같은 날 확정)
+
+- 커뮤니티 지도를 **보는 자격**만 바뀐다: "공개된 신고 1건 이상 공유한 참여자" → **"공개된 신고 10건 이상 공유한 참여자"**.
+  개인 통계·비교(`my-analytics`, `internal_my_analytics_source`의 `has_public_facts` 등)와 앱(PC·모바일)·업로드 계약은 그대로다.
+- 10건은 **고유 신고 수**다: 같은 신고가 이 사용자의 여러 dataset(PC·모바일·복원본)에 있어도 1건.
+  세는 기준은 공개 통계의 `report_identity`와 같다
+  (`source_report_key || '|' || coalesce(자기 번호, 키의 최초 번호, 'legacy')`, 202609281500 H1·202609281600 R2).
+  타 계정의 같은 신고 업로드는 세지 않는다(계정별 기여 규칙). `internal_analytics_viewer`가 기존 키는 그대로 두고
+  `public_fact_count`를 함께 돌려준다(map migration `202609281900`).
+- 비교는 Edge 쪽 코드 상수 `MAP_VIEWER_MIN_REPORTS = 10`(`server/viewerAuth.ts`, 환경변수로 덮지 않음)에서 한다.
+  구버전 SQL 응답(키 없음)이면 안전하게 거부한다(fail closed).
+- 거부(`upload_required`, 코드는 그대로)에는 `{required: 10, current: N|null}`을 담아 안내 화면이
+  "지금 N건 / 10건" 진행을 보여 줄 수 있다. `current`가 null이면 건수 없이 요건만 안내한다.
+- 배포 순서: 새 Edge Function(`public-analytics`)과 지도 Pages를 함께 반영 → 중앙 SQL(map `202609281900`).
+  새 Edge는 SQL 반영 전 `public_fact_count` 키가 없는 응답을 `upload_required`로 거부한다(fail closed). 따라서
+  SQL 적용 전에는 일시적으로 지도 열람이 막히지만 1~9건 계정이 구 Edge를 통해 지도를 보는 정책 공백은 없다.
+  구 Pages의 strict 오류 스키마는 새 Edge의 `details` 응답을 거절할 수 있으므로 Pages와 Edge를 한 배포 단계로 묶는다.
+  `my-analytics`·ingest·앱은 바꿀 것이 없어 재배포하지 않는다.

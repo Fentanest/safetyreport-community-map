@@ -1,5 +1,5 @@
 import type { DashboardData, PublicEntity, Scope } from '../domain/public';
-import { entitiesResponseSchema, metaSchema, dashboardResponseSchema } from './schema';
+import { entitiesResponseSchema, errorResponseSchema, metaSchema, dashboardResponseSchema, type AccessErrorDetails } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
 
 export type DataMode = 'demo' | 'live';
@@ -13,7 +13,9 @@ export function entitiesAvailable(): boolean {
 export class PublicApiError extends Error {
   constructor(message: string, readonly status: number | null = null, readonly retryAfter: number | null = null,
     /** server error code, e.g. auth_required / contributor_required while the map is contributor-only */
-    readonly code: string | null = null) {
+    readonly code: string | null = null,
+    /** threshold progress on upload_required refusals (required 10, current N or null when unknown) */
+    readonly details: AccessErrorDetails | null = null) {
     super(message);
     this.name = 'PublicApiError';
   }
@@ -65,15 +67,25 @@ async function read(path: string, params: URLSearchParams | null, signal?: Abort
     const retry = Number(res.headers.get('retry-after'));
     let code: string | null = null;
     let message: string | null = null;
+    let details: AccessErrorDetails | null = null;
     try {
-      const body = (await res.json()) as { error?: { code?: unknown; message?: unknown } };
-      code = typeof body.error?.code === 'string' ? body.error.code : null;
-      message = typeof body.error?.message === 'string' ? body.error.message : null;
+      const raw = (await res.json()) as unknown;
+      const parsed = errorResponseSchema.safeParse(raw);
+      if (parsed.success) {
+        code = parsed.data.error.code;
+        message = parsed.data.error.message;
+        details = parsed.data.error.details ?? null;
+      } else {
+        // Non-conforming envelope (older server): still recover code/message, without progress.
+        const body = raw as { error?: { code?: unknown; message?: unknown } };
+        code = typeof body.error?.code === 'string' ? body.error.code : null;
+        message = typeof body.error?.message === 'string' ? body.error.message : null;
+      }
     } catch { /* not JSON */ }
     const access = (ACCESS_CODES as readonly string[]).includes(code ?? '');
     throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.'
       : access && message ? message : '통계를 불러오지 못했습니다.',
-      res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code);
+      res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code, details);
   }
   return res.json();
 }

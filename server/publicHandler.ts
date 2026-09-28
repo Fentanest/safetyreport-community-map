@@ -1,6 +1,6 @@
 import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
 import { codeForLegacyKey } from './regions.ts';
-import { authenticate, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
+import { authenticate, mapViewerEligibility, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
 import { isLawParam, LAW_NONE, lawKey, parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
 
 export interface AnalyticsState {
@@ -30,6 +30,18 @@ export interface ViewerCheck {
   contributor: 'active' | 'none' | 'suspended' | 'revoked';
   /** at least one of the viewer's reports is on the map (completed, active consent lineage) */
   has_public_facts: boolean;
+  /**
+   * distinct publicly-listed report identities of the viewer (202609281900; multiple datasets of the
+   * same report count once). Absent on pre-threshold databases — the gate then fail-closes.
+   */
+  public_fact_count?: number | null;
+}
+
+/** Details carried on the upload_required refusal so the UI can show "now N of 10" progress. */
+export interface ViewerThresholdDetails {
+  required: number;
+  /** null when the database did not report a usable count (older SQL); the UI then shows no number */
+  current: number | null;
 }
 
 /** Every route, including meta, requires a verified Kakao contributor with a shared report. */
@@ -62,15 +74,16 @@ const ACCESS_MESSAGES: Record<string, string> = {
   session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
   kakao_required: '카카오 계정으로 로그인해 주세요.',
   contributor_required: '지금은 신고내용 공유에 동의한 사람만 볼 수 있습니다.',
-  upload_required: '지도에 올라간 내 신고가 아직 없습니다. 앱에서 답변 완료 신고를 공유하면 볼 수 있습니다.',
+  upload_required: '지도에 올라간 내 신고가 10건 이상이면 볼 수 있습니다. 앱에서 답변 완료 신고를 공유하면 볼 수 있습니다.',
   origin_forbidden: '허용되지 않은 요청입니다.',
 };
 
-function errorWith(code: string, status: number, headers: Headers): Response {
+function errorWith(code: string, status: number, headers: Headers, details?: ViewerThresholdDetails): Response {
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
     code === 'AGGREGATE_NOT_READY' ? '공개 집계가 아직 준비되지 않았습니다.' :
       code === 'DATASET_CHANGED' ? '데이터 버전이 변경됐습니다. 다시 조회해 주세요.' :
-        ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.' } }, status, headers);
+        ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.',
+    ...(details !== undefined ? { details } : {}) } }, status, headers);
   if (status === 429) res.headers.set('Retry-After', '60');
   if (status === 401) res.headers.set('WWW-Authenticate', 'Bearer');
   return res;
@@ -177,7 +190,8 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       ...(originAllowed && origin ? { 'Access-Control-Allow-Origin': origin } : {}),
     };
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
-    const errorResponse = (code: string, status: number) => errorWith(code, status, headers);
+    const errorResponse = (code: string, status: number, details?: ViewerThresholdDetails) =>
+      errorWith(code, status, headers, details);
     if (origin !== null && !originAllowed) return errorResponse('origin_forbidden', 403);
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -196,7 +210,14 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       if (!v.kakao) return errorResponse('kakao_required', 403);
       if (!v.session) return errorResponse('session_expired', 401);
       if (v.contributor !== 'active') return errorResponse('contributor_required', 403);
-      if (v.has_public_facts !== true) return errorResponse('upload_required', 403);
+      if (v.has_public_facts !== true) {
+        const gate = mapViewerEligibility(v);
+        return errorResponse('upload_required', 403, { required: gate.required, current: gate.current });
+      }
+      // Map viewer threshold (user decision 2026-09-28): 10+ publicly-listed reports. Compared here in
+      // the Edge layer (server/viewerAuth.ts), never in SQL, and fail-closed on pre-threshold databases.
+      const gate = mapViewerEligibility(v);
+      if (!gate.ok) return errorResponse('upload_required', 403, { required: gate.required, current: gate.current });
       if (!await repo.allowRequest(request, uid)) return errorResponse('RATE_LIMITED', 429);
       const state = await repo.getState();
       if (route === 'meta') {
