@@ -20,6 +20,7 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 | manager_key / manager_name | agency_key + name + 가능하면 안정 담당자 식별. 이름 단독 전역 병합 금지 |
 | vehicle_raw | private 원번호(업로드 원문). 공개 전 `parsePlate` 로 정규화(지역 접두어 보존)·마스킹 |
 | amount_kind / amount_confirmed_won / penalty_points | private 저장(답변에 적힌 금액·종류·벌점). 공개 RPC는 **사실의 동의 정책이 금액 공개를 허용할 때만**(`private.community_policy_disclosures.amounts_public`) 금액 값을 내보내고, 아니면 null + `amount_stated`(적혔는지 여부)만. 공개 DTO에는 집계(합계·평균·중앙값·건수)만. 벌점은 내보내지 않는다 |
+| violation_law | 위반법규(법 이름·조항, 예: `도로교통법 제32조`) text 1..60자 또는 null. observation-v2(2026-09-28)의 payload 값을 그대로 저장(`private.community_report_facts.violation_law`, map `202609281100`). v1 payload(구 앱)는 null. 공개 RPC는 **사실의 동의 계보가 위반법규 공개를 허용할 때만**(`community_policy_disclosures.violation_law_public`) 값을 내보내고, 아니면 null(=법규 미상) |
 | count | fact=1; joint cube면 1 이상의 가중치 |
 
 manager 동명이인이 같은 기관에도 존재할 수 있다. 별도 ID가 없으면 '기관·성명 기준 묶음'임을 표시하고 동일인으로 단정하지 않는다.
@@ -48,9 +49,14 @@ map migration `202609280300`이 그 버전을 disclosures에 등록했다(auth `
 정한다: 새 버전에 직접 동의하면 이전 버전으로 보낸 사실의 금액도 통계에 들어가고(동의문에 적음), 이전 동의만으로는 들어가지 않는다.
 재동의를 자동으로 만들지 않는다. 한 조건에 1건뿐이면 통계가 곧 그 신고의 금액임을 동의문에 적었다.
 
+위반법규 공개 정책(2026-09-28 사용자 결정): 동의문 2026-09-28.2가 ‘다른 이용자에게 어떤 정보가 보이나요?’에 위반법규를 적었고,
+auth `202609281000`이 그 정책을 현재로 지정, map `202609281100`이 disclosures에 `('2026-09-28.2', amounts_public=true, violation_law_public=true)`를 등록했다.
+2026-09-28.1 이하는 위반법규를 적지 않아 `violation_law_public=false`다. 공개 DTO에는 법규 원문(필터 값·표의 행 이름)과 법규별 집계만 나간다.
+처리내용 원문은 앱이 보내지 않는다(contracts/community-ingest/observation.md). ingest는 C0 제어문자·DEL이 든 법규를 422로 거절한다(clean()이 남기지 않는 문자, 공개 필터 값 보호).
+
 ## E. capabilities
 meta.capabilities: daily_report_dates, completion_dates, manager_status_cross,
-agency_status_cross, vehicle_top5, fine_amount, processing_duration, region_boundaries.
+agency_status_cross, vehicle_top5, fine_amount, processing_duration, region_boundaries, violation_law(2026-09-28, coverage = 법규 있는 답변/C).
 각각 supported / missing / partial + reason + coverage.{eligible,total}로 표현한다.
 2026-09-27부터 processing_duration(coverage = 계산된 건수/답변 cohort), fine_amount(coverage = 금액 확인/F), region_boundaries는
 집계 상태(ready)를 따른다. 실제로 계산한 결과가 있는 경로에서만 supported다.
