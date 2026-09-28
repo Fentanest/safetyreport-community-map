@@ -178,6 +178,15 @@
     "202609280800",
     "202609281100"
    ]
+  },
+  {
+   "version": "202609281300",
+   "repo": "map",
+   "path": "supabase/migrations/202609281300_account_contributions.sql",
+   "sha256": "625bb3f7893232dca426e2bd9e1b17e8e42238868ab4e09a2578455a507ad71c",
+   "depends_on": [
+    "202609281200"
+   ]
   }
  ],
  "functions": [

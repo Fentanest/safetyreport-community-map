@@ -1,7 +1,8 @@
-# 2026-09-28 신고번호 및 소유 이전 결정·검증 계획
-<!-- 2026-09-28 개정: 답변 완료만 수집, 이전은 완전 동일만. 아래 "개정 전" 문단은 효력을 잃었다. -->
+# 2026-09-28 신고번호 및 계정별 기여 결정·검증 계획
+<!-- 2026-09-28 개정2: 소유 이전 모델을 계정별 기여 + 전역 중복 제거로 대체(사용자 규칙). 아래 "개정 전" 문단과
+     완전-동일-이전 규칙(4·5·7항)은 효력을 잃었다. 1~3·6항(번호 수집·답변 완료만·NULL 백필)은 유지. -->
 
-## 확정 계획 (2026-09-28 개정)
+## 확정 계획 (2026-09-28 개정2)
 
 1. PC 제목 `신고번호`, 모바일 `Report.reportNumber`를 별도 private event `report_number`로 전송한다. `source_report_id`(링크 ID)는 기존 그대로다. Observation JSON과 `payload_sha256`은 바꾸지 않는다. 서버 형식 검사 후 private events/facts에 저장한다. 공개 RPC/DTO는 번호 열을 선택하지 않는다.
 2. 앱은 답변 완료(eligible: accepted/partial/rejected/completed_unknown) 관측만 이벤트로 만든다. 적격이 아닌 관측(처리중·보완요청·취하·이송·other)은 이벤트 없음 — `status_correction` 발급 없음, 로컬 `detail_status` 기록만. 로컬 prev 합성에 `server_completed` 를 쓰지 않는다(표 자체는 manifest 신선도 증명용으로 유지).
@@ -9,10 +10,15 @@
 3. 서버(TS 핸들러 + SQL ingest 함수 양쪽)는 payload 가 적격이 아니거나 event_type 이 `status_correction` 인 이벤트를
    이벤트 단위로 재시도 불가 `rejected:non_final_not_accepted`(durable=false)로 거절한다. 구버전 앱 배치의 나머지 이벤트는 정상 처리한다.
    `status_correction` 이름은 구버전 인식용으로만 유지한다. 답변 완료로 올라간 신고가 나중에 비종결 상태로 돌아가면(드묾) 중앙은 마지막 답변 상태를 유지한다.
-4. 새 migration에서 기존 연결 잠금 뒤, fact 접근 전 신고 키 advisory transaction lock을 건다. 동일 링크 ID의 다른 계정 fact가 있으면 신고번호 두 개가 같고, Observation payload 가 **완전히 같을 때만**(상태 포함, `status_only` 예외 없음) 이전한다. 이전은 한 트랜잭션에서 A fact 삭제·B fact 삽입·private 감사 기록(`reason='identical'` 만 허용)으로 수행한다. A 톰스톤은 만들지 않는다. 기존 manifest 트리거가 A 축소와 B 추가를 기록한다. 같은 계정 갱신 규칙은 그대로다.
-5. 조건 불일치면 비재시도 `rejected` ACK(`report_identity_mismatch`, `cross_account_mismatch`, 다수 기존 소유자는 `ambiguous_existing_owners`)로 차단한다. PC·모바일 outbox는 blocked로 보존하고 이유를 표시한다. `transferred`는 receipt가 있는 성공 ACK다.
+4. ~~새 migration에서 기존 연결 잠금 뒤, fact 접근 전 신고 키 advisory transaction lock을 건다. 동일 링크 ID의 다른 계정 fact가 있으면 신고번호 두 개가 같고, Observation payload 가 **완전히 같을 때만**(상태 포함, `status_only` 예외 없음) 이전한다. 이전은 한 트랜잭션에서 A fact 삭제·B fact 삽입·private 감사 기록(`reason='identical'` 만 허용)으로 수행한다. A 톰스톤은 만들지 않는다. 기존 manifest 트리거가 A 축소와 B 추가를 기록한다. 같은 계정 갱신 규칙은 그대로다.~~
+   → **계정별 기여(개정2)로 대체**: 타 계정 업로드는 업로더의 fact만 만들거나 갱신하고 `accepted`로 수신한다. A fact 삭제·이전·감사 기록 없음.
+   advisory lock은 동시 기여의 결정적 처리를 위해 유지한다. 같은 계정 갱신 규칙은 그대로다.
+5. ~~조건 불일치면 비재시도 `rejected` ACK(`report_identity_mismatch`, `cross_account_mismatch`, 다수 기존 소유자는 `ambiguous_existing_owners`)로 차단한다. PC·모바일 outbox는 blocked로 보존하고 이유를 표시한다. `transferred`는 receipt가 있는 성공 ACK다.~~
+   → **폐기(개정2)**: payload·신고번호가 달라도 타 계정 기여로 정상 수신한다. 코드 이름은 구버전 앱 호환용으로만 문서에 남긴다.
 6. 과거 fact의 신고번호는 NULL로 남긴다. 기존 소유자가 다시 상세를 수집해 번호를 백필하기 전에는 다른 계정으로 자동 이전하지 않는다. 로컬 최신 journal의 번호가 NULL이고 새 번호가 생기면 해시가 같아도 새 이벤트를 발급한다. 로컬에 상세 재수집이 없는 행은 자동 백필되지 않는다.
-7. 참여 계정의 동일인 추정·병합은 하지 않는다. contributor_count는 현재 공개 fact를 가진 서로 다른 계정의 수다. 이전 전후 두 fact가 모두 공개 가능한 상태라면 총 신고 건수는 1로 유지되고 기여자는 A에서 B로 바뀐다.
+7. 참여 계정의 동일인 추정·병합은 하지 않는다. contributor_count는 현재 공개 fact를 가진 서로 다른 계정의 수다. ~~이전 전후 두 fact가 모두 공개 가능한 상태라면 총 신고 건수는 1로 유지되고 기여자는 A에서 B로 바뀐다.~~
+   → **개정2**: 공개 통계는 identity당 대표행 1건으로 집계하고(`contribution-dedupe-v1`), 개인 범위는 각자의 기여를 센다(A=1, B=1, 전체=1).
+8. 공개 projection(`internal_analytics_v2_facts`)은 identity당 공개 목록 중 `first_accepted_at`이 가장 이른 행을 대표(`is_representative`)로 선출하고 기여 수(`contribution_count`)를 싣는다. 실제 결과가 계정마다 다르면 각 관측을 보존하고 대표는 최초 기여로 유지한다. 한 계정의 삭제/철회는 그 계정만 처리하고 대표는 유효 기여로 승계된다.
 
 ## 개정 전 계획 (효력 없음 — 2026-09-28 결정으로 대체됨)
 
@@ -51,5 +57,5 @@
 
 ## 검증 범위
 
-단위: 번호 형식/해시 독립/캡처 백필(적격만)/성공·비재시도 ACK(`non_final_not_accepted`·`cross_account_mismatch` 포함)/공개 비노출.
-로컬 실스택: 완전 동일 이전, 상태만 다른 이전 거절, 비적격·구버전 correction 거절(배치 나머지 정상 처리), 필드·번호 불일치, 레거시 NULL, 동시 A/B, manifest 축소, 공개 수·기여자, 삭제/철회. 실제 운영 계정·DB 검증은 이 작업 범위 밖이다.
+단위: 번호 형식/해시 독립/캡처 백필(적격만)/성공·비재시도 ACK(`non_final_not_accepted` 포함, 이전 모델 거절 코드 제외)/공개 비노출/대표 선출·개인 collapse.
+로컬 실스택: A→A이름변경→B이름변경→B재전송 집계표(1/0/1→1/0/1→1/1/1→1/1/1), 결과 상이 기여 수용과 대표 유지, 번호 무관 수신, 비적격·구버전 correction 거절(배치 나머지 정상 처리), 레거시 supplement 혼합 배치, 동시 A/B, 삭제 시 대표 승계, manifest·공개 수·기여자, 철회. 실제 운영 계정·DB 검증은 이 작업 범위 밖이다.

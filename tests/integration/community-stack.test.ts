@@ -137,7 +137,7 @@ async function register(s: Session, dataset: string, takeover = false, mode: 'se
   return { r, secret };
 }
 
-async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E', login = `int-${randomUUID()}`): Promise<Writer> {
+async function writerFor(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G', login = `int-${randomUUID()}`): Promise<Writer> {
   const session = await kakaoSession(choice);
   const grantId = await consent(session);
   const dataset = datasetKey(login);
@@ -668,92 +668,133 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(foreign.status).toBe(403); // another user's connection: no keys leak
     });
 
-    it('rejects a cross-account mismatch while preserving same-account second datasets', async () => {
-      const report = `SAME-${rid()}`;
-      const a = await writerFor('A');
-      const c = await writerFor('C');
-      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
-      expect((await ingest(c, [await event(c, report, payloadOf('partial_penalty_traffic'))])).json.results[0])
-        .toMatchObject({ status: 'rejected', error: { code: 'cross_account_mismatch', retryable: false } });
-      // same user, a second official account (dataset) — its own writer, its own fact
-      const { r: reg, secret } = await register(a.session, datasetKey(`second-${rid()}`));
-      expect(reg.status).toBe(200);
-      const a2: Writer = { ...a, connectionId: reg.json.connection_id, epoch: reg.json.writer_epoch, dataset: '', secret, revision: 0 };
-      expect((await ingest(a2, [await event(a2, report, payloadOf('rejected_none'))])).json.results[0].status).toBe('accepted');
-      expect(count('private.community_report_facts', `source_report_id = '${report}'`)).toBe(2);
-      expect(sql(`select status from private.community_report_facts where source_report_id = '${report}' and contributor_id = '${a.session.userId}' and dataset_key = '${a.dataset}';`)).toBe('accepted');
-      expect(count('private.community_report_facts', `source_report_id = '${report}' and contributor_id = '${c.session.userId}'`)).toBe(0);
-    });
-
-    it('transfers identical facts, rejects any differing payload, shrinks the old manifest and keeps one public owner', async () => {
-      const report = `XFER-${rid()}`;
+    it('counts one shared report once globally while each account keeps its contribution (2026-09-28 account rule)', async () => {
+      // | 순서 | A 내 신고 | B 내 신고 | 전체 고유 신고 |
+      // | A가 R 최초 업로드 | 1 | 0 | 1 |
+      // | A가 R의 현행기관명 변경본 업로드 | 1 | 0 | 1 |
+      // | B가 R의 현행기관명 변경본 업로드 | 1 | 1 | 1 |
+      // | B가 같은 내용을 재전송 | 1 | 1 | 1 |
+      const report = `SHR-${rid()}`;
       const a = await writerFor('A');
       const b = await writerFor('B');
-      const c = await writerFor('C');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const rep = () => Number(sql(`select count(*) from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`));
+      const contrib = () => sql(`select contribution_count from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      const overviewReports = async () => {
+        const r = await publicApi('overview');
+        expect(r.status, JSON.stringify(r.json)).toBe(200);
+        return Number(r.json.overview?.report_count?.value);
+      };
+      const base = await overviewReports();
+      // A 최초 업로드: A=1, B=0, 전체=1
+      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1);
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(0);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
+      // A가 현행기관명만 바꾼 재업로드: 정상 수신, counts unchanged, A fact preserved (no new fact)
+      const renamed = { ...payloadOf('accepted_fine'), agency_name: '부산광역시 해운대구청' };
+      expect((await ingest(a, [await event(a, report, renamed)])).json.results[0].status).toBe('accepted');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(1);
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
+      // B가 같은 신고의 이름 변경본 제출: B도 정상 수신(accepted — 이전 모델의 transferred/cross_account_mismatch 대체)
+      expect((await ingest(b, [await event(b, report, renamed)])).json.results[0].status).toBe('accepted');
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1); // A 기여 보존
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(1); // B 기여 연결
+      expect(rep()).toBe(1); // 전체 고유 1건
+      expect(contrib()).toBe('2');
+      expect(await overviewReports()).toBe(base + 1);
+      // B 재전송: idempotent(no_change), counts unchanged
+      expect((await ingest(b, [await event(b, report, renamed)])).json.results[0].status).toBe('no_change');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
+      // 같은 계정의 두 번째 dataset(PC·모바일·복원본)도 신고 횟수를 늘리지 않는다
+      const { r: reg } = await register(a.session, datasetKey(`second-${rid()}`));
+      expect(reg.status).toBe(200);
+      const a2: Writer = { ...a, connectionId: reg.json.connection_id, epoch: reg.json.writer_epoch, dataset: '', revision: 0 };
+      expect((await ingest(a2, [await event(a2, report, payloadOf('rejected_none'))])).json.results[0].status).toBe('accepted');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(3);
+      expect(rep()).toBe(1);
+      expect(await overviewReports()).toBe(base + 1);
+    });
+
+    it('accepts divergent outcomes per account without moving the public representative', async () => {
+      const report = `DIV-${rid()}`;
+      const a = await writerFor('A');
+      const b = await writerFor('B');
       const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
       expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
-      const oldGeneration = Number(sql(`select generation from private.community_manifest_generations where contributor_id='${a.session.userId}' and dataset_key='${a.dataset}';`));
-      const identical = await ingest(b, [await event(b, report)]);
-      expect(identical.json.results[0]).toMatchObject({ status: 'transferred', durable: true, projection_status: 'published' });
-      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(1);
-      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(0);
-      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(1);
-      expect(sql(`select count(distinct e->>'contributor_id') from jsonb_array_elements(public.internal_analytics_v2_facts(date '2024-01-01',date '2028-12-31','all',null,null,null,null)) e where e->>'fact_identity' like '%:${key}';`)).toBe('1');
-      expect(Number(sql(`select generation from private.community_manifest_generations where contributor_id='${a.session.userId}' and dataset_key='${a.dataset}';`))).toBeGreaterThan(oldGeneration);
-      expect(count('private.community_fact_tombstones', `contributor_id='${a.session.userId}' and source_report_key='${key}'`)).toBe(0);
-      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('identical');
-      // 2026-09-28: no status_only exception — a payload differing in any field (status included) is rejected.
-      const partial = { ...payloadOf('accepted_fine'), status: 'partial', status_raw: '일부수용' };
-      const changed = await ingest(c, [await event(c, report, partial)]);
-      expect(changed.json.results[0]).toMatchObject({ status: 'rejected', durable: false,
-        error: { code: 'cross_account_mismatch', retryable: false } });
-      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(1);
-      expect(publicFacts(`%:${key}`)).toBe(1);
-      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('identical');
-      expect((await account('consent-revoke', b.session.access, { grant_id: b.grantId })).status).toBe(200);
-      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(0); // revoked lineage stays hidden
-      // the first owner re-uploads the identical payload: it transfers back under the active lineage
-      expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('transferred');
-      expect(publicFacts(`%:${key}`)).toBe(1); // no tombstone on the former owner
-      expect(sql(`select reason from private.community_owner_transfer_audit where source_report_key='${key}' order by transferred_at desc limit 1;`)).toBe('identical');
-      expect((await account('contributions-delete', a.session.access, { confirm: 'DELETE_MY_SHARED_REPORTS' })).status).toBe(200);
-      expect(publicFacts(`%:${key}`)).toBe(0);
-      expect((await ingest(c, [await event(c, report)])).json.results[0].status).toBe('accepted');
-      expect(publicFacts(`%:${key}`)).toBe(1);
-      const publicRow = sql(`select public.internal_analytics_v2_facts(date '2024-01-01',date '2028-12-31','all',null,null,null,null)::text;`);
-      expect(publicRow).not.toContain('SPP-2609-8000001');
+      // B의 실제 결과가 다르면(수용 vs 일부수용) B 기여도 별도 관측으로 보존하고 정상 수신한다
+      expect((await ingest(b, [await event(b, report, payloadOf('partial_penalty_traffic'))])).json.results[0].status).toBe('accepted');
+      expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+      expect(sql(`select status from private.community_report_facts where source_report_key='${key}' and contributor_id='${a.session.userId}';`)).toBe('accepted');
+      expect(sql(`select status from private.community_report_facts where source_report_key='${key}' and contributor_id='${b.session.userId}';`)).toBe('partial');
+      // 공개 대표는 최초 기여(A)로 안정 유지 — 단순 최신 업로드 계정 우선으로 갈아치우지 않는다
+      expect(sql(`select contributor_id from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`)).toBe(a.session.userId);
     });
 
-    it('refuses number, legacy and other-field mismatches without a second fact', async () => {
+    it('accepts any report_number from another account and keeps the first fact (no identity gate)', async () => {
       const a = await writerFor('A');
       const b = await writerFor('B');
-      for (const [kind, change, code] of [
-        ['number', { report_number: 'SPP-2609-8000002' }, 'report_identity_mismatch'],
-        ['legacy', { report_number: null }, 'report_identity_mismatch'],
-        ['address', {}, 'cross_account_mismatch'],
+      for (const [kind, change] of [
+        ['number', { report_number: 'SPP-2609-8000002' }],
+        ['legacy', { report_number: null }],
       ] as const) {
-        const report = `DENY-${rid()}`;
-        const first = await event(a, report, payloadOf('accepted_fine'), kind === 'legacy' ? { report_number: null } : {});
-        expect((await ingest(a, [first])).json.results[0].status).toBe('accepted');
-        const payload = payloadOf('accepted_fine');
-        if (kind === 'address') payload.address = '서울특별시 중구 다른 주소';
-        const next = await event(b, report, payload, change);
-        const rejected = await ingest(b, [next]);
-        expect(rejected.json.results[0]).toMatchObject({ status: 'rejected', durable: false, error: { code, retryable: false } });
-        expect((await ingest(b, [next])).json.results[0]).toMatchObject({ status: 'rejected', durable: false, error: { code } });
-        expect(count('private.community_report_facts', `source_report_id='${report}'`)).toBe(1);
+        const report = `NUM-${kind}-${rid()}`;
+        const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+        expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
+        // 이전 모델은 report_identity_mismatch로 거절했지만, 이제 B 기여도 정상 수신한다
+        const next = await event(b, report, payloadOf('accepted_fine'), change);
+        expect((await ingest(b, [next])).json.results[0].status).toBe('accepted');
+        expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(2);
+        expect(sql(`select count(*) from jsonb_array_elements(
+          public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+          where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`)).toBe('1');
       }
     });
 
-    it('serializes concurrent owners of one report', async () => {
-      const report = `RACE-${rid()}`;
+    it('keeps the other account contribution when one account deletes its own (tombstone independence)', async () => {
+      // A의 공유 삭제/철회는 A의 관계만 처리한다. B가 유효하게 공유한 관계는 유지되고 전체 대표는 B로 승계된다.
+      const report = `DEL-${rid()}`;
+      const f = await writerFor('F');
+      const g = await writerFor('G');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
+      const repContributor = () => sql(`select contributor_id from jsonb_array_elements(
+        public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
+        where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
+      expect((await ingest(f, [await event(f, report)])).json.results[0].status).toBe('accepted');
+      expect((await ingest(g, [await event(g, report)])).json.results[0].status).toBe('accepted');
+      expect(repContributor()).toBe(f.session.userId);
+      expect((await account('contributions-delete', f.session.access, { confirm: 'DELETE_MY_SHARED_REPORTS' })).status).toBe(200);
+      expect(publicFacts(`%:${key}`, f.session.userId)).toBe(0);
+      expect(publicFacts(`%:${key}`, g.session.userId)).toBe(1);
+      expect(publicFacts(`%:${key}`)).toBe(1); // 전체 고유 1건 유지
+      expect(repContributor()).toBe(g.session.userId); // 대표가 G로 승계
+      // G의 기여는 그대로 유효하다: 재전송도 정상 처리된다
+      expect((await ingest(g, [await event(g, report)])).json.results[0].status).toBe('no_change');
+    });
+
+    it('serializes concurrent contributions of one report without duplicates', async () => {      const report = `RACE-${rid()}`;
       const a = await writerFor('A');
       const b = await writerFor('B');
+      const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
       const [left, right] = await Promise.all([
         ingest(a, [await event(a, report)]), ingest(b, [await event(b, report)]),
       ]);
-      expect([left.json.results[0].status, right.json.results[0].status].sort()).toEqual(['accepted', 'transferred']);
-      expect(count('private.community_report_facts', `source_report_id='${report}'`)).toBe(1);
+      // 둘 다 accepted: 한 요청의 일부 실패로 잘못 ACK하지 않고, 계정 연결이 중복 생성되지 않는다
+      expect([left.json.results[0].status, right.json.results[0].status].sort()).toEqual(['accepted', 'accepted']);
+      expect(count('private.community_report_facts', `source_report_id='${report}'`)).toBe(2);
+      expect(publicFacts(`%:${key}`, a.session.userId)).toBe(1);
+      expect(publicFacts(`%:${key}`, b.session.userId)).toBe(1);
     });
 
     it('keeps the last answered state when a legacy correction says it is no longer final (2026-09-28: no corrections)', async () => {

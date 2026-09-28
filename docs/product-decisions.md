@@ -38,12 +38,13 @@
   이름 그대로의 별도 지표로 남겨 두며 화면의 수용률로 쓰지 않는다.
 - 화면에는 일반 이용자 말만 쓴다(docs/personal-comparison.md §5.7).
 
-<## 2026-09-28 신고번호·소유 이전
+<## 2026-09-28 신고번호·소유 이전 → 같은 날 계정별 기여 규칙으로 대체
 
-- 안전신문고 신고번호는 별도 private 이벤트 필드로 수집한다. Observation 해시는 유지하고 공개 API에는 번호를 내보내지 않는다.
-- 다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 Observation payload 가 **완전히 같을 때만** 나중에 올린 계정으로 이전한다(상태 포함 하나라도 다르면 비재시도 `cross_account_mismatch` 거절). `status_only` 예외는 없다. 이전 감사 기록은 private에 남으며 reason 은 `identical` 만 허용한다.
-- 참여자 수의 동일인 추정·계정 병합은 드롭했다. `contributor_count`는 현재 공개 fact를 가진 계정 수 그대로다.
-- 레거시 NULL 번호는 기존 소유자의 재수집으로 백필될 때까지 이전할 수 없다. 조사와 검증 계획: [report-owner-transfer-plan.md](integration/community-ingest/report-owner-transfer-plan.md).
+- ~~다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 Observation payload 가 **완전히 같을 때만** 나중에 올린 계정으로 이전한다~~ — 사용자 규칙(계정별 기여)으로 대체되어 소유 이전을 하지 않는다. A 의 fact·연결은 보존하고 B 에도 연결한다(B 의 내 신고·개인 통계에 1건). 전체 지도·기관·담당자·공개 통계는 고유 신고 1건(대표행만 집계, `contribution-dedupe-v1`).
+- 같은 신고의 타 계정 업로드는 payload·신고번호가 달라도 정상 수신(`accepted`)한다. `transferred`·`cross_account_mismatch`·`report_identity_mismatch`·`ambiguous_existing_owners`는 폐기(구버전 앱이 받아도 무해하도록 문서에만 유지). 이전 감사 표는 역사 기록으로 남기고 새로 쓰지 않는다.
+- 같은 계정의 PC·모바일·두 번째 dataset·복원본 업로드는 개인 집계에서도 identity당 1건으로 collapse 된다.
+- 대표 선출: 공개 목록 중 `first_accepted_at`이 가장 이른 행(동점시 contributor_id 순). 실제 결과가 계정마다 다르면 각 관측을 보존하고 대표는 최초 기여로 유지한다. 한 계정의 삭제/철회는 그 계정만 처리하고 대표는 유효 기여로 승계된다.
+- 아래 2026-09-28 신고번호 수집 문단 중 이전 관련 내용은 위 규칙으로 대체된다. 신고번호 private 수집·해시 제외·공개 비노출은 유지한다.
 
 ## 2026-09-28 답변 완료만 중앙 수집 (같은 날 확정)
 

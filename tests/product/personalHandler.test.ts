@@ -9,7 +9,7 @@ const ORIGIN = 'https://safemap.worklazy.net';
 const SESSION = '11111111-2222-4333-8444-555555555555';
 const state: AnalyticsState = {
   dataset_version: 'v-live-1', ready: true, source_updated_at: null, generated_at: '2026-09-27T00:00:00Z',
-  published_at: null, data_min: DEMO_DATA_MIN, data_max: DEMO_AS_OF, coverage_note: 'test', dedupe_policy_version: 'ingest-latest-v1',
+  published_at: null, data_min: DEMO_DATA_MIN, data_max: DEMO_AS_OF, coverage_note: 'test', dedupe_policy_version: 'contribution-dedupe-v1',
 };
 
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');

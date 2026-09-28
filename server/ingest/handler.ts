@@ -222,11 +222,14 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         if (hash !== raw.payload_sha256) fail('payload_hash_mismatch');
         const valueError = validateObservationValues(payload);
         if (valueError) fail(valueError.code, undefined, valueError.reason);
-        const typeError = validateEventType(raw.event_type as EventType, b.trigger as string, payload);
-        if (typeError) fail(typeError.code, undefined, typeError.reason);
         // Non-final payloads and legacy status_correction events are recognised (no 422) and rejected
-        // per event by the SQL ingest function, so the rest of the batch still processes.
+        // per event by the SQL ingest function, so the rest of the batch still processes (Sol 2026-09-28:
+        // a legacy/non-final event must not fail the whole batch — skip the type check for it).
         const rejectionCode = nonFinalRejection(raw.event_type as EventType, payload);
+        if (!rejectionCode) {
+          const typeError = validateEventType(raw.event_type as EventType, b.trigger as string, payload);
+          if (typeError) fail(typeError.code, undefined, typeError.reason);
+        }
         events.push({ event_id: raw.event_id, event_type: raw.event_type, source_report_id: raw.source_report_id,
           report_number: raw.report_number ?? null,
           source_report_key: await sourceReportKey(raw.source_report_id as string), source_revision: raw.source_revision,

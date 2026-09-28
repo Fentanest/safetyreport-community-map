@@ -59,3 +59,16 @@ Sol 샌드박스 밖에서 같은 worktree를 다시 검사했다. 운영 DB·�
 | 세 레포 | `sha256sum -c MANIFEST.sha256` (`contracts/community-ingest`) | 모두 일치 |
 
 남은 결정: 처리상태 예외는 사용자 확인으로 `status_raw`·`status` 두 필드만 유지한다(2026-09-28).
+→ **2026-09-28 개정2로 폐기**: 소유 이전 모델 자체가 계정별 기여 + 전역 중복 제거로 대체되어 예외 규정도 함께 사라졌다.
+동일 신고의 타 계정 업로드는 payload·신고번호와 무관하게 정상 수신된다.
+
+## 계정별 기여 모델 검증 (2026-09-28 개정2, 브랜치 feat/report-owner-transfer)
+
+범위: MAP `202609281300_account_contributions.sql`(ingest 이전 삭제, analytics 대표 선출),
+`server/aggregate.ts` 대표행 집계 + 개인 collapse, `server/compare.ts` 전체/개인 분리,
+`server/ingest/handler.ts` 레거시 supplement 혼합 배치 개별 거절, 계약·오류·결정 문서 개정,
+스택 테스트 이전 3건→기여 5건 교체, 집계 단위 테스트 추가. 운영 Supabase·배포·push 없음.
+
+(아래 표는 실행 후 기입 — 현재 미실행 항목은 "미실행"으로 둔다. SQL 실스택 검증은 이 환경에
+Postgres 바이너리·이미지가 없고 Docker 네트워크 사용이 금지되어 수행하지 못했다.
+`community-stack.test.ts` 기여 5건은 합성 스택에서 실행해야 하며, 통과를 주장하지 않는다.)

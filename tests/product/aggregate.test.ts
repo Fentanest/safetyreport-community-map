@@ -66,6 +66,26 @@ describe('identity, scope and public projection', () => {
     expect(data.overview.report_count.value).toBe(2);
     expect(data.overview.contributor_count.value).toBe(2);
   });
+  it('counts a report shared by two accounts once globally but keeps both contributors', () => {
+    // A의 기존 연결은 보존하고 B도 연결; 전체 지도·기관 통계는 고유 1건 (2026-09-28 계정 규칙).
+    const a = fact(1, { contributor_id: 'user-a', fact_identity: 'da:shared', source_report_key: 'shared',
+      is_representative: true, contribution_count: 2, first_accepted_at: '2026-02-01T00:00:00Z' });
+    const b = fact(2, { contributor_id: 'user-b', fact_identity: 'db:shared', source_report_key: 'shared',
+      agency_name: '부산광역시 해운대구청', is_representative: false, contribution_count: 2,
+      first_accepted_at: '2026-02-02T00:00:00Z' });
+    const data = aggregate([a, b]);
+    expect(data.overview.report_count.value).toBe(1);
+    expect(data.overview.completed_count.value).toBe(1);
+    expect(data.overview.contributor_count.value).toBe(2);
+    expect(data.agencies).toHaveLength(1);
+    expect(data.agencies[0]).toMatchObject({ completed_count: 1 });
+    expect((data.regions ?? []).flatMap(r => [r.report_count, r.completed_count]).reduce((n, v) => n + v, 0)).toBeGreaterThan(0);
+    expect(data.meta.dedupe_policy_version).toBe('contribution-dedupe-v1');
+  });
+  it('treats rows without the representative flag as before (legacy snapshots)', () => {
+    const data = aggregate([fact(1), fact(2)]);
+    expect(data.overview.report_count.value).toBe(2);
+  });
   it('aggregates private canonical plates before masking and keeps collisions as separate rows', () => {
     const data = aggregate([
       fact(1, { vehicle_raw: '서울12가3456' }),

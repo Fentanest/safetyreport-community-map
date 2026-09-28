@@ -106,7 +106,7 @@ describe('per-law rows (docs/metrics-catalog.md law_results)', () => {
 
 const state: AnalyticsState = {
   dataset_version: 'v2-law', ready: true, source_updated_at: '2026-09-28T00:00:00Z', generated_at: '2026-09-28T01:00:00Z',
-  published_at: null, data_min: '2026-01-01', data_max: '2026-09-30', coverage_note: 'synthetic test', dedupe_policy_version: 'ingest-latest-v1',
+  published_at: null, data_min: '2026-01-01', data_max: '2026-09-30', coverage_note: 'synthetic test', dedupe_policy_version: 'contribution-dedupe-v1',
 };
 const repo = (): AnalyticsRepository => ({ getState: async () => state, getFacts: async () => facts, allowRequest: async () => true });
 const endpoint = (path: string) => viewerRequest(`https://example.supabase.co/functions/v1/public-analytics/${path}`);

@@ -117,6 +117,26 @@ describe('community-ingest handler', () => {
     expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(2); // six-digit and legacy events
   });
 
+  it('lets a legacy non-final supplement through per event instead of failing the batch (Sol 2026-09-28)', async () => {
+    const { handler, calls } = setup(() => ({ results: [] }));
+    const good = await event('bd9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'RMIX1');
+    const processingNoLoc = { ...vectors.cases.find((c: { name: string }) => c.name === 'processing_not_eligible').expected_payload,
+      location: { lat: null, lng: null, source: 'none' } };
+    // Sol: status=processing + event_type=location_supplement + location.source=none must not 422 the batch —
+    // the legacy event is recognised and rejected per event, the valid event still processes.
+    const legacy = await event('cd9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'RMIX2', processingNoLoc, 'location_supplement');
+    const res = await handler(post(await envelope([good, legacy])));
+    expect(res.status).toBe(200);
+    const forwarded = calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as Record<string, unknown>[];
+    expect(forwarded).toHaveLength(2);
+    expect(forwarded[0]).toMatchObject({ rejection_code: null });
+    expect(forwarded[1]).toMatchObject({ rejection_code: 'non_final_not_accepted' });
+    // a malformed eligible supplement (geocode required) still fails fast
+    const badEligible = { ...payload, location: { lat: null, lng: null, source: 'none' } };
+    const bad = await event('dd9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'RMIX3', badEligible, 'location_supplement');
+    expect((await handler(post(await envelope([bad])))).status).toBe(422);
+  });
+
   it('passes server-computed keys, hashes and derived columns; the user comes from the token', async () => {
     const { handler, calls } = setup(() => ({ results: [{ event_id: 'x', status: 'accepted', durable: true }], dataset_version: 'v' }));
     const res = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));

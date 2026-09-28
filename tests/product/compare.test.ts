@@ -205,3 +205,58 @@ describe('rows share the public keys and totals', () => {
     expect(cmp.my_points.some(p => p.shared)).toBe(true);
   });
 });
+
+describe('account contributions (2026-09-28 account rule)', () => {
+  // A가 올린 동일 신고를 B도 제출: A 연결 보존 + B 연결, 전체는 고유 1건, 개인은 각 1건.
+  const row = (patch: Partial<PrivateFact>): PrivateFact => ({
+    fact_identity: 'dx:shared', contributor_id: 'viewer-a', snapshot_id: 'ingest-v1', snapshot_generation: 1,
+    report_date: '2026-03-10', completed_date: '2026-03-12', category: 'traffic',
+    status: 'accepted', disposition: 'fine', vehicle_raw: null,
+    point_key: 'v1:37.5,127.0', lat: 37.5, lng: 127.0, address: '공유 지점',
+    region_code: null, agency_key: 'a1:test', agency_name: '예시 기관',
+    manager_key: 'm1:test', manager_name: '김하늘', ...patch,
+  });
+  const shared: PrivateFact[] = [
+    row({ contributor_id: 'viewer-a', fact_identity: 'da:shared', source_report_key: 'shared',
+      is_representative: true, contribution_count: 3, first_accepted_at: '2026-03-12T00:00:00Z' }),
+    row({ contributor_id: 'viewer-b', fact_identity: 'db1:shared', source_report_key: 'shared',
+      agency_name: '부산광역시 해운대구청', is_representative: false, contribution_count: 3,
+      first_accepted_at: '2026-03-13T00:00:00Z' }),
+    // 같은 계정의 두 번째 dataset(PC·모바일·복원본) — 개인 집계에서도 1건으로 collapse 된다
+    row({ contributor_id: 'viewer-b', fact_identity: 'db2:shared', source_report_key: 'shared',
+      agency_name: '부산광역시 해운대구청', is_representative: false, contribution_count: 3,
+      first_accepted_at: '2026-03-14T00:00:00Z' }),
+  ];
+  const forViewer = (viewer: string) => aggregateCompare(shared, DEMO_SCOPE, viewer, opts);
+
+  it('counts the identity once globally while each account sees its own contribution', () => {
+    const b = forViewer('viewer-b');
+    expect(b.all.report_count).toBe(1);
+    expect(b.all.completed_count).toBe(1);
+    expect(b.mine.report_count).toBe(1);
+    expect(b.mine.completed_count).toBe(1);
+    const a = forViewer('viewer-a');
+    expect(a.all).toEqual(b.all);
+    expect(a.mine.report_count).toBe(1);
+    expect(a.mine.completed_count).toBe(1);
+    // my_points: B의 점은 A도 기록했으므로 shared, 좌표는 정확
+    expect(b.my_points).toHaveLength(1);
+    expect(b.my_points[0]).toMatchObject({ key: 'v1:37.5,127.0', lat: 37.5, lng: 127.0,
+      mine_report_count: 1, mine_completed_count: 1, shared: true });
+    expect(a.my_points[0]).toMatchObject({ shared: true });
+    // schema conformance on the new population shape
+    expect(personalCompareSchema.safeParse(JSON.parse(JSON.stringify(b))).success).toBe(true);
+  });
+
+  it('keeps regions/entities/monthly consistent (all deduped, mine per account)', () => {
+    const b = forViewer('viewer-b');
+    const pub = dash(shared, DEMO_SCOPE);
+    expect(b.all.report_count).toBe(pub.overview.report_count.value);
+    expect(b.all.completed_count).toBe(pub.overview.completed_count.value);
+    expect(b.monthly.reduce((n, m) => n + (m.all_report_count ?? 0), 0)).toBe(b.all.report_count);
+    expect(b.monthly.reduce((n, m) => n + (m.mine_report_count ?? 0), 0)).toBe(b.mine.report_count);
+    expect(b.regions.every(r => r.mine.report_count <= r.all.report_count)).toBe(true);
+    expect(b.agencies).toHaveLength(1);
+    expect(b.agencies[0].mine.completed_count).toBe(1);
+  });
+});
