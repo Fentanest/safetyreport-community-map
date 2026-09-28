@@ -74,8 +74,8 @@ describe('verified succession resolves from either code (REVIEW3 높음-2)', () 
     const after = await deriveFact({ ...ok, source_agency_code: '1815198', agency_name: '광주경찰청' });
     expect(before.agency_key).toBe('inst:ag-gwangju-police-hq');
     expect(after.agency_key).toBe('inst:ag-gwangju-police-hq');
-    expect(before.agency_current_name).toBe('경찰청 광주경찰청 광주동부경찰서');
-    expect(after.agency_current_name).toBe('경찰청 광주경찰청 광주동부경찰서');
+    expect(before.agency_current_name).toBe('광주경찰청 광주동부경찰서');
+    expect(after.agency_current_name).toBe('광주경찰청 광주동부경찰서');
     // 원문 기관명은 그대로 보존된다.
     expect(before.agency_name).toBe('광주광역시경찰청');
     expect(after.agency_name).toBe('광주경찰청');

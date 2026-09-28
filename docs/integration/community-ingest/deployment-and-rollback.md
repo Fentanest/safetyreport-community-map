@@ -141,3 +141,30 @@
 - 확인: dry-run `upToDate`, `internal_analytics_viewer` 존재·anon/authenticated/PUBLIC EXECUTE 0건, 익명 `public-analytics/meta` 401, `https://safemap.worklazy.net/` 200, 배포 번들에 10건 안내·건수 미상 문구 포함(‘한 건 이상’ 문구 없음).
 - 로컬 검증: 별도 스택(`rsc0928-int`)에 migration 23개 적용, `community-stack` 33/33(9건 403 `required:10,current:9`, 10건 200, 두 dataset 같은 신고 1건). `my-analytics-stack` 6/7 — 무토큰 401 의 `auth_required` 코드 누락은 main 과 같은 기존 결함.
 - 롤백: Edge 두 함수 이전 배포 재배포와 구 Pages 를 함께, SQL 은 새 migration 으로 `internal_analytics_viewer` 를 이전 본문으로 재정의.
+
+## 14. registry 2026-09-29.2(현행 기관 표시명 '경찰청 ' 제거) 배포 순서 (2026-09-29 — 운영 반영 전)
+
+사용자 결정(ADR-203): 기관코드로 찾은 현행 기관 표시명은 공식 '전체기관명'에서 맨 앞의
+'경찰청 ' 접두어만 한 번 뗀다. resolver·원문 컬럼·집계 건수는 그대로이며,
+스냅샷 `2026-09-29.2`를 담은 Edge 번들과 singleton 버전 상향이 함께 가야 한다.
+
+1. **Edge Functions 재배포를 먼저 한다**(`community-ingest` 등 새 스냅샷 번들 포함).
+   새 Edge는 `2026-09-29.2` 기준으로 파생값을 계산한다. 이 시점의 DB singleton은
+   아직 `2026-09-29.1`이므로 재계산 스크립트는 버전 불일치로 중단된다(fail closed).
+   구 Edge가 먼저 내려가면 새 표시 규칙이 적용되지 않은 파생값이 계속 쌓이므로,
+   Edge 재배포 전에 중앙 SQL을 적용하지 않는다.
+2. **그다음 중앙 SQL `202609290200_agency_registry_display_2026_09_29_2.sql`을 적용한다.**
+   합성 이력의 manifest check(`compose_supabase.mjs check`, 25개)와 dry-run을 확인한 뒤
+   진행한다. 이 migration은 singleton 버전만 `2026-09-29.2`로 올린다(facts 값 변경 없음).
+3. **저장된 사실의 파생값을 재계산한다.** `scripts/recompute-agency-keys.mjs --dry-run`
+   (변경 대상·건수 확인) → `--apply`. 코드 있는 행은 새 표시명으로 갱신되고, 코드 없는 행은
+   REVIEW4 보존 규칙(저장된 `inst:` 유지, `a1:` + 유일 별칭 적중만 승급)을 따른다.
+   코드 없이 공식 전체기관명(접두어 포함)으로 저장된 행은 별칭 적중이 안 되어 원문 유지된다.
+4. 지도 Pages·`public-analytics`는 표시 문자열만 바뀌므로 재배포 없이도 동작한다.
+   PC·모바일 앱은 같은 스냅샷(`2026-09-29.2`, 바이트 동일)을 담은 뒤 배포한다.
+   순서 어긋남(앱만 새 표시·중앙은 구 표시)은 일시적인 표기 차이만 내고 집계 키(`inst:`)는
+   바뀌지 않으므로 통계가 갈라지지 않는다.
+
+- 롤백: Edge 이전 배포 재배포와 구 Pages를 함께, SQL은 새 migration으로 singleton 버전을
+  `2026-09-29.1`로 되돌린 뒤 재계산 스크립트로 파생값을 되돌린다. 이 절은 절차 기록이며
+  운영 적용 기록이 아니다.

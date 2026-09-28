@@ -24,7 +24,7 @@ describe('recompute plan', () => {
     expect(plan.changed).toBe(true);
     expect(plan.reason).toBe('code-present');
     expect(plan.next.agency_key).toBe('inst:ag-gwangju-police-hq');
-    expect(plan.next.agency_current_name).toBe('경찰청 광주경찰청 광주동부경찰서');
+    expect(plan.next.agency_current_name).toBe('광주경찰청 광주동부경찰서');
   });
   it('is a no-op when the stored triple already matches', async () => {
     const first = await planUpdate({
@@ -51,7 +51,7 @@ describe('recompute plan', () => {
       source_agency_code: null,
       agency_name: '광주광역시경찰청',
       agency_key: 'inst:ag-gwangju-police-hq',
-      agency_current_name: '경찰청 광주경찰청 광주동부경찰서',
+      agency_current_name: '광주경찰청 광주동부경찰서',
       manager_key: 'm1:somehash0000000000000000',
     });
     expect(plan.changed).toBe(false);
@@ -62,9 +62,9 @@ describe('recompute plan', () => {
     const plan = await planUpdate({
       ...base,
       source_agency_code: null,
-      agency_name: '경찰청 광주경찰청 광주동부경찰서',
+      agency_name: '광주경찰청 광주동부경찰서',
       agency_key: 'a1:somehash0000000000000000',
-      agency_current_name: '경찰청 광주경찰청 광주동부경찰서',
+      agency_current_name: '광주경찰청 광주동부경찰서',
       manager_key: 'm1:somehash0000000000000000',
     });
     expect(plan.changed).toBe(true);
