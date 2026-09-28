@@ -116,7 +116,7 @@ describe('session-expired guidance (docs/personal-comparison.md §6)', () => {
 });
 
 describe('personal client', () => {
-  const scope = { start: '2025-09-25', end: '2026-09-24', category: 'all' as const, region_code: '서울 중구', agency_key: null, manager_key: null, bbox: null };
+  const scope = { start: '2025-09-25', end: '2026-09-24', category: 'all' as const, region_code: '서울 중구', agency_key: null, manager_key: null, bbox: null, law: null };
   async function sample() {
     const { aggregateCompare } = await import('../../server/compare');
     const { demoFacts, DEMO_AS_OF, DEMO_DATA_MIN, DEMO_VIEWER_ID } = await import('../../src/data/demoEngine');

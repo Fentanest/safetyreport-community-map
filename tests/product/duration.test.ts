@@ -10,7 +10,7 @@ const fact = (report: string | null, done: string | null, patch: Partial<Private
   vehicle_raw: null, point_key: null, lat: null, lng: null, address: null, region_code: '서울 중구',
   agency_key: 'a1', agency_name: '기관1', manager_key: 'm1', manager_name: '담당1', ...patch,
 });
-const scope = (start: string, end: string): Scope => ({ start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null });
+const scope = (start: string, end: string): Scope => ({ start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null });
 const opts = { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-09-27T00:00:00Z', asOf: '2026-12-31', sample: false, dataMin: '2020-01-01' };
 
 describe('duration of one report (KST calendar days)', () => {

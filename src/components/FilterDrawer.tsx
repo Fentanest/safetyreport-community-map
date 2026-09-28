@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { CATEGORY_LABEL, regionLabel, type DraftFilters } from '../state/filters';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { LAW_NONE } from '../domain/public';
+import { CATEGORY_LABEL, LAW_UNKNOWN_LABEL, lawLabel, regionLabel, type DraftFilters } from '../state/filters';
 import Icon from './icons';
 import RegionSelect from './RegionSelect';
 
@@ -13,6 +14,38 @@ interface Props {
   onApply: () => void;
   onReset: () => void;
   regionCounts: Map<string, number>;
+  /** named laws of the current data (answered reports per law; null count = kept selection not in the data) */
+  lawOptions: Array<{ law: string; count: number | null }>;
+}
+
+/** 위반법규 choice: a search box narrows the list; 전체 and 법규 미상 are always offered. */
+function LawSelect({ value, options, onChange }: { value: string | null; options: Props['lawOptions']; onChange: (law: string | null) => void }) {
+  const [q, setQ] = useState('');
+  const needle = q.trim();
+  const matches = useMemo(() => (needle ? options.filter(o => o.law.includes(needle)) : options), [options, needle]);
+  // the current selection stays in the list so the select never shows a value it does not have
+  const shown = useMemo(() => (value && !matches.some(o => o.law === value) ? [...options.filter(o => o.law === value), ...matches] : matches),
+    [options, matches, value]);
+  return (
+    <>
+      <label>위반법규 검색
+        <input type="search" value={q} placeholder="예: 도로교통법 제32조" onChange={(e) => setQ(e.target.value)}
+          aria-describedby="law-count" />
+      </label>
+      <label>위반법규
+        <select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}>
+          <option value="">전체</option>
+          <option value={LAW_NONE}>{LAW_UNKNOWN_LABEL}</option>
+          {shown.map((o) => (
+            <option key={o.law} value={o.law}>{o.count === null ? o.law : `${o.law} (${o.count.toLocaleString('ko-KR')})`}</option>
+          ))}
+        </select>
+      </label>
+      <span id="law-count" className="cm-muted" style={{ fontSize: 12 }}>
+        {needle ? `검색 결과 ${matches.length.toLocaleString('ko-KR')}개 · ` : ''}괄호 안은 답변 완료 건수입니다.
+      </span>
+    </>
+  );
 }
 
 export default function FilterDrawer(p: Props) {
@@ -84,9 +117,10 @@ export default function FilterDrawer(p: Props) {
         </label>
         <RegionSelect value={p.draft.region_code} counts={p.regionCounts}
           onChange={(code) => p.onDraft({ ...p.draft, region_code: code })} />
+        <LawSelect value={p.draft.law} options={p.lawOptions} onChange={(law) => p.onDraft({ ...p.draft, law })} />
         <div className="drawer-notice">
           신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. 1건뿐인 결과도 그대로 보여 드립니다.
-          현재 선택: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]}
+          현재 선택: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]} · {lawLabel(p.draft.law)}
         </div>
         {p.unsupportedNote && (
           <div className="banner warn" role="note">

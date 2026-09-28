@@ -10,6 +10,23 @@ export interface Scope {
   agency_key: string | null;
   manager_key: string | null;
   bbox: [number, number, number, number] | null;
+  /** 위반법규 exact match (observation-v2); LAW_NONE selects facts without a law (법규 미상); null = all laws */
+  law: string | null;
+}
+
+/** Scope value that selects facts whose violation law is unknown (null). Never a real law text. */
+export const LAW_NONE = '__none__';
+export const LAW_MAX_CODE_POINTS = 60;
+
+/** Characters the upload rule clean() never leaves in a text (C0 controls, DEL); the ingest refuses them. */
+export const LAW_FORBIDDEN = /[\u0000-\u001f\u007f]/;
+
+/** A law filter value: LAW_NONE, or any storable law text (1..60 code points without C0 controls or DEL).
+ *  Outer spaces are allowed: clean() truncates after trimming, so a stored law may end with a space. */
+export function isLawParam(value: string): boolean {
+  if (value === LAW_NONE) return true;
+  const n = [...value].length;
+  return n >= 1 && n <= LAW_MAX_CODE_POINTS && !LAW_FORBIDDEN.test(value);
 }
 
 /** A map viewport may extend beyond Korea at nationwide zoom. Keep real geographic bounds intact. */
@@ -190,6 +207,27 @@ export interface PublicRegion {
   fine_amount?: FineAmountBrief | null;
 }
 
+/** 위반법규별 현황 row (docs/metrics-catalog.md law_results). Completion-date cohort of the scope, same facts and
+ *  denominators as the rest of the dashboard. law null = 법규 미상 (not stated, v1 upload or not published). */
+export interface PublicLaw {
+  law: string | null;
+  /** C: answered reports whose completion date is in the range */
+  completed_count: number;
+  outcomes: OutcomeCounts;
+  /** A/D×100, null when D = 0 */
+  accept_rate: number | null;
+  /** P/D×100, null when D = 0 (shown separately from accept_rate) */
+  partial_rate: number | null;
+  /** F: 과태료 처분 */
+  fine_count: number;
+  /** F/C×100, null when C = 0 */
+  fine_rate: number | null;
+  penalty_count: number;
+  warning_count: number;
+  /** answered fine amounts, confirmed and published only (same masking as every other amount) */
+  fine_amount: FineAmountBrief;
+}
+
 export interface PublicVehicle {
   rank: number;
   rank_item_id: string;
@@ -208,6 +246,8 @@ export interface DashboardData {
   managers: PublicEntity[];
   /** null = the source did not provide region rows (never replaced by an empty list). */
   regions: PublicRegion[] | null;
+  /** 위반법규별 현황; null = the source did not provide law rows (never replaced by an empty list) */
+  laws: PublicLaw[] | null;
   vehicles: PublicVehicle[];
   vehicle_total_scope_reports: number | null;
   vehicle_identifiable_reports: number | null;
@@ -215,7 +255,7 @@ export interface DashboardData {
 
 export const DEMO_SCOPE: Scope = {
   start: '2025-09-25', end: '2026-09-24', category: 'all', region_code: null,
-  agency_key: null, manager_key: null, bbox: null,
+  agency_key: null, manager_key: null, bbox: null, law: null,
 };
 
 function recentTwelveMonths(): Pick<Scope, 'start' | 'end'> {

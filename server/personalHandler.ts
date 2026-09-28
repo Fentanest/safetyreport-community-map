@@ -26,7 +26,7 @@ export interface PersonalSource {
 }
 
 const SCOPE_PARAMS: ReadonlySet<string> = new Set([
-  'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'expected_version',
+  'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law', 'expected_version',
 ]);
 
 const MESSAGES: Record<string, [number, string]> = {
@@ -100,6 +100,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
         // region is filtered on official codes in server/aggregate.ts (same as the public API)
         p_region_code: null, p_agency_key: scope.agency_key, p_manager_key: scope.manager_key,
         p_bbox: scope.bbox,
+        // the law (위반법규) is filtered in server/aggregate.ts, like the region
       }) as PersonalSource | null;
       if (!source || typeof source !== 'object' || !source.state || !source.viewer || !Array.isArray(source.facts)) fail('service_unavailable');
       const { state, viewer, facts } = source!;

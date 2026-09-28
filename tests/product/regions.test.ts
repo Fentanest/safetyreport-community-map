@@ -75,7 +75,7 @@ describe('region filter over facts', () => {
   });
   const facts = [f('서울 중구'), f('서울 강남구'), f('부산 해운대구'), f('인천 중구'), f(null), f('세종 조치원읍')];
   const opts = { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: 'x', asOf: '2026-12-31', sample: false, dataMin: null };
-  const run = (region: string | null) => aggregateDashboard(facts, { start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: region, agency_key: null, manager_key: null, bbox: null }, opts);
+  const run = (region: string | null) => aggregateDashboard(facts, { start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: region, agency_key: null, manager_key: null, bbox: null, law: null }, opts);
 
   it('nationwide keeps unknown facts in the total and in a separate row', () => {
     const d = run(null);
