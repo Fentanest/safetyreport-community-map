@@ -189,7 +189,8 @@ export interface DerivedFact {
 export async function deriveFact(p: Observation): Promise<DerivedFact> {
   // 받은 원문 기관코드를 검증된 registry resolver 로 현행 통계에 연결한다(2026-09-29 전체자료 색인).
   // 확인된 코드(현존·승계·별칭 유일)는 기관 ID 키로 묶고(개명 전후·하위부서가 한 기관으로 집계),
-  // (구) 분기·미확정·코드 없음이면 기존 기관명 해시 키를 그대로 쓴다(기존 통계 불변).
+  // 코드 없는 행도 표시명·공식 전체기관명 중 유일한 별칭이면 기관 ID로 묶는다.
+  // (구) 분기·미확정만 기존 기관명 해시 키를 쓴다.
   const resolution = resolveAgency(p.source_agency_code ?? null, p.agency_name, agencySnap.asOfDate, agencySnap);
   const agencyKey = resolution.institution_id !== null
     ? resolution.agency_stat_key

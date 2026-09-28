@@ -28,8 +28,10 @@
   (사용자 결정. 공식 '전체기관명' 기준: '경찰청 광주경찰청 광주동부경찰서' →
   '광주경찰청 광주동부경찰서', 본청 '경찰청'·'경찰청장…'·비경찰 이름은 그대로).
   표시 규칙은 registry 빌드 시점에 적용한 `2026-09-29.2` 스냅샷이 정본이며,
-  resolver 3종·원문 컬럼(`source_agency_code`, `agency_name`)·집계 건수는 바뀌지 않는다.
-  코드 없음 이름 파생(정확 일치)은 스냅샷 저장명(표시명 기준)과의 일치다.
+  원문 컬럼(`source_agency_code`, `agency_name`)은 바뀌지 않는다.
+  중간 검수에서 확인한 코드 없음 원래 전체기관명 누락을 고쳐, 색인의 표시명과
+  별도 `lookup_name`(표시명과 다른 공식 전체기관명)을 세 resolver가 함께 조회한다.
+  같은 코드 중복은 제거하고, 시점상 유일한 코드일 때만 파생한다.
   저장된 사실의 파생값은 migration 202609290200(singleton 버전 상향)과
   scripts/recompute-agency-keys.mjs(dry-run 먼저)로 다시 계산한다.
   배포 순서는 docs/integration/community-ingest/deployment-and-rollback.md §14.
