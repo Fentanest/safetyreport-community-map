@@ -196,10 +196,11 @@ function runtimeTerminations(): number {
       .filter(l => /connection closed before message completed|early termination has been triggered/.test(l)).length;
   } catch { return 0; }
 }
+// IN arguments only: for RETURNS TABLE functions proargnames also lists the output columns (after the inputs).
 function rpcSignatures(): { name: string; body: Json }[] {
   const dummy = (type: string): unknown => ({ uuid: '00000000-0000-4000-8000-000000000000', text: 'x', jsonb: {}, integer: 1,
     boolean: false, date: '2026-01-01', 'timestamp with time zone': '2026-01-01T00:00:00Z', 'double precision[]': null } as Json)[type] ?? null;
-  const rows = sql(`select p.proname || '|' || coalesce(array_to_string(p.proargnames, ','), '') || '|' ||
+  const rows = sql(`select p.proname || '|' || coalesce(array_to_string(p.proargnames[1:p.pronargs], ','), '') || '|' ||
       coalesce((select string_agg(format_type(t, null), ',' order by i) from unnest(p.proargtypes) with ordinality u(t, i)), '')
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname like 'internal\\_%' order by 1;`);
   const out = rows.split('\n').filter(Boolean).map(line => {

@@ -260,6 +260,15 @@
    "depends_on": [
     "202609290100"
    ]
+  },
+  {
+   "version": "202609290300",
+   "repo": "map",
+   "path": "supabase/migrations/202609290300_agency_recompute_rpc.sql",
+   "sha256": "6650e8b52670d459aad6f6d553ab64f6144253c949bcd922e1f0a1adbd5b9058",
+   "depends_on": [
+    "202609290200"
+   ]
   }
  ],
  "functions": [

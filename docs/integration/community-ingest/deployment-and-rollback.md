@@ -184,3 +184,10 @@
 - 2026-09-29 기록: migration `202609290100`·`202609290200` 적용, `my-analytics` v7(`--use-api`), `community-ingest` v4(Docker 번들).
   SQL 적용과 ingest 재배포 사이에 새로 들어온 사실은 없었다(2,868건 모두 `2026-09-28.1`, 마지막 갱신 2026-09-28 14:19 UTC).
   저장 사실 재계산(`recompute-agency-keys.mjs`)은 운영자가 dry-run 확인 후 apply 한다.
+- **재계산 전 새 SQL `202609290300_agency_recompute_rpc.sql`을 먼저 적용한다.** 이 migration은 public의
+  `internal_agency_recompute_state/page/apply`만 추가하고 `private`를 PostgREST 노출 스키마에 넣지 않는다.
+  합성 manifest check(26개) → 합성 SQL dry-run에서 이 migration만 확인 → 적용 → anon/authenticated EXECUTE
+  부재 확인 → service_role로 스크립트 `--dry-run`(변경 건수·예시 확인) → `--apply`(적용·충돌 건수 확인) →
+  재실행 `--dry-run`에서 `scanned=0` 확인 순서다. 배치 적용은 조회 당시 원문·파생값·버전이 바뀐 행을
+  건너뛰므로 `skipped>0`이면 충돌 원인을 확인하고 다시 dry-run/apply 한다. 번들 버전과 DB singleton이 다르면
+  스크립트와 적용 RPC가 중단된다. 운영 실행·배포는 별도 승인 경계다.
