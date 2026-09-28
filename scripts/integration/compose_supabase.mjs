@@ -47,6 +47,58 @@ function load() {
   return manifest;
 }
 
+// Every static relative import reachable from a function's index.ts — value imports,
+// `import type`/`export type` (the Deno module graph follows type-only edges too) and
+// `with { type: 'json' }` JSON imports — must resolve to a file that compose stages
+// (the index itself or an entry of functions[].shared). Otherwise `supabase start`
+// fails at the Edge bundle step with "failed to read file". Conversely a shared entry
+// nothing imports is dead weight and fails as well, so staged == import closure.
+function relativeImportSpecs(source) {
+  const specs = new Set();
+  for (const re of [/from\s*['"](\.[^'"]+)['"]/g, /import\s*['"](\.[^'"]+)['"]/g, /import\s*\(\s*['"](\.[^'"]+)['"]\s*\)/g]) {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(source))) specs.add(m[1]);
+  }
+  return specs;
+}
+
+function checkStagingCoverage(manifest, problems) {
+  for (const fn of manifest.functions) {
+    const root = roots[fn.repo];
+    if (!root || !existsSync(join(root, 'supabase/functions', fn.name, 'index.ts'))) continue;
+    const entry = `supabase/functions/${fn.name}/index.ts`;
+    const staged = new Set([entry, ...(fn.shared || [])]);
+    const seen = new Set([entry]);
+    const queue = [entry];
+    while (queue.length) {
+      const rel = queue.shift();
+      if (!/\.(ts|tsx|js|jsx|mjs|cjs|json)$/.test(rel)) continue;
+      let source;
+      try { source = readFileSync(join(root, rel), 'utf8'); } catch { continue; }
+      for (const spec of relativeImportSpecs(source)) {
+        let target = resolve(join(root, dirname(rel)), spec);
+        if (statSync(target, { throwIfNoEntry: false })?.isDirectory()) target = join(target, 'index.ts');
+        const targetRel = relative(root, target);
+        if (targetRel === '' || targetRel.startsWith('..')) {
+          problems.push(`function ${fn.name}: import escapes ${fn.repo} repo (${rel} -> ${spec})`);
+          continue;
+        }
+        if (!existsSync(target) || !statSync(target).isFile()) {
+          problems.push(`function ${fn.name}: unresolvable relative import ${spec} (from ${rel})`);
+          continue;
+        }
+        if (!staged.has(targetRel)) {
+          problems.push(`function ${fn.name}: import ${targetRel} (from ${rel}) is not staged — add it to functions[${fn.name}].shared`);
+        } else if (!seen.has(targetRel)) { seen.add(targetRel); queue.push(targetRel); }
+      }
+    }
+    for (const rel of staged) {
+      if (rel !== entry && !seen.has(rel)) problems.push(`function ${fn.name}: staged ${rel} is not imported — remove it from functions[${fn.name}].shared`);
+    }
+  }
+}
+
 function check(manifest) {
   const problems = [];
   const seen = new Map();
@@ -91,6 +143,7 @@ function check(manifest) {
       shared.set(rel, { repo: fn.repo, digest });
     }
   }
+  checkStagingCoverage(manifest, problems);
   return problems;
 }
 

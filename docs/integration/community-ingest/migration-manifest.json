@@ -252,15 +252,18 @@
     "src/domain/public.ts"
    ]
   },
-  {
-   "name": "community-ingest",
-   "repo": "map",
-   "verify_jwt": true,
-   "shared": [
-    "server/ingest/handler.ts",
-    "server/ingest/observation.ts"
-   ]
-  },
+   {
+    "name": "community-ingest",
+    "repo": "map",
+    "verify_jwt": true,
+    "shared": [
+     "server/ingest/handler.ts",
+     "server/ingest/observation.ts",
+     "shared/agency-region-registry/data/agency_links.json",
+     "shared/agency-region-registry/manifest.json",
+     "shared/agency-region-registry/resolvers/resolve.ts"
+    ]
+   },
   {
    "name": "community-auth-relay",
    "repo": "auth",
@@ -273,16 +276,19 @@
     "server/relay.ts"
    ]
   },
-  {
-   "name": "community-account",
-   "repo": "auth",
-   "verify_jwt": true,
-   "shared": [
-    "server/account.ts",
-    "server/adapters.ts",
-    "server/crypto.ts"
-   ]
-  },
+   {
+    "name": "community-account",
+    "repo": "auth",
+    "verify_jwt": true,
+    "shared": [
+     "server/account.ts",
+     "server/adapters.ts",
+     "server/config.ts",
+     "server/crypto.ts",
+     "server/protocol.ts",
+     "server/relay.ts"
+    ]
+   },
   {
    "name": "my-analytics",
    "repo": "map",

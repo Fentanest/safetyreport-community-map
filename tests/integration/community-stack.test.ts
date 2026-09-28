@@ -681,7 +681,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const rep = () => Number(sql(`select count(*) from jsonb_array_elements(
         public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
         where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`));
-      const contrib = () => sql(`select contribution_count from jsonb_array_elements(
+      const contrib = () => sql(`select e->>'contribution_count' from jsonb_array_elements(
         public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
         where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
       const overviewReports = async () => {
@@ -730,7 +730,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const a = await writerFor('A');
       const b = await writerFor('B');
       const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
-      const repField = (field: string) => sql(`select ${field} from jsonb_array_elements(
+      const repField = (field: string) => sql(`select e->>'${field}' from jsonb_array_elements(
         public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
         where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
       const agencyKeyOf = (name: string) => `a1:${createHash('sha256').update(name.normalize('NFC')).digest('hex').slice(0, 24)}`;
@@ -764,7 +764,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const a = await writerFor('A');
       const b = await writerFor('B');
       const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
-      const repField = (field: string) => sql(`select ${field} from jsonb_array_elements(
+      const repField = (field: string) => sql(`select e->>'${field}' from jsonb_array_elements(
         public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
         where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
       expect((await ingest(a, [await event(a, report)])).json.results[0].status).toBe('accepted');
@@ -880,20 +880,20 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       // REVIEW2 높음-4: v1/v2 payload 에는 source_agency_code 키가 없다 — 키 부재가 명시적 NULL 이 아니다.
       const w = await writerFor('D');
       const report = `CODE-${rid()}`;
-      const key = sql(`select source_report_key from private.community_ingest_events where source_report_id = '${report}' limit 1;`);
+      const key = () => sql(`select source_report_key from private.community_ingest_events where source_report_id = '${report}' limit 1;`);
       const storedCode = () => sql(`select coalesce(source_agency_code, '<null>') from private.community_report_facts
         where contributor_id = '${w.session.userId}' and source_report_id = '${report}';`);
       const v3 = { ...payloadOf('accepted_fine'), source_agency_code: 'B410002' };
       expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
       expect(storedCode()).toBe('B410002');
       // v1 키셋(violation_law·source_agency_code 없음)으로 더 높은 revision 을 보내도 코드는 유지된다.
-      const { source_agency_code: _dropCode, violation_law: _dropLaw, ...v1 } = payloadOf('accepted_fine');
+      const { source_agency_code: _dropCode, violation_law: _dropLaw, rating: _dropRating, ...v1 } = payloadOf('accepted_fine');
       expect((await ingest(w, [await event(w, report, v1)])).json.results[0].status).toBe('accepted');
       expect(storedCode()).toBe('B410002');
       // v3 명시적 null(키 있음)은 코드를 지운다.
       expect((await ingest(w, [await event(w, report, payloadOf('accepted_fine'))])).json.results[0].status).toBe('accepted');
       expect(storedCode()).toBe('<null>');
-      expect(key).not.toBe('');
+      expect(key()).not.toBe('');
     });
 
     it('does not attach a stored agency code to a renamed answer from an older app (REVIEW3 중간-4)', async () => {
@@ -908,7 +908,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect((await ingest(w, [await event(w, report, v3)])).json.results[0].status).toBe('accepted');
       expect(storedCode()).toBe('B410002');
       // v1 + 같은 기관명 + 다른 답변 → 코드 보존.
-      const { source_agency_code: _d1, violation_law: _d2, ...v1base } = payloadOf('accepted_fine');
+      const { source_agency_code: _d1, violation_law: _d2, rating: _d3, ...v1base } = payloadOf('accepted_fine');
       const v1same = { ...v1base, status: 'partial', status_raw: '일부수용' };
       expect((await ingest(w, [await event(w, report, v1same)])).json.results[0].status).toBe('accepted');
       expect(storedCode()).toBe('B410002');
@@ -932,7 +932,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(stored('agency_key')).toBe('inst:ag-gwangju-police-hq');
       expect(stored('agency_current_name')).toBe('광주경찰청');
       // v1 + 같은 기관명 + 다른 답변 → 코드·기관 키·현행명 모두 보존.
-      const { source_agency_code: _k1, violation_law: _k2, ...v1base } = payloadOf('accepted_fine');
+      const { source_agency_code: _k1, violation_law: _k2, rating: _k3, ...v1base } = payloadOf('accepted_fine');
       const v1same = { ...v1base, status: 'partial', status_raw: '일부수용', agency_name: '광주광역시경찰청' };
       expect((await ingest(w, [await event(w, report, v1same)])).json.results[0].status).toBe('accepted');
       expect(stored('source_agency_code')).toBe('1812314');
@@ -951,7 +951,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       const f = await writerFor('F');
       const g = await writerFor('G');
       const key = createHash('sha256').update(`safetyreport|${report}`).digest('hex');
-      const repContributor = () => sql(`select contributor_id from jsonb_array_elements(
+      const repContributor = () => sql(`select e->>'contributor_id' from jsonb_array_elements(
         public.internal_analytics_v2_facts(date '2024-01-01', date '2028-12-31', 'all', null, null, null, null)) e
         where e->>'fact_identity' like '%:${key}' and (e->>'is_representative')::boolean;`);
       expect((await ingest(f, [await event(f, report)])).json.results[0].status).toBe('accepted');
