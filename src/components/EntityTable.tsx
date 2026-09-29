@@ -40,8 +40,9 @@ const share = (a: number, d: number) => fmtPercent(d > 0 ? (a / d) * 100 : null)
 
 /** Single source of truth for header, cells, colSpan, sorting and the column picker (R09). */
 export const ENTITY_COLUMNS: Col[] = [
-  { id: 'completed', label: '답변', sort: 'completed', num: true, defaultOn: true,
-    cell: (e) => (e.completed_count === 1 ? <span className="sample-one">1건</span> : fmtInt(e.completed_count)) },
+  // R6: every count is rendered the same way (unit in the header); a value of 1 gets no special badge
+  { id: 'completed', label: '답변(건)', sort: 'completed', num: true, defaultOn: true,
+    cell: (e) => fmtInt(e.completed_count) },
   { id: 'acceptRate', label: '수용률', sort: 'acceptRate', num: true, defaultOn: true, title: '수용 ÷ 결과가 나온 신고',
     cell: (e) => fmtPercent(acceptRate(e.outcomes)) },
   { id: 'rejectRate', label: '불수용률', num: true, defaultOn: true, title: '불수용 ÷ 결과가 나온 신고',

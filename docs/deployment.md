@@ -79,3 +79,15 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
 5. smoke(공유자 전용): 비로그인 → 로그인 안내 화면·API 401 → 공유 신고가 있는 계정으로 로그인 → 지도 → 비교 켜기 → 전체 열 = 지도 KPI → 로그아웃 → 앱 수동 업로드가 계속 ACK되는지. 로컬 증거 스크립트 `scripts/integration/access_gate_e2e.mjs`.
 6. 되돌리기: 개인 비교만 끄려면 `MY_ANALYTICS_ENABLED=false`. 지도 오류 때는 직전 인증 전용 Edge 배포로 되돌리고 익명 공개 버전으로는 되돌리지 않는다. RPC drop은 선택.
 로컬 합성 스택 검증 결과는 `docs/integration/community-ingest/evidence/2026-09-27-personal-compare/`. 운영 적용·실카카오는 BLOCKED.
+
+## 2026-09-30 대시보드 후속(R1–R7) 운영 적용 — 별도 승인 필요
+순서: ① DB 마이그레이션 → ② Edge 두 개 → ③ Pages. 새 클라이언트는 구 서버와도 동작한다(과태료 처분 별점 행은 ‘서버 미지원’, 새 오류 코드는 추가뿐).
+1. 운영 DB에 `supabase/migrations/202609300100_long_range_bounds.sql` 적용. `internal_analytics_v2_facts`의 1826일 상한 삭제,
+   후보 10만 건 초과는 `RESULT_TOO_LARGE` 예외(조용한 limit 삭제), `internal_analytics_v2_state`가 data_min/max를 공개 가능 신고에서 계산.
+   읽기 전용 함수 교체만 있고 테이블·권한 변경 없음. 로컬 검증: `PGHOST=… PGPORT=… bash scripts/sql/verify_long_range.sh`.
+   되돌리기: 파일 머리말의 rollback 절차(`202609281800_rating.sql`의 facts, `202609240001_analytics_v2.sql`의 state 함수 본문을 새 마이그레이션으로 재적용).
+2. `supabase functions deploy public-analytics` · `supabase functions deploy my-analytics`(RESULT_TOO_LARGE 매핑, entity_limit, 별점 과태료 행, 법규 미상 히트맵 제외).
+3. Pages 빌드·배포(`VITE_DATA_MODE=live npm run build && npm run scan`).
+4. smoke: 로그인 → ‘전체 기간’ 한 번 → 날짜 버튼·칩·URL이 같은 범위, dashboard 200 → 2014-09-30~2026-09-29 입력 적용 200 →
+   지도 ‘수용률’에서 핀 0·시도 색칠 → 확대/축소로 시군구↔시도 → 지역 클릭 시 선택한 지역 카드.
+운영 적용·실카카오 SDK·운영 로그 확인은 이 세션에서 하지 않았다(**미검증**).

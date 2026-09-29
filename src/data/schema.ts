@@ -140,8 +140,8 @@ const scatterEntity = z.strictObject({
 });
 export const ratingDistributionSchema = z.strictObject({
   basis: z.literal('completed_date'), unrated: count,
-  rows: z.array(z.strictObject({ status: z.enum(['all', 'accepted', 'partial', 'rejected', 'unknown']),
-    counts: z.tuple([count, count, count, count, count]), rating_count: count, mean: z.number().min(1).max(5).nullable() })).max(5),
+  rows: z.array(z.strictObject({ status: z.enum(['all', 'accepted', 'partial', 'rejected', 'fine', 'unknown']),
+    counts: z.tuple([count, count, count, count, count]), rating_count: count, mean: z.number().min(1).max(5).nullable() })).max(6),
 });
 export const analyticsSchema = z.strictObject({
   duration: durationDistributionSchema,
@@ -163,7 +163,7 @@ const unplacedSchema = z.strictObject({
 
 export const placeDetailResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema, sample: z.boolean(),
-  place: pointSchema, agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
+  place: pointSchema, agencies: z.array(entitySchema).max(1000), managers: z.array(entitySchema).max(1000),
   agency_total: count, manager_total: count,
 });
 export const placesResponseSchema = z.strictObject({
@@ -200,7 +200,7 @@ export const dashboardResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), sample: z.boolean(), scope: scopeSchema,
   overview: overviewSchema, points: z.array(pointSchema).max(1000), monthly: z.array(monthlySchema),
   agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
-  regions: z.array(regionSchema).max(300).optional(),
+  regions: z.array(regionSchema).max(400).optional(),
   laws: z.array(lawSchema).max(300).optional(),
   vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,
   vehicle_identifiable_reports: count, location_missing: count.optional(),

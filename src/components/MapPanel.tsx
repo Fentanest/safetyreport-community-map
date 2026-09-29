@@ -30,6 +30,22 @@ interface Props {
   onPickRegion?: (code: string | null) => void;
   /** a refresh is running for another scope; the map stays mounted and shows a small badge */
   refreshing?: boolean;
+  /** the statistics scope carries a map range (auto refresh): region colours are 'within the range' numbers */
+  statsBbox?: boolean;
+}
+
+/** R7: rate metrics draw the regions (choropleth) and NO pins; 신고 수 draws address pins. */
+export type RenderMode = 'points' | 'regions';
+export const renderModeOf = (m: MapMetric): RenderMode => (m === 'reports' ? 'points' : 'regions');
+/** Kakao level > SGG_ZOOM → 시도; ≤ SGG_ZOOM → 시군구. Independent of the region filter (R7). */
+export const boundaryLevelFor = (zoom: number): BoundaryLevel => (zoom <= SGG_ZOOM ? 'sgg' : 'sido');
+
+/** Codes outside the applied region filter at the drawn level (drawn as 'out of range', never as 0%). */
+export function outOfScopeCodes(features: readonly BoundaryFeature[], level: BoundaryLevel, active: string | null): Set<string> {
+  if (!active) return new Set();
+  const inside = (f: BoundaryFeature) => (level === 'sido' ? f.code === active.slice(0, 2)
+    : active.length === 2 ? f.sido === active : f.code === active);
+  return new Set(features.filter((f) => !inside(f)).map((f) => f.code));
 }
 
 const BOUNDARY_KEY = 'cm-boundaries';
@@ -89,17 +105,25 @@ export function toKakaoInputs(points: readonly PublicPoint[], m: MapMetric, sele
   });
 }
 
-function Legend({ metric }: { metric: MapMetric }) {
+const LEVEL_LABEL: Record<BoundaryLevel, string> = { sido: '시도', sgg: '시군구' };
+
+function Legend({ metric, level, statsBbox, filtered }: { metric: MapMetric; level: BoundaryLevel; statsBbox: boolean; filtered: boolean }) {
   const def = metricDef(metric);
   const gradient = `linear-gradient(90deg, ${METRIC_RAMP.join(', ')})`;
+  const regions = renderModeOf(metric) === 'regions';
   return (
-    <span className="legend-title map-legend" title={def.basis} aria-label={`범례: ${def.legend}`}>
-      <b>{def.legend}</b>
+    <span className="legend-title map-legend" title={def.basis} aria-label={`범례: ${regions ? `${LEVEL_LABEL[level]}별 ` : ''}${def.legend}`}>
+      <b>{regions ? `${LEVEL_LABEL[level]}별 ${def.legend}` : def.legend}</b>
       <span className="cm-muted">{def.kind === 'rate' ? '0%' : '적음'}</span>
       <i className="gradient-scale" style={{ background: gradient }} aria-hidden="true" />
       <span className="cm-muted">{def.kind === 'rate' ? '100%' : '많음'}</span>
-      {def.kind === 'rate' && (
-        <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />– 결과 없음</span>
+      {regions && (
+        <>
+          <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(분모 0)</span>
+          <span className="legend-null"><i className="legend-empty" aria-hidden="true" />자료 없음</span>
+          {filtered && <span className="legend-null"><i className="legend-out" aria-hidden="true" />범위 밖</span>}
+          {statsBbox && <span className="cm-muted">화면 범위 내 신고 기준</span>}
+        </>
       )}
     </span>
   );
@@ -138,7 +162,9 @@ export default function MapPanel(p: Props) {
     },
   };
   const def = metricDef(p.metric);
-  const shownPoints = useMemo(() => visiblePoints(p.points, p.metric), [p.points, p.metric]);
+  const renderMode = renderModeOf(p.metric);
+  // points mode only: in regions mode there is no place list, marker or cluster at all
+  const shownPoints = useMemo(() => (renderMode === 'points' ? visiblePoints(p.points, p.metric) : []), [p.points, p.metric, renderMode]);
   const hiddenPoints = p.points.length - shownPoints.length;
   const hiddenNote = hiddenPoints > 0
     ? (p.metric === 'reports'
@@ -167,10 +193,11 @@ export default function MapPanel(p: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // metric / selection / data changes only redraw markers: no refetch, no new map (R03 §5)
+  // metric / selection / data changes only redraw markers: no refetch, no new map (R03 §5).
+  // Regions mode clears every marker, cluster and the adapter's last point input (R7) — nothing to re-render later.
   useEffect(() => {
-    handleRef.current?.setPoints(toKakaoInputs(p.points, p.metric, p.selectedKey, p.marks));
-  }, [p.points, p.selectedKey, p.metric, sdkState, p.marks]);
+    handleRef.current?.setPoints(renderMode === 'points' ? toKakaoInputs(p.points, p.metric, p.selectedKey, p.marks) : []);
+  }, [p.points, p.selectedKey, p.metric, sdkState, p.marks, renderMode]);
 
   // container size changes (view switch, window, side panel) → relayout only (R04 §12)
   useEffect(() => {
@@ -192,13 +219,16 @@ export default function MapPanel(p: Props) {
 
   // ---- boundary layer (display only; its failure never touches markers or statistics) ----
   const activeCode = p.activeRegion ?? null;
-  const level: BoundaryLevel = activeCode && activeCode !== '36' ? 'sgg' : zoom <= SGG_ZOOM ? 'sgg' : 'sido';
+  // drawn level follows the zoom only; the region filter no longer forces 시군구 (R7)
+  const level: BoundaryLevel = boundaryLevelFor(zoom);
+  // regions mode always draws boundaries; the saved preference applies to 신고 수 only and comes back with it
+  const boundaryShown = renderMode === 'regions' || boundaryOn;
   const needed = useMemo(() => {
     const set = new Set<BoundaryLevel>();
-    if (boundaryOn) set.add(level);
-    if (activeCode) set.add('sgg');
+    if (boundaryShown) set.add(level);
+    if (activeCode) set.add('sgg'); // fitting to a chosen region uses the 시군구 shapes
     return [...set];
-  }, [boundaryOn, level, activeCode]);
+  }, [boundaryShown, level, activeCode]);
   useEffect(() => {
     if (sdkState !== 'ready') return;
     let cancelled = false;
@@ -208,23 +238,24 @@ export default function MapPanel(p: Props) {
         .then((features) => { if (!cancelled) { setLayers((x) => ({ ...x, [l]: features })); setBoundaryError(false); } })
         .catch(() => { if (!cancelled) setBoundaryError(true); });
     }
-    if (boundaryOn && !boundaryMeta) loadBoundaryMeta().then((m) => { if (!cancelled) setBoundaryMeta(m); }).catch(() => undefined);
+    if (boundaryShown && !boundaryMeta) loadBoundaryMeta().then((m) => { if (!cancelled) setBoundaryMeta(m); }).catch(() => undefined);
     return () => { cancelled = true; };
-  }, [needed, layers, sdkState, boundaryOn, boundaryMeta]);
+  }, [needed, layers, sdkState, boundaryShown, boundaryMeta]);
 
+  // one level at a time (시도 and 시군구 are never filled together); 시군구 is limited to the viewport for speed
   const shown = useMemo(() => {
     const features = layers[level];
     if (!features) return null;
     if (level === 'sido') return features;
-    if (activeCode) return features.filter((f) => f.sido === activeCode.slice(0, 2));
     return bbox ? features.filter((f) => intersects(f.bbox, bbox)) : features;
-  }, [layers, level, activeCode, bbox]);
+  }, [layers, level, bbox]);
   const rowByCode = useMemo(() => new Map((p.regions ?? []).filter((r) => r.region_code).map((r) => [r.region_code!, r])), [p.regions]);
   useEffect(() => {
     const h = handleRef.current;
     if (!h || sdkState !== 'ready') return;
-    if (!boundaryOn || !shown) { h.setBoundaries(null, { selected: null, weight: new Map() }); return; }
-    // fill = the ACTIVE metric (R03-6): counts relative to the largest shown region, rates on the fixed 0..1 scale
+    if (!boundaryShown || !shown) { h.setBoundaries(null, { selected: null, weight: new Map() }); return; }
+    // fill = the ACTIVE metric: region rows are Σnumerator/Σdenominator from raw facts on the server (a 시도 is
+    // never an average of its 시군구); rates on the fixed 0..1 scale, counts relative to the largest shown region
     const parts = shown.map((f) => { const row = rowByCode.get(f.code); return row ? metricParts(row, p.metric) : null; });
     const max = Math.max(1, ...parts.map((x) => (x && x.kind === 'count' ? x.num : 0)));
     const weight = new Map<string, number | null>();
@@ -233,8 +264,8 @@ export default function MapPanel(p: Props) {
       if (!x || x.weight <= 0) return;
       weight.set(f.code, colorScalar(x.kind, x.num, x.den, max));
     });
-    h.setBoundaries(shown, { selected: activeCode, weight });
-  }, [boundaryOn, shown, rowByCode, activeCode, sdkState, p.metric]);
+    h.setBoundaries(shown, { selected: activeCode, weight, mode: renderMode, outOfScope: outOfScopeCodes(shown, level, activeCode) });
+  }, [boundaryShown, shown, rowByCode, activeCode, sdkState, p.metric, renderMode, level]);
 
   // Move the map to a newly chosen region (from the list, the filter or a boundary click). Programmatic move.
   const fittedRef = useRef<string | null>(null);
@@ -260,6 +291,7 @@ export default function MapPanel(p: Props) {
   };
   const retryBoundary = () => { setBoundaryError(false); setLayers((x) => ({ ...x })); };
   const hoverRow = hover ? rowByCode.get(hover) : undefined;
+  const hoverOut = hover && shown ? outOfScopeCodes(shown.filter((f) => f.code === hover), level, activeCode).has(hover) : false;
 
   const retry = () => {
     if (!kakaoKey()) {
@@ -303,7 +335,9 @@ export default function MapPanel(p: Props) {
       <div className="panel-top">
         <div>
           <h2>신고 지도 {p.refreshing && <span className="refresh-badge" role="status">갱신 중…</span>}</h2>
-          <span className="subtitle">{p.categoryLabel} · 같은 주소는 핀 하나 · 멀리서 보면 가까운 주소를 묶어 보여 줍니다</span>
+          <span className="subtitle">{p.categoryLabel} · {renderMode === 'points'
+            ? '같은 주소는 핀 하나 · 멀리서 보면 가까운 주소를 묶어 보여 줍니다'
+            : `${LEVEL_LABEL[level]}별 ${def.legend} · 신고 위치의 행정구역 기준 · 분자/분모 합으로 계산`}</span>
         </div>
         <div className="mini-segments metric-switch" role="group" aria-label="지도에 표시할 값">
           {MAP_METRICS.map((m) => (
@@ -327,17 +361,35 @@ export default function MapPanel(p: Props) {
                 <button className="ghost-btn" type="button" onClick={retry}>다시 시도</button>
               </span>
             </div>
-            <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}{hiddenNote ? ` · ${hiddenNote}` : ''}</p>
-            <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
-              {shownPoints.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
-              {shownPoints.map(pointButton)}
-            </ul>
+            {renderMode === 'points' ? (
+              <>
+                <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}{hiddenNote ? ` · ${hiddenNote}` : ''}</p>
+                <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
+                  {shownPoints.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
+                  {shownPoints.map(pointButton)}
+                </ul>
+              </>
+            ) : (
+              <>
+                <p className="map-points-note">지도 대신 시도별 {def.legend} 목록입니다.</p>
+                <ul className="point-list" aria-label={`시도별 ${def.legend}`}>
+                  {(p.regions ?? []).filter((r) => r.level === 'sido').map((r) => (
+                    <li key={r.region_code}><button type="button" onClick={() => p.onPickRegion?.(r.region_code)}>
+                      <b>{r.name}</b><small>{def.legend} {metricText(metricParts(r, p.metric), p.metric)}</small>
+                    </button></li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
         )}
-        {sdkState === 'ready' && boundaryOn && hover && (
+        {sdkState === 'ready' && boundaryShown && hover && (
           <span className="map-hover" role="status">
             <b>{regionLabel(hover)}</b>
-            <span>{hoverRow ? `${def.legend} ${metricText(metricParts(hoverRow, p.metric), p.metric)}` : '이 조건의 신고 없음'}</span>
+            <span>{hoverOut ? '적용한 지역 조건 밖' : hoverRow
+              ? `${def.legend} ${metricText(metricParts(hoverRow, p.metric), p.metric)}${p.metric !== 'reports' ? ` · 답변 ${fmtInt(hoverRow.completed_count)}건 · 신고 ${fmtInt(hoverRow.report_count)}건` : ''}`
+              : '이 조건의 자료 없음'}</span>
+            {p.statsBbox && <small>화면 범위 내 신고 기준 (지역 전체 수치 아님)</small>}
             <small>{activeCode === hover ? '누르면 한 단계 위 지역으로' : '누르면 이 지역만 보기'}</small>
           </span>
         )}
@@ -363,7 +415,7 @@ export default function MapPanel(p: Props) {
         )}
         {sdkState !== 'error' && (
           <div className="map-bottom">
-            <Legend metric={p.metric} />
+            <Legend metric={p.metric} level={level} statsBbox={!!p.statsBbox} filtered={!!activeCode} />
           </div>
         )}
       </div>
@@ -372,18 +424,23 @@ export default function MapPanel(p: Props) {
           <input type="checkbox" checked={p.autoRefresh} onChange={(e) => p.onAutoRefresh(e.target.checked)} />
           지도를 움직이면 통계도 바꾸기
         </label>
-        {sdkState === 'ready' && (
+        {sdkState === 'ready' && (renderMode === 'regions' ? (
+          <span className="map-option" role="note">
+            <input type="checkbox" checked disabled aria-label="행정구역 경계(비율 지도에서는 항상 표시)" />
+            {LEVEL_LABEL[level]} 단위로 색칠 중 · 확대하면 시군구, 멀리서 보면 시도
+          </span>
+        ) : (
           <label className="map-option">
             <input type="checkbox" checked={boundaryOn} onChange={(e) => toggleBoundary(e.target.checked)} />
-            행정구역 경계{boundaryOn ? ` · ${level === 'sido' ? '시도' : '시군구'}` : ''}
+            행정구역 경계{boundaryOn ? ` · ${LEVEL_LABEL[level]}` : ''}
           </label>
-        )}
+        ))}
         <span className="cm-muted map-option-note">
           {p.autoRefresh ? '지도를 멈추면 잠시 뒤 보이는 범위의 통계로 바뀝니다.' : '지도를 움직여도 통계는 그대로입니다.'}
           {unplacedNote ? ` 지도에 없는 신고: ${unplacedNote} (통계에는 포함).` : ''}
         </span>
       </div>
-      {sdkState === 'ready' && (
+      {sdkState === 'ready' && renderMode === 'points' && (
         <details className="map-point-alternative">
           <summary>장소 목록으로 보기 · {fmtInt(shownPoints.length)}곳{hiddenNote ? ` · ${hiddenNote}` : ''}</summary>
           <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
@@ -391,13 +448,14 @@ export default function MapPanel(p: Props) {
           </ul>
         </details>
       )}
-      {sdkState === 'ready' && boundaryOn && boundaryError && (
+      {sdkState === 'ready' && boundaryShown && boundaryError && (
         <p className="boundary-note" role="alert">
-          행정구역 경계선을 불러오지 못했습니다. 지도와 통계는 그대로 쓸 수 있습니다.{' '}
+          {renderMode === 'regions' ? '행정구역 경계를 불러오지 못해 비율 지도를 그릴 수 없습니다(핀으로 대신 보여 주지 않습니다). 다른 통계는 그대로입니다.'
+            : '행정구역 경계선을 불러오지 못했습니다. 지도와 통계는 그대로 쓸 수 있습니다.'}{' '}
           <button className="mini-btn" type="button" onClick={retryBoundary}>다시 시도</button>
         </p>
       )}
-      {sdkState === 'ready' && boundaryOn && boundaryMeta && (
+      {sdkState === 'ready' && boundaryShown && boundaryMeta && (
         <details className="boundary-note">
           <summary>경계선 안내·출처</summary>
           경계선은 화면 표시용으로 단순화했고 색은 선택한 지표({def.legend})를 따릅니다. 거의 투명한 곳은 이 조건의 자료가 없는 곳입니다. {boundaryMeta.attribution}

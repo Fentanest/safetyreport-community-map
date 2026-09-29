@@ -87,8 +87,13 @@ async function read(path: string, params: URLSearchParams | null, signal?: Abort
       }
     } catch { /* not JSON */ }
     const access = (ACCESS_CODES as readonly string[]).includes(code ?? '');
+    // the server's fixed messages for these codes are safe to show and tell the user what to change;
+    // the code is appended so a failure report carries the real cause
+    const known = code === 'RESULT_TOO_LARGE' || code === 'INVALID_QUERY' || code === 'AGGREGATE_NOT_READY';
     throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.'
-      : access && message ? message : '통계를 불러오지 못했습니다.',
+      : access && message ? message
+        : known ? `${message ?? '통계를 불러오지 못했습니다.'} (${code}, HTTP ${res.status})`
+          : `통계를 불러오지 못했습니다.${code ? ` (${code}, HTTP ${res.status})` : ` (HTTP ${res.status})`}`,
       res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code, details);
   }
   return res.json();
@@ -207,14 +212,15 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
 }
 
 /** R05/R07: one address place under the current scope (by place key, never a coordinate bbox). */
-export async function loadPlace(scope: Scope, key: string, version: string, signal?: AbortSignal): Promise<PlaceDetail> {
+export async function loadPlace(scope: Scope, key: string, version: string, signal?: AbortSignal, entityLimit = 100): Promise<PlaceDetail> {
   if (import.meta.env.VITE_DATA_MODE === 'demo') {
     const { demoPlace } = await import('./demoEngine');
-    const detail = demoPlace(scope, key, version);
+    const detail = demoPlace(scope, key, version, entityLimit);
     if (!detail) throw new PublicApiError('이 장소는 지금 조건에 없습니다.', 404, null, 'NOT_FOUND');
     return detail;
   }
-  const parsed = placeDetailResponseSchema.parse(await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version), signal));
+  const extra = entityLimit !== 100 ? { entity_limit: String(Math.min(1000, Math.max(1, entityLimit))) } : undefined;
+  const parsed = placeDetailResponseSchema.parse(await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version, extra), signal));
   if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope) || parsed.place.key !== key) {
     throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
   }

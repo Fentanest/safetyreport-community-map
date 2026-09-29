@@ -32,6 +32,8 @@ export interface RefreshError {
 }
 
 export interface RefreshState {
+  /** dataset metadata of this session (version, whole-history data_min/data_max); null until read */
+  meta: PublicMeta | null;
   displayed: Snapshot | null;
   requested: Scope | null;
   /** a request is in flight or scheduled for a scope that is not displayed yet */
@@ -81,7 +83,7 @@ export function toRefreshError(e: unknown): RefreshError {
 
 export class RefreshController {
   private state: RefreshState = {
-    displayed: null, requested: null, refreshing: false, scheduled: false, error: null, pausedUntil: null, access: null, generation: 0,
+    meta: null, displayed: null, requested: null, refreshing: false, scheduled: false, error: null, pausedUntil: null, access: null, generation: 0,
   };
   private listeners = new Set<(s: RefreshState) => void>();
   private meta: PublicMeta | null = null;
@@ -148,7 +150,7 @@ export class RefreshController {
     this.retries = 0;
     if (this.pauseTimer !== null) this.deps.clearTimer(this.pauseTimer);
     this.pauseTimer = null;
-    this.set({ displayed: null, requested: null, refreshing: false, scheduled: false, error: null, pausedUntil: null, access: null });
+    this.set({ meta: null, displayed: null, requested: null, refreshing: false, scheduled: false, error: null, pausedUntil: null, access: null });
   }
 
   dispose(): void {
@@ -202,7 +204,10 @@ export class RefreshController {
 
   private async run(scope: Scope, ac: AbortController, gen: number, metaRetried: boolean): Promise<void> {
     try {
-      if (!this.meta) this.meta = await this.deps.fetchMeta(ac.signal);
+      if (!this.meta) {
+        this.meta = await this.deps.fetchMeta(ac.signal);
+        if (gen === this.state.generation) this.set({ meta: this.meta });
+      }
       const meta = this.meta;
       const data = await this.deps.fetchDashboard(meta, scope, ac.signal);
       if (ac.signal.aborted || gen !== this.state.generation) return;

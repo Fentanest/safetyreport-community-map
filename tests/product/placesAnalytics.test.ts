@@ -158,7 +158,7 @@ describe('A01 duration distribution', () => {
 });
 
 describe('A02 agency × law heatmap', () => {
-  it('cells are true cross counts, 법규 미상 kept, sample 1 kept', () => {
+  it('cells are true cross counts, 법규 미상 excluded from the heatmap only, sample 1 kept', () => {
     const facts = [
       f({ agency_key: 'a1:p', agency_name: '갑 경찰서', violation_law: '도로교통법 제32조', status: 'accepted' }),
       f({ agency_key: 'a1:p', agency_name: '갑 경찰서', violation_law: '도로교통법 제32조제1항', status: 'rejected', disposition: 'fine' }),
@@ -168,7 +168,8 @@ describe('A02 agency × law heatmap', () => {
     const h = lawHeatmap(facts, false);
     const cell = (row: string, law: string) => h.cells.find(c => c.row_key === row && c.law_key === law);
     expect(cell('a1:p', '도로교통법 제32조')).toMatchObject({ completed_count: 2, fine_count: 1, outcomes: { accepted: 1, rejected: 1, result_known: 2 } });
-    expect(cell('a1:p', LAW_NONE)).toMatchObject({ completed_count: 1 });
+    expect(cell('a1:p', LAW_NONE)).toBeUndefined();
+    expect(h.laws.some(l => l.law_key === LAW_NONE)).toBe(false);
     expect(cell('a1:q', '도로교통법 제5조')).toMatchObject({ completed_count: 1, outcomes: { partial: 1 } });
     expect(cell('a1:q', '도로교통법 제32조')).toBeUndefined(); // no data ≠ 0%
     expect(h.total_rows).toBe(2);

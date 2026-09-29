@@ -21,7 +21,7 @@ Deno.serve(createPersonalHandler({
     .split(',').map(s => s.trim()).filter(Boolean),
   rpc: async (name, args) => {
     const { data, error } = await client.rpc(name, args);
-    if (error) throw new Error(`rpc ${error.code ?? 'failed'}`);
+    if (error) throw new Error(/RESULT_TOO_LARGE/.test(error.message ?? '') ? 'RESULT_TOO_LARGE' : `rpc ${error.code ?? 'failed'}`);
     return data;
   },
   getUser: async token => {

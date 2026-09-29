@@ -8,7 +8,7 @@ import type {
   DurationBucket, DurationDistribution, EntityScatter, HeatmapCell, HeatmapRow, LawHeatmap, OutcomeCounts,
   RatingDistribution, RatingRow, ScatterEntity, VehicleDayBucket, VehicleDayDistribution,
 } from '../src/domain/public.ts';
-import { LAW_NONE, lawKey } from '../src/domain/public.ts';
+import { lawKey } from '../src/domain/public.ts';
 import { kstDate, outcomes, type PrivateFact } from './aggregate.ts';
 import { durationOf, median, nearestRank } from './duration.ts';
 import { parsePlate } from './plate.ts';
@@ -67,11 +67,14 @@ export const HEATMAP_MAX_LAWS = 16;
  * A02: real cross-tab. Rows are agencies, or the managers of the selected agency when `managerRows`.
  * Only the most-answered rows/laws are returned (bounded payload); totals say how many exist.
  */
-export function lawHeatmap(done: readonly PrivateFact[], managerRows: boolean): LawHeatmap {
+export function lawHeatmap(allDone: readonly PrivateFact[], managerRows: boolean): LawHeatmap {
+  // R4 (2026-09-30): the heatmap shows KNOWN laws only. 법규 미상 is excluded before choosing rows/laws, so it
+  // never takes a top-N slot and a row with only unknown-law reports is not listed. Totals elsewhere are unchanged.
+  const done = allDone.filter(f => lawKey(f.violation_law) !== null);
   const rowKey = managerRows ? managerKeyOf : agencyKeyOf;
   const rowsAll = [...groupBy(done, rowKey)].sort((a, b) => b[1].length - a[1].length || agencyName(a[1][0]).localeCompare(agencyName(b[1][0]), 'ko') || String(a[0]).localeCompare(String(b[0])));
-  const lawOf = (f: PrivateFact) => lawKey(f.violation_law) ?? LAW_NONE;
-  const lawsAll = [...groupBy(done, lawOf)].sort((a, b) => b[1].length - a[1].length || (a[0] === LAW_NONE ? 1 : 0) - (b[0] === LAW_NONE ? 1 : 0) || a[0].localeCompare(b[0], 'ko'));
+  const lawOf = (f: PrivateFact) => lawKey(f.violation_law)!;
+  const lawsAll = [...groupBy(done, lawOf)].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'ko'));
   const rowList = rowsAll.slice(0, HEATMAP_MAX_ROWS);
   const lawList = lawsAll.slice(0, HEATMAP_MAX_LAWS);
   const lawSet = new Set(lawList.map(([k]) => k));
@@ -162,11 +165,13 @@ function ratingRow(status: RatingRow['status'], facts: readonly PrivateFact[]): 
   return { status, counts, rating_count: n, mean: n ? sum / n : null };
 }
 
-/** A06: numeric ratings disclosed by consent only (1..5); unrated/undisclosed/out-of-range are never 0점. */
+/** A06: numeric ratings disclosed by consent only (1..5); unrated/undisclosed/out-of-range are never 0점.
+ *  Rows are keyed by `status`: outcome rows (accepted/partial/rejected/unknown) partition the cohort; 'fine'
+ *  (disposition = 과태료 처분) is a separate, overlapping cut — never added to the outcome rows. */
 export function ratingDistribution(done: readonly PrivateFact[]): RatingDistribution {
   const by = (s: string) => done.filter(f => f.status === s);
   const unknown = done.filter(f => f.status !== 'accepted' && f.status !== 'partial' && f.status !== 'rejected');
   const rows = [ratingRow('all', done), ratingRow('accepted', by('accepted')), ratingRow('partial', by('partial')),
-    ratingRow('rejected', by('rejected')), ratingRow('unknown', unknown)];
+    ratingRow('rejected', by('rejected')), ratingRow('fine', done.filter(f => f.disposition === 'fine')), ratingRow('unknown', unknown)];
   return { basis: 'completed_date', rows, unrated: done.length - rows[0].rating_count };
 }

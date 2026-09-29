@@ -46,13 +46,36 @@ function e2eApi(): Plugin {
           server.ssrLoadModule('/server/personalHandler.ts'),
           server.ssrLoadModule('/src/data/demoEngine.ts'),
         ]);
-        const facts = (demo.demoFacts() as Array<Record<string, unknown>>).map(f =>
+        const recent = (demo.demoFacts() as Array<Record<string, unknown>>).map(f =>
           f.contributor_id === demo.DEMO_VIEWER_ID ? { ...f, contributor_id: E2E_UID } : f);
+        // R1 (2026-09-30): synthetic long history 2014-10..2024-09 (every 7th recent fact shifted back 2..10 years) so
+        // the 12-year range and 전체 기간 are exercised end to end. Synthetic only.
+        const shift = (d: unknown, years: number) => typeof d === 'string'
+          ? `${Number(d.slice(0, 4)) - years}${d.slice(4) === '-02-29' ? '-02-28' : d.slice(4)}` : d;
+        const older = recent.filter((_, i) => i % 7 === 0).map((f, i) => {
+          const years = 2 + (i % 9);
+          return { ...f, fact_identity: `${String(f.fact_identity)}-h${years}`, report_date: shift(f.report_date, years), completed_date: shift(f.completed_date, years) };
+        }).filter(f => String(f.report_date) >= '2014-10-01');
+        // R3: one synthetic address answered by 110 different managers, so the per-manager chart's zoom, the
+        // 100-row first page and "나머지 담당자 불러오기" are exercised. Synthetic only.
+        const tpl = recent.find(f => f.completed_date && f.status === 'accepted') as Record<string, unknown>;
+        const crowd = Array.from({ length: 110 }, (_, i) => ({
+          ...tpl, fact_identity: `e2e-crowd-${i}`, contributor_id: `e2e-crowd-user-${i % 9}`,
+          address: '서울특별시 중구 세종대로 110 (합성 검수 주소)', lat: 37.5663, lng: 126.9779, point_key: null,
+          manager_key: `m1:crowd-${String(i).padStart(3, '0')}`, manager_name: `합성담당${String(i + 1).padStart(3, '0')}`,
+          status: ['accepted', 'partial', 'rejected', 'completed_unknown'][i % 4], disposition: i % 3 === 0 ? 'fine' : i % 3 === 1 ? 'warning' : 'none',
+          report_date: '2026-09-01', completed_date: '2026-09-10',
+        }));
+        const facts = [...recent, ...older, ...crowd];
+        // like internal_analytics_v2_state after 202609300100: bounds computed from the publicly eligible facts
+        const dates = facts.flatMap(f => [f.report_date, f.completed_date]).filter((d): d is string => typeof d === 'string').sort();
+        bounds = { min: dates[0], max: dates[dates.length - 1] };
         return { pub, per, facts };
       };
+      let bounds = { min: '2014-10-01', max: '2026-09-24' };
       const state = () => ({
         dataset_version: version, ready: true, source_updated_at: '2026-09-24T00:00:00Z', generated_at: '2026-09-24T00:00:00Z',
-        published_at: null, data_min: '2024-09-25', data_max: '2026-09-24',
+        published_at: null, data_min: bounds.min, data_max: bounds.max,
         coverage_note: '로컬 검수용 합성 자료입니다. 실제 신고 통계가 아닙니다.', dedupe_policy_version: 'e2e',
       });
       const getUser = async (token: string) => {

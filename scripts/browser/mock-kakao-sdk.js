@@ -139,6 +139,7 @@
     setMap(m) { this.map = m; if (!m) stats.polygons = stats.polygons.filter((p) => p !== this); }
     setOptions(o) { Object.assign(this.opts, o); if (this.map) { clearTimeout(this.map.dt); const t = this.map; t.dt = setTimeout(() => t.__draw(), 0); } }
     __hover() { fire(this, 'mouseover'); }
+    __click() { fire(this, 'click'); }
   }
   window.__kakaoLiveMarkers = () => [...(stats.live || [])].map((m) => ({
     title: m.opts.title, src: decodeURIComponent(String(m.opts.image && m.opts.image.src || '').replace(/^data:image\/svg\+xml;charset=utf-8,/, '')),

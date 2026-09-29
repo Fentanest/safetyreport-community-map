@@ -72,13 +72,16 @@ export function isValidDate(s: string): boolean {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === s;
 }
 
+/** Same rules as the API (server/publicHandler.ts parseScope): a real calendar range, not in the future, and
+ *  overlapping the shared data [min, max]. A period may start before the first report (the whole history is
+ *  allowed, 2026-09-30) — there is no length limit. */
 export function validateRange(start: string, end: string, min: string | null, max: string | null): string | null {
-  if (!isValidDate(start) || !isValidDate(end)) return '시작일과 종료일을 YYYY-MM-DD 형식으로 입력해 주세요.';
+  if (!isValidDate(start) || !isValidDate(end)) return '시작일과 종료일을 YYYY-MM-DD 형식의 실제 날짜로 입력해 주세요.';
   if (start > end) return '시작일은 종료일보다 늦을 수 없습니다.';
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   if (end > today) return '종료일은 오늘 이후일 수 없습니다.';
-  if (min && start < min) return `분석 가능 기간은 ${min} 이후입니다.`;
-  if (max && end > max) return `분석 가능 기간은 ${max} 이전입니다.`;
+  if (min && end < min) return `이 기간에는 공유된 자료가 없습니다. 자료는 ${min}부터 있습니다.`;
+  if (max && start > max) return `이 기간에는 공유된 자료가 없습니다. 자료는 ${max}까지 있습니다.`;
   return null;
 }
 
@@ -153,12 +156,14 @@ export const PRESETS: Array<{ id: string; label: string; days: number | null }> 
   { id: 'd30', label: '최근 30일', days: 30 },
   { id: 'd90', label: '최근 90일', days: 90 },
   { id: 'm12', label: '최근 12개월', days: 365 },
-  { id: 'all', label: '전체', days: null },
+  // the whole shared history (never the fixed default year); needs the dataset bounds from /meta
+  { id: 'all', label: '전체 기간', days: null },
 ];
 
-export function presetRange(days: number | null, min: string | null, max: string | null): { start: string; end: string } {
+/** Preset range, or null for '전체 기간' while the real data bounds are unknown (never a fixed year). */
+export function presetRange(days: number | null, min: string | null, max: string | null): { start: string; end: string } | null {
+  if (days == null) return min && max ? { start: min, end: max } : null;
   const end = max ?? DEFAULT_SCOPE.end;
-  if (days == null) return { start: min ?? DEFAULT_SCOPE.start, end };
   const e = new Date(`${end}T00:00:00Z`);
   if (days === 365) {
     const previousYear = e.getUTCFullYear() - 1;

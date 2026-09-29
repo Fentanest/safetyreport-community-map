@@ -416,7 +416,8 @@ export interface ScopeSelection {
 
 export function selectScope(input: readonly PrivateFact[], scope: Scope): ScopeSelection {
   const length = dayNumber(scope.end) - dayNumber(scope.start) + 1;
-  if (length <= 0 || length > 1827) throw new Error('date range exceeds supported bound');
+  // no upper bound on the period (2026-09-30): the whole history is a valid scope
+  if (length <= 0) throw new Error('reversed date range');
   if (scope.bbox && (scope.bbox[0] > scope.bbox[2] || scope.bbox[1] > scope.bbox[3])) throw new Error('invalid bbox');
   const prev = previousWindow(scope.start, scope.end);
   const facts = activeFacts(input).filter(fact => dimensions(fact, scope));

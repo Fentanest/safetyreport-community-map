@@ -170,7 +170,7 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
           <button type="button" className="link-btn" onClick={() => setExpanded((v) => !v)}>{expanded ? '줄여 보기' : '더 넓게 보기'}</button>
         )}
       </>}>
-      {!data ? <Unsupported what="기관 × 법규 교차표" /> : data.rows.length === 0 ? <div className="empty-state">답변 완료 신고가 없습니다.</div> : null}
+      {!data ? <Unsupported what="기관 × 법규 교차표" /> : data.rows.length === 0 ? <div className="empty-state">표시할 위반법규 자료가 없습니다.</div> : null}
       <div ref={hostRef} className="chart-host tall" style={{ height: Math.max(220, rows.length * 30 + 100) }} hidden={table || !data || data.rows.length === 0 || !!error} role="img"
         aria-label="기관과 위반법규별 처리결과 히트맵. 표로 보기에서 같은 값을 읽을 수 있습니다." />
       {error && !table && <div className="empty-state" role="alert">{error}</div>}
@@ -281,47 +281,92 @@ export function VehicleDaysCard({ data, theme }: { data: VehicleDayDistribution 
 }
 
 // ── A06 ─────────────────────────────────────────────────────────────────────────────────────────────
-const STATUS_LABEL: Record<RatingRow['status'], string> = { all: '전체', accepted: '수용', partial: '일부 수용', rejected: '불수용', unknown: '결과 미상' };
+/** Row order and labels. 'fine' (과태료 처분) is a separate, overlapping cut — never summed with outcome rows. */
+export const RATING_KEYS: ReadonlyArray<RatingRow['status']> = ['all', 'accepted', 'partial', 'rejected', 'fine', 'unknown'];
+export const RATING_LABEL: Record<RatingRow['status'], string> = {
+  all: '전체', accepted: '수용', partial: '일부 수용', rejected: '불수용', fine: '과태료 처분', unknown: '결과 미상',
+};
+export type MineRatingState = 'off' | 'loading' | 'error' | 'signed_out' | 'ready';
+export interface RatingLine {
+  key: RatingRow['status'];
+  side: 'all' | 'mine';
+  label: string;
+  /** null = no row to draw: not provided by this server, still loading, or failed (see `note`) */
+  row: RatingRow | null;
+  note: string | null;
+}
 
-export function RatingCard({ all, mine, theme }: { all: RatingDistribution | null; mine: RatingDistribution | null; theme: string }) {
+/** Rows of the card, matched by KEY (never by array position). With comparison on every category is paired
+ *  as 전체 / 내 신고; a mine row is never filled with the public numbers. */
+/** in paired mode the 전체 row is named by what it covers, so it never reads “전체 · 전체” */
+const pairName = (key: RatingRow['status']) => (key === 'all' ? '모든 결과' : RATING_LABEL[key]);
+
+export function ratingLines(all: RatingDistribution, mine: RatingDistribution | null, state: MineRatingState): RatingLine[] {
+  const pick = (d: RatingDistribution | null, key: RatingRow['status']) => d?.rows.find((r) => r.status === key) ?? null;
+  const lines: RatingLine[] = [];
+  for (const key of RATING_KEYS) {
+    const a = pick(all, key);
+    lines.push({ key, side: 'all', label: state === 'off' ? RATING_LABEL[key] : `${pairName(key)} · 전체`, row: a,
+      note: a ? null : '서버 미지원' });
+    if (state === 'off') continue;
+    const m = state === 'ready' ? pick(mine, key) : null;
+    lines.push({ key, side: 'mine', label: `${pairName(key)} · 내 신고`, row: m,
+      note: m ? null : state === 'loading' ? '불러오는 중' : state === 'error' ? '불러오지 못함'
+        : state === 'signed_out' ? '로그인하면 볼 수 있음' : '서버 미지원' });
+  }
+  return lines;
+}
+
+const lineText = (l: RatingLine) => (l.row
+  ? (l.row.rating_count ? `평가 ${fmtInt(l.row.rating_count)}건 · 평균 ${l.row.mean!.toFixed(1)}점` : '평가 0건 · 자료 없음')
+  : l.note ?? '—');
+
+export function RatingCard({ all, mine, mineState, theme }: { all: RatingDistribution | null; mine: RatingDistribution | null;
+  mineState: MineRatingState; theme: string }) {
   const [table, setTable] = useState(false);
-  const rows: Array<{ label: string; row: RatingRow }> = all ? [
-    { label: '전체', row: all.rows[0] },
-    ...(mine ? [{ label: '내 신고', row: mine.rows[0] }] : []),
-    ...all.rows.slice(1).map((row) => ({ label: STATUS_LABEL[row.status], row })),
-  ] : [];
+  const lines = all ? ratingLines(all, mine, mineState) : [];
+  const allTotal = all?.rows.find((r) => r.status === 'all')?.rating_count ?? 0;
   const { hostRef, error } = useEChart((t) => {
-    if (!all || all.rows[0].rating_count === 0) return null;
-    const labels = rows.map(({ label, row }) => `${label} · ${row.rating_count ? `${row.mean!.toFixed(1)}점 ${fmtInt(row.rating_count)}건` : '자료 없음'}`);
-    return { ...baseOption(t), grid: { left: 150, right: 16, top: 8, bottom: 24 },
+    if (!all || allTotal === 0) return null;
+    const narrow = window.matchMedia?.('(max-width: 700px)').matches === true;
+    return { ...baseOption(t), grid: { left: narrow ? 118 : 196, right: 14, top: 8, bottom: 24 },
       tooltip: { ...baseOption(t).tooltip, formatter: (p: { dataIndex: number; seriesIndex: number }) => {
-        const { label, row } = rows[p.dataIndex];
-        const n = row.counts[p.seriesIndex];
-        return `<b>${label}</b><br/>${p.seriesIndex + 1}점 ${fmtInt(n)}건 · ${fmtPercent(pct(n, row.rating_count))} (평가 ${fmtInt(row.rating_count)}건 중)`;
+        const l = lines[p.dataIndex];
+        if (!l.row || !l.row.rating_count) return `<b>${l.label}</b><br/>${lineText(l)}`;
+        const n = l.row.counts[p.seriesIndex];
+        return `<b>${l.label}</b><br/>${p.seriesIndex + 1}점 ${fmtInt(n)}건 · ${fmtPercent(pct(n, l.row.rating_count))}<br/>${lineText(l)}`;
       } },
       xAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: t.muted, formatter: '{value}%' }, splitLine: { lineStyle: { color: t.grid } } },
-      yAxis: { type: 'category', data: labels, inverse: true, axisLabel: { color: t.text, fontSize: 11 } },
-      series: [0, 1, 2, 3, 4].map((s) => ({ name: `${s + 1}점`, type: 'bar', stack: 'r', barMaxWidth: 18,
-        // rows without ratings get no bar (not a 0점 bar)
-        data: rows.map(({ row }) => (row.rating_count ? (row.counts[s] / row.rating_count) * 100 : null)),
+      yAxis: { type: 'category', inverse: true, data: lines.map((l) => l.label),
+        axisLabel: { fontSize: 11, color: t.text, formatter: (v: string, i: number) => `${v}\n{sub|${lineText(lines[i])}}`,
+          rich: { sub: { color: t.muted, fontSize: 10 } } } },
+      series: [0, 1, 2, 3, 4].map((s) => ({ name: `${s + 1}점`, type: 'bar', stack: 'r', barMaxWidth: 16,
+        // rows without ratings / not loaded get no bar (never a 0점 bar)
+        data: lines.map((l) => (l.row && l.row.rating_count ? (l.row.counts[s] / l.row.rating_count) * 100 : null)),
         itemStyle: { color: METRIC_RAMP[s] } })),
     };
-  }, [all, mine], theme);
+  }, [all, mine, mineState], theme);
   return (
     <Card label="처리결과별 별점 분포" title="처리결과별 별점 분포" subtitle="공개에 동의한 숫자 별점(1~5점)만 · 행마다 그 행의 평가 건수가 100%"
       tools={<TableToggle table={table} onToggle={() => setTable((v) => !v)} />}
       caption={all && <>
         <span className="rating-legend">{[1, 2, 3, 4, 5].map((s) => <span key={s}><i className="dot" style={{ background: METRIC_RAMP[s - 1] }} />{s}점</span>)}</span>
-        {' '}평가하지 않았거나 공개하지 않은 {fmtInt(all.unrated)}건은 0점으로 넣지 않고 뺐습니다. 평균이 같아도 분포는 다를 수 있습니다.</>}>
-      {!all ? <Unsupported what="별점 분포" /> : all.rows[0].rating_count === 0 ? <div className="empty-state">공개된 별점이 아직 없습니다.</div> : null}
-      <div ref={hostRef} className="chart-host" style={{ height: Math.max(180, rows.length * 34 + 40) }} hidden={table || !all || all.rows[0].rating_count === 0 || !!error} role="img"
-        aria-label={rows.map(({ label, row }) => `${label} 평가 ${row.rating_count}건`).join(', ')} />
+        {' '}평가하지 않았거나 공개하지 않은 {fmtInt(all.unrated)}건은 0점으로 넣지 않고 뺐습니다. ‘과태료 처분’은 처분이 과태료인 신고로, 수용·일부 수용 등과 겹칠 수 있어 다른 행과 더하지 않습니다.
+        {mineState === 'ready' && !mine && ' 이 서버는 내 신고 별점 분포를 아직 제공하지 않습니다.'}</>}>
+      {!all ? <Unsupported what="별점 분포" /> : allTotal === 0 ? <div className="empty-state">공개된 별점이 아직 없습니다.</div> : null}
+      <div ref={hostRef} className="chart-host" style={{ height: Math.max(200, lines.length * 38 + 40) }} hidden={table || !all || allTotal === 0 || !!error} role="img"
+        aria-label={lines.map((l) => `${l.label} ${lineText(l)}`).join(', ')} />
       {error && !table && <div className="empty-state" role="alert">{error}</div>}
       {table && all && (
         <div className="trend-table"><table>
-          <thead><tr><th scope="col">구분</th>{[1, 2, 3, 4, 5].map((s) => <th key={s} scope="col">{s}점</th>)}<th scope="col">평가 건수</th><th scope="col">평균</th></tr></thead>
-          <tbody>{rows.map(({ label, row }) => (
-            <tr key={label}><td>{label}</td>{row.counts.map((c, i) => <td key={i}>{fmtInt(c)}</td>)}<td>{fmtInt(row.rating_count)}</td><td>{row.mean === null ? '자료 없음' : `${row.mean.toFixed(2)}점`}</td></tr>
+          <thead><tr><th scope="col">구분</th>{[1, 2, 3, 4, 5].map((s) => <th key={s} scope="col">{s}점(건)</th>)}<th scope="col">평가(건)</th><th scope="col">평균</th></tr></thead>
+          <tbody>{lines.map((l) => (
+            <tr key={`${l.key}-${l.side}`} className={l.side === 'mine' ? 'mine-row' : undefined}>
+              <td>{l.label}</td>
+              {l.row ? l.row.counts.map((c, i) => <td key={i}>{fmtInt(c)}</td>) : <td colSpan={5}>{l.note}</td>}
+              <td>{l.row ? fmtInt(l.row.rating_count) : '—'}</td>
+              <td>{l.row ? (l.row.mean === null ? '자료 없음' : `${l.row.mean.toFixed(1)}점`) : '—'}</td>
+            </tr>
           ))}</tbody>
         </table></div>
       )}
