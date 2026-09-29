@@ -11,7 +11,7 @@
 | 로컬 통합 검증 | 완료(로컬 합성) | 실제 Postgres 17·GoTrue·PostgREST + Deno Edge 진입점(deno-local), mock Kakao OAuth |
 | 운영 DB 적용 | **미적용** | 사용자 승인·실행 필요(§6) |
 | Edge 배포 | **미배포** | 사용자 승인·실행 필요(§6) |
-| 확장 연동 | **미완료** | 확장 dev(4c87550)는 main의 offset 초안에 맞춰져 있음 → 인계서 §10대로 v1 전환 필요 |
+| 확장 연동 | 코드 전환 완료(모의) | 확장 `dev` fb2c7c7(Fentanest/safetyreport-chromeextension#1): v1 요청·커서·번호 복사, 브라우저 모의 테스트 13 통과. 실제 설치·운영 로그인은 Edge 배포 후 |
 
 ## 2. 변경
 
@@ -118,5 +118,5 @@
    `npx supabase secrets set MY_REPORTS_CURSOR_SECRET=<32바이트 이상 임의 문자열> MY_REPORTS_ALLOWED_ORIGINS=chrome-extension://<배포 ID>[,chrome-extension://<개발 ID>]`
 4. `npx supabase functions deploy my-reports`
 5. Supabase Dashboard → Authentication → URL Configuration → Redirect URLs에 `https://<확장 ID>.chromiumapp.org/supabase-auth` **추가**(기존 유지).
-6. 확장 세션에 인계서 §10 전달 → 확장 v1 전환 후 smoke(인계서 §8-5).
+6. 확장 `dev`(v1 전환 완료)를 `SR_SUPABASE_URL`·`SR_SUPABASE_PUBLISHABLE_KEY`로 빌드해 설치 → smoke(인계서 §8-5).
 7. 문제 시 `npx supabase secrets set MY_REPORTS_ENABLED=false`(즉시 503, DB 접근 없음).
