@@ -185,3 +185,13 @@ describe('SO sort oracle (registry comparator)', () => {
     expect(sortFraction(unknown, 'fine', 'rate')).toBeNull();
   });
 });
+
+describe('long periods in the personal comparison', () => {
+  it('a 12-year comparison (145 monthly rows) passes the client schema (was capped at 80 rows)', async () => {
+    const { personalCompareSchema } = await import('../../src/data/personal');
+    const c = aggregateCompare(facts, scope('report_date', { start: '2014-09-01', end: '2026-09-30' }), 'u1', { datasetVersion: 'oracle', asOf: '2025-09-12',
+      dataMin: '2014-09-01', viewer: { contributor: 'active', has_public_facts: true }, today: ORACLE.today_kst });
+    expect(c.monthly).toHaveLength(145);
+    expect(personalCompareSchema.safeParse(JSON.parse(JSON.stringify(c))).success).toBe(true);
+  });
+});

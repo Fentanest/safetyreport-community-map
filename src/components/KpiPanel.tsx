@@ -35,25 +35,26 @@ interface Props {
 const pct = (a: number | null | undefined, d: number | null | undefined) => (a != null && d ? (a / d) * 100 : null);
 
 /** Real period-over-period change only: counts in %, rates in %p; a focus without comparison says so. */
-function Delta({ metric, kind }: { metric: CountMetric; kind: 'count' | 'rate' }) {
-  if (metric.previous === null || metric.delta === null) return <small className="kpi-delta none">{metric.note ?? '비교기간 자료 없음'}</small>;
+function deltaText(metric: CountMetric, kind: 'count' | 'rate'): string {
+  if (metric.previous === null || metric.delta === null) return '비교 자료 없음';
   if (kind === 'count') {
-    if (metric.delta_percent === null) return <small className="kpi-delta none">직전 같은 기간 0건</small>;
+    if (metric.delta_percent === null) return '직전 0건';
     const d = metric.delta_percent;
-    return <small className="kpi-delta">직전 대비 {d > 0 ? '+' : d < 0 ? '−' : ''}{Math.abs(d).toFixed(1)}%</small>;
+    return `직전 대비 ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(1)}%`;
   }
-  return <small className="kpi-delta">직전 대비 {fmtPp(metric.delta)}</small>;
+  return `직전 대비 ${fmtPp(metric.delta)}`;
 }
 
 const FOCUS_WORD: Record<KpiFocus['kind'], string> = { nation: '전국', region: '지역', bbox: '지도 범위', place: '선택한 주소' };
 
 export default function KpiPanel({ focus, overview: o, state, staleFocus, errorText, personal, showMine, placeMine, unsupported, detail }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
   const [edges, setEdges] = useState({ left: false, right: false });
   useEffect(() => {
     const el = scroller.current;
     if (!el) return;
-    const update = () => setEdges({ left: el.scrollLeft > 2, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+    const update = () => setEdges({ left: el.scrollLeft > 8, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 8 });
     update();
     el.addEventListener('scroll', update, { passive: true });
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
@@ -71,7 +72,7 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
         : personal.status === 'signed_out' ? '로그인하면 내 신고도 보입니다' : personal.error?.message ?? '내 신고를 불러오지 못했습니다';
   const basisWord = DATE_BASIS_LABEL[focus.basis];
 
-  type Cell = { id: string; label: string; value: string; sub: string; mine?: string | null; delta?: ReactNode; tone: string };
+  type Cell = { id: string; label: string; value: string; sub: string; mine?: string | null; delta?: string; tone: string };
   const cells: Cell[] = [];
   if (o) {
     const out = o.outcomes;
@@ -81,11 +82,11 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
     const sameNC = N !== null && N === C;
     cells.push({ id: 'report', label: '신고', value: `${fmtInt(N)}건`, tone: 'brand',
       // KP-13: N = C keeps C as a sub-value; N ≠ C shows both cells
-      sub: sameNC ? `답변 확인 ${fmtInt(C)}건 · ${basisWord} 기준` : `${basisWord} 기준`,
+      sub: sameNC ? `답변 확인 ${fmtInt(C)}건` : `${basisWord} 기준`,
       mine: placeFocus ? (placeMine ? `내 신고 ${fmtInt(placeMine.reports)}건` : null) : mine && `내 신고 ${fmtInt(mine.report_count)}건`,
-      delta: <Delta metric={o.report_count} kind="count" /> });
+      delta: deltaText(o.report_count, 'count') });
     if (!sameNC) cells.push({ id: 'completed', label: '답변 확인', value: `${fmtInt(C)}건`, tone: 'cyan', sub: `결과 확인 ${fmtInt(K)}건`,
-      mine: mine && `내 ${fmtInt(mine.completed_count)}건`, delta: <Delta metric={o.completed_count} kind="count" /> });
+      mine: mine && `내 ${fmtInt(mine.completed_count)}건`, delta: deltaText(o.completed_count, 'count') });
     cells.push({ id: 'accept', label: '수용률', value: fmtPercent(acceptRate(out)), sub: `${fmtInt(out?.accepted ?? null)} / ${fmtInt(K)}건`, tone: 'accepted',
       mine: mine && `내 ${fmtPercent(mine.accept_rate)} (${fmtPp(diff?.accept_rate_pp)})` });
     cells.push({ id: 'partial', label: '일부수용률', value: fmtPercent(partialRate(out)), sub: `${fmtInt(out?.partial ?? null)} / ${fmtInt(K)}건`, tone: 'partial',
@@ -105,7 +106,7 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
     cells.push({ id: 'places', label: '장소', tone: 'muted', value: `${fmtInt(o.point_count.value)}곳`, sub: '서로 다른 주소',
       mine: mine && `내 ${fmtInt(mine.point_count)}곳` });
     cells.push({ id: 'contributors', label: '참여자', tone: 'muted', value: `${fmtInt(o.contributor_count.value)}명`, sub: '같은 신고의 공동 신고자 포함',
-      delta: <Delta metric={o.contributor_count} kind="count" /> });
+      delta: deltaText(o.contributor_count, 'count') });
   }
   return (
     <section className="cm-panel kpi-strip" aria-label="주요 통계" aria-busy={state === 'loading'} id="summary">
@@ -124,6 +125,9 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
         {state === 'error' && <span className="kpi-status error" role="alert">{errorText ?? '불러오지 못했습니다'}</span>}
         {unsupported && <span className="kpi-status">이 조건의 통계는 아직 없습니다</span>}
         {showMine && <span className="cm-chip mine-chip" title="같은 조건의 내 신고">내 신고와 비교 중</span>}
+        <button type="button" className="link-btn kpi-more" aria-expanded={open} aria-controls="kpi-detail" onClick={() => setOpen((v) => !v)}>
+          {open ? '상세 접기' : showMine ? '전체와 내 신고 상세 비교' : '지표 정의와 상세 수치'}
+        </button>
       </header>
       <div className={`kpi-scroll-wrap${edges.left ? ' more-left' : ''}${edges.right ? ' more-right' : ''}`}>
         {edges.left && <button type="button" className="kpi-nudge left" aria-label="주요 통계 왼쪽 보기" onClick={() => nudge(-1)}>‹</button>}
@@ -132,8 +136,7 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
             <div key={k.id} className={`kpi-cell tone-${k.tone}`} data-kpi={k.id}>
               <span className="kpi-label">{k.label}</span>
               <b className="kpi-value cm-number">{k.value}</b>
-              <small className="kpi-basis">{k.sub}</small>
-              {k.delta}
+              <small className="kpi-basis">{k.sub}{k.delta ? ` · ${k.delta}` : ''}</small>
               {showMine && k.mine != null && <small className="kpi-mine mine-col">{k.mine}</small>}
             </div>
           )) : Array.from({ length: 6 }).map((_, i) => <div key={i} className="kpi-cell skeleton" role="status" aria-label="불러오는 중" />)}
@@ -141,10 +144,7 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
         {edges.right && <button type="button" className="kpi-nudge right" aria-label="주요 통계 오른쪽 보기" onClick={() => nudge(1)}>›</button>}
       </div>
       {mineState && <p className="compare-note" role="status">{mineState}</p>}
-      <details className="kpi-detail">
-        <summary>{showMine ? '전체와 내 신고 상세 비교 펼치기' : '지표 정의와 상세 수치 펼치기'}</summary>
-        {detail}
-      </details>
+      <div className="kpi-detail" id="kpi-detail" hidden={!open}>{open ? detail : null}</div>
     </section>
   );
 }

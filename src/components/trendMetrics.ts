@@ -5,6 +5,18 @@
  * Support is decided per metric (a missing fine field never hides the outcome lines, and vice versa).
  */
 import type { MonthlyBucket, OutcomeCounts } from '../domain/public';
+
+/** D12: a month label's note — the real current month (KST) is 진행 중; a range edge month is 일부 기간 (d1~d2). */
+export function monthNote(m: Pick<MonthlyBucket, 'month'> & Partial<Pick<MonthlyBucket, 'in_progress' | 'range_partial' | 'interval_start' | 'interval_end' | 'coverage_note'>>): string {
+  const parts: string[] = [];
+  if (m.range_partial && m.interval_start && m.interval_end) {
+    parts.push(`일부 기간(${Number(m.interval_start.slice(5, 7))}.${Number(m.interval_start.slice(8))}~${Number(m.interval_end.slice(5, 7))}.${Number(m.interval_end.slice(8))})`);
+  }
+  if (m.in_progress) parts.push('이번 달 진행 중');
+  if (m.coverage_note) parts.push(m.coverage_note);
+  return parts.join(' · ');
+}
+
 import type { CompareMonth } from '../domain/personal';
 
 export type TrendRate = 'accept' | 'reject' | 'partial' | 'fine';

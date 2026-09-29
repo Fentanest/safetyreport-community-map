@@ -326,7 +326,7 @@ try {
     const m = await openPage(browser, { height: 1000 });
     captureConsole(m.page, ctx);
     await waitMap(m.page);
-    await m.page.waitForSelector('.kpi-grid', { timeout: 20000 });
+    await m.page.waitForSelector('.kpi-strip .kpi-row', { timeout: 20000 });
     await m.page.evaluate(() => { const mp = window.__kakaoMaps[window.__kakaoMaps.length - 1]; mp.setCenter(new kakao.maps.LatLng(37.55, 126.99)); mp.setLevel(5); });
     await waitFor(() => m.page.evaluate(() => window.__kakaoLiveMarkers().filter((x) => !x.title.includes('묶음')).length), (n) => n >= 1);
     await m.page.evaluate(() => { const ms = window.__kakaoLiveMarkers().filter((x) => !x.title.includes('묶음')).sort((a, b2) => a.title.localeCompare(b2.title)); ms[0].marker.__click(); });
@@ -466,7 +466,7 @@ try {
     s.page.on('response', async (r) => { if (/\/functions\/v1\/public-analytics\/dashboard/.test(r.url())) { try { dash.push(await r.json()); } catch { /* ignore */ } } });
     const { page } = s;
     await waitMap(page);
-    await page.waitForSelector('.kpi-grid', { timeout: 20000 });
+    await page.waitForSelector('.kpi-strip .kpi-row', { timeout: 20000 });
     await sleep(800);
     const trend = page.locator('.trend-card');
     await trend.getByRole('button', { name: '처리결과 비율' }).click();

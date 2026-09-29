@@ -3,9 +3,9 @@
  * range). They read the same selectors as the cards (trendRateRows / entityRates), so the file shows the numbers,
  * denominators and missing reasons of the screen — and only the rows the card actually has.
  */
-import type { MonthlyBucket, PublicEntity } from '../../domain/public';
+import type { DateBasis, MonthlyBucket, PublicEntity } from '../../domain/public';
 import type { CompareMonth } from '../../domain/personal';
-import { TREND_RATES, TREND_RATE_LABEL, TREND_RATE_TOKEN, REASON_TEXT, trendRateRows, type TrendRate } from '../../components/trendMetrics';
+import { TREND_RATES, TREND_RATE_LABEL, TREND_RATE_TOKEN, REASON_TEXT, monthNote, trendRateRows, type TrendRate } from '../../components/trendMetrics';
 import { duplicateNames, entityLabel, entityRates } from '../../components/entityMetrics';
 import { FILE_COLOR } from './statistics';
 import { monthSerial, type ExportSnapshot, type XCategoryChart, type XColumn, type XRow, type XSeries } from '../model';
@@ -25,6 +25,8 @@ export interface TrendExportInput {
   mine: readonly CompareMonth[] | null;
   view: 'count' | 'rate';
   rates: readonly TrendRate[];
+  /** the ONE basis whose months these are (신고월 / 답변월) — same model as the screen, never re-selected here */
+  basis?: DateBasis;
   conditions: Array<{ label: string; value: string }>;
   datasetVersion: string | null;
   capturedAt: string;
@@ -37,14 +39,15 @@ export function trendSnapshot(input: TrendExportInput): ExportSnapshot {
   const mineBy = new Map((input.mine ?? []).map((m) => [m.month, m]));
   const sides = withMine ? (['all', 'mine'] as const) : (['all'] as const);
   const sideWord = (s: 'all' | 'mine') => (s === 'all' ? '전체' : '내 신고');
+  const monthWord = input.basis === 'report_date' ? '신고월' : '답변월';
 
   const columns: XColumn[] = [
-    { id: 'month', header: ['월'], unit: 'month', label: true, width: 12 },
-    { id: 'report', header: ['건수', '신고(건, 신고한 달)'], unit: 'count' },
-    { id: 'completed', header: ['건수', '답변 완료(건, 답변 받은 달)'], unit: 'count' },
+    { id: 'month', header: [monthWord], unit: 'month', label: true, width: 12 },
+    { id: 'report', header: ['건수', `신고(건, ${monthWord})`], unit: 'count' },
+    { id: 'completed', header: ['건수', `답변 완료(건, 같은 신고 · ${monthWord})`], unit: 'count' },
     ...(withMine ? [
-      { id: 'mine_report', header: ['건수', '내 신고(건, 신고한 달)'], unit: 'count' as const },
-      { id: 'mine_completed', header: ['건수', '내 답변 완료(건, 답변 받은 달)'], unit: 'count' as const },
+      { id: 'mine_report', header: ['건수', `내 신고(건, ${monthWord})`], unit: 'count' as const },
+      { id: 'mine_completed', header: ['건수', `내 답변 완료(건, ${monthWord})`], unit: 'count' as const },
     ] : []),
   ];
   for (const s of sides) {
@@ -57,7 +60,7 @@ export function trendSnapshot(input: TrendExportInput): ExportSnapshot {
   const rows: XRow[] = rateRows.map((rr) => {
     const m = byMonth.get(rr.month)!;
     const mm = mineBy.get(rr.month);
-    const row: XRow = { id: rr.month, cells: { month: monthSerial(rr.month), report: m.report_count, completed: m.completed_count, note: m.partial ? '아직 진행 중인 달' : m.coverage_note ?? null }, reasons: {} };
+    const row: XRow = { id: rr.month, cells: { month: monthSerial(rr.month), report: m.report_count, completed: m.completed_count, note: monthNote(m) || null }, reasons: {} };
     if (withMine) { row.cells.mine_report = mm?.mine_report_count ?? null; row.cells.mine_completed = mm?.mine_completed_count ?? null; }
     for (const s of sides) {
       const o = s === 'all' ? m.outcomes : mm?.mine_outcomes ?? null;
@@ -77,17 +80,17 @@ export function trendSnapshot(input: TrendExportInput): ExportSnapshot {
   if (input.view === 'count') {
     const s = (key: string, name: string, color: string, dashed = false): XSeries => ({ key, name, color, dashed, marker: dashed ? 'diamond' : 'circle',
       points: rateRows.map((r) => (typeof rows.find((x) => x.id === r.month)!.cells[key] === 'number' ? { row: r.month, col: key } : null)) });
-    chart = { kind: 'line', id: 'trend:count', title: '월별 신고·답변 건수', categoryTitle: '월', categories, unit: 'count', axis: { min: 0 },
+    chart = { kind: 'line', id: 'trend:count', title: `${monthWord}별 신고·답변 건수`, categoryTitle: monthWord, categories, unit: 'count', axis: { min: 0 },
       series: [s('report', '신고', FILE_COLOR.brand), s('completed', '답변 완료', FILE_COLOR.cyan), ...(withMine ? [s('mine_report', '내 신고', FILE_COLOR.brand, true)] : [])],
-      note: '신고는 신고한 달, 답변은 답변 받은 달에 셉니다. 자료가 없는 달은 선을 끊었습니다.' };
+      note: `${monthWord}마다 그 달에 든 같은 신고의 건수입니다(신고와 답변 완료가 같은 신고 묶음). 신고가 없는 달은 0, 자료가 없는 달은 선을 끊었습니다.` };
   } else {
     const series: XSeries[] = input.rates.flatMap((k) => sides.map((s) => ({
       key: `rate:${k}:${s}`, name: `${TREND_RATE_LABEL[k]} · ${sideWord(s)}`, color: FILE_COLOR[TREND_RATE_TOKEN[k]], dashed: s === 'mine', marker: s === 'mine' ? 'diamond' as const : 'circle' as const,
       points: rateRows.map((r) => ((s === 'all' ? r.all : r.mine!)[k].value === null ? null : { row: r.month, col: `rate:${k}:${s}` })),
     })));
-    chart = { kind: 'line', id: 'trend:rate', title: `월별 처리결과 비율 · ${input.rates.map((k) => TREND_RATE_LABEL[k]).join('·')}`, categoryTitle: '월', categories,
+    chart = { kind: 'line', id: 'trend:rate', title: `${monthWord}별 처리결과 비율 · ${input.rates.map((k) => TREND_RATE_LABEL[k]).join('·')}`, categoryTitle: monthWord, categories,
       unit: 'percent', axis: { min: 0, max: 1 }, series,
-      note: '답변 받은 달 기준입니다. 수용·일부 수용·불수용은 결과가 나온 신고 중 비율, 과태료는 답변 완료 신고 중 비율이라 네 선을 더해도 100%가 되지 않습니다. 계산할 수 없는 달은 선을 끊었고, 0%로 찍힌 점은 실제로 0인 경우입니다.' };
+      note: `${monthWord} 기준입니다. 수용·일부 수용·불수용은 결과가 나온 신고 중 비율, 과태료는 답변 완료 신고 중 비율이라 네 선을 더해도 100%가 되지 않습니다. 계산할 수 없는 달은 선을 끊었고, 0%로 찍힌 점은 실제로 0인 경우입니다.` };
   }
   return {
     schema: 1, source: 'trend', fileStem: '커뮤니티신고지도_월별추이', title: input.view === 'count' ? '월별 추이 · 건수' : '월별 추이 · 처리결과 비율',
@@ -97,7 +100,7 @@ export function trendSnapshot(input: TrendExportInput): ExportSnapshot {
       { label: '내 신고', value: withMine ? '함께 넣음 (이 파일을 내려받은 계정의 신고)' : '넣지 않음' },
       { label: '계산 방법', value: '수용률은 결과가 나온 신고(수용+일부 수용+불수용) 중 수용의 비율입니다. 일부수용률과 불수용률도 같은 기준입니다. 과태료 부과율은 답변 완료 신고 중 과태료 처분의 비율입니다. 처리 결과를 알 수 없는 신고는 결과가 나온 신고에서 뺍니다.' },
       { label: '빈 칸의 뜻', value: '계산 불가는 그 달에 기준이 되는 신고가 없다는 뜻, 제공 안 됨은 아직 그 항목을 제공하지 않는다는 뜻, 자료 없음은 자료가 있는 기간 밖이라는 뜻입니다. 모두 0과 다릅니다.' }],
-    table: { columns, rows, notes: ['비율은 같은 줄의 ‘해당 건수 ÷ 기준 건수’로 계산하는 수식입니다. 월 칸은 날짜 값이라 정렬하거나 계산할 수 있습니다.', '이번 달은 아직 끝나지 않아 다른 달보다 적게 보일 수 있습니다.'] },
+    table: { columns, rows, notes: ['비율은 같은 줄의 ‘해당 건수 ÷ 기준 건수’로 계산하는 수식입니다. 월 칸은 날짜 값이라 정렬하거나 계산할 수 있습니다.', '비고에 ‘이번 달 진행 중’(오늘 기준)과 ‘일부 기간’(기간의 첫·마지막 달)을 적었습니다. 그런 달은 다른 달보다 적게 보일 수 있습니다.'] },
     charts: [chart], chartNotice: input.view === 'rate' && input.rates.length === 0 ? '고른 지표가 없어 차트는 넣지 않았습니다.' : null,
     legend: null,
   };

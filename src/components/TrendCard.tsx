@@ -9,7 +9,7 @@ import PanelStatus from './PanelStatus';
 import ExportButton from './ExportButton';
 import { trendSnapshot } from '../export/adapters/dashboard';
 import {
-  TREND_RATES, TREND_RATE_LABEL, TREND_RATE_TOKEN, rateCellText, readTrendRates, trendRateRows, writeTrendRates,
+  monthNote, TREND_RATES, TREND_RATE_LABEL, TREND_RATE_TOKEN, rateCellText, readTrendRates, trendRateRows, writeTrendRates,
   type RateCell, type TrendRate,
 } from './trendMetrics';
 
@@ -33,17 +33,6 @@ export type TrendMineState = 'off' | 'loading' | 'error' | 'signed_out' | 'ready
 const MINE_NOTE: Record<Exclude<TrendMineState, 'off' | 'ready'>, string> = {
   loading: '내 신고를 불러오는 중', error: '내 신고를 불러오지 못했습니다', signed_out: '로그인하면 내 신고를 함께 볼 수 있습니다',
 };
-
-/** D12: a month label's note — the real current month (KST) is 진행 중; a range edge month is 일부 기간 (d1~d2). */
-export function monthNote(m: Pick<MonthlyBucket, 'month'> & Partial<Pick<MonthlyBucket, 'in_progress' | 'range_partial' | 'interval_start' | 'interval_end' | 'coverage_note'>>): string {
-  const parts: string[] = [];
-  if (m.range_partial && m.interval_start && m.interval_end) {
-    parts.push(`일부 기간(${Number(m.interval_start.slice(5, 7))}.${Number(m.interval_start.slice(8))}~${Number(m.interval_end.slice(5, 7))}.${Number(m.interval_end.slice(8))})`);
-  }
-  if (m.in_progress) parts.push('이번 달 진행 중');
-  if (m.coverage_note) parts.push(m.coverage_note);
-  return parts.join(' · ');
-}
 
 const VIEW_KEY = 'cm-trend-view';
 const readView = (): View => { try { return localStorage.getItem(VIEW_KEY) === 'rate' ? 'rate' : 'count'; } catch { return 'count'; } };
@@ -138,7 +127,7 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
     : mineState === 'loading' ? '내 신고를 불러오는 중입니다. 끝나면 받을 수 있습니다'
       : mineState === 'error' ? '내 신고를 불러오지 못했습니다. ‘내 신고와 비교’를 끄면 전체만 받을 수 있습니다'
         : view === 'rate' && rates.length === 0 ? '표시할 지표를 선택해 주세요' : null;
-  const captureExport = () => (exportCtx ? trendSnapshot({ monthly, mine: withMine ? mine : null, view, rates, conditions: exportCtx.conditions,
+  const captureExport = () => (exportCtx ? trendSnapshot({ monthly, mine: withMine ? mine : null, view, rates, basis, conditions: exportCtx.conditions,
     datasetVersion: exportCtx.datasetVersion, capturedAt: new Date().toISOString() }) : null);
   const mineNote = mineState === 'loading' || mineState === 'error' || mineState === 'signed_out' ? MINE_NOTE[mineState] : null;
   return (

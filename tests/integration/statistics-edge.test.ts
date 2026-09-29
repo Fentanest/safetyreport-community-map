@@ -10,6 +10,8 @@ import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { canonicalJson, sha256Hex } from '../../server/ingest/observation';
 import { candidatesSchema, catalogSchema, statisticsResultSchema } from '../../src/data/statistics';
+import { dashboardResponseSchema, lawsResponseSchema } from '../../src/data/schema';
+import { personalCompareSchema } from '../../src/data/personal';
 
 const enabled = process.env.COMMUNITY_STACK === '1';
 const API = process.env.COMMUNITY_API_URL ?? 'http://127.0.0.1:56321';
@@ -157,5 +159,25 @@ describe.skipIf(!enabled)('맞춤 통계 on real function code + local database'
     expect((await call('GET', `/functions/v1/my-analytics/statistics?${q(spec({ population: 'mine' }))}`, { origin: MAP_ORIGIN })).status).toBe(401);
     // population 'all' is not served by my-analytics (the public route owns it)
     expect((await call('GET', `/functions/v1/my-analytics/statistics?${q(spec())}`, { token: viewer.access, origin: MAP_ORIGIN })).status).toBe(400);
+  });
+
+  it('single-date-v1 on real function code: both bases, policy echo, /laws sort, basis conflict refused (EX-08/EX-09/AG-13)', async () => {
+    for (const basis of ['report_date', 'completed_date'] as const) {
+      const d = await call('GET', `/functions/v1/public-analytics/dashboard?${new URLSearchParams({ ...SCOPE, date_basis: basis })}`, { token: viewer.access, apikey: null });
+      expect(d.status, JSON.stringify(d.json).slice(0, 300)).toBe(200);
+      const body = dashboardResponseSchema.parse(d.json);
+      expect([body.scope.date_basis, body.cohort_policy_version, body.overview.report_count.basis]).toEqual([basis, 'single-date-v1', basis]);
+    }
+    const laws = await call('GET', `/functions/v1/public-analytics/laws?${new URLSearchParams({ ...SCOPE, sort: 'fine', sort_value: 'rate', dir: 'desc' })}`, { token: viewer.access, apikey: null });
+    expect(laws.status).toBe(200);
+    expect(lawsResponseSchema.parse(laws.json).sort).toEqual({ column: 'fine', value: 'rate', dir: 'desc' });
+    const conflict = await call('GET', `/functions/v1/public-analytics/statistics/query?${q(spec({ date_basis: 'report_date' }))}`, { token: viewer.access, apikey: null });
+    expect([conflict.status, conflict.json.error.code]).toEqual([400, 'BASIS_CONFLICT']);
+    const mineConflict = await call('GET', `/functions/v1/my-analytics/statistics?${q(spec({ date_basis: 'report_date', population: 'mine' }))}`, { token: viewer.access, origin: MAP_ORIGIN });
+    expect([mineConflict.status, mineConflict.json.error.code]).toEqual([400, 'BASIS_CONFLICT']);
+    const cmp = await call('GET', `/functions/v1/my-analytics/compare?${new URLSearchParams({ ...SCOPE, date_basis: 'report_date' })}`, { token: viewer.access, origin: MAP_ORIGIN });
+    expect(cmp.status).toBe(200);
+    const parsed = personalCompareSchema.parse(cmp.json);
+    expect([parsed.scope.date_basis, parsed.cohort.all.date_basis, parsed.cohort.mine.date_basis]).toEqual(['report_date', 'report_date', 'report_date']);
   });
 });

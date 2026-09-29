@@ -51,7 +51,7 @@ async function fresh(ctx, opts = {}) {
   const s = await openPage(browser, { locale: 'ko-KR', height: 1000, ...opts });
   captureConsole(s.page, ctx);
   await waitMap(s.page);
-  await s.page.waitForSelector('.kpi-grid', { timeout: 20000 });
+  await s.page.waitForSelector('.kpi-strip .kpi-row', { timeout: 20000 });
   await sleep(800);
   return s;
 }
@@ -120,7 +120,7 @@ try {
     await page.getByRole('button', { name: '주정차', exact: true }).click();
     const during = await waitFor(() => status(page), (t) => t.includes('새 조건으로 통계를 불러오는 중'), { timeout: 1500 });
     check('LD-02', 'top status while refreshing', during.includes('화면은 이전 조건'), true);
-    check('LD-02', 'panel busy and previous numbers kept', { busy: await page.locator('.scope-panel').getAttribute('aria-busy'), kpi: await page.locator('.kpi-grid').count() }, { busy: 'true', kpi: 1 });
+    check('LD-02', 'panel busy and previous numbers kept', { busy: await page.locator('.scope-panel').getAttribute('aria-busy'), kpi: await page.locator('.kpi-strip .kpi-row').count() }, { busy: 'true', kpi: 1 });
     await shot(page, 'LD-refresh-in-flight');
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     check('LD-26', 'status visible at the bottom', await page.locator('.query-status.on').evaluate((e) => { const r = e.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), true);

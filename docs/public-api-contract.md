@@ -1,4 +1,17 @@
 # 공개 읽기 API · 제안 계약
+
+> **2026-09-29 single-date-v1 (정본: docs/implementation/date-basis-dashboard/)** — 아래의 “신고 지표는 신고일, 처리 지표는
+> 완료일로 따로 거른다”, “지도 점 = 신고일·완료일 위치의 합집합”, “point_count 는 신고일 기준” 같은 설명은 **폐기**됐다.
+> 모든 경로는 `date_basis=report_date|completed_date`(없으면 `completed_date`, 잘못된 값 400)를 받고, 그 날짜 **하나**로 고른
+> 신고 묶음(대표를 먼저 정한 뒤 대표의 선택 날짜로 판정)에서 모든 값을 계산한다. 다른 날짜는 기간 밖이어도 거르지 않는다.
+> 응답은 `scope.date_basis`와 `cohort_policy_version: "single-date-v1"`을 돌려주고, 새 클라이언트는 이 값이 없으면 받지 않는다.
+> 추가/변경: `GET /laws`(q·sort·sort_value·dir·page·page_size, 전체 목록을 서버에서 정렬 후 페이지), `/entities` 의
+> `sort_value=count|rate|median|sum|mean`(src/domain/tableSort.ts 레지스트리, 비율은 분자·분모 정확 비교, 계산 불가는 방향과 무관하게
+> 마지막), `/places/{key}` 의 `overview`(주소 포커스 요약, 대시보드와 같은 함수), `meta.basis_bounds`·`meta.today_kst`,
+> `overview.cohort`(선택 날짜 결측 진단), 월별 `interval_start/interval_end/range_partial/in_progress`, 맞춤 통계의
+> `excluded.selected_date_missing{all,mine}`·`date_axes`. scope 의 `date_basis` 와 맞춤 통계 `spec.date_basis` 가 다르면
+> 400 `BASIS_CONFLICT`(scope 에 없으면 spec 값을 쓴다). 기간이 자료 범위 밖이어도 올바른 달력 날짜면 400 이 아니라 0건이다.
+
 모든 경로명은 이 프로젝트의 구현 계약이다. 인증 전용 수정본의 운영 반영 상태는 `docs/reviews/edge-auth-2026-09-27.md`를 따른다.
 base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽을 수 있는지는 아래 §열람 조건(2026-09-27부터 공유자 전용).
 

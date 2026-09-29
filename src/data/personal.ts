@@ -72,7 +72,7 @@ export const personalCompareSchema = z.strictObject({
     all_rating: rating, mine_rating: rating,
     mine_outcomes: z.strictObject({ accepted: count, partial: count, rejected: count, result_known: count, result_unknown: count }).nullable().optional(),
     mine_fine_count: count.nullable().optional(),
-  })).max(80),
+  })).max(2400), // one row per calendar month of the period (the whole history is allowed; 80 cut periods over 6.6 years)
   my_points: z.array(z.strictObject({
     key: z.string().max(160), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
     region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean(),

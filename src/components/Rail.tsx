@@ -3,11 +3,13 @@ import Icon, { type IconName } from './icons';
 export type Screen = 'dashboard' | 'statistics';
 
 /** S03: exact targets — 지역 is the region list (not the map), 통계 is a separate screen (not the charts section). */
+/** U05: menu order = page order (지도 → 법규 → 기관 → 추이 → 지역), then the separate 통계 screen. */
 const ITEMS: Array<{ id: string; label: string; icon: IconName; target: string | null }> = [
   { id: 'mapsection', label: '지도', icon: 'map', target: 'mapsection' },
-  { id: 'regions', label: '지역', icon: 'pin', target: 'regions' },
+  { id: 'laws', label: '법규', icon: 'table', target: 'laws' },
   { id: 'entities', label: '기관', icon: 'building', target: 'entities' },
   { id: 'analytics', label: '추이', icon: 'chart', target: 'analytics' },
+  { id: 'regions', label: '지역', icon: 'pin', target: 'regions' },
   { id: 'statistics', label: '통계', icon: 'table', target: null },
 ];
 

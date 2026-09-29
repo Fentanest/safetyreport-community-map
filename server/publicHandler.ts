@@ -171,6 +171,8 @@ function meta(state: AnalyticsState): PublicMeta {
     source_updated_at: state.source_updated_at, generated_at: state.generated_at,
     published_at: state.published_at, data_min: state.data_min, data_max: state.data_max,
     coverage_note: state.coverage_note, dedupe_policy_version: state.dedupe_policy_version,
+    // 전체 기간 of each basis (DT-15) and the server's KST today (D12); the policy version tells old servers apart
+    cohort_policy_version: COHORT_POLICY_VERSION, today_kst: todayKst(), basis_bounds: state.basis_bounds ?? null,
     capabilities: Object.fromEntries([
       'daily_report_dates', 'completion_dates', 'manager_status_cross', 'agency_status_cross', 'vehicle_top5',
       'fine_amount', 'processing_duration', 'region_boundaries', 'violation_law',
