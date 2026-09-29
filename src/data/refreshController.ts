@@ -148,6 +148,8 @@ export class RefreshController {
   /** Account change / sign-out: cancel everything and forget every cached response and the metadata. */
   reset(): void {
     this.cancelPending();
+    // C01: a new generation, so nothing started before the reset (meta included) can land afterwards
+    this.state = { ...this.state, generation: this.state.generation + 1 };
     this.inflight?.ac.abort();
     this.inflight = null;
     this.meta = null;
@@ -209,8 +211,11 @@ export class RefreshController {
   private async run(scope: Scope, ac: AbortController, gen: number, metaRetried: boolean): Promise<void> {
     try {
       if (!this.meta) {
-        this.meta = await this.deps.fetchMeta(ac.signal);
-        if (gen === this.state.generation) this.set({ meta: this.meta });
+        const fetched = await this.deps.fetchMeta(ac.signal);
+        // C01: an answer for a request started before a reset/newer start is dropped before it is cached
+        if (ac.signal.aborted || gen !== this.state.generation) return;
+        this.meta = fetched;
+        this.set({ meta: this.meta });
       }
       const meta = this.meta;
       const data = await this.deps.fetchDashboard(meta, scope, ac.signal);

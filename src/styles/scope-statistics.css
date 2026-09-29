@@ -175,3 +175,10 @@ html { scroll-padding-top: var(--scroll-top-inset, calc(var(--topbar-h) + 12px))
 .top-region select { min-height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 4px 8px; max-width: 170px; }
 .top-region.filter-on select { border-color: var(--filter-active-border); }
 @media (max-width: 700px) { .top-region { width: 100%; } .top-region .region-select { width: 100%; } .top-region .region-select label { flex: 1; } .top-region select { max-width: none; width: 100%; } }
+/* C02 compare heatmaps: same axes and scale, side by side on wide screens, stacked on narrow */
+.heatmap-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; container-type: inline-size; }
+.heatmap-side { margin: 0; min-width: 0; }
+.heatmap-side figcaption { font-size: 13px; font-weight: 700; padding: 4px 8px 0; }
+@container (min-width: 900px) { .heatmap-pair.compare { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stats-member.unavailable, .picker-unavailable { color: var(--rejected); text-decoration: line-through dotted; }
+.picker-unavailable { text-decoration: none; font-size: 11px; white-space: nowrap; }

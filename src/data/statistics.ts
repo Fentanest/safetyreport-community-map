@@ -31,10 +31,10 @@ export const statisticsResultSchema = z.strictObject({
   row_totals: z.array(total).max(10000), col_totals: z.array(total).max(10000), grand_totals: z.array(total).max(2),
   population_count: z.strictObject({ all: count.nullable(), mine: count.nullable() }),
   excluded: z.strictObject({ no_report_date: count }),
-  filter_members: z.array(z.strictObject({ dimension: z.string(), key: z.string(), label: z.string().nullable(), count })).max(400),
+  filter_members: z.array(z.strictObject({ dimension: z.string(), key: z.string(), label: z.string().nullable(), count, status: z.enum(['ok', 'zero', 'unconfirmed']) })).max(400),
   complete: z.literal(true),
 });
-const candidate = z.strictObject({ key: z.string().max(200), label: z.string().max(300), sub: z.string().max(200).nullable(), count });
+const candidate = z.strictObject({ key: z.string().max(200), label: z.string().max(300), sub: z.string().max(200).nullable(), count, status: z.enum(['ok', 'zero', 'unconfirmed']).optional() });
 export const candidatesSchema = z.strictObject({
   dataset_version: z.string(), kind: z.string(), items: z.array(candidate).max(100), total: count,
   next_cursor: count.nullable(), selected: z.array(candidate).max(50),

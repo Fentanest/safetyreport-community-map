@@ -124,7 +124,7 @@ describe('personal client', () => {
       datasetVersion: 'v1', asOf: DEMO_AS_OF, dataMin: DEMO_DATA_MIN, viewer: { contributor: 'active', has_public_facts: true } })));
   }
   const fakeAuth = (tokens: Array<string | null>) => ({
-    snapshot: () => ({ status: 'signed_in' as const, displayName: null, synthetic: false, message: null }),
+    snapshot: () => ({ status: 'signed_in' as const, displayName: null, viewerId: null, synthetic: false, message: null }),
     subscribe: () => () => {}, signIn: async () => {}, signOut: async () => {},
     accessToken: async () => 'token-1', refreshToken: vi.fn(async () => tokens.shift() ?? null), settled: async () => undefined,
   });

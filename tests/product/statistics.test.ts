@@ -188,3 +188,35 @@ describe('statistics routes', () => {
     expect((await r.json()).items[0]).toMatchObject({ key: 'a1:A', count: 20 });
   });
 });
+
+describe('C05 / MS-10: 0건 vs 확인할 수 없음', () => {
+  const people = [
+    f({ agency_key: 'a1:A', category: 'traffic' }),
+    f({ agency_key: 'a1:B', agency_name: '기관B', category: 'parking' }),
+    // only in another account's own rows and not representative (e.g. a shared identity elected elsewhere)
+    f({ agency_key: 'a1:HIDDEN', agency_name: '비공개기관', is_representative: false, contributor_id: 'other' }),
+  ];
+  const trafficScope: Scope = { ...scope, category: 'traffic' };
+  it('a member excluded only by the other conditions is "zero"; an unknown / not-permitted key is "unconfirmed" without a label', () => {
+    const r = aggregateStatistics({ facts: people, scope: trafficScope, datasetVersion: 'v',
+      spec: spec({ rows: ['agency'], filters: [{ dimension: 'agency', members: ['a1:A', 'a1:B', 'a1:HIDDEN', 'a1:made-up'] }] }) });
+    const st = Object.fromEntries(r.filter_members.map((m) => [m.key, [m.status, m.count, m.label]]));
+    expect(st['a1:A']).toEqual(['ok', 1, '기관A']);
+    expect(st['a1:B']).toEqual(['zero', 0, '기관B']); // exists this period, the 교통위반 condition excludes it
+    expect(st['a1:HIDDEN']).toEqual(['unconfirmed', 0, null]); // not in the permitted (representative) data: no name, no reason
+    expect(st['a1:made-up']).toEqual(['unconfirmed', 0, null]);
+    // unconfirmed keys are never turned into "all": the result stays limited to the confirmed selection
+    expect(r.row_members.map((m) => m.key[0])).toEqual(['a1:A']);
+  });
+  it('candidates report the same three states for already-selected keys', () => {
+    const page = statisticsCandidates({ facts: people, scope: trafficScope, datasetVersion: 'v', kind: 'agency', q: '', cursor: 0, limit: 10,
+      filters: [], basis: 'completed_date', placeKey: null, keys: ['a1:A', 'a1:B', 'a1:HIDDEN'] });
+    expect(page.selected.map((s) => [s.key, s.status])).toEqual([['a1:A', 'ok'], ['a1:B', 'zero'], ['a1:HIDDEN', 'unconfirmed']]);
+    expect(page.selected.find((s) => s.key === 'a1:HIDDEN')!.label).toBe('');
+  });
+  it("another account's key saved in this browser is unconfirmed for a viewer whose permitted data lacks it (mine)", () => {
+    const r = aggregateStatistics({ facts: [f({ contributor_id: 'u1', agency_key: 'a1:MINE' }), f({ contributor_id: 'u2', agency_key: 'a1:THEIRS' })], scope,
+      datasetVersion: 'v', viewerId: 'u1', spec: spec({ population: 'mine', filters: [{ dimension: 'agency', members: ['a1:MINE', 'a1:THEIRS'] }] }) });
+    expect(r.filter_members.map((m) => m.status)).toEqual(['ok', 'unconfirmed']);
+  });
+});

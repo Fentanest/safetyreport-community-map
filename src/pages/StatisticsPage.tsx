@@ -48,7 +48,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const [sort, setSort] = useState<RowSort>({ metric: null, dir: 'desc' });
   const [picker, setPicker] = useState<string | null>(null);
   const [pick, setPick] = useState<{ row: string[]; col: string[] | null } | null>(null);
-  const [saved, setSaved] = useState<SavedRecipe[]>(readSaved);
+  const [saved, setSaved] = useState<SavedRecipe[]>(() => readSaved(viewer));
   const [saveName, setSaveName] = useState('');
   const gen = useRef(0);
   const abort = useRef<AbortController | null>(null);
@@ -92,16 +92,8 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     return () => { abort.current?.abort(); abort.current = null; };
   }, [execute]);
 
-  // viewer change: forget everything of the previous account (conditions, results, running request)
-  const viewerRef = useRef(viewer);
-  useEffect(() => {
-    if (viewerRef.current === viewer) return;
-    viewerRef.current = viewer;
-    abort.current?.abort();
-    gen.current++;
-    setResult(null); setApplied(null); setRun({ status: 'idle' }); setDraft(null);
-  }, [viewer]);
-
+  // C01: this component instance belongs to ONE viewer — Dashboard remounts it (key = session key) on any account
+  // change, so the previous account's draft, result, hand-off, run and catalog can never be saved under the new one.
   // hand-off from the dashboard: the displayed conditions + preset/metrics, run once
   const lastHandoff = useRef<number | null>(null);
   useEffect(() => {
@@ -288,8 +280,14 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
               {spec.filters.map((f) => (
                 <span key={f.dimension} className="applied-chip"><small>{dimLabel(f.dimension)}</small>
                   {f.members.map((k) => {
-                    const zero = result?.filter_members.find((m) => m.dimension === f.dimension && m.key === k)?.count === 0;
-                    return <span key={k} className={`stats-member${zero ? ' zero' : ''}`}>{draft.labels[k] ?? k}{zero ? ' (현재 조건 0건)' : ''}</span>;
+                    // C05: 0건 (exists, excluded by the conditions) vs 확인할 수 없음 (not confirmable under the current
+                    // permission/period) vs no answer yet — never collapsed into one another or dropped silently
+                    const fm = applied && recipeKey(applied) === recipeKey(draft) ? result?.filter_members.find((m) => m.dimension === f.dimension && m.key === k) : undefined;
+                    const st = fm?.status;
+                    const label = fm?.label ?? draft.labels[k] ?? k;
+                    return <span key={k} className={`stats-member${st === 'zero' ? ' zero' : st === 'unconfirmed' ? ' unavailable' : ''}`}
+                      title={st === 'unconfirmed' ? '저장된 이름입니다. 이 기간·현재 권한에서 확인할 수 없어 결과에 포함되지 않았습니다.' : undefined}>
+                      {label}{st === 'zero' ? ' (현재 조건 0건)' : st === 'unconfirmed' ? ' (확인할 수 없음)' : !fm && result ? ' (적용 전)' : ''}</span>;
                   })}
                   <button type="button" aria-label={`${dimLabel(f.dimension)} 선택 해제`} onClick={() => edit({ filters: spec.filters.filter((x) => x !== f) })}>×</button></span>
               ))}
@@ -306,7 +304,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
             <summary>구성 저장·불러오기</summary>
             <div className="stats-save-row">
               <input value={saveName} placeholder="이름" aria-label="구성 이름" maxLength={40} onChange={(e) => setSaveName(e.target.value)} />
-              <button type="button" className="mini-btn" disabled={!saveName.trim()} onClick={() => { setSaved(saveRecipe(saveName.trim(), draft, chart)); setSaveName(''); }}>저장</button>
+              <button type="button" className="mini-btn" disabled={!saveName.trim()} onClick={() => { setSaved(saveRecipe(viewer, saveName.trim(), draft, chart)); setSaveName(''); }}>저장</button>
             </div>
             <small className="cm-muted">이 브라우저에만 저장합니다(주소·내 신고 설정은 저장하지 않음).</small>
             <ul>
@@ -355,6 +353,11 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
               )}
             </div>
           </div>
+          {result && result.filter_members.some((m) => m.status === 'unconfirmed') && (
+            <div className="banner warn" role="note">
+              <span className="grow">확인할 수 없는 비교 대상 {result.filter_members.filter((m) => m.status === 'unconfirmed').length}개는 이 결과에 포함되지 않았습니다(전체로 바꾸지 않았습니다). 설정에서 대상을 정리해 주세요.</span>
+            </div>
+          )}
           {run.status === 'error' && (
             <div className={`banner ${result ? 'warn' : 'error'}`} role="alert">
               <span className="grow">{run.message}{result ? ' · 아래는 이전 조건의 결과입니다.' : ''}</span>

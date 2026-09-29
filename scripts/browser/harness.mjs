@@ -16,15 +16,17 @@ export const { chromium } = loadPlaywright();
 export const PORT = Number(process.env.E2E_PORT || 5190);
 export const ORIGIN = `http://127.0.0.1:${PORT}`;
 export const E2E_UID = '11111111-2222-4333-8444-555555555555';
+/** C01: second synthetic account, SAME nickname ('로컬검수') as the first */
+export const E2E_UID_B = '22222222-3333-4444-8555-666666666666';
 const SESSION = '66666666-7777-4888-9999-aaaaaaaaaaaa';
 const MOCK_SDK = readFileSync(join(here, 'mock-kakao-sdk.js'), 'utf8');
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-export function fakeSession(uid = E2E_UID) {
+export function fakeSession(uid = E2E_UID, nickname = '로컬검수') {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24;
   const token = `${b64({ alg: 'none', typ: 'JWT' })}.${b64({ sub: uid, role: 'authenticated', aud: 'authenticated', session_id: SESSION, exp, is_anonymous: false })}.e2e`;
   return { access_token: token, refresh_token: 'e2e-refresh', token_type: 'bearer', expires_in: 86400, expires_at: exp,
-    user: { id: uid, aud: 'authenticated', role: 'authenticated', app_metadata: { provider: 'kakao' }, user_metadata: { nickname: '로컬검수' } } };
+    user: { id: uid, aud: 'authenticated', role: 'authenticated', app_metadata: { provider: 'kakao' }, user_metadata: { nickname } } };
 }
 
 export async function api(path, body) {
@@ -32,8 +34,8 @@ export async function api(path, body) {
   return res.json();
 }
 
-export async function openPage(browser, { width = 1440, height = 900, theme = 'dark', signedIn = true, search = '', mockSdk = true, locale = 'ko-KR' } = {}) {
-  const context = await browser.newContext({ locale, viewport: { width, height }, colorScheme: theme === 'light' ? 'light' : 'dark', deviceScaleFactor: 1 });
+export async function openPage(browser, { width = 1440, height = 900, theme = 'dark', signedIn = true, search = '', mockSdk = true, locale = 'ko-KR', uid = E2E_UID, deviceScaleFactor = 1 } = {}) {
+  const context = await browser.newContext({ locale, viewport: { width, height }, colorScheme: theme === 'light' ? 'light' : 'dark', deviceScaleFactor });
   if (mockSdk) await context.route('https://dapi.kakao.com/**', route => route.fulfill({ contentType: 'text/javascript', body: MOCK_SDK }));
   await context.addInitScript(({ session, theme, signedIn }) => {
     try {
@@ -51,7 +53,7 @@ export async function openPage(browser, { width = 1440, height = 900, theme = 'd
       obs.observe(document.documentElement, { childList: true, subtree: true });
     };
     if (document.documentElement) count(); else document.addEventListener('DOMContentLoaded', count);
-  }, { session: fakeSession(), theme, signedIn });
+  }, { session: fakeSession(uid), theme, signedIn });
   const page = await context.newPage();
   const consoleErrors = [];
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text()); });

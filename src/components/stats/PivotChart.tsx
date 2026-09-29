@@ -61,32 +61,7 @@ export default function PivotChart({ result, catalog, settings, theme, onPick }:
     const colorOf = (m: string, key: string) => (plan.metrics.length > 1 || oneDim ? (SEMANTIC[m] ? String(t[SEMANTIC[m]]) : memberColor(m)) : memberColor(key));
     const seriesMetric = new Map<string, string>();
 
-    if (plan.type === 'heatmap') {
-      const m = plan.metrics[0];
-      const unit = metric(m)?.unit;
-      const xs = columns.length ? result.col_members : result.row_members.map((r) => ({ key: r.key.slice(1), label: r.label.slice(1) }));
-      const ys = columns.length ? result.row_members : result.row_members.map((r) => ({ key: r.key.slice(0, 1), label: r.label.slice(0, 1) }));
-      const xKeys = [...new Map(xs.map((x) => [tupleKey(x.key), x])).values()];
-      const yKeys = [...new Map(ys.map((y) => [tupleKey(y.key), y])).values()];
-      const data: Array<{ value: [number, number, number | null]; sv: StatValue; row: string[]; col: string[] }> = [];
-      yKeys.forEach((y, yi) => xKeys.forEach((x, xi) => {
-        const row = columns.length ? y.key : [...y.key, ...x.key];
-        const col = columns.length ? x.key : [];
-        const v = cell(sides[0], row, col)?.values[m];
-        if (v) data.push({ value: [xi, yi, v.value], sv: v, row, col });
-      }));
-      const max = unit === 'percent' ? 100 : Math.max(1, ...data.map((d) => d.value[2] ?? 0));
-      seriesMetric.set(metric(m)?.label ?? m, m);
-      return { ...base, grid: { left: 150, right: 24, top: 16, bottom: 90 },
-        tooltip: { ...base.tooltip, formatter: (p: { data: { value: [number, number, number | null]; sv: StatValue } }) =>
-          `<b>${esc(yKeys[p.data.value[1]].label.join(' · '))}</b> × <b>${esc(xKeys[p.data.value[0]].label.join(' · '))}</b><br/>${esc(metric(m)?.label ?? m)} ${esc(fmtStat(p.data.sv, metric(m)))}` },
-        xAxis: { type: 'category', data: xKeys.map((x) => x.label.join(' · ')), axisLabel: { color: t.muted, rotate: 40, width: 90, overflow: 'truncate' } },
-        yAxis: { type: 'category', data: yKeys.map((y) => y.label.join(' · ')), inverse: true, axisLabel: { color: t.muted, width: 140, overflow: 'truncate' } },
-        visualMap: { min: 0, max, calculable: false, orient: 'horizontal', left: 'center', bottom: 4, textStyle: { color: t.muted },
-          inRange: { color: ['#DBEAFE', '#1D4ED8'] }, text: [unit === 'percent' ? '100%' : String(max), '0'] },
-        series: [{ id: `heatmap:${m}:${sides[0]}`, name: metric(m)?.label ?? m, type: 'heatmap', data, label: { show: data.length <= 120, color: '#0B1220', fontSize: 10,
-          formatter: (p: { data: { sv: StatValue } }) => fmtStat(p.data.sv, metric(m), false) } }] };
-    }
+    if (plan.type === 'heatmap') return null; // drawn by HeatmapSide (one per population, C02)
 
     if (plan.type === 'scatter') {
       const [mx, my] = plan.metrics;
@@ -174,6 +149,14 @@ export default function PivotChart({ result, catalog, settings, theme, onPick }:
       </div>
     );
   }
+  if (plan.type === 'heatmap' && !blocked) {
+    return (
+      <div className="pivot-chart">
+        {plan.refusal && <p className="scope-note" role="note">{plan.refusal} 지금은 히트맵으로 그렸습니다.</p>}
+        <HeatmapPair result={result} catalog={catalog} metricId={plan.metrics[0]} sides={sides} theme={theme} onPick={onPick} />
+      </div>
+    );
+  }
   return (
     <div className="pivot-chart">
       {plan.refusal && <p className="scope-note" role="note">{plan.refusal} 지금은 {plan.type === 'heatmap' ? '히트맵' : '추천 그래프'}로 그렸습니다.</p>}
@@ -183,5 +166,82 @@ export default function PivotChart({ result, catalog, settings, theme, onPick }:
         aria-label={`${result.spec.metrics.map((m) => metric(m)?.label).join('·')} 그래프. 같은 수치를 표로 볼 수 있습니다.`} />
       {error && <div className="empty-state" role="alert">{error}</div>}
     </div>
+  );
+}
+
+type Axis = Array<{ key: string[]; label: string[] }>;
+/** the heatmap's axes: rows × columns, or the first two row dimensions when there are no columns */
+export function heatmapAxes(result: StatisticsResult): { xs: Axis; ys: Axis; rowOf: (y: string[], x: string[]) => string[]; colOf: (x: string[]) => string[] } {
+  const hasCols = result.spec.columns.length > 0;
+  const dedupe = (list: Axis) => [...new Map(list.map((m) => [tupleKey(m.key), m])).values()];
+  const xs = dedupe(hasCols ? result.col_members : result.row_members.map((r) => ({ key: r.key.slice(1), label: r.label.slice(1) })));
+  const ys = dedupe(hasCols ? result.row_members : result.row_members.map((r) => ({ key: r.key.slice(0, 1), label: r.label.slice(0, 1) })));
+  return { xs, ys, rowOf: (y, x) => (hasCols ? y : [...y, ...x]), colOf: (x) => (hasCols ? x : []) };
+}
+
+/** one cell list per population with the SAME axes (member keys, order) — never another population's values */
+export function heatmapCells(result: StatisticsResult, side: 'all' | 'mine', metricId: string) {
+  const cell = cellIndex(result);
+  const { xs, ys, rowOf, colOf } = heatmapAxes(result);
+  const out: Array<{ value: [number, number, number | null]; sv: StatValue; row: string[]; col: string[] }> = [];
+  ys.forEach((y, yi) => xs.forEach((x, xi) => {
+    const row = rowOf(y.key, x.key), col = colOf(x.key);
+    const v = cell(side, row, col)?.values[metricId];
+    if (v) out.push({ value: [xi, yi, v.value], sv: v, row, col });
+  }));
+  return out;
+}
+
+/** C02: compare = two heatmaps (전체 · 내 신고) side by side (stacked on narrow screens), same axes, same scale:
+ *  0–100% for rates; for counts/amounts one common 0..max over BOTH populations (stated under the charts). */
+function HeatmapPair({ result, catalog, metricId, sides, theme, onPick }: {
+  result: StatisticsResult; catalog: StatCatalog; metricId: string; sides: Array<'all' | 'mine'>; theme: 'dark' | 'light';
+  onPick?: (row: string[], col: string[] | null) => void;
+}) {
+  const m = catalog.metrics.find((x) => x.id === metricId);
+  const per = sides.map((side) => ({ side, data: heatmapCells(result, side, metricId) }));
+  const max = m?.unit === 'percent' ? 100 : Math.max(1, ...per.flatMap((p) => p.data.map((d) => d.value[2] ?? 0)));
+  const compare = sides.length > 1;
+  return (
+    <>
+      <div className={`heatmap-pair${compare ? ' compare' : ''}`}>
+        {per.map((p) => (
+          <HeatmapSide key={p.side} result={result} metric={m} metricId={metricId} data={p.data} max={max} theme={theme} onPick={onPick}
+            title={compare ? (p.side === 'all' ? '전체' : '내 신고') : null} side={p.side} />
+        ))}
+      </div>
+      {compare && <p className="chart-caption">왼쪽(위) 전체, 오른쪽(아래) 내 신고 · 같은 행·열 순서와 같은 색 척도({m?.unit === 'percent' ? '0~100%' : `0~${max.toLocaleString('ko-KR')} 두 집단 공통`}) · 빈 칸은 그 집단에 해당 신고가 없다는 뜻입니다(0 아님).</p>}
+    </>
+  );
+}
+
+function HeatmapSide({ result, metric, metricId, data, max, theme, title, side, onPick }: {
+  result: StatisticsResult; metric: MetricDef | undefined; metricId: string; side: 'all' | 'mine';
+  data: ReturnType<typeof heatmapCells>; max: number; theme: 'dark' | 'light'; title: string | null;
+  onPick?: (row: string[], col: string[] | null) => void;
+}) {
+  const { xs, ys } = heatmapAxes(result);
+  const { hostRef, error } = useEChart((t) => {
+    const base = baseOption(t);
+    return { ...base, grid: { left: 150, right: 16, top: 12, bottom: 90 },
+      tooltip: { ...base.tooltip, formatter: (p: { data: { value: [number, number, number | null]; sv: StatValue } }) =>
+        `<b>${esc(ys[p.data.value[1]].label.join(' · '))}</b> × <b>${esc(xs[p.data.value[0]].label.join(' · '))}</b><br/>${title ? `${esc(title)} · ` : ''}${esc(metric?.label ?? metricId)} ${esc(fmtStat(p.data.sv, metric))}` },
+      xAxis: { type: 'category', data: xs.map((x) => x.label.join(' · ')), axisLabel: { color: t.muted, rotate: 40, width: 90, overflow: 'truncate' } },
+      yAxis: { type: 'category', data: ys.map((y) => y.label.join(' · ')), inverse: true, axisLabel: { color: t.muted, width: 140, overflow: 'truncate' } },
+      visualMap: { min: 0, max, calculable: false, orient: 'horizontal', left: 'center', bottom: 4, textStyle: { color: t.muted },
+        inRange: { color: ['#DBEAFE', '#1D4ED8'] }, text: [metric?.unit === 'percent' ? '100%' : String(max), '0'] },
+      series: [{ id: `heatmap:${metricId}:${side}`, name: `${title ? `${title} · ` : ''}${metric?.label ?? metricId}`, type: 'heatmap', data,
+        label: { show: data.length <= 120, color: '#0B1220', fontSize: 10, formatter: (p: { data: { sv: StatValue } }) => fmtStat(p.data.sv, metric, false) } }] };
+  }, [result, data, max, metricId], theme, (p) => {
+    const d = p.data as { row: string[]; col: string[] } | undefined;
+    if (d && onPick) onPick(d.row, d.col.length ? d.col : null);
+  });
+  return (
+    <figure className="heatmap-side" data-side={side}>
+      {title && <figcaption>{title}{data.length === 0 ? ' · 이 조건의 신고 없음' : ''}</figcaption>}
+      <div ref={hostRef} className="chart-host stats-chart-host" role="img" hidden={!!error}
+        aria-label={`${title ?? ''} ${metric?.label ?? metricId} 히트맵. 같은 수치를 표로 볼 수 있습니다.`} />
+      {error && <div className="empty-state" role="alert">{error}</div>}
+    </figure>
   );
 }

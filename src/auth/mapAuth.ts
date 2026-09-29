@@ -16,8 +16,11 @@ export type AuthStatus = 'unconfigured' | 'loading' | 'signed_out' | 'signed_in'
 
 export interface AuthSnapshot {
   status: AuthStatus;
-  /** Kakao nickname for the viewer's own menu only; never an email or id. */
+  /** Kakao nickname for the viewer's own menu only; never an email or id — and never an account key. */
   displayName: string | null;
+  /** C01: the Supabase Auth user id of this session (internal account boundary for caches, restores and late
+   *  answers). Never shown, logged or put in a URL; the server still decides access from the verified JWT. */
+  viewerId: string | null;
   /** true only for the explicit demo fixture login */
   synthetic: boolean;
   message: string | null;
@@ -97,7 +100,7 @@ export function createLiveAuth(): MapAuth {
   const oauthReturn = typeof window !== 'undefined' && /[?&](code|error)=/.test(window.location.search);
   let checkingInitial = !!config && (oauthReturn || hasStoredSession());
   const emitter = new Emitter({
-    status: config ? (checkingInitial ? 'loading' : 'signed_out') : 'unconfigured', displayName: null, synthetic: false,
+    status: config ? (checkingInitial ? 'loading' : 'signed_out') : 'unconfigured', displayName: null, viewerId: null, synthetic: false,
     message: config ? null : '지금은 로그인 기능을 쓸 수 없습니다.',
   });
   let clientPromise: Promise<SupabaseClient> | null = null;
@@ -117,8 +120,8 @@ export function createLiveAuth(): MapAuth {
         // trigger another redirect while getSession() is still checking the callback.
         if (!session && (checkingInitial || startingOAuth || (oauthReturn && emitter.state.status === 'error'))) return;
         emitter.set(session
-          ? { status: 'signed_in', displayName: nickname(session.user.user_metadata), message: null }
-          : { status: 'signed_out', displayName: null });
+          ? { status: 'signed_in', displayName: nickname(session.user.user_metadata), viewerId: session.user.id, message: null }
+          : { status: 'signed_out', displayName: null, viewerId: null });
       });
       return c;
     });
@@ -131,7 +134,7 @@ export function createLiveAuth(): MapAuth {
       .then(c => c.auth.getSession())
       .then(({ data }) => {
         emitter.set(data.session
-          ? { status: 'signed_in', displayName: nickname(data.session.user.user_metadata), message: null }
+          ? { status: 'signed_in', displayName: nickname(data.session.user.user_metadata), viewerId: data.session.user.id, message: null }
           : failed || oauthReturn
             ? { status: 'error', message: '카카오 로그인이 취소되었거나 끝나지 않았습니다. 다시 시도해 주세요.' }
             : { status: 'signed_out' });
@@ -164,13 +167,13 @@ export function createLiveAuth(): MapAuth {
     },
     async signOut() {
       if (!config || !clientPromise) {
-        emitter.set({ status: config ? 'signed_out' : 'unconfigured', displayName: null });
+        emitter.set({ status: config ? 'signed_out' : 'unconfigured', displayName: null, viewerId: null });
         return;
       }
       const c = await client();
       // Only this browser's map session. Never 'global' or 'others' (would end the app's upload sessions).
       await c.auth.signOut({ scope: 'local' });
-      emitter.set({ status: 'signed_out', displayName: null, message: null });
+      emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: null });
     },
     async accessToken() {
       if (!config || emitter.state.status !== 'signed_in') return null;
@@ -181,7 +184,7 @@ export function createLiveAuth(): MapAuth {
       if (!config || !clientPromise) return null;
       const { data, error } = await (await client()).auth.refreshSession();
       if (error || !data.session) {
-        emitter.set({ status: 'signed_out', displayName: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.' });
+        emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.' });
         return null;
       }
       return data.session.access_token;
@@ -209,7 +212,7 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
     : fixture === 'out' ? 'signed_out'
       : fixture && signedStates.includes(fixture) ? 'signed_in' : stored ? 'signed_in' : 'signed_out';
   const emitter = new Emitter({
-    status: initial, displayName: initial === 'signed_in' ? '예시 사용자' : null, synthetic: true,
+    status: initial, displayName: initial === 'signed_in' ? '예시 사용자' : null, viewerId: initial === 'signed_in' ? 'synthetic-viewer' : null, synthetic: true,
     message: initial === 'unconfigured' ? '지금은 로그인 기능을 쓸 수 없습니다.' : null,
   });
   return {
@@ -220,20 +223,36 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
       if (emitter.state.status === 'unconfigured') return;
       try { window.sessionStorage.setItem(DEMO_AUTH_KEY, '1'); } catch { /* ignore */ }
       if (fixture === 'out') fixture = 'signed';
-      emitter.set({ status: 'signed_in', displayName: '예시 사용자', message: null });
+      emitter.set({ status: 'signed_in', displayName: '예시 사용자', viewerId: 'synthetic-viewer', message: null });
     },
     async signOut() {
       try { window.sessionStorage.removeItem(DEMO_AUTH_KEY); } catch { /* ignore */ }
-      emitter.set({ status: 'signed_out', displayName: null, message: null });
+      emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: null });
     },
     async accessToken() { return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null; },
     settled: () => Promise.resolve(),
     async refreshToken() {
       if (fixture === 'expired') {
-        emitter.set({ status: 'signed_out', displayName: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.' });
+        emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.' });
         return null;
       }
       return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null;
     },
   };
+}
+
+/** C01: a short, non-reversible key of the account id for in-memory/session-storage boundaries (FNV-1a 64).
+ *  Not a secret and not an authorization input; it only keeps one account's local state from another's. */
+/** C01: the page's account boundary — status + account id (never the nickname) + demo fixture.
+ *  A nickname change or a token refresh of the same account keeps the key; another account changes it. */
+export function sessionKeyOf(auth: Pick<AuthSnapshot, 'status' | 'viewerId'>, fixture: string): string | null {
+  if (auth.status === 'loading') return null;
+  return `${auth.status}|${auth.status === 'signed_in' ? viewerKey(auth.viewerId) : 'none'}|${fixture}`;
+}
+
+export function viewerKey(viewerId: string | null): string {
+  if (!viewerId) return 'none';
+  let h = 0xcbf29ce484222325n;
+  for (const ch of viewerId) { h ^= BigInt(ch.codePointAt(0)!); h = (h * 0x100000001b3n) & 0xffffffffffffffffn; }
+  return h.toString(16).padStart(16, '0');
 }

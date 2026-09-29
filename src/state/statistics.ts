@@ -122,8 +122,17 @@ export function planChart(spec: StatisticsSpec, catalog: StatCatalog | null, set
 }
 
 // ── persistence (per viewer, per tab) ────────────────────────────────────────────────────────────────────
-const SESSION_KEY = 'cm-stats-state-v1';
-const SAVED_KEY = 'cm-stats-recipes-v1';
+// C01: v2 is keyed by the account-id hash (sessionKeyOf). v1 was keyed by a nickname-based string: it is removed,
+// never migrated to whoever is signed in now.
+const SESSION_KEY = 'cm-stats-state-v2';
+const SAVED_PREFIX = 'cm-stats-recipes-v2:';
+const LEGACY_KEYS = ['cm-stats-state-v1', 'cm-stats-recipes-v1'];
+export function dropLegacyStatsStorage(): void {
+  for (const k of LEGACY_KEYS) {
+    try { sessionStorage.removeItem(k); } catch { /* ignore */ }
+    try { localStorage.removeItem(k); } catch { /* ignore */ }
+  }
+}
 
 export interface StatsSession { draft: StatsRecipe; applied: StatsRecipe | null; chart: ChartSettings; view: 'table' | 'chart'; viewer: string }
 
@@ -143,15 +152,16 @@ export function writeSession(s: StatsSession): void {
 export function clearSession(): void { try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ } }
 
 export interface SavedRecipe { name: string; spec: StatisticsSpec; labels: Record<string, string>; chart: ChartSettings }
-export function readSaved(): SavedRecipe[] {
-  try { const v = JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]'); return Array.isArray(v) ? v.slice(0, 20) : []; } catch { return []; }
+/** saved recipes belong to one account on this browser (another account signing in here does not see them) */
+export function readSaved(viewer: string): SavedRecipe[] {
+  try { const v = JSON.parse(localStorage.getItem(SAVED_PREFIX + viewer) ?? '[]'); return Array.isArray(v) ? v.slice(0, 20) : []; } catch { return []; }
 }
 /** saved recipes keep the analysis only: never an address, never 'mine' (a shared browser must not carry them) */
-export function saveRecipe(name: string, r: StatsRecipe, chart: ChartSettings): SavedRecipe[] {
-  const entry: SavedRecipe = { name: name.slice(0, 40), spec: { ...r.spec, place_key: null, population: r.spec.population === 'all' ? 'all' : 'all' },
+export function saveRecipe(viewer: string, name: string, r: StatsRecipe, chart: ChartSettings): SavedRecipe[] {
+  const entry: SavedRecipe = { name: name.slice(0, 40), spec: { ...r.spec, place_key: null, population: 'all' },
     labels: Object.fromEntries(Object.entries(r.labels).filter(([k]) => !k.startsWith('pl1:'))), chart };
-  const list = [entry, ...readSaved().filter((x) => x.name !== entry.name)].slice(0, 20);
-  try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+  const list = [entry, ...readSaved(viewer).filter((x) => x.name !== entry.name)].slice(0, 20);
+  try { localStorage.setItem(SAVED_PREFIX + viewer, JSON.stringify(list)); } catch { /* ignore */ }
   return list;
 }
 

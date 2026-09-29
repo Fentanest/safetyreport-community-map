@@ -1,0 +1,373 @@
+{
+  "run_id": "scope-statistics-2026-09-29T06-56-58-692Z",
+  "suite": "scope-statistics",
+  "commit": "39552e3a2f5056857c07e35673f67fa5262839df",
+  "working_tree_dirty": true,
+  "started_at": "2026-09-29T06:56:58.712Z",
+  "only": [
+    "C01"
+  ],
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 141.0.7390.37",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic (demoFacts + e2e extras)",
+    "server": "local Vite middleware running server/publicHandler.ts + server/personalHandler.ts",
+    "default_viewport": "1440x1000",
+    "theme": "dark unless noted",
+    "zoom": "browser zoom 100% (headless); ZOOM-EMU uses viewport/DSF emulation, not browser zoom"
+  },
+  "results": {
+    "MT-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-16": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-18": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-19": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-20": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-21": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-19": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-26": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-12": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-13": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-13": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-09": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-08": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-09": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-SPY": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "ZOOM-EMU": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-11": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-CMP": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "C01-AB": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "after the switch the numbers are B's own (A's late answer never shown)",
+          "actual": {
+            "nickSame": true,
+            "shown": "내 신고 12건",
+            "differentAccounts": true
+          },
+          "expected": {
+            "nickSame": true,
+            "shown": "내 신고 5건",
+            "differentAccounts": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no loading left over from A's request",
+          "actual": "",
+          "expected": ""
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "C01-NICK": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "nickname change of the same account: no refetch",
+          "actual": {
+            "dashboard": 1,
+            "my-analytics": 1
+          },
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "nickname shown updated",
+          "actual": "새닉네임",
+          "expected": "(t) => t.startsWith('새닉네임')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "C01-RESTORE": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "B does not get A's 맞춤 통계 draft",
+          "actual": "기관\n↑\n↓\n✕\n시도\n↑\n↓\n✕",
+          "expected": "(t) => !t.includes('시도')"
+        },
+        {
+          "ok": false,
+          "label": "after reload as B: still not A's draft",
+          "actual": "기관\n↑\n↓\n✕\n시도\n↑\n↓\n✕",
+          "expected": "(t) => !t.includes('시도')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "W-OVERFLOW": {
+      "status": "NOT_RUN",
+      "checks": []
+    }
+  },
+  "steps": {
+    "MT": {
+      "status": "NOT_RUN"
+    },
+    "LD": {
+      "status": "NOT_RUN"
+    },
+    "PI": {
+      "status": "NOT_RUN"
+    },
+    "SC_PG": {
+      "status": "NOT_RUN"
+    },
+    "NV": {
+      "status": "NOT_RUN"
+    },
+    "MS_CH": {
+      "status": "NOT_RUN"
+    },
+    "MT21": {
+      "status": "NOT_RUN"
+    },
+    "C01": {
+      "status": "DONE",
+      "ids": [
+        "C01-AB",
+        "C01-NICK",
+        "C01-RESTORE"
+      ],
+      "notes": {
+        "mine_before_switch": "내 신고 31건"
+      },
+      "ms": 24647
+    },
+    "W": {
+      "status": "NOT_RUN"
+    }
+  },
+  "finished_at": "2026-09-29T06:57:23.429Z",
+  "summary": {
+    "NOT_RUN": 57,
+    "FAIL": 3
+  }
+}

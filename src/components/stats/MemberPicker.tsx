@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Scope } from '../../domain/public';
-import type { StatCandidate, StatisticsSpec, StatsFilter } from '../../domain/statistics';
+import type { MemberStatus, StatCandidate, StatisticsSpec, StatsFilter } from '../../domain/statistics';
 import { loadCandidates } from '../../data/statistics';
 import { useReportActivity } from '../../data/queryActivity';
 import PanelStatus from '../PanelStatus';
@@ -45,6 +45,7 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
   const [total, setTotal] = useState<number | null>(null);
   const [next, setNext] = useState<number | null>(null);
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
+  const [statuses, setStatuses] = useState<Map<string, MemberStatus>>(new Map());
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [onlySelected, setOnlySelected] = useState(false);
   const composing = useRef(false);
@@ -83,6 +84,7 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
         setTotal(page.total);
         setNext(page.next_cursor);
         setCounts(new Map(page.selected.map((s) => [s.key, s.count])));
+        setStatuses(new Map(page.selected.map((s) => [s.key, s.status ?? (s.count > 0 ? 'ok' : 'zero')] as [string, MemberStatus])));
         setState('idle');
       })
       .catch(() => { if (!ac.signal.aborted && my === gen.current) setState('error'); });
@@ -116,7 +118,7 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
     return next;
   });
   const kindLabel = PICK_KINDS.find((k) => k.id === kind)?.label ?? kind;
-  const shown = onlySelected ? draft.map((d) => ({ key: d.key, label: d.label, sub: null, count: counts.get(d.key) ?? 0 })) : items;
+  const shown = onlySelected ? draft.map((d) => ({ key: d.key, label: d.label, sub: null, count: counts.get(d.key) ?? 0, status: statuses.get(d.key) })) : items;
   return (
     <div className="picker-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="picker" role="dialog" aria-modal="true" aria-labelledby="picker-title" ref={dialogRef}>
@@ -148,7 +150,7 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
                   <label>
                     <input type="checkbox" checked={has(c.key)} onChange={() => toggle(c)} />
                     <span className="picker-name">{c.label}</span>
-                    <small className="cm-muted">{c.count === 0 ? '현재 조건 0건' : `${c.count.toLocaleString('ko-KR')}건`}</small>
+                    <small className="cm-muted">{'status' in c && c.status === 'unconfirmed' ? '확인할 수 없음' : c.count === 0 ? '현재 조건 0건' : `${c.count.toLocaleString('ko-KR')}건`}</small>
                   </label>
                 </li>
               ))}
@@ -169,7 +171,10 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
               {draft.map((d, i) => (
                 <li key={d.key}>
                   <span className="picker-name">{d.label}</span>
-                  {counts.get(d.key) === 0 && <small className="picker-zero">현재 조건 0건</small>}
+                  {state === 'error' ? <small className="picker-zero">확인 실패</small>
+                    : state === 'loading' && !statuses.has(d.key) ? <small className="cm-muted">확인 중</small>
+                      : statuses.get(d.key) === 'unconfirmed' ? <small className="picker-unavailable" title="이 기간·현재 권한에서 확인할 수 없는 대상입니다(자세한 이유는 표시하지 않습니다)">확인할 수 없음</small>
+                        : statuses.get(d.key) === 'zero' ? <small className="picker-zero">현재 조건 0건</small> : null}
                   <span className="picker-order">
                     <button type="button" className="mini-btn" aria-label={`${d.label} 위로`} disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
                     <button type="button" className="mini-btn" aria-label={`${d.label} 아래로`} disabled={i === draft.length - 1} onClick={() => move(i, 1)}>↓</button>

@@ -8,7 +8,7 @@ vi.mock('../../src/hooks/usePersonal', () => ({ mapAuth: () => auth.current }));
 
 function fakeAuth(token: string | null, refreshed: string | null = null): MapAuth {
   return {
-    snapshot: () => ({ status: token ? 'signed_in' : 'signed_out', displayName: null, synthetic: false, message: null }),
+    snapshot: () => ({ status: token ? 'signed_in' : 'signed_out', displayName: null, viewerId: null, synthetic: false, message: null }),
     subscribe: () => () => undefined, signIn: async () => undefined, signOut: async () => undefined,
     accessToken: async () => token, refreshToken: vi.fn(async () => refreshed), settled: async () => undefined,
   };

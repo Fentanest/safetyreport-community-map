@@ -14,8 +14,8 @@ import FilterDrawer from '../components/FilterDrawer';
 import MapPanel, { renderModeOf } from '../components/MapPanel';
 import ScopeDetailsPanel from '../components/ScopeDetailsPanel';
 import StatisticsPage, { type ScopeChip } from './StatisticsPage';
-import { clearSession as clearStatsSession, handoffRecipe, type StatsRecipe } from '../state/statistics';
-import { scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
+import { clearSession as clearStatsSession, dropLegacyStatsStorage, handoffRecipe, type StatsRecipe } from '../state/statistics';
+import { SPY_SECTIONS, currentSection, scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
 import type { Screen } from '../components/Rail';
 import type { TrendRate } from '../components/trendMetrics';
 import { TREND_RATE_METRIC_ID } from '../components/trendMetrics';
@@ -41,7 +41,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { consistentWithPublic } from '../data/personal';
 import { readComparePref, readInterest, screenFromSearch, toggleInterest, viewFromSearch, writeComparePref, writeInterest, type ViewMode } from '../state/view';
 import { markPoints } from '../state/pointMarks';
-import { demoViewerFromSearch } from '../auth/mapAuth';
+import { demoViewerFromSearch, sessionKeyOf } from '../auth/mapAuth';
 import { CLUSTER_LEVEL } from '../lib/kakao';
 import type { CompareEntityRow } from '../domain/personal';
 import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
@@ -79,6 +79,20 @@ const intersects = (a: [number, number, number, number], b: [number, number, num
   a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
 
 type EntityName = { agency: string; manager: string | null };
+
+/** C06: keep the current history entry's scroll position (debounced on scroll, and before every push) */
+function rememberScroll(): void {
+  try { window.history.replaceState({ ...(window.history.state ?? {}), cmScroll: window.scrollY }, ''); } catch { /* ignore */ }
+}
+/** restore after the screen switch has rendered (two frames: React commit, then layout) */
+function restoreScroll(y: number): void {
+  requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y })));
+}
+
+/** C06 scroll spy: programmatic moves (menu, restore) pause it briefly so passing sections do not flash in the menu */
+let spyLockUntil = 0;
+function lockSpy(ms = 1200): void { spyLockUntil = Date.now() + ms; }
+
 
 export default function Dashboard() {
   const [scope, setScopeState] = useState<Scope>(() => scopeFromSearch(window.location.search, baseScope(dataMode)));
@@ -130,7 +144,8 @@ export default function Dashboard() {
   }, []);
 
   // ── data (R04): the last successful snapshot stays on screen while a new one loads ─────────────────────
-  const sessionKey = auth.status === 'loading' ? null : `${auth.status}|${auth.displayName ?? ''}|${fixture}`;
+  // C01: account boundary by the auth user id (a shared nickname is never the same account)
+  const sessionKey = sessionKeyOf(auth, fixture);
   const dash = useDashboardData(scope, sourceRef.current, sessionKey);
   const shown = dash.displayed;
   const data = shown?.data ?? null;
@@ -173,12 +188,41 @@ export default function Dashboard() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
+  // C06: scroll spy on the dashboard screen only (a hidden dashboard never drives the menu on the statistics screen)
+  useEffect(() => {
+    if (screen !== 'dashboard') return;
+    let raf = 0;
+    let t: number | undefined;
+    const evaluate = () => {
+      if (Date.now() < spyLockUntil) { window.clearTimeout(t); t = window.setTimeout(evaluate, spyLockUntil - Date.now() + 20); return; }
+      const inset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scroll-top-inset')) || 76;
+      const tops = SPY_SECTIONS.map((id) => [id, document.getElementById(id)?.getBoundingClientRect().top ?? Infinity] as [string, number])
+        .filter(([, top]) => Number.isFinite(top));
+      const id = currentSection(tops, inset);
+      if (id) setNav((cur) => (cur === id ? cur : id));
+    };
+    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(evaluate); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); window.clearTimeout(t); };
+  }, [screen]);
   // S03: publish the measured sticky cover as --scroll-top-inset (scroll-padding-top), once per page
   useEffect(() => watchStickyInsets(), []);
+  // C06: the page restores scroll itself (the screens swap after popstate, so the browser's own restore is too early)
+  useEffect(() => {
+    try { window.history.scrollRestoration = 'manual'; } catch { /* ignore */ }
+    let t: number | undefined;
+    const onScroll = () => { window.clearTimeout(t); t = window.setTimeout(rememberScroll, 250); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); window.clearTimeout(t); };
+  }, []);
 
   // back/forward: conditions, chips and list selections follow the URL
   useEffect(() => {
-    const onPop = () => {
+    const onPop = (e: PopStateEvent) => {
+      // C06: back/forward restores this entry's scroll position once the screen it belongs to is laid out
+      const y = typeof (e.state as { cmScroll?: unknown } | null)?.cmScroll === 'number' ? (e.state as { cmScroll: number }).cmScroll : null;
+      if (y !== null) restoreScroll(y);
       const s = scopeFromSearch(window.location.search, baseScope(dataMode));
       requestScope(s, 'explicit');
       setDraft(draftFromScope(s));
@@ -197,7 +241,11 @@ export default function Dashboard() {
     return `${window.location.pathname}${withScreen ? `?${withScreen}` : ''}`;
   };
   /** explicit condition change: new history entry; automatic map range: replace (no history flood, R04 §11) */
-  const pushUrl = (s: Scope, v: ViewMode = view, sc: Screen = screen) => window.history.pushState(null, '', urlFor(s, v, sc));
+  /** C06: every history entry carries its scroll position (the entry being left is updated first) */
+  const pushUrl = (s: Scope, v: ViewMode = view, sc: Screen = screen) => {
+    rememberScroll();
+    window.history.pushState({ cmScroll: sc === screen ? window.scrollY : 0 }, '', urlFor(s, v, sc));
+  };
   const replaceUrl = (s: Scope) => window.history.replaceState(window.history.state, '', urlFor(s));
 
   const explicit = (next: Scope, message?: string) => {
@@ -453,9 +501,25 @@ export default function Dashboard() {
     ? { resource: 'personal', phase: 'fetching', label: '내 신고를 비교하는 중' } : null, activity);
   useReportActivity('place-detail', selection && point && !point.aggregate && placeDetail.status === 'loading'
     ? { resource: 'place-detail', phase: 'fetching', label: '주소 상세를 불러오는 중' } : null, activity);
-  // a new account never sees the previous account's pending work; signing out forgets the 맞춤 통계 draft too
-  useEffect(() => { activity.clear(); }, [activity, sessionKey]);
+  // C01: a new account (or signing out) never sees the previous account's selection, address detail, hand-off,
+  // pending work or 맞춤 통계 state. The dashboard controller resets itself on the same key (useDashboardData).
+  const lastSession = useRef(sessionKey);
+  useEffect(() => {
+    if (lastSession.current === sessionKey) return;
+    const previous = lastSession.current;
+    lastSession.current = sessionKey;
+    if (previous === null) return; // first settle of the auth check: nothing of another account to forget
+    activity.clear();
+    setSelection(null);
+    setPlaceDetail({ status: 'loading' });
+    setRefined(null);
+    setEntityNames(new Map());
+    setScopeManagers(null);
+    setHandoff(null);
+    refineAbort.current?.abort();
+  }, [activity, sessionKey]);
   useEffect(() => { if (auth.status === 'signed_out') clearStatsSession(); }, [auth.status]);
+  useEffect(() => { dropLegacyStatsStorage(); }, []);
 
   // ── S04: 맞춤 통계 screen and the hand-off of the DISPLAYED conditions (never a half-requested scope) ─────
   const goStatistics = (recipe?: StatsRecipe) => {
@@ -466,6 +530,7 @@ export default function Dashboard() {
     window.scrollTo({ top: 0 });
   };
   const goDashboard = (section?: string) => {
+    if (section) lockSpy();
     if (screen !== 'dashboard') {
       setScreen('dashboard');
       pushUrl(scope, view, 'dashboard');
@@ -739,7 +804,7 @@ export default function Dashboard() {
           )}
           </div>
           {statsOpened && sessionKey !== null && (
-            <StatisticsPage active={screen === 'statistics'} handoff={handoff} fallbackScope={shownScope} version={version}
+            <StatisticsPage key={sessionKey} active={screen === 'statistics'} handoff={handoff} fallbackScope={shownScope} version={version}
               viewer={sessionKey} canMine={dataMode === 'demo' || auth.status === 'signed_in'} theme={resolvedTheme}
               scopeChips={scopeChips} onBack={goDashboard} />
           )}

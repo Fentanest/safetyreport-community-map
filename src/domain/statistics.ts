@@ -2,7 +2,7 @@
  * 맞춤 통계 (S05–S08) contract, shared by the server aggregator (server/statistics.ts), the Edge handlers, the Zod
  * response schema and the page. The request is declarative: registry ids only — never SQL, column or table names.
  */
-import type { Scope } from './public';
+import type { Scope } from './public.ts';
 
 export type StatRole = 'row' | 'column' | 'filter';
 export type DateBasis = 'completed_date' | 'report_date';
@@ -80,11 +80,16 @@ export interface StatisticsResult {
   population_count: { all: number | null; mine: number | null };
   excluded: { no_report_date: number };
   /** count of every selected filter member under the other conditions (0 = "현재 조건 0건", kept as a chip) */
-  filter_members: Array<{ dimension: string; key: string; label: string | null; count: number }>;
+  filter_members: Array<{ dimension: string; key: string; label: string | null; count: number; status: MemberStatus }>;
   complete: true;
 }
 
-export interface StatCandidate { key: string; label: string; sub: string | null; count: number }
+/** C05 availability of a selected key under the viewer's current permission:
+ *  ok = has reports now · zero = exists in this period's permitted data, only the other conditions exclude it
+ *  (현재 조건 0건) · unconfirmed = not found in this period's permitted data (period, policy, withdrawn or unknown key:
+ *  deliberately not told apart, so nothing about other people's data is revealed). */
+export type MemberStatus = 'ok' | 'zero' | 'unconfirmed';
+export interface StatCandidate { key: string; label: string; sub: string | null; count: number; status?: MemberStatus }
 export interface StatCandidatesPage {
   dataset_version: string;
   kind: string;

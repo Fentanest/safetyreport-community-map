@@ -102,3 +102,14 @@ describe('S01 region trail and children', () => {
     expect(childRegions(regions, '11140')).toEqual([]);
   });
 });
+
+describe('C06 scroll spy', () => {
+  it('the last section at or above the sticky line wins; above the first section the first one is current', async () => {
+    const { currentSection } = await import('../../src/lib/navigation');
+    const at = (a: number, b: number, c: number, d: number) => currentSection([['mapsection', a], ['analytics', b], ['regions', c], ['entities', d]], 76);
+    expect(at(140, 900, 1800, 2400)).toBe('mapsection');
+    expect(at(-600, 90, 900, 1500)).toBe('analytics');
+    expect(at(-2000, -1200, 60, 700)).toBe('regions');
+    expect(at(-3000, -2000, -900, 80)).toBe('entities');
+  });
+});

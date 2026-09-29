@@ -55,7 +55,7 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     // The comparison table replaced the 6-KPI row (docs/personal-comparison.md §5.1); public column only here.
     const kpi = renderToStaticMarkup(<CompareKpis overview={data.overview} compareOn={false} unsupported={false}
       personal={{ status: 'off', data: null, error: null, retry: () => {} }} onSignIn={() => {}}
-      auth={{ status: 'signed_out', displayName: null, synthetic: false, message: null }} />);
+      auth={{ status: 'signed_out', displayName: null, viewerId: null, synthetic: false, message: null }} />);
     expect(kpi).toContain('신고한 날 기준');
     expect(kpi).toContain('신고 장소');
     expect(kpi).toMatch(/<b class="cm-number">0<\/b>/);

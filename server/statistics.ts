@@ -331,12 +331,22 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
   // selected filter members: their count under every OTHER condition (so a member the period excludes shows "0건")
   const filterMembers: StatisticsResult['filter_members'] = [];
   const pool = all?.facts ?? mine?.facts ?? [];
+  // C05: "exists" = present in this period's PERMITTED population with the other conditions relaxed (same rule as
+  // the candidate list); nothing outside the viewer's permission is ever looked at
+  const relaxed = relaxScope(scope);
+  const period = spec.population === 'mine'
+    ? population(ownRepresentatives(scopeFacts(input.facts, relaxed).filter((f) => f.contributor_id === input.viewerId)), scope, { date_basis: basis, place_key: null }).facts
+    : population(scopeFacts(representatives(input.facts), relaxed), scope, { date_basis: basis, place_key: null }).facts;
   for (const flt of spec.filters) {
     const d = DIM.get(flt.dimension)!;
     const others = pool.filter((f) => matches(f, spec.filters, basis, flt.dimension));
+    const present = new Map<string, string>();
+    for (const f of period) { const m = d.member(f, basis); if (m && !present.has(m.key)) present.set(m.key, m.label); }
     for (const key of flt.members) {
       const hit = others.filter((f) => d.member(f, basis)?.key === key);
-      filterMembers.push({ dimension: flt.dimension, key, label: hit[0] ? d.member(hit[0], basis)?.label ?? null : null, count: hit.length });
+      const status = hit.length > 0 ? 'ok' as const : present.has(key) ? 'zero' as const : 'unconfirmed' as const;
+      filterMembers.push({ dimension: flt.dimension, key, label: status === 'unconfirmed' ? null : (hit[0] ? d.member(hit[0], basis)?.label ?? null : present.get(key) ?? null),
+        count: hit.length, status });
     }
   }
 
@@ -352,6 +362,8 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
   };
 }
 
+const relaxScope = (s: Scope): Scope => ({ ...s, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null });
+
 // ── candidates (target selector) ─────────────────────────────────────────────────────────────────────────
 export const CANDIDATE_KINDS = new Set(['agency', 'manager', 'sido', 'sgg', 'law', 'place']);
 
@@ -364,6 +376,9 @@ export function statisticsCandidates(input: { facts: readonly PrivateFact[]; sco
   if (!d || !CANDIDATE_KINDS.has(input.kind)) throw new StatsQueryError('INVALID_QUERY', 'kind');
   const pop = population(scopeFacts(representatives(input.facts), input.scope), input.scope, { date_basis: input.basis, place_key: input.placeKey }).facts
     .filter((f) => matches(f, input.filters, input.basis, input.kind));
+  const periodKeys = new Set<string>();
+  for (const f of population(scopeFacts(representatives(input.facts), relaxScope(input.scope)),
+    input.scope, { date_basis: input.basis, place_key: null }).facts) { const m = d.member(f, input.basis); if (m) periodKeys.add(m.key); }
   const map = new Map<string, StatCandidate>();
   for (const f of pop) {
     const m = d.member(f, input.basis);
@@ -380,7 +395,7 @@ export function statisticsCandidates(input: { facts: readonly PrivateFact[]; sco
   return {
     dataset_version: input.datasetVersion, kind: input.kind, items, total: list.length,
     next_cursor: input.cursor + input.limit < list.length ? input.cursor + input.limit : null,
-    selected: input.keys.map((k) => map.get(k) ?? { key: k, label: '', sub: null, count: 0 }),
+    selected: input.keys.map((k) => { const c = map.get(k); return c ? { ...c, status: 'ok' as const } : { key: k, label: '', sub: null, count: 0, status: periodKeys.has(k) ? 'zero' as const : 'unconfirmed' as const }; }),
   };
 }
 

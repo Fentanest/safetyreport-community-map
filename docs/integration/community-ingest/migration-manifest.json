@@ -278,6 +278,15 @@
    "depends_on": [
     "202609290300"
    ]
+  },
+  {
+   "version": "202609300100",
+   "repo": "map",
+   "path": "supabase/migrations/202609300100_long_range_bounds.sql",
+   "sha256": "c5f4e21cc969c463636d8dae48d084777e145ce9c8a630d7bb563fcf84189c15",
+   "depends_on": [
+    "202609290400"
+   ]
   }
  ],
  "functions": [
@@ -287,14 +296,19 @@
    "verify_jwt": true,
    "shared": [
     "server/aggregate.ts",
+    "server/agencyType.ts",
     "server/amount.ts",
+    "server/analyticsDistributions.ts",
     "server/duration.ts",
+    "server/places.ts",
     "server/plate.ts",
     "server/publicHandler.ts",
     "server/regions.ts",
+    "server/statistics.ts",
     "server/viewerAuth.ts",
     "contracts/regions/regions-20260701.json",
-    "src/domain/public.ts"
+    "src/domain/public.ts",
+    "src/domain/statistics.ts"
    ]
   },
   {
@@ -342,18 +356,23 @@
    "repo": "map",
    "verify_jwt": true,
    "shared": [
+    "server/agencyType.ts",
     "server/aggregate.ts",
     "server/amount.ts",
+    "server/analyticsDistributions.ts",
     "server/compare.ts",
     "server/duration.ts",
     "server/personalHandler.ts",
+    "server/places.ts",
     "server/plate.ts",
     "server/publicHandler.ts",
     "server/regions.ts",
+    "server/statistics.ts",
     "server/viewerAuth.ts",
     "contracts/regions/regions-20260701.json",
     "src/domain/personal.ts",
-    "src/domain/public.ts"
+    "src/domain/public.ts",
+    "src/domain/statistics.ts"
    ]
   }
  ]

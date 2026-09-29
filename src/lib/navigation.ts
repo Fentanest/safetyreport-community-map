@@ -80,3 +80,12 @@ export function scrollToSectionWhenReady(id: string, tries = 20): void {
   };
   attempt(tries);
 }
+
+/** C06 scroll spy: dashboard sections in page order */
+export const SPY_SECTIONS = ['mapsection', 'analytics', 'regions', 'entities'] as const;
+/** the last section whose top is at or above the sticky inset line (+24px) is the current one */
+export function currentSection(tops: Array<[string, number]>, inset: number): string | null {
+  let current: string | null = null;
+  for (const [id, top] of tops) if (top <= inset + 24) current = id;
+  return current ?? tops[0]?.[0] ?? null;
+}
