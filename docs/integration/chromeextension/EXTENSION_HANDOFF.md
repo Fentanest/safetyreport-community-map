@@ -9,11 +9,11 @@
 | 항목 | 상태 |
 |---|---|
 | 계약 `my-reports-v1` | 확정(v1). 변경은 `contracts/my-reports/README.md §8`에 기록 |
-| map 코드(SQL·Edge·handler) | 구현 완료, 브랜치 `claude/gallant-darwin-7ldkbl` (PR 전, main 미병합) |
-| 로컬 통합 검증 | 로컬 스택(Postgres 17·GoTrue·PostgREST)에서 SQL+handler 통합 테스트 통과. Deno Edge 경로는 `REPORT.md` 참고 |
+| map 코드(SQL·Edge·handler) | 구현 완료, 브랜치 `claude/gallant-darwin-7ldkbl` (main 병합 전) |
+| 로컬 통합 검증 | 통과: 실제 Postgres 17·GoTrue·PostgREST + Deno Edge 진입점(deno-local) + mock Kakao OAuth. `REPORT.md` |
 | 운영 DB 적용 | **미적용** (사용자 승인·실행 필요, §8) |
 | Edge 배포 | **미배포** (사용자 승인·실행 필요, §8) |
-| 확장 연동 | 확장 세션 작업 중. 실제 확장 ID·Origin 미확정 |
+| 확장 연동 | 확장 dev 4c87550은 offset 초안 기준 → §10대로 전환 필요. 실제 확장 ID 미확정 |
 
 운영 반영 전에는 실제 프로젝트에서 호출하면 `404`(함수 없음)가 난다. 개발 중에는 `fixtures/`의 응답으로 UI를 만든다.
 
@@ -160,7 +160,8 @@ async function copyAllNumbers(kind, query) {
 ## 8. 운영 반영 순서 (map 쪽, 사용자 승인 후)
 
 1. SQL: `supabase/migrations/202610020100_my_reports.sql`만 적용(auth 레포와 공유 프로젝트이므로 `db push` 금지).
-   `202610010100_single_date_cohort.sql`이 먼저 적용돼 있어야 한다.
+   `202610010100_single_date_cohort.sql`이 먼저 적용돼 있어야 한다. main 초안 `202609300200_my_reports.sql`은 적용하지 않고
+   (이미 적용했다면 그대로 둔다) `npx supabase migration repair --status applied 202609300200`으로 기록만 맞춘다.
    ```
    psql "<운영 DB 연결 문자열>" -v ON_ERROR_STOP=1 -f supabase/migrations/202610020100_my_reports.sql
    npx supabase migration repair --status applied 202610020100

@@ -22,6 +22,8 @@ export const ACCOUNTS = {
   G: { id: 920007, nickname: '통합테스트G', email: null },
   H: { id: 920008, nickname: '통합테스트H', email: null }, // nine-report browser gate fixture
   I: { id: 920009, nickname: '통합테스트I', email: null }, // my-analytics stack threshold fixture
+  J: { id: 920010, nickname: '통합테스트J', email: null }, // my-reports Edge fixture (own reports, Kakao OAuth path)
+  K: { id: 920011, nickname: '통합테스트K', email: null }, // my-reports Edge fixture (other account)
 };
 
 export function startMockKakao({ host = '127.0.0.1', port = 56410, clientSecret, clientId = 'mock-kakao-client', redirectUri }) {
