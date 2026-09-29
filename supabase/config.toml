@@ -8,3 +8,7 @@ verify_jwt = true
 # User-only personal comparison (read-only): platform JWT check AND getUser + claims in server/personalHandler.ts.
 [functions.my-analytics]
 verify_jwt = true
+
+# Extension personal completed-report read API: gateway and handler both verify the user JWT.
+[functions.my-reports]
+verify_jwt = true
