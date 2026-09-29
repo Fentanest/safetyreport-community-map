@@ -169,6 +169,8 @@ export interface Overview {
   processing_duration?: DurationSummary | null;
   fine_amount?: FineAmountSummary | null;
   rating?: RatingBrief | null;
+  /** S01: 계도(경고) count of the completion cohort; undefined = older server (shown as 서버 미지원, never 0) */
+  warning_count?: number | null;
 }
 
 /** Map place grouping (R07). 'address-v1' = one pin per normalized full address (server/places.ts).
@@ -390,6 +392,10 @@ export interface DashboardData {
   monthly: MonthlyBucket[];
   agencies: PublicEntity[];
   managers: PublicEntity[];
+  /** S01: how many agencies/managers the scope really has (the arrays are a first page of at most 100);
+   *  undefined = older server (the UI then says "많은 순 N개" without claiming a total) */
+  agency_total?: number;
+  manager_total?: number;
   /** null = the source did not provide region rows (never replaced by an empty list). */
   regions: PublicRegion[] | null;
   /** 위반법규별 현황; null = the source did not provide law rows (never replaced by an empty list) */

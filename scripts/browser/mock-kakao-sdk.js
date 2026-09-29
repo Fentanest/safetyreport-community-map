@@ -38,7 +38,8 @@
     getNorthEast() { return this.ne; }
   }
   class Size { constructor(w, h) { this.width = w; this.height = h; } }
-  class MarkerImage { constructor(src, size) { this.src = src; this.size = size; } }
+  class MarkerImage { constructor(src, size, opts) { this.src = src; this.size = size; this.offset = opts && opts.offset; } }
+  class Point { constructor(x, y) { this.x = x; this.y = y; } }
 
   class KMap {
     constructor(el, opts) {
@@ -78,11 +79,15 @@
         const pts = (rings[0] || []).map((p) => xy(p.lat, p.lng).map((v) => v.toFixed(1)).join(',')).join(' ');
         html += `<svg style="position:absolute;inset:0" width="${w}" height="${h}"><polygon points="${pts}" fill="${poly.opts.fillColor}" fill-opacity="${poly.opts.fillOpacity}" stroke="${poly.opts.strokeColor}" stroke-width="${poly.opts.strokeWeight}" stroke-opacity="${poly.opts.strokeOpacity}"/></svg>`;
       }
-      for (const m of stats.live || []) {
+      // draw in zIndex order (the SDK stacks by zIndex); a custom offset keeps the circle centre on the point
+      for (const m of [...(stats.live || [])].sort((a, b) => (a.opts.zIndex || 0) - (b.opts.zIndex || 0))) {
         if (m.map !== this) continue;
         const [x, y] = xy(m.opts.position.lat, m.opts.position.lng);
-        const size = m.opts.image && m.opts.image.size ? m.opts.image.size.width : 40;
-        html += `<img src="${m.opts.image && m.opts.image.src}" title="${String(m.opts.title || '').replace(/"/g, '&quot;')}" style="position:absolute;left:${(x - size / 2).toFixed(1)}px;top:${(y - size / 2).toFixed(1)}px;width:${size}px;height:${size}px">`;
+        const img = m.opts.image || {};
+        const iw = img.size ? img.size.width : 40, ih = img.size ? img.size.height : 40;
+        const left = img.offset ? x - img.offset.x : x - iw / 2;
+        const top = img.offset ? y - (img.offset.y - 20) : y - ih / 2;
+        html += `<img src="${img.src}" data-z="${m.opts.zIndex || 0}" title="${String(m.opts.title || '').replace(/"/g, '&quot;')}" style="position:absolute;left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;width:${iw}px;height:${ih}px">`;
       }
       this.layer.innerHTML = html;
     }
@@ -117,9 +122,12 @@
       fire(this, 'dragstart');
       fire(this, 'bounds_changed');
       fire(this, 'dragend');
+      this.__lastDragEnd = Date.now();
       this.idleSoon();
     }
-    __userZoom(delta) { stats.userMoves += 1; this.setLevel(this.level + delta); }
+    __userZoom(delta) { stats.userMoves += 1; this.setLevel(this.level + delta); fire(this, 'zoom_changed'); }
+    /** test helper: a click on the bare map (the SDK fires 'click' on the map only for non-clickable targets) */
+    __blankClick() { fire(this, 'click'); }
   }
 
   class Marker {
@@ -148,7 +156,7 @@
 
   window.kakao = { maps: {
     load(cb) { setTimeout(cb, 0); },
-    LatLng, LatLngBounds, Size, MarkerImage, Map: KMap, Marker, Polygon,
+    LatLng, LatLngBounds, Size, MarkerImage, Point, Map: KMap, Marker, Polygon,
     event: { addListener: on, removeListener: off },
   } };
 })();

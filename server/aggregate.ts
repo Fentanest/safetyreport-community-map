@@ -163,6 +163,20 @@ function dimensions(fact: PrivateFact, scope: Scope): boolean {
   return true;
 }
 
+/** answered (terminal status) with a completion date — the population of every completion-basis indicator */
+export function answered(fact: PrivateFact): boolean {
+  return terminal.has(fact.status) && kstDate(fact.completed_date) !== null;
+}
+
+/** S05: the scope's non-date filters (category, region, agency, manager, law, bbox) over the active facts */
+export function scopeFacts(input: readonly PrivateFact[], scope: Scope): PrivateFact[] {
+  return activeFacts(input).filter(fact => dimensions(fact, scope));
+}
+
+export function inDateRange(day: string | null, start: string, end: string): boolean {
+  return inRange(day, start, end);
+}
+
 function completed(fact: PrivateFact, start: string, end: string): boolean {
   return terminal.has(fact.status) && inRange(fact.completed_date, start, end);
 }
@@ -530,6 +544,8 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
       processing_duration: duration,
       fine_amount: fineAmount,
       rating: ratingSummary(done),
+      // S01: 계도(warning) of the completion cohort — the scope detail's box (additive; older servers omit it)
+      warning_count: done.filter(fact => fact.disposition === 'warning').length,
     },
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
     regions: regionRows(reported, done), laws: lawRows(done),

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useReportActivity } from '../data/queryActivity';
 import type { PublicEntity, Scope } from '../domain/public';
 import type { CompareEntityRow } from '../domain/personal';
 import { loadEntities, type AgencyTypeFilter, type EntitySortKey, type SortDir } from '../data/client';
@@ -152,6 +153,8 @@ export default function EntityTable(p: Props) {
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey, true); };
   }, [picker]);
 
+  // S10: the list request is local to this table (the map and the other cards keep their state)
+  useReportActivity('entities', loading ? { resource: 'entities', phase: 'fetching', label: '기관·담당자 목록을 불러오는 중' } : null);
   const summaryRows = p.tab === 'agency' ? p.agencies : p.managers;
   const rows = needServer ? (list?.items ?? []) : summaryRows.slice(0, pageSize);
   const total = needServer ? (list?.total ?? 0) : summaryRows.length;

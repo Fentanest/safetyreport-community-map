@@ -168,6 +168,7 @@ declare global {
         Polygon: new (opts: unknown) => KakaoPolygonInstance;
         LatLngBounds: new (sw?: unknown, ne?: unknown) => unknown;
         Size: new (w: number, h: number) => unknown;
+        Point?: new (x: number, y: number) => unknown;
         event: { addListener(obj: unknown, type: string, cb: () => void): void; removeListener(obj: unknown, type: string, cb: () => void): void };
       };
     };
@@ -191,6 +192,7 @@ interface KakaoPolygonInstance {
 
 interface KakaoMarkerInstance {
   setMap(m: KakaoMapInstance | null): void;
+  setZIndex?(z: number): void;
   getPosition?(): unknown;
 }
 
@@ -272,6 +274,23 @@ export function markerSvg(text: string, selected: boolean, scalar: number | null
     + (mark?.interest ? `<text x="33" y="10" font-size="10" fill="${partial}">★</text>` : '')
     + `<text x="20" y="24" text-anchor="middle" font-size="${fontSize}" font-weight="700" fill="${inkFor(scalar)}" font-family="system-ui">${text}</text></svg>`;
 }
+/** S02 selected place: ~1.3× pin, white + amber double halo (visible on light and dark maps), a "선택됨" tab above
+ *  (non-colour cue) and the same metric fill/text — the selection never changes what the colour means.
+ *  The 'mine' ring is drawn INSIDE the halo, so the selection always wins while "내 신고" stays readable. */
+export const SELECTED_SIZE = { w: 60, h: 70, cx: 30, cy: 44 };
+export function selectedMarkerSvg(text: string, scalar: number | null, colors: MarkColors, mark?: { mine?: boolean; shared?: boolean; interest?: boolean }): string {
+  const { w, h, cx, cy } = SELECTED_SIZE;
+  const fill = rampColor(scalar);
+  const fontSize = text.length >= 4 ? 12 : 14;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">`
+    + `<rect x="8" y="1" width="44" height="15" rx="7.5" fill="#0B1220" stroke="#F8FAFC" stroke-width="1"/>`
+    + `<text x="30" y="12" text-anchor="middle" font-size="9.5" font-weight="700" fill="#F8FAFC" font-family="system-ui">선택됨</text>`
+    + `<circle cx="${cx}" cy="${cy}" r="25" fill="none" stroke="#F8FAFC" stroke-width="3.5"/>`
+    + `<circle cx="${cx}" cy="${cy}" r="22.5" fill="none" stroke="#D97706" stroke-width="3"/>`
+    + `<circle cx="${cx}" cy="${cy}" r="20" fill="${fill}" fill-opacity="1" stroke="${mark?.mine ? colors.mineInk : '#0B1220'}" stroke-width="${mark?.mine ? 2.5 : 1.5}"${scalar === null ? ' stroke-dasharray="3 2"' : ''}/>`
+    + (mark?.interest ? `<text x="50" y="30" font-size="11" fill="${colors.partial}">★</text>` : '')
+    + `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="${fontSize}" font-weight="800" fill="${inkFor(scalar)}" font-family="system-ui">${text}</text></svg>`;
+}
 const svgUrl = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 
 /** Cluster bubble: larger than a pin with a double ring so aggregates never read as one address. */
@@ -293,6 +312,8 @@ export async function createKakaoMap(
     onIdle?(bounds: [number, number, number, number], zoom: number, user: boolean): void;
     onRegionHover?(code: string | null): void;
     onRegionClick?(code: string): void;
+    /** S02: a click on the bare map (not a marker, cluster, polygon, control, or the end of a drag/zoom) */
+    onMapClick?(): void;
   },
 ): Promise<KakaoHandle> {
   const key = kakaoKey();
@@ -310,6 +331,8 @@ export async function createKakaoMap(
   let boundaryStyle: BoundaryStyle = { selected: null, weight: new Map() };
   let lastInputs: KakaoPointInput[] = [];
   let lastLevel = 13;
+  let lastOverlayClick = 0;
+  let lastMove = 0;
 
   const clearMarkers = () => {
     for (const m of markers) {
@@ -341,12 +364,17 @@ export async function createKakaoMap(
       if (g.kind === 'single') {
         const p = g.point;
         const pos = new kakao.LatLng(p.lat, p.lng);
-        const img = new kakao.MarkerImage(
-          svgUrl(markerSvg(pinText(p.kind, p.num, p.den), p.selected, colorScalar(p.kind, p.num, p.den, maxCount), colors, p)),
-          new kakao.Size(40, 40),
-        );
-        const marker = new kakao.Marker({ position: pos, image: img, title: p.label });
-        kakao.event.addListener(marker, 'click', () => opts.onSelect(p.key));
+        const text = pinText(p.kind, p.num, p.den);
+        const scalar = colorScalar(p.kind, p.num, p.den, maxCount);
+        // the selected pin keeps the same anchor point (circle centre 20 px above the coordinate, like every pin)
+        const img = p.selected
+          ? new kakao.MarkerImage(svgUrl(selectedMarkerSvg(text, scalar, colors, p)), new kakao.Size(SELECTED_SIZE.w, SELECTED_SIZE.h),
+            kakao.Point ? { offset: new kakao.Point(SELECTED_SIZE.cx, SELECTED_SIZE.cy + 20) } : undefined)
+          : new kakao.MarkerImage(svgUrl(markerSvg(text, false, scalar, colors, p)), new kakao.Size(40, 40));
+        // clickable: a marker click does not also fire the map's click (Kakao's documented option)
+        const marker = new kakao.Marker({ position: pos, image: img, title: p.selected ? `${p.label} (선택됨)` : p.label,
+          clickable: true, zIndex: p.selected ? 10 : 1 });
+        kakao.event.addListener(marker, 'click', () => { lastOverlayClick = Date.now(); opts.onSelect(p.key); });
         marker.setMap(map);
         markers.push(marker);
         continue;
@@ -363,11 +391,13 @@ export async function createKakaoMap(
       const marker = new kakao.Marker({
         position: pos,
         image: img,
-        title: kind === 'count'
+        clickable: true,
+        zIndex: g.members.some((m) => m.selected) ? 9 : 2,
+        title: (g.members.some((m) => m.selected) ? '선택한 주소 포함 · ' : '') + (kind === 'count'
           ? `서로 다른 주소 ${g.places.toLocaleString('ko-KR')}곳 묶음 · 합계 ${g.num.toLocaleString('ko-KR')}건 (눌러서 확대)`
-          : `서로 다른 주소 ${g.places.toLocaleString('ko-KR')}곳 묶음 · ${text} (${g.num.toLocaleString('ko-KR')}/${g.den.toLocaleString('ko-KR')}건, 눌러서 확대)`,
+          : `서로 다른 주소 ${g.places.toLocaleString('ko-KR')}곳 묶음 · ${text} (${g.num.toLocaleString('ko-KR')}/${g.den.toLocaleString('ko-KR')}건, 눌러서 확대)`),
       });
-      kakao.event.addListener(marker, 'click', () => zoomToMembers(g.members, g.lat, g.lng));
+      kakao.event.addListener(marker, 'click', () => { lastOverlayClick = Date.now(); zoomToMembers(g.members, g.lat, g.lng); });
       marker.setMap(map);
       markers.push(marker);
     }
@@ -458,6 +488,17 @@ export async function createKakaoMap(
     shapes = [];
   };
   kakao.event.addListener(map, 'idle', onIdle);
+  // S02 blank click: ignore clicks right after a marker/cluster/polygon click, a drag or a zoom (synthetic clicks)
+  const onMoveEnd = () => { lastMove = Date.now(); };
+  const onMapClick = () => {
+    if (disposed || !opts.onMapClick) return;
+    const now = Date.now();
+    if (now - lastOverlayClick < 400 || now - lastMove < 300) return;
+    opts.onMapClick();
+  };
+  kakao.event.addListener(map, 'click', onMapClick);
+  kakao.event.addListener(map, 'dragend', onMoveEnd);
+  kakao.event.addListener(map, 'zoom_changed', onMoveEnd);
   onIdle();
 
   return {
@@ -496,7 +537,7 @@ export async function createKakaoMap(
             restyle(f.code);
             opts.onRegionHover?.(null);
           });
-          kakao.event.addListener(polygon, 'click', () => opts.onRegionClick?.(f.code));
+          kakao.event.addListener(polygon, 'click', () => { lastOverlayClick = Date.now(); opts.onRegionClick?.(f.code); });
           return polygon;
         });
         shapes.push({ code: f.code, polygons });
@@ -532,6 +573,9 @@ export async function createKakaoMap(
     destroy() {
       disposed = true;
       kakao.event.removeListener(map, 'idle', onIdle);
+      kakao.event.removeListener(map, 'click', onMapClick);
+      kakao.event.removeListener(map, 'dragend', onMoveEnd);
+      kakao.event.removeListener(map, 'zoom_changed', onMoveEnd);
       clearMarkers();
       lastInputs = [];
       clearShapes();

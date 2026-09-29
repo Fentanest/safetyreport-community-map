@@ -4,6 +4,7 @@
 // all/mine over one selection → private, non-cacheable response. No admin-key fallback, no ids/tokens in logs.
 
 import { aggregateCompare } from './compare.ts';
+import { aggregateStatistics, parseSpec, StatsQueryError } from './statistics.ts';
 import type { PrivateFact } from './aggregate.ts';
 import { parseScope, QueryError, type AnalyticsState } from './publicHandler.ts';
 import { authenticate, ViewerAuthError, type ViewerAuthDeps, type ViewerUser } from './viewerAuth.ts';
@@ -87,7 +88,16 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       if (request.method !== 'GET') fail('method_not_allowed');
       if (!deps.enabled) fail('service_unavailable');
       const url = new URL(request.url);
-      if (!/\/my-analytics\/compare\/?$/.test(url.pathname)) fail('not_found');
+      // compare = the dashboard comparison; statistics = 맞춤 통계 with population mine/compare (S05, JWT viewer only)
+      const stats = /\/my-analytics\/statistics\/?$/.test(url.pathname);
+      if (!stats && !/\/my-analytics\/compare\/?$/.test(url.pathname)) fail('not_found');
+      let spec: ReturnType<typeof parseSpec> | null = null;
+      const scopeParams = new URLSearchParams(url.searchParams);
+      if (stats) {
+        spec = parseSpec(url.searchParams.get('spec'));
+        if (spec.population === 'all') fail('INVALID_QUERY');
+        scopeParams.delete('spec');
+      } else if (url.searchParams.has('spec')) fail('INVALID_QUERY');
 
       const { uid, session } = await authenticate(request, deps);
 
@@ -95,7 +105,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: bucket, p_limit: 60 }) !== true) fail('rate_limited');
 
       // Bounds are re-checked against state below; parse shape first so bad input never reaches the DB.
-      const scope = parseScope(url.searchParams, { data_min: null, data_max: null }, SCOPE_PARAMS);
+      const scope = parseScope(scopeParams, { data_min: null, data_max: null }, SCOPE_PARAMS);
       const source = await deps.rpc('internal_my_analytics_source', {
         p_user: uid, p_session: session, p_start: scope.start, p_end: scope.end, p_category: scope.category,
         // region is filtered on official codes in server/aggregate.ts (same as the public API)
@@ -108,12 +118,18 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       if (!viewer.user_ok) fail('account_ineligible');
       if (!viewer.kakao) fail('kakao_required');
       if (!viewer.session) fail('session_expired');
-      parseScope(url.searchParams, state, SCOPE_PARAMS); // data_min/data_max bounds, same as the public API
+      parseScope(scopeParams, state, SCOPE_PARAMS); // data_min/data_max bounds, same as the public API
       const expected = url.searchParams.get('expected_version');
       if (expected && expected !== state.dataset_version) fail('DATASET_CHANGED');
       if (!state.ready || !state.generated_at) fail('AGGREGATE_NOT_READY');
       if (facts.length > 100000) fail('RESULT_TOO_LARGE');
 
+      if (spec) {
+        // the viewer id comes only from the verified JWT (uid); a user id in the request is never read
+        const result = aggregateStatistics({ facts, scope, spec, datasetVersion: state.dataset_version, viewerId: uid });
+        deps.log?.({ event: 'my_analytics_statistics', outcome: 'ok', request_id: rid });
+        return respond(200, result);
+      }
       const body = aggregateCompare(facts, scope, uid, {
         datasetVersion: state.dataset_version, asOf: state.data_max || scope.end, dataMin: state.data_min,
         viewer: { contributor: viewer.contributor, has_public_facts: viewer.has_public_facts === true },
@@ -123,6 +139,10 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
     } catch (e) {
       if (e instanceof Fail || e instanceof ViewerAuthError) return error(e.code);
       if (e instanceof QueryError) return error(e.code);
+      if (e instanceof StatsQueryError) {
+        if (e.code === 'RESULT_TOO_LARGE') return respond(422, { error: { code: 'RESULT_TOO_LARGE', message: e.message } });
+        return error('INVALID_QUERY');
+      }
       if (e instanceof Error && e.message === 'RESULT_TOO_LARGE') return error('RESULT_TOO_LARGE');
       return error('service_unavailable');
     }

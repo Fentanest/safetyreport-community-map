@@ -6,6 +6,8 @@
  */
 import { aggregateDashboard, entityRows, mapNodes, representatives, selectScope, type PrivateFact, type Status, type Disposition } from '../../server/aggregate';
 import { aggregateCompare } from '../../server/compare';
+import { aggregateStatistics, statisticsCandidates } from '../../server/statistics';
+import type { StatisticsSpec, StatsFilter } from '../domain/statistics';
 import { placeFacts, placeRows, placesInView, placeSummary, representativeOf } from '../../server/places';
 import type { DashboardData, PlaceDetail, PublicEntity, PublicMeta, PublicPoint, Scope } from '../domain/public';
 import type { EntitiesPage, EntitiesQuery } from './client';
@@ -240,4 +242,14 @@ export function demoPlacesInView(scope: Scope, view: [number, number, number, nu
   const inView = placesInView(placeRows(selection.reported, selection.done).places, view);
   const points = mapNodes(inView);
   return { points, total: inView.length, compacted: points.length < inView.length };
+}
+
+/** 맞춤 통계 over the synthetic facts (demo builds only; the same server aggregator as the live API). */
+export function demoStatistics(scope: Scope, spec: StatisticsSpec) {
+  return aggregateStatistics({ facts: demoFacts(), scope, spec, datasetVersion: demoMeta().dataset_version,
+    viewerId: spec.population === 'all' ? null : DEMO_VIEWER_ID });
+}
+export function demoCandidates(scope: Scope, q: { kind: string; q: string; cursor: number; limit: number; filters: StatsFilter[];
+  basis: StatisticsSpec['date_basis']; placeKey: string | null; keys: string[] }) {
+  return statisticsCandidates({ facts: demoFacts(), scope, datasetVersion: demoMeta().dataset_version, ...q });
 }

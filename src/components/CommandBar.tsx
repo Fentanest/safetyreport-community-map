@@ -23,6 +23,9 @@ interface Props {
   law: string | null;
   lawOptions: Array<{ law: string; count: number | null }>;
   onLaw: (law: string | null) => void;
+  /** S01: the applied region, chosen here at once (시도 · 시군구); same action as the region list and the map */
+  region?: string | null;
+  onRegion?: (code: string | null) => void;
   /** number of applied conditions besides the dates (상세 필터 button is inverted when > 0) */
   filterCount: number;
   minDate: string | null;
@@ -81,6 +84,11 @@ export default function CommandBar(p: Props) {
           ))}
         </select>
       </label>
+      {p.onRegion && (
+        <span className={`top-region${p.region ? ' filter-on' : ''}`} aria-label="지역 (바로 적용)">
+          <RegionSelect value={p.region ?? null} onChange={p.onRegion} counts={p.regionCounts} />
+        </span>
+      )}
       {p.extra}
       <div className="command-end">
         <button className={`control control-extra${p.filterCount > 0 ? ' filter-active' : ''}`} type="button" onClick={p.onOpenDrawer}

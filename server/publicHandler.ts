@@ -1,6 +1,7 @@
 import { aggregateDashboard, entityRows, mapNodes, previousWindow, representatives, selectScope, type PrivateFact } from './aggregate.ts';
 import { placeFacts, placeRows, placesInView, placeSummary, representativeOf } from './places.ts';
 import { codeForLegacyKey } from './regions.ts';
+import { aggregateStatistics, parseFilters, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from './statistics.ts';
 import { authenticate, mapViewerEligibility, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
 import { isLawParam, LAW_NONE, lawKey, parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
 
@@ -60,6 +61,8 @@ const allowed = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
   'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type', 'view_bbox', 'entity_limit',
 ]);
+/** 맞춤 통계 parameters (S05–S08): the declarative spec / candidate search; never part of the scope */
+export const STATS_ONLY = ['spec', 'kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key'];
 // list-only parameters: never part of the statistics scope
 const ENTITY_ONLY = ['kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type'];
 const date = /^\d{4}-\d{2}-\d{2}$/;
@@ -187,6 +190,42 @@ function routeName(pathname: string): string {
   return index < 0 ? '' : pathname.slice(index + marker.length).replace(/\/+$/, '');
 }
 
+/** 맞춤 통계 routes of the PUBLIC API: population 'all' only (the viewer's own rows are served by my-analytics). */
+async function statisticsRoute(route: string, url: URL, state: AnalyticsState, repo: AnalyticsRepository): Promise<unknown> {
+  const statsAllowed = new Set([...allowed, ...STATS_ONLY].filter(n => !['page', 'page_size', 'sort', 'dir', 'agency_type', 'view_bbox', 'entity_limit'].includes(n)));
+  for (const name of url.searchParams.keys()) if (!statsAllowed.has(name) || url.searchParams.getAll(name).length !== 1) throw new QueryError('INVALID_QUERY', 400);
+  const scopeParams = new URLSearchParams(url.searchParams);
+  for (const n of STATS_ONLY) scopeParams.delete(n);
+  const scope = parseScope(scopeParams, state);
+  if (url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) throw new QueryError('DATASET_CHANGED', 409);
+  if (!state.ready || !state.generated_at) throw new QueryError('AGGREGATE_NOT_READY', 503);
+  if (route === 'statistics/query') {
+    for (const n of ['kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key']) if (url.searchParams.has(n)) throw new QueryError('INVALID_QUERY', 400);
+    const spec = parseSpec(url.searchParams.get('spec'));
+    if (spec.population !== 'all') throw new QueryError('INVALID_QUERY', 400);
+    const facts = await repo.getFacts(scope);
+    return aggregateStatistics({ facts, scope, spec, datasetVersion: state.dataset_version });
+  }
+  if (url.searchParams.has('spec')) throw new QueryError('INVALID_QUERY', 400);
+  const q = url.searchParams.get('q') ?? '';
+  if (q.length > 80) throw new QueryError('INVALID_QUERY', 400);
+  const cursor = Number(url.searchParams.get('cursor') ?? '0'), limit = Number(url.searchParams.get('limit') ?? '30');
+  if (!Number.isInteger(cursor) || cursor < 0 || cursor > 100000 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw new QueryError('INVALID_QUERY', 400);
+  const basis = url.searchParams.get('basis') ?? 'completed_date';
+  if (basis !== 'completed_date' && basis !== 'report_date') throw new QueryError('INVALID_QUERY', 400);
+  const placeKey = url.searchParams.get('place_key');
+  if (placeKey !== null && !/^pl1:[0-9a-f]{16}$/.test(placeKey)) throw new QueryError('INVALID_QUERY', 400);
+  let keys: string[] = [];
+  const rawKeys = url.searchParams.get('keys');
+  if (rawKeys !== null) {
+    try { keys = JSON.parse(rawKeys); } catch { throw new QueryError('INVALID_QUERY', 400); }
+    if (!Array.isArray(keys) || keys.length > 50 || keys.some(k => typeof k !== 'string' || k.length > 160)) throw new QueryError('INVALID_QUERY', 400);
+  }
+  const facts = await repo.getFacts(scope);
+  return statisticsCandidates({ facts, scope, datasetVersion: state.dataset_version, kind: url.searchParams.get('kind') ?? '', q, cursor, limit,
+    filters: parseFilters(url.searchParams.get('filters')), basis, placeKey, keys });
+}
+
 export function createPublicHandler(repo: AnalyticsRepository, access: PublicAccess) {
   return async (request: Request): Promise<Response> => {
     const origin = request.headers.get('origin');
@@ -207,7 +246,8 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
     if (request.method !== 'GET') return errorResponse('METHOD_NOT_ALLOWED', 405);
     const url = new URL(request.url);
     const route = routeName(url.pathname);
-    if (!['meta', 'dashboard', 'overview', 'map', 'series', 'entities', 'vehicles/top', 'places'].includes(route) &&
+    if (!['meta', 'dashboard', 'overview', 'map', 'series', 'entities', 'vehicles/top', 'places',
+      'statistics/catalog', 'statistics/query', 'statistics/candidates'].includes(route) &&
       !route.startsWith('points/') && !route.startsWith('places/')) {
       return errorResponse('NOT_FOUND', 404);
     }
@@ -232,6 +272,11 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
         return json(meta(state), 200);
       }
+      if (route === 'statistics/catalog') {
+        if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
+        return json(statisticsCatalog(), 200);
+      }
+      if (route === 'statistics/query' || route === 'statistics/candidates') return json(await statisticsRoute(route, url, state, repo), 200);
       if (route !== 'entities' && ENTITY_ONLY.some(name => url.searchParams.has(name))) {
         throw new QueryError('INVALID_QUERY', 400);
       }
@@ -300,6 +345,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
+        agency_total: data.agencies.length, manager_total: data.managers.length,
         regions: (data.regions ?? []).slice(0, 400), laws: (data.laws ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
         vehicle_identifiable_reports: data.vehicle_identifiable_reports,
         analytics: data.analytics ?? null, map_unplaced: data.map_unplaced ?? null }, 200);
@@ -340,6 +386,14 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       return point ? json({ ...common, point }, 200) : errorResponse('NOT_FOUND', 404);
     } catch (e) {
       if (e instanceof QueryError) return errorResponse(e.code, e.status);
+      if (e instanceof StatsQueryError) {
+        // the budget message tells the user how to narrow the query (never a raw SQL/stack detail)
+        if (e.code === 'RESULT_TOO_LARGE') {
+          const res = errorResponse('RESULT_TOO_LARGE', 422);
+          return new Response(JSON.stringify({ error: { code: 'RESULT_TOO_LARGE', message: e.message } }), { status: 422, headers: res.headers });
+        }
+        return errorResponse('INVALID_QUERY', 400);
+      }
       // the repository refused to materialise more facts than its budget: say so (never a partial result)
       if (e instanceof Error && e.message === 'RESULT_TOO_LARGE') return errorResponse('RESULT_TOO_LARGE', 422);
       if (e instanceof ViewerAuthError) {

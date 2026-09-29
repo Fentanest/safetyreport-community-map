@@ -36,7 +36,9 @@ const FINE_SERIES = [
   { key: 'other', name: '과태료 외(경고·범칙금·처분 없음·미확인)', color: 'unknown' as const },
 ];
 
-export default function PlaceEntityChart({ managers, total, theme, loadingMore, onLoadMore }: {
+export default function PlaceEntityChart({ managers, total, theme, loadingMore, onLoadMore, title = '이 주소의 담당자별 처리 현황' }: {
+  /** S01: the same chart for a region / map range ('이 범위의 담당자별 처리 현황') */
+  title?: string;
   managers: PublicEntity[];
   total: number;
   theme: string;
@@ -87,11 +89,11 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
   }, [managers, mode], theme);
 
   return (
-    <article className="cm-panel chart-card place-entity-chart" aria-label="이 주소의 담당자별 처리 현황">
+    <article className="cm-panel chart-card place-entity-chart" aria-label={title}>
       <div className="panel-top">
         <div>
-          <h2>이 주소의 담당자별 처리 현황</h2>
-          <span className="subtitle">선택한 주소의 신고만 · 막대는 100% 비율, 선은 답변 완료 건수</span>
+          <h2>{title}</h2>
+          <span className="subtitle">{title.startsWith('이 주소') ? '선택한 주소의 신고만' : '선택 범위의 신고만 · 목록에서 불러온 담당자'} · 막대는 100% 비율, 선은 답변 완료 건수</span>
         </div>
         <div className="card-tools">
           <div className="radio-group" role="radiogroup" aria-label="막대 기준">

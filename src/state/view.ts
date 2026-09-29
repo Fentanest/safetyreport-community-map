@@ -63,3 +63,8 @@ export function toggleInterest(codes: string[], code: string): string[] {
 export function regionName(code: string | null): string {
   return code === null ? '지역 미확인' : regionLabel(code);
 }
+
+/** S04: which screen the URL asks for (a page parameter, never part of the statistics scope) */
+export function screenFromSearch(search: string): 'dashboard' | 'statistics' {
+  return new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('screen') === 'statistics' ? 'statistics' : 'dashboard';
+}

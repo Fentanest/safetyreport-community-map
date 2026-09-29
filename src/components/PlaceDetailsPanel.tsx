@@ -2,7 +2,10 @@ import { useState } from 'react';
 import type { PlaceDetail, PublicEntity, PublicPoint } from '../domain/public';
 import type { PointMark } from '../state/pointMarks';
 import { acceptRate, fmtInt, fmtPercent } from './format';
-import { duplicateNames, entityLabel, entityRates } from './entityMetrics';
+import { duplicateNames, entityLabel } from './entityMetrics';
+import EntityMetricRow from './EntityMetricRow';
+import PanelStatus from './PanelStatus';
+import { regionTrail } from './ScopeDetailsPanel';
 
 export type PlaceDetailState =
   | { status: 'loading' }
@@ -23,43 +26,16 @@ interface Props {
   /** currently applied agency/manager filter (active highlight) */
   activeAgency?: string | null;
   activeManager?: string | null;
+  /** S01: explicit move to an ancestor region of this address (clears the address selection) */
+  onBreadcrumb?: (code: string | null) => void;
+  /** S04: hand the displayed conditions + this address to 맞춤 통계 */
+  onMakeStatistics?: () => void;
+  /** the applied region filter (to tell the address's own region path from the current condition) */
+  appliedRegion?: string | null;
 }
 
 const LIST_STEP = 6;
 const pct = (a: number, d: number) => (d > 0 ? (a / d) * 100 : null);
-
-/** R2: name (the only button) + separate metric boxes; boxes are plain cells, never nested buttons. */
-function EntityMetricRow({ kind, e, label, active, onPick }: { kind: 'agency' | 'manager'; e: PublicEntity; label: string;
-  active: boolean; onPick: Props['onPickEntity'] }) {
-  const m = entityRates(e);
-  const full = kind === 'manager' ? `${e.manager_name ?? '이름 없음'} · ${e.agency_name}` : e.agency_name;
-  return (
-    <li className={`pe-row${active ? ' active' : ''}`}>
-      <div className="pe-name">
-        <button type="button" className="pe-pick" title={`${full} — 이 ${kind === 'agency' ? '기관' : '담당자'}만 보기`} aria-pressed={active}
-          disabled={!e.agency_key || (kind === 'manager' && !e.manager_key)} onClick={() => onPick(kind, e)}>
-          {label}
-        </button>
-        {kind === 'manager' && <small title={e.agency_name}>{e.agency_name}</small>}
-      </div>
-      <div className="pe-metrics">
-        <div className="pe-box"><span className="pe-label">답변</span><b className="pe-num cm-number">{fmtInt(m.C)}건</b></div>
-        <div className="pe-box pe-triple" title={`결과 확인 ${m.K}건 기준 · 결과 미상 ${m.U}건 제외`}>
-          <span className="pe-label">처리 결과 <small>(결과 확인 {fmtInt(m.K)}건)</small></span>
-          <div className="pe-cells">
-            <span><em>수용</em><b className="pe-num cm-number">{fmtPercent(m.accept)}</b></span>
-            <span><em>일부수용</em><b className="pe-num cm-number">{fmtPercent(m.partial)}</b></span>
-            <span><em>불수용</em><b className="pe-num cm-number">{fmtPercent(m.reject)}</b></span>
-          </div>
-        </div>
-        <div className="pe-box"><span className="pe-label">과태료</span>
-          <b className="pe-num cm-number">{m.F === null ? '—' : `${fmtInt(m.F)}건`} <i aria-hidden="true">|</i> {fmtPercent(m.fineRate)}</b></div>
-        <div className="pe-box"><span className="pe-label">계도</span><b className="pe-num cm-number">{m.W === null ? '—' : `${fmtInt(m.W)}건`}</b></div>
-        <div className="pe-box"><span className="pe-label">계도처분율</span><b className="pe-num cm-number">{fmtPercent(m.warnRate)}</b></div>
-      </div>
-    </li>
-  );
-}
 
 function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: { kind: 'agency' | 'manager'; rows: PublicEntity[]; total: number;
   onPick: Props['onPickEntity']; activeAgency: string | null; activeManager: string | null }) {
@@ -111,12 +87,25 @@ export default function PlaceDetailsPanel(p: Props) {
       <header className="place-head">
         <div>
           <span className="overline">선택한 주소</span>
+          {p.onBreadcrumb && (
+            <nav className="scope-trail" aria-label="주소의 지역 경로">
+              <ol>
+                {regionTrail(pt.region_code).map((t) => (
+                  <li key={t.code ?? 'all'}><button type="button" className="link-btn" onClick={() => p.onBreadcrumb!(t.code)}
+                    title={`${t.label} 상세로 이동(주소 선택 해제)`}>{t.label}</button></li>
+                ))}
+                <li><span aria-current="location">선택 주소</span></li>
+              </ol>
+            </nav>
+          )}
           <h2>{pt.address ?? '주소 없음'}</h2>
-          <p className="subtitle">{p.scopeLabel}</p>
+          <p className="subtitle">현재 조건: {p.scopeLabel}</p>
+          <PanelStatus busy={p.detail.status === 'loading'} label="주소 상세를 불러오는 중" />
         </div>
         <div className="place-actions">
+          <button className="mini-btn select-clear" type="button" onClick={p.onClose} aria-label="주소 선택 해제 (Esc)">선택 해제</button>
           <button className="mini-btn" type="button" onClick={copy} disabled={!pt.address}>주소 복사</button>
-          <button className="mini-btn" type="button" onClick={p.onClose} aria-label="선택한 주소 닫기">닫기</button>
+          {p.onMakeStatistics && <button className="mini-btn primary-mini" type="button" onClick={p.onMakeStatistics}>이 조건으로 통계 만들기</button>}
         </div>
       </header>
       {p.mark?.mine && (

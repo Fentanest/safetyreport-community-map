@@ -1,0 +1,577 @@
+{
+  "fixture_version": 1,
+  "sample": true,
+  "production_allowed": false,
+  "description": "인수 테스트 전용 독립 입력/기대값. 운영 DB 자료나 바로 삽입할 앱 DTO가 아니다. 날짜는 고정 테스트 입력이다.",
+  "date_basis": "completed_date",
+  "metric_order": [
+    "accept",
+    "reject",
+    "partial",
+    "fine"
+  ],
+  "default_selected": [
+    "accept"
+  ],
+  "cases": [
+    {
+      "month": "2026-01",
+      "all": {
+        "completed_count": 20,
+        "outcomes": {
+          "accepted": 12,
+          "partial": 3,
+          "rejected": 3,
+          "result_known": 18,
+          "result_unknown": 2
+        },
+        "fine_count": 8
+      },
+      "mine": {
+        "completed_count": 5,
+        "outcomes": {
+          "accepted": 1,
+          "partial": 1,
+          "rejected": 2,
+          "result_known": 4,
+          "result_unknown": 1
+        },
+        "fine_count": 2
+      },
+      "note": "기본 G: 분모 K와 C가 다른 달",
+      "expected": {
+        "all": {
+          "accept": {
+            "numerator": 12,
+            "denominator": 18,
+            "value": 66.66666666666666,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 3,
+            "denominator": 18,
+            "value": 16.666666666666664,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 3,
+            "denominator": 18,
+            "value": 16.666666666666664,
+            "reason": null
+          },
+          "fine": {
+            "numerator": 8,
+            "denominator": 20,
+            "value": 40.0,
+            "reason": null
+          }
+        },
+        "mine": {
+          "accept": {
+            "numerator": 1,
+            "denominator": 4,
+            "value": 25.0,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 2,
+            "denominator": 4,
+            "value": 50.0,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 1,
+            "denominator": 4,
+            "value": 25.0,
+            "reason": null
+          },
+          "fine": {
+            "numerator": 2,
+            "denominator": 5,
+            "value": 40.0,
+            "reason": null
+          }
+        }
+      }
+    },
+    {
+      "month": "2026-02",
+      "all": {
+        "completed_count": 4,
+        "outcomes": {
+          "accepted": 0,
+          "partial": 0,
+          "rejected": 0,
+          "result_known": 0,
+          "result_unknown": 4
+        },
+        "fine_count": 1
+      },
+      "mine": {
+        "completed_count": 1,
+        "outcomes": {
+          "accepted": 0,
+          "partial": 0,
+          "rejected": 0,
+          "result_known": 0,
+          "result_unknown": 1
+        },
+        "fine_count": 0
+      },
+      "note": "결과 확인 없음, fine만 유효",
+      "expected": {
+        "all": {
+          "accept": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "reject": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "partial": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "fine": {
+            "numerator": 1,
+            "denominator": 4,
+            "value": 25.0,
+            "reason": null
+          }
+        },
+        "mine": {
+          "accept": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "reject": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "partial": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "fine": {
+            "numerator": 0,
+            "denominator": 1,
+            "value": 0.0,
+            "reason": null
+          }
+        }
+      }
+    },
+    {
+      "month": "2026-03",
+      "all": {
+        "completed_count": 0,
+        "outcomes": {
+          "accepted": 0,
+          "partial": 0,
+          "rejected": 0,
+          "result_known": 0,
+          "result_unknown": 0
+        },
+        "fine_count": 0
+      },
+      "mine": {
+        "completed_count": 0,
+        "outcomes": {
+          "accepted": 0,
+          "partial": 0,
+          "rejected": 0,
+          "result_known": 0,
+          "result_unknown": 0
+        },
+        "fine_count": 0
+      },
+      "note": "분모0은 gap",
+      "expected": {
+        "all": {
+          "accept": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "reject": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "partial": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "fine": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          }
+        },
+        "mine": {
+          "accept": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "reject": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "partial": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          },
+          "fine": {
+            "numerator": 0,
+            "denominator": 0,
+            "value": null,
+            "reason": "zero_denominator"
+          }
+        }
+      }
+    },
+    {
+      "month": "2026-04",
+      "all": {
+        "completed_count": 10,
+        "outcomes": {
+          "accepted": 0,
+          "partial": 2,
+          "rejected": 8,
+          "result_known": 10,
+          "result_unknown": 0
+        },
+        "fine_count": 0
+      },
+      "mine": {
+        "completed_count": 3,
+        "outcomes": {
+          "accepted": 0,
+          "partial": 1,
+          "rejected": 2,
+          "result_known": 3,
+          "result_unknown": 0
+        },
+        "fine_count": 0
+      },
+      "note": "분자0/분모양수 정상0%",
+      "expected": {
+        "all": {
+          "accept": {
+            "numerator": 0,
+            "denominator": 10,
+            "value": 0.0,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 8,
+            "denominator": 10,
+            "value": 80.0,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 2,
+            "denominator": 10,
+            "value": 20.0,
+            "reason": null
+          },
+          "fine": {
+            "numerator": 0,
+            "denominator": 10,
+            "value": 0.0,
+            "reason": null
+          }
+        },
+        "mine": {
+          "accept": {
+            "numerator": 0,
+            "denominator": 3,
+            "value": 0.0,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 2,
+            "denominator": 3,
+            "value": 66.66666666666666,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 1,
+            "denominator": 3,
+            "value": 33.33333333333333,
+            "reason": null
+          },
+          "fine": {
+            "numerator": 0,
+            "denominator": 3,
+            "value": 0.0,
+            "reason": null
+          }
+        }
+      }
+    },
+    {
+      "month": "2026-05",
+      "all": {
+        "completed_count": 8,
+        "outcomes": {
+          "accepted": 4,
+          "partial": 0,
+          "rejected": 2,
+          "result_known": 6,
+          "result_unknown": 2
+        }
+      },
+      "mine": {
+        "completed_count": 2,
+        "outcomes": {
+          "accepted": 1,
+          "partial": 0,
+          "rejected": 1,
+          "result_known": 2,
+          "result_unknown": 0
+        }
+      },
+      "note": "fine 필드 미지원이 outcome 전체를 막지 않음",
+      "expected": {
+        "all": {
+          "accept": {
+            "numerator": 4,
+            "denominator": 6,
+            "value": 66.66666666666666,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 2,
+            "denominator": 6,
+            "value": 33.33333333333333,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 0,
+            "denominator": 6,
+            "value": 0.0,
+            "reason": null
+          },
+          "fine": {
+            "numerator": null,
+            "denominator": 8,
+            "value": null,
+            "reason": "missing_field"
+          }
+        },
+        "mine": {
+          "accept": {
+            "numerator": 1,
+            "denominator": 2,
+            "value": 50.0,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 1,
+            "denominator": 2,
+            "value": 50.0,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0.0,
+            "reason": null
+          },
+          "fine": {
+            "numerator": null,
+            "denominator": 2,
+            "value": null,
+            "reason": "missing_field"
+          }
+        }
+      }
+    },
+    {
+      "month": "2026-06",
+      "all": {
+        "completed_count": 6,
+        "outcomes": {
+          "accepted": 4,
+          "partial": 1,
+          "rejected": 1,
+          "result_known": 6,
+          "result_unknown": 0
+        },
+        "fine_count": 3
+      },
+      "mine": {
+        "completed_count": 2,
+        "fine_count": 1
+      },
+      "note": "내 outcome 미지원이어도 fine50% 지원",
+      "expected": {
+        "all": {
+          "accept": {
+            "numerator": 4,
+            "denominator": 6,
+            "value": 66.66666666666666,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 1,
+            "denominator": 6,
+            "value": 16.666666666666664,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 1,
+            "denominator": 6,
+            "value": 16.666666666666664,
+            "reason": null
+          },
+          "fine": {
+            "numerator": 3,
+            "denominator": 6,
+            "value": 50.0,
+            "reason": null
+          }
+        },
+        "mine": {
+          "accept": {
+            "numerator": null,
+            "denominator": null,
+            "value": null,
+            "reason": "missing_outcomes"
+          },
+          "reject": {
+            "numerator": null,
+            "denominator": null,
+            "value": null,
+            "reason": "missing_outcomes"
+          },
+          "partial": {
+            "numerator": null,
+            "denominator": null,
+            "value": null,
+            "reason": "missing_outcomes"
+          },
+          "fine": {
+            "numerator": 1,
+            "denominator": 2,
+            "value": 50.0,
+            "reason": null
+          }
+        }
+      }
+    },
+    {
+      "month": "2026-09",
+      "all": {
+        "completed_count": 5,
+        "outcomes": {
+          "accepted": 2,
+          "partial": 1,
+          "rejected": 1,
+          "result_known": 4,
+          "result_unknown": 1
+        },
+        "fine_count": 2
+      },
+      "mine": {
+        "completed_count": 5,
+        "outcomes": {
+          "accepted": 2,
+          "partial": 1,
+          "rejected": 1,
+          "result_known": 4,
+          "result_unknown": 1
+        },
+        "fine_count": 2
+      },
+      "partial": true,
+      "note": "전체/내 동일값 및 진행 중 월",
+      "expected": {
+        "all": {
+          "accept": {
+            "numerator": 2,
+            "denominator": 4,
+            "value": 50.0,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 1,
+            "denominator": 4,
+            "value": 25.0,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 1,
+            "denominator": 4,
+            "value": 25.0,
+            "reason": null
+          },
+          "fine": {
+            "numerator": 2,
+            "denominator": 5,
+            "value": 40.0,
+            "reason": null
+          }
+        },
+        "mine": {
+          "accept": {
+            "numerator": 2,
+            "denominator": 4,
+            "value": 50.0,
+            "reason": null
+          },
+          "reject": {
+            "numerator": 1,
+            "denominator": 4,
+            "value": 25.0,
+            "reason": null
+          },
+          "partial": {
+            "numerator": 1,
+            "denominator": 4,
+            "value": 25.0,
+            "reason": null
+          },
+          "fine": {
+            "numerator": 2,
+            "denominator": 5,
+            "value": 40.0,
+            "reason": null
+          }
+        }
+      }
+    }
+  ],
+  "assertions": [
+    "null은0이 아님",
+    "outcome분모는K, fine분모는C",
+    "미지원은지표별판정",
+    "전체와내신고는달key로결합",
+    "중첩이므로stack금지"
+  ]
+}

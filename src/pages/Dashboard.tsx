@@ -12,7 +12,13 @@ import Rail from '../components/Rail';
 import CommandBar from '../components/CommandBar';
 import FilterDrawer from '../components/FilterDrawer';
 import MapPanel, { renderModeOf } from '../components/MapPanel';
-import RegionSummaryCard from '../components/RegionSummaryCard';
+import ScopeDetailsPanel from '../components/ScopeDetailsPanel';
+import StatisticsPage, { type ScopeChip } from './StatisticsPage';
+import { clearSession as clearStatsSession, handoffRecipe, type StatsRecipe } from '../state/statistics';
+import { scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
+import type { Screen } from '../components/Rail';
+import type { TrendRate } from '../components/trendMetrics';
+import { TREND_RATE_METRIC_ID } from '../components/trendMetrics';
 import type { MapMetric } from '../components/mapMetrics';
 import PlaceDetailsPanel, { type PlaceDetailState } from '../components/PlaceDetailsPanel';
 import PlaceEntityChart from '../components/PlaceEntityChart';
@@ -33,11 +39,13 @@ import { DurationCard, HeatmapCard, RatingCard, ScatterCard, VehicleDaysCard, mi
 import { useMapAuth, usePersonalCompare, type PersonalState } from '../hooks/usePersonal';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { consistentWithPublic } from '../data/personal';
-import { readComparePref, readInterest, toggleInterest, viewFromSearch, writeComparePref, writeInterest, type ViewMode } from '../state/view';
+import { readComparePref, readInterest, screenFromSearch, toggleInterest, viewFromSearch, writeComparePref, writeInterest, type ViewMode } from '../state/view';
 import { markPoints } from '../state/pointMarks';
 import { demoViewerFromSearch } from '../auth/mapAuth';
 import { CLUSTER_LEVEL } from '../lib/kakao';
 import type { CompareEntityRow } from '../domain/personal';
+import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
+import GlobalQueryStatus from '../components/GlobalQueryStatus';
 
 function initialTheme(): ThemeMode {
   try {
@@ -91,6 +99,11 @@ export default function Dashboard() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [nav, setNav] = useState('mapsection');
+  // S04: separate 맞춤 통계 screen in the same shell (?screen=statistics works for direct entry and refresh on Pages)
+  const [screen, setScreen] = useState<Screen>(() => screenFromSearch(window.location.search));
+  const [statsOpened, setStatsOpened] = useState(() => screenFromSearch(window.location.search) === 'statistics');
+  const [handoff, setHandoff] = useState<{ id: number; recipe: StatsRecipe } | null>(null);
+  useEffect(() => { if (screen === 'statistics') setStatsOpened(true); }, [screen]);
   const [dateError, setDateError] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>(() => viewFromSearch(window.location.search));
   const [compareOn, setCompareOn] = useState<boolean>(readComparePref);
@@ -99,6 +112,8 @@ export default function Dashboard() {
   const [entityNames, setEntityNames] = useState<Map<string, EntityName>>(() => new Map());
   const [refined, setRefined] = useState<{ view: [number, number, number, number]; points: PublicPoint[]; version: string } | null>(null);
   const { auth, signIn, signOut } = useMapAuth();
+  // S10: one display-only activity registry per page (never starts a request)
+  const activity = useMemo(() => new ActivityRegistry(), []);
   const demoMe = dataMode === 'demo' ? demoViewerFromSearch(window.location.search) : null;
   const toastTimer = useRef<number | undefined>(undefined);
 
@@ -141,13 +156,25 @@ export default function Dashboard() {
     setBriefingShowMine(false);
   }, [briefing]);
   useEffect(() => { document.body.dataset.view = view; }, [view]);
+  // S02 Esc: the topmost layer only — drawer, then briefing, then the address selection (never all at once).
+  // Dialogs (e.g. 비교 대상 선택) handle their own Esc in the capture phase and stop it. Typing is never intercepted.
+  const escState = useRef({ drawer: false, briefing: false, selection: null as string | null });
+  escState.current = { drawer, briefing, selection };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setDrawer(false); setBriefing(false); }
+      if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing) return;
+      const t = e.target as HTMLElement | null;
+      const typing = !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+      const st = escState.current;
+      if (st.drawer) { setDrawer(false); return; }
+      if (st.briefing) { setBriefing(false); return; }
+      if (st.selection && !typing) setSelection(null);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
+  // S03: publish the measured sticky cover as --scroll-top-inset (scroll-padding-top), once per page
+  useEffect(() => watchStickyInsets(), []);
 
   // back/forward: conditions, chips and list selections follow the URL
   useEffect(() => {
@@ -157,17 +184,20 @@ export default function Dashboard() {
       setDraft(draftFromScope(s));
       setFixture(dataMode === 'demo' ? fixtureFromSearch(window.location.search) : 'overview');
       setView(viewFromSearch(window.location.search));
+      setScreen(screenFromSearch(window.location.search));
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, [requestScope]);
 
-  const urlFor = (s: Scope, v: ViewMode = view) => {
+  const urlFor = (s: Scope, v: ViewMode = view, sc: Screen = screen) => {
     const search = scopeToSearch(s, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null, view: v, me: demoMe });
-    return `${window.location.pathname}${search ? `?${search}` : ''}`;
+    // the screen is a page parameter only: it is never part of the statistics scope sent to the API
+    const withScreen = sc === 'statistics' ? `${search ? `${search}&` : ''}screen=statistics` : search;
+    return `${window.location.pathname}${withScreen ? `?${withScreen}` : ''}`;
   };
   /** explicit condition change: new history entry; automatic map range: replace (no history flood, R04 §11) */
-  const pushUrl = (s: Scope, v: ViewMode = view) => window.history.pushState(null, '', urlFor(s, v));
+  const pushUrl = (s: Scope, v: ViewMode = view, sc: Screen = screen) => window.history.pushState(null, '', urlFor(s, v, sc));
   const replaceUrl = (s: Scope) => window.history.replaceState(window.history.state, '', urlFor(s));
 
   const explicit = (next: Scope, message?: string) => {
@@ -260,7 +290,9 @@ export default function Dashboard() {
   const pickCategory = (category: Scope['category']) => { if (category !== scope.category) explicit({ ...scope, category }); };
   const pickRegion = (code: string | null) => {
     // a region replaces the automatic map range (both at once would silently narrow to their overlap);
-    // the following fitBounds is programmatic and never re-inserts a bbox (R04 filter rules)
+    // the following fitBounds is programmatic and never re-inserts a bbox (R04 filter rules).
+    // S01: an explicit region move also ends the address selection (the panel shows the region's detail).
+    setSelection(null);
     setRefined(null);
     explicit({ ...scope, region_code: code, bbox: null }, code ? `${regionLabel(code)}만 봅니다.` : '전체 지역으로 돌아왔습니다.');
   };
@@ -329,6 +361,10 @@ export default function Dashboard() {
     const keys = new Set(keep.map((pt) => pt.key));
     return [...keep, ...refined.points.filter((pt) => !keys.has(pt.key))];
   }, [data, refined, version]);
+
+  // ── S02: one toggle / one clear for the map pin, the place list, the panel button, Esc and a blank map click ──
+  const togglePlace = useCallback((key: string | null) => setSelection((cur) => (key === null || cur === key ? null : key)), []);
+  const clearPlace = useCallback(() => setSelection(null), []);
 
   // ── place selection (R05): its own request, never a dashboard refetch; A→B races are dropped ──────────
   const point: PublicPoint | null = useMemo(() => mapPoints.find((pt) => pt.key === selection) ?? null, [mapPoints, selection]);
@@ -404,6 +440,60 @@ export default function Dashboard() {
   const unapplied = draft.start !== scope.start || draft.end !== scope.end || draft.region_code !== scope.region_code || (draft.law ?? null) !== (scope.law ?? null);
   const scopeLabel = (s: Scope | null) => (s ? `${fmtDate(s.start)} — ${fmtDate(s.end)} · ${regionLabel(s.region_code)}${s.category !== 'all' ? ` · ${CATEGORY_LABEL[s.category]}` : ''}${s.law ? ` · ${lawLabel(s.law)}` : ''}${s.bbox ? ' · 지도 범위' : ''}${s.agency_key ? ` · ${s.manager_key ? managerName(s.agency_key, s.manager_key) : agencyName(s.agency_key)}` : ''}` : '');
 
+  // ── S10: what the page is waiting for, reported from the real request state (display only) ─────────────
+  const displayedText = shownScope ? scopeLabel(shownScope) : null;
+  const dashActivity: QueryActivity | null = dash.access ? null
+    : dash.wait === 'rate_limit' ? { resource: 'dashboard', phase: 'retry_wait', label: '요청이 많아 잠시 기다리는 중', retryAt: dash.pausedUntil, displayedLabel: displayedText }
+      : dash.fetching ? { resource: 'dashboard', phase: 'fetching', label: shown ? '새 조건으로 통계를 불러오는 중' : '통계를 불러오는 중', displayedLabel: shown ? displayedText : null }
+        : dash.wait === 'retry' ? { resource: 'dashboard', phase: 'retry_wait', label: '연결이 불안정해 곧 한 번 더 시도하는 중', displayedLabel: displayedText }
+          : dash.wait === 'debounce' ? { resource: 'dashboard', phase: 'scheduled', label: '선택한 범위로 갱신 준비 중', displayedLabel: displayedText }
+            : dash.error ? { resource: 'dashboard', phase: 'error', label: '통계를 불러오지 못했습니다' } : null;
+  useReportActivity('dashboard', dashActivity, activity);
+  useReportActivity('personal', showMine && personal.status === 'loading'
+    ? { resource: 'personal', phase: 'fetching', label: '내 신고를 비교하는 중' } : null, activity);
+  useReportActivity('place-detail', selection && point && !point.aggregate && placeDetail.status === 'loading'
+    ? { resource: 'place-detail', phase: 'fetching', label: '주소 상세를 불러오는 중' } : null, activity);
+  // a new account never sees the previous account's pending work; signing out forgets the 맞춤 통계 draft too
+  useEffect(() => { activity.clear(); }, [activity, sessionKey]);
+  useEffect(() => { if (auth.status === 'signed_out') clearStatsSession(); }, [auth.status]);
+
+  // ── S04: 맞춤 통계 screen and the hand-off of the DISPLAYED conditions (never a half-requested scope) ─────
+  const goStatistics = (recipe?: StatsRecipe) => {
+    if (recipe) setHandoff((h) => ({ id: (h?.id ?? 0) + 1, recipe }));
+    setStatsOpened(true);
+    setScreen('statistics');
+    pushUrl(scope, view, 'statistics');
+    window.scrollTo({ top: 0 });
+  };
+  const goDashboard = (section?: string) => {
+    if (screen !== 'dashboard') {
+      setScreen('dashboard');
+      pushUrl(scope, view, 'dashboard');
+      scrollToSectionWhenReady(section ?? 'mapsection');
+    } else if (section) scrollToSection(section);
+    if (section) setNav(section);
+  };
+  const statsFromScope = (origin: string, extra: Parameters<typeof handoffRecipe>[1] extends infer O ? Omit<O & object, 'origin'> : never = {}) => {
+    if (!shownScope) return;
+    goStatistics(handoffRecipe(shownScope, { origin, ...extra }));
+  };
+  const statsFromTrend = (rates: TrendRate[]) => statsFromScope('월별 추이', {
+    rows: ['completed_month'], columns: [], metrics: rates.map((r) => TREND_RATE_METRIC_ID[r]),
+    population: showMine && personal.status === 'ready' ? 'compare' : 'all',
+  });
+  const scopeChips = (s: Scope): ScopeChip[] => {
+    const out: ScopeChip[] = [];
+    if (s.category !== 'all') out.push({ id: 'category', kind: '분류', label: CATEGORY_LABEL[s.category], remove: (x) => ({ ...x, category: 'all' }) });
+    if (s.region_code) out.push({ id: 'region', kind: '지역', label: regionLabel(s.region_code), remove: (x) => ({ ...x, region_code: null }) });
+    if (s.law) out.push({ id: 'law', kind: '법규', label: lawLabel(s.law), remove: (x) => ({ ...x, law: null }) });
+    if (s.agency_key && !s.manager_key) out.push({ id: 'agency', kind: '기관', label: agencyName(s.agency_key), remove: (x) => ({ ...x, agency_key: null, manager_key: null }) });
+    if (s.manager_key) out.push({ id: 'manager', kind: '담당자', label: managerName(s.agency_key, s.manager_key), remove: (x) => ({ ...x, manager_key: null }) });
+    if (s.bbox) out.push({ id: 'bbox', kind: '지도 범위', label: '적용한 지도 범위', remove: (x) => ({ ...x, bbox: null }) });
+    return out;
+  };
+  const [scopeManagers, setScopeManagers] = useState<{ key: string; rows: PublicEntity[]; total: number } | null>(null);
+  const conditionsText = (s: Scope | null) => (s ? scopeChips(s).map((c) => `${c.kind} ${c.label}`).join(' · ') : '');
+
   const accessCode = dash.access?.code && (ACCESS_CODES as readonly string[]).includes(dash.access.code) ? dash.access.code as AccessCode : null;
   if (accessCode) {
     // Contributor-only: nothing of the dashboard renders without a readable response (the server refuses the data).
@@ -424,7 +514,7 @@ export default function Dashboard() {
   const analytics = data?.analytics ?? null;
 
   return (
-    <>
+    <ActivityContext.Provider value={activity}>
       <TopBar
         theme={theme}
         onTheme={setTheme}
@@ -433,10 +523,13 @@ export default function Dashboard() {
         dataStamp={stamp}
         sample={data?.meta.sample ?? false}
         account={<AccountMenu auth={auth} onSignIn={signIn} onSignOut={signOut} briefing={briefing} />}
+        status={<GlobalQueryStatus />}
       />
       <div className="app">
-        <Rail active={nav} onNavigate={setNav} onAbout={() => document.getElementById('guide')?.scrollIntoView({ behavior: 'auto' })} />
-        <main id="main" data-view={view}>
+        <Rail active={nav} screen={screen} onSection={goDashboard} onStatistics={() => goStatistics()}
+          onAbout={() => goDashboard('guide')} />
+        <main id="main" data-view={view} data-screen={screen}>
+          <div className="dashboard-screen" hidden={screen !== 'dashboard'}>
           <section className="page-heading" aria-label="소개">
             <div>
               <div className="overline">나만의 안전신문고 커뮤니티</div>
@@ -468,6 +561,8 @@ export default function Dashboard() {
             law={scope.law}
             lawOptions={lawChoices}
             onLaw={pickLaw}
+            region={scope.region_code}
+            onRegion={pickRegion}
             filterCount={filterCount}
             minDate={dataMin}
             maxDate={dataMax}
@@ -520,7 +615,8 @@ export default function Dashboard() {
                   <MapPanel
                     points={mapPoints}
                     selectedKey={selection}
-                    onSelect={setSelection}
+                    onSelect={togglePlace}
+                    onBlankClick={clearPlace}
                     metric={mapMetric}
                     onMetric={setMapMetric}
                     categoryLabel={shownScope?.category === 'all' ? '모든 신고' : CATEGORY_LABEL[shownScope?.category ?? 'all']}
@@ -545,12 +641,45 @@ export default function Dashboard() {
                       detail={point.aggregate ? { status: 'unsupported' } : placeDetail}
                       scopeLabel={scopeLabel(shownScope)}
                       mark={showMine ? marks.get(point.key) ?? null : null}
-                      onClose={() => setSelection(null)}
+                      onClose={clearPlace}
                       onRetry={() => setPlaceReload((n) => n + 1)}
                       onPickEntity={pickEntity}
                       toast={showToast}
                       activeAgency={scope.agency_key}
                       activeManager={scope.manager_key}
+                      onBreadcrumb={pickRegion}
+                      appliedRegion={shownScope?.region_code ?? null}
+                      onMakeStatistics={point.aggregate ? undefined : () => statsFromScope('선택한 주소', { placeKey: point.place_key ?? point.key, placeLabel: point.address })}
+                    />
+                  ) : shownScope && version ? (
+                    <ScopeDetailsPanel
+                      scope={shownScope}
+                      data={data}
+                      version={version}
+                      autoRefresh={autoRefresh}
+                      busy={dash.isRefreshing}
+                      onPickRegion={pickRegion}
+                      onPickEntity={pickEntity}
+                      onMakeStatistics={() => statsFromScope('선택 범위')}
+                      activeAgency={scope.agency_key}
+                      activeManager={scope.manager_key}
+                      conditions={conditionsText(shownScope)}
+                      onManagers={(rows, total) => setScopeManagers({ key: `${JSON.stringify(shownScope)}|${version}`, rows, total })}
+                      summary={(
+                        <KpiPanel
+                          overview={data.overview}
+                          personal={personal}
+                          showMine={showMine}
+                          unsupported={unsupported}
+                          scopeLabel={scopeLabel(shownScope)}
+                          detail={(
+                            <>
+                              <CompareKpis overview={data.overview} personal={personal} compareOn={showMine} auth={auth} onSignIn={signIn} unsupported={unsupported} />
+                              {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
+                            </>
+                          )}
+                        />
+                      )}
                     />
                   ) : null}
                   {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
@@ -564,28 +693,24 @@ export default function Dashboard() {
                         ? () => setPlaceLimit(Math.min(1000, placeDetail.detail.manager_total)) : null}
                     />
                   )}
-                  {!point && renderMode === 'regions' && scope.region_code && (
-                    <RegionSummaryCard code={scope.region_code} regions={data.regions} metric={mapMetric}
-                      statsBbox={!!shownScope?.bbox} onClear={() => pickRegion(null)} />
-                  )}
-                  {!point && (
-                    <KpiPanel
-                      overview={data.overview}
-                      personal={personal}
-                      showMine={showMine}
-                      unsupported={unsupported}
-                      scopeLabel={scopeLabel(shownScope)}
-                      detail={(
-                        <>
-                          <CompareKpis overview={data.overview} personal={personal} compareOn={showMine} auth={auth} onSignIn={signIn} unsupported={unsupported} />
-                          {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
-                        </>
-                      )}
+                  {!point && shownScope && version && scopeManagers?.key === `${JSON.stringify(shownScope)}|${version}` && scopeManagers.rows.length > 0 && (
+                    <PlaceEntityChart
+                      key={scopeManagers.key}
+                      title="이 범위의 담당자별 처리 현황"
+                      managers={scopeManagers.rows}
+                      total={scopeManagers.total}
+                      theme={resolvedTheme}
+                      loadingMore={false}
+                      onLoadMore={null}
                     />
                   )}
                 </div>
                 <section className="area-charts" id="analytics" aria-label="데이터로 보는 신고 현황">
-                  <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null} />
+                  <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null}
+                    mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
+                      : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
+                        : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'}
+                    busy={dash.isRefreshing} onMakeStatistics={statsFromTrend} />
                   <DurationCard all={analytics?.duration ?? null} mine={showMine ? compareData?.analytics?.duration ?? null : null} theme={resolvedTheme} />
                   <HeatmapCard data={analytics?.heatmap ?? null} theme={resolvedTheme} onPick={pickCell} />
                   <VehicleDaysCard data={analytics?.vehicle_days ?? null} theme={resolvedTheme} />
@@ -612,6 +737,12 @@ export default function Dashboard() {
               <DataGuide data={data} />
             </>
           )}
+          </div>
+          {statsOpened && sessionKey !== null && (
+            <StatisticsPage active={screen === 'statistics'} handoff={handoff} fallbackScope={shownScope} version={version}
+              viewer={sessionKey} canMine={dataMode === 'demo' || auth.status === 'signed_in'} theme={resolvedTheme}
+              scopeChips={scopeChips} onBack={goDashboard} />
+          )}
 
           <footer className="page-footer">
             <span>나만의 안전신문고 <b>커뮤니티 신고 지도</b>{dataMode === 'demo' ? ' · 예시 데이터' : ''}</span>
@@ -633,6 +764,6 @@ export default function Dashboard() {
         dateError={dateError}
       />
       {toast && <div className="toast" role="status" aria-live="polite">{toast}</div>}
-    </>
+    </ActivityContext.Provider>
   );
 }

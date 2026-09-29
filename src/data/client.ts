@@ -52,7 +52,7 @@ export function sameScope(a: Scope, b: Scope): boolean {
 
 // No static snapshot: while the map is contributor-only every read goes through the API's viewer check, and the
 // Pages artifact carries no data files (publish-pages.yml no longer exports one).
-async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
+export async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
   if (!base) throw new PublicApiError('통계 서버에 연결할 수 없습니다.');
   const url = `${base}/public-analytics/${path}${params ? `?${params}` : ''}`;
@@ -181,6 +181,7 @@ export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?:
     meta: { ...meta, location_missing: result.location_missing ?? undefined },
     scope, overview: result.overview, points: result.points, monthly: result.monthly,
     agencies: result.agencies, managers: result.managers, regions: result.regions ?? null, laws: result.laws ?? null,
+    agency_total: result.agency_total, manager_total: result.manager_total,
     vehicles: result.vehicles,
     vehicle_total_scope_reports: result.vehicle_total_scope_reports,
     vehicle_identifiable_reports: result.vehicle_identifiable_reports,

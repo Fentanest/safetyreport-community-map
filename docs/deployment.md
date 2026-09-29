@@ -91,3 +91,11 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
 4. smoke: 로그인 → ‘전체 기간’ 한 번 → 날짜 버튼·칩·URL이 같은 범위, dashboard 200 → 2014-09-30~2026-09-29 입력 적용 200 →
    지도 ‘수용률’에서 핀 0·시도 색칠 → 확대/축소로 시군구↔시도 → 지역 클릭 시 선택한 지역 카드.
 운영 적용·실카카오 SDK·운영 로그 확인은 이 세션에서 하지 않았다(**미검증**).
+
+## scope-statistics-2026-09-29.2 운영 적용 — 별도 승인 필요
+DB 마이그레이션 **없음**(맞춤 통계는 기존 `internal_analytics_v2_facts` / `internal_my_analytics_source` 한 번의 조회 결과를 Edge에서 집계).
+1. `npx supabase functions deploy public-analytics` · `npx supabase functions deploy my-analytics` (새 경로 statistics/*, dashboard 추가 필드 — 모두 additive).
+2. Pages 배포(`VITE_DATA_MODE=live npm run build && npm run scan`). 새 화면은 `?screen=statistics`라 별도 rewrite가 필요 없다.
+3. smoke: 로그인 → 지도 핀 선택/다시 눌러 해제/Esc → 서울 선택 시 오른쪽 ‘선택 범위’ → ‘이 조건으로 통계 만들기’ → 표↔그래프 → 비교 대상 선택 →
+   월별 추이 ‘처리결과 비율’ 네 지표 체크 → 느린 조회에서 상단 상태 표시.
+운영 적용·실카카오 SDK는 이 세션에서 하지 않았다(**운영 미검증**). Edge를 먼저 올리지 않으면 새 프런트의 맞춤 통계는 404로 ‘통계를 불러오지 못했습니다’를 보이고 지도는 그대로 동작한다.

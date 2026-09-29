@@ -66,6 +66,7 @@ export const overviewSchema = z.strictObject({
   report_count: countMetric, completed_count: countMetric, accepted_including_partial: rateMetric,
   fine_count: countMetric, point_count: countMetric, contributor_count: countMetric, outcomes: outcomes.nullable(),
   processing_duration: durationSummary, fine_amount: fineSummary, rating,
+  warning_count: nullableCount.optional(),
 });
 
 export const pointSchema = z.strictObject({
@@ -200,6 +201,7 @@ export const dashboardResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), sample: z.boolean(), scope: scopeSchema,
   overview: overviewSchema, points: z.array(pointSchema).max(1000), monthly: z.array(monthlySchema),
   agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
+  agency_total: count.optional(), manager_total: count.optional(),
   regions: z.array(regionSchema).max(400).optional(),
   laws: z.array(lawSchema).max(300).optional(),
   vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,

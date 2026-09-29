@@ -15,7 +15,7 @@ export function loadCharts(): Promise<(el: HTMLElement) => EChartsType> {
   ]).then(([core, charts, components, renderers]) => {
     core.use([charts.BarChart, charts.LineChart, charts.HeatmapChart, charts.ScatterChart,
       components.GridComponent, components.TooltipComponent, components.VisualMapComponent, components.MarkLineComponent,
-      components.DataZoomComponent,
+      components.DataZoomComponent, components.LegendComponent,
       renderers.CanvasRenderer]);
     return core.init;
   });
@@ -73,6 +73,8 @@ export function useEChart(build: (t: ChartTheme) => Record<string, unknown> | nu
       if (dead) return;
       const chart = init(el);
       chartRef.current = chart;
+      // dev/e2e only (stripped from production builds): lets the browser check read the drawn series ids
+      if (import.meta.env.DEV) (el as unknown as { __chart?: EChartsType }).__chart = chart;
       chart.on('click', (params) => clickRef.current?.(params as unknown as { dataIndex: number; seriesIndex: number; data: unknown }));
       if (typeof ResizeObserver !== 'undefined') {
         ro = new ResizeObserver(() => chart.resize());

@@ -40,6 +40,10 @@ export interface RefreshState {
   refreshing: boolean;
   /** an automatic request is waiting for its debounce / interval / budget slot */
   scheduled: boolean;
+  /** S10: a request is actually on the wire (meta → body → schema check → commit); false while only waiting */
+  fetching: boolean;
+  /** S10: why nothing is on the wire although a scope is wanted: debounce slot, the one transient retry, or a 429 pause */
+  wait: 'debounce' | 'retry' | 'rate_limit' | null;
   error: RefreshError | null;
   /** epoch ms until which requests are paused after a 429 */
   pausedUntil: number | null;
@@ -83,7 +87,7 @@ export function toRefreshError(e: unknown): RefreshError {
 
 export class RefreshController {
   private state: RefreshState = {
-    meta: null, displayed: null, requested: null, refreshing: false, scheduled: false, error: null, pausedUntil: null, access: null, generation: 0,
+    meta: null, displayed: null, requested: null, refreshing: false, scheduled: false, fetching: false, wait: null, error: null, pausedUntil: null, access: null, generation: 0,
   };
   private listeners = new Set<(s: RefreshState) => void>();
   private meta: PublicMeta | null = null;
@@ -120,13 +124,13 @@ export class RefreshController {
       this.cancelPending();
       this.inflight?.ac.abort();
       this.inflight = null;
-      this.set({ refreshing: false, scheduled: false, generation: this.state.generation + 1 });
+      this.set({ refreshing: false, scheduled: false, fetching: false, wait: null, generation: this.state.generation + 1 });
       return;
     }
     if (this.inflight && sameScope(this.inflight.scope, scope)) return; // same request already running
     if (this.state.access) return;
     this.retries = 0;
-    if (this.paused()) { this.set({ refreshing: true, scheduled: true }); return; }
+    if (this.paused()) { this.set({ refreshing: true, scheduled: true, wait: 'rate_limit' }); return; }
     if (source === 'auto') this.schedule();
     else this.start(scope);
   }
@@ -137,7 +141,7 @@ export class RefreshController {
     if (!scope || this.disposed) return;
     this.set({ error: null });
     this.retries = 0;
-    if (this.paused()) { this.set({ refreshing: true, scheduled: true }); return; }
+    if (this.paused()) { this.set({ refreshing: true, scheduled: true, wait: 'rate_limit' }); return; }
     this.start(scope);
   }
 
@@ -150,7 +154,7 @@ export class RefreshController {
     this.retries = 0;
     if (this.pauseTimer !== null) this.deps.clearTimer(this.pauseTimer);
     this.pauseTimer = null;
-    this.set({ meta: null, displayed: null, requested: null, refreshing: false, scheduled: false, error: null, pausedUntil: null, access: null });
+    this.set({ meta: null, displayed: null, requested: null, refreshing: false, scheduled: false, fetching: false, wait: null, error: null, pausedUntil: null, access: null });
   }
 
   dispose(): void {
@@ -181,7 +185,7 @@ export class RefreshController {
     this.cancelPending();
     const now = this.deps.now();
     const delay = Math.max(0, this.nextSlot(now) - now);
-    this.set({ refreshing: true, scheduled: true });
+    this.set({ refreshing: true, scheduled: true, wait: 'debounce' });
     this.timer = this.deps.setTimer(() => {
       this.timer = null;
       const scope = this.state.requested;
@@ -198,7 +202,7 @@ export class RefreshController {
     const now = this.deps.now();
     this.starts.push(now);
     this.lastStart = now;
-    this.set({ generation: gen, refreshing: true, scheduled: false });
+    this.set({ generation: gen, refreshing: true, scheduled: false, fetching: true, wait: null });
     void this.run(scope, ac, gen, false);
   }
 
@@ -215,7 +219,8 @@ export class RefreshController {
       this.retries = 0;
       const stillWanted = this.state.requested && sameScope(this.state.requested, scope);
       this.set({ displayed: { data, scope, version: data.meta.dataset_version }, error: null,
-        refreshing: !stillWanted, scheduled: false });
+        // an automatic request may already be waiting for its slot behind this one: it stays visible as waiting
+        refreshing: !stillWanted, scheduled: this.timer !== null, fetching: false, wait: this.timer !== null ? 'debounce' : null });
     } catch (e) {
       if (isAbort(e) || ac.signal.aborted || gen !== this.state.generation) return;
       const err = toRefreshError(e);
@@ -223,7 +228,7 @@ export class RefreshController {
         this.inflight = null;
         this.meta = null;
         this.cancelPending();
-        this.set({ access: err, displayed: null, refreshing: false, scheduled: false, error: null });
+        this.set({ access: err, displayed: null, refreshing: false, scheduled: false, fetching: false, wait: null, error: null });
         return;
       }
       if (err.status === 409 && !metaRetried) {
@@ -240,15 +245,15 @@ export class RefreshController {
           this.set({ pausedUntil: null });
           const latest = this.state.requested;
           if (latest && !(this.state.displayed && sameScope(this.state.displayed.scope, latest))) this.start(latest);
-          else this.set({ refreshing: false, scheduled: false, error: null });
+          else this.set({ refreshing: false, scheduled: false, fetching: false, wait: null, error: null });
         }, wait);
-        this.set({ pausedUntil: until, error: { ...err, retryAfter: Math.ceil(wait / 1000) }, refreshing: true, scheduled: true });
+        this.set({ pausedUntil: until, error: { ...err, retryAfter: Math.ceil(wait / 1000) }, refreshing: true, scheduled: true, fetching: false, wait: 'rate_limit' });
         return;
       }
       const transient = err.status === null || err.status >= 500;
       if (transient && this.retries < 1) {
         this.retries += 1;
-        this.set({ refreshing: true, scheduled: true });
+        this.set({ refreshing: true, scheduled: true, fetching: false, wait: 'retry' });
         this.timer = this.deps.setTimer(() => {
           this.timer = null;
           const latest = this.state.requested;
@@ -256,7 +261,7 @@ export class RefreshController {
         }, this.opts.retryDelayMs);
         return;
       }
-      this.set({ error: err, refreshing: false, scheduled: false });
+      this.set({ error: err, refreshing: false, scheduled: false, fetching: false, wait: null });
     }
   }
 }

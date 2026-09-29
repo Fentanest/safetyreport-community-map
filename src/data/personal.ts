@@ -199,3 +199,35 @@ export function consistentWithPublic(c: PersonalCompare, overview: import('../do
     (!overview.fine_amount || (overview.fine_amount.confirmed_count === c.all.fine_amount.confirmed_count &&
       overview.fine_amount.sum_won === c.all.fine_amount.sum_won));
 }
+
+/**
+ * 맞춤 통계 with population mine/compare (S05): the same credential rules as the comparison — the viewer is the
+ * verified JWT user, no user id is sent, no cookies. Errors keep their code; the page shows them in its result area.
+ */
+export async function readPersonalStatistics(params: URLSearchParams, signal?: AbortSignal): Promise<unknown> {
+  const { PublicApiError } = await import('./client');
+  const { mapAuth } = await import('../hooks/usePersonal');
+  const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
+  if (!base) throw new PublicApiError('통계 서버에 연결할 수 없습니다.');
+  const auth = mapAuth();
+  await auth.settled();
+  let token = await auth.accessToken();
+  if (!token) throw new PublicApiError('내 신고를 보려면 로그인이 필요합니다.', 401, null, 'auth_required');
+  const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)?.trim();
+  const send = (t: string) => fetch(`${base}/my-analytics/statistics?${params}`, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${t}`, ...(key ? { apikey: key } : {}) } });
+  let res = await send(token);
+  if (res.status === 401) {
+    token = await auth.refreshToken();
+    if (!token) throw new PublicApiError('로그인이 만료되었습니다. 다시 로그인해 주세요.', 401, null, 'session_expired');
+    res = await send(token);
+  }
+  if (!res.ok) {
+    let code: string | null = null, message: string | null = null;
+    try { const b = await res.json() as { error?: { code?: string; message?: string } }; code = b.error?.code ?? null; message = b.error?.message ?? null; } catch { /* ignore */ }
+    const retry = Number(res.headers.get('retry-after'));
+    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : `${message ?? '내 신고 통계를 불러오지 못했습니다.'} (${code ?? 'error'}, HTTP ${res.status})`,
+      res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code);
+  }
+  return res.json();
+}

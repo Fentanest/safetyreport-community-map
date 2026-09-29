@@ -32,6 +32,8 @@ interface Props {
   refreshing?: boolean;
   /** the statistics scope carries a map range (auto refresh): region colours are 'within the range' numbers */
   statsBbox?: boolean;
+  /** S02: a click on the bare map (never a marker/cluster/polygon/control click or the end of a drag) */
+  onBlankClick?: () => void;
 }
 
 /** R7: rate metrics draw the regions (choropleth) and NO pins; 신고 수 draws address pins. */
@@ -156,6 +158,7 @@ export default function MapPanel(p: Props) {
       if (user) cb.current.onUserViewport?.(b, z);
     },
     onRegionHover: (code: string | null) => setHover(code),
+    onMapClick: () => cb.current.onBlankClick?.(),
     onRegionClick: (code: string) => {
       const active = cb.current.activeRegion ?? null;
       cb.current.onPickRegion?.(active === code ? parentOf(code) : code);
