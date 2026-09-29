@@ -9,11 +9,11 @@
 | 항목 | 상태 |
 |---|---|
 | 계약 `my-reports-v1` | 확정(v1). 변경은 `contracts/my-reports/README.md §8`에 기록 |
-| map 코드(SQL·Edge·handler) | 구현 완료, 브랜치 `claude/gallant-darwin-7ldkbl` (main 병합 전) |
+| map 코드(SQL·Edge·handler) | main 병합(Fentanest/safetyreport-community-map#19) |
 | 로컬 통합 검증 | 통과: 실제 Postgres 17·GoTrue·PostgREST + Deno Edge 진입점(deno-local) + mock Kakao OAuth. `REPORT.md` |
 | 운영 DB 적용 | **미적용** (사용자 승인·실행 필요, §8) |
 | Edge 배포 | **미배포** (사용자 승인·실행 필요, §8) |
-| 확장 연동 | 확장 dev 4c87550은 offset 초안 기준 → §10대로 전환 필요. 실제 확장 ID 미확정 |
+| 확장 연동 | 확장 `dev`에 v1 전환 병합(Fentanest/safetyreport-chromeextension#1, fb2c7c7). 모의 브라우저 테스트 13 통과. 실제 설치·운영 로그인은 Edge 배포 후. 확장 ID 미확정 |
 
 운영 반영 전에는 실제 프로젝트에서 호출하면 `404`(함수 없음)가 난다. 개발 중에는 `fixtures/`의 응답으로 UI를 만든다.
 
@@ -187,6 +187,7 @@ async function copyAllNumbers(kind, query) {
 
 - 2026-09-29: v1 최초 인계.
 - 2026-09-30: main에 들어온 offset 초안(501a84d)을 v1으로 대체(사용자 결정). `Summary.report_number_missing` 추가. §10 참고.
+- 2026-09-30: 확장 `dev`가 §10대로 v1 전환 완료(map 세션이 수행, 확장 `src/myReportsClient.js`).
 
 ## 10. offset 초안 → v1 변경표 (확장 dev 4c87550 기준)
 
