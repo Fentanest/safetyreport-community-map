@@ -83,15 +83,20 @@ show_counts() {
   query "$(counts_sql)" | python3 -c '
 import json, sys
 t = sys.stdin.read()
-# The CLI may print notices (plain text or JSON lines) around the result: take the JSON object that has "rows".
-dec, rows, i = json.JSONDecoder(), None, t.find("{")
+# CLI versions differ: some print {"rows": [...], ...}, others a bare [...] of rows; notices may surround it.
+def is_rows(v): return isinstance(v, list) and all(isinstance(r, dict) and "tbl" in r and "n" in r for r in v)
+def next_start(s, k):
+    c = [p for p in (s.find("{", k), s.find("[", k)) if p != -1]
+    return min(c) if c else -1
+dec, rows, i = json.JSONDecoder(), None, next_start(t, 0)
 while i != -1 and rows is None:
     try:
         obj, end = dec.raw_decode(t, i)
-        if isinstance(obj, dict) and isinstance(obj.get("rows"), list): rows = obj["rows"]
-        else: i = t.find("{", end)
+        if is_rows(obj): rows = obj
+        elif isinstance(obj, dict) and is_rows(obj.get("rows")): rows = obj["rows"]
+        else: i = next_start(t, end)
     except ValueError:
-        i = t.find("{", i + 1)
+        i = next_start(t, i + 1)
 if rows is None: sys.exit("unexpected output from supabase db query (logged in? linked?):\n" + t[:2000])
 for r in rows: print("  %-45s %8s" % (r["tbl"], r["n"]))
 print("  %-45s %8d" % ("total", sum(int(r["n"]) for r in rows)))'
