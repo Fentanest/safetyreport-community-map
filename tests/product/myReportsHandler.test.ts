@@ -31,7 +31,8 @@ function setup(over: Partial<MyReportsDeps> = {}, rpcResult?: (name: string, arg
   const deps: MyReportsDeps = {
     enabled: true, cursorSecret: SECRET, jwtIssuer: null, allowedOrigins: [ORIGIN], now: () => Date.parse('2026-09-29T03:00:00Z'),
     getUser: async (t) => (t.endsWith('.sig') ? { id: UID, isAnonymous: false } : null),
-    rpc: async (name, args) => {
+    rpc: async (name, raw) => {
+      const args = raw as Json;
       calls.push([name, args]);
       if (name === 'internal_community_ingest_rate_limit') return true;
       if (rpcResult) return rpcResult(name, args);
