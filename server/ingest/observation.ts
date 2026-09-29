@@ -9,13 +9,17 @@ import agencyManifest from '../../shared/agency-region-registry/manifest.json' w
 import { displayAgency, resolveAgency, type AgencySnapshot } from '../../shared/agency-region-registry/resolvers/resolve.ts';
 
 const agencySnap: AgencySnapshot = (() => {
-  const rows = (agencyIndex as { rows: Array<Array<string | null>> }).rows;
+  const blob = agencyIndex as { rows: Array<Array<string | null>>; compact_rows: Array<Array<string>> };
+  const rows = blob.rows;
   const index: Record<string, Array<string | null>> = {};
   for (const row of rows) index[row[0] as string] = row.slice(1);
+  const compact: Record<string, string> = {};
+  for (const [code, agg] of blob.compact_rows) compact[code] = agg;
   const manifest = agencyManifest as { registry_version: string; as_of_date: string };
   return {
     links: (agencyLinks as unknown as { links: Array<Record<string, string>> }).links,
     index,
+    compact,
     forward: (agencyLegacy as { forward: Record<string, string> }).forward,
     multi: (agencyLegacy as { multi: Record<string, string> }).multi,
     institutions: (agencyInstitutions as { institutions: Record<string, string> }).institutions,
