@@ -20,6 +20,9 @@
 
 맞춤통계 회귀 첫 실행은 컨테이너 재시작으로 브라우저가 닫혀 W-OVERFLOW 1건이 FAIL 로 끊겼다(`*.interrupted-by-container-restart.log`).
 같은 SHA로 다시 돌려 60/60.
+재시작 뒤 다시 돌린 맞춤통계·마감·자가검사 run 파일은 `working_tree_dirty: true` 로 적혀 있다. 그때 추적되지 않은 파일은 이 증거 폴더와
+검사가 만든 `docs/.verify-dist/`(정적 빌드)뿐이었고, `git diff 0c1473f HEAD -- src server supabase scripts tests` 는 비어 있다
+(코드 변경 없음). 컨테이너 재시작으로 멈춘 것: 로컬 Supabase 스택·Deno 함수·모의 카카오 서버 — SQL·Edge 결과는 재시작 전에 끝난 것이다.
 
 실행하지 못함: 실제 카카오 SDK(NOT_RUN), Supabase edge-runtime 컨테이너(BLOCKED — 이 환경에서 npm 받기 실패, 이전 라운드와 동일),
 Microsoft Excel·LibreOffice로 이번 파일 열기(NOT_RUN), 실제 브라우저 확대 125/150/200%(NOT_RUN), 운영 DB·운영 화면(범위 밖).
