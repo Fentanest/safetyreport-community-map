@@ -37,7 +37,8 @@
       "parking": 0,
       "other": 0
     },
-    "completed_date_missing": 0
+    "completed_date_missing": 0,
+    "report_number_missing": 0
   },
   "recent_summary": {
     "total": 0,
@@ -67,7 +68,8 @@
       "parking": 0,
       "other": 0
     },
-    "completed_date_missing": 0
+    "completed_date_missing": 0,
+    "report_number_missing": 0
   },
   "recent": {
     "items": [],

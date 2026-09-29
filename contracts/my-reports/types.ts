@@ -154,6 +154,8 @@ export interface Summary {
   category: CategoryCounts;
   /** reports without completed_date (counted in total, never in a recent window) */
   completed_date_missing: number;
+  /** reports without report_number (never copied by /numbers; show "번호 없는 n건 제외") */
+  report_number_missing: number;
 }
 
 export interface ManagerRow {

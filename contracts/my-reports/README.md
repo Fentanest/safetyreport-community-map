@@ -195,6 +195,7 @@ contributor UUID·dataset_key·source_report_key·grant/receipt/connection ID·p
 | `fine_amount.other_count` | 과태료이고 금액은 있지만 확정 과태료가 아닌 신고(금액 종류가 범칙금·혼합·미상이거나 상태가 수용/일부 수용이 아님). `fine_count = confirmed + unconfirmed + other` |
 | `category.*` | 분류별 수(합 = `total`). 교통위반 전용 요약은 제공하지 않는다 |
 | `completed_date_missing` | 답변일 없는 신고 수 |
+| `report_number_missing` | 신고번호 없는 신고 수(번호 복사에서 빠지는 수. `numbers`의 `without_number`와 같은 범위면 같은 값) |
 
 담당자 행의 `status`·`accept_rate`·`disposition`·`fine_amount`도 같은 정의를 그 담당자 신고에 적용한다.
 
@@ -240,3 +241,4 @@ contributor UUID·dataset_key·source_report_key·grant/receipt/connection ID·p
 ## 8. 변경 이력
 
 - v1 (2026-09-29): 최초 확정.
+- v1 (2026-09-30): `Summary.report_number_missing` 추가(확장 복사 버튼 표시용). main의 offset 초안(`internal_my_reports`)을 대체.

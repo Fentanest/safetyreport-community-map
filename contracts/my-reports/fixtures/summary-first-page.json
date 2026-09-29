@@ -37,7 +37,8 @@
       "parking": 10,
       "other": 0
     },
-    "completed_date_missing": 1
+    "completed_date_missing": 1,
+    "report_number_missing": 1
   },
   "recent_summary": {
     "total": 3,
@@ -67,7 +68,8 @@
       "parking": 3,
       "other": 0
     },
-    "completed_date_missing": 0
+    "completed_date_missing": 0,
+    "report_number_missing": 0
   },
   "recent": {
     "items": [
@@ -125,6 +127,6 @@
     "total": 3,
     "page_size": 2,
     "offset": 0,
-    "next_cursor": "eyJ2IjoxLCJyIjoic3VtbWFyeS5yZWNlbnQiLCJ1IjoiY2MwOTk1MWYxNDA5YTYzMzhkYzhhNjg5MzAxMTAyNzciLCJxIjoiIiwiZHYiOiJkYTc0MWI3NzJhYWY4YmJhZGI4MmMzZjYyMjQ1MmYwMyIsIm8iOjIsIm4iOjIsInJzIjoiMjAyNi0wOS0yNyIsInJlIjoiMjAyNi0wOS0yOSIsImV4IjoxNzkwNjUxNzAwfQ.hPhIf83R1nQhuPTpKWsPyQRp-K3eoHGd1FiIdEhs3q8"
+    "next_cursor": "eyJ2IjoxLCJyIjoic3VtbWFyeS5yZWNlbnQiLCJ1IjoiYjg2YTlhZjkxMDU2MzcyNjg5OTE2Nzc5YjI0ODVkYTAiLCJxIjoiIiwiZHYiOiJkYTc0MWI3NzJhYWY4YmJhZGI4MmMzZjYyMjQ1MmYwMyIsIm8iOjIsIm4iOjIsInJzIjoiMjAyNi0wOS0yNyIsInJlIjoiMjAyNi0wOS0yOSIsImV4IjoxNzkwNjUxNzAwfQ.WIRDFLZxyaT2gXSsV2cRjjGYzVNbrj6if2FyE2vOU0g"
   }
 }

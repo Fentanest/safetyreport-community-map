@@ -180,7 +180,8 @@
         "disposition",
         "fine_amount",
         "category",
-        "completed_date_missing"
+        "completed_date_missing",
+        "report_number_missing"
       ],
       "properties": {
         "total": {
@@ -208,6 +209,10 @@
           "$ref": "#/$defs/CategoryCounts"
         },
         "completed_date_missing": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "report_number_missing": {
           "type": "integer",
           "minimum": 0
         }

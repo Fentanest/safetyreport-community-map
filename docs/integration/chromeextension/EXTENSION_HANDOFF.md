@@ -151,7 +151,7 @@ async function copyAllNumbers(kind, query) {
 | 설정 | 값 형식 | 어디에 |
 |---|---|---|
 | CORS 허용 Origin | `chrome-extension://<확장 ID>` (개발·배포 ID 각각, 쉼표 구분) | Edge 환경변수 `MY_REPORTS_ALLOWED_ORIGINS` |
-| OAuth Redirect URL | `https://<확장 ID>.chromiumapp.org/` (확장이 `chrome.identity.getRedirectURL()`로 쓰는 값과 정확히 같게) | Supabase Dashboard → Authentication → URL Configuration → Redirect URLs에 **추가** |
+| OAuth Redirect URL | `https://<확장 ID>.chromiumapp.org/supabase-auth` (확장 dev 4c87550이 쓰는 `chrome.identity.getRedirectURL('supabase-auth')`와 정확히 같게) | Supabase Dashboard → Authentication → URL Configuration → Redirect URLs에 **추가** |
 
 - 기존 Redirect URL(지도·PC·모바일)은 지우지 않는다. 와일드카드 전체 확장은 허용하지 않는다.
 - 개발용(압축 해제 로드) 확장 ID는 manifest `key`를 고정하지 않으면 PC마다 달라진다. 개발 ID를 쓰려면 그 값도 두 곳에 넣는다.
@@ -167,7 +167,7 @@ async function copyAllNumbers(kind, query) {
    ```
 2. Edge 비밀값: `npx supabase secrets set MY_REPORTS_CURSOR_SECRET=<32바이트 이상 임의값> MY_REPORTS_ALLOWED_ORIGINS=chrome-extension://<ID>`
 3. 함수 배포: `npx supabase functions deploy my-reports` (`verify_jwt = true`는 `supabase/config.toml`에 있음)
-4. Auth Redirect URL에 `https://<ID>.chromiumapp.org/` 추가.
+4. Auth Redirect URL에 `https://<ID>.chromiumapp.org/supabase-auth` 추가(기존 URL 유지).
 5. smoke: 확장(또는 로그인한 토큰)으로 `summary` 1회 → 200, 토큰 없이 → 401, 다른 Origin → 403.
 6. 끄기(kill switch): `npx supabase secrets set MY_REPORTS_ENABLED=false` → 모든 요청 503(DB 접근 없음).
    되돌리기: 함수 삭제 `npx supabase functions delete my-reports`, SQL은 마이그레이션 머리말의 rollback 순서.
@@ -185,3 +185,55 @@ async function copyAllNumbers(kind, query) {
 ## 9. 변경 이력
 
 - 2026-09-29: v1 최초 인계.
+- 2026-09-30: main에 들어온 offset 초안(501a84d)을 v1으로 대체(사용자 결정). `Summary.report_number_missing` 추가. §10 참고.
+
+## 10. offset 초안 → v1 변경표 (확장 dev 4c87550 기준)
+
+확장 dev는 main의 첫 초안(offset/limit, `public.internal_my_reports`)에 맞춰져 있다. 사용자가 v1을 정본으로 정했으므로
+아래를 바꾼다. 초안 응답 모양은 운영에 배포되지 않는다(v1 마이그레이션이 초안 함수를 제거한다).
+
+### 요청 (`src/background.js validRequest`)
+
+| 초안 | v1 |
+|---|---|
+| `offset` (0~5000) | 없음. 첫 요청 `cursor: null`, 다음은 응답의 `next_cursor` |
+| `limit` 20 / numbers 50 | `page_size` (search·summary 1~50 기본 20, numbers 1~500 기본 200) |
+| `expected_version` | 없음. 버전은 커서에 서명되어 들어간다(보내면 400) |
+| — | search `part: "managers"` + `managers.next_cursor`로 담당자 더 보기, `managers_page_size` 1~50 |
+| 본문 4 KiB | 16 KiB |
+
+캐시 키는 `[계정, route, kind, query_normalized, part, cursor]`로 바꾼다. 커서는 해석하지 않는다.
+
+### 응답
+
+| 초안 | v1 search | v1 summary | v1 numbers |
+|---|---|---|---|
+| `version` | `data_version` | `data_version` | `data_version` |
+| `total` | `summary.total` (= `reports.total`) | `summary.total`(전체), 최근은 `recent.total` | `matched_reports` |
+| `missing_numbers` | `summary.report_number_missing` | `summary.report_number_missing` | `without_number` |
+| `summary.accepted/partial/rejected/completed_unknown` | `summary.status.*` | 같음 | — |
+| `summary.fine/warning/penalty` | `summary.disposition.fine/warning/penalty` | 같음 | — |
+| `summary.disposition_none/disposition_unknown` | `summary.disposition.none/unknown` | 같음 | — |
+| `summary.confirmed_fine_won` (없으면 0) | `summary.fine_amount.confirmed_sum_won` (**없으면 null**) | 같음 | — |
+| `summary.confirmed_fine_count` | `summary.fine_amount.confirmed_count` | 같음 | — |
+| `summary.recent_count` | — | `recent.total` / `recent_summary.total` | — |
+| `managers[]` (상위 100) | `managers.items` (페이지, 자르지 않음) | — | — |
+| `manager_total` | `managers.total_managers` | — | — |
+| `managers_truncated` | 없음(`managers.next_cursor`로 더 보기) | — | — |
+| 담당자 `accepted/partial/fine/confirmed_fine_won` | `status.accepted`, `status.partial`, `disposition.fine`, `fine_amount.confirmed_sum_won`, 서버 계산 `accept_rate` | — | — |
+| `items` | `reports.items` | `recent.items` | `items`(문자열 배열, 객체 아님) |
+| `next_offset` | `reports.next_cursor` / `managers.next_cursor` | `recent.next_cursor` | `next_cursor` (+ `complete`) |
+| — | 행 `official_url`, `status_label` 추가 | 같음 | — |
+| — | `summary`는 첫 쪽에만, 다음 쪽은 null | `recent_start/recent_end/timezone` | `unique_numbers`(중복 제거된 복사 수) |
+
+### 파일별로 고칠 곳
+
+- `src/background.js`: `validRequest`(위 요청표), 오류 매핑을 `error.code`로(§6: 401 `SESSION_EXPIRED`만 refresh,
+  409 `DATASET_CHANGED`/`CURSOR_EXPIRED`/400 `INVALID_CURSOR`는 캐시 삭제 후 첫 쪽, 422 `NUMBERS_LIMIT_EXCEEDED`, 429 `Retry-After`).
+- `content.js`: 더 보기 = `reports.next_cursor`, 담당자 더 보기 = `part:"managers"`. 복사 = numbers를 `next_cursor`가 null이 될
+  때까지(page_size 500), 버전 비교 코드는 삭제(서버가 409로 알림). 복사 버튼 조건 `summary.total > summary.report_number_missing`.
+- `popup.js`: `summary.total`, 최근 목록 `recent.items`/`recent.total`, 기간 표시 `recent_start~recent_end`, 더 보기 `recent.next_cursor`.
+- `shared-ui.js`: 요약은 중첩 필드로. 확정 합계가 null이면 “확인된 금액 없음”(0원으로 표시하지 않음). 담당자 수용률은
+  `accept_rate`(null이면 “—”). 상태 이름은 `status_label` 사용(completed_unknown = “결과 미상”). 링크는 `official_url`을 쓰고
+  접두사 확인만 한다(확장 자체 `officialUrl`의 숫자 전용 규칙은 서버 규칙 `^[0-9A-Za-z_-]{1,40}$`보다 좁아 링크가 빠질 수 있음).
+- 테스트 fixture(`tests/extension-browser.test.mjs`, `scripts/capture-ui.mjs`)는 `contracts/my-reports/fixtures/*.json`으로 교체한다.

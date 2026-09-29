@@ -18,7 +18,7 @@ const DV = 'a'.repeat(32);
 const stats = (total: number) => ({ total, status: { accepted: total, partial: 0, rejected: 0, completed_unknown: 0 },
   accept_rate: total ? 100 : null, disposition: { fine: 0, warning: 0, penalty: 0, none: total, unknown: 0 },
   fine_amount: { fine_count: 0, confirmed_count: 0, confirmed_sum_won: null, unconfirmed_count: 0, other_count: 0 },
-  category: { traffic: 0, parking: total, other: 0 }, completed_date_missing: 0 });
+  category: { traffic: 0, parking: total, other: 0 }, completed_date_missing: 0, report_number_missing: 0 });
 const row = (i: number, extra: Json = {}) => ({ report_number: `SPP-2609-0000000${i}`, source_report_id: `91000000${i}`,
   vehicle_number: '12가3456', report_date: '2026-09-20', completed_date: '2026-09-29', category: 'parking', status: 'accepted',
   disposition: 'none', amount_kind: 'unknown', confirmed_amount_won: null, penalty_points: null, address: '예시로 1', lat: null, lng: null,

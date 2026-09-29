@@ -8,11 +8,11 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createMyReportsHandler, RPC_INVALID, RPC_TIMEOUT, type MyReportsDeps } from '../../server/myReports/handler';
-import { LIMITS } from '../../contracts/my-reports/types';
+import { LIMITS, addressBase, normalizeAddress, normalizeVehicle } from '../../contracts/my-reports/types';
 import { validate } from '../product/helpers/jsonSchema';
 import schema from '../../contracts/my-reports/my-reports-v1.schema.json';
 import {
-  API, createUser, deleteUsers, hex, insertFacts, serviceClient, signIn, sql, stackKeys, type StackKeys, type TestUser,
+  API, createUser, deleteUsers, hex, insertFacts, lit, serviceClient, signIn, sql, stackKeys, type StackKeys, type TestUser,
 } from './helpers/myReportsSeed';
 import { ADDR, ADDR_B_ONLY, ADDR_REF, V, V_B_ONLY, V_OLD, V_WILD, scenarioA, scenarioB } from './helpers/myReportsScenario';
 
@@ -105,6 +105,7 @@ describe.skipIf(!enabled)('my-reports on real Postgres/GoTrue (in-process handle
     expect(r.json.summary.fine_amount).toEqual({ fine_count: 3, confirmed_count: 2, confirmed_sum_won: 40000, unconfirmed_count: 1, other_count: 0 });
     expect(r.json.summary.category).toEqual({ traffic: 1, parking: 9, other: 0 });
     expect(r.json.summary.completed_date_missing).toBe(1);
+    expect(r.json.summary.report_number_missing).toBe(1);
     expect(r.json.reports.total).toBe(10);
     expect(numbersOf(r.json)).toEqual(['SPP-2609-00000001', 'SPP-2609-00000002', 'SPP-2609-00000003']);
     // PC + mobile copies of R1 are one row; B's newer copy of R1 changes nothing for A
@@ -263,6 +264,18 @@ describe.skipIf(!enabled)('my-reports on real Postgres/GoTrue (in-process handle
     // one second before KST midnight is still the 29th
     clock = Date.parse('2026-09-29T14:59:59Z');
     try { expect((await post('summary', {}, A.token)).json.recent_end).toBe('2026-09-29'); } finally { clock = NOON; }
+  });
+
+  it('SQL normalisation equals contracts/my-reports/types.ts on tricky input', () => {
+    const cp = (...c: number[]) => String.fromCharCode(...c);
+    const inputs = [
+      ` 12 가 3456 `, `\t12${cp(0x3000)}가${cp(0xa0)}34${cp(0x2028)}56\n`, `12${cp(0x1100, 0x1161)}3456`, `12가${cp(0x200b)}3456`,
+      `${cp(0xfeff)}12가3456${cp(0x205f)}`, '12가%456_\\', `  서울특별시   종로구${cp(0x3000)}예시로 1  (예시동) `,
+      '서울특별시 종로구 예시로 1 (예시동) (2층)', '(예시동)', `서울${cp(0x1680)}종로${cp(0x2009)}예시로${cp(0x202f)}1`,
+    ];
+    const rows = JSON.parse(sql(`select json_agg(json_build_array(private.my_reports_norm_vehicle(x), private.my_reports_norm_address(x),
+      private.my_reports_address_base(x)) order by i) from unnest(array[${inputs.map((x) => lit(x)).join(',')}]::text[]) with ordinality t(x, i)`));
+    inputs.forEach((x, i) => expect(rows[i], JSON.stringify(x)).toEqual([normalizeVehicle(x), normalizeAddress(x), addressBase(normalizeAddress(x))]));
   });
 
   it('recent window across month and year ends (SQL)', () => {

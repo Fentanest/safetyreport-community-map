@@ -144,7 +144,8 @@ returns jsonb language sql immutable set search_path = '' as $$
             'traffic', count(*) filter (where category = 'traffic'),
             'parking', count(*) filter (where category = 'parking'),
             'other', count(*) filter (where category = 'other')),
-        'completed_date_missing', count(*) filter (where completed_date is null))
+        'completed_date_missing', count(*) filter (where completed_date is null),
+        'report_number_missing', count(*) filter (where report_number is null))
       from r;
 $$;
 

@@ -49,7 +49,7 @@ describe('my-reports-v1 contract', () => {
     const kind = { search: 'SearchResponse', summary: 'SummaryResponse', numbers: 'NumbersResponse' }[body.route as string]!;
     expect(validate(ref(kind), body)).toEqual([]);
     for (const s of [body.summary, body.recent_summary].filter(Boolean)) checkSummary(s);
-    for (const m of body.managers?.items ?? []) checkSummary({ ...m, category: { x: m.total }, completed_date_missing: 0 });
+    for (const m of body.managers?.items ?? []) checkSummary({ ...m, category: { x: m.total }, completed_date_missing: 0, report_number_missing: 0 });
     const rows = [...(body.reports?.items ?? []), ...(body.recent?.items ?? [])];
     for (const r of rows) {
       expect(r.status_label).toBe(STATUS_LABEL[r.status as keyof typeof STATUS_LABEL]);

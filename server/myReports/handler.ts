@@ -170,6 +170,7 @@ export function toSummary(o: unknown): Summary {
     total: count(s.total), status: counts(s.status, STATUSES), accept_rate: num(s.accept_rate),
     disposition: counts(s.disposition, DISPOSITIONS), fine_amount: fineAmount(s.fine_amount),
     category: counts(s.category, CATEGORIES), completed_date_missing: count(s.completed_date_missing),
+    report_number_missing: count(s.report_number_missing),
   };
 }
 
