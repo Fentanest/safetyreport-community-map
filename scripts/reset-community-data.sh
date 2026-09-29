@@ -83,9 +83,16 @@ show_counts() {
   query "$(counts_sql)" | python3 -c '
 import json, sys
 t = sys.stdin.read()
-if "{" not in t: sys.exit("no JSON from supabase db query (logged in? linked?):\n" + t)
-# The CLI may print notices (e.g. an update hint) before or after the JSON: read the first object only.
-rows = json.JSONDecoder().raw_decode(t[t.index("{"):])[0]["rows"]
+# The CLI may print notices (plain text or JSON lines) around the result: take the JSON object that has "rows".
+dec, rows, i = json.JSONDecoder(), None, t.find("{")
+while i != -1 and rows is None:
+    try:
+        obj, end = dec.raw_decode(t, i)
+        if isinstance(obj, dict) and isinstance(obj.get("rows"), list): rows = obj["rows"]
+        else: i = t.find("{", end)
+    except ValueError:
+        i = t.find("{", i + 1)
+if rows is None: sys.exit("unexpected output from supabase db query (logged in? linked?):\n" + t[:2000])
 for r in rows: print("  %-45s %8s" % (r["tbl"], r["n"]))
 print("  %-45s %8d" % ("total", sum(int(r["n"]) for r in rows)))'
 }
