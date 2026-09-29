@@ -1,9 +1,9 @@
 {
-  "run_id": "scope-statistics-2026-09-29T07-03-52-713Z",
+  "run_id": "scope-statistics-2026-09-29T07-14-08-624Z",
   "suite": "scope-statistics",
-  "commit": "39552e3a2f5056857c07e35673f67fa5262839df",
-  "working_tree_dirty": true,
-  "started_at": "2026-09-29T07:03:52.730Z",
+  "commit": "4eef79747f578730bac1a87ce0fe289cec0b3ea3",
+  "working_tree_dirty": false,
+  "started_at": "2026-09-29T07:14:08.656Z",
   "only": null,
   "selftest_wrong": null,
   "environment": {
@@ -227,8 +227,8 @@
         {
           "ok": true,
           "label": "same chart instance",
-          "actual": "ec_1790665434050",
-          "expected": "ec_1790665434050"
+          "actual": "ec_1790666049945",
+          "expected": "ec_1790666049945"
         },
         {
           "ok": true,
@@ -905,7 +905,7 @@
         {
           "ok": true,
           "label": "address condition chip",
-          "actual": "지역\n서울특별시\n×\n주소\n서울특별시 강남구 예시로 1길\n×",
+          "actual": "지역\n서울특별시\n×\n주소\n서울특별시 강남구 예시로 3길\n×",
           "expected": "(t) => t.includes('주소')"
         },
         {
@@ -1609,7 +1609,7 @@
         "MT-19",
         "MT-20"
       ],
-      "ms": 7984
+      "ms": 7987
     },
     "LD": {
       "status": "DONE",
@@ -1621,7 +1621,7 @@
         "LD-19",
         "LD-26"
       ],
-      "ms": 15201
+      "ms": 15316
     },
     "PI": {
       "status": "DONE",
@@ -1636,7 +1636,7 @@
         "PI-10",
         "PI-13"
       ],
-      "ms": 6384
+      "ms": 6425
     },
     "SC_PG": {
       "status": "DONE",
@@ -1656,7 +1656,7 @@
       "notes": {
         "breadcrumb_from": "경기도 수원시 예시로 1길 · 신고 수 18건"
       },
-      "ms": 7982
+      "ms": 15458
     },
     "NV": {
       "status": "DONE",
@@ -1670,7 +1670,7 @@
         "NV-10",
         "ZOOM-EMU"
       ],
-      "ms": 25829
+      "ms": 26379
     },
     "MS_CH": {
       "status": "DONE",
@@ -1687,14 +1687,14 @@
         "LD-12",
         "LD-13"
       ],
-      "ms": 9328
+      "ms": 9099
     },
     "MT21": {
       "status": "DONE",
       "ids": [
         "MT-21"
       ],
-      "ms": 3018
+      "ms": 2948
     },
     "C01": {
       "status": "DONE",
@@ -1706,17 +1706,17 @@
       "notes": {
         "mine_before_switch": "내 신고 31건"
       },
-      "ms": 14252
+      "ms": 14422
     },
     "W": {
       "status": "DONE",
       "ids": [
         "W-OVERFLOW"
       ],
-      "ms": 26234
+      "ms": 25981
     }
   },
-  "finished_at": "2026-09-29T07:05:49.038Z",
+  "finished_at": "2026-09-29T07:16:12.741Z",
   "summary": {
     "PASS": 60
   }

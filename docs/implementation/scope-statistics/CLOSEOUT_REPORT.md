@@ -17,7 +17,7 @@
 | `npm run build` | 통과 |
 | `npm run scan` | `passed: true` |
 | dist 확인 | `__chart` hook 없음 |
-| assertion 브라우저 실행 | `closeout-evidence/local-mock/runs/<run_id>.json` — **60개 ID 모두 PASS, exit 0**. run_id·commit은 파일에 기록 |
+| assertion 브라우저 실행 | `closeout-evidence/local-mock/runs/scope-statistics-2026-09-29T07-14-08-624Z.json` — commit `4eef797`, working tree clean, **60개 ID 모두 PASS, exit 0** |
 | 자가 검증 | `SELFTEST_WRONG='MT-01:default rate series'`로 기대값 하나를 뒤집으면 **exit 1**(MT-01 FAIL) |
 | 이전 코드 재현 | `39552e3` worktree에서 **C01 3건 FAIL**, C02 히트맵 `all`만 그림 → `closeout-evidence/before-39552e3/` |
 | 기존 관찰 스크립트 회귀 | `verify_redesign` P04·R10, `verify_followup` R7 — 관찰값 일치. 이 스크립트들은 판정 스크립트가 아니다 |
