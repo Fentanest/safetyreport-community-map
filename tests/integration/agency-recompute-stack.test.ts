@@ -40,7 +40,7 @@ describe.skipIf(!enabled)('agency registry recompute RPCs on local stack', () =>
     const uuid = () => randomUUID();
     try {
       const version = (await svc.rpc('internal_agency_recompute_state')).data;
-      expect(version).toBe('2026-09-29.2');
+      expect(version).toBe('2026-09-29.3');
       const insert = reports.map((report, i) => `
         ('${uid}', '${dataset}', '${report}', 'local-${i}', '${uuid()}', '${uuid()}', 1, 1,
          '${'a'.repeat(64)}', 'completed', 'other', 'accepted', 'none', 'unknown', 'none',

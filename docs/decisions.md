@@ -35,3 +35,14 @@
   저장된 사실의 파생값은 migration 202609290200(singleton 버전 상향)과
   scripts/recompute-agency-keys.mjs(dry-run 먼저)로 다시 계산한다.
   배포 순서는 docs/integration/community-ingest/deployment-and-rollback.md §14.
+- ADR-204 (2026-09-29): 폐지 하위조직 코드를 registry 색인에 포함한다(`2026-09-29.3`).
+  2026-09-29.2로 운영 2,868건을 재계산했더니 기관코드가 있는데도 86건(3%)이
+  미확정(`src:` 이름 키)으로 남았다. 빌더가 색인을 줄이며 폐지된 부서 코드를 뺐기
+  때문이다. 후속 없는 폐지 코드는 답변 당시 소속 집계기관(차상위 연쇄, 경찰은
+  경찰서 단위)으로 연결하고, 집계기관이 개명·1:1 승계됐으면 현행 경계로 잇는다.
+  집계기관 자체가 폐지된 경우(4810000 여수시 — 전남광주통합특별시 출범 2026-07-01로
+  폐지, 새 코드 이전기관코드 NULL이라 자동 연결 금지)는 당시 소속 그대로 묶는다.
+  색인 84,750행 → 336,139행, `forward`/`multi`/링크는 그대로이므로 기존 확정·(구)
+  판정은 바뀌지 않는다. 저장된 사실의 파생값은 migration 202609290400(singleton
+  버전 상향)과 scripts/recompute-agency-keys.mjs(dry-run 먼저)로 다시 계산한다.
+  배포 순서는 docs/integration/community-ingest/deployment-and-rollback.md §16.
