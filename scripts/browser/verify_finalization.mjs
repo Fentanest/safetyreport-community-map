@@ -264,7 +264,7 @@ try {
     const list = async (pg, i) => pg.locator('.stats-builder .stats-list').nth(i).locator('ol li span:first-child').allInnerTexts();
     check('FN-06', 'rows/columns/metrics order restored', { r: await list(o.page, 0), c: await list(o.page, 1), m: await list(o.page, 2) },
       { r: await list(page, 0).then((x) => x.slice(0, 1)), c: await list(page, 1), m: await list(page, 2) });
-    check('FN-06', 'chart view + type restored', { type: await o.page.locator('.stats-result').getByLabel('유형').inputValue(), bars: (await series(o.page)).length > 0 }, { type: 'bar', bars: true });
+    check('FN-06', 'chart view + type restored', { type: await o.page.locator('.stats-result').getByLabel('유형').inputValue(), bars: (await waitFor(() => series(o.page), (x) => x.length > 0)).length > 0 }, { type: 'bar', bars: true });
     check('FN-06', 'banner says it was re-computed with my permission', await o.page.locator('.share-banner').innerText(), (t) => t.includes('공유받은 설정으로 통계를 만들었습니다'));
     check('FN-10', 'sr parameter removed after the run; screen kept', new URL(o.page.url()).searchParams.has('sr') ? 'sr' : new URL(o.page.url()).searchParams.get('screen'), 'statistics');
     await o.page.reload();
