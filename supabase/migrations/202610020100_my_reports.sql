@@ -11,10 +11,15 @@
 -- consent or public-analytics change. No index: the per-user scan uses the existing primary key
 -- (contributor_id, dataset_key, source_report_key) — docs/integration/chromeextension/MEASUREMENTS.md.
 --
+-- Supersedes 202609300200_my_reports.sql (first offset-based draft on main): its public.internal_my_reports is dropped
+-- here whether or not that migration was applied; its owner index is kept (harmless, measured in MEASUREMENTS.md).
+--
 -- Rollback: drop the three public.internal_my_reports_* functions, then the private.my_reports_* functions and the
 -- private.my_reports_row type (nothing else depends on them).
 
 begin;
+
+drop function if exists public.internal_my_reports(uuid, uuid, text, text, text, integer, integer, text);
 
 -- Normalisation, byte-identical to contracts/my-reports/types.ts (WHITESPACE = JS `\s`).
 create or replace function private.my_reports_norm_vehicle(p text)

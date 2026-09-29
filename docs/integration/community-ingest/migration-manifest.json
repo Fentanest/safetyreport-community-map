@@ -290,6 +290,15 @@
    ]
   },
   {
+   "version": "202609300200",
+   "repo": "map",
+   "path": "supabase/migrations/202609300200_my_reports.sql",
+   "sha256": "5c61e37a82bb51c03205d79771788abdb5d418e5328970c5c1570c375850d0f8",
+   "depends_on": [
+    "202609300100"
+   ]
+  },
+  {
    "version": "202610010100",
    "repo": "map",
    "path": "supabase/migrations/202610010100_single_date_cohort.sql",
@@ -302,8 +311,9 @@
    "version": "202610020100",
    "repo": "map",
    "path": "supabase/migrations/202610020100_my_reports.sql",
-   "sha256": "d3e3b1b8a3613d9399e7201de4feb2c805a6fee7812962a42eba3f9fe4a47dfe",
+   "sha256": "0262f90b63c82240bb2e9021f37f853374ce45f1a65c2ba227651f4117a30be9",
    "depends_on": [
+    "202609300200",
     "202610010100"
    ]
   }
