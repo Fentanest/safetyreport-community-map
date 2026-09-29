@@ -39,7 +39,7 @@
 | | | 선택 핀은 1.3배 크기, 흰색+주황 이중 halo, "선택됨" 탭, `zIndex` 10이다. 내 신고 테두리는 halo 안쪽에 그려져 선택 표시가 우선한다. | | | |
 | | | 선택을 포함한 묶음은 제목에 "선택한 주소 포함"을 붙이고 zIndex 9로 둔다. | | | |
 | **S03** 스티키 보정·사이드바 | `lib/navigation.ts`(신규), `Rail.tsx`, `TopBar.tsx`, `scope-statistics.css` | 측정한 가림 높이(겹침 합산 없음)를 `--scroll-top-inset`으로 두고 `scroll-padding-top`에 쓴다. 전략은 하나이고 JS가 다시 빼지 않는다. ResizeObserver, resize, 글꼴 로딩을 반영한다. 메뉴는 지도·지역(`#regions`)·기관·추이·통계다. 통계는 `aria-current=page`, 섹션은 `location`이다. 통계 화면에서 섹션을 누르면 대시보드를 복원한 뒤 rAF로 이동한다. | – | 1440: 섹션 top 76 = TopBar 64 + 12. 390: 68 = 56 + 12. 네 메뉴 모두 같다 (`NV-entities-*.png`) | scrollspy(스크롤에 따른 활성 표시)는 **미구현**(클릭 기준). 브라우저 확대율 125/150/200%는 **미검증** |
-| **S04** 맞춤 통계 화면·인계 | `StatisticsPage.tsx`(신규), `Dashboard.tsx`, `state/view.ts` | `?screen=statistics`로 들어가므로 Pages 새로고침·직접 진입이 된다. screen 값은 API로 보내지 않는다. 대시보드는 `hidden`으로 두고 지도 인스턴스를 유지하며, 통계 페이지는 한 번 열리면 계속 mount 상태다. | `screenFromSearch`, 인계 단위 | 서울 상세에서 "통계 만들기"를 누르면 URL `region_code=11&screen=statistics`, H1 포커스, 지역 칩, 결과가 나온다. 새로고침 뒤 결과가 복원되고, 뒤로가기는 대시보드로 간다. 지도 인스턴스 2→2. 주소 인계는 "주소" 칩과 해제 버튼으로 보인다 (`PG-*.png`) | 공유 링크(레시피 URL)는 **NOT_IMPLEMENTED**. 원지시서 S08.3에 있는 요구이므로 구현할지 보류할지 판단이 필요하다 |
+| **S04** 맞춤 통계 화면·인계 | `StatisticsPage.tsx`(신규), `Dashboard.tsx`, `state/view.ts` | `?screen=statistics`로 들어가므로 Pages 새로고침·직접 진입이 된다. screen 값은 API로 보내지 않는다. 대시보드는 `hidden`으로 두고 지도 인스턴스를 유지하며, 통계 페이지는 한 번 열리면 계속 mount 상태다. | `screenFromSearch`, 인계 단위 | 서울 상세에서 "통계 만들기"를 누르면 URL `region_code=11&screen=statistics`, H1 포커스, 지역 칩, 결과가 나온다. 새로고침 뒤 결과가 복원되고, 뒤로가기는 대시보드로 간다. 지도 인스턴스 2→2. 주소 인계는 "주소" 칩과 해제 버튼으로 보인다 (`PG-*.png`) | 공유 링크(레시피 URL)는 최종 마감 **F02에서 구현**(`FINALIZATION_REPORT.md` F02, FN-05~10) |
 | | | 인계는 **표시된 조건**(`shownScope`)을 넘긴다. 주소 인계에는 place_key를 붙인다. | | | |
 | | | 설정 초안·적용 레시피·표시 설정은 viewer별 sessionStorage에 두고, 결과 자체는 저장하지 않는다. 로그아웃하면 지운다. | | | |
 | **S05** 필드 registry·피벗 | `server/statistics.ts`(신규), `domain/statistics.ts`(신규), `server/aggregate.ts`(helper export) | 차원 26개: 시도, 시군구, 주소, 기관(현행명), 기관 유형, 담당자(복합 키), 법규, 분류, 처리결과, 처분, 답변·신고의 연·분기·월·일·요일, 별점, 처리기간 구간, 확인 금액 구간, 위치 자료. 지표 26개. | PV-01~10, 14, 15 단위·라우트 (G 66.7/16.7/16.7/40/25, 1/1+9/99 → 10%, distinct 차량 합 3 대 전체 2, 신고일 기준 제외 1, SQL 조각 거부, 5,000칸 초과는 422) | 표에서 합계 행이 원천 재계산 값을 보인다 (`W-stats-*.png`) | 필드 감사 결과는 아래 표 |
@@ -50,7 +50,7 @@
 | | | 자동 추천: 날짜 → 꺾은선, 2차원 → 히트맵, 긴 이름 → 가로 막대, 차원 없음 → 요약값. 100% 누적은 K·C 분할에만, 산점도는 차원 1개·지표 2개일 때만 허용한다. 호환되지 않는 요청은 이유를 표시하고 설정은 바꾸지 않는다. | | | |
 | | | 같은 단위 지표만 겹쳐 그린다. member key로 색을 고정하고 날짜 순서를 지킨다. null은 선을 끊는다. 선 24개·항목 400개·히트맵 2,500칸을 넘으면 그리지 않고 이유를 보인다. | | | |
 | | | 범례는 읽기 전용이라 분석 대상과 표시 대상이 어긋나지 않는다. cell·행을 누르면 "이 항목으로 좁히기"가 뜬다. | | | |
-| **S08** 보안·성능·저장 | `publicHandler.ts`, `personalHandler.ts`, `data/statistics.ts`, `data/personal.ts` | 공개 API는 all만 받는다(mine은 400). 알 수 없는 파라미터는 400이다. Authorization은 기존 두 클라이언트 파일에서만 보낸다(경계 테스트 유지). Zod로 응답을 검증하고 scope·spec·version이 요청과 같은지 확인한다(불일치는 409). | 라우트 테스트(401, 카탈로그에 비공개 없음, mine 거부, 추가 파라미터 거부) | 실행 중 버튼 "만드는 중…", 중복 실행 방지, 이전 결과 유지 (`LD-statistics-running-1440.png`) | 서버 저장 테이블은 필수가 아니다(원지시서). CSV는 선택 기능이라 NOT_IMPLEMENTED. 공유 링크는 S08.3 요구인데 NOT_IMPLEMENTED이며 판단이 필요하다 |
+| **S08** 보안·성능·저장 | `publicHandler.ts`, `personalHandler.ts`, `data/statistics.ts`, `data/personal.ts` | 공개 API는 all만 받는다(mine은 400). 알 수 없는 파라미터는 400이다. Authorization은 기존 두 클라이언트 파일에서만 보낸다(경계 테스트 유지). Zod로 응답을 검증하고 scope·spec·version이 요청과 같은지 확인한다(불일치는 409). | 라우트 테스트(401, 카탈로그에 비공개 없음, mine 거부, 추가 파라미터 거부) | 실행 중 버튼 "만드는 중…", 중복 실행 방지, 이전 결과 유지 (`LD-statistics-running-1440.png`) | 서버 저장 테이블은 필수가 아니다(원지시서). CSV 대신 최종 마감 **F06 Excelize XLSX**(통계표·편집 가능한 차트·조회 조건)를 구현했다. 공유 링크는 **F02에서 구현** (`FINALIZATION_REPORT.md`) |
 | | | 한 요청은 facts 조회 1회라 같은 스냅숏을 쓴다. 구성 저장은 localStorage에 하되 주소와 내 신고는 저장하지 않는다. | | | |
 | **S09** 월별 복수 비율 | `trendMetrics.ts`(신규), `MonthlyRateSelector.tsx`(신규), `TrendCard.tsx`, `Dashboard.tsx` | 네 체크박스(native)와 전체 선택·해제. 기본은 수용률이고, 이전 단일 설정은 1개 배열로 이관한다. 선택은 localStorage에 표현 설정으로만 둔다. | **oracle 7개 달 전부 일치**(MT-08~13), 설정 이관(MT-07) | 기본 1선 → 네 개 체크 시 `rate:*:all` 4선 → 20회 토글에 요청 0, 같은 차트 인스턴스 | 390px에서 Space 키 조작은 브라우저에서 따로 누르지 않았다(native checkbox) |
 | | | 선마다 `rate:<k>:all\|mine` id. 비교를 켜면 지표별로 실선 전체와 점선◆ 내 신고, 최대 8선이다. | | 모두 해제하면 "비교할 지표를 선택해 주세요" 안내, 체크박스 4개는 그대로 | |
@@ -122,9 +122,9 @@
 | CH-01·03·04 | PASS | browser-mock |
 | CH-02·07·08·09·11·12 | PASS | unit(차트 계획, key 결합, null gap) |
 | CH-05·06 | N/A · PASS | CH-05: 결과가 항상 complete(5,000칸 한도 안에서 전부 반환)라 부분 결과 경로가 없다. 대신 한도 초과 422 거부를 PV-14 unit으로 확인. CH-06 안내 문구는 NOT_RUN |
-| CH-10 (범례로 숨기기) | NOT_IMPLEMENTED | 범례는 읽기 전용이다. 표현 전용 토글은 만들지 않았다 |
+| CH-10 (범례로 숨기기) | PASS (최종 마감 F03) | 이 표는 이전 라운드 기록이다. F03에서 키보드로 조작 가능한 계열 범례(안정 key, 요청 0, 100% 누적 분모 유지)를 구현했고 FN-11~14로 판정했다 (`FINALIZATION_REPORT.md`) |
 | CH-13·16 | PASS · NOT_RUN | CH-13: browser-mock(표↔그래프 반복). CH-16: NOT_RUN |
-| CH-14 | NOT_IMPLEMENTED | CSV 없음(원지시서의 선택 기능) |
+| CH-14 | 대체: F06 XLSX | CSV 대신 Excelize XLSX 내보내기를 최종 마감 F06에서 구현했다(EX-01~60, `FINALIZATION_REPORT.md`) |
 | CH-15 · CH-CMP | PASS | unit(C02 4건) + browser-mock(compare 히트맵 2개) |
 | MT-01~06·16·18·19·20·21 | PASS | browser-mock |
 | MT-07~13·15·24 | PASS | unit(oracle fixture) |

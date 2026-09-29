@@ -10,6 +10,8 @@ import { baseOption, useEChart } from '../lib/charts';
 import { duplicateNames, entityLabel, entityRates } from './entityMetrics';
 import { fmtInt, fmtPercent } from './format';
 import Icon from './icons';
+import ExportButton from './ExportButton';
+import { placeManagersSnapshot } from '../export/adapters/dashboard';
 
 export type PlaceChartMode = 'accept' | 'fine';
 
@@ -36,7 +38,7 @@ const FINE_SERIES = [
   { key: 'other', name: '과태료 외(경고·범칙금·처분 없음·미확인)', color: 'unknown' as const },
 ];
 
-export default function PlaceEntityChart({ managers, total, theme, loadingMore, onLoadMore, title = '이 주소의 담당자별 처리 현황' }: {
+export default function PlaceEntityChart({ managers, total, theme, loadingMore, onLoadMore, title = '이 주소의 담당자별 처리 현황', exportCtx }: {
   /** S01: the same chart for a region / map range ('이 범위의 담당자별 처리 현황') */
   title?: string;
   managers: PublicEntity[];
@@ -44,6 +46,8 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
   theme: string;
   loadingMore: boolean;
   onLoadMore: (() => void) | null;
+  /** F06: conditions of the displayed address / range (the file holds exactly the managers of this card) */
+  exportCtx?: { conditions: Array<{ label: string; value: string }>; datasetVersion: string | null; blocked: string | null };
 }) {
   const [mode, setMode] = useState<PlaceChartMode>('accept');
   const [table, setTable] = useState(false);
@@ -123,6 +127,11 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
               <td>{r.m.F === null ? '—' : fmtInt(r.m.F)}</td><td>{fmtPercent(r.m.fineRate)}</td></tr>
           ))}</tbody>
         </table></div>
+      )}
+      {exportCtx && (
+        <ExportButton source="place-managers" blocked={managers.length === 0 ? '담당자 자료가 없습니다' : exportCtx.blocked}
+          capture={() => placeManagersSnapshot({ managers, total, mode, scopeTitle: title, conditions: exportCtx.conditions,
+            datasetVersion: exportCtx.datasetVersion, capturedAt: new Date().toISOString() })} />
       )}
       <p className="chart-caption">
         {mode === 'accept'

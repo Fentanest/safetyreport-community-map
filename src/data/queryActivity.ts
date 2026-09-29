@@ -12,7 +12,9 @@ import { createContext, useContext, useEffect, useRef, useSyncExternalStore } fr
 export type ActivityPhase = 'scheduled' | 'fetching' | 'processing' | 'retry_wait' | 'error';
 export type ActivityResource =
   | 'dashboard' | 'scope-detail' | 'place-detail' | 'entities' | 'personal' | 'statistics' | 'candidates'
-  | 'chart-series' | 'map-places' | 'map-boundaries' | 'session';
+  | 'chart-series' | 'map-places' | 'map-boundaries' | 'session'
+  /** F06: making an Excel file in the browser (no database request) */
+  | 'export';
 
 export interface QueryActivity {
   resource: ActivityResource;

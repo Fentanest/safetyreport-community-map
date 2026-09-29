@@ -31,7 +31,7 @@ const shot = (page, name) => page.screenshot({ path: join(dir, 'shots', `${name}
 const log = async () => api('log');
 const lastMap = (page, fn) => page.evaluate((f) => new Function('m', f)(window.__kakaoMaps[window.__kakaoMaps.length - 1]), fn);
 const status = (page) => page.locator('.query-status-text').innerText().catch(() => '');
-const series = (page, sel) => page.evaluate((s) => [...document.querySelectorAll(s)].flatMap((h) => (h.__chart ? (h.__chart.getOption().series || []).map((x) => x.id) : [])), sel);
+const series = (page, sel) => page.evaluate((s) => [...document.querySelectorAll(s)].flatMap((h) => (h.__chart && !h.__chart.isDisposed() ? ((h.__chart.getOption() || {}).series || []).map((x) => x.id) : [])), sel);
 const instanceId = (page, sel) => page.evaluate((s) => document.querySelector(s)?.getAttribute('_echarts_instance_') ?? null, sel);
 const selectedPins = (page) => page.evaluate(() => window.__kakaoLiveMarkers().filter((m) => m.title.includes('(선택됨)')).length);
 const pinCount = (page) => page.evaluate(() => window.__kakaoLiveMarkers().filter((m) => !m.title.includes('묶음')).length);

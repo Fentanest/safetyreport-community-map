@@ -134,7 +134,7 @@ export function dropLegacyStatsStorage(): void {
   }
 }
 
-export interface StatsSession { draft: StatsRecipe; applied: StatsRecipe | null; chart: ChartSettings; view: 'table' | 'chart'; viewer: string }
+export interface StatsSession { draft: StatsRecipe; applied: StatsRecipe | null; chart: ChartSettings; view: 'table' | 'chart'; viewer: string; hidden?: string[] }
 
 export function readSession(viewer: string): StatsSession | null {
   try {
@@ -177,4 +177,24 @@ export function cellIndex(result: StatisticsResult) {
   const map = new Map<string, StatisticsResult['cells'][number]>();
   for (const c of result.cells) map.set(`${c.side}|${tupleKey(c.row)}|${tupleKey(c.col)}`, c);
   return (side: 'all' | 'mine', row: readonly string[], col: readonly string[]) => map.get(`${side}|${tupleKey(row)}|${tupleKey(col)}`);
+}
+
+export type RowSort = { metric: string | null; dir: 'asc' | 'desc' };
+/** the table's row order (display + Excel): by the first population's row total (with columns) or row value;
+ *  unknown values last in both directions; otherwise the server order */
+export function sortedRowMembers(result: StatisticsResult, sort: RowSort): StatisticsResult['row_members'] {
+  const list = [...result.row_members];
+  if (!sort.metric) return list;
+  const side = result.spec.population === 'mine' ? 'mine' : 'all';
+  const cell = cellIndex(result);
+  const rowTotal = new Map(result.row_totals.map((t) => [`${t.side}|${tupleKey(t.key)}`, t]));
+  const val = (key: string[]) => (result.spec.columns.length ? rowTotal.get(`${side}|${tupleKey(key)}`)?.values[sort.metric!]?.value
+    : cell(side, key, [])?.values[sort.metric!]?.value) ?? null;
+  return list.sort((a, b) => {
+    const va = val(a.key), vb = val(b.key);
+    if (va === null && vb === null) return 0;
+    if (va === null) return 1;
+    if (vb === null) return -1;
+    return sort.dir === 'desc' ? vb - va : va - vb;
+  });
 }

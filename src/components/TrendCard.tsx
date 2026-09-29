@@ -6,6 +6,8 @@ import { fmtDays, fmtFineAmount, fmtInt, fmtMonth, fmtPercent, fmtRating } from 
 import Icon from './icons';
 import MonthlyRateSelector from './MonthlyRateSelector';
 import PanelStatus from './PanelStatus';
+import ExportButton from './ExportButton';
+import { trendSnapshot } from '../export/adapters/dashboard';
 import {
   TREND_RATES, TREND_RATE_LABEL, TREND_RATE_TOKEN, rateCellText, readTrendRates, trendRateRows, writeTrendRates,
   type RateCell, type TrendRate,
@@ -36,7 +38,7 @@ const VIEW_KEY = 'cm-trend-view';
 const readView = (): View => { try { return localStorage.getItem(VIEW_KEY) === 'rate' ? 'rate' : 'count'; } catch { return 'count'; } };
 
 /** 월별 추이: 건수 view (신고·답변) and the 처리결과 비율 view with 1–4 overlaid rates (S09). */
-export default function TrendCard({ monthly, theme, mine = null, mineState = mine ? 'ready' : 'off', busy = false, onMakeStatistics }: {
+export default function TrendCard({ monthly, theme, mine = null, mineState = mine ? 'ready' : 'off', busy = false, onMakeStatistics, exportCtx }: {
   monthly: MonthlyBucket[];
   theme: 'dark' | 'light';
   mine?: CompareMonth[] | null;
@@ -45,6 +47,8 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
   busy?: boolean;
   /** hand the current conditions + the checked rates to 맞춤 통계 */
   onMakeStatistics?: (rates: TrendRate[]) => void;
+  /** F06: the conditions of the DISPLAYED months (fixed dates, scope) for the Excel file */
+  exportCtx?: { conditions: Array<{ label: string; value: string }>; datasetVersion: string | null };
 }) {
   const [view, setViewState] = useState<View>(readView);
   const setView = (v: View) => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* ignore */ } };
@@ -111,6 +115,13 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
   const last = monthly[monthly.length - 1];
   const noRates = view === 'rate' && rates.length === 0;
   const allNull = view === 'rate' && rates.length > 0 && rows.every((r) => rates.every((k) => r.all[k].value === null));
+  // F06: the file follows the card (view, checked rates, 전체/내 신고); it waits instead of saving a half comparison
+  const exportBlocked = monthly.length === 0 ? '월별 자료가 없습니다' : busy ? '새 조건 결과를 기다리는 중입니다'
+    : mineState === 'loading' ? '내 신고 비교를 불러오는 중입니다(끝나면 누를 수 있습니다)'
+      : mineState === 'error' ? '내 신고를 불러오지 못했습니다(비교를 끄면 전체만 저장할 수 있습니다)'
+        : view === 'rate' && rates.length === 0 ? '표시할 지표를 선택해 주세요' : null;
+  const captureExport = () => (exportCtx ? trendSnapshot({ monthly, mine: withMine ? mine : null, view, rates, conditions: exportCtx.conditions,
+    datasetVersion: exportCtx.datasetVersion, capturedAt: new Date().toISOString() }) : null);
   const mineNote = mineState === 'loading' || mineState === 'error' || mineState === 'signed_out' ? MINE_NOTE[mineState] : null;
   return (
     <article className="cm-panel chart-card trend-card" aria-label="월별 추이" aria-busy={busy || mineState === 'loading'}>
@@ -210,6 +221,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
           </table>
         </div>
       )}
+      {exportCtx && <ExportButton source="trend" blocked={exportBlocked} capture={captureExport} />}
       <p className="chart-caption">{view === 'rate'
         ? '선마다 분모가 다릅니다(수용·일부·불수용=결과 확인, 과태료=답변 완료). 과태료는 처리결과와 겹치므로 네 선을 더해 100%가 되지 않습니다. 답변이 없는 달은 선을 끊습니다.'
         : '이번 달은 아직 끝나지 않아 다른 달보다 적게 보일 수 있습니다.'}</p>

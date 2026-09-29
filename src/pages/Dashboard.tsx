@@ -42,6 +42,7 @@ import { consistentWithPublic } from '../data/personal';
 import { readComparePref, readInterest, screenFromSearch, toggleInterest, viewFromSearch, writeComparePref, writeInterest, type ViewMode } from '../state/view';
 import { markPoints } from '../state/pointMarks';
 import { demoViewerFromSearch, sessionKeyOf } from '../auth/mapAuth';
+import { SHARE_PARAM } from '../state/share';
 import { CLUSTER_LEVEL } from '../lib/kakao';
 import type { CompareEntityRow } from '../domain/personal';
 import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
@@ -117,6 +118,8 @@ export default function Dashboard() {
   const [screen, setScreen] = useState<Screen>(() => screenFromSearch(window.location.search));
   const [statsOpened, setStatsOpened] = useState(() => screenFromSearch(window.location.search) === 'statistics');
   const [handoff, setHandoff] = useState<{ id: number; recipe: StatsRecipe } | null>(null);
+  // F02: a shared analysis link (?screen=statistics&sr=…) — raw text, validated by the statistics page
+  const [sharedRecipe, setSharedRecipe] = useState<string | null>(() => new URLSearchParams(window.location.search).get(SHARE_PARAM));
   useEffect(() => { if (screen === 'statistics') setStatsOpened(true); }, [screen]);
   const [dateError, setDateError] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>(() => viewFromSearch(window.location.search));
@@ -558,6 +561,13 @@ export default function Dashboard() {
   };
   const [scopeManagers, setScopeManagers] = useState<{ key: string; rows: PublicEntity[]; total: number } | null>(null);
   const conditionsText = (s: Scope | null) => (s ? scopeChips(s).map((c) => `${c.kind} ${c.label}`).join(' · ') : '');
+  /** F06: 조회 조건 rows of a dashboard card file (the DISPLAYED scope, fixed dates) */
+  const exportConditions = (s: Scope, address?: string) => [
+    { label: '기간', value: `${s.start} — ${s.end} (Asia/Seoul 날짜, 양 끝 포함)` },
+    { label: '대상 범위', value: scopeChips(s).filter((c) => c.id !== 'bbox').map((c) => `${c.kind} ${c.label}`).join(' · ') || '전국 · 모든 분류' },
+    ...(s.bbox ? [{ label: '지도 범위', value: `적용(경도 ${s.bbox[0]}~${s.bbox[2]}, 위도 ${s.bbox[1]}~${s.bbox[3]})` }] : []),
+    ...(address ? [{ label: '주소', value: address }] : []),
+  ];
 
   const accessCode = dash.access?.code && (ACCESS_CODES as readonly string[]).includes(dash.access.code) ? dash.access.code as AccessCode : null;
   if (accessCode) {
@@ -750,6 +760,8 @@ export default function Dashboard() {
                   {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
                     <PlaceEntityChart
                       key={point.key}
+                      exportCtx={shownScope ? { conditions: exportConditions(shownScope, point.address ?? '선택한 주소'), datasetVersion: version,
+                        blocked: dash.isRefreshing ? '새 조건 결과를 기다리는 중입니다' : null } : undefined}
                       managers={placeDetail.detail.managers}
                       total={placeDetail.detail.manager_total}
                       theme={resolvedTheme}
@@ -762,6 +774,7 @@ export default function Dashboard() {
                     <PlaceEntityChart
                       key={scopeManagers.key}
                       title="이 범위의 담당자별 처리 현황"
+                      exportCtx={{ conditions: exportConditions(shownScope), datasetVersion: version, blocked: dash.isRefreshing ? '새 조건 결과를 기다리는 중입니다' : null }}
                       managers={scopeManagers.rows}
                       total={scopeManagers.total}
                       theme={resolvedTheme}
@@ -772,6 +785,7 @@ export default function Dashboard() {
                 </div>
                 <section className="area-charts" id="analytics" aria-label="데이터로 보는 신고 현황">
                   <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null}
+                    exportCtx={shownScope ? { conditions: exportConditions(shownScope), datasetVersion: version } : undefined}
                     mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
                       : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
                         : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'}
@@ -806,7 +820,7 @@ export default function Dashboard() {
           {statsOpened && sessionKey !== null && (
             <StatisticsPage key={sessionKey} active={screen === 'statistics'} handoff={handoff} fallbackScope={shownScope} version={version}
               viewer={sessionKey} canMine={dataMode === 'demo' || auth.status === 'signed_in'} theme={resolvedTheme}
-              scopeChips={scopeChips} onBack={goDashboard} />
+              scopeChips={scopeChips} onBack={goDashboard} shared={sharedRecipe} onSharedDone={() => setSharedRecipe(null)} onSignIn={signIn} />
           )}
 
           <footer className="page-footer">

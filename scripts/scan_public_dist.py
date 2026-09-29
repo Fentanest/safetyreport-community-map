@@ -35,6 +35,27 @@ def private_keys(obj, path=''):
         for i,v in enumerate(obj): bad.extend(private_keys(v,path+f'/{i}'))
     return bad
 
+# F06: the ONE binary the site ships on purpose — the Excelize WebAssembly archive of the pinned npm package
+# (excelize-wasm 0.1.3). It is accepted only when it is byte-identical to that package's file and really is a gzip'd
+# WebAssembly module; its bytes are still searched for secret markers and tokens. Everything else is scanned as before.
+import hashlib
+PINNED_WASM = Path(__file__).resolve().parent.parent / 'node_modules' / 'excelize-wasm' / 'excelize.wasm.gz'
+PINNED_WASM_VERSION = '0.1.3'
+
+def pinned_binary(rel: Path, raw: bytes) -> str | None:
+    """None = accepted pinned binary; a string = why it is not; '' = not a pinned-binary candidate"""
+    if not re.fullmatch(r'assets/excelize\.wasm-[A-Za-z0-9_-]+\.gz', rel.as_posix()):return ''
+    try:
+        meta=json.loads((PINNED_WASM.parent/'package.json').read_text())
+        if meta.get('version')!=PINNED_WASM_VERSION:return f'excelize-wasm is {meta.get("version")}, expected {PINNED_WASM_VERSION}'
+        if hashlib.sha256(raw).hexdigest()!=hashlib.sha256(PINNED_WASM.read_bytes()).hexdigest():return 'not byte-identical to the pinned excelize-wasm archive'
+        body=gzip.decompress(raw)
+    except (OSError,EOFError,ValueError) as e:return f'pinned archive check failed ({type(e).__name__})'
+    if body[:4]!=b'\0asm':return 'not a WebAssembly module'
+    loose=body.decode('latin-1')
+    if FORBIDDEN.search(loose) or TOKEN_JWT.search(loose):return 'secret-like marker inside the WebAssembly module'
+    return None
+
 def scan(root: Path) -> list[str]:
     if not root.is_dir(): raise ValueError('public artifact directory not found')
     failures=[]
@@ -47,6 +68,9 @@ def scan(root: Path) -> list[str]:
             failures.append(f'{rel}: uninspected archive/compression; expand and validate before publishing');continue
         try:
             data=file.read_bytes()
+            why=pinned_binary(rel,data)
+            if why is None:continue
+            if why:failures.append(f'{rel}: {why}');continue
             if file.suffix=='.gz':data=gzip.decompress(data)
             elif file.suffix.lower() not in TEXT_SUFFIXES:continue
             text=data.decode('utf-8')

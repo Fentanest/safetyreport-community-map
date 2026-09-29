@@ -10,6 +10,11 @@ import {
 } from '../state/statistics';
 import PivotTable, { type RowSort } from '../components/stats/PivotTable';
 import PivotChart from '../components/stats/PivotChart';
+import ExportButton from '../components/ExportButton';
+import SharePanel from '../components/stats/SharePanel';
+import { statisticsSnapshot } from '../export/adapters/statistics';
+import { cartesianModel, effectiveHidden } from '../state/statsChartModel';
+import { checkAgainstCatalog, decodeShare, dropShareParam, recipeFromPayload, type SharePayload } from '../state/share';
 import MemberPicker, { PICK_KINDS, type PickedMember } from '../components/stats/MemberPicker';
 import PanelStatus from '../components/PanelStatus';
 import { fmtDate } from '../components/format';
@@ -21,7 +26,7 @@ type Run = { status: 'idle' } | { status: 'loading'; recipe: StatsRecipe } | { s
 const recipeKey = (r: StatsRecipe) => JSON.stringify({ scope: r.scope, spec: r.spec });
 
 /** S04 맞춤 통계 page (a separate screen inside the same shell). Draft edits never query; 통계 만들기 runs once. */
-export default function StatisticsPage({ active, handoff, fallbackScope, version, viewer, canMine, theme, scopeChips, onBack }: {
+export default function StatisticsPage({ active, handoff, fallbackScope, version, viewer, canMine, theme, scopeChips, onBack, shared = null, onSharedDone, onSignIn }: {
   /** the screen is shown (the page stays mounted while hidden so its draft and result survive a round trip) */
   active: boolean;
   /** a hand-off from the dashboard (new id = new hand-off) */
@@ -35,10 +40,21 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   theme: 'dark' | 'light';
   scopeChips: (s: Scope) => ScopeChip[];
   onBack: (section?: string) => void;
+  /** F02: the raw `sr` parameter of a shared analysis link (validated here, never trusted) */
+  shared?: string | null;
+  onSharedDone?: () => void;
+  onSignIn?: () => void;
 }) {
   const [catalog, setCatalog] = useState<StatCatalog | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
-  const restored = useRef(readSession(viewer));
+  // F02: an opened share link wins over this tab's restored session (the user asked for that analysis)
+  const restored = useRef(shared ? null : readSession(viewer));
+  const [share, setShare] = useState<{ status: 'none' } | { status: 'pending'; payload: SharePayload | null; error: string | null }
+    | { status: 'waiting_login'; payload: SharePayload } | { status: 'applied'; mine: boolean } | { status: 'error'; reason: string }>(() => {
+    if (!shared) return { status: 'none' };
+    const d = decodeShare(shared);
+    return d.ok ? { status: 'pending', payload: d.payload, error: null } : { status: 'error', reason: d.reason };
+  });
   const [draft, setDraft] = useState<StatsRecipe | null>(restored.current?.draft ?? null);
   const [applied, setApplied] = useState<StatsRecipe | null>(null);
   const [result, setResult] = useState<StatisticsResult | null>(null);
@@ -46,6 +62,10 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const [view, setView] = useState<'table' | 'chart'>(restored.current?.view ?? 'table');
   const [chart, setChart] = useState<ChartSettings>(restored.current?.chart ?? DEFAULT_CHART);
   const [sort, setSort] = useState<RowSort>({ metric: null, dir: 'desc' });
+  // F03: series hidden in the chart legend (stable series keys; presentation only)
+  const [hidden, setHidden] = useState<string[]>(restored.current?.hidden ?? []);
+  const [includeHidden, setIncludeHidden] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [picker, setPicker] = useState<string | null>(null);
   const [pick, setPick] = useState<{ row: string[]; col: string[] | null } | null>(null);
   const [saved, setSaved] = useState<SavedRecipe[]>(() => readSaved(viewer));
@@ -62,7 +82,25 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     return () => ac.abort();
   }, [active, catalog]);
 
+  // F02: the shared recipe is checked against this server's registry, then run with the opener's own permission
+  useEffect(() => {
+    if (share.status !== 'pending' || !catalog || !share.payload) return;
+    const why = checkAgainstCatalog(share.payload, catalog);
+    if (why) { setShare({ status: 'error', reason: why }); return; }
+    const { recipe, chart: c, view: v } = recipeFromPayload(share.payload);
+    setDraft(recipe);
+    setChart(c);
+    setView(v);
+    setHidden([]);
+    if (recipe.spec.population !== 'all' && !canMine) { setShare({ status: 'waiting_login', payload: share.payload }); return; }
+    setShare({ status: 'applied', mine: recipe.spec.population !== 'all' });
+    execute(recipe);
+  }, [share, catalog, canMine]); // eslint-disable-line react-hooks/exhaustive-deps
+  const closeShareError = () => { dropShareParam(); onSharedDone?.(); setShare({ status: 'none' }); };
+
   const runRef = useRef<StatsRecipe | null>(null);
+  const onSharedDoneRef = useRef(onSharedDone);
+  onSharedDoneRef.current = onSharedDone;
   const execute = useCallback((recipe: StatsRecipe) => {
     abort.current?.abort(); // client-side cancel of the older run; its late answer is ignored by the generation
     const ac = new AbortController();
@@ -78,6 +116,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         setResult(r);
         setApplied(recipe);
         setRun({ status: 'idle' });
+        if (recipe.origin === '공유 링크') { dropShareParam(); onSharedDoneRef.current?.(); }
       })
       .catch((e: unknown) => {
         if (ac.signal.aborted || my !== gen.current) return;
@@ -106,11 +145,11 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   // first open without a hand-off: restore the session's applied recipe, else the default preset on the dashboard scope
   useEffect(() => {
     // a hand-off (handled just above, same pass) or a restored draft always wins over the default preset
-    if (!active || draft || !fallbackScope || lastHandoff.current !== null) return;
+    if (!active || draft || !fallbackScope || lastHandoff.current !== null || share.status !== 'none') return;
     const r: StatsRecipe = { scope: fallbackScope, spec: baseSpec({ rows: ['agency'], columns: ['law'], metrics: ['fine_rate', 'completed_count'] }), labels: {}, origin: '기본 예시' };
     setDraft(r);
     execute(r);
-  }, [active, draft, fallbackScope, execute]);
+  }, [active, draft, fallbackScope, execute, share.status]);
   useEffect(() => {
     if (!active || applied || run.status !== 'idle' || !restored.current?.applied) return;
     const r = restored.current.applied;
@@ -118,8 +157,14 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     execute(r); // a refresh re-runs the last applied recipe once (the result itself is never stored)
   }, [active, applied, run.status, execute]);
   useEffect(() => {
-    if (draft) writeSession({ draft, applied, chart, view, viewer });
-  }, [draft, applied, chart, view, viewer]);
+    if (draft) writeSession({ draft, applied, chart, view, viewer, hidden });
+  }, [draft, applied, chart, view, viewer, hidden]);
+  // F03: a new result drops the hidden keys of series it no longer has (never hides another series in their place)
+  useEffect(() => {
+    if (!result || !catalog) return;
+    const universe = cartesianModel(result, catalog, { type: 'bar', metrics: result.spec.metrics, refusal: null, compatible: [], note: null });
+    setHidden((h) => { const next = effectiveHidden(universe, h); return next.length === h.length ? h : next; });
+  }, [result, catalog]);
 
   useReportActivity('statistics', run.status === 'loading'
     ? { resource: 'statistics', phase: 'fetching', label: result ? '선택한 조건으로 통계를 다시 만드는 중' : '선택한 조건으로 통계를 만드는 중' }
@@ -138,12 +183,64 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     return () => cancelAnimationFrame(id);
   }, [active, hasDraft]);
   const plan = useMemo(() => (result && catalog ? planChart(result.spec, catalog, chart) : null), [result, catalog, chart]);
+  // F06: the file is the APPLIED result on screen (never the draft); a newer run in flight locks the button
+  const exportBlocked = !result || !applied || !catalog ? '먼저 통계를 만들어 주세요(내보낼 결과가 없습니다)'
+    : run.status === 'loading' ? '새 조건 결과를 기다리는 중입니다' : null;
+  const captureExport = () => {
+    if (!result || !applied || !catalog) return null;
+    const dl = (id: string) => catalog.dimensions.find((d) => d.id === id)?.label ?? id;
+    const ml = (id: string) => catalog.metrics.find((m) => m.id === id)?.label ?? id;
+    const chipsText = scopeChips(applied.scope).filter((c) => c.id !== 'bbox').map((c) => `${c.kind} ${c.label}`).join(' · ');
+    const p = planChart(result.spec, catalog, chart);
+    const conditions = [
+      { label: '기간', value: `${applied.scope.start} — ${applied.scope.end} (Asia/Seoul 날짜, 양 끝 포함)` },
+      { label: '날짜 기준', value: applied.spec.date_basis === 'completed_date' ? '답변 받은 날' : '신고한 날' },
+      { label: '대상 범위', value: chipsText || '전국 · 모든 분류' },
+      ...(applied.scope.bbox ? [{ label: '지도 범위', value: `적용(경도 ${applied.scope.bbox[0]}~${applied.scope.bbox[2]}, 위도 ${applied.scope.bbox[1]}~${applied.scope.bbox[3]})` }] : []),
+      ...(applied.spec.place_key ? [{ label: '주소', value: applied.labels[applied.spec.place_key] ?? '선택한 주소' }] : []),
+      { label: '누구의 신고', value: applied.spec.population === 'all' ? '전체' : applied.spec.population === 'mine' ? '내 신고(이 파일을 내보낸 사람)' : '전체와 내 신고(내보낸 사람) 비교' },
+      { label: '행', value: applied.spec.rows.map(dl).join(' › ') || '없음' },
+      { label: '열', value: applied.spec.columns.map(dl).join(' › ') || '없음' },
+      { label: '지표', value: applied.spec.metrics.map(ml).join(', ') },
+      { label: '답변 신고', value: `${result.population_count.all !== null ? `전체 ${result.population_count.all.toLocaleString('ko-KR')}건` : ''}${result.population_count.mine !== null ? ` 내 신고 ${result.population_count.mine.toLocaleString('ko-KR')}건` : ''}`.trim() },
+      ...(result.excluded.no_report_date > 0 ? [{ label: '제외', value: `신고일이 없는 ${result.excluded.no_report_date.toLocaleString('ko-KR')}건(신고일 기준이라 제외)` }] : []),
+      { label: '표 정렬', value: sort.metric ? `${ml(sort.metric)} ${sort.dir === 'desc' ? '큰 값부터' : '작은 값부터'}` : '서버 순서' },
+      { label: '그래프', value: `${CHART_LABEL[chart.type]} 요청 → ${CHART_LABEL[p.type]}${p.refusal ? ` (${p.refusal})` : ''}` },
+      { label: '지표 정의', value: applied.spec.metrics.map((m) => `${ml(m)}: ${catalog.metrics.find((x) => x.id === m)?.description ?? ''}`).join(' · ') },
+      { label: '빈 값', value: '‘—’ 해당 조합 신고 없음 · ‘분모 없음’ 분모가 0 · ‘자료 없음’ 계산할 자료가 없음. 모두 0이 아닙니다.' },
+    ];
+    return statisticsSnapshot({ result, catalog, chart, sort, hidden, includeHidden, conditions, title: `맞춤 통계 · ${describe(applied)}`, capturedAt: new Date().toISOString() });
+  };
 
+  // F02 banners (also shown before any draft exists: an invalid link never falls back to a default silently)
+  const shareBanners = (
+    <>
+      {share.status === 'error' && (
+        <div className="banner error share-banner" role="alert">
+          <span className="grow">공유 링크를 열 수 없습니다: {share.reason} 다른 구성으로 바꾸지 않았습니다.</span>
+          <button type="button" className="ghost-btn" onClick={closeShareError}>닫고 기본 화면으로</button>
+        </div>
+      )}
+      {share.status === 'waiting_login' && (
+        <div className="banner warn share-banner" role="note">
+          <span className="grow">이 링크는 ‘{share.payload.spec.population === 'mine' ? '내 신고' : '전체와 내 신고 비교'}’ 구성입니다. 내 신고는 링크를 연 사람의 신고로 계산하므로 로그인이 필요합니다. 공유한 사람의 값은 볼 수 없습니다.</span>
+          {onSignIn && <button type="button" className="ghost-btn" onClick={onSignIn}>로그인</button>}
+        </div>
+      )}
+      {share.status === 'applied' && (
+        <div className="banner info share-banner" role="note">
+          <span className="grow">공유받은 분석 구성으로 다시 계산했습니다. 링크에는 결과 수치가 없고, 지금 자료와 내 권한으로 계산합니다{share.mine ? ' · 내 신고는 링크를 연 사람(나)의 신고입니다' : ''}. 주소·지도 범위 조건은 링크에 포함되지 않습니다.</span>
+          <button type="button" className="link-btn" onClick={() => setShare({ status: 'none' })}>닫기</button>
+        </div>
+      )}
+    </>
+  );
   if (!draft) {
     return (
       <section className="stats-page" aria-labelledby="stats-title" hidden={!active}>
         <h1 id="stats-title" tabIndex={-1}>맞춤 통계</h1>
-        <p className="cm-muted">지도의 통계를 먼저 불러오는 중입니다…</p>
+        {shareBanners}
+        {share.status !== 'error' && <p className="cm-muted">지도의 통계를 먼저 불러오는 중입니다…</p>}
       </section>
     );
   }
@@ -234,6 +331,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         <button type="button" className="ghost-btn" onClick={() => onBack()}>지도로 돌아가기</button>
       </header>
       {catalogError && <div className="banner error" role="alert"><span className="grow">{catalogError}</span></div>}
+      {shareBanners}
       <div className="stats-layout">
         <aside className="cm-panel stats-builder" aria-label="통계 설정">
           <label className="stats-field">예시 구성
@@ -353,6 +451,17 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
               )}
             </div>
           </div>
+          <div className="stats-actions">
+            <ExportButton source="statistics" blocked={exportBlocked} capture={captureExport}
+              extra={hidden.length > 0 && view === 'chart' ? (
+                <label className="inline-check export-option"><input type="checkbox" checked={includeHidden} onChange={(e) => setIncludeHidden(e.target.checked)} />숨긴 계열도 차트에 포함</label>
+              ) : null} />
+            <button type="button" className="mini-btn" aria-expanded={shareOpen} disabled={!applied && !draft} onClick={() => setShareOpen((o) => !o)}>공유 링크</button>
+          </div>
+          {shareOpen && (
+            <SharePanel applied={applied} draft={draft} unapplied={unapplied} chart={chart} view={view} placeLabel={(r) => (r.spec.place_key ? r.labels[r.spec.place_key] ?? '선택한 주소' : null)}
+              onClose={() => setShareOpen(false)} />
+          )}
           {result && result.filter_members.some((m) => m.status === 'unconfirmed') && (
             <div className="banner warn" role="note">
               <span className="grow">확인할 수 없는 비교 대상 {result.filter_members.filter((m) => m.status === 'unconfirmed').length}개는 이 결과에 포함되지 않았습니다(전체로 바꾸지 않았습니다). 설정에서 대상을 정리해 주세요.</span>
@@ -367,7 +476,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           {!result && running && <div className="skeleton stats-skeleton" role="status" aria-label="통계를 만드는 중" />}
           {result && catalog && (view === 'table'
             ? <PivotTable result={result} catalog={catalog} sort={sort} onSort={setSort} onPick={(row, col) => setPick({ row, col })} />
-            : <PivotChart result={result} catalog={catalog} settings={chart} theme={theme} onPick={(row, col) => setPick({ row, col })} />)}
+            : <PivotChart result={result} catalog={catalog} settings={chart} theme={theme} hidden={hidden} onHidden={setHidden} onPick={(row, col) => setPick({ row, col })} />)}
           {result && result.population_count.all === 0 && result.population_count.mine !== null && result.population_count.mine === 0 && <p className="cm-muted">이 조건에 맞는 답변 신고가 없습니다(0건).</p>}
           {pick && result && (
             <div className="stats-pick" role="dialog" aria-label="이 항목으로 좁히기">

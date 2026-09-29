@@ -182,3 +182,33 @@ html { scroll-padding-top: var(--scroll-top-inset, calc(var(--topbar-h) + 12px))
 @container (min-width: 900px) { .heatmap-pair.compare { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stats-member.unavailable, .picker-unavailable { color: var(--rejected); text-decoration: line-through dotted; }
 .picker-unavailable { text-decoration: none; font-size: 11px; white-space: nowrap; }
+
+/* F03 series legend (buttons: click / Enter / Space; presentation only) */
+.series-legend { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 0 4px; }
+.series-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--raised); color: var(--text); font-size: 12px; cursor: pointer; max-width: 100%; }
+.series-toggle .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.series-toggle .dash { width: 14px; border-top: 2px dashed; flex: none; }
+.series-toggle.off { color: var(--muted); background: transparent; text-decoration: line-through; }
+.series-toggle.off .dot, .series-toggle.off .dash { opacity: .35; }
+.series-toggle:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 2px; }
+
+/* F06 Excel export + F02 share */
+.stats-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; margin: 4px 0 8px; padding: 0 16px; }
+.export-box { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 6px 16px 0; font-size: 12px; }
+.stats-actions .export-box { padding: 0; flex: 1 1 320px; }
+.export-hint { color: var(--muted); }
+.export-progress, .export-ready, .export-error { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.export-error { color: var(--rejected); }
+.export-progress .spinner { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--brand-ink); animation: cm-spin .8s linear infinite; }
+@keyframes cm-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .export-progress .spinner { animation: none; } }
+.share-panel { border: 1px solid var(--border); border-radius: 12px; background: var(--raised); padding: 12px 14px; margin: 0 16px 12px; font-size: 13px; display: grid; gap: 10px; }
+.share-panel .share-lead { margin: 0; color: var(--text-secondary, var(--muted)); }
+.share-panel ul { margin: 0; padding-left: 18px; }
+.share-warn { border-left: 3px solid var(--partial); padding-left: 10px; display: grid; gap: 6px; }
+.share-row { display: flex; gap: 10px; align-items: center; }
+.share-result { display: grid; gap: 6px; }
+.share-result input { width: 100%; min-width: 0; font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+.share-error { color: var(--rejected); margin: 0; }
+.banner.info { border-left-color: var(--brand); }

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { MetricDef, StatCatalog, StatisticsResult } from '../../domain/statistics';
-import { cellIndex, tupleKey } from '../../state/statistics';
+import { cellIndex, sortedRowMembers, tupleKey, type RowSort } from '../../state/statistics';
 import { fmtStat } from './statFormat';
 
 const PAGE = 50;
-export type RowSort = { metric: string | null; dir: 'asc' | 'desc' };
+export type { RowSort };
 
 /**
  * S07 table renderer of a complete StatisticsResult. Rows are member tuples; columns are column members × metrics
@@ -29,21 +29,7 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
   const metrics = result.spec.metrics;
   const rowTotal = useMemo(() => new Map(result.row_totals.map((t) => [`${t.side}|${tupleKey(t.key)}`, t])), [result]);
   const colTotal = useMemo(() => new Map(result.col_totals.map((t) => [`${t.side}|${tupleKey(t.key)}`, t])), [result]);
-  const rows = useMemo(() => {
-    const list = [...result.row_members];
-    if (sort.metric) {
-      const val = (key: string[]) => (result.spec.columns.length ? rowTotal.get(`${sides[0]}|${tupleKey(key)}`)?.values[sort.metric!]?.value
-        : cell(sides[0], key, [])?.values[sort.metric!]?.value) ?? null;
-      list.sort((a, b) => {
-        const va = val(a.key), vb = val(b.key);
-        if (va === null && vb === null) return 0;
-        if (va === null) return 1; // unknown values last in both directions
-        if (vb === null) return -1;
-        return sort.dir === 'desc' ? vb - va : va - vb;
-      });
-    }
-    return list;
-  }, [result, sort, rowTotal, cell]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = useMemo(() => sortedRowMembers(result, sort), [result, sort]);
   const pages = Math.max(1, Math.ceil(rows.length / PAGE));
   const shown = rows.slice(page * PAGE, page * PAGE + PAGE);
   const hasRows = result.spec.rows.length > 0, hasCols = result.spec.columns.length > 0;

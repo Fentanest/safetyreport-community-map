@@ -50,7 +50,16 @@ export function baseOption(t: ChartTheme) {
   };
 }
 
+/** dev/e2e only (the calls sit behind import.meta.env.DEV and are stripped from production): live chart instances and
+ *  ResizeObservers, so the browser check can prove that switching renderers 20× leaves nothing behind (F01) */
+function devCount(name: '__cmChartLive' | '__cmChartObservers', d: number) {
+  const g = globalThis as unknown as Record<string, number>;
+  g[name] = (g[name] ?? 0) + d;
+}
+
 /**
+ * The host element must be rendered by the SAME component that calls this hook, on every render (F01): the instance
+ * is created once when that component mounts and disposed when it unmounts.
  * @param build returns the full option for the current data (called again when `deps` or the theme change)
  * @param onClick optional series click handler (data index + series index)
  */
@@ -74,16 +83,24 @@ export function useEChart(build: (t: ChartTheme) => Record<string, unknown> | nu
       const chart = init(el);
       chartRef.current = chart;
       // dev/e2e only (stripped from production builds): lets the browser check read the drawn series ids
-      if (import.meta.env.DEV) (el as unknown as { __chart?: EChartsType }).__chart = chart;
+      if (import.meta.env.DEV) {
+        (el as unknown as { __chart?: EChartsType }).__chart = chart;
+        devCount('__cmChartLive', 1);
+      }
       chart.on('click', (params) => clickRef.current?.(params as unknown as { dataIndex: number; seriesIndex: number; data: unknown }));
       if (typeof ResizeObserver !== 'undefined') {
         ro = new ResizeObserver(() => chart.resize());
         ro.observe(el);
+        if (import.meta.env.DEV) devCount('__cmChartObservers', 1);
       }
       setReady(true);
     }).catch(() => { if (!dead) setError('그래프를 불러오지 못했습니다. 표로 보기를 눌러 주세요.'); });
     return () => {
       dead = true;
+      if (import.meta.env.DEV) {
+        if (ro) devCount('__cmChartObservers', -1);
+        if (chartRef.current) devCount('__cmChartLive', -1);
+      }
       ro?.disconnect();
       chartRef.current?.dispose();
       chartRef.current = null;
