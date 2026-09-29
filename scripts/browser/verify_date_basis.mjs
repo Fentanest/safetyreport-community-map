@@ -20,7 +20,7 @@ const IDS = [
   'MP-01', 'MP-04', 'MP-05', 'MP-06', 'MP-07', 'MP-11',
   'KP-01', 'KP-02', 'KP-05', 'KP-06', 'KP-07', 'KP-12',
   'SO-01', 'SO-07', 'SO-13', 'SO-06',
-  'LY-01', 'LY-02', 'LY-03', 'LY-05', 'LY-06', 'LY-08', 'LY-10', 'LY-11',
+  'LY-01', 'LY-02', 'LY-03', 'LY-05', 'LY-06', 'LY-08', 'LY-09', 'LY-10', 'LY-11',
   'EX-01', 'EX-03', 'EX-10', 'EX-11',
 ];
 const run = createRun({ dir, suite: 'date-basis', ids: IDS, meta: {
@@ -43,7 +43,7 @@ const urlParams = (page) => page.evaluate(() => Object.fromEntries(new URLSearch
 
 async function fresh(ctx, { dataset = 'synthetic', search = '', ...opts } = {}) {
   await api('reset');
-  if (dataset === 'oracle') await api('dataset', { name: 'oracle' });
+  if (dataset !== 'synthetic') await api('dataset', { name: dataset });
   const s = await openPage(browser, { height: 1000, search, ...opts });
   captureConsole(s.page, ctx);
   await waitMap(s.page);
@@ -69,7 +69,7 @@ try {
     await s.context.close();
   });
 
-  await step('basis-top', ['DT-02', 'DT-16'], async (ctx) => {
+  await step('basis-top', ['DT-02', 'DT-16', 'LY-09'], async (ctx) => {
     const s = await fresh(ctx, { search: '?date_basis=completed_date&start=2026-03-01&end=2026-08-31&category=all' });
     const { page } = s;
     const before = dashReq(await log()).length;
@@ -79,6 +79,14 @@ try {
     const reqs = dashReq(await log()).slice(before);
     check('DT-02', 'exactly one dashboard request', reqs.length, 1);
     check('DT-02', 'same dates, new basis', reqs.map((r) => [r.params.date_basis, r.params.start, r.params.end]), [['report_date', '2026-03-01', '2026-08-31']]);
+    // LY-09: back/forward restore the basis with the dates (one request each way)
+    await page.goBack();
+    await idle(page);
+    check('LY-09', 'back → 답변일 again, same dates', [await page.getByLabel('날짜 기준').first().inputValue(), (await urlParams(page)).start], ['completed_date', '2026-03-01']);
+    await page.goForward();
+    await idle(page);
+    check('LY-09', 'forward → 신고일', await page.getByLabel('날짜 기준').first().inputValue(), 'report_date');
+    check('LY-09', 'the displayed numbers follow (last request basis)', dashReq(await log()).at(-1)?.params.date_basis, 'report_date');
     await page.getByRole('button', { name: /상세 필터/ }).click();
     check('DT-02', 'drawer reopens on the applied basis', await page.locator('input[name="drawer-basis"][value="report_date"]').isChecked(), true);
     await page.getByRole('button', { name: '닫기' }).click();

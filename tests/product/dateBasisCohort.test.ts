@@ -195,3 +195,29 @@ describe('long periods in the personal comparison', () => {
     expect(personalCompareSchema.safeParse(JSON.parse(JSON.stringify(c))).success).toBe(true);
   });
 });
+
+describe('calendar (D12)', () => {
+  const one = (patch: Partial<PrivateFact>): PrivateFact => ({ ...facts[0], fact_identity: `cal-${Math.random()}`, report_identity: null, is_representative: true, ...patch });
+  it('DT-12 a UTC timestamp is placed on its KST day (08-31 15:30Z = 09-01 KST, outside August); month/year ends inclusive', () => {
+    const late = one({ report_date: '2025-08-31T15:30:00Z', completed_date: '2025-09-02' });
+    const edge = one({ report_date: '2025-08-31', completed_date: '2025-09-02' });
+    const leap = one({ report_date: '2024-02-29', completed_date: '2024-03-02' });
+    const aug = selectScope([late, edge], scope('report_date', { start: '2025-08-01', end: '2025-08-31' }));
+    expect(aug.cohort).toEqual([edge]);
+    expect(selectScope([leap], scope('report_date', { start: '2024-02-01', end: '2024-02-29' })).cohort).toHaveLength(1);
+  });
+  it('DT-17 "진행 중" is the real KST month, not the latest data month; the data end is its own note', () => {
+    const d = aggregateDashboard(facts, scope('completed_date', { start: '2025-06-01', end: '2025-09-30' }),
+      { ...options, asOf: '2025-06-30', today: '2025-09-29', basisBounds: { report_date: { min: '2025-04-01', max: '2025-06-30' }, completed_date: { min: '2025-04-01', max: '2025-06-30' } } });
+    const june = d.monthly.find((m) => m.month === '2025-06')!, sept = d.monthly.find((m) => m.month === '2025-09')!;
+    expect(june.in_progress).toBe(false);
+    expect(sept.in_progress).toBe(true);
+    expect(sept.report_count).toBeNull(); // after the data end: no_data, not a real 0
+  });
+  it('DT-18 8.10–8.20 is a partial interval of August (never shown as the whole month)', () => {
+    const d = aggregateDashboard(facts, scope('completed_date', { start: '2025-08-10', end: '2025-08-20' }), options);
+    expect(d.monthly).toHaveLength(1);
+    expect(d.monthly[0]).toMatchObject({ month: '2025-08', interval_start: '2025-08-10', interval_end: '2025-08-20', range_partial: true });
+    expect(d.monthly[0].report_count).toBe(2); // C (08-20) and D (08-20); B (08-05) is outside the interval
+  });
+});
