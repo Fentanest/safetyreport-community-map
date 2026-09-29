@@ -7,13 +7,16 @@ const ROOT = new URL('../../shared/agency-region-registry/', import.meta.url);
 const read = (name: string) => JSON.parse(readFileSync(new URL(name, ROOT), 'utf8'));
 const manifest = read('manifest.json');
 const registryVersion: string = manifest.registry_version;
-const indexRows = read('data/agency_index.json').rows as Array<Array<string | null>>;
+const indexBlob = read('data/agency_index.json');
+const indexRows = indexBlob.rows as Array<Array<string | null>>;
 const index: Record<string, Array<string | null>> = {};
 for (const row of indexRows) index[row[0] as string] = row.slice(1);
+const compact: Record<string, string> = Object.fromEntries(indexBlob.compact_rows as Array<[string, string]>);
 const legacy = read('data/agency_legacy.json');
 const snap: AgencySnapshot = {
   links: read('data/agency_links.json').links,
   index,
+  compact,
   forward: legacy.forward,
   multi: legacy.multi,
   institutions: read('data/agency_institutions.json').institutions,
@@ -25,7 +28,7 @@ const cases = read('vectors/resolve_cases.json').cases;
 
 describe('agency-region-registry vectors (shared)', () => {
   it('registry version matches the snapshot', () => {
-    expect(registryVersion).toBe('2026-09-29.2');
+    expect(registryVersion).toBe('2026-09-29.3');
   });
   for (const c of cases) {
     it(c.name, () => {

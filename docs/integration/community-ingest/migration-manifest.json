@@ -269,6 +269,15 @@
    "depends_on": [
     "202609290200"
    ]
+  },
+  {
+   "version": "202609290400",
+   "repo": "map",
+   "path": "supabase/migrations/202609290400_agency_registry_2026_09_29_3.sql",
+   "sha256": "d109e4974af501cfced6ab5ed301ab5d6a78073bfc8d9845509cb7cd4e07b777",
+   "depends_on": [
+    "202609290300"
+   ]
   }
  ],
  "functions": [
