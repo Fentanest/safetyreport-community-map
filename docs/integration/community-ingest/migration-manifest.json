@@ -302,7 +302,7 @@
    "version": "202610010100",
    "repo": "map",
    "path": "supabase/migrations/202610010100_single_date_cohort.sql",
-   "sha256": "342d72b93ebe0521ac0e038a93c48434d9e1637393cff90d0695b24642e32216",
+   "sha256": "5e0135a44f6edf7626c77933d65efbeef559c6182517ebc26651669202b1fd74",
    "depends_on": [
     "202609300100"
    ]
@@ -311,7 +311,7 @@
    "version": "202610020100",
    "repo": "map",
    "path": "supabase/migrations/202610020100_my_reports.sql",
-   "sha256": "85bf81e9a65514b33896326ecf9e2ca14e00c2eb42b3e90184f8bb2a1baa7222",
+   "sha256": "05d675b82cca6a2bf78ff29441f897ac19965c6aa8195ba54856870c6cd436c8",
    "depends_on": [
     "202609300200",
     "202610010100"

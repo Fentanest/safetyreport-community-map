@@ -1,9 +1,9 @@
--- my-reports-v1 (contracts/my-reports/README.md): the Chrome extension's read-only view of the signed-in user's
+-- my-reports-v1 (contracts/my-reports/README.md): the Chrome extension’s read-only view of the signed-in user’s
 -- OWN completed reports. Owner: safetyreport-community-map. Depends on 202610010100 and the AUTH registry
 -- (private.community_identity_state, private.community_lineage_active, community_consent_grants).
 --
--- Order (contract §1.3): verified account → the user's own consent-active completed uploads → identity and
--- representative elected INSIDE that own set (another account's observation never elects, fills a number or
+-- Order (contract §1.3): verified account → the user’s own consent-active completed uploads → identity and
+-- representative elected INSIDE that own set (another account’s observation never elects, fills a number or
 -- hides a row) → search condition on the representative → full-scope aggregates and the page. Everything is
 -- computed here; the Edge function receives only the page, the aggregates and a version hash.
 --
@@ -24,7 +24,7 @@ drop function if exists public.internal_my_reports(uuid, uuid, text, text, text,
 -- Normalisation, byte-identical to contracts/my-reports/types.ts (WHITESPACE = JS `\s`).
 -- The per-row helpers below are plain IMMUTABLE SQL without a SET clause so the planner inlines them (a SET clause or
 -- SECURITY DEFINER makes every row a separate nested call: measured 20k-report user, MEASUREMENTS.md). They touch no
--- table and name every built-in as pg_catalog.*, so the caller's search_path cannot redirect them.
+-- table and name every built-in as pg_catalog.*, so the caller’s search_path cannot redirect them.
 create or replace function private.my_reports_norm_vehicle(p text)
 returns text language sql immutable parallel safe as $$
     select pg_catalog.regexp_replace(pg_catalog.normalize(p, 'NFC'),
@@ -68,7 +68,7 @@ create type private.my_reports_row as (
     rating integer
 );
 
--- The user's own representative completed reports (one row per report identity, no search condition).
+-- The user’s own representative completed reports (one row per report identity, no search condition).
 create or replace function private.my_reports_own(p_user uuid)
 returns setof private.my_reports_row language sql stable security definer set search_path = '' set work_mem = '32MB' as $$
     -- the lineage check runs once per distinct grant (materialised: otherwise the planner pushes it into the
@@ -95,7 +95,7 @@ returns setof private.my_reports_row language sql stable security definer set se
            and f.public_state = 'completed'
            and f.status in ('accepted', 'partial', 'rejected', 'completed_unknown')
     ),
-    -- the number a key was first seen with, over the user's own consent-active completed history only
+    -- the number a key was first seen with, over the user’s own consent-active completed history only
     key_numbers as (
         select distinct on (o.source_report_key) o.source_report_key, o.report_number as key_number
           from own o
@@ -178,7 +178,7 @@ returns jsonb language sql immutable as $$
 $$;
 
 -- Personal data version: every returned field of every own report + the identity + the account state.
--- Another account's upload cannot change it; a content/rating/amount/agency/manager/number/consent change does.
+-- Another account’s upload cannot change it; a content/rating/amount/agency/manager/number/consent change does.
 create or replace function private.my_reports_version(p private.my_reports_row[], p_contributor text)
 returns text language sql immutable as $$
     select left(encode(sha256(convert_to(
