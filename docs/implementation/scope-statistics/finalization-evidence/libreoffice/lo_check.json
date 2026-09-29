@@ -1,0 +1,1527 @@
+{
+  "tool": "LibreOffice 24.2.7.2 420(Build:2)",
+  "note": "LibreOffice Calc is a supplementary viewer, NOT Microsoft Excel",
+  "results": [
+    {
+      "file": "01-stats-table-view.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [],
+      "conditional_formats": 1,
+      "table_formulas": 108,
+      "table_formulas_numeric_after_recalc": 108,
+      "edit_check": null,
+      "png": [
+        "01-stats-table-view-1.png",
+        "01-stats-table-view-2.png"
+      ]
+    },
+    {
+      "file": "02-stats-chart-bar.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$15"
+              ],
+              "values": [
+                0.3565217391304348,
+                0.125,
+                0.1111111111111111,
+                0.4444444444444444,
+                0.2857142857142857,
+                0.3333333333333333,
+                0.0,
+                0.5,
+                1.0,
+                1.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$15"
+              ],
+              "values": [
+                0.5,
+                0.5833333333333334,
+                0.6,
+                0.0,
+                0.0,
+                1.0,
+                0.3333333333333333,
+                null,
+                0.5,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$6:$D$15"
+              ],
+              "values": [
+                null,
+                0.3333333333333333,
+                0.3333333333333333,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$E$6:$E$15"
+              ],
+              "values": [
+                0.0,
+                0.2,
+                0.3333333333333333,
+                0.5,
+                0.0,
+                1.0,
+                0.0,
+                0.6666666666666666,
+                0.0,
+                null
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$F$6:$F$15"
+              ],
+              "values": [
+                0.3333333333333333,
+                0.4,
+                0.3333333333333333,
+                0.4,
+                0.0,
+                null,
+                null,
+                null,
+                0.0,
+                null
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$G$6:$G$15"
+              ],
+              "values": [
+                1.0,
+                0.0,
+                0.25,
+                0.25,
+                null,
+                0.0,
+                1.0,
+                null,
+                null,
+                1.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$H$6:$H$15"
+              ],
+              "values": [
+                0.0,
+                0.3333333333333333,
+                0.0,
+                0.0,
+                1.0,
+                0.3333333333333333,
+                0.0,
+                null,
+                null,
+                0.6666666666666666
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$I$6:$I$15"
+              ],
+              "values": [
+                null,
+                0.0,
+                0.0,
+                0.0,
+                0.3333333333333333,
+                null,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$J$6:$J$15"
+              ],
+              "values": [
+                null,
+                0.0,
+                0.0,
+                0.2,
+                0.5,
+                null,
+                null,
+                0.0,
+                0.5,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$K$6:$K$15"
+              ],
+              "values": [
+                1.0,
+                0.3333333333333333,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                null
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$L$6:$L$15"
+              ],
+              "values": [
+                0.3333333333333333,
+                0.0,
+                0.0,
+                0.0,
+                0.5,
+                null,
+                0.0,
+                1.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$M$6:$M$15"
+              ],
+              "values": [
+                null,
+                0.3333333333333333,
+                0.6666666666666666,
+                0.0,
+                null,
+                null,
+                0.0,
+                0.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$N$6:$N$15"
+              ],
+              "values": [
+                null,
+                0.0,
+                0.3333333333333333,
+                0.6666666666666666,
+                null,
+                null,
+                null,
+                0.5,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$O$6:$O$15"
+              ],
+              "values": [
+                0.0,
+                0.25,
+                0.25,
+                0.3333333333333333,
+                0.0,
+                0.16666666666666666,
+                0.3333333333333333,
+                0.0,
+                0.5,
+                0.0
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 108,
+      "table_formulas_numeric_after_recalc": 108,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$C$8",
+        "old_value": 41.0,
+        "new_value": 42.0,
+        "plotted_before": 0.3565217391304348,
+        "plotted_after": 0.3652173913043478,
+        "chart_followed": true
+      },
+      "png": [
+        "02-stats-chart-bar-1.png",
+        "02-stats-chart-bar-2.png"
+      ]
+    },
+    {
+      "file": "03-stats-compare-heatmap.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [],
+      "conditional_formats": 2,
+      "table_formulas": 74,
+      "table_formulas_numeric_after_recalc": 74,
+      "edit_check": null,
+      "png": [
+        "03-stats-compare-heatmap-1.png",
+        "03-stats-compare-heatmap-2.png"
+      ]
+    },
+    {
+      "file": "04-stats-stack100-hidden.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$15"
+              ],
+              "values": [
+                0.39215686274509803,
+                0.5925925925925926,
+                0.7021276595744681,
+                0.6363636363636364,
+                0.28,
+                0.631578947368421,
+                0.6,
+                0.5625,
+                0.6,
+                0.8181818181818182
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$15"
+              ],
+              "values": [
+                0.30392156862745096,
+                0.2037037037037037,
+                0.06382978723404255,
+                0.11363636363636363,
+                0.24,
+                0.15789473684210525,
+                0.06666666666666667,
+                0.125,
+                0.2,
+                0.09090909090909091
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 0,
+      "table_formulas_numeric_after_recalc": 0,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$B$8",
+        "old_value": 40.0,
+        "new_value": 41.0,
+        "plotted_before": 0.39215686274509803,
+        "plotted_after": 0.39805825242718446,
+        "chart_followed": true
+      },
+      "png": [
+        "04-stats-stack100-hidden-1.png",
+        "04-stats-stack100-hidden-2.png"
+      ]
+    },
+    {
+      "file": "05-stats-all-hidden.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [],
+      "conditional_formats": 0,
+      "table_formulas": 0,
+      "table_formulas_numeric_after_recalc": 0,
+      "edit_check": null,
+      "png": [
+        "05-stats-all-hidden-1.png",
+        "05-stats-all-hidden-2.png"
+      ]
+    },
+    {
+      "file": "06-stats-include-hidden.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$15"
+              ],
+              "values": [
+                0.39215686274509803,
+                0.5925925925925926,
+                0.7021276595744681,
+                0.6363636363636364,
+                0.28,
+                0.631578947368421,
+                0.6,
+                0.5625,
+                0.6,
+                0.8181818181818182
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$15"
+              ],
+              "values": [
+                0.30392156862745096,
+                0.2037037037037037,
+                0.06382978723404255,
+                0.11363636363636363,
+                0.24,
+                0.15789473684210525,
+                0.06666666666666667,
+                0.125,
+                0.2,
+                0.09090909090909091
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$6:$D$15"
+              ],
+              "values": [
+                0.30392156862745096,
+                0.2037037037037037,
+                0.23404255319148937,
+                0.25,
+                0.48,
+                0.21052631578947367,
+                0.3333333333333333,
+                0.3125,
+                0.2,
+                0.09090909090909091
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 0,
+      "table_formulas_numeric_after_recalc": 0,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$B$8",
+        "old_value": 40.0,
+        "new_value": 41.0,
+        "plotted_before": 0.39215686274509803,
+        "plotted_after": 0.39805825242718446,
+        "chart_followed": true
+      },
+      "png": [
+        "06-stats-include-hidden-1.png",
+        "06-stats-include-hidden-2.png"
+      ]
+    },
+    {
+      "file": "07-stats-snapshot-kept.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$15"
+              ],
+              "values": [
+                0.39215686274509803,
+                0.5925925925925926,
+                0.7021276595744681,
+                0.6363636363636364,
+                0.28,
+                0.631578947368421,
+                0.6,
+                0.5625,
+                0.6,
+                0.8181818181818182
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$15"
+              ],
+              "values": [
+                0.30392156862745096,
+                0.2037037037037037,
+                0.06382978723404255,
+                0.11363636363636363,
+                0.24,
+                0.15789473684210525,
+                0.06666666666666667,
+                0.125,
+                0.2,
+                0.09090909090909091
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$6:$D$15"
+              ],
+              "values": [
+                0.30392156862745096,
+                0.2037037037037037,
+                0.23404255319148937,
+                0.25,
+                0.48,
+                0.21052631578947367,
+                0.3333333333333333,
+                0.3125,
+                0.2,
+                0.09090909090909091
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 0,
+      "table_formulas_numeric_after_recalc": 0,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$B$8",
+        "old_value": 40.0,
+        "new_value": 41.0,
+        "plotted_before": 0.39215686274509803,
+        "plotted_after": 0.39805825242718446,
+        "chart_followed": true
+      },
+      "png": [
+        "07-stats-snapshot-kept-1.png",
+        "07-stats-snapshot-kept-2.png"
+      ]
+    },
+    {
+      "file": "08-trend-2rates.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$18"
+              ],
+              "values": [
+                1.0,
+                0.6875,
+                0.5833333333333334,
+                0.631578947368421,
+                0.6842105263157895,
+                0.6666666666666666,
+                0.631578947368421,
+                0.7241379310344828,
+                0.4,
+                0.4666666666666667,
+                0.59375,
+                0.47368421052631576,
+                0.4107142857142857
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$18"
+              ],
+              "values": [
+                0.0,
+                0.38095238095238093,
+                0.2962962962962963,
+                0.35,
+                0.2727272727272727,
+                0.55,
+                0.2,
+                0.3125,
+                0.09090909090909091,
+                0.05555555555555555,
+                0.2647058823529412,
+                0.2608695652173913,
+                0.3310344827586207
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 52,
+      "table_formulas_numeric_after_recalc": 52,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$E$6",
+        "old_value": 1.0,
+        "new_value": 2.0,
+        "plotted_before": 1.0,
+        "plotted_after": 2.0,
+        "chart_followed": true
+      },
+      "png": [
+        "08-trend-2rates-1.png",
+        "08-trend-2rates-2.png"
+      ]
+    },
+    {
+      "file": "09-trend-4rates-compare.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$18"
+              ],
+              "values": [
+                1.0,
+                0.6875,
+                0.5833333333333334,
+                0.631578947368421,
+                0.6842105263157895,
+                0.6666666666666666,
+                0.631578947368421,
+                0.7241379310344828,
+                0.4,
+                0.4666666666666667,
+                0.59375,
+                0.47368421052631576,
+                0.4107142857142857
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$18"
+              ],
+              "values": [
+                null,
+                1.0,
+                0.0,
+                1.0,
+                0.5,
+                1.0,
+                1.0,
+                1.0,
+                0.5,
+                0.75,
+                1.0,
+                1.0,
+                0.75
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$6:$D$18"
+              ],
+              "values": [
+                0.0,
+                0.3125,
+                0.16666666666666666,
+                0.21052631578947367,
+                0.2631578947368421,
+                0.16666666666666666,
+                0.21052631578947367,
+                0.2413793103448276,
+                0.55,
+                0.4,
+                0.1875,
+                0.2631578947368421,
+                0.29464285714285715
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$E$6:$E$18"
+              ],
+              "values": [
+                null,
+                0.0,
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                0.0,
+                0.5,
+                0.25,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$F$6:$F$18"
+              ],
+              "values": [
+                0.0,
+                0.0,
+                0.25,
+                0.15789473684210525,
+                0.05263157894736842,
+                0.16666666666666666,
+                0.15789473684210525,
+                0.034482758620689655,
+                0.05,
+                0.13333333333333333,
+                0.21875,
+                0.2631578947368421,
+                0.29464285714285715
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$G$6:$G$18"
+              ],
+              "values": [
+                null,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.25
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$H$6:$H$18"
+              ],
+              "values": [
+                0.0,
+                0.38095238095238093,
+                0.2962962962962963,
+                0.35,
+                0.2727272727272727,
+                0.55,
+                0.2,
+                0.3125,
+                0.09090909090909091,
+                0.05555555555555555,
+                0.2647058823529412,
+                0.2608695652173913,
+                0.3310344827586207
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$I$6:$I$18"
+              ],
+              "values": [
+                null,
+                0.6666666666666666,
+                0.0,
+                0.0,
+                0.0,
+                0.6666666666666666,
+                0.0,
+                0.25,
+                0.0,
+                0.25,
+                0.75,
+                0.0,
+                0.25
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 100,
+      "table_formulas_numeric_after_recalc": 100,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$G$6",
+        "old_value": 1.0,
+        "new_value": 2.0,
+        "plotted_before": 1.0,
+        "plotted_after": 2.0,
+        "chart_followed": true
+      },
+      "png": [
+        "09-trend-4rates-compare-1.png",
+        "09-trend-4rates-compare-2.png"
+      ]
+    },
+    {
+      "file": "10-trend-counts.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$18"
+              ],
+              "values": [
+                0.0,
+                30.0,
+                19.0,
+                24.0,
+                18.0,
+                24.0,
+                33.0,
+                21.0,
+                22.0,
+                29.0,
+                25.0,
+                21.0,
+                131.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$18"
+              ],
+              "values": [
+                1.0,
+                21.0,
+                27.0,
+                20.0,
+                22.0,
+                20.0,
+                25.0,
+                32.0,
+                22.0,
+                18.0,
+                34.0,
+                23.0,
+                145.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$6:$D$18"
+              ],
+              "values": [
+                0.0,
+                3.0,
+                1.0,
+                1.0,
+                2.0,
+                3.0,
+                4.0,
+                3.0,
+                5.0,
+                3.0,
+                2.0,
+                3.0,
+                1.0
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 100,
+      "table_formulas_numeric_after_recalc": 100,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$B$6",
+        "old_value": 0.0,
+        "new_value": 1.0,
+        "plotted_before": 0.0,
+        "plotted_after": 1.0,
+        "chart_followed": true
+      },
+      "png": [
+        "10-trend-counts-1.png",
+        "10-trend-counts-2.png"
+      ]
+    },
+    {
+      "file": "11-range-managers.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [
+        {
+          "name": "Object 1",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$6:$B$45"
+              ],
+              "values": [
+                0.6666666666666666,
+                0.6666666666666666,
+                0.7333333333333333,
+                0.5,
+                0.28,
+                0.6470588235294118,
+                0.6,
+                0.5625,
+                0.5714285714285714,
+                0.5384615384615384,
+                0.5714285714285714,
+                0.6,
+                0.8181818181818182,
+                0.8333333333333334,
+                0.8,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$6:$C$45"
+              ],
+              "values": [
+                0.2,
+                0.1,
+                0.03333333333333333,
+                0.20833333333333334,
+                0.24,
+                0.11764705882352941,
+                0.06666666666666667,
+                0.125,
+                0.14285714285714285,
+                0.23076923076923078,
+                0.14285714285714285,
+                0.2,
+                0.09090909090909091,
+                0.0,
+                0.2,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$6:$D$45"
+              ],
+              "values": [
+                0.13333333333333333,
+                0.23333333333333334,
+                0.23333333333333334,
+                0.2916666666666667,
+                0.48,
+                0.23529411764705882,
+                0.3333333333333333,
+                0.3125,
+                0.2857142857142857,
+                0.23076923076923078,
+                0.2857142857142857,
+                0.2,
+                0.09090909090909091,
+                0.16666666666666666,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$E$6:$E$45"
+              ],
+              "values": [
+                38.0,
+                35.0,
+                34.0,
+                27.0,
+                27.0,
+                19.0,
+                18.0,
+                17.0,
+                16.0,
+                15.0,
+                15.0,
+                14.0,
+                14.0,
+                6.0,
+                5.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Object 2",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$49:$B$88"
+              ],
+              "values": [
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$49:$C$88"
+              ],
+              "values": [
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$49:$D$88"
+              ],
+              "values": [
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$E$49:$E$88"
+              ],
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Object 3",
+          "series": [
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$B$92:$B$111"
+              ],
+              "values": [
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0,
+                0.0,
+                0.0,
+                null,
+                1.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$C$92:$C$111"
+              ],
+              "values": [
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0,
+                1.0,
+                0.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.ColumnChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$D$92:$D$111"
+              ],
+              "values": [
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0,
+                0.0,
+                1.0,
+                null,
+                0.0
+              ]
+            },
+            {
+              "type": "com.sun.star.chart2.LineChartType",
+              "ranges": [
+                "values-y=$'차트 데이터'.$E$92:$E$111"
+              ],
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          ]
+        }
+      ],
+      "conditional_formats": 0,
+      "table_formulas": 437,
+      "table_formulas_numeric_after_recalc": 437,
+      "edit_check": {
+        "chart": "Object 1",
+        "source_cell": "$통계표.$F$6",
+        "old_value": 20.0,
+        "new_value": 21.0,
+        "plotted_before": 0.6666666666666666,
+        "plotted_after": 0.7,
+        "chart_followed": true
+      },
+      "png": [
+        "11-range-managers-1.png",
+        "11-range-managers-2.png"
+      ]
+    },
+    {
+      "file": "12-pages-subpath.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [],
+      "conditional_formats": 1,
+      "table_formulas": 108,
+      "table_formulas_numeric_after_recalc": 108,
+      "edit_check": null,
+      "png": [
+        "12-pages-subpath-1.png",
+        "12-pages-subpath-2.png"
+      ]
+    },
+    {
+      "file": "13-pages-content-encoding.xlsx",
+      "sheets": [
+        "통계표",
+        "차트",
+        "차트 데이터",
+        "조회 조건"
+      ],
+      "charts": [],
+      "conditional_formats": 1,
+      "table_formulas": 108,
+      "table_formulas_numeric_after_recalc": 108,
+      "edit_check": null,
+      "png": [
+        "13-pages-content-encoding-1.png",
+        "13-pages-content-encoding-2.png"
+      ]
+    }
+  ]
+}

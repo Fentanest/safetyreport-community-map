@@ -1,0 +1,75 @@
+{
+  "commit": "7e4ba96fdaa2b7f94db561961069621c4aaf3d8c",
+  "dirty": true,
+  "steps": [
+    {
+      "step": "auto heatmap",
+      "hosts": [
+        {
+          "hidden": false,
+          "instance": "ec_1790672560271",
+          "live": true,
+          "series": [
+            "heatmap:heatmap:fine_rate:all:111"
+          ],
+          "canvas": true
+        }
+      ]
+    },
+    {
+      "step": "switched to 막대 (no table round trip)",
+      "hosts": [
+        {
+          "hidden": false,
+          "instance": "ec_1790672560272",
+          "live": true,
+          "series": [
+            "bar:[\"도로교통법 제32조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제5조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제33조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제27조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제34조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제35조\"]:fine_rate:all:10",
+            "bar:[\"자동차관리법 제10조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제49조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제38조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제13조\"]:fine_rate:all:10",
+            "bar:[\"주차장법 제29조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제5조의2\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제25조\"]:fine_rate:all:10",
+            "bar:[\"__none__\"]:fine_rate:all:10"
+          ],
+          "canvas": true
+        }
+      ]
+    },
+    {
+      "step": "막대 → 히트맵 → 막대",
+      "hosts": [
+        {
+          "hidden": false,
+          "instance": "ec_1790672560274",
+          "live": true,
+          "series": [
+            "bar:[\"도로교통법 제32조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제5조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제33조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제27조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제34조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제35조\"]:fine_rate:all:10",
+            "bar:[\"자동차관리법 제10조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제49조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제38조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제13조\"]:fine_rate:all:10",
+            "bar:[\"주차장법 제29조\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제5조의2\"]:fine_rate:all:10",
+            "bar:[\"도로교통법 제25조\"]:fine_rate:all:10",
+            "bar:[\"__none__\"]:fine_rate:all:10"
+          ],
+          "canvas": true
+        }
+      ]
+    }
+  ],
+  "blank_bar_reproduced": false
+}

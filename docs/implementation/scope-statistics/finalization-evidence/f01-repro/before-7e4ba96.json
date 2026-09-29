@@ -1,0 +1,45 @@
+{
+  "commit": "7e4ba96fdaa2b7f94db561961069621c4aaf3d8c",
+  "dirty": true,
+  "steps": [
+    {
+      "step": "auto heatmap",
+      "hosts": [
+        {
+          "hidden": false,
+          "instance": "ec_1790670934919",
+          "live": true,
+          "series": [
+            "heatmap:heatmap:fine_rate:all:111"
+          ],
+          "canvas": true
+        }
+      ]
+    },
+    {
+      "step": "switched to 막대 (no table round trip)",
+      "hosts": [
+        {
+          "hidden": false,
+          "instance": null,
+          "live": false,
+          "series": [],
+          "canvas": false
+        }
+      ]
+    },
+    {
+      "step": "막대 → 히트맵 → 막대",
+      "hosts": [
+        {
+          "hidden": false,
+          "instance": null,
+          "live": false,
+          "series": [],
+          "canvas": false
+        }
+      ]
+    }
+  ],
+  "blank_bar_reproduced": true
+}
