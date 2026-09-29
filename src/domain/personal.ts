@@ -1,4 +1,4 @@
-import type { Scope } from './public.ts';
+import type { DurationDistribution, OutcomeCounts, RatingDistribution, Scope } from './public.ts';
 
 /**
  * Personal comparison (my-analytics) DTO. Returned only to the verified signed-in user, never
@@ -129,9 +129,12 @@ export interface CompareMonth {
   mine_duration_median_days: number | null;
   all_rating?: { count: number; mean: number | null };
   mine_rating?: { count: number; mean: number | null };
+  /** A05: the viewer's outcome counts / fines of the completion month (absent on older servers) */
+  mine_outcomes?: OutcomeCounts | null;
+  mine_fine_count?: number | null;
 }
 
-/** A located point that contains at least one of my reports or completions in the scope. */
+/** A place (address-v1, same key as the public map) that contains at least one of my reports or completions in the scope. */
 export interface MyPoint {
   key: string;
   lat: number;
@@ -164,4 +167,6 @@ export interface PersonalCompare {
   managers: CompareEntityRow[];
   monthly: CompareMonth[];
   my_points: MyPoint[];
+  /** A01/A06 of the viewer's own completion cohort; absent on older servers */
+  analytics?: { duration: DurationDistribution; rating: RatingDistribution };
 }

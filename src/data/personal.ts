@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { Scope } from '../domain/public';
 import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
-import { scopeSchema } from './schema';
+import { durationDistributionSchema, ratingDistributionSchema, scopeSchema } from './schema';
 
 const count = z.number().int().nonnegative();
 const rate = z.number().min(0).max(100).nullable();
@@ -68,11 +68,14 @@ export const personalCompareSchema = z.strictObject({
     all_accept_rate: rate, mine_accept_rate: rate,
     all_duration_median_days: days, mine_duration_median_days: days,
     all_rating: rating, mine_rating: rating,
+    mine_outcomes: z.strictObject({ accepted: count, partial: count, rejected: count, result_known: count, result_unknown: count }).nullable().optional(),
+    mine_fine_count: count.nullable().optional(),
   })).max(80),
   my_points: z.array(z.strictObject({
     key: z.string().max(160), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
     region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean(),
   })).max(1000),
+  analytics: z.strictObject({ duration: durationDistributionSchema, rating: ratingDistributionSchema }).optional(),
 });
 
 export type PersonalErrorCode =

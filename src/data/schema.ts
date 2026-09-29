@@ -74,6 +74,8 @@ export const pointSchema = z.strictObject({
   bbox: z.tuple([positive, positive, positive, positive]).optional(),
   address: z.string().nullable(), region_code: z.string().regex(/^\d{5}$/).nullable(), report_count: count,
   completed_count: nullableCount, outcomes: outcomes.nullable(), fine_count: nullableCount,
+  // R06/R07 (address-v1). Optional: an older server omits them and the UI shows "지원하지 않음", never 0.
+  warning_count: nullableCount.optional(), place_key: z.string().max(40).optional(), grouping_version: z.string().max(40).optional(),
 });
 
 export const monthlySchema = z.strictObject({
@@ -86,6 +88,7 @@ export const entitySchema = z.strictObject({
   key: z.string(), agency_key: z.string().nullable(), manager_key: z.string().nullable(),
   agency_name: z.string(), manager_name: z.string().nullable(),
   completed_count: count, outcomes, fine_count: nullableCount, duration: durationBrief, fine_amount: fineBrief, rating,
+  warning_count: nullableCount.optional(), agency_type: z.enum(['police', 'non_police', 'unknown']).optional(),
 });
 
 export const regionSchema = z.strictObject({
@@ -112,6 +115,61 @@ export const vehicleSchema = z.strictObject({
   // Optional short region (kept visible), then the masked number: 경기7*자*6*3, 1*가*4*6.
   masked_plate: z.string().regex(/^(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)?[0-9]\*[0-9가-힣]\*[0-9]\*[0-9]{1,2}$/),
   report_count: z.number().int().positive(), percentage: z.number().min(0).max(100).nullable(),
+});
+
+// ── A01–A04, A06 (docs/implementation/dashboard-redesign) ──────────────────────────────────────────────
+const pctN = z.number().min(0).max(100).nullable();
+export const durationDistributionSchema = z.strictObject({
+  basis: z.literal('completed_date'), bucket_width_days: z.number().int().positive(),
+  buckets: z.array(z.strictObject({ lower: count, upper: count.nullable(), label: z.string().max(20), count, percentage: pctN })).max(60),
+  valid_count: count, excluded: z.strictObject({ no_report_date: count, reversed: count }),
+  median_days: z.number().min(0).nullable(), mean_days: z.number().min(0).nullable(), p90_days: z.number().min(0).nullable(),
+});
+const heatmapSchema = z.strictObject({
+  row_kind: z.enum(['agency', 'manager']),
+  rows: z.array(z.strictObject({ key: z.string().max(330), agency_key: z.string().nullable(), manager_key: z.string().nullable(),
+    agency_name: z.string().max(200), manager_name: z.string().max(160).nullable(), completed_count: count })).max(40),
+  laws: z.array(z.strictObject({ law_key: z.string().min(1).max(120), completed_count: count })).max(16),
+  cells: z.array(z.strictObject({ row_key: z.string().max(330), law_key: z.string().min(1).max(120), completed_count: count, outcomes, fine_count: count })).max(640),
+  total_rows: count, total_laws: count,
+});
+const scatterEntity = z.strictObject({
+  key: z.string().max(330), agency_key: z.string().nullable(), manager_key: z.string().nullable(),
+  agency_name: z.string().max(200), manager_name: z.string().max(160).nullable(), completed_count: count,
+  duration_count: count, median_days: z.number().min(0).nullable(), outcomes, fine_count: count,
+});
+export const ratingDistributionSchema = z.strictObject({
+  basis: z.literal('completed_date'), unrated: count,
+  rows: z.array(z.strictObject({ status: z.enum(['all', 'accepted', 'partial', 'rejected', 'unknown']),
+    counts: z.tuple([count, count, count, count, count]), rating_count: count, mean: z.number().min(1).max(5).nullable() })).max(5),
+});
+export const analyticsSchema = z.strictObject({
+  duration: durationDistributionSchema,
+  heatmap: heatmapSchema,
+  scatter: z.strictObject({ agencies: z.array(scatterEntity).max(500), managers: z.array(scatterEntity).max(500), agency_total: count, manager_total: count }),
+  // no plate text / hash: buckets and denominators only
+  vehicle_days: z.strictObject({
+    basis: z.literal('completed_date'),
+    buckets: z.array(z.strictObject({ label: z.string().max(20), min: count, max: count.nullable(), vehicle_count: count, percentage: pctN })).max(8),
+    vehicle_count: count, repeat_vehicle_count: count, repeat_share: pctN,
+    excluded: z.strictObject({ no_plate: count, no_report_date: count }),
+  }),
+  rating: ratingDistributionSchema,
+});
+const unplacedSchema = z.strictObject({
+  no_address: z.strictObject({ reported: count, completed: count }),
+  no_coordinates: z.strictObject({ reported: count, completed: count }),
+});
+
+export const placeDetailResponseSchema = z.strictObject({
+  schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema, sample: z.boolean(),
+  place: pointSchema, agencies: z.array(entitySchema).max(100), managers: z.array(entitySchema).max(100),
+  agency_total: count, manager_total: count,
+});
+export const placesResponseSchema = z.strictObject({
+  schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema, sample: z.boolean(),
+  view_bbox: z.tuple([positive, positive, positive, positive]), points: z.array(pointSchema).max(1000),
+  total_places: count, compacted: z.boolean(),
 });
 
 export const pointsResponseSchema = z.strictObject({
@@ -146,6 +204,7 @@ export const dashboardResponseSchema = z.strictObject({
   laws: z.array(lawSchema).max(300).optional(),
   vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,
   vehicle_identifiable_reports: count, location_missing: count.optional(),
+  analytics: analyticsSchema.nullable().optional(), map_unplaced: unplacedSchema.nullable().optional(),
 });
 
 export const snapshotManifestSchema = z.strictObject({

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { aggregateDashboard, type PrivateFact } from '../../server/aggregate';
+import { placeKeyOf } from '../../server/places';
 import { isEmptyResult } from '../../src/pages/Dashboard';
 import CompareKpis from '../../src/components/CompareKpis';
 import MapPanel from '../../src/components/MapPanel';
@@ -44,7 +45,7 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     expect(covered.overview.point_count.previous).toBe(1);
     // The drawn map point is the union: the completion-only location is still shown.
     expect(data.points).toHaveLength(1);
-    expect(data.points[0]).toMatchObject({ key: 'pt-map2-cross', report_count: 0, completed_count: 1 });
+    expect(data.points[0]).toMatchObject({ key: placeKeyOf('예시 지점'), report_count: 0, completed_count: 1 });
   });
 
   it('shows the result screen instead of the empty banner (render test, no mocks)', () => {

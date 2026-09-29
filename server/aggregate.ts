@@ -1,6 +1,6 @@
 /** Exact private-fact aggregation. This module must run behind the public API only. */
 import type {
-  Category, CountMetric, DashboardData, MonthlyBucket, OutcomeCounts,
+  Category, CountMetric, DashboardAnalytics, DashboardData, MonthlyBucket, OutcomeCounts,
   PublicEntity, PublicLaw, PublicMeta, PublicPoint, PublicRegion, Scope,
 } from '../src/domain/public.ts';
 import { LAW_NONE, lawKey } from '../src/domain/public.ts';
@@ -8,6 +8,9 @@ import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
 import { fineAmountBrief, fineAmountSummary } from './amount.ts';
 import { regionMatches, regionName, resolveRegion, type RegionRef } from './regions.ts';
+import { agencyTypeOf } from './agencyType.ts';
+import { distinctPlaces, placeKey, placeRows } from './places.ts';
+import { durationDistribution, entityScatter, lawHeatmap, ratingDistribution, vehicleDayDistribution } from './analyticsDistributions.ts';
 
 export type Status = 'accepted' | 'partial' | 'rejected' | 'processing' | 'supplement' |
   'withdrawn' | 'transferred' | 'completed_unknown' | 'other';
@@ -215,8 +218,10 @@ export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'mana
     key, agency_key: rows[0].agency_key, manager_key: kind === 'manager' ? rows[0].manager_key : null,
     agency_name: rows[0].agency_current_name || rows[0].agency_name || '기관 정보 없음',
     manager_name: kind === 'manager' ? rows[0].manager_name : null,
+    agency_type: agencyTypeOf(rows[0].agency_key, rows[0].agency_current_name || rows[0].agency_name),
     completed_count: rows.length, outcomes: outcomes(rows),
     fine_count: rows.filter(row => row.disposition === 'fine').length,
+    warning_count: rows.filter(row => row.disposition === 'warning').length,
     duration: durationBrief(rows), fine_amount: fineAmountBrief(rows), rating: ratingSummary(rows),
   })).sort((a, b) => b.completed_count - a.completed_count || a.agency_name.localeCompare(b.agency_name, 'ko'));
 }
@@ -295,11 +300,9 @@ export function regionRows(reported: readonly PrivateFact[], done: readonly Priv
     b.completed_count - a.completed_count || (a.region_code ?? '').localeCompare(b.region_code ?? ''));
 }
 
+/** Legacy exact-coordinate points (grouping by point_key). Kept for callers that still need the pre-address
+ *  grouping; the dashboard map uses address places (server/places.ts, grouping_version address-v1). */
 export function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly PrivateFact[]): PublicPoint[] {
-  // SOL-06: points are the union of report-date and completion-date location keys, so a fact whose
-  // report date is outside the range but whose completion date is inside still gets its completion
-  // point. Per-point report and completion counts use their own date basis independently, keeping
-  // the invariant overview.completed = sum(points.completed) + unlocated completions (same for reported).
   const reported = reportedAll.filter(located), done = doneAll.filter(located);
   const reports = new Map<string, LocatedFact[]>();
   const completions = new Map<string, LocatedFact[]>();
@@ -312,12 +315,20 @@ export function pointRows(reportedAll: readonly PrivateFact[], doneAll: readonly
     const anchor = rows[0] || finished[0];
     return { key, lat: anchor.lat, lng: anchor.lng, address: anchor.address,
       region_code: regionKeys(anchor).sgg, report_count: rows.length, completed_count: finished.length,
-      outcomes: outcomes(finished), fine_count: finished.filter(row => row.disposition === 'fine').length };
+      outcomes: outcomes(finished), fine_count: finished.filter(row => row.disposition === 'fine').length,
+      warning_count: finished.filter(row => row.disposition === 'warning').length };
   }).sort((a, b) => b.report_count - a.report_count || b.completed_count - a.completed_count || a.key.localeCompare(b.key));
 }
 
-function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
-  if (exact.length <= 1000) return [...exact];
+export const MAP_NODE_LIMIT = 1000;
+
+/**
+ * Server-side compaction when a range has more than MAP_NODE_LIMIT places: places of one grid cell merge into an
+ * aggregate node. Every count of a node is the SUM of its members (so any rate derived from it is Σnumerator /
+ * Σdenominator — never an average of member rates); point_count is the number of member places.
+ */
+export function mapNodes(exact: readonly PublicPoint[], limit = MAP_NODE_LIMIT): PublicPoint[] {
+  if (exact.length <= limit) return [...exact];
   let cell = 0.04;
   let groups = new Map<string, PublicPoint[]>();
   for (;;) {
@@ -328,7 +339,7 @@ function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
       if (group) group.push(point);
       else groups.set(cellKey, [point]);
     }
-    if (groups.size <= 1000) break;
+    if (groups.size <= limit) break;
     cell *= 2;
   }
   return [...groups].map(([cellKey, rows]) => {
@@ -346,6 +357,7 @@ function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
       rejected: sum(row => row.outcomes!.rejected), result_known: sum(row => row.outcomes!.result_known),
       result_unknown: sum(row => row.outcomes!.result_unknown),
     } : null;
+    const warnings = rows.every(row => typeof row.warning_count === 'number') ? sum(row => row.warning_count!) : null;
     return {
       key: `cluster:${cell}:${cellKey}`,
       // SOL-06: completion-only points carry report_count 0, so a cluster of those would divide by
@@ -354,7 +366,7 @@ function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
         rows.reduce((n, row) => n + row.lat, 0) / rows.length,
       lng: reportCount > 0 ? sum(row => row.lng * row.report_count) / reportCount :
         rows.reduce((n, row) => n + row.lng, 0) / rows.length,
-      aggregate: true, point_count: rows.length,
+      aggregate: true, point_count: sum(row => row.point_count ?? 1),
       bbox: [minLng, minLat, maxLng, maxLat] as [number, number, number, number],
       address: null,
       region_code: rows.every(row => row.region_code === rows[0].region_code) ? rows[0].region_code : null,
@@ -362,6 +374,7 @@ function mapNodes(exact: readonly PublicPoint[]): PublicPoint[] {
       completed_count: rows.every(row => row.completed_count !== null) ? sum(row => row.completed_count!) : null,
       outcomes: result,
       fine_count: rows.every(row => row.fine_count !== null) ? sum(row => row.fine_count!) : null,
+      warning_count: warnings,
     };
   }).sort((a, b) => b.report_count - a.report_count || a.key.localeCompare(b.key));
 }
@@ -427,14 +440,14 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   const priorResult = outcomes(previousDone), priorD = priorResult.result_known;
   const fine = done.filter(fact => fact.disposition === 'fine').length;
   const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
-  const exactPoints = pointRows(reported, done);
-  const points = mapNodes(exactPoints);
-  // AF-MAP2: point_count is the report-date location count (unique point_key among located
-  // reported facts) so it matches basis='report_date' and the report-count denominator. The map
-  // itself still draws the union of report-date and completion-date points, so a completion-only
-  // location appears in `points` but not in point_count.
-  const reportedPointKeys = new Set(reported.filter(located).map(fact => fact.point_key));
-  const previousReportedPointKeys = new Set(previousReported.filter(located).map(fact => fact.point_key));
+  // R07: one pin per normalized address (server/places.ts). The map draws the union of report-date and
+  // completion-date places; facts that cannot be drawn are counted by reason in map_unplaced.
+  const { places: exactPlaces, unplaced } = placeRows(reported, done);
+  const points = mapNodes(exactPlaces);
+  // AF-MAP2 + R07: point_count is the report-date count of distinct address places (the same key the map, the
+  // place list and the personal marks use), so it matches basis='report_date' and the report-count denominator.
+  const reportedPlaces = distinctPlaces(reported);
+  const previousReportedPlaces = distinctPlaces(previousReported);
   const vehicles = vehicleRows(reported);
   const sourceDates = activeFacts(input).flatMap(fact => [kstDate(fact.report_date), kstDate(fact.completed_date)])
     .filter((day): day is string => day !== null).sort();
@@ -465,7 +478,12 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
   // window are excluded, and a fact present in both indicators is counted once.
   const inScopeFacts = new Map<string, PrivateFact>();
   for (const fact of [...reported, ...done]) inScopeFacts.set(`${fact.contributor_id}\u0000${fact.fact_identity}`, fact);
-  const locationMissing = [...inScopeFacts.values()].filter(fact => !located(fact)).length;
+  // facts of the current range that are not on any address pin (no address, or an address without any coordinate)
+  const placedKeys = new Set(exactPlaces.map(place => place.key));
+  const locationMissing = [...inScopeFacts.values()].filter(fact => {
+    const key = placeKey(fact);
+    return key === null || !placedKeys.has(key);
+  }).length;
   const meta: PublicMeta = {
     schema_version: 2, dataset_version: options.datasetVersion, sample: options.sample,
     source_updated_at: options.sourceUpdatedAt, generated_at: options.generatedAt, published_at: null,
@@ -504,7 +522,7 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
         delta_percent: null, delta_reason: !comparisonCovered ? null : priorD ? null : D ? 'new' : 'no_baseline',
       },
       fine_count: countMetric(fine, 'completed_date', comparisonCovered ? priorFine : null, 0, done.length),
-      point_count: countMetric(reportedPointKeys.size, 'report_date', comparisonCovered ? previousReportedPointKeys.size : null, 0, reported.length),
+      point_count: countMetric(reportedPlaces, 'report_date', comparisonCovered ? previousReportedPlaces : null, 0, reported.length),
       contributor_count: countMetric(new Set(full.reported.map(fact => fact.contributor_id)).size, 'report_date',
         comparisonCovered ? new Set(full.previousReported.map(fact => fact.contributor_id)).size : null, 0, full.reported.length),
       outcomes: result,
@@ -516,5 +534,18 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
     regions: regionRows(reported, done), laws: lawRows(done),
     vehicles: vehicles.items, vehicle_total_scope_reports: reported.length,
     vehicle_identifiable_reports: vehicles.identifiable,
+    analytics: dashboardAnalytics(done, scope),
+    map_unplaced: unplaced,
+  };
+}
+
+/** A01–A04, A06 from the same completion cohort as every other completion-basis indicator of the dashboard. */
+export function dashboardAnalytics(done: readonly PrivateFact[], scope: Scope): DashboardAnalytics {
+  return {
+    duration: durationDistribution(done),
+    heatmap: lawHeatmap(done, scope.agency_key !== null),
+    scatter: entityScatter(done),
+    vehicle_days: vehicleDayDistribution(done),
+    rating: ratingDistribution(done),
   };
 }

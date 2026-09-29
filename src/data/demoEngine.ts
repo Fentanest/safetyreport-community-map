@@ -4,9 +4,11 @@
  * production. Nothing here is a real report, account, vehicle or place record. Imported only behind
  * `import.meta.env.VITE_DATA_MODE === 'demo'`, so live builds drop this chunk (checked by the dist scan test).
  */
-import { aggregateDashboard, type PrivateFact, type Status, type Disposition } from '../../server/aggregate';
+import { aggregateDashboard, entityRows, mapNodes, representatives, selectScope, type PrivateFact, type Status, type Disposition } from '../../server/aggregate';
 import { aggregateCompare } from '../../server/compare';
-import type { DashboardData, Scope } from '../domain/public';
+import { placeFacts, placeRows, placesInView, placeSummary, representativeOf } from '../../server/places';
+import type { DashboardData, PlaceDetail, PublicEntity, PublicMeta, PublicPoint, Scope } from '../domain/public';
+import type { EntitiesPage, EntitiesQuery } from './client';
 import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
 import { demoViewerFromSearch } from '../auth/mapAuth';
@@ -102,6 +104,9 @@ export function demoFacts(): PrivateFact[] {
     const q = lawRand();
     return q < 0.12 ? `${law}제1항` : q < 0.18 ? `${law} 2항` : law;
   };
+  // R07 demo: the same address is recorded with slightly different coordinates (GPS/geocoder jitter), and a few
+  // reports carry no address. Own generator, so every other synthetic value stays unchanged.
+  const placeRand = mulberry32(20260930);
   const add = (index: number, contributor: string, areaIndex: number, spot: number, mine: boolean) => {
     const area = AREAS[areaIndex];
     const report = addDays(DEMO_DATA_MIN, Math.floor(rand() * (SPAN + 1)));
@@ -116,8 +121,10 @@ export function demoFacts(): PrivateFact[] {
     const disposition: Disposition = finalStatus === 'accepted' || finalStatus === 'partial'
       ? (rand() < 0.45 ? 'fine' : rand() < 0.3 ? 'warning' : 'none') : finalStatus === 'rejected' ? 'none' : 'unknown';
     const locatedFact = rand() > 0.03;
-    const lat = +(area.lat + (spot - 1) * 0.0071 + (spot === 2 ? 0.0033 : 0)).toFixed(6);
-    const lng = +(area.lng + (spot - 1) * 0.0093).toFixed(6);
+    const jitter = placeRand() < 0.6 ? (placeRand() - 0.5) * 0.0008 : 0;
+    const noAddress = placeRand() < 0.02;
+    const lat = +(area.lat + (spot - 1) * 0.0071 + (spot === 2 ? 0.0033 : 0) + jitter).toFixed(6);
+    const lng = +(area.lng + (spot - 1) * 0.0093 - jitter / 2).toFixed(6);
     const manager = area.managers[spot % area.managers.length];
     const category = pick(['traffic', 'traffic', 'parking', 'parking', 'other'] as const);
     facts.push({
@@ -125,7 +132,7 @@ export function demoFacts(): PrivateFact[] {
       report_date: report, completed_date: completed, category,
       status: finalStatus, disposition, vehicle_raw: rand() < 0.85 ? pick(vehicles) : null,
       point_key: locatedFact ? `synthetic:${areaIndex}:${spot}` : null, lat: locatedFact ? lat : null, lng: locatedFact ? lng : null,
-      address: `${area.sido} ${area.gu} 예시로 ${spot + 1}길`, region_code: area.code,
+      address: noAddress ? null : `${area.sido} ${area.gu} 예시로 ${spot + 1}길`, region_code: area.code,
       agency_key: `a1:synthetic-${areaIndex}`, agency_name: area.agency,
       manager_key: `m1:synthetic-${areaIndex}-${manager}`, manager_name: manager, ...amountOf(disposition),
       violation_law: lawOf(category),
@@ -182,4 +189,55 @@ export async function demoCompare(scope: Scope, version: string, auth: MapAuth):
         : { contributor: 'active', has_public_facts: true },
   });
   return JSON.parse(JSON.stringify(result));
+}
+
+/** Demo metadata (same shape as /meta). */
+export function demoMeta(): PublicMeta {
+  const meta = demoEngineDashboard({ start: DEMO_AS_OF, end: DEMO_AS_OF, category: 'all', region_code: null,
+    agency_key: null, manager_key: null, bbox: null, law: null }).meta;
+  return { ...meta, location_missing: undefined };
+}
+
+/** Same selection, filter, sort and paging rules as the /entities route (server/publicHandler.ts). */
+export function demoEntities(scope: Scope, query: EntitiesQuery): EntitiesPage {
+  const data = demoEngineDashboard(scope);
+  let rows: PublicEntity[] = query.kind === 'agency' ? data.agencies : data.managers;
+  if (query.agencyType && query.agencyType !== 'all') rows = rows.filter(row => row.agency_type === query.agencyType);
+  const needle = (query.q ?? '').trim();
+  if (needle) rows = rows.filter(row => row.agency_name.includes(needle) || (row.manager_name ?? '').includes(needle));
+  const sort = query.sort ?? 'completed', dir = query.dir ?? 'desc';
+  const value = (row: PublicEntity): number => {
+    const known = row.outcomes.result_known;
+    switch (sort) {
+      case 'accepted': return row.outcomes.accepted;
+      case 'partial': return row.outcomes.partial;
+      case 'rejected': return row.outcomes.rejected;
+      case 'fine': return row.fine_count ?? -Infinity;
+      case 'acceptRate': return known > 0 ? (row.outcomes.accepted / known) * 100 : -Infinity;
+      default: return row.completed_count;
+    }
+  };
+  rows = [...rows].sort((a, b) => (dir === 'desc' ? value(b) - value(a) : value(a) - value(b)) ||
+    a.agency_name.localeCompare(b.agency_name, 'ko') || (a.manager_name ?? '').localeCompare(b.manager_name ?? '', 'ko') || (a.key < b.key ? -1 : 1));
+  const page = query.page ?? 1, pageSize = query.pageSize ?? 50;
+  return { datasetVersion: DEMO_VERSION, scope, items: rows.slice((page - 1) * pageSize, page * pageSize), totalRows: rows.length, page, pageSize };
+}
+
+/** Same rules as /places/{key}. */
+export function demoPlace(scope: Scope, key: string, version: string): PlaceDetail | null {
+  const selection = selectScope(representatives(demoFacts()), scope);
+  const own = placeFacts(key, selection.reported, selection.done);
+  const anchor = representativeOf([...own.reported, ...own.done]);
+  if (!anchor) return null;
+  const agencies = entityRows(own.done, 'agency'), managers = entityRows(own.done, 'manager');
+  return { dataset_version: version, scope, place: placeSummary(key, own.reported, own.done, anchor),
+    agencies: agencies.slice(0, 100), managers: managers.slice(0, 100), agency_total: agencies.length, manager_total: managers.length };
+}
+
+/** Same rules as /places?view_bbox=… (display refinement only). */
+export function demoPlacesInView(scope: Scope, view: [number, number, number, number]): { points: PublicPoint[]; total: number; compacted: boolean } {
+  const selection = selectScope(representatives(demoFacts()), scope);
+  const inView = placesInView(placeRows(selection.reported, selection.done).places, view);
+  const points = mapNodes(inView);
+  return { points, total: inView.length, compacted: points.length < inView.length };
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateDashboard, growth, kstDate, previousWindow, type PrivateFact } from '../../server/aggregate';
+import { placeKeyOf } from '../../server/places';
 import { overviewResponseSchema, pointSchema, vehicleSchema } from '../../src/data/schema';
 import type { Scope } from '../../src/domain/public';
 
@@ -159,10 +160,10 @@ describe('identity, scope and public projection', () => {
     expect(selected.overview.report_count.value).toBe(1);
     expect(selected.managers).toHaveLength(1);
   });
-  it('returns bounded aggregate map nodes for ten thousand exact source locations without changing totals', () => {
+  it('returns bounded aggregate map nodes for ten thousand address places without changing totals', () => {
     const facts = Array.from({ length: 10_000 }, (_, i) => fact(i + 1, {
       point_key: `point-${i}`, lat: 33.1 + Math.floor(i / 100) * 0.05,
-      lng: 124.1 + (i % 100) * 0.07,
+      lng: 124.1 + (i % 100) * 0.07, address: `예시시 예시구 예시로 ${i + 1}`,
     }));
     const data = aggregate(facts);
     expect(data.overview.report_count.value).toBe(10_000);
@@ -170,6 +171,8 @@ describe('identity, scope and public projection', () => {
     expect(data.points.length).toBeLessThanOrEqual(1000);
     expect(data.points.some(point => point.aggregate === true && (point.point_count ?? 0) > 1)).toBe(true);
     expect(data.points.reduce((sum, point) => sum + point.report_count, 0)).toBe(10_000);
+    // a node's point_count is the number of member places, so nodes add up to every place
+    expect(data.points.reduce((sum, point) => sum + (point.point_count ?? 1), 0)).toBe(10_000);
     expect(data.points.every(point => pointSchema.safeParse(point).success)).toBe(true);
   });
   it('rejects private or unknown response fields instead of silently projecting them', () => {
@@ -183,10 +186,20 @@ describe('identity, scope and public projection', () => {
 
 describe('community ingest facts without coordinates (S-01)', () => {
   it('counts them in statistics, never as map points, and reports how many lack a location', () => {
-    const facts = [fact(1), fact(2, { lat: null, lng: null, point_key: null }), fact(3, { lat: null, lng: null, point_key: null })];
+    const facts = [fact(1),
+      // same address as fact 1 but no coordinate: belongs to that address pin (R07)
+      fact(2, { lat: null, lng: null, point_key: null }),
+      // no address, no coordinate: statistics only
+      fact(3, { lat: null, lng: null, point_key: null, address: null }),
+      // an address that never has a coordinate: statistics only, reason no_coordinates
+      fact(4, { lat: null, lng: null, point_key: null, address: '예시시 좌표없는로 1' })];
     const data = aggregate(facts);
-    expect(data.overview.report_count.value).toBe(3);
+    expect(data.overview.report_count.value).toBe(4);
     expect(data.points).toHaveLength(1);
+    expect(data.points[0]).toMatchObject({ key: placeKeyOf('예시 지점'), report_count: 2 });
+    expect(data.map_unplaced).toEqual({ no_address: { reported: 1, completed: 1 }, no_coordinates: { reported: 1, completed: 1 } });
+    // disjoint: pins + reasons = the whole report-date population
+    expect(data.points[0].report_count + data.map_unplaced!.no_address.reported + data.map_unplaced!.no_coordinates.reported).toBe(4);
     expect(data.meta.location_missing).toBe(2);
     expect(data.meta.population).toBe('shared_completed_reports');
   });

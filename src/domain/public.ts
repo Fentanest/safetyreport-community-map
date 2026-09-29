@@ -171,12 +171,20 @@ export interface Overview {
   rating?: RatingBrief | null;
 }
 
+/** Map place grouping (R07). 'address-v1' = one pin per normalized full address (server/places.ts).
+ *  Older servers grouped by exact coordinate (point_key) and send no grouping_version. */
+export const PLACE_GROUPING_VERSION = 'address-v1';
+
 export interface PublicPoint {
+  /** place key (address-v1: `pl1:<hash of the normalized address>`); a cluster key for aggregate nodes */
   key: string;
+  /** display position only: a deterministic representative of the place's own source coordinates,
+   *  or the report-weighted centroid of an aggregate node. Never written back to any source fact. */
   lat: number;
   lng: number;
   /** Aggregated map node; lat/lng is a display centroid, never a source coordinate. */
   aggregate?: boolean;
+  /** places inside an aggregate node (address-v1: distinct addresses) */
   point_count?: number;
   bbox?: [number, number, number, number];
   address: string | null;
@@ -185,6 +193,114 @@ export interface PublicPoint {
   completed_count: number | null;
   outcomes: OutcomeCounts | null;
   fine_count: number | null;
+  /** 계도(경고) 처분 건수, completion basis. undefined = the server does not report it (never shown as 0). */
+  warning_count?: number | null;
+  /** same as key for an address place; absent on aggregate nodes and on pre-address servers */
+  place_key?: string;
+  grouping_version?: string;
+}
+
+/** Facts of the current range that cannot be drawn as an address pin (R07), by reason; disjoint.
+ *  sum(points.report_count) + no_address.reported + no_coordinates.reported = overview.report_count (same for completed). */
+export interface MapUnplaced {
+  no_address: { reported: number; completed: number };
+  no_coordinates: { reported: number; completed: number };
+}
+
+/** Place detail (R05/R06): every agency and manager that handled the answered reports of ONE address
+ *  under the current scope, aggregated from raw facts by place_key (never by a coordinate bbox). */
+export interface PlaceDetail {
+  dataset_version: string;
+  scope: Scope;
+  place: PublicPoint;
+  agencies: PublicEntity[];
+  managers: PublicEntity[];
+  agency_total: number;
+  manager_total: number;
+}
+
+/** A01 답변까지 걸린 기간 구간별 건수 (completion cohort). Equal-width bins plus one open tail bin. */
+export interface DurationBucket { lower: number; upper: number | null; label: string; count: number; percentage: number | null }
+export interface DurationDistribution {
+  basis: 'completed_date';
+  bucket_width_days: number;
+  buckets: DurationBucket[];
+  valid_count: number;
+  excluded: { no_report_date: number; reversed: number };
+  median_days: number | null;
+  mean_days: number | null;
+  p90_days: number | null;
+}
+
+/** A02 기관(또는 선택 기관의 담당자) × 위반법규 cross-tab; each cell counted from raw facts. */
+export interface HeatmapRow {
+  key: string;
+  agency_key: string | null;
+  manager_key: string | null;
+  agency_name: string;
+  manager_name: string | null;
+  completed_count: number;
+}
+export interface HeatmapCell {
+  row_key: string;
+  /** lawKey value, or LAW_NONE for 법규 미상 */
+  law_key: string;
+  completed_count: number;
+  outcomes: OutcomeCounts;
+  fine_count: number;
+}
+export interface LawHeatmap {
+  row_kind: 'agency' | 'manager';
+  rows: HeatmapRow[];
+  laws: Array<{ law_key: string; completed_count: number }>;
+  cells: HeatmapCell[];
+  total_rows: number;
+  total_laws: number;
+}
+
+/** A03 처리기간 × 처리결과: one point per agency/manager of the completion cohort. */
+export interface ScatterEntity {
+  key: string;
+  agency_key: string | null;
+  manager_key: string | null;
+  agency_name: string;
+  manager_name: string | null;
+  completed_count: number;
+  /** answered reports with a computable duration (x is null when 0) */
+  duration_count: number;
+  median_days: number | null;
+  outcomes: OutcomeCounts;
+  fine_count: number;
+}
+export interface EntityScatter {
+  agencies: ScatterEntity[];
+  managers: ScatterEntity[];
+  agency_total: number;
+  manager_total: number;
+}
+
+/** A04 차량별 서로 다른 신고일 수 분포 (completion cohort, parsed plates only; no plate text or hash). */
+export interface VehicleDayBucket { label: string; min: number; max: number | null; vehicle_count: number; percentage: number | null }
+export interface VehicleDayDistribution {
+  basis: 'completed_date';
+  buckets: VehicleDayBucket[];
+  vehicle_count: number;
+  repeat_vehicle_count: number;
+  repeat_share: number | null;
+  excluded: { no_plate: number; no_report_date: number };
+}
+
+/** A06 처리결과별 별점 분포. counts[i] = number of (i+1)-point ratings; mean over rating_count. */
+export interface RatingRow { status: 'all' | 'accepted' | 'partial' | 'rejected' | 'unknown'; counts: [number, number, number, number, number]; rating_count: number; mean: number | null }
+export interface RatingDistribution { basis: 'completed_date'; rows: RatingRow[]; unrated: number }
+
+/** New analytics A01–A06 computed from ONE selection with the dashboard (same scope/version). A05 uses `monthly`. */
+export interface DashboardAnalytics {
+  duration: DurationDistribution;
+  heatmap: LawHeatmap;
+  scatter: EntityScatter;
+  vehicle_days: VehicleDayDistribution;
+  rating: RatingDistribution;
 }
 
 export interface MonthlyBucket {
@@ -209,6 +325,10 @@ export interface PublicEntity {
   completed_count: number;
   outcomes: OutcomeCounts;
   fine_count: number | null;
+  /** 계도(경고) 처분 건수; undefined on older servers */
+  warning_count?: number | null;
+  /** 경찰 구분 (server/agencyType.ts); undefined on older servers */
+  agency_type?: 'police' | 'non_police' | 'unknown';
   duration?: DurationBrief | null;
   fine_amount?: FineAmountBrief | null;
   rating?: RatingBrief | null;
@@ -277,6 +397,10 @@ export interface DashboardData {
   vehicles: PublicVehicle[];
   vehicle_total_scope_reports: number | null;
   vehicle_identifiable_reports: number | null;
+  /** null = the server does not provide A01–A04/A06 yet (never replaced by empty charts) */
+  analytics?: DashboardAnalytics | null;
+  /** null = the server does not report the unplaced breakdown */
+  map_unplaced?: MapUnplaced | null;
 }
 
 export const DEMO_SCOPE: Scope = {

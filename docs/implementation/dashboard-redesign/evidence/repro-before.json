@@ -1,0 +1,192 @@
+{
+  "R04": {
+    "baseline": {
+      "maps": 2,
+      "idle": 2,
+      "skeletons": 1
+    },
+    "initialRequests": {
+      "meta": 1,
+      "dashboard": 1,
+      "entities": 1
+    },
+    "afterPans": {
+      "maps": 8,
+      "idle": 28,
+      "skeletons": 4,
+      "errorBanner": null,
+      "scrollY": 0
+    },
+    "requestsDuringPans": {
+      "meta": 3,
+      "entities": 6,
+      "dashboard": 3
+    },
+    "statuses": [
+      "meta:200",
+      "entities:200",
+      "dashboard:200",
+      "entities:200",
+      "meta:200",
+      "entities:200",
+      "dashboard:200",
+      "entities:200",
+      "meta:200",
+      "entities:200",
+      "dashboard:200",
+      "entities:200"
+    ],
+    "documentNavigations": 4
+  },
+  "R10": {
+    "opened": true,
+    "steps": [
+      {
+        "key": "2",
+        "active": "INPUT[date]",
+        "value": ""
+      },
+      {
+        "key": "0",
+        "active": "INPUT[date]",
+        "value": ""
+      },
+      {
+        "key": "2",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      },
+      {
+        "key": "5",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      },
+      {
+        "key": "ArrowRight",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      },
+      {
+        "key": "0",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      },
+      {
+        "key": "3",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      },
+      {
+        "key": "ArrowRight",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      },
+      {
+        "key": "1",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      },
+      {
+        "key": "5",
+        "active": "BUTTON[button](닫기)",
+        "value": "2025-02-02"
+      }
+    ],
+    "requestsWhileTyping": {
+      "meta": 1,
+      "dashboard": 1,
+      "entities": 1
+    }
+  },
+  "R03": {
+    "신고 수": [
+      {
+        "title": "가까운 6곳 묶음 · 합계 103건 (눌러서 확대)",
+        "fill": "rgba(100,124,253,0.95)",
+        "text": "103"
+      },
+      {
+        "title": "가까운 5곳 묶음 · 합계 64건 (눌러서 확대)",
+        "fill": "rgba(100,124,253,0.95)",
+        "text": "64"
+      },
+      {
+        "title": "서울특별시 강남구 예시로 3길 신고 15건",
+        "fill": "rgba(13,180,253,0.92)",
+        "text": "15"
+      },
+      {
+        "title": "가까운 3곳 묶음 · 합계 19건 (눌러서 확대)",
+        "fill": "rgba(100,124,253,0.95)",
+        "text": "19"
+      }
+    ],
+    "수용률": [
+      {
+        "title": "가까운 6곳 묶음 · 합계 108건 (눌러서 확대)",
+        "fill": "rgba(68,144,253,0.95)",
+        "text": "108"
+      },
+      {
+        "title": "가까운 5곳 묶음 · 합계 65건 (눌러서 확대)",
+        "fill": "rgba(69,144,253,0.95)",
+        "text": "65"
+      },
+      {
+        "title": "서울특별시 강남구 예시로 3길 · 완료 16건",
+        "fill": "rgba(13,180,253,0.92)",
+        "text": "16"
+      },
+      {
+        "title": "가까운 3곳 묶음 · 합계 20건 (눌러서 확대)",
+        "fill": "rgba(57,152,253,0.95)",
+        "text": "20"
+      }
+    ],
+    "일부수용률": [
+      {
+        "title": "가까운 6곳 묶음 · 합계 108건 (눌러서 확대)",
+        "fill": "rgba(100,124,253,0.95)",
+        "text": "108"
+      },
+      {
+        "title": "가까운 5곳 묶음 · 합계 65건 (눌러서 확대)",
+        "fill": "rgba(100,124,253,0.95)",
+        "text": "65"
+      },
+      {
+        "title": "서울특별시 강남구 예시로 3길 · 완료 16건",
+        "fill": "rgba(109,118,253,0.92)",
+        "text": "16"
+      },
+      {
+        "title": "가까운 3곳 묶음 · 합계 20건 (눌러서 확대)",
+        "fill": "rgba(100,124,253,0.95)",
+        "text": "20"
+      }
+    ],
+    "과태료": [
+      {
+        "title": "가까운 6곳 묶음 · 합계 108건 (눌러서 확대)",
+        "fill": "rgba(98,125,253,0.95)",
+        "text": "108"
+      },
+      {
+        "title": "가까운 5곳 묶음 · 합계 65건 (눌러서 확대)",
+        "fill": "rgba(89,131,253,0.95)",
+        "text": "65"
+      },
+      {
+        "title": "서울특별시 강남구 예시로 3길 · 완료 16건",
+        "fill": "rgba(13,180,253,0.92)",
+        "text": "16"
+      },
+      {
+        "title": "가까운 3곳 묶음 · 합계 20건 (눌러서 확대)",
+        "fill": "rgba(86,133,253,0.95)",
+        "text": "20"
+      }
+    ]
+  },
+  "consoleErrors": []
+}

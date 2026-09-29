@@ -1,5 +1,8 @@
-import type { DashboardData, PublicEntity, Scope } from '../domain/public';
-import { entitiesResponseSchema, errorResponseSchema, metaSchema, dashboardResponseSchema, type AccessErrorDetails } from './schema';
+import type { DashboardData, PlaceDetail, PublicEntity, PublicMeta, PublicPoint, Scope } from '../domain/public';
+import {
+  entitiesResponseSchema, errorResponseSchema, metaSchema, dashboardResponseSchema, placeDetailResponseSchema, placesResponseSchema,
+  type AccessErrorDetails,
+} from './schema';
 import { mapAuth } from '../hooks/usePersonal';
 
 export type DataMode = 'demo' | 'live';
@@ -7,7 +10,8 @@ export const dataMode: DataMode = import.meta.env.VITE_DATA_MODE === 'demo' ? 'd
 
 // SOL-08: the entity table uses full /entities browsing only when the live analytics base URL exists.
 export function entitiesAvailable(): boolean {
-  return dataMode === 'live' && !!import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
+  // demo builds browse the same list rules over the synthetic facts (src/data/demoEngine.ts demoEntities)
+  return dataMode === 'demo' || !!import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
 }
 
 export class PublicApiError extends Error {
@@ -94,8 +98,12 @@ export type EntityKind = 'agency' | 'manager';
 export type EntitySortKey = 'completed' | 'accepted' | 'partial' | 'rejected' | 'fine' | 'acceptRate';
 export type SortDir = 'asc' | 'desc';
 
+export type AgencyTypeFilter = 'all' | 'police' | 'non_police';
+
 export interface EntitiesQuery {
   kind: EntityKind;
+  /** 경찰 구분 (R09); 'all' or undefined sends nothing */
+  agencyType?: AgencyTypeFilter;
   q?: string;
   sort?: EntitySortKey;
   dir?: SortDir;
@@ -123,6 +131,11 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
   if (query.q !== undefined && query.q.trim() !== '') extra.q = query.q.trim();
   if (query.sort !== undefined) extra.sort = query.sort;
   if (query.dir !== undefined) extra.dir = query.dir;
+  if (query.agencyType && query.agencyType !== 'all') extra.agency_type = query.agencyType;
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
+    const { demoEntities } = await import('./demoEngine');
+    return demoEntities(scope, query);
+  }
   const parsed = entitiesResponseSchema.parse(await read('entities', scopeParams(scope, version, extra), signal));
   if (version !== undefined && parsed.dataset_version !== version) {
     throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
@@ -133,6 +146,42 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
   return {
     datasetVersion: parsed.dataset_version, scope: parsed.scope, items: parsed.items,
     totalRows: parsed.total_rows, page: parsed.page, pageSize: parsed.page_size,
+  };
+}
+
+/** Dataset metadata (version, date bounds, capabilities). The dashboard hook keeps it for the signed-in
+ *  session in memory only and re-reads it only on a 409 (R04 §7) — never on every map move. */
+export async function loadMeta(signal?: AbortSignal): Promise<PublicMeta> {
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
+    const { demoMeta } = await import('./demoEngine');
+    return demoMeta();
+  }
+  const meta = metaSchema.parse(await read('meta', null, signal));
+  if (meta.capabilities.daily_report_dates?.status !== 'supported') {
+    throw new PublicApiError('통계가 아직 준비되지 않았습니다. 잠시 후 다시 확인해 주세요.', 503);
+  }
+  return meta;
+}
+
+/** One dashboard snapshot for `scope` checked against `meta.dataset_version` (409 when the data changed). */
+export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
+  if (import.meta.env.VITE_DATA_MODE === 'demo') return loadDashboard(scope, signal);
+  const q = scopeParams(scope, meta.dataset_version);
+  const result = dashboardResponseSchema.parse(await read('dashboard', q, signal));
+  if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
+      !sameScope(result.scope, scope)) {
+    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+  }
+  return {
+    meta: { ...meta, location_missing: result.location_missing ?? undefined },
+    scope, overview: result.overview, points: result.points, monthly: result.monthly,
+    agencies: result.agencies, managers: result.managers, regions: result.regions ?? null, laws: result.laws ?? null,
+    vehicles: result.vehicles,
+    vehicle_total_scope_reports: result.vehicle_total_scope_reports,
+    vehicle_identifiable_reports: result.vehicle_identifiable_reports,
+    // null/absent = this server does not provide them yet; the UI says so instead of drawing empty charts
+    analytics: result.analytics ?? null,
+    map_unplaced: result.map_unplaced ?? null,
   };
 }
 
@@ -154,22 +203,35 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     const { demoEngineDashboard } = await import('./demoEngine');
     return demoEngineDashboard(scope);
   }
-  const meta = metaSchema.parse(await read('meta', null, signal));
-  if (meta.capabilities.daily_report_dates?.status !== 'supported') {
-    throw new PublicApiError('통계가 아직 준비되지 않았습니다. 잠시 후 다시 확인해 주세요.', 503);
+  return loadDashboardWith(await loadMeta(signal), scope, signal);
+}
+
+/** R05/R07: one address place under the current scope (by place key, never a coordinate bbox). */
+export async function loadPlace(scope: Scope, key: string, version: string, signal?: AbortSignal): Promise<PlaceDetail> {
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
+    const { demoPlace } = await import('./demoEngine');
+    const detail = demoPlace(scope, key, version);
+    if (!detail) throw new PublicApiError('이 장소는 지금 조건에 없습니다.', 404, null, 'NOT_FOUND');
+    return detail;
   }
-  const q = scopeParams(scope, meta.dataset_version);
-  const result = dashboardResponseSchema.parse(await read('dashboard', q, signal));
-  if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
-      !sameScope(result.scope, scope)) {
+  const parsed = placeDetailResponseSchema.parse(await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version), signal));
+  if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope) || parsed.place.key !== key) {
     throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
   }
-  return {
-    meta: { ...meta, location_missing: result.location_missing ?? undefined },
-    scope, overview: result.overview, points: result.points, monthly: result.monthly,
-    agencies: result.agencies, managers: result.managers, regions: result.regions ?? null, laws: result.laws ?? null,
-    vehicles: result.vehicles,
-    vehicle_total_scope_reports: result.vehicle_total_scope_reports,
-    vehicle_identifiable_reports: result.vehicle_identifiable_reports,
-  };
+  return { dataset_version: parsed.dataset_version, scope: parsed.scope, place: parsed.place,
+    agencies: parsed.agencies, managers: parsed.managers, agency_total: parsed.agency_total, manager_total: parsed.manager_total };
+}
+
+/** R07/F04: exact address pins inside a viewport for DISPLAY only; the statistics scope is unchanged. */
+export async function loadPlacesInView(scope: Scope, view: [number, number, number, number], version: string,
+  signal?: AbortSignal): Promise<{ points: PublicPoint[]; total: number; compacted: boolean }> {
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
+    const { demoPlacesInView } = await import('./demoEngine');
+    return demoPlacesInView(scope, view);
+  }
+  const parsed = placesResponseSchema.parse(await read('places', scopeParams(scope, version, { view_bbox: view.join(',') }), signal));
+  if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope)) {
+    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+  }
+  return { points: parsed.points, total: parsed.total_places, compacted: parsed.compacted };
 }

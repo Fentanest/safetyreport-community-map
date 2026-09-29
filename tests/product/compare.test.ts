@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateDashboard, entityRows, selectScope, type PrivateFact } from '../../server/aggregate';
 import { aggregateCompare, diffOf, summarize } from '../../server/compare';
+import { placeKey, placeKeyOf } from '../../server/places';
 import { demoFacts, DEMO_AS_OF, DEMO_DATA_MIN, DEMO_VIEWER_ID } from '../../src/data/demoEngine';
 import { consistentWithPublic, personalCompareSchema } from '../../src/data/personal';
 import { DEMO_SCOPE, type Scope } from '../../src/domain/public';
@@ -108,6 +109,7 @@ describe('differences', () => {
     const one: PrivateFact[] = [{
       ...facts[0], contributor_id: 'solo', fact_identity: 'solo-1', report_date: '2026-09-01', completed_date: '2026-09-05',
       status: 'rejected', disposition: 'none', point_key: 'solo:pt', lat: 37.1, lng: 127.1, region_code: '경기 수원시',
+      address: '경기도 수원시 혼자로 1',
     }];
     const cmp = aggregateCompare([...facts, ...one], DEMO_SCOPE, 'solo', opts);
     expect(cmp.mine.report_count).toBe(1);
@@ -115,7 +117,7 @@ describe('differences', () => {
     expect(cmp.mine.accept_rate).toBe(0);
     expect(cmp.mine.reject_rate).toBe(100);
 
-    expect(cmp.my_points).toEqual([expect.objectContaining({ key: 'solo:pt', lat: 37.1, lng: 127.1, mine_report_count: 1, shared: false })]);
+    expect(cmp.my_points).toEqual([expect.objectContaining({ key: placeKeyOf('경기도 수원시 혼자로 1'), lat: 37.1, lng: 127.1, mine_report_count: 1, shared: false })]);
   });
 });
 
@@ -191,14 +193,14 @@ describe('rows share the public keys and totals', () => {
     cmp.monthly.forEach((m, i) => expect(m.all_report_count).toBe(pub.monthly[i].report_count));
   });
 
-  it('my points are exact public point keys and coordinates; shared means another contributor recorded it too', () => {
+  it('my points are the public address place keys and display positions; shared means another contributor recorded it too', () => {
     const pubPoints = new Map(pub.points.map(p => [p.key, p]));
     const scoped = selectScope(facts, DEMO_SCOPE);
     for (const own of cmp.my_points) {
       const p = pubPoints.get(own.key)!;
       expect(p).toBeDefined();
       expect([own.lat, own.lng]).toEqual([p.lat, p.lng]);
-      const others = [...scoped.reported, ...scoped.done].some(f => f.point_key === own.key && f.contributor_id !== DEMO_VIEWER_ID);
+      const others = [...scoped.reported, ...scoped.done].some(f => placeKey(f) === own.key && f.contributor_id !== DEMO_VIEWER_ID);
       expect(own.shared).toBe(others);
     }
     expect(cmp.my_points.some(p => !p.shared)).toBe(true);
@@ -241,7 +243,7 @@ describe('account contributions (2026-09-28 account rule)', () => {
     expect(a.mine.completed_count).toBe(1);
     // my_points: B의 점은 A도 기록했으므로 shared, 좌표는 정확
     expect(b.my_points).toHaveLength(1);
-    expect(b.my_points[0]).toMatchObject({ key: 'v1:37.5,127.0', lat: 37.5, lng: 127.0,
+    expect(b.my_points[0]).toMatchObject({ key: placeKeyOf('공유 지점'), lat: 37.5, lng: 127.0,
       mine_report_count: 1, mine_completed_count: 1, shared: true });
     expect(a.my_points[0]).toMatchObject({ shared: true });
     // schema conformance on the new population shape

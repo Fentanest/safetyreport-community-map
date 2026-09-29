@@ -1,4 +1,5 @@
-import { aggregateDashboard, previousWindow, type PrivateFact } from './aggregate.ts';
+import { aggregateDashboard, entityRows, mapNodes, previousWindow, representatives, selectScope, type PrivateFact } from './aggregate.ts';
+import { placeFacts, placeRows, placesInView, placeSummary, representativeOf } from './places.ts';
 import { codeForLegacyKey } from './regions.ts';
 import { authenticate, mapViewerEligibility, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
 import { isLawParam, LAW_NONE, lawKey, parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
@@ -57,8 +58,10 @@ export class QueryError extends Error {
 type Headers = Record<string, string>;
 const allowed = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
-  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir',
+  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type', 'view_bbox',
 ]);
+// list-only parameters: never part of the statistics scope
+const ENTITY_ONLY = ['kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type'];
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const key = /^[\p{L}\p{N}._:-]{1,160}$/u;
 // SOL-08: server-side search/sort keys for /entities. Value semantics mirror the EntityTable
@@ -200,7 +203,8 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
     if (request.method !== 'GET') return errorResponse('METHOD_NOT_ALLOWED', 405);
     const url = new URL(request.url);
     const route = routeName(url.pathname);
-    if (!['meta', 'dashboard', 'overview', 'map', 'series', 'entities', 'vehicles/top'].includes(route) && !route.startsWith('points/')) {
+    if (!['meta', 'dashboard', 'overview', 'map', 'series', 'entities', 'vehicles/top', 'places'].includes(route) &&
+      !route.startsWith('points/') && !route.startsWith('places/')) {
       return errorResponse('NOT_FOUND', 404);
     }
     try {
@@ -224,10 +228,20 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
         return json(meta(state), 200);
       }
-      if (route !== 'entities' && ['kind', 'page', 'page_size', 'q', 'sort', 'dir'].some(name => url.searchParams.has(name))) {
+      if (route !== 'entities' && ENTITY_ONLY.some(name => url.searchParams.has(name))) {
         throw new QueryError('INVALID_QUERY', 400);
       }
-      const scope = parseScope(url.searchParams, state);
+      // view_bbox = the map viewport of a display refinement (R07/F04); it never enters the statistics scope
+      if (route !== 'places' && url.searchParams.has('view_bbox')) throw new QueryError('INVALID_QUERY', 400);
+      let viewBbox: [number, number, number, number] | null = null;
+      if (route === 'places') {
+        const raw = url.searchParams.get('view_bbox');
+        viewBbox = raw === null || url.searchParams.getAll('view_bbox').length !== 1 ? null : parseBbox(raw);
+        if (!viewBbox) throw new QueryError('INVALID_QUERY', 400);
+      }
+      const scopeParams = new URLSearchParams(url.searchParams);
+      scopeParams.delete('view_bbox');
+      const scope = parseScope(scopeParams, state);
       if (url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) {
         throw new QueryError('DATASET_CHANGED', 409);
       }
@@ -235,21 +249,50 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       if (!state.generated_at) throw new QueryError('AGGREGATE_NOT_READY', 503);
       if (route === 'entities') {
         if (!['agency', 'manager'].includes(url.searchParams.get('kind') || '')) throw new QueryError('INVALID_QUERY', 400);
+        const type = url.searchParams.get('agency_type');
+        if (type !== null && type !== 'police' && type !== 'non_police') throw new QueryError('INVALID_QUERY', 400);
+      }
+      let placeKey: string | null = null;
+      if (route.startsWith('places/')) {
+        try { placeKey = decodeURIComponent(route.slice('places/'.length)); }
+        catch { throw new QueryError('INVALID_QUERY', 400); }
+        if (!/^pl1:[0-9a-f]{16}$/.test(placeKey)) throw new QueryError('INVALID_QUERY', 400);
       }
       const facts = await repo.getFacts(scope);
+      const common = { schema_version: 2, dataset_version: state.dataset_version, sample: false, scope };
+      if (placeKey !== null) {
+        // R05/R07: one address, every fact of the place key under the scope (never a coordinate bbox)
+        const selection = selectScope(representatives(facts), scope);
+        const own = placeFacts(placeKey, selection.reported, selection.done);
+        const anchor = representativeOf([...own.reported, ...own.done]);
+        // only drawable places have a detail (a place without any coordinate is counted in map_unplaced)
+        if (!anchor) return errorResponse('NOT_FOUND', 404);
+        const agencies = entityRows(own.done, 'agency'), managers = entityRows(own.done, 'manager');
+        return json({ ...common, place: placeSummary(placeKey, own.reported, own.done, anchor),
+          agencies: agencies.slice(0, 100), managers: managers.slice(0, 100),
+          agency_total: agencies.length, manager_total: managers.length }, 200);
+      }
+      if (route === 'places') {
+        // display refinement of the map only: exact address places inside the viewport under the SAME scope
+        const selection = selectScope(representatives(facts), scope);
+        const inView = placesInView(placeRows(selection.reported, selection.done).places, viewBbox!);
+        const nodes = mapNodes(inView);
+        return json({ ...common, view_bbox: viewBbox, points: nodes, total_places: inView.length,
+          compacted: nodes.length < inView.length }, 200);
+      }
       const data = aggregateDashboard(facts, scope, {
         datasetVersion: state.dataset_version, sourceUpdatedAt: state.source_updated_at,
         generatedAt: state.generated_at, asOf: state.data_max || scope.end, sample: false,
         dataMin: state.data_min,
       });
-      const common = { schema_version: 2, dataset_version: state.dataset_version, sample: false, scope };
       // location_missing: unique facts actually in the current range's report/completion indicators
       // but without coordinates (SOL-07 basis: comparison-window-only facts excluded, counted once).
       if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
         regions: (data.regions ?? []).slice(0, 300), laws: (data.laws ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
-        vehicle_identifiable_reports: data.vehicle_identifiable_reports }, 200);
+        vehicle_identifiable_reports: data.vehicle_identifiable_reports,
+        analytics: data.analytics ?? null, map_unplaced: data.map_unplaced ?? null }, 200);
       if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200);
       if (route === 'map') return json({ ...common, points: data.points }, 200);
       if (route === 'series') return json({ ...common, monthly: data.monthly }, 200);
@@ -270,8 +313,10 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         const dir = url.searchParams.get('dir') || 'desc';
         if (!entitySorts.has(sort) || (dir !== 'asc' && dir !== 'desc')) throw new QueryError('INVALID_QUERY', 400);
         let rows = url.searchParams.get('kind') === 'agency' ? data.agencies : data.managers;
+        const agencyType = url.searchParams.get('agency_type');
+        if (agencyType) rows = rows.filter(row => row.agency_type === agencyType);
         if (needle) rows = rows.filter(row => row.agency_name.includes(needle) || (row.manager_name ?? '').includes(needle));
-        if (needle || url.searchParams.get('sort') !== null || url.searchParams.get('dir') !== null) {
+        if (needle || agencyType || url.searchParams.get('sort') !== null || url.searchParams.get('dir') !== null) {
           rows = [...rows].sort(compareEntities(sort, dir));
         }
         return json({ ...common, items: rows.slice((page - 1) * pageSize, page * pageSize),

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { aggregateDashboard, type PrivateFact } from '../../server/aggregate';
+import { placeKeyOf } from '../../server/places';
 import { createPublicHandler, type AnalyticsRepository, type AnalyticsState } from '../../server/publicHandler';
 import { entitiesResponseSchema } from '../../src/data/schema';
 import { loadEntities } from '../../src/data/client';
@@ -35,8 +36,10 @@ const mkFact = (patch: Partial<PrivateFact>): PrivateFact => {
     ...patch,
   };
 };
+// R07: map places are keyed by address, so each "point" of these tests is its own address
 const located = (key: string): Partial<PrivateFact> =>
-  ({ point_key: key, lat: 37.5, lng: 127.0, address: '예시 지점' });
+  ({ point_key: key, lat: 37.5, lng: 127.0, address: `예시 지점 ${key}` });
+const place = (key: string) => placeKeyOf(`예시 지점 ${key}`);
 
 describe('SOL-06 completion-only points', () => {
   it('keeps a completion whose report date is out of range as its own point', () => {
@@ -46,7 +49,7 @@ describe('SOL-06 completion-only points', () => {
     expect(data.overview.report_count.value).toBe(0);
     expect(data.overview.completed_count.value).toBe(1);
     expect(data.points).toHaveLength(1);
-    expect(data.points[0]).toMatchObject({ key: 'pt-cross', report_count: 0, completed_count: 1 });
+    expect(data.points[0]).toMatchObject({ key: place('pt-cross'), report_count: 0, completed_count: 1 });
     // invariant: overview.completed = sum(points.completed) + unlocated completions
     expect(data.points.reduce((n, row) => n + (row.completed_count ?? 0), 0)).toBe(1);
   });
@@ -60,9 +63,8 @@ describe('SOL-06 completion-only points', () => {
     expect(data.overview.report_count.value).toBe(3);
     expect(data.overview.completed_count.value).toBe(3);
     expect(data.points).toHaveLength(3);
-    expect(data.points.map(row => [row.key, row.report_count, row.completed_count])).toEqual([
-      ['pt-a', 1, 1], ['pt-c', 1, 0], ['pt-b', 0, 1],
-    ]);
+    const expected = [[place('pt-a'), 1, 1], [place('pt-c'), 1, 0], [place('pt-b'), 0, 1]];
+    expect(data.points.map(row => [row.key, row.report_count, row.completed_count])).toEqual(expected);
     const pointReports = data.points.reduce((n, row) => n + row.report_count, 0);
     const pointDone = data.points.reduce((n, row) => n + (row.completed_count ?? 0), 0);
     expect(pointReports + 1).toBe(3); // +1 unlocated report

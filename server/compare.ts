@@ -1,7 +1,9 @@
 /** Personal comparison: all vs mine over ONE scope selection. Server-only (my-analytics). */
 import {
-  located, monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, selectScope, kstDate, ratingSummary, type PrivateFact,
+  monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, selectScope, kstDate, ratingSummary, type PrivateFact,
 } from './aggregate.ts';
+import { distinctPlaces, groupPlaces, representativeOf } from './places.ts';
+import { durationDistribution, ratingDistribution } from './analyticsDistributions.ts';
 import { regionName } from './regions.ts';
 import type { Scope } from '../src/domain/public.ts';
 import { durationSummary } from './duration.ts';
@@ -17,7 +19,8 @@ const pct = (numerator: number, denominator: number): number | null =>
 export function summarize(reported: readonly PrivateFact[], done: readonly PrivateFact[]): CompareSummary {
   const o = outcomes(done);
   const fine = done.filter(fact => fact.disposition === 'fine').length;
-  const points = new Set(reported.filter(located).map(fact => fact.point_key)).size;
+  // 신고 장소 = distinct address places (R07), the same key as the public map and point_count
+  const points = distinctPlaces(reported);
   return {
     report_count: reported.length, completed_count: done.length,
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
@@ -171,7 +174,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
     const outside = month > options.asOf.slice(0, 7) || (options.dataMin !== null && month < options.dataMin.slice(0, 7));
     if (outside) return { month, all_report_count: null, mine_report_count: null, all_completed_count: null,
       mine_completed_count: null, all_accept_rate: null, mine_accept_rate: null,
-      all_duration_median_days: null, mine_duration_median_days: null };
+      all_duration_median_days: null, mine_duration_median_days: null, mine_outcomes: null, mine_fine_count: null };
     const r = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
     const d = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
     const mr = myReported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
@@ -181,31 +184,34 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
       all_completed_count: a.completed_count, mine_completed_count: m.completed_count,
       all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate,
       all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days,
-      all_rating: a.rating, mine_rating: m.rating };
+      all_rating: a.rating, mine_rating: m.rating,
+      // A05: the viewer's own numerators/denominators of the month (completion month), never a re-averaged rate
+      mine_outcomes: outcomes(md), mine_fine_count: md.filter(fact => fact.disposition === 'fine').length };
   });
 
-  // Points with my facts; `shared` = another contributor recorded the same point in this scope
-  // (checked against every listed row, not only representatives).
-  const pointReported = group(reported.filter(located), fact => fact.point_key);
-  const pointDone = group(done.filter(located), fact => fact.point_key);
-  const fullReported = group(mineSel.reported.filter(located), fact => fact.point_key);
-  const fullDone = group(mineSel.done.filter(located), fact => fact.point_key);
-  const myPointKeys = new Set([...myReported, ...myDone].filter(located).map(fact => fact.point_key));
-  const my_points: MyPoint[] = [...myPointKeys].map(key => {
-    const r = pointReported.get(key) ?? [], d = pointDone.get(key) ?? [];
-    const mineR = group(myReported.filter(located), fact => fact.point_key).get(key) ?? [];
-    const mineD = group(myDone.filter(located), fact => fact.point_key).get(key) ?? [];
-    const anchor = (r[0] ?? d[0] ?? mineR[0] ?? mineD[0]) as PrivateFact & { lat: number; lng: number };
-    return {
-      key: key as string, lat: anchor.lat, lng: anchor.lng, region_code: regionKeys(anchor).sgg,
+  // Address places with my facts (R07: same place key and display position as the public map);
+  // `shared` = another contributor recorded the same address in this scope (checked against every listed row).
+  const publicPlaces = groupPlaces(reported, done);
+  const fullPlaces = groupPlaces(mineSel.reported, mineSel.done);
+  const myPlaces = groupPlaces(myReported, myDone);
+  const myPlaceKeys = new Set([...myPlaces.reported.keys(), ...myPlaces.done.keys()]);
+  const my_points: MyPoint[] = [...myPlaceKeys].flatMap(key => {
+    const anchor = representativeOf([...(publicPlaces.reported.get(key) ?? []), ...(publicPlaces.done.get(key) ?? [])]) ??
+      representativeOf([...(myPlaces.reported.get(key) ?? []), ...(myPlaces.done.get(key) ?? [])]);
+    if (!anchor) return [];
+    const mineR = myPlaces.reported.get(key) ?? [], mineD = myPlaces.done.get(key) ?? [];
+    return [{
+      key, lat: anchor.lat, lng: anchor.lng, region_code: regionKeys(anchor).sgg,
       mine_report_count: mineR.length, mine_completed_count: mineD.length,
-      shared: [...(fullReported.get(key) ?? []), ...(fullDone.get(key) ?? [])].some(fact => !isMine(fact)),
-    };
+      shared: [...(fullPlaces.reported.get(key) ?? []), ...(fullPlaces.done.get(key) ?? [])].some(fact => !isMine(fact)),
+    }];
   }).sort((x, y) => y.mine_report_count - x.mine_report_count || x.key.localeCompare(y.key)).slice(0, MAX_MY_POINTS);
 
   return {
     schema_version: 2, dataset_version: options.datasetVersion, scope, viewer: options.viewer,
     all, mine, diff: diffOf(all, mine), regions,
     agencies: entities('agency'), managers: entities('manager'), monthly, my_points,
+    // A01/A06 for the viewer's own cohort (own denominators; the public side is in the dashboard response)
+    analytics: { duration: durationDistribution(myDone), rating: ratingDistribution(myDone) },
   };
 }
