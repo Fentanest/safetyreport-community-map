@@ -32,8 +32,8 @@ export async function api(path, body) {
   return res.json();
 }
 
-export async function openPage(browser, { width = 1440, height = 900, theme = 'dark', signedIn = true, search = '', mockSdk = true } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, colorScheme: theme === 'light' ? 'light' : 'dark', deviceScaleFactor: 1 });
+export async function openPage(browser, { width = 1440, height = 900, theme = 'dark', signedIn = true, search = '', mockSdk = true, locale = 'ko-KR' } = {}) {
+  const context = await browser.newContext({ locale, viewport: { width, height }, colorScheme: theme === 'light' ? 'light' : 'dark', deviceScaleFactor: 1 });
   if (mockSdk) await context.route('https://dapi.kakao.com/**', route => route.fulfill({ contentType: 'text/javascript', body: MOCK_SDK }));
   await context.addInitScript(({ session, theme, signedIn }) => {
     try {

@@ -113,8 +113,10 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
   const [metric, setMetric] = useState<CellMetric>('accept');
   const [expanded, setExpanded] = useState(false);
   const [table, setTable] = useState(false);
+  // narrow screens get fewer law columns so every cell stays readable (the rest via 더 넓게 보기 / 표)
+  const narrow = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 700px)').matches === true;
   const rows = data ? (expanded ? data.rows : data.rows.slice(0, 8)) : [];
-  const laws = data ? (expanded ? data.laws : data.laws.slice(0, 7)) : [];
+  const laws = data ? (expanded ? data.laws : data.laws.slice(0, narrow ? 4 : 7)) : [];
   const cellOf = useMemo(() => new Map((data?.cells ?? []).map((c) => [`${c.row_key}\u0000${c.law_key}`, c])), [data]);
   const value = (c: LawHeatmap['cells'][number]) => (metric === 'fine' ? pct(c.fine_count, c.completed_count)
     : pct(metric === 'accept' ? c.outcomes.accepted : c.outcomes.rejected, c.outcomes.result_known));
@@ -128,9 +130,10 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
       const v = value(c);
       // readable label on the ramp: dark text on light cells, white on dark ones
       points.push({ value: [x, y, v === null ? '-' : Math.round(v * 10) / 10, c.completed_count],
-        label: { color: v !== null && v > 60 ? '#ffffff' : '#0b1220' } });
+        label: { color: v !== null && v >= 70 ? '#ffffff' : '#0b1220' } });
     }));
-    return { ...baseOption(t), grid: { left: 150, right: 16, top: 8, bottom: 86 },
+    const left = narrow ? 104 : 150;
+    return { ...baseOption(t), grid: { left, right: 12, top: 8, bottom: 86 },
       tooltip: { ...baseOption(t).tooltip, formatter: (p: { data: { value: [number, number, number | string, number] } }) => {
         const [x, y] = p.data.value;
         const c = cellOf.get(`${rows[y].key}\u0000${laws[x].law_key}`)!;
@@ -140,14 +143,14 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
       } },
       xAxis: { type: 'category', data: laws.map((l) => lawText(l.law_key).replace(/^도로교통법 /, '도교법 ')), splitArea: { show: false },
         axisLabel: { color: t.muted, rotate: 35, fontSize: 10, interval: 0 }, axisLine: { lineStyle: { color: t.grid } } },
-      yAxis: { type: 'category', data: rows.map((r) => { const n = rowName(r); return n.length > 16 ? `${n.slice(0, 15)}…` : n; }), inverse: true,
+      yAxis: { type: 'category', data: rows.map((r) => { const n = rowName(r); const max = narrow ? 9 : 16; return n.length > max ? `${n.slice(0, max - 1)}…` : n; }), inverse: true,
         axisLabel: { color: t.text, fontSize: 11 }, axisLine: { lineStyle: { color: t.grid } } },
       visualMap: { min: 0, max: 100, show: false, inRange: { color: [...METRIC_RAMP] }, outOfRange: { color: METRIC_NULL } },
       series: [{ type: 'heatmap', data: points, label: { show: true, fontSize: 10, color: t.text,
         formatter: (p: { data: { value: [number, number, number | string, number] } }) => (p.data.value[2] === '-' ? '–' : `${p.data.value[2]}%`) },
         itemStyle: { borderColor: t.surface, borderWidth: 2 }, emphasis: { itemStyle: { borderColor: t.text, borderWidth: 1 } } }],
     };
-  }, [data, metric, expanded], theme, (params) => {
+  }, [data, metric, expanded, narrow], theme, (params) => {
     const d = (params.data as { value: [number, number] } | undefined)?.value;
     if (!d) return;
     onPick(rows[d[1]], laws[d[0]].law_key);
@@ -163,7 +166,7 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
         {data.row_kind === 'manager' ? '담당자' : '기관'} {fmtInt(data.total_rows)}개 중 {fmtInt(rows.length)}개 · 법규 {fmtInt(data.total_laws)}개 중 {fmtInt(laws.length)}개(답변 많은 순)
         {data.total_rows > data.rows.length || data.total_laws > data.laws.length ? ` · 서버는 상위 ${fmtInt(data.rows.length)}×${fmtInt(data.laws.length)}까지 제공합니다` : ''}.
         {' '}빈 칸은 그 조합의 신고가 없다는 뜻이고, ‘–’는 결과가 나온 신고가 없어 비율을 계산할 수 없다는 뜻입니다.{' '}
-        {(data.rows.length > 8 || data.laws.length > 7) && (
+        {(data.rows.length > 8 || data.laws.length > laws.length) && (
           <button type="button" className="link-btn" onClick={() => setExpanded((v) => !v)}>{expanded ? '줄여 보기' : '더 넓게 보기'}</button>
         )}
       </>}>
@@ -253,7 +256,7 @@ export function VehicleDaysCard({ data, theme }: { data: VehicleDayDistribution 
         const b = data.buckets[ps[0]?.dataIndex ?? 0];
         return `<b>서로 다른 신고일 ${b.label}</b><br/>차량 ${fmtInt(b.vehicle_count)}대 · ${fmtPercent(b.percentage)} (번호를 알 수 있는 ${fmtInt(data.vehicle_count)}대 중)`;
       } },
-      xAxis: { type: 'category', data: data.buckets.map((b) => b.label), axisLabel: { color: t.muted }, axisLine: { lineStyle: { color: t.grid } }, name: '신고일 수', nameLocation: 'end', nameTextStyle: { color: t.muted } },
+      xAxis: { type: 'category', data: data.buckets.map((b) => b.label), axisLabel: { color: t.muted, interval: 0 }, axisLine: { lineStyle: { color: t.grid } }, name: '신고일 수', nameLocation: 'end', nameTextStyle: { color: t.muted } },
       yAxis: { type: 'value', min: 0, minInterval: 1, axisLabel: { color: t.muted }, splitLine: { lineStyle: { color: t.grid } } },
       series: [{ type: 'bar', barMaxWidth: 48, data: data.buckets.map((b) => b.vehicle_count), itemStyle: { color: t.brand, borderRadius: [4, 4, 0, 0] },
         label: { show: true, position: 'top', color: t.text, fontSize: 11 } }] };

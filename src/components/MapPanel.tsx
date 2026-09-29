@@ -398,9 +398,10 @@ export default function MapPanel(p: Props) {
         </p>
       )}
       {sdkState === 'ready' && boundaryOn && boundaryMeta && (
-        <p className="boundary-note" title={boundaryMeta.attribution}>
+        <details className="boundary-note">
+          <summary>경계선 안내·출처</summary>
           경계선은 화면 표시용으로 단순화했고 색은 선택한 지표({def.legend})를 따릅니다. 거의 투명한 곳은 이 조건의 자료가 없는 곳입니다. {boundaryMeta.attribution}
-        </p>
+        </details>
       )}
     </article>
   );

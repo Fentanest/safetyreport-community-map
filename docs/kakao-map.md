@@ -27,3 +27,9 @@ polygon 경계는 출처/기준일/license를 metadata와 NOTICE에 남긴다. �
 ## 오프라인/키 없음
 디자인검수 demo 모드에서는 '지도 모형 · 실제 지도 아님'. production은 '지도 연결을 확인할 수 없습니다' +
 재시도/목록 보기. 통계는 계속 탐색 가능. 지도가 보였다는 screenshot은 실제 SDK key/domain 성공 로그가 있을 때만 live evidence.
+
+## 2026-09-29 개편 (docs/implementation/dashboard-redesign)
+- 핀은 정규화 주소당 1개(`place_key`, address-v1). 핀 위치는 그 주소 원천 좌표 중 결정적으로 고른 표시용 위치이며 원천 좌표는 바꾸지 않는다.
+- 지표: 신고 수 / 수용률 / 불수용률 / 과태료(부과율). 핀·묶음 숫자는 건수 또는 %; 묶음 비율은 Σ분자/Σ분모. 색 입력은 0..1, 분모 없음은 회색 '–'.
+- 경계 채움·hover·범례도 선택 지표를 따른다. 지도 생성·fitBounds·relayout은 프로그램 이동이라 자동 통계 범위에 쓰지 않는다.
+- 지도 host는 보기 전환에서 재삽입하지 않고 ResizeObserver로 relayout만 한다. SDK가 컨테이너에 inline `position:relative`를 써도 host가 크기를 유지하도록 CSS가 `!important`로 고정한다.

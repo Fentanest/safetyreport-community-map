@@ -1,0 +1,547 @@
+{
+  "R01_R02_R03": {
+    "buttons": [
+      "신고 수",
+      "수용률",
+      "불수용률",
+      "과태료"
+    ],
+    "removedTexts": [],
+    "pointFilterNodes": 0,
+    "metricRuns": {
+      "신고 수": [
+        {
+          "text": "107",
+          "fill": "#1e3a8a"
+        },
+        {
+          "text": "64",
+          "fill": "#214cb4"
+        },
+        {
+          "text": "15",
+          "fill": "#319cf3"
+        },
+        {
+          "text": "18",
+          "fill": "#2e8ff1"
+        },
+        {
+          "text": "17",
+          "fill": "#2f93f2"
+        }
+      ],
+      "신고 수_legend": "신고 수\n적음\n많음",
+      "수용률": [
+        {
+          "text": "55%",
+          "fill": "#34abf5"
+        },
+        {
+          "text": "57%",
+          "fill": "#33a4f4"
+        },
+        {
+          "text": "100%",
+          "fill": "#1e3a8a"
+        },
+        {
+          "text": "63%",
+          "fill": "#2e8ef1"
+        },
+        {
+          "text": "56%",
+          "fill": "#33a7f5"
+        }
+      ],
+      "수용률_legend": "수용률\n0%\n100%\n– 결과 없음",
+      "불수용률": [
+        {
+          "text": "29%",
+          "fill": "#73d0fb"
+        },
+        {
+          "text": "29%",
+          "fill": "#71cffb"
+        },
+        {
+          "text": "0%",
+          "fill": "#e0f2fe"
+        },
+        {
+          "text": "21%",
+          "fill": "#8dd8fc"
+        },
+        {
+          "text": "31%",
+          "fill": "#6ccefb"
+        }
+      ],
+      "불수용률_legend": "불수용률\n0%\n100%\n– 결과 없음",
+      "과태료": [
+        {
+          "text": "22%",
+          "fill": "#88d6fc"
+        },
+        {
+          "text": "26%",
+          "fill": "#7ad2fc"
+        },
+        {
+          "text": "53%",
+          "fill": "#35b1f6"
+        },
+        {
+          "text": "37%",
+          "fill": "#5cc9fa"
+        },
+        {
+          "text": "29%",
+          "fill": "#71cffb"
+        }
+      ],
+      "과태료_legend": "과태료 부과율\n0%\n100%\n– 결과 없음"
+    },
+    "requestsDuringMetricSwitch": {},
+    "mapInstancesBefore": 2,
+    "mapInstancesAfter": 2,
+    "consoleErrors": [],
+    "markersWithLegacyParams": 9,
+    "markersDefault": 9
+  },
+  "R04_P01_P02": {
+    "mapInstancesBefore": 2,
+    "mapInstancesAfter": 2,
+    "levelBefore": 13,
+    "levelAfter": 13,
+    "scrollYBefore": 0,
+    "scrollYAfter": 0,
+    "requests": {
+      "dashboard": 1
+    },
+    "statuses": [
+      "dashboard:200"
+    ],
+    "lastDashboardBbox": "123.9708,35.7334,130.8892,39.373",
+    "urlBbox": "123.9708,35.7334,130.8892,39.373",
+    "historyGrowth": 0,
+    "documentNavigations": 21,
+    "skeletonsShown": 1,
+    "chips": [
+      "지도 범위\n지도에 보이는 범위(자동)\n×"
+    ],
+    "staleTest": {
+      "requests": [
+        "dashboard:traffic",
+        "dashboard:parking"
+      ],
+      "kpiScope": "2025.09.30 — 2026.09.29 · 전국 · 주정차 · 지도 범위",
+      "categoryPressed": "주정차"
+    }
+  },
+  "P03": {
+    "banner": "요청이 많아 잠시 쉬고 있습니다 · 10초 뒤 최신 범위로 자동으로 다시 불러옵니다 · 화면의 수치는 마지막으로 불러온 조건(2025.09.30 — 2026.09.29 · 전국)의 결과입니다.",
+    "kpiDuring": "287건",
+    "dashboardDuringWait": [
+      429
+    ],
+    "afterWait": [
+      {
+        "status": 200,
+        "bbox": "124.8168,34.831,131.7352,38.4706"
+      }
+    ],
+    "finalUrlBbox": "124.8168,34.831,131.7352,38.4706",
+    "conflict": [
+      "dashboard:409",
+      "meta:200",
+      "dashboard:200"
+    ],
+    "conflictBanner": 0,
+    "serverError": {
+      "requests": [
+        "dashboard:503",
+        "dashboard:503"
+      ],
+      "banner": "통계를 불러오지 못했습니다. · 화면의 수치는 마지막으로 불러온 조건(2025.09.30 — 2026.09.29 · 전국 · 기타 · 지도 범위)의 결과입니다.\n다시 시도",
+      "mapStillMounted": 1,
+      "kpiStill": 8
+    }
+  },
+  "P04": {
+    "kpiBefore": "287건",
+    "gate": 1,
+    "gateTitle": "지금은 신고를 10건 이상 공유한 분만 볼 수 있어요",
+    "kpiAfter": 0,
+    "mapAfter": 0,
+    "localStorageKeys": [
+      "cm-map-auth-v1",
+      "cm-theme"
+    ],
+    "sessionStorageHasResponses": false
+  },
+  "R05_R06_R07": {
+    "pinTitles": [
+      "서울특별시 중구 예시로 2길 · 신고 수 25건",
+      "서울특별시 강남구 예시로 2길 · 신고 수 19건",
+      "서울특별시 중구 예시로 3길 · 신고 수 18건",
+      "서울특별시 강남구 예시로 1길 · 신고 수 18건",
+      "경기도 수원시 예시로 1길 · 신고 수 18건",
+      "서울특별시 중구 예시로 1길 · 신고 수 16건",
+      "경기도 수원시 예시로 2길 · 신고 수 16건",
+      "경기도 수원시 예시로 3길 · 신고 수 15건",
+      "서울특별시 강남구 예시로 3길 · 신고 수 15건",
+      "인천광역시 남동구 예시로 1길 · 신고 수 11건",
+      "인천광역시 남동구 예시로 3길 · 신고 수 11건",
+      "부산광역시 해운대구 예시로 3길 · 신고 수 8건",
+      "대전광역시 서구 예시로 3길 · 신고 수 8건",
+      "광주광역시 북구 예시로 2길 · 신고 수 7건",
+      "부산광역시 연제구 예시로 3길 · 신고 수 7건",
+      "대구광역시 수성구 예시로 2길 · 신고 수 6건",
+      "대구광역시 수성구 예시로 3길 · 신고 수 6건",
+      "제주특별자치도 제주시 예시로 3길 · 신고 수 6건",
+      "부산광역시 해운대구 예시로 1길 · 신고 수 6건",
+      "대구광역시 수성구 예시로 1길 · 신고 수 6건",
+      "부산광역시 연제구 예시로 1길 · 신고 수 5건",
+      "대전광역시 서구 예시로 1길 · 신고 수 5건",
+      "부산광역시 해운대구 예시로 2길 · 신고 수 4건",
+      "부산광역시 연제구 예시로 2길 · 신고 수 4건",
+      "제주특별자치도 제주시 예시로 1길 · 신고 수 4건",
+      "인천광역시 남동구 예시로 2길 · 신고 수 4건",
+      "대전광역시 서구 예시로 2길 · 신고 수 4건",
+      "광주광역시 북구 예시로 1길 · 신고 수 3건",
+      "제주특별자치도 제주시 예시로 2길 · 신고 수 2건",
+      "광주광역시 북구 예시로 3길 · 신고 수 2건",
+      "제주특별자치도 제주시 예시로 9길 · 신고 수 1건"
+    ],
+    "distinctTitles": true,
+    "panelTitle": "서울특별시 강남구 예시로 2길",
+    "expectedB": "서울특별시 강남구 예시로 2길",
+    "bWins": true,
+    "hasTabs": 0,
+    "order": [
+      -1,
+      150,
+      230,
+      298
+    ],
+    "hasAddressCopy": true,
+    "hasCoordinateUi": false,
+    "warningLabel": true,
+    "completedLabelInSummary": false,
+    "requestsOnClick": {
+      "places/:key": 2
+    },
+    "placeKeys": 2,
+    "sectionsSample": [
+      "신고\n19\n건 · 신고한 날\n계도\n4\n건 · 경고·계도 처분\n과태료\n5\n건 · 답변 받은 날\n수용률\n64.7%\n11/17건\n불수용률\n23.5%\n4/17건",
+      "처리 결과\n답변 19건 중 결과가 나온 17건\n수용 11 64.7%\n일부 수용 2 11.8%\n불수용 4 23.5%\n결과 미상 2 비율에서 제외",
+      "처리 결과\n답변 19건 중 결과가 나온 17건",
+      "처리 기관\n1곳 · 이 주소 신고만\n예시 강남구청\n19건\n수용 64.7% · 불수용 23.5% · 과태료 5 · 계도 4",
+      "처리 기관\n1곳 · 이 주소 신고만",
+      "담당자\n1명 · 소속 기관과 함께\n최민준\n예시 강남구청\n19건\n수용 64.7% · 불수용 23.5% · 과태료 5 · 계도 4"
+    ],
+    "chipsAfterPick": [
+      "기관\n예시 강남구청\n×"
+    ]
+  },
+  "R08": {
+    "dark": {
+      "buttonStyle": {
+        "bg": "rgb(232, 240, 255)",
+        "fg": "rgb(11, 18, 32)",
+        "cls": "control control-extra filter-active",
+        "label": "상세 필터, 적용 중 2개"
+      },
+      "chips": [
+        "지역\n서울특별시\n×",
+        "법규\n도로교통법 제32조\n×"
+      ],
+      "afterRemove": [
+        "지역\n서울특별시\n×"
+      ],
+      "afterBack": [
+        "지역\n서울특별시\n×",
+        "법규\n도로교통법 제32조\n×"
+      ],
+      "backRestoredUrl": true,
+      "lawSelect": "도로교통법 제32조",
+      "regionActive": 0
+    },
+    "light": {
+      "buttonStyle": {
+        "bg": "rgb(11, 31, 77)",
+        "fg": "rgb(255, 255, 255)",
+        "cls": "control control-extra filter-active",
+        "label": "상세 필터, 적용 중 2개"
+      },
+      "chips": [
+        "지역\n서울특별시\n×",
+        "법규\n도로교통법 제32조\n×"
+      ],
+      "afterRemove": [
+        "지역\n서울특별시\n×"
+      ],
+      "afterBack": [
+        "지역\n서울특별시\n×",
+        "법규\n도로교통법 제32조\n×"
+      ],
+      "backRestoredUrl": true,
+      "lawSelect": "도로교통법 제32조",
+      "regionActive": 0
+    }
+  },
+  "R09": {
+    "390": {
+      "order": [
+        "기관·담당자 이름 검색",
+        "열 선택",
+        "목록 종류",
+        "경찰 구분"
+      ],
+      "kindSwitchBox": {
+        "x": 115.453125,
+        "y": 255.671875,
+        "width": 115,
+        "height": 42
+      },
+      "kindInViewportX": true,
+      "pageOverflow": 0
+    },
+    "1440": {
+      "order": [
+        "기관·담당자 이름 검색",
+        "열 선택",
+        "목록 종류",
+        "경찰 구분"
+      ],
+      "kindSwitchBox": {
+        "x": 1117,
+        "y": 258.953125,
+        "width": 115,
+        "height": 42
+      },
+      "kindInViewportX": true,
+      "headersAfterHide": [
+        "기관",
+        "답변 ▼",
+        "불수용률",
+        "과태료",
+        "답변까지"
+      ],
+      "headersAfterAdd": [
+        "기관",
+        "답변 ▼",
+        "불수용률",
+        "과태료",
+        "답변까지",
+        "계도"
+      ],
+      "requestsAfterKindSwitch": {},
+      "searchRequests": [
+        "김하늘"
+      ],
+      "rowsAfterSearch": 2,
+      "policeRows": [
+        "예시 서울중부경찰서",
+        "예시 인천남동경찰서",
+        "예시 대구수성경찰서",
+        "예시 부산연제경찰서"
+      ],
+      "policeRequest": {
+        "start": "2025-09-30",
+        "end": "2026-09-29",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "kind": "agency",
+        "page": "1",
+        "page_size": "8",
+        "sort": "completed",
+        "dir": "desc",
+        "agency_type": "police"
+      },
+      "expandedPager": "1 / 1쪽\n이전\n다음",
+      "localError": "기관·담당자 목록을 불러오지 못했습니다. 지도와 다른 통계는 그대로입니다.\n다시 시도",
+      "mapStillThere": 1
+    }
+  },
+  "R10": {
+    "drawerOpenAfterApply": 0,
+    "order": "mm/dd/yyyy",
+    "startValue": "2026-03-15",
+    "steps": [
+      {
+        "key": "0",
+        "active": "INPUT[date]",
+        "value": ""
+      },
+      {
+        "key": "3",
+        "active": "INPUT[date]",
+        "value": "2025-03-30"
+      },
+      {
+        "key": "1",
+        "active": "INPUT[date]",
+        "value": "2025-03-01"
+      },
+      {
+        "key": "5",
+        "active": "INPUT[date]",
+        "value": "2025-03-15"
+      },
+      {
+        "key": "2",
+        "active": "INPUT[date]",
+        "value": "0002-03-15"
+      },
+      {
+        "key": "0",
+        "active": "INPUT[date]",
+        "value": "0020-03-15"
+      },
+      {
+        "key": "2",
+        "active": "INPUT[date]",
+        "value": "0202-03-15"
+      },
+      {
+        "key": "6",
+        "active": "INPUT[date]",
+        "value": "2026-03-15"
+      }
+    ],
+    "endValue": "2026-02-01",
+    "fixValue": "2026-05-31",
+    "whileTyping": {},
+    "reversedError": "시작일은 종료일보다 늦을 수 없습니다. 입력한 날짜는 그대로 두었습니다.",
+    "draftKept": [
+      "2026-03-15",
+      "2026-02-01"
+    ],
+    "appliedRequests": {
+      "dashboard": 1
+    },
+    "topDate": "2026.03.15 — 2026.05.31",
+    "focusAfterEsc": "BUTTON[button](상세 필터)"
+  },
+  "A_charts": {
+    "cellTooltip": [
+      "예시 서울중부경찰서\n도로교통법 제32조\n수용률 37.5% (3/8건)\n답변 8건 · 누르면 이 조합만 보기"
+    ],
+    "titles": [
+      "월별 추이",
+      "답변까지 걸린 기간",
+      "기관 × 위반법규 처리결과",
+      "차량별 반복 신고일 분포",
+      "처리기간 × 처리결과",
+      "처리결과별 별점 분포"
+    ],
+    "captions": [
+      "이번 달은 아직 끝나지 않아 다른 달보다 적게 보일 수 있습니다.",
+      "유효 300건 · 중앙값 21일 · 평균 22.0일 · 90%는 38일 이내. 제외: 신고일 없음 0건, 답변일이 신고일보다 빠름 0건. 진행 중인 신고의 완료 예측이 아닙니다.",
+      "기관 10개 중 8개 · 법규 14개 중 7개(답변 많은 순). 빈 칸은 그 조합의 신고가 없다는 뜻이고, ‘–’는 결과가 나온 신고가 없어 비율을 계산할 수 없다는 뜻입니다. 더 넓게 보기",
+      "2일 이상 신고된 차량 40대 (100.0%) · 번호를 알 수 있는 차량 40대. 번호를 알 수 없는 답변 41건, 신고일이 없는 답변 0건은 뺐습니다. 신고가 곧 위반 확정은 아니며 재범률이 아닙니다.",
+      "기관 10개 · 그래프 10개. 표본 1건도 그대로 표시하며, 순위·평가가 아닙니다.",
+      "1점\n2점\n3점\n4점\n5점\n 평가하지 않았거나 공개하지 않은 72건은 0점으로 넣지 않고 뺐습니다. 평균이 같아도 분포는 다를 수 있습니다."
+    ],
+    "trendAria": "월별 수용률 2025.09 100.0%, 2025.10 68.8%, 2025.11 58.3%, 2025.12 63.2%, 2026.01 68.4%, 2026.02 66.7%, 2026.03 63.2%, 2026.04 72.4%, 2026.05 40.0%, 2026.06 46.7%, 20",
+    "cellRequest": [
+      {
+        "start": "2025-09-30",
+        "end": "2026-09-29",
+        "category": "all",
+        "agency_key": "a1:synthetic-0",
+        "law": "도로교통법 제32조",
+        "expected_version": "e2e-synthetic-1"
+      }
+    ],
+    "chipsAfterCell": [
+      "법규\n도로교통법 제32조\n×",
+      "기관\n예시 서울중부경찰서\n×"
+    ],
+    "personalReq": {
+      "my-analytics": 1
+    },
+    "mineLines": [
+      "내 신고 1건",
+      "내 답변 1건",
+      "내 신고 100.0% (+62.5%p)",
+      "내 신고 0.0% (−37.5%p)"
+    ]
+  },
+  "P01_views": {
+    "mapsAtStart": 2,
+    "seq": [
+      {
+        "view": "지도 크게",
+        "maps": 2,
+        "relayouts": 2
+      },
+      {
+        "view": "통계 크게",
+        "maps": 2,
+        "relayouts": 3
+      },
+      {
+        "view": "지도+통계",
+        "maps": 2,
+        "relayouts": 4
+      },
+      {
+        "theme": "toggled",
+        "maps": 2
+      },
+      {
+        "selected": "서울특별시 중구 예시로 2길",
+        "maps": 2
+      }
+    ],
+    "requests": {
+      "places/:key": 1
+    },
+    "navigationsNote": "view switch uses pushState only"
+  },
+  "P07": {
+    "390-dark": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    },
+    "768-dark": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    },
+    "1440-dark": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    },
+    "1920-dark": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    },
+    "390-light": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    },
+    "768-light": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    },
+    "1440-light": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    },
+    "1920-light": {
+      "overflow": 0,
+      "offscreenButtons": [],
+      "consoleErrors": []
+    }
+  }
+}

@@ -208,3 +208,7 @@ body.briefing .applied-bar, body.briefing .area-tables { display: none; }
 .laws .table-scroll td:first-child { white-space: normal; }
 /* the map SDK may write position:relative inline on its container; keep the host filling the canvas */
 .map-sdk-host { position: absolute !important; inset: 0; width: 100%; height: 100%; }
+.region-crumb span { padding: 2px 10px; border-radius: 999px; background: var(--filter-active-bg); color: var(--filter-active-fg); border: 1px solid var(--filter-active-border); font-weight: 650; }
+.map-card .map-canvas { height: clamp(420px, 54vh, 580px); }
+.boundary-note summary { cursor: pointer; color: var(--muted); }
+.map-point-alternative { padding: 4px 14px; }

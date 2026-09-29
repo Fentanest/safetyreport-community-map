@@ -31,3 +31,8 @@
     통계는 법정 시도/시군구 코드, 인천 분할 구는 좌표로, 세종 하나, 전남광주 통합. 필터 두 단계, 지역 목록 단계, 카카오 경계 레이어.
   - 검증: 단위 191·Python 11·blueprint 27, 로컬 스택 27(금액 공개 게이트 포함), live build 스캔, 실제 카카오 SDK(등록 도메인을 브라우저 resolver로만 로컬에 연결)
     위 경계 hover·클릭·목록·뒤로·확대·끄기·옛 URL·390 확인. Muse 검수: `docs/tasks/muse-dab-review.md` → `docs/reviews/dab-review.md`.
+
+## 2026-09-29 대시보드 개편 (Claude, 사용자 지시로 Sol/Muse 역할 겸임)
+- 지시서: docs/implementation/dashboard-redesign/IMPLEMENTATION_PROMPT.md, 결과: REPORT.md, 증거: evidence/.
+- 변경 전 재현(repro-before.json) → 서버 주소 장소·분석 6종 → 클라이언트 갱신 컨트롤러 → UI 재배치 → 로컬 live 스택 브라우저 검수.
+- 운영 적용(Pages → Edge 순) 미실행. Muse(OpenCode) 교차 검수 미실행(MODEL_UNVERIFIED).

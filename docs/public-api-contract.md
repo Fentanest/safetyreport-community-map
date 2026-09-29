@@ -12,7 +12,30 @@ base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽
 | GET /public-analytics/series | 일별/월별 report/completed/fine/results |
 | GET /public-analytics/entities | agency 또는 manager의 정렬·pagination 결과 |
 | GET /public-analytics/vehicles/top | 전체 조건 후보 집계 후 masked TOP5 |
-| GET /public-analytics/points/:key | 한 위치의 안전한 상세 집계 |
+| GET /public-analytics/points/:key | 한 지도 노드(주소 장소 또는 서버 묶음)의 요약 (구 경로, 호환 유지) |
+| GET /public-analytics/places/:place_key | 주소 장소 상세: 요약(계도 포함) + 이 주소 신고만의 기관·담당자 전체 집계 (2026-09-29) |
+| GET /public-analytics/places?view_bbox= | 지도 표시 정밀화 전용: 화면 안 주소 핀(통계 scope 불변) (2026-09-29) |
+
+### 2026-09-29 대시보드 개편 추가 사항 (docs/implementation/dashboard-redesign)
+- **주소 장소(grouping_version `address-v1`)**: 지도 점의 `key`는 이제 `pl1:<정규화 주소 64-bit 해시>`인 `place_key`다
+  (`server/places.ts`). 같은 주소의 다른 좌표 신고는 핀 하나로 묶이고, 핀 위치는 그 주소 원천 좌표 중 결정적 규칙
+  (최빈 좌표, 동률은 가장 작은 신고 identity)으로 고른 **표시용** 위치다. 원천 주소·좌표·identity는 바꾸지 않는다.
+  점 응답에 `place_key`, `grouping_version`, `warning_count`(계도=`disposition='warning'`)가 추가됐다. 없으면 구 서버다
+  (클라이언트는 0으로 보지 않고 '서버 미지원'으로 표시). 서버 묶음 노드(`aggregate:true`)의 모든 수는 구성원 합이고
+  `point_count`는 구성 주소 수다.
+- `dashboard` 응답 추가 필드: `analytics`(A01 duration·A02 heatmap·A03 scatter·A04 vehicle_days·A06 rating, 모두 같은
+  완료일 cohort·같은 version), `map_unplaced`(`no_address`/`no_coordinates`별 신고·답변 수; 핀 합 + 사유별 합 = 전체).
+  구 서버는 두 필드가 없거나 null이며 클라이언트는 빈 차트 대신 '서버 미지원'을 표시한다.
+- `places/:place_key`: scope 파라미터 + `expected_version`. 좌표 bbox가 아니라 place_key로 모은다. 좌표가 하나도 없는
+  주소와 없는 key는 404. 응답 `{place, agencies[≤100], managers[≤100], agency_total, manager_total}`.
+- `places?view_bbox=w,s,e,n`: `view_bbox`는 이 경로에서만 허용되고 statistics scope(`bbox`)와 분리된다. 자동 통계 갱신이
+  꺼져 있어도 서버에서 압축된 노드를 확대해 주소 핀으로 풀 수 있다(응답 scope.bbox는 그대로).
+- `entities`의 `agency_type=police|non_police`: 서버 전체 목록에 적용되는 표 도구 조건(Scope 아님). 경찰은 기관명이 경찰
+  조직일 때만, 비경찰은 registry 확인 기관(`inst:`) 또는 지자체·공사 이름일 때만이며 확인 불가 기관은 어느 쪽에도 넣지 않는다.
+- 요청 정책(클라이언트 `src/data/refreshController.ts`): meta는 세션당 1회(409 때만 1회 재조회), 자동 지도 갱신은 500ms
+  debounce·최소 간격 1.2초·분당 20회 예산, 429는 Retry-After 동안 중지 후 최신 범위만, 5xx/네트워크는 1회 지연 재시도.
+  한 번의 논리 갱신은 `dashboard` 1회(+내 신고 비교가 켜져 있으면 `my-analytics` 1회). 기관표는 요약 상태에서는 dashboard
+  행을 쓰고 검색·정렬·페이지·전체 보기에서만 `/entities`를 부른다.
 
 공통 query: start/end(ISO date), category, region_code, agency_key, manager_key,
 bbox=minLng,minLat,maxLng,maxLat, expected_version, metric별 result/disposition 조건.

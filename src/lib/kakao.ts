@@ -74,7 +74,7 @@ export function rampColor(t: number | null): string {
   const mix = [0, 1, 2].map(k => Math.round(ch(a, k) + (ch(b, k) - ch(a, k)) * f));
   return `#${mix.map(v => v.toString(16).padStart(2, '0')).join('')}`;
 }
-const inkFor = (t: number | null) => (t !== null && t > 0.6 ? '#FFFFFF' : '#0B1220');
+const inkFor = (t: number | null) => (t !== null && t >= 0.7 ? '#FFFFFF' : '#0B1220');
 
 /**
  * Client-side grid clustering (pure; unit-tested without the SDK).
