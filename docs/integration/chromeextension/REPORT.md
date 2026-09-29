@@ -108,15 +108,19 @@
 
 ## 6. 사용자 조치 (순서)
 
-1. PR 생성·검토·main 병합(요청 시 PR을 만든다).
-2. 운영 DB — `db push` 금지(auth 레포와 공유 프로젝트):
-   - `202610010100_single_date_cohort.sql`이 아직이면 먼저 적용 + `npx supabase migration repair --status applied 202610010100`
-   - `202609300200_my_reports.sql`: **적용하지 않는다.** 이미 적용했다면 그대로 두고, 아니면 `npx supabase migration repair --status applied 202609300200`만 실행
-   - `psql "<운영 DB 연결 문자열>" -v ON_ERROR_STOP=1 -f supabase/migrations/202610020100_my_reports.sql`
-   - `npx supabase migration repair --status applied 202610020100`
-3. Edge 비밀값(값은 직접 생성, 커밋·공유 금지):
-   `npx supabase secrets set MY_REPORTS_CURSOR_SECRET=<32바이트 이상 임의 문자열> MY_REPORTS_ALLOWED_ORIGINS=chrome-extension://<배포 ID>[,chrome-extension://<개발 ID>]`
-4. `npx supabase functions deploy my-reports`
-5. Supabase Dashboard → Authentication → URL Configuration → Redirect URLs에 `https://<확장 ID>.chromiumapp.org/supabase-auth` **추가**(기존 유지).
-6. 확장 `dev`(v1 전환 완료)를 `SR_SUPABASE_URL`·`SR_SUPABASE_PUBLISHABLE_KEY`로 빌드해 설치 → smoke(인계서 §8-5).
-7. 문제 시 `npx supabase secrets set MY_REPORTS_ENABLED=false`(즉시 503, DB 접근 없음).
+`db push`는 쓰지 않는다(auth 레포와 공유 프로젝트). 마이그레이션 파일은 Supabase Dashboard **SQL Editor**에 **파일 내용 그대로**
+붙여넣어 실행할 수 있다(202610010100 이후 파일은 주석에 ASCII 작은따옴표가 없음 — `tests/product/migrationEditorSafe.test.ts`).
+SQL 실행 성공을 확인한 **다음에** `migration repair`로 기록한다(둘을 한 번에 붙여 실행하지 않는다).
+
+1. `202610010100_single_date_cohort.sql` — 2026-09-30 적용·기록 완료.
+2. `202609300200_my_reports.sql`(main 초안) — **실행하지 않고** 기록만: `npx supabase migration repair --status applied 202609300200`
+3. `202610020100_my_reports.sql` — SQL Editor에 붙여넣어 Run → 확인
+   `select proname from pg_proc where proname like 'internal_my_reports_%';` (3행) → `npx supabase migration repair --status applied 202610020100`
+4. `npx supabase migration list`로 로컬/원격 일치 확인(auth 레포 버전 7개가 원격에만 있는 것은 정상).
+5. Edge 비밀값(값은 직접 생성, 커밋·공유 금지):
+   `npx supabase secrets set MY_REPORTS_CURSOR_SECRET="$(openssl rand -base64 48)"`
+   `npx supabase secrets set MY_REPORTS_ALLOWED_ORIGINS="chrome-extension://<확장 ID>"`
+6. `npx supabase functions deploy my-reports` (대시보드 작업분 `public-analytics`, `my-analytics`도 미배포면 함께)
+7. Dashboard → Authentication → URL Configuration → Redirect URLs에 `https://<확장 ID>.chromiumapp.org/supabase-auth` **추가**(기존 유지).
+8. 확장 `dev`를 `SR_SUPABASE_URL=… SR_SUPABASE_PUBLISHABLE_KEY=… npm run build` → Chrome에 `build/` 설치 → 확장 ID를 5·7에 반영 → smoke(인계서 §8-5).
+9. 문제 시 `npx supabase secrets set MY_REPORTS_ENABLED=false`(즉시 503, DB 접근 없음).

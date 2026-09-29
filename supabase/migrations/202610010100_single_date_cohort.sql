@@ -3,19 +3,19 @@
 --
 -- What changes (incremental; earlier files are not edited, earlier functions are NOT replaced):
 --   1. internal_analytics_cohort_facts(p_date_basis, p_start, p_end, p_with_previous, …)
---      - ONE date selects the reports: p_date_basis = 'report_date' | 'completed_date'. The other date never filters.
---      - D13: the representative of an identity is elected over the identity's WHOLE eligible history first; only
---        then the representative's selected date decides whether the identity is in the window. The previous
+--      - ONE date selects the reports: p_date_basis = `report_date` | `completed_date`. The other date never filters.
+--      - D13: the representative of an identity is elected over the identity’s WHOLE eligible history first; only
+--        then the representative’s selected date decides whether the identity is in the window. The previous
 --        function elected among rows already cut to the window, so an older answer (August) could come back as the
 --        representative of a report whose latest answer is in September.
---      - Every returned row carries identity_report_date / identity_completed_date (the representative's dates), so
+--      - Every returned row carries identity_report_date / identity_completed_date (the representative’s dates), so
 --        the server places all rows of one identity (co-contributors, mine) in the same period.
 --      - D14: p_with_previous = false reads only [p_start, p_end]; the candidate identities are found with the
 --        SQL-filterable dimensions (category, agency, manager, bbox) BEFORE the row budget is checked, so a narrow
 --        request is not refused because the whole country is large. The budget is still checked before
 --        materialising (RESULT_TOO_LARGE for the whole request, never a partial set).
 --   2. internal_analytics_cohort_state(): internal_analytics_v2_state() plus basis_bounds (전체 기간 of each basis)
---      and cohort_policy_version = 'single-date-v1'.
+--      and cohort_policy_version = `single-date-v1`.
 --   3. internal_my_analytics_cohort_source(p_user, p_session, p_date_basis, p_start, p_end, p_with_previous, …):
 --      the same identity checks as internal_my_analytics_source over the new facts/state.
 --
@@ -162,7 +162,7 @@ begin
        and (p_agency_key is null or agency_key = p_agency_key)
        and (p_manager_key is null or manager_key = p_manager_key)
        and (p_bbox is null or (lat is not null and lng between p_bbox[1] and p_bbox[3] and lat between p_bbox[2] and p_bbox[4]))
-       -- the representative's SELECTED date decides for every row of the identity (never the row's own copy)
+       -- the representative’s SELECTED date decides for every row of the identity (never the row’s own copy)
        and (case when p_date_basis = 'report_date' then identity_report_date else identity_completed_date end)
            between v_from and p_end;
     if v_count > 100000 then raise exception 'RESULT_TOO_LARGE'; end if;
