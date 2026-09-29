@@ -49,13 +49,48 @@ main { gap: var(--card-gap); }
 .area-charts > *, .area-tables > * { min-width: 0; }
 .area-tables .entities.expanded { grid-column: 1 / -1; }
 .map-card .map-canvas { min-height: 0; height: clamp(440px, 58vh, 600px); margin: 10px 14px 10px; }
-.dash-grid[data-view="map"] .area-map { grid-column: span 8; }
-.dash-grid[data-view="map"] .area-side { grid-column: span 4; }
-.dash-grid[data-view="map"] .map-card .map-canvas { height: clamp(520px, 72vh, 860px); }
-.dash-grid[data-view="map"] .area-charts, .dash-grid[data-view="map"] .area-tables { display: none; }
-.dash-grid[data-view="stats"] .area-map { grid-column: span 4; }
-.dash-grid[data-view="stats"] .area-side { grid-column: span 8; }
-.dash-grid[data-view="stats"] .map-card .map-canvas { height: 360px; }
+/* U04: one responsive layout (the 지도 크게 / 통계 크게 variants were removed). U05 order: KPI → map/detail →
+   법규 | 기관·담당자 → 월별 추이 | 처리기간 → other charts → region list / vehicles. */
+.dash-stack { display: flex; flex-direction: column; gap: var(--card-gap); min-width: 0; }
+.area-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap); align-items: start; min-width: 0; }
+.area-pair > * { min-width: 0; }
+.area-pair > .expanded { grid-column: 1 / -1; }
+
+/* ── U02 KPI strip: one full-width row above the map; cells flow horizontally, only the row scrolls ─── */
+.kpi-strip { padding: 10px 0 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.kpi-strip-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 0 14px; min-width: 0; }
+.kpi-strip-head h2 { margin: 0; font-size: 15px; }
+.kpi-focus { display: inline-flex; gap: 6px; align-items: baseline; min-width: 0; max-width: min(520px, 100%); }
+.kpi-focus small { font-size: 11px; color: var(--muted); flex: none; }
+.kpi-focus-label { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.kpi-period { font-size: 12px; color: var(--text-secondary); }
+.kpi-status { font-size: 12px; color: var(--partial); }
+.kpi-status.error { color: var(--rejected); }
+.kpi-scroll-wrap { position: relative; min-width: 0; }
+.kpi-row { display: flex; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 2px 14px 6px; scrollbar-width: thin; }
+.kpi-row:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }
+.kpi-cell { flex: 0 0 auto; min-width: 128px; max-width: 220px; scroll-snap-align: start; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--raised); padding: 8px 12px; display: flex; flex-direction: column; gap: 1px; border-left: 3px solid var(--brand-ink); }
+.kpi-cell.skeleton { min-height: 76px; min-width: 140px; }
+.kpi-cell.tone-cyan { border-left-color: var(--cyan); } .kpi-cell.tone-accepted { border-left-color: var(--accepted); }
+.kpi-cell.tone-partial { border-left-color: var(--partial); } .kpi-cell.tone-rejected { border-left-color: var(--rejected); }
+.kpi-cell.tone-fine { border-left-color: var(--fine); } .kpi-cell.tone-purple { border-left-color: var(--warning-penalty); }
+.kpi-cell.tone-muted { border-left-color: var(--unknown); }
+.kpi-cell .kpi-value { font-size: 21px; line-height: 27px; white-space: nowrap; }
+.kpi-nudge { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 32px; height: 44px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 20px; cursor: pointer; box-shadow: var(--shadow); }
+.kpi-nudge.left { left: 4px; } .kpi-nudge.right { right: 4px; }
+.kpi-scroll-wrap.more-right::after, .kpi-scroll-wrap.more-left::before { content: ''; position: absolute; top: 0; bottom: 6px; width: 28px; pointer-events: none; z-index: 1; }
+.kpi-scroll-wrap.more-right::after { right: 0; background: linear-gradient(to left, var(--surface), transparent); }
+.kpi-scroll-wrap.more-left::before { left: 0; background: linear-gradient(to right, var(--surface), transparent); }
+.kpi-strip .kpi-detail, .kpi-strip .compare-note { margin-top: 0; }
+.basis-select select { min-height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--raised); color: var(--text); padding: 6px 10px; font-weight: 650; }
+.basis-field { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.basis-field legend { font-size: 13px; font-weight: 600; padding: 0; margin-bottom: 6px; }
+.basis-field .segments label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; min-height: 44px; cursor: pointer; border-radius: 8px; }
+.basis-field .segments label.selected { background: var(--brand); color: #fff; }
+.basis-field .segments input { width: 16px; height: 16px; }
+.scope-strip { font-size: 12px; color: var(--muted); margin: 0; padding: 0 2px; }
 
 /* ── map card ──────────────────────────────────────────────────────────────────────────────── */
 .map-card .panel-top { flex-wrap: wrap; }
@@ -172,18 +207,20 @@ body.briefing .applied-bar, body.briefing .area-tables { display: none; }
   .chart-host { height: 270px; }
 }
 @media (max-width: 1280px) {
-  .area-map, .dash-grid[data-view="map"] .area-map, .dash-grid[data-view="stats"] .area-map { grid-column: 1 / -1; }
-  .area-side, .dash-grid[data-view="map"] .area-side, .dash-grid[data-view="stats"] .area-side { grid-column: 1 / -1; }
+  .area-map { grid-column: 1 / -1; }
+  .area-side { grid-column: 1 / -1; }
   .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .place-panel { max-height: none; }
 }
 @media (max-width: 900px) {
-  .area-charts, .area-tables { grid-template-columns: minmax(0, 1fr); }
+  .area-charts, .area-tables, .area-pair { grid-template-columns: minmax(0, 1fr); }
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .place-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 700px) {
-  .map-card .map-canvas, .dash-grid[data-view="map"] .map-card .map-canvas, .dash-grid[data-view="stats"] .map-card .map-canvas { height: 420px; margin: 8px 10px; }
+  .map-card .map-canvas { height: 420px; margin: 8px 10px; }
+  .kpi-cell { min-width: 118px; }
+  .kpi-cell .kpi-value { font-size: 19px; line-height: 25px; }
   .kpi-extra { grid-template-columns: minmax(0, 1fr); }
   .law-select { flex: 1 1 100%; }
   .law-select select { max-width: none; width: 100%; }

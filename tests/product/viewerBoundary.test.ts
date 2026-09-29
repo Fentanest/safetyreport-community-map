@@ -24,7 +24,7 @@ describe('C01 session key', () => {
 
 describe('C01 controller reset fences late answers', () => {
   it("account A's metadata / dashboard answer arriving after the reset for B never lands", async () => {
-    const scope: Scope = { start: '2026-01-01', end: '2026-01-31', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+    const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-01-31', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
     const meta = { dataset_version: 'vA' } as PublicMeta;
     let releaseMeta!: (m: PublicMeta) => void;
     let calls = 0;

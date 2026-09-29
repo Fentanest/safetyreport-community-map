@@ -12,7 +12,7 @@ const f = (patch: Partial<PrivateFact>): PrivateFact => ({
   category: 'traffic', status: 'accepted', disposition: 'none', vehicle_raw: null, point_key: null, lat: 37.5, lng: 127, address: null,
   region_code: '서울 중구', agency_key: 'a1:A', agency_name: '기관A', manager_key: null, manager_name: null, ...patch,
 });
-const scope: Scope = { start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 const facts = [
   // agency A × 제32조: all 1/2 = 50%, mine (me) 1/1 = 100%
   f({ violation_law: '도로교통법 제32조', contributor_id: 'me' }), f({ violation_law: '도로교통법 제32조', status: 'rejected' }),

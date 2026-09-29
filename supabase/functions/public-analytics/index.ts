@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.1';
-import { createPublicHandler, type AnalyticsState, type ViewerCheck } from '../../../server/publicHandler.ts';
+import { createPublicHandler, type AnalyticsState, type FactsOptions, type ViewerCheck } from '../../../server/publicHandler.ts';
 import type { PrivateFact } from '../../../server/aggregate.ts';
 import type { Scope } from '../../../src/domain/public.ts';
 
@@ -28,13 +28,16 @@ async function rateBucket(viewerId: string): Promise<string> {
 
 const handle = createPublicHandler({
   async getState(): Promise<AnalyticsState> {
-    const value = await rpc('internal_analytics_v2_state');
+    // single-date-v1 state: the old state plus the 전체 기간 of each date basis
+    const value = await rpc('internal_analytics_cohort_state');
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('analytics state unavailable');
     return value as AnalyticsState;
   },
-  async getFacts(scope: Scope): Promise<PrivateFact[]> {
-    const value = await rpc('internal_analytics_v2_facts', {
-      p_start: scope.start, p_end: scope.end, p_category: scope.category,
+  async getFacts(scope: Scope, options?: FactsOptions): Promise<PrivateFact[]> {
+    // representative elected before the date condition; ONE date (scope.date_basis) selects the identities
+    const value = await rpc('internal_analytics_cohort_facts', {
+      p_date_basis: scope.date_basis, p_start: scope.start, p_end: scope.end,
+      p_with_previous: options?.previous ?? true, p_category: scope.category,
       // Region filtering happens in server/aggregate.ts on official codes (시도 includes its 시군구); the SQL filter
       // only knows the raw display key, so it is not used here.
       p_region_code: null, p_agency_key: scope.agency_key,

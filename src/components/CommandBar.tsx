@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import type { Category } from '../domain/public';
+import type { Category, DateBasis } from '../domain/public';
 import { LAW_NONE } from '../domain/public';
 import {
-  CATEGORY_LABEL, LAW_UNKNOWN_LABEL, PRESETS, presetRange, regionLabel,
+  CATEGORY_LABEL, DATE_BASIS_LABEL, LAW_UNKNOWN_LABEL, PRESETS, presetRange, regionLabel, todayKst,
   type DraftFilters,
 } from '../state/filters';
 import { fmtDate } from './format';
@@ -15,6 +15,9 @@ interface Props {
   /** applied (requested) period — the date button shows it; the inputs below edit the draft */
   appliedStart: string;
   appliedEnd: string;
+  /** U01: the applied date basis; changing it here applies at once with the applied dates (one request) */
+  basis: DateBasis;
+  onBasis: (basis: DateBasis) => void;
   /** a quick period applies at once (one request, chips/URL updated); null range = bounds still unknown */
   onPreset: (range: { start: string; end: string }) => void;
   /** applied (requested) category / law: these controls apply at once (explicit selection, pushState) */
@@ -28,6 +31,7 @@ interface Props {
   onRegion?: (code: string | null) => void;
   /** number of applied conditions besides the dates (상세 필터 button is inverted when > 0) */
   filterCount: number;
+  /** 전체 기간 of the applied basis (never the other date's range) */
   minDate: string | null;
   maxDate: string | null;
   /** validates and applies the draft; false keeps the popover open with the typed values */
@@ -37,7 +41,7 @@ interface Props {
   onOpenDrawer: () => void;
   dateError: string | null;
   regionCounts: Map<string, number>;
-  /** personal comparison toggle + view switch (docs/personal-comparison.md §5.1) */
+  /** personal comparison toggle (docs/personal-comparison.md §5.1) */
   extra?: ReactNode;
 }
 
@@ -45,9 +49,15 @@ const CATS: Category[] = ['all', 'traffic', 'parking', 'other'];
 
 export default function CommandBar(p: Props) {
   const [open, setOpen] = useState(false);
-  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const today = todayKst();
   return (
     <section className="cm-panel command" aria-label="조건">
+      <label className="basis-select" title="이 날짜 하나로 신고를 고릅니다. 다른 날짜가 기간 밖이어도 그 신고는 포함됩니다.">
+        <span className="sr-only">날짜 기준</span>
+        <select value={p.basis} aria-label="날짜 기준" onChange={(e) => p.onBasis(e.target.value as DateBasis)}>
+          {(['completed_date', 'report_date'] as const).map((b) => <option key={b} value={b}>{DATE_BASIS_LABEL[b]}</option>)}
+        </select>
+      </label>
       <button
         className="control"
         type="button"
@@ -57,6 +67,7 @@ export default function CommandBar(p: Props) {
       >
         <span aria-hidden="true"><Icon name="calendar" /></span>
         <span>{fmtDate(p.appliedStart)} — {fmtDate(p.appliedEnd)}</span>
+        <span className="sr-only"> ({DATE_BASIS_LABEL[p.basis]} 기준)</span>
         <span aria-hidden="true"><Icon name="chevron" /></span>
       </button>
       <div className="segments" role="group" aria-label="신고 분류">
@@ -108,7 +119,7 @@ export default function CommandBar(p: Props) {
         <div className="date-pop" role="group" aria-label="기간 선택">
           <div className="preset-row" role="group" aria-label="빠른 기간 선택">
             {PRESETS.map((pr) => {
-              const r = presetRange(pr.days, p.minDate, p.maxDate);
+              const r = presetRange(pr.days, p.minDate, p.maxDate, today);
               const active = !!r && r.start === p.appliedStart && r.end === p.appliedEnd;
               return (
                 <button
@@ -117,7 +128,7 @@ export default function CommandBar(p: Props) {
                   className={active ? 'selected' : undefined}
                   aria-pressed={active}
                   disabled={!r}
-                  title={pr.days == null ? (r ? `공유된 전체 자료 ${fmtDate(r.start)} — ${fmtDate(r.end)} (바로 적용)` : '자료 범위를 불러오는 중입니다') : '바로 적용'}
+                  title={pr.days == null ? (r ? `${DATE_BASIS_LABEL[p.basis]} 기준 공유된 전체 자료 ${fmtDate(r.start)} — ${fmtDate(r.end)} (바로 적용)` : '자료 범위를 불러오는 중입니다') : `오늘(${fmtDate(today)})까지 · 바로 적용`}
                   onClick={() => { if (r) { p.onPreset(r); setOpen(false); } }}
                 >
                   {pr.label}
@@ -147,8 +158,8 @@ export default function CommandBar(p: Props) {
           </button>
           {p.dateError && <span className="field-error" role="alert">{p.dateError}</span>}
           <span className="basis-note">
-            신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. 직접 고른 날짜는 ‘적용’을 눌러야 바뀌고, 빠른 기간은 바로 적용됩니다.
-            {p.minDate && p.maxDate ? ` 공유된 자료: ${fmtDate(p.minDate)} — ${fmtDate(p.maxDate)}.` : ''}
+            {DATE_BASIS_LABEL[p.basis]}이 이 기간 안인 신고를 모아 모든 수치를 셉니다(다른 날짜는 기간 밖이어도 포함). 직접 고른 날짜는 ‘적용’을 눌러야 바뀌고, 빠른 기간은 바로 적용됩니다.
+            {p.minDate && p.maxDate ? ` ${DATE_BASIS_LABEL[p.basis]} 기준 공유된 자료: ${fmtDate(p.minDate)} — ${fmtDate(p.maxDate)}.` : ''}
             선택: {regionLabel(p.draft.region_code)}
           </span>
         </div>

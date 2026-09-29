@@ -7,7 +7,7 @@ import { screenFromSearch } from '../../src/state/view';
 import { scopeToSearch } from '../../src/state/filters';
 import type { PublicRegion, Scope } from '../../src/domain/public';
 
-const scope: Scope = { start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: '11', agency_key: null, manager_key: null, bbox: null, law: null };
+const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: '11', agency_key: null, manager_key: null, bbox: null, law: null };
 const catalog = statisticsCatalog();
 
 describe('S10 activity registry (display only)', () => {

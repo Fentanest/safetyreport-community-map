@@ -5,7 +5,7 @@ import { loadCatalog, loadStatistics } from '../data/statistics';
 import { PublicApiError } from '../data/client';
 import { useReportActivity } from '../data/queryActivity';
 import {
-  CHART_LABEL, DEFAULT_CHART, PRESETS, baseSpec, filterOf, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
+  CHART_LABEL, DEFAULT_CHART, PRESETS, baseSpec, filterOf, normalizeRecipe, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
   type ChartSettings, type SavedRecipe, type StatsRecipe,
 } from '../state/statistics';
 import PivotTable, { type RowSort } from '../components/stats/PivotTable';
@@ -26,6 +26,14 @@ type Run = { status: 'idle' } | { status: 'loading'; recipe: StatsRecipe } | { s
 const recipeKey = (r: StatsRecipe) => JSON.stringify({ scope: r.scope, spec: r.spec });
 
 /** S04 맞춤 통계 page (a separate screen inside the same shell). Draft edits never query; 통계 만들기 runs once. */
+/** D11: each side's own missing-date count (the same report can be on both sides — never added together) */
+function missingRows(result: StatisticsResult, basis: StatisticsSpec['date_basis']): Array<{ label: string; value: string }> {
+  const word = basis === 'completed_date' ? '답변일' : '신고일';
+  const sides = result.excluded.selected_date_missing ?? { all: result.excluded.no_report_date, mine: null };
+  const parts = [sides.all ? `전체 ${sides.all.toLocaleString('ko-KR')}건` : '', sides.mine ? `내 신고 ${sides.mine.toLocaleString('ko-KR')}건` : ''].filter(Boolean);
+  return parts.length ? [{ label: '제외', value: `${word}이 없어 이 기간에 넣을 수 없는 신고: ${parts.join(', ')} (각각 따로 센 수)` }] : [];
+}
+
 export default function StatisticsPage({ active, handoff, fallbackScope, version, viewer, canMine, theme, scopeChips, onBack, shared = null, onSharedDone, onSignIn }: {
   /** the screen is shown (the page stays mounted while hidden so its draft and result survive a round trip) */
   active: boolean;
@@ -55,7 +63,10 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     const d = decodeShare(shared);
     return d.ok ? { status: 'pending', payload: d.payload, error: null } : { status: 'error', reason: d.reason };
   });
-  const [draft, setDraft] = useState<StatsRecipe | null>(restored.current?.draft ?? null);
+  const [draft, setDraftRaw] = useState<StatsRecipe | null>(() => (restored.current?.draft ? normalizeRecipe(restored.current.draft) : null));
+  // one date basis per recipe: every draft change keeps scope.date_basis = spec.date_basis (EX-08 never reaches the server)
+  const setDraft = useCallback((next: StatsRecipe | null | ((d: StatsRecipe | null) => StatsRecipe | null)) =>
+    setDraftRaw((prev) => { const r = typeof next === 'function' ? next(prev) : next; return r ? normalizeRecipe(r) : r; }), []);
   const [applied, setApplied] = useState<StatsRecipe | null>(null);
   const [result, setResult] = useState<StatisticsResult | null>(null);
   const [run, setRun] = useState<Run>({ status: 'idle' });
@@ -101,7 +112,8 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const runRef = useRef<StatsRecipe | null>(null);
   const onSharedDoneRef = useRef(onSharedDone);
   onSharedDoneRef.current = onSharedDone;
-  const execute = useCallback((recipe: StatsRecipe) => {
+  const execute = useCallback((input: StatsRecipe) => {
+    const recipe = normalizeRecipe(input);
     abort.current?.abort(); // client-side cancel of the older run; its late answer is ignored by the generation
     const ac = new AbortController();
     abort.current = ac;
@@ -146,7 +158,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   useEffect(() => {
     // a hand-off (handled just above, same pass) or a restored draft always wins over the default preset
     if (!active || draft || !fallbackScope || lastHandoff.current !== null || share.status !== 'none') return;
-    const r: StatsRecipe = { scope: fallbackScope, spec: baseSpec({ rows: ['agency'], columns: ['law'], metrics: ['fine_rate', 'completed_count'] }), labels: {}, origin: '기본 예시' };
+    const r: StatsRecipe = { scope: fallbackScope, spec: baseSpec({ date_basis: fallbackScope.date_basis, rows: ['agency'], columns: ['law'], metrics: ['fine_rate', 'completed_count'] }), labels: {}, origin: '기본 예시' };
     setDraft(r);
     execute(r);
   }, [active, draft, fallbackScope, execute, share.status]);
@@ -194,7 +206,11 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     const p = planChart(result.spec, catalog, chart);
     const conditions = [
       { label: '기간', value: `${applied.scope.start} — ${applied.scope.end} (시작일·종료일 포함)` },
-      { label: '날짜 기준', value: applied.spec.date_basis === 'completed_date' ? '답변 받은 날' : '신고한 날' },
+      { label: '날짜 기준', value: `${applied.spec.date_basis === 'completed_date' ? '답변일' : '신고일'} — 이 날짜가 기간 안인 신고만 모았습니다(다른 날짜는 기간 밖이어도 포함)` },
+      ...(result.date_axes ?? []).map((a) => ({ label: `${a.role === 'row' ? '행' : '열'} 날짜 축`, value: a.mode === 'spine'
+        ? `${dl(a.dimension)}: 기간의 모든 단위를 빠짐없이 보여 줍니다(신고 0건은 0, 비율을 셀 수 없으면 빈 칸, 자료가 없는 구간은 ‘자료 없음’)`
+        : a.mode === 'explicit' ? `${dl(a.dimension)}: 고른 단위만 보여 줍니다(사이의 빠진 단위는 조회하지 않았습니다)`
+          : `${dl(a.dimension)}: ${applied.spec.date_basis === 'completed_date' ? '답변일' : '신고일'} 기준으로 모은 신고를 이 날짜로 나눠 본 것입니다` })),
       { label: '대상 범위', value: chipsText || '전국 · 모든 분류' },
       ...(applied.scope.bbox ? [{ label: '지도 범위', value: `지도에서 고른 범위 (경도 ${applied.scope.bbox[0]}~${applied.scope.bbox[2]}, 위도 ${applied.scope.bbox[1]}~${applied.scope.bbox[3]})` }] : []),
       ...(applied.spec.place_key ? [{ label: '주소', value: applied.labels[applied.spec.place_key] ?? '선택한 주소' }] : []),
@@ -203,7 +219,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       { label: '열', value: applied.spec.columns.map(dl).join(' › ') || '없음' },
       { label: '지표', value: applied.spec.metrics.map(ml).join(', ') },
       { label: '답변 신고', value: [result.population_count.all !== null ? `전체 ${result.population_count.all.toLocaleString('ko-KR')}건` : '', result.population_count.mine !== null ? `내 신고 ${result.population_count.mine.toLocaleString('ko-KR')}건` : ''].filter(Boolean).join(' · ') },
-      ...(result.excluded.no_report_date > 0 ? [{ label: '제외', value: `신고일이 없는 ${result.excluded.no_report_date.toLocaleString('ko-KR')}건 (신고한 날 기준이라 뺐습니다)` }] : []),
+      ...missingRows(result, applied.spec.date_basis),
       { label: '표 정렬', value: sort.metric ? `${ml(sort.metric)} ${sort.dir === 'desc' ? '큰 값부터' : '작은 값부터'}` : '기본 순서' },
       { label: '그래프', value: chart.type === 'auto' ? `${CHART_LABEL[p.type]} (자동 선택)` : p.refusal ? `${CHART_LABEL[p.type]} (고른 ${CHART_LABEL[chart.type]} 그래프는 이 설정에서 쓸 수 없어 바꿨습니다)` : CHART_LABEL[p.type] },
       { label: '지표 정의', value: applied.spec.metrics.map((m) => `${ml(m)}: ${catalog.metrics.find((x) => x.id === m)?.description ?? ''}`).join(' · ') },
@@ -359,9 +375,9 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
             </div>
           </fieldset>
           <fieldset className="stats-field radio-row">
-            <legend>기간 기준</legend>
-            <label><input type="radio" name="basis" checked={spec.date_basis === 'completed_date'} onChange={() => edit({ date_basis: 'completed_date' })} />답변 받은 날</label>
-            <label><input type="radio" name="basis" checked={spec.date_basis === 'report_date'} onChange={() => edit({ date_basis: 'report_date' })} />신고한 날</label>
+            <legend>날짜 기준</legend>
+            <label><input type="radio" name="basis" checked={spec.date_basis === 'completed_date'} onChange={() => edit({ date_basis: 'completed_date' })} />답변일</label>
+            <label><input type="radio" name="basis" checked={spec.date_basis === 'report_date'} onChange={() => edit({ date_basis: 'report_date' })} />신고일</label>
           </fieldset>
           <fieldset className="stats-field radio-row">
             <legend>누구의 신고</legend>
@@ -420,7 +436,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
               <p className="subtitle">
                 {applied ? `${fmtDate(applied.scope.start)} — ${fmtDate(applied.scope.end)} · ${applied.spec.date_basis === 'completed_date' ? '답변일 기준' : '신고일 기준'}${appliedChips ? ` · ${appliedChips}` : ''}${applied.spec.population === 'mine' ? ' · 내 신고' : applied.spec.population === 'compare' ? ' · 전체와 내 신고' : ''}` : ''}
                 {result ? ` · 답변 ${result.population_count.all ?? result.population_count.mine ?? 0}건` : ''}
-                {result && result.excluded.no_report_date > 0 ? ` · 신고일 없는 ${result.excluded.no_report_date}건 제외` : ''}
+                {result ? missingRows(result, result.spec.date_basis).map((r) => ` · ${r.value}`).join('') : ''}
               </p>
               <PanelStatus busy={running} label={result ? '선택한 조건으로 통계를 만드는 중 · 아래는 이전 조건의 결과' : '선택한 조건으로 통계를 만드는 중'} />
             </div>

@@ -124,7 +124,8 @@ export function checkAgainstCatalog(p: SharePayload, catalog: StatCatalog): stri
 }
 
 export function recipeFromPayload(p: SharePayload): { recipe: StatsRecipe; chart: ChartSettings; view: 'table' | 'chart' } {
-  const scope: Scope = { ...p.scope, bbox: null };
+  // one basis: the recipe's explicit date_basis is the scope's (EX-07: an old report_date recipe stays report_date)
+  const scope: Scope = { ...p.scope, bbox: null, date_basis: p.spec.date_basis };
   return {
     recipe: { scope, spec: baseSpec({ ...p.spec, place_key: null }), labels: {}, origin: '공유 링크' },
     chart: { ...p.chart }, view: p.view,

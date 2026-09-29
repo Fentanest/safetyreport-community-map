@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { DashboardData, PublicEntity, PublicRegion, Scope } from '../domain/public';
+import { useEffect, useRef, useState } from 'react';
+import { DATE_BASIS_LABEL, type DashboardData, type PublicEntity, type PublicRegion, type Scope } from '../domain/public';
 import { SIDO_LIST, regionLabel, sggName, sidoOf } from '../data/regions';
 import { loadEntities } from '../data/client';
 import { useReportActivity } from '../data/queryActivity';
@@ -124,7 +124,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
 
 /** S01: the right-hand detail of the applied scope when no address is selected (전국 · 시도 · 시군구 · 지도 범위). */
 export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, busy, onPickRegion, onPickEntity, onMakeStatistics,
-  activeAgency, activeManager, conditions, onManagers, summary }: {
+  activeAgency, activeManager, conditions, onManagers }: {
   /** the DISPLAYED scope (the numbers below belong to it) */
   scope: Scope;
   data: DashboardData;
@@ -140,16 +140,12 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
   /** human text of the applied conditions (period · category · law · agency) */
   conditions: string;
   onManagers?: (rows: PublicEntity[], total: number) => void;
-  /** the dashboard's KPI summary (deltas, 내 신고 비교) — shown instead of repeating the same boxes */
-  summary?: ReactNode;
 }) {
   const trail = regionTrail(scope.region_code);
   const name = trail[trail.length - 1].label;
   const o = data.overview.outcomes;
   const known = o?.result_known ?? 0;
   const C = data.overview.completed_count.value;
-  const F = data.overview.fine_count.value;
-  const W = data.overview.warning_count;
   const pct = (a: number | null | undefined, d: number | null | undefined) => (a != null && d ? (a / d) * 100 : null);
   const children = childRegions(data.regions, scope.region_code);
   const [childShown, setChildShown] = useState(8);
@@ -175,7 +171,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
             </ol>
           </nav>
           <h2>{name}{scope.bbox ? <small className="scope-bbox"> × {autoRefresh ? '현재 지도 범위' : '마지막으로 적용한 지도 범위'}</small> : null}</h2>
-          <p className="subtitle">{fmtDate(scope.start)} — {fmtDate(scope.end)}{conditions ? ` · ${conditions}` : ''}</p>
+          <p className="subtitle">{DATE_BASIS_LABEL[scope.date_basis]} 기준 · {fmtDate(scope.start)} — {fmtDate(scope.end)}{conditions ? ` · ${conditions}` : ''}</p>
           <PanelStatus busy={busy} label="새 조건으로 바꾸는 중 · 아래 숫자는 이전 조건의 결과" />
         </div>
         <div className="place-actions">
@@ -186,30 +182,6 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
         <p className="scope-note" role="note">{autoRefresh ? '지도에 보이는 범위(자동 갱신)에 든 신고만 셉니다. 지역 전체 수치가 아닙니다.'
           : '마지막으로 적용한 지도 범위의 신고만 셉니다. 지도만 움직여서는 바뀌지 않습니다.'}</p>
       )}
-
-      {summary ? (
-        <>
-          {summary}
-      <section className="scope-boxes compact" aria-label="처분 요약">
-        <div className="pe-box"><span className="pe-label">과태료</span><b className="pe-num cm-number">{fmtInt(F)}건 <i aria-hidden="true">|</i> {fmtPercent(pct(F, C))}</b><small>÷ 답변 {fmtInt(C)}건</small></div>
-        <div className="pe-box"><span className="pe-label">계도</span>
-          <b className="pe-num cm-number">{W === undefined ? '—' : `${fmtInt(W)}건`}{W != null ? <> <i aria-hidden="true">|</i> {fmtPercent(pct(W, C))}</> : null}</b>
-          <small>{W === undefined ? '제공 안 됨' : '경고·계도 처분 ÷ 답변'}</small></div>
-      </section>
-        </>
-      ) : (
-        <>
-      <section className="scope-boxes" aria-label="요약">
-        <div className="pe-box"><span className="pe-label">신고</span><b className="pe-num cm-number">{fmtInt(data.overview.report_count.value)}건</b><small>신고한 날</small></div>
-        <div className="pe-box"><span className="pe-label">답변</span><b className="pe-num cm-number">{fmtInt(C)}건</b><small>답변 받은 날</small></div>
-        <div className="pe-box"><span className="pe-label">수용률</span><b className="pe-num cm-number">{fmtPercent(acceptRate(o))}</b><small>{fmtInt(o?.accepted ?? null)}/{fmtInt(known)}건</small></div>
-        <div className="pe-box"><span className="pe-label">일부수용률</span><b className="pe-num cm-number">{fmtPercent(pct(o?.partial, known))}</b><small>{fmtInt(o?.partial ?? null)}/{fmtInt(known)}건</small></div>
-        <div className="pe-box"><span className="pe-label">불수용률</span><b className="pe-num cm-number">{fmtPercent(pct(o?.rejected, known))}</b><small>{fmtInt(o?.rejected ?? null)}/{fmtInt(known)}건</small></div>
-        <div className="pe-box"><span className="pe-label">과태료</span><b className="pe-num cm-number">{fmtInt(F)}건 <i aria-hidden="true">|</i> {fmtPercent(pct(F, C))}</b><small>÷ 답변 {fmtInt(C)}건</small></div>
-        <div className="pe-box"><span className="pe-label">계도</span>
-          <b className="pe-num cm-number">{W === undefined ? '—' : `${fmtInt(W)}건`}{W != null ? <> <i aria-hidden="true">|</i> {fmtPercent(pct(W, C))}</> : null}</b>
-          <small>{W === undefined ? '제공 안 됨' : '경고·계도 처분 ÷ 답변'}</small></div>
-      </section>
 
       <section className="place-section" aria-label="처리 결과">
         <h3>처리 결과 <small>답변 {fmtInt(C)}건 중 결과가 나온 {fmtInt(known)}건</small></h3>
@@ -226,8 +198,6 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
         ) : <p className="cm-muted place-empty">이 범위에는 결과가 나온 답변이 아직 없습니다.</p>}
       </section>
 
-        </>
-      )}
       {children.length > 0 && (
         <section className="place-section" aria-label={scope.region_code ? '시군구별' : '시도별'}>
           <h3>{scope.region_code ? '시군구별' : '시도별'} <small>누르면 그 지역 상세로 이동 · 신고 위치 기준</small></h3>
@@ -257,7 +227,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
         <ScopeEntities kind="manager" first={data.managers} total={data.manager_total} scope={scope} version={version} onPick={onPickEntity}
           activeAgency={activeAgency} activeManager={activeManager} onRows={onManagers} />
       </section>
-      <p className="place-note">지역은 신고 위치의 행정구역 기준입니다(처리 기관 소재지가 아님). 신고는 신고한 날, 처리 결과·계도·과태료는 답변 받은 날 기준입니다.</p>
+      <p className="place-note">지역은 신고 위치의 행정구역 기준입니다(처리 기관 소재지가 아님). 모든 수치는 {DATE_BASIS_LABEL[scope.date_basis]}이 기간 안인 같은 신고 묶음에서 셉니다. 주요 수치는 지도 위 ‘주요 통계’에 있습니다.</p>
     </aside>
   );
 }

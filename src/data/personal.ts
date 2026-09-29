@@ -8,7 +8,9 @@ import { z } from 'zod';
 import type { Scope } from '../domain/public';
 import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
+import { COHORT_POLICY_VERSION } from '../domain/public';
 import { durationDistributionSchema, ratingDistributionSchema, scopeSchema } from './schema';
+const cohortDiagnostics = z.strictObject({ date_basis: z.enum(['report_date', 'completed_date']), selected_date_missing: z.number().int().nonnegative(), other_date_missing: z.number().int().nonnegative() });
 
 const count = z.number().int().nonnegative();
 const rate = z.number().min(0).max(100).nullable();
@@ -76,6 +78,9 @@ export const personalCompareSchema = z.strictObject({
     region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean(),
   })).max(1000),
   analytics: z.strictObject({ duration: durationDistributionSchema, rating: ratingDistributionSchema }).optional(),
+  // EX-09: required — an older (dual-set) server's comparison is refused, never shown under the new labels
+  cohort_policy_version: z.literal(COHORT_POLICY_VERSION),
+  cohort: z.strictObject({ all: cohortDiagnostics, mine: cohortDiagnostics }),
 });
 
 export type PersonalErrorCode =
@@ -108,7 +113,7 @@ export const personalError = (code: PersonalErrorCode, retryAfter: number | null
   new PersonalApiError(code, MESSAGE[code], retryAfter);
 
 export function sameScope(a: Scope, b: Scope): boolean {
-  return a.start === b.start && a.end === b.end && a.category === b.category &&
+  return a.date_basis === b.date_basis && a.start === b.start && a.end === b.end && a.category === b.category &&
     a.region_code === b.region_code && a.agency_key === b.agency_key &&
     a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox) &&
     (a.law ?? null) === (b.law ?? null);
@@ -125,7 +130,7 @@ export function acceptCompare(raw: unknown, scope: Scope, version: string): Pers
 }
 
 export function compareParams(scope: Scope, version: string): URLSearchParams {
-  const p = new URLSearchParams({ start: scope.start, end: scope.end, category: scope.category, expected_version: version });
+  const p = new URLSearchParams({ date_basis: scope.date_basis, start: scope.start, end: scope.end, category: scope.category, expected_version: version });
   if (scope.region_code) p.set('region_code', scope.region_code);
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
   if (scope.manager_key) p.set('manager_key', scope.manager_key);

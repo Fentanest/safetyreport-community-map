@@ -17,12 +17,13 @@ const f = (patch: Partial<PrivateFact> = {}): PrivateFact => {
     agency_key: 'a1:A', agency_name: '기관A', manager_key: 'm1:kim', manager_name: '김하늘', ...patch,
   };
 };
-const scope: Scope = { start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 const spec = (patch: Partial<StatisticsSpec> = {}): StatisticsSpec => ({
   version: 1, date_basis: 'completed_date', population: 'all', rows: [], columns: [], metrics: ['completed_count'], filters: [], place_key: null, ...patch,
 });
+// one basis per request: the handler unifies scope and recipe (unifyBasis), so the helper does the same
 const run = (facts: PrivateFact[], s: Partial<StatisticsSpec>, viewerId?: string) =>
-  aggregateStatistics({ facts, scope, spec: spec(s), datasetVersion: 'v', viewerId });
+  aggregateStatistics({ facts, scope: { ...scope, date_basis: spec(s).date_basis }, spec: spec(s), datasetVersion: 'v', viewerId });
 const cell = (r: ReturnType<typeof run>, row: string[], col: string[] = [], side: 'all' | 'mine' = 'all') =>
   r.cells.find((c) => JSON.stringify(c.row) === JSON.stringify(row) && JSON.stringify(c.col) === JSON.stringify(col) && c.side === side);
 
@@ -92,7 +93,14 @@ describe('PV: exact pivot values', () => {
     const long: Scope = { ...scope, start: '2014-09-30', end: '2026-09-29' };
     const facts = [f({ completed_date: '2015-01-02' }), f({ completed_date: '2026-09-01' }), f({ completed_date: '2020-05-05' })];
     const r = aggregateStatistics({ facts, scope: long, spec: spec({ rows: ['completed_month'] }), datasetVersion: 'v' });
-    expect(r.row_members.map((m) => m.key[0])).toEqual(['2015-01', '2020-05', '2026-09']);
+    // D17 (2026-09-29): the selected basis's month axis is a calendar spine — every month of the period, in order
+    const months = r.row_members.map((m) => m.key[0]);
+    expect(months).toHaveLength(145);
+    expect([months[0], months[4], months[144]]).toEqual(['2014-09', '2015-01', '2026-09']);
+    expect(months).toEqual([...months].sort());
+    const cellOf = (k: string) => r.cells.find((c) => c.row[0] === k)!.values.completed_count.value;
+    expect([cellOf('2015-01'), cellOf('2015-02'), cellOf('2020-05')]).toEqual([1, 0, 1]);
+    expect(r.date_axes).toEqual([{ dimension: 'completed_month', role: 'row', mode: 'spine' }]);
   });
 });
 
@@ -167,12 +175,12 @@ describe('statistics routes', () => {
   const q = (path: string, params: Record<string, string>) => `${base}/${path}?${new URLSearchParams(params)}`;
   const handler = createPublicHandler(repo, fixtureAccess());
   it('query returns the exact result; mine on the public API is refused; unknown params are refused', async () => {
-    const ok = await handler(viewerRequest(q('statistics/query', { start: '2026-01-01', end: '2026-06-30', category: 'all', spec: JSON.stringify(spec({ metrics: ['fine_rate'] })) })));
+    const ok = await handler(viewerRequest(q('statistics/query', { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', spec: JSON.stringify(spec({ metrics: ['fine_rate'] })) })));
     expect(ok.status).toBe(200);
     expect((await ok.json()).grand_totals[0].values.fine_rate.value).toBe(40);
-    const mine = await handler(viewerRequest(q('statistics/query', { start: '2026-01-01', end: '2026-06-30', category: 'all', spec: JSON.stringify(spec({ population: 'mine' })) })));
+    const mine = await handler(viewerRequest(q('statistics/query', { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', spec: JSON.stringify(spec({ population: 'mine' })) })));
     expect(mine.status).toBe(400);
-    const extra = await handler(viewerRequest(q('statistics/query', { start: '2026-01-01', end: '2026-06-30', category: 'all', spec: JSON.stringify(spec()), user_id: 'u2' })));
+    const extra = await handler(viewerRequest(q('statistics/query', { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', spec: JSON.stringify(spec()), user_id: 'u2' })));
     expect(extra.status).toBe(400);
   });
   it('PV-15 no token → 401 like every other route; catalog lists no private field', async () => {
@@ -183,7 +191,7 @@ describe('statistics routes', () => {
     expect(JSON.stringify(await cat.json())).not.toMatch(/vehicle_raw|report_number|contributor_id/);
   });
   it('candidates page and search', async () => {
-    const r = await handler(viewerRequest(q('statistics/candidates', { start: '2026-01-01', end: '2026-06-30', category: 'all', kind: 'agency', q: '기관', limit: '5' })));
+    const r = await handler(viewerRequest(q('statistics/candidates', { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', kind: 'agency', q: '기관', limit: '5' })));
     expect(r.status).toBe(200);
     expect((await r.json()).items[0]).toMatchObject({ key: 'a1:A', count: 20 });
   });

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LAW_NONE, type DashboardData, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
-import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadPlace, loadPlacesInView, type AccessCode } from '../data/client';
+import { DATE_BASIS_LABEL, LAW_NONE, type DashboardData, type DateBasis, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
+import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
 import type { RequestSource } from '../data/refreshController';
 import AccessGate from '../components/AccessGate';
 import {
-  CATEGORY_LABEL, baseScope, draftFromScope, fixtureFromSearch, lawLabel, lawOptions, regionCounts, regionLabel, scopeFromDraft,
+  CATEGORY_LABEL, basisFromSearch, baseScope, draftFromScope, fixtureFromSearch, lawLabel, lawOptions, regionCounts, regionLabel, scopeFromDraft,
   scopeFromSearch, scopeToSearch, validateRange, type DraftFilters, type EntityTab, type ThemeMode,
 } from '../state/filters';
 import TopBar from '../components/TopBar';
@@ -29,7 +29,7 @@ import LawTable from '../components/LawTable';
 import DataGuide from '../components/DataGuide';
 import { fmtDate } from '../components/format';
 import CompareKpis from '../components/CompareKpis';
-import KpiPanel from '../components/KpiPanel';
+import KpiPanel, { type KpiFocus } from '../components/KpiPanel';
 import RegionList from '../components/RegionList';
 import ManagerCompare from '../components/ManagerCompare';
 import AccountMenu from '../components/AccountMenu';
@@ -39,7 +39,7 @@ import { DurationCard, HeatmapCard, RatingCard, ScatterCard, VehicleDaysCard, mi
 import { useMapAuth, usePersonalCompare, type PersonalState } from '../hooks/usePersonal';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { consistentWithPublic } from '../data/personal';
-import { readComparePref, readInterest, screenFromSearch, toggleInterest, viewFromSearch, writeComparePref, writeInterest, type ViewMode } from '../state/view';
+import { hasLayoutParam, readComparePref, readInterest, screenFromSearch, toggleInterest, writeComparePref, writeInterest } from '../state/view';
 import { markPoints } from '../state/pointMarks';
 import { demoViewerFromSearch, sessionKeyOf } from '../auth/mapAuth';
 import { SHARE_PARAM } from '../state/share';
@@ -90,6 +90,26 @@ function restoreScroll(y: number): void {
   requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y })));
 }
 
+/** U01 saved setting: the date basis last chosen by this account (hashed session key; never sent anywhere).
+ *  Order of restore: explicit URL / shared link / hand-off > this saved setting > the default (답변일). */
+const BASIS_KEY = 'cm-date-basis';
+function readBasisPref(account: string): DateBasis | null {
+  try {
+    const v = (JSON.parse(localStorage.getItem(BASIS_KEY) ?? '{}') as Record<string, unknown>)[account];
+    return v === 'report_date' || v === 'completed_date' ? v : null;
+  } catch { return null; }
+}
+function writeBasisPref(account: string, basis: DateBasis): void {
+  try {
+    const all = JSON.parse(localStorage.getItem(BASIS_KEY) ?? '{}') as Record<string, string>;
+    localStorage.setItem(BASIS_KEY, JSON.stringify({ ...all, [account]: basis }));
+  } catch { /* storage blocked: the choice still works for this page */ }
+}
+
+/** D10: the exact conditions a display refinement belongs to (full scope incl. basis, account, version, mode) */
+const refineKey = (s: Scope | null, version: string | null, session: string | null, mode: string) =>
+  s ? `${JSON.stringify(s)}|${version}|${session}|${mode}` : '';
+
 /** C06 scroll spy: programmatic moves (menu, restore) pause it briefly so passing sections do not flash in the menu */
 let spyLockUntil = 0;
 function lockSpy(ms = 1200): void { spyLockUntil = Date.now() + ms; }
@@ -122,12 +142,14 @@ export default function Dashboard() {
   const [sharedRecipe, setSharedRecipe] = useState<string | null>(() => new URLSearchParams(window.location.search).get(SHARE_PARAM));
   useEffect(() => { if (screen === 'statistics') setStatsOpened(true); }, [screen]);
   const [dateError, setDateError] = useState<string | null>(null);
-  const [view, setView] = useState<ViewMode>(() => viewFromSearch(window.location.search));
+  // U01: whether the basis came explicitly (URL / link); otherwise this account's saved setting may apply once
+  const basisExplicit = useRef(basisFromSearch(window.location.search) !== null);
   const [compareOn, setCompareOn] = useState<boolean>(readComparePref);
   const [briefingShowMine, setBriefingShowMine] = useState(false);
   const [interest, setInterest] = useState<string[]>(readInterest);
   const [entityNames, setEntityNames] = useState<Map<string, EntityName>>(() => new Map());
-  const [refined, setRefined] = useState<{ view: [number, number, number, number]; points: PublicPoint[]; version: string } | null>(null);
+  // D10: a refinement carries the full key of the snapshot it was asked for; it is merged only into that snapshot
+  const [refined, setRefined] = useState<{ view: [number, number, number, number]; points: PublicPoint[]; key: string } | null>(null);
   const { auth, signIn, signOut } = useMapAuth();
   // S10: one display-only activity registry per page (never starts a request)
   const activity = useMemo(() => new ActivityRegistry(), []);
@@ -173,7 +195,15 @@ export default function Dashboard() {
     document.body.classList.toggle('briefing', briefing);
     setBriefingShowMine(false);
   }, [briefing]);
-  useEffect(() => { document.body.dataset.view = view; }, [view]);
+  // U04 + U01: an old URL (layout parameter, or no date basis) is rewritten once to the new form; every other
+  // parameter (share link, fixture, screen, OAuth return) is kept as it is
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    let changed = false;
+    if (hasLayoutParam(url.search)) { url.searchParams.delete('view'); changed = true; }
+    if (!url.searchParams.has('date_basis') && url.searchParams.has('start')) { url.searchParams.set('date_basis', scope.date_basis); changed = true; }
+    if (changed) window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // S02 Esc: the topmost layer only — drawer, then briefing, then the address selection (never all at once).
   // Dialogs (e.g. 비교 대상 선택) handle their own Esc in the capture phase and stop it. Typing is never intercepted.
   const escState = useRef({ drawer: false, briefing: false, selection: null as string | null });
@@ -230,24 +260,23 @@ export default function Dashboard() {
       requestScope(s, 'explicit');
       setDraft(draftFromScope(s));
       setFixture(dataMode === 'demo' ? fixtureFromSearch(window.location.search) : 'overview');
-      setView(viewFromSearch(window.location.search));
       setScreen(screenFromSearch(window.location.search));
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, [requestScope]);
 
-  const urlFor = (s: Scope, v: ViewMode = view, sc: Screen = screen) => {
-    const search = scopeToSearch(s, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null, view: v, me: demoMe });
+  const urlFor = (s: Scope, sc: Screen = screen) => {
+    const search = scopeToSearch(s, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null, me: demoMe });
     // the screen is a page parameter only: it is never part of the statistics scope sent to the API
     const withScreen = sc === 'statistics' ? `${search ? `${search}&` : ''}screen=statistics` : search;
     return `${window.location.pathname}${withScreen ? `?${withScreen}` : ''}`;
   };
   /** explicit condition change: new history entry; automatic map range: replace (no history flood, R04 §11) */
   /** C06: every history entry carries its scroll position (the entry being left is updated first) */
-  const pushUrl = (s: Scope, v: ViewMode = view, sc: Screen = screen) => {
+  const pushUrl = (s: Scope, sc: Screen = screen) => {
     rememberScroll();
-    window.history.pushState({ cmScroll: sc === screen ? window.scrollY : 0 }, '', urlFor(s, v, sc));
+    window.history.pushState({ cmScroll: sc === screen ? window.scrollY : 0 }, '', urlFor(s, sc));
   };
   const replaceUrl = (s: Scope) => window.history.replaceState(window.history.state, '', urlFor(s));
 
@@ -258,9 +287,11 @@ export default function Dashboard() {
     if (message) showToast(message);
   };
 
-  // whole-history bounds come from the dataset metadata (/meta), never from the last screen or a filtered response
-  const dataMin = dash.meta?.data_min ?? null;
-  const dataMax = dash.meta?.data_max ?? null;
+  // 전체 기간 of the SELECTED basis from the dataset metadata (/meta), never the other date's range, the last
+  // screen or a filtered response (D12/D15)
+  const bounds = dash.meta?.basis_bounds?.[scope.date_basis] ?? null;
+  const dataMin = bounds ? bounds.min : dash.meta?.data_min ?? null;
+  const dataMax = bounds ? bounds.max : dash.meta?.data_max ?? null;
   const apply = useCallback((): boolean => {
     const err = validateRange(draft.start, draft.end, dataMin, dataMax);
     setDateError(err);
@@ -268,11 +299,16 @@ export default function Dashboard() {
     // dates/region/law from the draft; the other applied conditions stay (a new region replaces the map range)
     const next = { ...scopeFromDraft(draft, scope), agency_key: scope.agency_key, manager_key: scope.manager_key,
       bbox: draft.region_code !== scope.region_code ? null : scope.bbox };
+    // DT-04: basis, dates and the other drawer conditions land together in ONE scope change (one request)
+    if (next.date_basis !== scope.date_basis) {
+      basisExplicit.current = true;
+      if (sessionKey) writeBasisPref(sessionKey, next.date_basis);
+    }
     requestScope(next, 'explicit');
     pushUrl(next);
     setDrawer(false);
     return true;
-  }, [draft, scope, dataMin, dataMax, showToast, requestScope]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [draft, scope, dataMin, dataMax, showToast, requestScope, sessionKey]); // eslint-disable-line react-hooks/exhaustive-deps
   /** quick period (incl. 전체 기간): dates only, applied at once — draft, chips, URL and one request together */
   const applyPreset = (range: { start: string; end: string }) => {
     setDateError(null);
@@ -292,18 +328,29 @@ export default function Dashboard() {
 
   // R10: stable callbacks for the drawer (a new function per render re-ran its focus effect)
   const closeDrawer = useCallback(() => setDrawer(false), []);
-  const openDrawer = useCallback(() => setDrawer(true), []);
+  // DT-03: the drawer always opens on the APPLIED conditions (a cancelled draft never survives a reopen)
+  const openDrawer = useCallback(() => { setDraft(draftFromScope(scope)); setDateError(null); setDrawer(true); }, [scope]);
+  /** U01 top selector: the new basis with the APPLIED dates at once (one request); typed-but-unapplied dates stay */
+  const changeBasis = (basis: DateBasis) => {
+    if (basis === scope.date_basis) return;
+    basisExplicit.current = true;
+    const next = { ...scope, date_basis: basis };
+    requestScope(next, 'explicit');
+    setDraft((d) => ({ ...d, date_basis: basis }));
+    pushUrl(next);
+    if (sessionKey) writeBasisPref(sessionKey, basis);
+  };
   const changeDraft = useCallback((d: DraftFilters) => { setDraft(d); setDateError(null); }, []);
 
   const share = useCallback(async () => {
-    const url = `${window.location.origin}${window.location.pathname}?${scopeToSearch(scope, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null, view })}`;
+    const url = `${window.location.origin}${window.location.pathname}?${scopeToSearch(scope, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null })}`;
     try {
       await navigator.clipboard.writeText(url);
       showToast('지금 보는 화면의 링크를 복사했습니다.');
     } catch {
       showToast(`링크: ${url}`);
     }
-  }, [scope, fixture, view, showToast]);
+  }, [scope, fixture, showToast]);
 
   const unsupported = !!data && data.overview.report_count.value == null;
   const empty = isEmptyResult(data);
@@ -390,28 +437,45 @@ export default function Dashboard() {
   const refineAbort = useRef<AbortController | null>(null);
   const hasAggregates = !!data?.points.some((pt) => pt.aggregate);
   const renderMode = renderModeOf(mapMetric);
+  // D10: the key of the DISPLAYED snapshot (full scope incl. date_basis, account, version, render mode). A timer or
+  // request made for another key is cancelled when the key changes, and a late answer is refused at commit AND merge.
+  const shownKey = refineKey(shownScope, version, sessionKey, renderMode);
+  const shownKeyRef = useRef(shownKey);
+  shownKeyRef.current = shownKey;
+  const refineGen = useRef(0);
+  useEffect(() => {
+    refineGen.current += 1;
+    window.clearTimeout(refineTimer.current);
+    refineAbort.current?.abort();
+    refineAbort.current = null;
+    setRefined(null);
+  }, [shownKey, shown]);
   const onView = (b: [number, number, number, number], zoom: number) => {
     window.clearTimeout(refineTimer.current);
     // pin refinement exists in the points (신고 수) mode only; a rate map never asks for or draws pins (R7)
     if (renderMode !== 'points' || !hasAggregates || !shownScope || !version || zoom >= CLUSTER_LEVEL) { if (refined) setRefined(null); return; }
+    const key = shownKey, gen = refineGen.current, askScope = shownScope, askVersion = version;
     refineTimer.current = window.setTimeout(() => {
+      if (gen !== refineGen.current || key !== shownKeyRef.current) return; // conditions changed while waiting
       refineAbort.current?.abort();
       const ac = new AbortController();
       refineAbort.current = ac;
-      loadPlacesInView(shownScope, roundBbox(b), version, ac.signal)
-        // a late answer after switching to a rate metric is dropped (no pin can come back)
-        .then((r) => { if (!ac.signal.aborted && renderModeRef.current === 'points') setRefined({ view: b, points: r.points, version }); })
+      loadPlacesInView(askScope, roundBbox(b), askVersion, ac.signal)
+        .then((r) => {
+          // a late answer for other conditions (basis, dates, account, version, rate metric) is dropped
+          if (ac.signal.aborted || gen !== refineGen.current || key !== shownKeyRef.current || renderModeRef.current !== 'points') return;
+          setRefined({ view: b, points: r.points, key });
+        })
         .catch(() => undefined); // display refinement only: the compacted nodes stay drawn
     }, 600);
   };
-  useEffect(() => { setRefined(null); }, [version, shown]);
   const mapPoints = useMemo(() => {
     const base = data?.points ?? [];
-    if (!refined || refined.version !== version) return base;
+    if (!refined || refined.key !== shownKey) return base;
     const keep = base.filter((pt) => !(pt.aggregate && pt.bbox && intersects(pt.bbox, refined.view)));
     const keys = new Set(keep.map((pt) => pt.key));
     return [...keep, ...refined.points.filter((pt) => !keys.has(pt.key))];
-  }, [data, refined, version]);
+  }, [data, refined, shownKey]);
 
   // ── S02: one toggle / one clear for the map pin, the place list, the panel button, Esc and a blank map click ──
   const togglePlace = useCallback((key: string | null) => setSelection((cur) => (key === null || cur === key ? null : key)), []);
@@ -420,6 +484,7 @@ export default function Dashboard() {
   // ── place selection (R05): its own request, never a dashboard refetch; A→B races are dropped ──────────
   const point: PublicPoint | null = useMemo(() => mapPoints.find((pt) => pt.key === selection) ?? null, [mapPoints, selection]);
   const lastPoint = useRef<PublicPoint | null>(null);
+  const lastKpi = useRef<{ key: string; label: string; overview: NonNullable<DashboardData['overview']> } | null>(null);
   useEffect(() => { if (point) lastPoint.current = point; }, [point]);
   useEffect(() => {
     if (selection && data && !point) {
@@ -459,7 +524,6 @@ export default function Dashboard() {
   const showMine = compareOn && !compareDisabledReason && !briefingHidden;
 
   const changeCompare = (on: boolean) => { setCompareOn(on); writeComparePref(on); };
-  const changeView = (v: ViewMode) => { setView(v); pushUrl(scope, v); };
   const flipInterest = (code: string) => setInterest((list) => writeInterest(toggleInterest(list, code)));
   const pickCompareEntity = (row: CompareEntityRow) => pickEntity(row.kind, row);
 
@@ -478,8 +542,9 @@ export default function Dashboard() {
   // ── applied chips (R08): requested scope vs defaults; human names only ────────────────────────────────
   const base = baseScope(dataMode);
   const chips: AppliedChip[] = [];
-  if (scope.start !== base.start || scope.end !== base.end) {
-    chips.push({ id: 'dates', kind: '기간', label: `${fmtDate(scope.start)} — ${fmtDate(scope.end)}`, onRemove: () => explicit({ ...scope, start: base.start, end: base.end }) });
+  if (scope.start !== base.start || scope.end !== base.end || scope.date_basis !== base.date_basis) {
+    chips.push({ id: 'dates', kind: '기간', label: `${DATE_BASIS_LABEL[scope.date_basis]} 기준 ${fmtDate(scope.start)} — ${fmtDate(scope.end)}`,
+      onRemove: () => explicit({ ...scope, start: base.start, end: base.end }) });
   }
   if (scope.category !== 'all') chips.push({ id: 'category', kind: '분류', label: CATEGORY_LABEL[scope.category], onRemove: () => explicit({ ...scope, category: 'all' }) });
   if (scope.region_code) chips.push({ id: 'region', kind: '지역', label: regionLabel(scope.region_code), onRemove: () => pickRegion(null) });
@@ -488,8 +553,9 @@ export default function Dashboard() {
   if (scope.manager_key) chips.push({ id: 'manager', kind: '담당자', label: managerName(scope.agency_key, scope.manager_key), onRemove: () => explicit({ ...scope, manager_key: null }) });
   if (scope.bbox) chips.push({ id: 'bbox', kind: '지도 범위', label: autoRefresh ? '지도에 보이는 범위(자동)' : '마지막으로 적용한 지도 범위', onRemove: () => explicit({ ...scope, bbox: null }) });
   const filterCount = chips.filter((c) => c.id !== 'dates').length;
-  const unapplied = draft.start !== scope.start || draft.end !== scope.end || draft.region_code !== scope.region_code || (draft.law ?? null) !== (scope.law ?? null);
-  const scopeLabel = (s: Scope | null) => (s ? `${fmtDate(s.start)} — ${fmtDate(s.end)} · ${regionLabel(s.region_code)}${s.category !== 'all' ? ` · ${CATEGORY_LABEL[s.category]}` : ''}${s.law ? ` · ${lawLabel(s.law)}` : ''}${s.bbox ? ' · 지도 범위' : ''}${s.agency_key ? ` · ${s.manager_key ? managerName(s.agency_key, s.manager_key) : agencyName(s.agency_key)}` : ''}` : '');
+  const unapplied = draft.date_basis !== scope.date_basis || draft.start !== scope.start || draft.end !== scope.end || draft.region_code !== scope.region_code || (draft.law ?? null) !== (scope.law ?? null);
+  // same range + another basis = another condition: every label names the basis (U01 1.3)
+  const scopeLabel = (s: Scope | null) => (s ? `${DATE_BASIS_LABEL[s.date_basis]} ${fmtDate(s.start)} — ${fmtDate(s.end)} · ${regionLabel(s.region_code)}${s.category !== 'all' ? ` · ${CATEGORY_LABEL[s.category]}` : ''}${s.law ? ` · ${lawLabel(s.law)}` : ''}${s.bbox ? ' · 지도 범위' : ''}${s.agency_key ? ` · ${s.manager_key ? managerName(s.agency_key, s.manager_key) : agencyName(s.agency_key)}` : ''}` : '');
 
   // ── S10: what the page is waiting for, reported from the real request state (display only) ─────────────
   const displayedText = shownScope ? scopeLabel(shownScope) : null;
@@ -522,6 +588,17 @@ export default function Dashboard() {
     refineAbort.current?.abort();
   }, [activity, sessionKey]);
   useEffect(() => { if (auth.status === 'signed_out') clearStatsSession(); }, [auth.status]);
+  // U01: without an explicit basis in the URL, this account's saved basis applies once (else the default 답변일)
+  useEffect(() => {
+    if (!sessionKey || basisExplicit.current) return;
+    basisExplicit.current = true;
+    const pref = readBasisPref(sessionKey);
+    if (!pref || pref === scope.date_basis) return;
+    const next = { ...scope, date_basis: pref };
+    requestScope(next, 'explicit');
+    setDraft((d) => ({ ...d, date_basis: pref }));
+    replaceUrl(next);
+  }, [sessionKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { dropLegacyStatsStorage(); }, []);
 
   // ── S04: 맞춤 통계 screen and the hand-off of the DISPLAYED conditions (never a half-requested scope) ─────
@@ -529,14 +606,14 @@ export default function Dashboard() {
     if (recipe) setHandoff((h) => ({ id: (h?.id ?? 0) + 1, recipe }));
     setStatsOpened(true);
     setScreen('statistics');
-    pushUrl(scope, view, 'statistics');
+    pushUrl(scope, 'statistics');
     window.scrollTo({ top: 0 });
   };
   const goDashboard = (section?: string) => {
     if (section) lockSpy();
     if (screen !== 'dashboard') {
       setScreen('dashboard');
-      pushUrl(scope, view, 'dashboard');
+      pushUrl(scope, 'dashboard');
       scrollToSectionWhenReady(section ?? 'mapsection');
     } else if (section) scrollToSection(section);
     if (section) setNav(section);
@@ -545,8 +622,9 @@ export default function Dashboard() {
     if (!shownScope) return;
     goStatistics(handoffRecipe(shownScope, { origin, ...extra }));
   };
+  // D09/EX-03: the month of the SELECTED basis (신고월 / 답변월) with the same basis in the recipe
   const statsFromTrend = (rates: TrendRate[]) => statsFromScope('월별 추이', {
-    rows: ['completed_month'], columns: [], metrics: rates.map((r) => TREND_RATE_METRIC_ID[r]),
+    rows: [shownScope?.date_basis === 'report_date' ? 'report_month' : 'completed_month'], columns: [], metrics: rates.map((r) => TREND_RATE_METRIC_ID[r]),
     population: showMine && personal.status === 'ready' ? 'compare' : 'all',
   });
   const scopeChips = (s: Scope): ScopeChip[] => {
@@ -563,11 +641,22 @@ export default function Dashboard() {
   const conditionsText = (s: Scope | null) => (s ? scopeChips(s).map((c) => `${c.kind} ${c.label}`).join(' · ') : '');
   /** F06: 조회 조건 rows of a dashboard card file (the DISPLAYED scope, fixed dates) */
   const exportConditions = (s: Scope, address?: string) => [
-    { label: '기간', value: `${s.start} — ${s.end} (시작일·종료일 포함)` },
+    { label: '날짜 기준', value: `${DATE_BASIS_LABEL[s.date_basis]} — 이 날짜가 기간 안인 신고만 모았습니다(다른 날짜는 기간 밖이어도 포함)` },
+    { label: '기간', value: `${s.start} — ${s.end} (시작일·종료일 포함)${partialNote(s)}` },
+    ...(version ? [{ label: '자료 버전', value: `${version} · 기준 규칙 single-date-v1` }] : []),
     { label: '대상 범위', value: scopeChips(s).filter((c) => c.id !== 'bbox').map((c) => `${c.kind} ${c.label}`).join(' · ') || '전국 · 모든 분류' },
     ...(s.bbox ? [{ label: '지도 범위', value: `지도에서 고른 범위 (경도 ${s.bbox[0]}~${s.bbox[2]}, 위도 ${s.bbox[1]}~${s.bbox[3]})` }] : []),
     ...(address ? [{ label: '주소', value: address }] : []),
   ];
+
+  /** D12: a range that covers only part of its first/last calendar month says so (never shown as a full month) */
+  function partialNote(s: Scope): string {
+    const last = (m: string) => new Date(Date.UTC(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 0)).toISOString().slice(0, 10);
+    const parts: string[] = [];
+    if (s.start.slice(8) !== '01') parts.push(`첫 달은 ${fmtDate(s.start)}부터`);
+    if (s.end !== last(s.end.slice(0, 7))) parts.push(`마지막 달은 ${fmtDate(s.end)}까지`);
+    return parts.length ? ` · 일부 기간: ${parts.join(', ')}` : '';
+  }
 
   const accessCode = dash.access?.code && (ACCESS_CODES as readonly string[]).includes(dash.access.code) ? dash.access.code as AccessCode : null;
   if (accessCode) {
@@ -583,6 +672,29 @@ export default function Dashboard() {
   }
 
   const stamp = data?.meta.data_max ? fmtDate(data.meta.data_max) : fmtDate(baseScope(dataMode).end);
+  // D12: the latest data day of the basis is told apart from today (never "this month in progress" for old data)
+  const today = data?.meta.today_kst ?? null;
+  const freshness = dataMax && today && dataMax < today && scope.end > dataMax ? ` · 최근 자료: ${fmtDate(dataMax)} (${DATE_BASIS_LABEL[scope.date_basis]} 기준, 그 뒤는 아직 없음)` : '';
+
+  // ── U02: the focus of the key-figure strip ─────────────────────────────────────────────────────────────
+  const placeFocus = !!point && !point.aggregate;
+  const placeReady = placeFocus && placeDetail.status === 'ready' && placeDetail.detail.place.key === point!.key &&
+    !!shownScope && sameScope(placeDetail.detail.scope, shownScope) && !!placeDetail.detail.overview;
+  const kpiFocus: KpiFocus = placeFocus
+    ? { kind: 'place', label: point!.address ?? '선택한 주소', basis: shownScope?.date_basis ?? scope.date_basis, start: shownScope?.start ?? scope.start, end: shownScope?.end ?? scope.end }
+    : { kind: shownScope?.bbox ? 'bbox' : shownScope?.region_code ? 'region' : 'nation',
+      label: `${regionLabel(shownScope?.region_code ?? null)}${shownScope?.bbox ? ` × ${autoRefresh ? '지도에 보이는 범위' : '마지막으로 적용한 지도 범위'}` : ''}`,
+      basis: shownScope?.date_basis ?? scope.date_basis, start: shownScope?.start ?? scope.start, end: shownScope?.end ?? scope.end };
+  const focusKey = `${kpiFocus.kind}|${kpiFocus.label}|${refineKey(shownScope, version, sessionKey, '')}`;
+  const readyOverview = placeFocus ? (placeReady && placeDetail.status === 'ready' ? placeDetail.detail.overview ?? null : null) : data?.overview ?? null;
+  // KP-05/06: while the new focus loads, the strip keeps the LAST figures but names their target (never a new title
+  // over old numbers, never national values under an address)
+  if (readyOverview && !(dash.isRefreshing && !placeFocus)) lastKpi.current = { key: focusKey, label: kpiFocus.label, overview: readyOverview };
+  const kpiState: 'ready' | 'loading' | 'error' = placeFocus
+    ? (placeReady ? 'ready' : placeDetail.status === 'error' ? 'error' : 'loading')
+    : dash.isRefreshing ? 'loading' : 'ready';
+  const kpiOverview = kpiState === 'ready' ? readyOverview : lastKpi.current?.overview ?? null;
+  const kpiStale = kpiState !== 'ready' && lastKpi.current ? (dash.isRefreshing && !placeFocus ? scopeLabel(shownScope) : lastKpi.current.label) : null;
   const err = dash.error;
   const errText = err ? `${err.status === 429 ? '요청이 많아 잠시 기다리는 중입니다' : err.message}${err.status === 429 && err.retryAfter ? ` · ${err.retryAfter}초 뒤 최신 범위로 자동으로 다시 불러옵니다` : ''}` : null;
   const entitiesLive = entitiesAvailable() && !(dataMode === 'demo' && (fixture === 'one' || fixture === 'empty'));
@@ -603,7 +715,7 @@ export default function Dashboard() {
       <div className="app">
         <Rail active={nav} screen={screen} onSection={goDashboard} onStatistics={() => goStatistics()}
           onAbout={() => goDashboard('guide')} />
-        <main id="main" data-view={view} data-screen={screen}>
+        <main id="main" data-screen={screen}>
           <div className="dashboard-screen" hidden={screen !== 'dashboard'}>
           <section className="page-heading" aria-label="소개">
             <div>
@@ -650,9 +762,11 @@ export default function Dashboard() {
             onOpenDrawer={openDrawer}
             dateError={dateError}
             regionCounts={regionCountMap}
+            basis={scope.date_basis}
+            onBasis={changeBasis}
             extra={(
               <ViewControls compareOn={compareOn} onCompare={changeCompare} compareDisabledReason={compareDisabledReason}
-                briefingHidden={briefingHidden} view={view} onView={changeView} />
+                briefingHidden={briefingHidden} />
             )}
           />
           <AppliedFilterChips chips={chips} onClearAll={reset} pending={dash.isRefreshing}
@@ -684,8 +798,27 @@ export default function Dashboard() {
               {dataMode === 'demo' && fixture === 'one' && (
                 <div className="banner" role="note"><span className="grow">예시: 신고가 1건뿐인 경우의 화면입니다.</span></div>
               )}
-              {/* One stable grid for every view: the map host is never re-parented or remounted (R04 §12). */}
-              <div className={`dash-grid${err && shownScope && JSON.stringify(shownScope) !== JSON.stringify(scope) ? ' stale' : ''}`} id="mapsection" data-view={view} data-selected={point ? 'place' : 'none'}>
+              {/* U02: ONE key-figure strip above the map (always in place); its focus is the selected address or the
+                  applied region / map range / nation. U04: one responsive layout — the map host is never re-parented. */}
+              <div id="mapsection" className="dash-stack">
+              <KpiPanel
+                focus={kpiFocus}
+                overview={kpiOverview}
+                state={kpiState}
+                staleFocus={kpiStale}
+                errorText={placeFocus && placeDetail.status === 'error' ? placeDetail.message : null}
+                personal={personal}
+                showMine={showMine}
+                placeMine={placeFocus && point ? { reports: marks.get(point.key)?.mineCount ?? 0 } : null}
+                unsupported={unsupported}
+                detail={(
+                  <>
+                    <CompareKpis overview={data.overview} personal={personal} compareOn={showMine} auth={auth} onSignIn={signIn} unsupported={unsupported} />
+                    {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
+                  </>
+                )}
+              />
+              <div className={`dash-grid${err && shownScope && JSON.stringify(shownScope) !== JSON.stringify(scope) ? ' stale' : ''}`} data-selected={point ? 'place' : 'none'}>
                 <div className="area-map">
                   <MapPanel
                     points={mapPoints}
@@ -740,21 +873,6 @@ export default function Dashboard() {
                       activeManager={scope.manager_key}
                       conditions={conditionsText(shownScope)}
                       onManagers={(rows, total) => setScopeManagers({ key: `${JSON.stringify(shownScope)}|${version}`, rows, total })}
-                      summary={(
-                        <KpiPanel
-                          overview={data.overview}
-                          personal={personal}
-                          showMine={showMine}
-                          unsupported={unsupported}
-                          scopeLabel={scopeLabel(shownScope)}
-                          detail={(
-                            <>
-                              <CompareKpis overview={data.overview} personal={personal} compareOn={showMine} auth={auth} onSignIn={signIn} unsupported={unsupported} />
-                              {showMine && <ManagerCompare personal={personal} onPick={pickCompareEntity} />}
-                            </>
-                          )}
-                        />
-                      )}
                     />
                   ) : null}
                   {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
@@ -783,36 +901,44 @@ export default function Dashboard() {
                     />
                   )}
                 </div>
-                <section className="area-charts" id="analytics" aria-label="데이터로 보는 신고 현황">
-                  <TrendCard monthly={data.monthly} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null}
-                    exportCtx={shownScope ? { conditions: exportConditions(shownScope), datasetVersion: version } : undefined}
-                    mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
-                      : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
-                        : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'}
-                    busy={dash.isRefreshing} onMakeStatistics={statsFromTrend} />
-                  <DurationCard all={analytics?.duration ?? null} mine={showMine ? compareData?.analytics?.duration ?? null : null} theme={resolvedTheme} />
-                  <HeatmapCard data={analytics?.heatmap ?? null} theme={resolvedTheme} onPick={pickCell} />
-                  <VehicleDaysCard data={analytics?.vehicle_days ?? null} theme={resolvedTheme} />
-                  <ScatterCard data={analytics?.scatter ?? null} theme={resolvedTheme}
-                    mineKeys={showMine ? mineEntityKeys(compareData?.agencies, compareData?.managers) : null}
-                    onPick={(kind, e) => pickEntity(kind, e)} />
-                  <RatingCard all={analytics?.rating ?? null} mine={showMine ? compareData?.analytics?.rating ?? null : null} theme={resolvedTheme}
-                    mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
-                      : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
-                        : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'} />
-                </section>
-                <section className="area-tables" aria-label="표로 보는 현황">
-                  <RegionList regions={data.regions} compare={showMine ? compareData?.regions ?? null : null} compareOn={showMine}
-                    interest={interest} onToggleInterest={flipInterest} activeRegion={scope.region_code} onPickRegion={pickRegion} />
-                  <VehicleTop5 vehicles={data.vehicles} totalScope={data.vehicle_total_scope_reports} identifiable={data.vehicle_identifiable_reports} toast={showToast} />
-                  <LawTable laws={data.laws} activeLaw={scope.law} onPickLaw={pickLaw} />
-                  {shownScope && version && (
-                    <EntityTable scope={shownScope} version={version} agencies={data.agencies} managers={data.managers}
-                      tab={entityTab} onTab={setEntityTab} onPick={pickEntity} mine={showMine ? entityMine : null}
-                      serverList={entitiesLive} activeAgency={scope.agency_key} activeManager={scope.manager_key} />
-                  )}
-                </section>
               </div>
+              </div>
+              {/* KP-04: the tables and charts below always describe the APPLIED scope (never the selected address) */}
+              <p className="scope-strip" role="note">아래 표와 그래프: {scopeLabel(shownScope)}{point && !point.aggregate ? ' · 선택한 주소가 아니라 적용한 조건 전체입니다' : ''}{freshness}</p>
+              {/* U05: 위반법규별 현황 (left) | 기관·담당자 처리 결과 (right), then 월별 추이 | 답변까지 걸린 기간 */}
+              <section className="area-pair area-tables-top" aria-label="표로 보는 현황">
+                <LawTable laws={data.laws} activeLaw={scope.law} onPickLaw={pickLaw} scope={shownScope} version={version} serverList={entitiesLive} />
+                {shownScope && version && (
+                  <EntityTable scope={shownScope} version={version} agencies={data.agencies} managers={data.managers}
+                    tab={entityTab} onTab={setEntityTab} onPick={pickEntity} mine={showMine ? entityMine : null}
+                    serverList={entitiesLive} activeAgency={scope.agency_key} activeManager={scope.manager_key} />
+                )}
+              </section>
+              <section className="area-pair" id="analytics" aria-label="데이터로 보는 신고 현황">
+                <TrendCard monthly={data.monthly} basis={shownScope?.date_basis ?? scope.date_basis} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null}
+                  exportCtx={shownScope ? { conditions: exportConditions(shownScope), datasetVersion: version } : undefined}
+                  mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
+                    : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
+                      : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'}
+                  busy={dash.isRefreshing} onMakeStatistics={statsFromTrend} />
+                <DurationCard all={analytics?.duration ?? null} mine={showMine ? compareData?.analytics?.duration ?? null : null} theme={resolvedTheme} />
+              </section>
+              <section className="area-charts" aria-label="더 보는 그래프">
+                <HeatmapCard data={analytics?.heatmap ?? null} theme={resolvedTheme} onPick={pickCell} />
+                <VehicleDaysCard data={analytics?.vehicle_days ?? null} theme={resolvedTheme} />
+                <ScatterCard data={analytics?.scatter ?? null} theme={resolvedTheme}
+                  mineKeys={showMine ? mineEntityKeys(compareData?.agencies, compareData?.managers) : null}
+                  onPick={(kind, e) => pickEntity(kind, e)} />
+                <RatingCard all={analytics?.rating ?? null} mine={showMine ? compareData?.analytics?.rating ?? null : null} theme={resolvedTheme}
+                  mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
+                    : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
+                      : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'} />
+              </section>
+              <section className="area-tables" aria-label="지역과 차량">
+                <RegionList regions={data.regions} compare={showMine ? compareData?.regions ?? null : null} compareOn={showMine}
+                  interest={interest} onToggleInterest={flipInterest} activeRegion={scope.region_code} onPickRegion={pickRegion} />
+                <VehicleTop5 vehicles={data.vehicles} totalScope={data.vehicle_total_scope_reports} identifiable={data.vehicle_identifiable_reports} toast={showToast} />
+              </section>
               <DataGuide data={data} />
             </>
           )}

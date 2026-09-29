@@ -76,9 +76,18 @@ export interface StatisticsResult {
   row_totals: StatTotal[];
   col_totals: StatTotal[];
   grand_totals: StatTotal[];
-  /** answered reports in the population per side, and the ones excluded by the date basis (e.g. no report date) */
+  /** reports of the cohort per side (one date basis = scope.date_basis = spec.date_basis) */
   population_count: { all: number | null; mine: number | null };
-  excluded: { no_report_date: number };
+  /**
+   * reports whose SELECTED date is empty while their other date is inside the period, per side (never added
+   * across all/mine: the same report can be on both sides). `no_report_date` = the first reported side's value.
+   */
+  excluded: { no_report_date: number; selected_date_missing?: { all: number | null; mine: number | null } };
+  /** D17 time axes: 'spine' = every calendar unit of the period listed (0 / null / no_data kept apart);
+   *  'explicit' = only the members picked in a filter (a gap is NOT a queried 0); 'other_date' = the other date
+   *  used as a classification (its own values, never re-filtered by the selected period) */
+  date_axes?: Array<{ dimension: string; role: 'row' | 'column'; mode: 'spine' | 'explicit' | 'other_date' }>;
+  cohort_policy_version?: string;
   /** count of every selected filter member under the other conditions (0 = "현재 조건 0건", kept as a chip) */
   filter_members: Array<{ dimension: string; key: string; label: string | null; count: number; status: MemberStatus }>;
   complete: true;

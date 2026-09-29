@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { MonthlyBucket, OutcomeCounts } from '../domain/public';
+import type { DateBasis, MonthlyBucket, OutcomeCounts } from '../domain/public';
 import type { CompareMonth } from '../domain/personal';
 import { baseOption, useEChart } from '../lib/charts';
 import { fmtDays, fmtFineAmount, fmtInt, fmtMonth, fmtPercent, fmtRating } from './format';
@@ -34,12 +34,25 @@ const MINE_NOTE: Record<Exclude<TrendMineState, 'off' | 'ready'>, string> = {
   loading: '내 신고를 불러오는 중', error: '내 신고를 불러오지 못했습니다', signed_out: '로그인하면 내 신고를 함께 볼 수 있습니다',
 };
 
+/** D12: a month label's note — the real current month (KST) is 진행 중; a range edge month is 일부 기간 (d1~d2). */
+export function monthNote(m: Pick<MonthlyBucket, 'month'> & Partial<Pick<MonthlyBucket, 'in_progress' | 'range_partial' | 'interval_start' | 'interval_end' | 'coverage_note'>>): string {
+  const parts: string[] = [];
+  if (m.range_partial && m.interval_start && m.interval_end) {
+    parts.push(`일부 기간(${Number(m.interval_start.slice(5, 7))}.${Number(m.interval_start.slice(8))}~${Number(m.interval_end.slice(5, 7))}.${Number(m.interval_end.slice(8))})`);
+  }
+  if (m.in_progress) parts.push('이번 달 진행 중');
+  if (m.coverage_note) parts.push(m.coverage_note);
+  return parts.join(' · ');
+}
+
 const VIEW_KEY = 'cm-trend-view';
 const readView = (): View => { try { return localStorage.getItem(VIEW_KEY) === 'rate' ? 'rate' : 'count'; } catch { return 'count'; } };
 
 /** 월별 추이: 건수 view (신고·답변) and the 처리결과 비율 view with 1–4 overlaid rates (S09). */
-export default function TrendCard({ monthly, theme, mine = null, mineState = mine ? 'ready' : 'off', busy = false, onMakeStatistics, exportCtx }: {
+export default function TrendCard({ monthly, basis = 'completed_date', theme, mine = null, mineState = mine ? 'ready' : 'off', busy = false, onMakeStatistics, exportCtx }: {
   monthly: MonthlyBucket[];
+  /** U01: the months are months of THIS date (신고월 / 답변월); the count and every rate of a month share its reports */
+  basis?: DateBasis;
   theme: 'dark' | 'light';
   mine?: CompareMonth[] | null;
   mineState?: TrendMineState;
@@ -59,6 +72,10 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
   // rate rows: the same selector feeds the lines, the tooltip and the table
   const rows = useMemo(() => trendRateRows(monthly, mineState === 'ready' ? mine : null), [monthly, mine, mineState]);
   const withMine = mineState === 'ready' && !!mine;
+  const monthWord = basis === 'report_date' ? '신고월' : '답변월';
+  // one set per month: when every month's answered count equals its report count, one line (the answered count
+  // stays in the tooltip and the table) — never two lines of different date axes
+  const sameLine = monthly.every((m) => m.report_count === m.completed_count);
 
   const { hostRef, error } = useEChart((t) => {
     if (monthly.length === 0) return null;
@@ -69,10 +86,10 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
       return { ...common, tooltip: { ...common.tooltip, trigger: 'axis' },
         yAxis: { type: 'value', min: 0, splitLine: { lineStyle: { color: t.grid } }, axisLabel: { color: t.muted } },
         series: [
-          { id: 'count:report:all', name: '신고', type: 'line', data: monthly.map((m) => m.report_count), connectNulls: false, symbolSize: 6,
+          { id: 'count:report:all', name: sameLine ? '신고(모두 답변 확인)' : '신고', type: 'line', data: monthly.map((m) => m.report_count), connectNulls: false, symbolSize: 6,
             lineStyle: { width: 2.5, color: t.brand }, itemStyle: { color: t.brand }, areaStyle: { color: t.brand, opacity: 0.12 } },
-          { id: 'count:completed:all', name: '답변 완료', type: 'line', data: monthly.map((m) => m.completed_count), connectNulls: false, showSymbol: false,
-            lineStyle: { width: 2, color: t.cyan }, itemStyle: { color: t.cyan } },
+          ...(sameLine ? [] : [{ id: 'count:completed:all', name: '답변 확인', type: 'line', data: monthly.map((m) => m.completed_count), connectNulls: false, showSymbol: false,
+            lineStyle: { width: 2, color: t.cyan }, itemStyle: { color: t.cyan } }]),
           ...(mine ? [{ id: 'count:report:mine', name: '내 신고', type: 'line', data: monthly.map((m) => mineByMonth.get(m.month)?.mine_report_count ?? null),
             connectNulls: false, symbol: 'diamond', symbolSize: 7, lineStyle: { width: 2, type: 'dashed', color: t.brand }, itemStyle: { color: t.brand } }] : []),
         ] };
@@ -106,11 +123,12 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
           }
           return out;
         });
-        return [`<b>${months[i]}${monthly[i].partial ? ' (진행 중)' : ''}</b>`, ...lines].join('<br/>');
+        const note = monthNote(monthly[i]);
+        return [`<b>${months[i]}${note ? ` (${note})` : ''}</b>`, ...lines].join('<br/>');
       } },
       yAxis: { type: 'value', min: 0, max: 100, splitLine: { lineStyle: { color: t.grid } }, axisLabel: { color: t.muted, formatter: '{value}%' } },
       series };
-  }, [monthly, mine, view, rates, rows, withMine], theme);
+  }, [monthly, mine, view, rates, rows, withMine, sameLine], theme);
 
   const last = monthly[monthly.length - 1];
   const noRates = view === 'rate' && rates.length === 0;
@@ -127,9 +145,9 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
     <article className="cm-panel chart-card trend-card" aria-label="월별 추이" aria-busy={busy || mineState === 'loading'}>
       <div className="panel-top">
         <div>
-          <h2>월별 추이 <PanelStatus busy={busy} label="월별 자료를 불러오는 중" /></h2>
-          <span className="subtitle">{view === 'count' ? '신고는 신고한 달, 답변은 답변 받은 달에 셉니다'
-            : '답변 받은 달 기준 · 수용·일부수용·불수용은 결과가 나온 신고 중 비율, 과태료는 답변 완료 신고 중 비율'}</span>
+          <h2>{monthWord}별 처리결과 <PanelStatus busy={busy} label="월별 자료를 불러오는 중" /></h2>
+          <span className="subtitle">{view === 'count' ? `${monthWord}마다 그 달에 든 같은 신고의 건수입니다`
+            : `${monthWord} 기준 · 수용·일부수용·불수용은 결과가 나온 신고 중 비율, 과태료는 답변 완료 신고 중 비율`}</span>
         </div>
         <div className="card-tools">
           <div className="mini-segments" role="group" aria-label="월별 추이 보기">
@@ -145,8 +163,8 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
       <div className="chart-legend">
         {view === 'count' ? (
           <>
-            <span><i className="dot" style={{ background: 'var(--brand-ink)' }} />신고</span>
-            <span><i className="dot" style={{ background: 'var(--cyan)' }} />답변 완료</span>
+            <span><i className="dot" style={{ background: 'var(--brand-ink)' }} />{sameLine ? '신고(모두 답변 확인)' : '신고'}</span>
+            {!sameLine && <span><i className="dot" style={{ background: 'var(--cyan)' }} />답변 확인</span>}
             {mine && <span><i className="dash" aria-hidden="true" />내 신고(점선)</span>}
           </>
         ) : (
@@ -156,7 +174,8 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
           </>
         )}
         {mineNote && <span className={`cm-chip${mineState === 'loading' ? ' is-pending' : ''}`} role="status">{mineNote}</span>}
-        {last?.partial && <span className="cm-chip">이번 달은 진행 중</span>}
+        {last?.in_progress && <span className="cm-chip">이번 달은 진행 중</span>}
+        {monthly.some((m) => m.range_partial) && <span className="cm-chip">일부 기간인 달 있음</span>}
         {onMakeStatistics && (
           <button type="button" className="link-btn trend-to-stats" onClick={() => onMakeStatistics(view === 'rate' ? rates : ['accept'])}
             title="지금 조건과 고른 비율로 맞춤 통계를 엽니다">이 조건으로 통계 만들기</button>
@@ -187,7 +206,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
                     <td key={`${k}-all`}>{rateCellText(r.all[k])}</td>,
                     ...(withMine ? [<td key={`${k}-mine`}>{r.mine ? rateCellText(r.mine[k]) : '—'}</td>] : []),
                   ])}
-                  <td>{r.partial ? '진행 중' : ''}</td>
+                  <td>{monthNote(monthly.find((m) => m.month === r.month) ?? { month: r.month })}</td>
                 </tr>
               ))}
             </tbody>
@@ -198,7 +217,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
         <div className="trend-table">
           <table>
             <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>자료가 없는 달은 ‘—’로 표시합니다. 비율은 그 달의 건수로 계산합니다.</caption>
-            <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 완료</th><th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료</th><th scope="col">과태료 금액</th><th scope="col">평균 별점 · 건수</th><th scope="col">답변까지(중앙값)</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
+            <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 확인</th><th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료</th><th scope="col">과태료 금액</th><th scope="col">평균 별점 · 건수</th><th scope="col">답변까지(중앙값)</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
             <tbody>
               {monthly.map((m) => (
                 <tr key={m.month}>
@@ -214,7 +233,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
                   <td>{m.duration && m.duration.count > 0 ? fmtDays(m.duration.median_days) : '—'}</td>
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_report_count ?? null)}</td>}
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_completed_count ?? null)}</td>}
-                  <td>{m.partial ? '진행 중' : m.coverage_note ?? ''}</td>
+                  <td>{monthNote(m)}</td>
                 </tr>
               ))}
             </tbody>
@@ -224,7 +243,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
       {exportCtx && <ExportButton source="trend" blocked={exportBlocked} capture={captureExport} />}
       <p className="chart-caption">{view === 'rate'
         ? '선마다 기준이 다릅니다. 수용·일부수용·불수용은 결과가 나온 신고, 과태료는 답변 완료 신고가 기준입니다. 과태료는 처리 결과와 겹치므로 네 선을 더해도 100%가 되지 않습니다. 답변이 없는 달은 선을 끊었습니다.'
-        : '이번 달은 아직 끝나지 않아 다른 달보다 적게 보일 수 있습니다.'}</p>
+        : `${monthWord}로 모은 신고입니다. 이번 달(오늘 기준)은 아직 끝나지 않았고, 기간의 첫·마지막 달은 일부 날짜만 들어 있을 수 있습니다. 신고가 없는 달은 0, 자료가 없는 달은 비워 둡니다.`}</p>
     </article>
   );
 }

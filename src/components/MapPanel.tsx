@@ -168,12 +168,11 @@ export default function MapPanel(p: Props) {
   const renderMode = renderModeOf(p.metric);
   // points mode only: in regions mode there is no place list, marker or cluster at all
   const shownPoints = useMemo(() => (renderMode === 'points' ? visiblePoints(p.points, p.metric) : []), [p.points, p.metric, renderMode]);
-  const hiddenPoints = p.points.length - shownPoints.length;
-  const hiddenNote = hiddenPoints > 0
-    ? (p.metric === 'reports'
-      ? `이 기간에 신고가 없고 답변만 있는 ${fmtInt(hiddenPoints)}곳은 비율 지표에서 보입니다`
-      : `이 기간에 답변이 없는 ${fmtInt(hiddenPoints)}곳은 ‘신고 수’에서 보입니다`)
-    : null;
+  // U01/D02: every place of the ONE cohort is drawn — nothing is hidden because of its other date (the old
+  // "답변만 있는 곳은 비율 지표에서 보임" note and its branch were removed). D02/MP-03: the place count is the number
+  // of distinct addresses (a compacted node counts its member addresses), never the number of drawn nodes.
+  const placeCount = shownPoints.reduce((n, pt) => n + (pt.aggregate ? pt.point_count ?? 1 : 1), 0);
+  const compactedNodes = shownPoints.some((pt) => pt.aggregate);
 
   useEffect(() => {
     if (!kakaoKey() || !hostRef.current) return;
@@ -366,7 +365,7 @@ export default function MapPanel(p: Props) {
             </div>
             {renderMode === 'points' ? (
               <>
-                <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}{hiddenNote ? ` · ${hiddenNote}` : ''}</p>
+                <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}</p>
                 <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
                   {shownPoints.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
                   {shownPoints.map(pointButton)}
@@ -445,7 +444,7 @@ export default function MapPanel(p: Props) {
       </div>
       {sdkState === 'ready' && renderMode === 'points' && (
         <details className="map-point-alternative">
-          <summary>장소 목록으로 보기 · {fmtInt(shownPoints.length)}곳{hiddenNote ? ` · ${hiddenNote}` : ''}</summary>
+          <summary>장소 목록으로 보기 · 주소 {fmtInt(placeCount)}곳{compactedNodes ? ` (가까운 주소를 묶은 점 포함 ${fmtInt(shownPoints.length)}개)` : ''}</summary>
           <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
             {shownPoints.map(pointButton)}
           </ul>

@@ -25,7 +25,7 @@ const f = (patch: Partial<PrivateFact> = {}): PrivateFact => {
     region_code: '서울 중구', agency_key: 'a1:x', agency_name: '예시 기관', manager_key: 'm1:x', manager_name: '김하늘', ...patch,
   };
 };
-const scope = (start: string, end: string): Scope => ({ start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null });
+const scope = (start: string, end: string): Scope => ({ date_basis: 'completed_date', start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null });
 const opts = { datasetVersion: 'fu', sourceUpdatedAt: null, generatedAt: '2026-09-30T00:00:00Z', asOf: '2026-09-29', sample: false };
 const addDays = (d: string, k: number) => { const x = new Date(`${d}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + k); return x.toISOString().slice(0, 10); };
 
@@ -68,7 +68,8 @@ describe('R1 long periods', () => {
     expect(validateRange('2026-03-02', '2026-03-01', null, null)).toMatch(/늦을 수 없습니다/);
     expect(validateRange('2026-01-01', '2999-01-01', null, null)).toMatch(/오늘 이후/);
     expect(validateRange('2000-01-01', '2026-09-29', '2014-10-01', '2026-09-29')).toBeNull();
-    expect(validateRange('2000-01-01', '2001-01-01', '2014-10-01', '2026-09-29')).toMatch(/자료가 없습니다/);
+    // DT-13/DT-15 (2026-09-29): a valid period without data is a normal 0-report result, not an input error
+    expect(validateRange('2000-01-01', '2001-01-01', '2014-10-01', '2026-09-29')).toBeNull();
   });
   it('전체 기간 = the dataset bounds, and nothing (not a fixed year) while they are unknown', () => {
     expect(presetRange(null, '2014-10-01', '2026-09-28')).toEqual({ start: '2014-10-01', end: '2026-09-28' });

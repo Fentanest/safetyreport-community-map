@@ -1,6 +1,10 @@
-import { useState } from 'react';
-import type { PublicLaw } from '../domain/public';
+import { useEffect, useRef, useState } from 'react';
+import { DATE_BASIS_LABEL, type PublicLaw, type Scope } from '../domain/public';
 import { lawLabel, lawValue } from '../state/filters';
+import { loadLaws } from '../data/client';
+import { useReportActivity } from '../data/queryActivity';
+import { DEFAULT_SORT, sortLabel, type SortSpec } from '../domain/tableSort';
+import SortHeader from './SortHeader';
 import { fmtFineAmount, fmtInt, fmtPercent, fmtWon, fmtRating } from './format';
 
 interface Props {
@@ -10,18 +14,56 @@ interface Props {
   activeLaw: string | null;
   /** explicit scope change: a law value, or null to show every law again */
   onPickLaw: (law: string | null) => void;
+  /** U03: DISPLAYED scope + version; a sort/search reads the full law list from the server (then pages) */
+  scope?: Scope | null;
+  version?: string | null;
+  serverList?: boolean;
 }
 
-/** 위반법규별 현황 (docs/metrics-catalog.md law_results). Answer-date cohort, same scope and denominators as the
+const PAGE_SIZE = 20;
+const isDefault = (s: SortSpec) => s.column === DEFAULT_SORT.column && s.value === DEFAULT_SORT.value && s.dir === DEFAULT_SORT.dir;
+
+/** 위반법규별 현황 (docs/metrics-catalog.md law_results). The scope's single-date cohort, same scope and denominators as the
  *  rest of the dashboard. Rows come from the server in order (answers desc, then law; 법규 미상 last on ties). */
 const SUMMARY_ROWS = 8;
 
 export default function LawTable(p: Props) {
   // summary density by default (4 key columns, 8 rows); 전체 보기 shows every row and column full width
   const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState<{ q: string; sort: SortSpec; page: number }>({ q: '', sort: DEFAULT_SORT, page: 1 });
+  const [input, setInput] = useState('');
+  const composing = useRef(false);
+  const [list, setList] = useState<{ key: string; items: PublicLaw[]; total: number } | null>(null);
+  const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const scopeKey = p.scope ? `${JSON.stringify(p.scope)}|${p.version}` : '';
+  // a new displayed scope starts again from page 1 (the sort choice stays)
+  useEffect(() => { setQuery((q) => ({ ...q, page: 1 })); }, [scopeKey]);
+  useEffect(() => {
+    if (composing.current) return;
+    const t = window.setTimeout(() => { if (input.trim() !== query.q) setQuery((q) => ({ ...q, q: input.trim(), page: 1 })); }, 300);
+    return () => window.clearTimeout(t);
+  }, [input]); // eslint-disable-line react-hooks/exhaustive-deps
+  const server = !!p.serverList && !!p.scope && !!p.version && (expanded || query.q !== '' || !isDefault(query.sort) || query.page > 1);
+  const reqKey = `${scopeKey}|${JSON.stringify(query)}|${expanded}`;
+  useEffect(() => {
+    if (!server || !p.scope || !p.version) { setState('idle'); return; }
+    const ac = new AbortController();
+    setState('loading');
+    loadLaws(p.scope, { q: query.q, sort: query.sort, page: query.page, pageSize: expanded ? PAGE_SIZE : SUMMARY_ROWS }, p.version, ac.signal)
+      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows }); setState('idle'); } })
+      .catch(() => { if (!ac.signal.aborted) setState('error'); });
+    return () => ac.abort();
+  }, [reqKey, server]); // eslint-disable-line react-hooks/exhaustive-deps
+  useReportActivity('laws', state === 'loading' ? { resource: 'entities', phase: 'fetching', label: '위반법규 목록을 불러오는 중' } : null);
   const all = p.laws ?? [];
-  const rows = expanded ? all : all.slice(0, SUMMARY_ROWS);
+  const rows = server ? (list?.items ?? []) : expanded ? all : all.slice(0, SUMMARY_ROWS);
+  const total = server ? list?.total ?? 0 : all.length;
+  const pageSize = expanded ? PAGE_SIZE : SUMMARY_ROWS;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
   const full = expanded;
+  const sortBy = (sort: SortSpec) => setQuery((q) => ({ ...q, sort, page: 1 }));
+  const sortable = !!p.serverList && !!p.scope;
+  const basis = p.scope ? DATE_BASIS_LABEL[p.scope.date_basis] : '';
   return (
     <section className={`cm-panel laws${expanded ? ' expanded' : ''}`} id="laws" aria-label="위반법규별 현황">
       <div className="panel-top">
@@ -30,31 +72,41 @@ export default function LawTable(p: Props) {
           <span className="subtitle">답변에 적힌 위반법규별 처리 결과입니다. 법규를 누르면 그 법규만 봅니다.</span>
         </div>
         {all.length > 0 && (
-          <button className="ghost-btn" type="button" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+          <button className="ghost-btn" type="button" aria-expanded={expanded} onClick={() => { setExpanded((v) => !v); setQuery((q) => ({ ...q, page: 1 })); }}>
             {expanded ? '요약으로 보기' : '전체 보기'}
           </button>
         )}
       </div>
+      {sortable && (
+        <div className="entity-toolbar" role="toolbar" aria-label="위반법규 표 도구">
+          <input type="search" value={input} placeholder="위반법규 검색" aria-label="위반법규 검색"
+            onChange={(e) => setInput(e.target.value)}
+            onCompositionStart={() => { composing.current = true; }}
+            onCompositionEnd={(e) => { composing.current = false; setInput((e.target as HTMLInputElement).value); }} />
+          <span className="cm-muted sort-now" aria-live="polite">정렬 {sortLabel(query.sort)}</span>
+        </div>
+      )}
+      {state === 'error' && <div className="banner error" role="alert"><span className="grow">위반법규 목록을 불러오지 못했습니다. 다른 통계는 그대로입니다.</span></div>}
       {p.laws === null ? (
         <p className="empty-state">위반법규별 통계는 아직 준비되지 않았습니다.</p>
       ) : rows.length === 0 ? (
-        <p className="empty-state">지금 조건에 맞는 답변 완료 신고가 없습니다.</p>
+        <p className="empty-state">{state === 'loading' ? '불러오는 중입니다…' : query.q ? `‘${query.q}’에 맞는 위반법규가 없습니다.` : '지금 조건에 맞는 답변 완료 신고가 없습니다.'}</p>
       ) : (
         <div className="table-scroll">
           <table className="entity-table law-table">
             <caption className="cm-muted" style={{ textAlign: 'left', padding: '0 16px 8px', fontSize: 12 }}>
-              위반법규 {fmtInt(all.length)}개 · 답변 많은 순 · 답변 받은 날 기준{!expanded && all.length > rows.length ? ` · ${fmtInt(rows.length)}개만 표시` : ''}
+              위반법규 {fmtInt(total)}개 · 정렬 {sortLabel(query.sort)}{basis ? ` · ${basis} 기준` : ''}{total > rows.length ? ` · ${fmtInt(rows.length)}개 표시` : ''}
             </caption>
             <thead>
               <tr>
                 <th scope="col">위반법규</th>
-                <th scope="col" className="num">답변 완료</th>
-                <th scope="col" className="num">수용률</th>
-                <th scope="col" className="num">과태료 부과율</th>
-                {full && <th scope="col" className="num" title="답변에 적힌 과태료 금액 합계(금액이 확인되고 공개에 동의한 것만)">답변에 적힌 과태료 금액</th>}
-                {full && <th scope="col" className="num">범칙금</th>}
-                <th scope="col" className="num" title="경고·계도 처분으로 확인된 신고">계도</th>
-                {full && <th scope="col" className="num" title="공개에 동의한 숫자 별점만 집계">평균 별점 · 건수</th>}
+                <SortHeader column="completed" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="답변 완료" />
+                <SortHeader column="accepted" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="수용" title="건수와 수용률(÷ 결과가 나온 신고)" />
+                <SortHeader column="fine" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="과태료" title="건수와 부과율(÷ 답변 완료)" />
+                {full && <SortHeader column="amount" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="답변에 적힌 과태료 금액" title="답변에 적힌 과태료 금액 합계(금액이 확인되고 공개에 동의한 것만)" />}
+                {full && <SortHeader column="penalty" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="범칙금" />}
+                <SortHeader column="warning" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="계도" title="경고·계도 처분 건수와 비율(÷ 답변 완료)" />
+                {full && <SortHeader column="rating" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="평균 별점 · 건수" title="공개에 동의한 숫자 별점만 집계" />}
               </tr>
             </thead>
             <tbody>
@@ -80,12 +132,12 @@ export default function LawTable(p: Props) {
                       {`${fmtInt(r.completed_count)}건`}
                     </td>
                     <td className="num">
-                      {fmtPercent(r.accept_rate)}
+                      {fmtInt(r.outcomes.accepted)}건 · {fmtPercent(r.accept_rate)}
                       <small>일부 {fmtPercent(r.partial_rate)} · 결과 {fmtInt(r.outcomes.result_known)}건</small>
                     </td>
                     <td className="num">
-                      {fmtPercent(r.fine_rate)}
-                      <small>과태료 {fmtInt(r.fine_count)}건</small>
+                      {fmtInt(r.fine_count)}건 · {fmtPercent(r.fine_rate)}
+                      <small>÷ 답변 {fmtInt(r.completed_count)}건</small>
                     </td>
                     {full && (
                       <td className="num">
@@ -96,8 +148,8 @@ export default function LawTable(p: Props) {
                       </td>
                     )}
                     {full && <td className="num">{fmtInt(r.penalty_count)}</td>}
-                    <td className="num">{fmtInt(r.warning_count)}</td>
-                    {full && <td className="num">{fmtRating(r.rating)}</td>}
+                    <td className="num">{fmtInt(r.warning_count)}<small>{fmtPercent(r.completed_count ? (r.warning_count / r.completed_count) * 100 : null)}</small></td>
+                    {full && <td className="num">{fmtRating(r.rating)}<small>{r.rating ? `${fmtInt(r.rating.count)}건` : ''}</small></td>}
                   </tr>
                 );
               })}
@@ -110,6 +162,15 @@ export default function LawTable(p: Props) {
           수용률·일부수용률 = 수용·일부 수용 ÷ 결과가 나온 신고(수용+일부 수용+불수용). 과태료 부과율 = 과태료 ÷ 답변 완료.
           금액은 금액이 확인되고 공개에 동의한 과태료만 더합니다.
         </p>
+      )}
+      {server && pages > 1 && (
+        <div className="table-footer">
+          <span className="table-pager">
+            <span className="cm-muted" aria-live="polite">{query.page} / {pages}쪽{state === 'loading' ? ' · 불러오는 중…' : ''}</span>
+            <button className="ghost-btn" type="button" disabled={query.page <= 1 || state === 'loading'} onClick={() => setQuery((q) => ({ ...q, page: q.page - 1 }))} aria-label="이전 페이지">이전</button>
+            <button className="ghost-btn" type="button" disabled={query.page >= pages || state === 'loading'} onClick={() => setQuery((q) => ({ ...q, page: q.page + 1 }))} aria-label="다음 페이지">다음</button>
+          </span>
+        </div>
       )}
       <div className="table-footer">
         <span>법규 미상: 답변에서 위반법규를 찾지 못했거나, 위반법규를 보내기 전 앱이나 동의로 공유된 신고입니다.</span>

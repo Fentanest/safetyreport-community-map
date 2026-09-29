@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { markPoints } from '../../src/state/pointMarks';
 import * as pointMarks from '../../src/state/pointMarks';
-import { sanitizeInterest, toggleInterest, viewFromSearch } from '../../src/state/view';
+import { hasLayoutParam, sanitizeInterest, toggleInterest } from '../../src/state/view';
 import type { PublicPoint } from '../../src/domain/public';
 import type { MyPoint } from '../../src/domain/personal';
 
@@ -56,9 +56,11 @@ describe('interest regions and view state', () => {
     expect(marks.get('x')!.interest).toBe(true);
     expect(marks.get('y')!.interest).toBe(false);
   });
-  it('reads only known view modes from the URL', () => {
-    expect(viewFromSearch('?view=map')).toBe('map');
-    expect(viewFromSearch('?view=stats')).toBe('stats');
-    expect(viewFromSearch('?view=<script>')).toBe('both');
+  it('LY-02 recognises only the removed layout values of an old URL', () => {
+    // U04 (LY-02): the removed layout values are recognised only to be dropped; anything else is left alone
+    expect(hasLayoutParam('?view=map')).toBe(true);
+    expect(hasLayoutParam('?view=stats&start=2026-01-01')).toBe(true);
+    expect(hasLayoutParam('?view=<script>')).toBe(false);
+    expect(hasLayoutParam('?screen=statistics')).toBe(false);
   });
 });

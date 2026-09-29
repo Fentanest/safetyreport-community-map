@@ -4,7 +4,7 @@ import { PublicApiError } from '../../src/data/client';
 import type { DashboardData, PublicMeta, Scope } from '../../src/domain/public';
 
 /** R04 / P02 / P03 / P04 request policy with a manual clock (no real timers, no network). */
-const base: Scope = { start: '2026-01-01', end: '2026-09-24', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const base: Scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-09-24', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 const bbox = (i: number): Scope => ({ ...base, bbox: [126 + i * 0.01, 37, 127 + i * 0.01, 38] });
 const meta = (version = 'v1'): PublicMeta => ({ schema_version: 2, dataset_version: version, sample: false, source_updated_at: null,
   generated_at: null, published_at: null, data_min: null, data_max: null, coverage_note: '', dedupe_policy_version: 't', capabilities: {} });

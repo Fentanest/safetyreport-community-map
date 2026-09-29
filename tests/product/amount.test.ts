@@ -13,7 +13,7 @@ const fine = (won: number | null, patch: Partial<PrivateFact> = {}): PrivateFact
   agency_key: 'a1', agency_name: '기관1', manager_key: 'm1', manager_name: '담당1',
   amount_kind: 'fine', amount_confirmed_won: won, amount_public: true, amount_stated: won !== null, ...patch,
 });
-const scope: Scope = { start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 const opts = { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-09-27T00:00:00Z', asOf: '2026-12-31', sample: false, dataMin: '2020-01-01' };
 
 describe('classification of one answered fact', () => {

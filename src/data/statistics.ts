@@ -4,9 +4,9 @@
  * my-analytics, where the viewer is the verified JWT user (no user id is ever sent).
  */
 import { z } from 'zod';
-import type { Scope } from '../domain/public';
+import { COHORT_POLICY_VERSION, type Scope } from '../domain/public';
 import type { StatCandidatesPage, StatCatalog, StatisticsResult, StatisticsSpec, StatsFilter } from '../domain/statistics';
-import { PublicApiError, read, sameScope, scopeParams } from './client';
+import { PublicApiError, read, requirePolicy, sameScope, scopeParams } from './client';
 import { readPersonalStatistics as readPersonal } from './personal';
 import { scopeSchema } from './schema';
 
@@ -30,7 +30,10 @@ export const statisticsResultSchema = z.strictObject({
   cells: z.array(z.strictObject({ row: keyList, col: keyList, side: z.enum(['all', 'mine']), values: z.record(z.string(), value) })).max(10000),
   row_totals: z.array(total).max(10000), col_totals: z.array(total).max(10000), grand_totals: z.array(total).max(2),
   population_count: z.strictObject({ all: count.nullable(), mine: count.nullable() }),
-  excluded: z.strictObject({ no_report_date: count }),
+  excluded: z.strictObject({ no_report_date: count,
+    selected_date_missing: z.strictObject({ all: count.nullable(), mine: count.nullable() }).optional() }),
+  date_axes: z.array(z.strictObject({ dimension: z.string(), role: z.enum(['row', 'column']), mode: z.enum(['spine', 'explicit', 'other_date']) })).max(5).optional(),
+  cohort_policy_version: z.literal(COHORT_POLICY_VERSION),
   filter_members: z.array(z.strictObject({ dimension: z.string(), key: z.string(), label: z.string().nullable(), count, status: z.enum(['ok', 'zero', 'unconfirmed']) })).max(400),
   complete: z.literal(true),
 });
@@ -67,7 +70,7 @@ export async function loadStatistics(scope: Scope, spec: StatisticsSpec, version
     const params = scopeParams(scope, version ?? undefined, { spec: JSON.stringify(spec) });
     raw = spec.population === 'all' ? await read('statistics/query', params, signal) : await readPersonal(params, signal);
   }
-  const result = statisticsResultSchema.parse(raw) as StatisticsResult;
+  const result = statisticsResultSchema.parse(requirePolicy(raw)) as StatisticsResult;
   // the answer must be for exactly this request (a late or mismatched answer is never shown as this one)
   if ((version && result.dataset_version !== version) || !sameScope(result.scope, scope) || JSON.stringify(result.spec) !== JSON.stringify(spec)) throw changed();
   return result;

@@ -27,7 +27,7 @@ const fineFact = (law: string | null, won: number | null, patch: Partial<Private
   violation_law: law, disposition: 'fine', amount_kind: 'fine', amount_confirmed_won: won, amount_stated: won !== null, ...patch,
 });
 const L32 = '도로교통법 제32조', L5 = '도로교통법 제5조', L34 = '도로교통법 제34조';
-const scope: Scope = { start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 const opts = { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-09-28T00:00:00Z', asOf: '2026-12-31', sample: false, dataMin: '2020-01-01' };
 
 // 제32조: 5 answers — A2 (fine 40,000 / fine 60,000), P1 (fine, amount NOT published: 90,000 withheld), J1, unknown1 (warning)
@@ -91,7 +91,8 @@ describe('per-law rows (docs/metrics-catalog.md law_results)', () => {
   it('the law filter narrows every indicator; __none__ selects facts without a law', () => {
     const only32 = aggregateDashboard(facts, { ...scope, law: L32 }, opts);
     expect(only32.overview.completed_count.value).toBe(5);
-    expect(only32.overview.report_count.value).toBe(7);  // report-date basis keeps the late answer and the unanswered one
+    // single-date-v1: N and C are the same answer-date set (the old report-date count of 7 was another set)
+    expect(only32.overview.report_count.value).toBe(5);
     expect(only32.laws!.map(r => r.law)).toEqual([L32]);
     expect(only32.agencies[0].completed_count).toBe(5);
     const none = aggregateDashboard(facts, { ...scope, law: LAW_NONE }, opts);

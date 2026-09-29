@@ -1,0 +1,71 @@
+{
+  "fixture_version": "single-date-dashboard-2026-09-29.1/opus-derived-1",
+  "provenance": "The canonical package named fixtures/cohort-oracle.json but the file was not supplied to this session. This file was written by the implementer from the oracle facts stated in ACCEPTANCE_TESTS.md (identities A-E, dates, median 30/41, D shared by two users, sort oracle). Values not stated there (statuses, dispositions, places, agencies, the F/G rows) are chosen by the implementer and marked as such; they do not change any stated fact. Synthetic data only: no real report, account, vehicle or address.",
+  "range": { "start": "2025-07-01", "end": "2025-08-31" },
+  "previous_range": { "start": "2025-04-30", "end": "2025-06-30" },
+  "today_kst": "2025-09-29",
+  "viewers": ["u1", "u2"],
+  "reports": [
+    { "id": "A", "report_date": "2025-07-10", "completed_date": "2025-09-03", "status": "accepted", "disposition": "fine", "contributors": ["u1"], "place": "P1", "agency": "G1", "vehicle": "V1", "stated": true },
+    { "id": "B", "report_date": "2025-05-20", "completed_date": "2025-08-05", "status": "rejected", "disposition": "none", "contributors": ["u3"], "place": "P2", "agency": "G2", "vehicle": "V1", "stated": true },
+    { "id": "C", "report_date": "2025-08-15", "completed_date": "2025-08-20", "status": "partial", "disposition": "warning", "contributors": ["u2"], "place": "P1", "agency": "G1", "vehicle": "V2", "stated": true },
+    { "id": "D", "report_date": null, "completed_date": "2025-08-20", "status": "accepted", "disposition": "fine", "contributors": ["u1", "u2"], "place": "P3", "agency": "G1", "vehicle": "V1", "stated": true },
+    { "id": "E", "report_date": "2025-08-25", "completed_date": null, "status": "accepted", "disposition": "warning", "contributors": ["u1"], "place": "P3", "agency": "G1", "vehicle": "V1", "stated": true, "note": "officially completed; the answer date is missing" },
+    { "id": "G", "report_date": "2025-06-01", "completed_date": "2025-06-10", "status": "accepted", "disposition": "fine", "contributors": ["u3"], "place": "P2", "agency": "G2", "vehicle": "V3", "stated": false, "note": "implementer-chosen previous-window report (AG-03)" }
+  ],
+  "representative_oracle": {
+    "note": "D13/AG-01/AG-02 (implementer-chosen dates matching the prompt's example): one identity F reported in May; an older answer in August (u3's copy) and the latest answer in September (u4's copy, answered later).",
+    "rows": [
+      { "identity": "F", "contributor": "u3", "report_date": "2025-05-12", "completed_date": "2025-08-10", "answer_accepted_at": "2025-08-11T00:00:00Z", "status": "rejected" },
+      { "identity": "F", "contributor": "u4", "report_date": "2025-05-12", "completed_date": "2025-09-12", "answer_accepted_at": "2025-09-13T00:00:00Z", "status": "accepted" }
+    ],
+    "expected": {
+      "completed_date 2025-08-01..2025-08-31": { "includes_F": false },
+      "report_date 2025-05-01..2025-05-31": { "includes_F": true, "status": "accepted", "completed_date": "2025-09-12" }
+    }
+  },
+  "expected": {
+    "report_date": {
+      "identities": ["A", "C", "E"],
+      "N": 3, "C": 3, "K": 3, "accepted": 2, "partial": 1, "rejected": 0, "F": 1, "W": 2,
+      "accept_rate": [2, 3], "partial_rate": [1, 3], "reject_rate": [0, 3], "fine_rate": [1, 3], "warning_rate": [2, 3],
+      "duration_days": [5, 55], "duration_median": 30, "duration_excluded": { "no_answer_date": 1, "no_report_date": 0 },
+      "participants": 2, "places": 2,
+      "mine": { "u1": ["A", "E"], "u2": ["C"] },
+      "monthly": { "2025-07": ["A"], "2025-08": ["C", "E"] },
+      "previous": { "identities": ["B", "G"] },
+      "selected_date_missing": 1,
+      "vehicle_repeat_days": { "V1": 2 }
+    },
+    "completed_date": {
+      "identities": ["B", "C", "D"],
+      "N": 3, "C": 3, "K": 3, "accepted": 1, "partial": 1, "rejected": 1, "F": 1, "W": 1,
+      "accept_rate": [1, 3], "partial_rate": [1, 3], "reject_rate": [1, 3], "fine_rate": [1, 3], "warning_rate": [1, 3],
+      "duration_days": [5, 77], "duration_median": 41, "duration_excluded": { "no_answer_date": 0, "no_report_date": 1 },
+      "participants": 3, "places": 3,
+      "all_D_count": 1, "D_participants": 2,
+      "mine": { "u1": ["D"], "u2": ["C", "D"] },
+      "monthly": { "2025-07": [], "2025-08": ["B", "C", "D"] },
+      "previous": { "identities": ["G"] },
+      "selected_date_missing": 1,
+      "vehicle_repeat_days": { "V1": 1 }
+    }
+  },
+  "sort_oracle": {
+    "rows": [
+      { "key": "agency-A", "name": "기관 A", "completed_count": 100, "fine_count": 20 },
+      { "key": "agency-B", "name": "기관 B", "completed_count": 5, "fine_count": 5 },
+      { "key": "agency-third", "name": "기관 C", "completed_count": 3, "fine_count": 1 },
+      { "key": "agency-fourth", "name": "기관 D", "completed_count": 10000, "fine_count": 3333 },
+      { "key": "agency-null", "name": "기관 E", "completed_count": 7, "fine_count": null },
+      { "key": "agency-zero", "name": "기관 F", "completed_count": 0, "fine_count": 0 }
+    ],
+    "expected": {
+      "fine count desc": ["agency-fourth", "agency-A", "agency-B", "agency-third", "agency-zero", "agency-null"],
+      "fine count asc": ["agency-zero", "agency-third", "agency-B", "agency-A", "agency-fourth", "agency-null"],
+      "fine rate desc": ["agency-B", "agency-third", "agency-fourth", "agency-A", "agency-null", "agency-zero"],
+      "fine rate asc": ["agency-A", "agency-fourth", "agency-third", "agency-B", "agency-null", "agency-zero"]
+    },
+    "note": "1/3 (agency-third) and 3333/10000 (agency-fourth) both display 33.3% and are ordered by the exact value. agency-null (count unknown) and agency-zero (denominator 0 for the rate) are last in both directions; agency-zero's count 0 is a real value. Among the rate-null rows the name decides (기관 E before 기관 F)."
+  }
+}

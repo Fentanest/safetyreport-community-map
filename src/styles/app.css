@@ -290,8 +290,6 @@ body.briefing .briefing-bar { display: flex; }
   .map-back { max-width: calc(100vw - 220px); }
   /* compare toggle + view switch take their own full-width rows under the command bar. */
   .command .view-controls { order: 90; flex-basis: 100%; flex-direction: column; align-items: stretch; border-top: 1px solid var(--border); padding-top: 10px; }
-  .command .view-switch { width: 100%; display: flex; }
-  .command .view-switch button { flex: 1; min-height: 44px; padding: 10px 4px; white-space: nowrap; }
   /* tall card headers stack instead of squeezing on narrow screens. */
   .map-card .panel-top, .region-list .panel-top, .entities .panel-top, .laws .panel-top, .manager-compare .panel-top { flex-direction: column; align-items: stretch; gap: 8px; }
   .laws .panel-top .cm-chip { align-self: flex-start; }
@@ -463,7 +461,6 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 .compare-toggle input[type="checkbox"]:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
 .compare-toggle.disabled { opacity: 0.75; cursor: not-allowed; }
 .compare-disabled-note { font-size: 12px; color: var(--muted); font-weight: 400; max-width: 260px; }
-.view-switch button { min-height: 44px; }
 
 /* account menu. */
 .account-menu { position: relative; }

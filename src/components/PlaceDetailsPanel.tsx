@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { PlaceDetail, PublicEntity, PublicPoint } from '../domain/public';
 import type { PointMark } from '../state/pointMarks';
-import { acceptRate, fmtInt, fmtPercent } from './format';
+import { fmtInt, fmtPercent } from './format';
 import { duplicateNames, entityLabel } from './entityMetrics';
 import EntityMetricRow from './EntityMetricRow';
 import PanelStatus from './PanelStatus';
@@ -76,7 +76,6 @@ export default function PlaceDetailsPanel(p: Props) {
       p.toast('복사에 실패했습니다. 직접 선택해 복사해 주세요.');
     }
   };
-  const warning = pt.warning_count;
   const rows = [
     { label: '수용', v: o?.accepted ?? 0, color: 'var(--accepted)' },
     { label: '일부 수용', v: o?.partial ?? 0, color: 'var(--partial)' },
@@ -111,18 +110,6 @@ export default function PlaceDetailsPanel(p: Props) {
       {p.mark?.mine && (
         <p className="mine-note" role="note">이 주소에 내 신고 {fmtInt(p.mark.mineCount)}건 · {p.mark.shared ? '다른 사람과 함께 신고한 곳' : '나만 신고한 곳'}</p>
       )}
-
-      <section className="place-summary" aria-label="요약">
-        <div><small>신고</small><b className="cm-number">{fmtInt(pt.report_count)}</b><span>건 · 신고한 날</span></div>
-        <div title="경고·계도 처분으로 확인된 신고 (답변 받은 날 기준)">
-          <small>계도</small>
-          <b className="cm-number">{warning === undefined ? '—' : fmtInt(warning)}</b>
-          <span>{warning === undefined ? '제공 안 됨' : '건 · 경고·계도 처분'}</span>
-        </div>
-        <div><small>과태료</small><b className="cm-number">{fmtInt(pt.fine_count)}</b><span>건 · 답변 받은 날</span></div>
-        <div><small>수용률</small><b className="cm-number">{fmtPercent(acceptRate(o))}</b><span>{fmtInt(o?.accepted ?? null)}/{fmtInt(known)}건</span></div>
-        <div><small>불수용률</small><b className="cm-number">{fmtPercent(pct(o?.rejected ?? 0, known))}</b><span>{fmtInt(o?.rejected ?? null)}/{fmtInt(known)}건</span></div>
-      </section>
 
       <section className="place-section" aria-label="처리 결과">
         <h3>처리 결과 <small>답변 {fmtInt(pt.completed_count)}건 중 결과가 나온 {fmtInt(known)}건</small></h3>
@@ -169,7 +156,7 @@ export default function PlaceDetailsPanel(p: Props) {
         </>
       )}
       <p className="place-note">
-        신고는 신고한 날, 처리 결과·계도·과태료는 답변 받은 날 기준입니다. 같은 주소의 신고를 하나로 묶었고, 지도 위치는 표시용 대표 위치입니다.
+        이 주소의 모든 수치(위 ‘주요 통계’ 포함)는 적용한 날짜 기준 하나로 고른 같은 신고 묶음에서 셉니다. 같은 주소의 신고를 하나로 묶었고, 지도 위치는 표시용 대표 위치입니다.
         이름·기관은 처리 결과 비교용이며 평가가 아닙니다.
       </p>
     </aside>

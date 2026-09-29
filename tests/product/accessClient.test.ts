@@ -19,7 +19,7 @@ const refusal = (status: number, code: string) =>
 beforeEach(() => { vi.stubEnv('VITE_PUBLIC_ANALYTICS_URL', 'https://p.supabase.co/functions/v1'); });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetModules(); });
 
-const scope = { start: '2026-01-01', end: '2026-01-31', category: 'all' as const, region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-01-31', category: 'all' as const, region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 
 describe('statistics client while the map is contributor-only', () => {
   it('sends the signed-in token to the analytics URL only, without cookies', async () => {

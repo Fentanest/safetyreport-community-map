@@ -9,7 +9,7 @@ import { cartesianModel, effectiveHidden, shareOf } from '../../src/state/statsC
 const catalog = statisticsCatalog();
 const base = { origin: 'https://example.github.io', pathname: '/safetyreport-community-map/' };
 const recipe = (patch: Partial<StatsRecipe['spec']> = {}, scope: Partial<StatsRecipe['scope']> = {}): StatsRecipe => ({
-  scope: { start: '2026-01-01', end: '2026-06-30', category: 'traffic', region_code: '11', agency_key: null, manager_key: null, bbox: null, law: null, ...scope },
+  scope: { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'traffic', region_code: '11', agency_key: null, manager_key: null, bbox: null, law: null, ...scope },
   spec: baseSpec({ rows: ['agency', 'completed_month'], columns: ['law'], metrics: ['fine_rate', 'completed_count'], filters: [{ dimension: 'agency', members: ['ag:서울 "강남"경찰서', 'ag:부산'] }], ...patch }),
   labels: { 'ag:부산': '부산경찰서 이름은 링크에 없음' }, origin: 'test',
 });

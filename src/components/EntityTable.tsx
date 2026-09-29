@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useReportActivity } from '../data/queryActivity';
 import type { PublicEntity, Scope } from '../domain/public';
 import type { CompareEntityRow } from '../domain/personal';
-import { loadEntities, type AgencyTypeFilter, type EntitySortKey, type SortDir } from '../data/client';
+import { loadEntities, type AgencyTypeFilter } from '../data/client';
+import { DEFAULT_SORT, sortLabel as sortText, type SortSpec, type SortValue } from '../domain/tableSort';
+import SortHeader from './SortHeader';
 import type { EntityTab } from '../state/filters';
 import { acceptRate, fmtDays, fmtInt, fmtPercent, fmtPp, fmtWon, fmtRating } from './format';
 
@@ -30,42 +32,44 @@ interface Col {
   id: string;
   label: string;
   title?: string;
-  sort?: EntitySortKey;
+  /** U03: the registry column this header sorts (values: the ones this cell shows; default = registry's) */
+  sort?: { column: string; values?: SortValue[] };
   num: boolean;
   defaultOn: boolean;
   mineOnly?: boolean;
   cell: (e: PublicEntity, ctx: Ctx) => ReactNode;
 }
 
-const share = (a: number, d: number) => fmtPercent(d > 0 ? (a / d) * 100 : null);
+const share = (a: number | null | undefined, d: number) => fmtPercent(a != null && d > 0 ? (a / d) * 100 : null);
 
 /** Single source of truth for header, cells, colSpan, sorting and the column picker (R09). */
 export const ENTITY_COLUMNS: Col[] = [
   // R6: every count is rendered the same way (unit in the header); a value of 1 gets no special badge
-  { id: 'completed', label: '답변(건)', sort: 'completed', num: true, defaultOn: true,
+  { id: 'completed', label: '답변(건)', sort: { column: 'completed' }, num: true, defaultOn: true,
     cell: (e) => fmtInt(e.completed_count) },
-  { id: 'acceptRate', label: '수용률', sort: 'acceptRate', num: true, defaultOn: true, title: '수용 ÷ 결과가 나온 신고',
+  { id: 'acceptRate', label: '수용률', sort: { column: 'accepted', values: ['rate'] }, num: true, defaultOn: true, title: '수용 ÷ 결과가 나온 신고',
     cell: (e) => fmtPercent(acceptRate(e.outcomes)) },
-  { id: 'rejectRate', label: '불수용률', num: true, defaultOn: true, title: '불수용 ÷ 결과가 나온 신고',
+  { id: 'rejectRate', label: '불수용률', sort: { column: 'rejected', values: ['rate'] }, num: true, defaultOn: true, title: '불수용 ÷ 결과가 나온 신고',
     cell: (e) => share(e.outcomes.rejected, e.outcomes.result_known) },
-  { id: 'fine', label: '과태료', sort: 'fine', num: true, defaultOn: true,
-    cell: (e) => <>{e.fine_count == null ? '—' : fmtInt(e.fine_count)}<small>{share(e.fine_count ?? 0, e.completed_count)}</small></> },
-  { id: 'duration', label: '답변까지', num: true, defaultOn: true, title: '신고한 날부터 답변 받은 날까지, 중앙값',
+  // SO-10: an unreported count is '—' with no rate (never 0 / 0%)
+  { id: 'fine', label: '과태료', sort: { column: 'fine' }, num: true, defaultOn: true, title: '건수와 비율(과태료 ÷ 답변)',
+    cell: (e) => <>{e.fine_count == null ? '—' : fmtInt(e.fine_count)}<small>{share(e.fine_count, e.completed_count)}</small></> },
+  { id: 'duration', label: '답변까지', sort: { column: 'duration' }, num: true, defaultOn: true, title: '신고한 날부터 답변 받은 날까지, 중앙값',
     cell: (e) => (e.duration && e.duration.count > 0 ? fmtDays(e.duration.median_days) : '—') },
-  { id: 'accepted', label: '수용', sort: 'accepted', num: true, defaultOn: false,
+  { id: 'accepted', label: '수용', sort: { column: 'accepted' }, num: true, defaultOn: false,
     cell: (e) => <>{fmtInt(e.outcomes.accepted)}<small>{share(e.outcomes.accepted, e.outcomes.result_known)}</small></> },
-  { id: 'partial', label: '일부 수용', sort: 'partial', num: true, defaultOn: false,
+  { id: 'partial', label: '일부 수용', sort: { column: 'partial' }, num: true, defaultOn: false,
     cell: (e) => <>{fmtInt(e.outcomes.partial)}<small>{share(e.outcomes.partial, e.outcomes.result_known)}</small></> },
-  { id: 'rejected', label: '불수용', sort: 'rejected', num: true, defaultOn: false,
+  { id: 'rejected', label: '불수용', sort: { column: 'rejected' }, num: true, defaultOn: false,
     cell: (e) => <>{fmtInt(e.outcomes.rejected)}<small>{share(e.outcomes.rejected, e.outcomes.result_known)}</small></> },
   { id: 'known', label: '결과 확인', num: true, defaultOn: false, title: '결과가 나온 신고(비율을 계산하는 기준)',
     cell: (e) => fmtInt(e.outcomes.result_known) },
-  { id: 'warning', label: '계도', num: true, defaultOn: false, title: '경고·계도 처분으로 확인된 신고',
-    cell: (e) => (e.warning_count == null ? '—' : fmtInt(e.warning_count)) },
-  { id: 'amount', label: '과태료 금액', num: true, defaultOn: false, title: '답변에 적힌 과태료 금액 합계(확인된 것만)',
+  { id: 'warning', label: '계도', sort: { column: 'warning' }, num: true, defaultOn: false, title: '경고·계도 처분 건수와 비율(÷ 답변)',
+    cell: (e) => <>{e.warning_count == null ? '—' : fmtInt(e.warning_count)}<small>{share(e.warning_count, e.completed_count)}</small></> },
+  { id: 'amount', label: '과태료 금액', sort: { column: 'amount' }, num: true, defaultOn: false, title: '답변에 적힌 과태료 금액 합계(확인된 것만)',
     cell: (e) => (e.fine_amount && e.fine_amount.confirmed_count > 0 ? fmtWon(e.fine_amount.sum_won) : '—') },
-  { id: 'rating', label: '평균 별점', num: true, defaultOn: false, title: '공개에 동의한 숫자 별점만',
-    cell: (e) => fmtRating(e.rating) },
+  { id: 'rating', label: '평균 별점', sort: { column: 'rating' }, num: true, defaultOn: false, title: '공개에 동의한 숫자 별점만 (평균 점수 · 평가 건수)',
+    cell: (e) => <>{fmtRating(e.rating)}<small>{e.rating ? `${fmtInt(e.rating.count)}건` : ''}</small></> },
   { id: 'bar', label: '결과 비율', num: false, defaultOn: false,
     cell: (e) => {
       const d = e.outcomes.result_known;
@@ -96,8 +100,9 @@ function readCols(): Set<string> {
   return new Set(ENTITY_COLUMNS.filter((c) => c.defaultOn).map((c) => c.id));
 }
 
-interface Query { q: string; sort: EntitySortKey; dir: SortDir; type: AgencyTypeFilter; page: number }
-const DEFAULT_QUERY: Query = { q: '', sort: 'completed', dir: 'desc', type: 'all', page: 1 };
+interface Query { q: string; sort: SortSpec; type: AgencyTypeFilter; page: number }
+const DEFAULT_QUERY: Query = { q: '', sort: DEFAULT_SORT, type: 'all', page: 1 };
+const isDefaultSort = (s: SortSpec) => s.column === DEFAULT_SORT.column && s.value === DEFAULT_SORT.value && s.dir === DEFAULT_SORT.dir;
 
 export default function EntityTable(p: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -122,7 +127,8 @@ export default function EntityTable(p: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input]);
 
-  const custom = query.q !== '' || query.sort !== 'completed' || query.dir !== 'desc' || query.type !== 'all' || query.page !== 1;
+  // any non-default sort reads the FULL server list (filter → sort → page), never the dashboard's first rows
+  const custom = query.q !== '' || !isDefaultSort(query.sort) || query.type !== 'all' || query.page !== 1;
   const needServer = p.serverList && (custom || expanded);
   const pageSize = expanded ? PAGE_SIZE : SUMMARY_ROWS;
   const scopeKey = JSON.stringify(p.scope);
@@ -131,7 +137,7 @@ export default function EntityTable(p: Props) {
     const ac = new AbortController();
     setLoading(true);
     setError(null);
-    loadEntities(p.scope, { kind: p.tab, q: query.q, sort: query.sort, dir: query.dir, agencyType: query.type, page: query.page, pageSize },
+    loadEntities(p.scope, { kind: p.tab, q: query.q, sort: query.sort, agencyType: query.type, page: query.page, pageSize },
       p.version, ac.signal)
       .then((r) => { if (!ac.signal.aborted) { setList({ items: r.items, total: r.totalRows }); setLoading(false); } })
       .catch((e: unknown) => {
@@ -167,11 +173,8 @@ export default function EntityTable(p: Props) {
     try { window.localStorage.setItem(COLS_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
     return next;
   });
-  const sortBy = (key: EntitySortKey) => update(query.sort === key ? { dir: query.dir === 'desc' ? 'asc' : 'desc' } : { sort: key, dir: 'desc' });
-  const ariaSort = (c: Col): 'ascending' | 'descending' | 'none' | undefined =>
-    !c.sort ? undefined : c.sort !== query.sort ? 'none' : query.dir === 'asc' ? 'ascending' : 'descending';
+  const sortBy = (sort: SortSpec) => update({ sort });
   const unit = p.tab === 'agency' ? '곳' : '명';
-  const sortLabel = ENTITY_COLUMNS.find((c) => c.sort === query.sort)?.label ?? '답변';
 
   return (
     <section className={`cm-panel entities${expanded ? ' expanded' : ''}`} id="entities" aria-label="기관·담당자별 처리 결과">
@@ -230,7 +233,7 @@ export default function EntityTable(p: Props) {
       <div className="table-scroll">
         <table className="entity-table">
           <caption className="cm-muted table-caption">
-            {p.tab === 'agency' ? '기관' : '담당자'} {fmtInt(total)}{unit} · {sortLabel} {query.dir === 'desc' ? '많은' : '적은'} 순
+            {p.tab === 'agency' ? '기관' : '담당자'} {fmtInt(total)}{unit} · 정렬 {sortText(query.sort)}
             {!needServer && summaryRows.length > rows.length ? ` · ${fmtInt(rows.length)}${unit}만 표시` : ''}
             {query.type !== 'all' ? ` · ${query.type === 'police' ? '경찰' : '비경찰(확인된 기관만)'}` : ''}
           </caption>
@@ -238,13 +241,9 @@ export default function EntityTable(p: Props) {
             <tr>
               <th scope="col">{p.tab === 'agency' ? '기관' : '담당자 · 소속 기관'}</th>
               {visibleCols.map((c) => (
-                <th key={c.id} scope="col" className={`${c.num ? 'num' : ''}${c.sort && p.serverList ? ' sortable' : ''}${c.mineOnly ? ' mine-col' : ''}`}
-                  aria-sort={p.serverList ? ariaSort(c) : undefined} title={c.title}
-                  tabIndex={c.sort && p.serverList ? 0 : undefined}
-                  onClick={c.sort && p.serverList ? () => sortBy(c.sort!) : undefined}
-                  onKeyDown={c.sort && p.serverList ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(c.sort!); } } : undefined}>
-                  {c.label}{c.sort && query.sort === c.sort ? (query.dir === 'desc' ? ' ▼' : ' ▲') : ''}
-                </th>
+                <SortHeader key={c.id} column={c.sort?.column ?? ''} values={c.sort?.values} current={query.sort} onSort={sortBy}
+                  enabled={!!c.sort && p.serverList} label={c.label} title={c.title}
+                  className={`${c.num ? 'num' : ''}${c.mineOnly ? ' mine-col' : ''}`} />
               ))}
             </tr>
           </thead>

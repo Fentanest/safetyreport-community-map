@@ -8,13 +8,14 @@
  * derived metrics (distinct vehicles) and never become a dimension or a member label.
  */
 import type { Scope } from '../src/domain/public.ts';
-import { LAW_NONE, lawKey } from '../src/domain/public.ts';
+import { COHORT_POLICY_VERSION, LAW_NONE, lawKey } from '../src/domain/public.ts';
 import {
   STAT_LIMITS, type DimensionDef, type MetricDef, type StatCandidate, type StatCandidatesPage, type StatCatalog,
   type StatCell, type StatisticsResult, type StatisticsSpec, type StatTotal, type StatValue, type StatsFilter,
 } from '../src/domain/statistics.ts';
 import {
-  answered, inDateRange, kstDate, outcomes, ownRepresentatives, regionKeys, representatives, scopeFacts, type PrivateFact,
+  cohortDateOf, inDateRange, isCompleted, kstDate, monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, scopeFacts,
+  type PrivateFact,
 } from './aggregate.ts';
 import { durationOf, median, nearestRank } from './duration.ts';
 import { classifyAmount } from './amount.ts';
@@ -227,20 +228,44 @@ export function parseSpec(raw: string | null): StatisticsSpec {
 }
 
 // ── aggregation ──────────────────────────────────────────────────────────────────────────────────────────
-/** answered facts of the period on the chosen date basis, after the scope and the (place) conditions */
-function population(base: readonly PrivateFact[], scope: Scope, spec: Pick<StatisticsSpec, 'date_basis' | 'place_key'>) {
-  let noReportDate = 0;
+/**
+ * The cohort of the period on the ONE date basis (single-date-v1, same rule as the dashboard): the identity
+ * representative's selected date decides, the other date never filters; completed status only (an officially
+ * completed report without an answer date stays in a report-date cohort). `dateOf` comes from the whole input.
+ */
+function population(base: readonly PrivateFact[], scope: Scope, spec: Pick<StatisticsSpec, 'date_basis' | 'place_key'>,
+  dateOf: (f: PrivateFact) => string | null) {
+  let missing = 0;
+  const other = spec.date_basis === 'report_date' ? 'completed_date' : 'report_date';
   const out: PrivateFact[] = [];
   for (const f of base) {
-    if (!answered(f)) continue;
+    if (!isCompleted(f)) continue;
     if (spec.place_key && placeKey(f) !== spec.place_key) continue;
-    if (spec.date_basis === 'completed_date') {
-      if (inDateRange(f.completed_date, scope.start, scope.end)) out.push(f);
-    } else if (kstDate(f.report_date) === null) {
-      if (inDateRange(f.completed_date, scope.start, scope.end)) noReportDate++;
-    } else if (inDateRange(f.report_date, scope.start, scope.end)) out.push(f);
+    const day = dateOf(f);
+    if (day === null) { if (inDateRange(f[other], scope.start, scope.end)) missing++; continue; }
+    if (day >= scope.start && day <= scope.end) out.push(f);
   }
-  return { facts: out, noReportDate };
+  return { facts: out, noReportDate: missing };
+}
+
+const TIME_UNITS = ['year', 'quarter', 'month', 'day'] as const;
+/** every calendar unit of [start, end] for a date dimension of the SELECTED basis (D17) */
+function spineMembers(dimId: string, start: string, end: string): Array<{ key: string; label: string }> | null {
+  const unit = TIME_UNITS.find((u) => dimId.endsWith(`_${u}`));
+  if (!unit) return null;
+  const dim = DIM.get(dimId)!;
+  const probe = (day: string) => dim.member({ report_date: day, completed_date: day } as PrivateFact, 'completed_date')!;
+  const out = new Map<string, { key: string; label: string }>();
+  if (unit === 'day') {
+    for (let t = Date.parse(`${start}T00:00:00Z`), last = Date.parse(`${end}T00:00:00Z`); t <= last; t += 86400000) {
+      const m = probe(new Date(t).toISOString().slice(0, 10));
+      out.set(m.key, m);
+      if (out.size > STAT_LIMITS.cells) break;
+    }
+  } else {
+    for (const month of monthKeys(start, end)) { const m = probe(`${month}-01`); out.set(m.key, m); }
+  }
+  return [...out.values()];
 }
 
 const matches = (f: PrivateFact, filters: readonly StatsFilter[], basis: StatisticsSpec['date_basis'], skip?: string) =>
@@ -253,22 +278,34 @@ export interface StatsInput {
   datasetVersion: string;
   /** JWT-verified viewer id — required for mine/compare; never taken from the request */
   viewerId?: string | null;
+  /** data window of the selected basis: spine units outside it are no_data, never 0 */
+  dataWindow?: { min: string | null; max: string | null };
 }
 
 export function sides(input: StatsInput) {
-  const { facts, scope, spec } = input;
+  const { facts, spec } = input;
+  if (input.scope.date_basis !== undefined && input.scope.date_basis !== spec.date_basis) {
+    // EX-08: one basis per request; the handler unifies scope and spec or refuses the request before this point
+    throw new StatsQueryError('INVALID_QUERY', 'date basis conflict');
+  }
+  const scope = { ...input.scope, date_basis: spec.date_basis };
   const wantAll = spec.population !== 'mine', wantMine = spec.population !== 'all';
   if (wantMine && !input.viewerId) throw new StatsQueryError('INVALID_QUERY', 'viewer required');
-  const all = wantAll ? population(scopeFacts(representatives(facts), scope), scope, spec) : null;
+  const dateOf = cohortDateOf(facts, spec.date_basis);
+  const all = wantAll ? population(scopeFacts(representatives(facts), scope), scope, spec, dateOf) : null;
   const mine = wantMine
-    ? population(ownRepresentatives(scopeFacts(facts, scope).filter((f) => f.contributor_id === input.viewerId)), scope, spec) : null;
-  return { all, mine };
+    ? population(ownRepresentatives(scopeFacts(facts, scope).filter((f) => f.contributor_id === input.viewerId)), scope, spec, dateOf) : null;
+  return { all, mine, dateOf };
 }
 
 export function aggregateStatistics(input: StatsInput): StatisticsResult {
-  const { scope, spec } = input;
-  const { all, mine } = sides(input);
+  const { spec } = input;
+  const scope = { ...input.scope, date_basis: spec.date_basis };
+  const { all, mine, dateOf } = sides(input);
   const basis = spec.date_basis;
+  const basisPrefix = basis === 'report_date' ? 'report_' : 'completed_';
+  const dateAxes: NonNullable<StatisticsResult['date_axes']> = [];
+  const noData = new Set<string>();
   const filtered = { all: all?.facts.filter((f) => matches(f, spec.filters, basis)) ?? null, mine: mine?.facts.filter((f) => matches(f, spec.filters, basis)) ?? null };
   const rowDims = spec.rows.map((id) => DIM.get(id)!), colDims = spec.columns.map((id) => DIM.get(id)!);
   const tuple = (f: PrivateFact, dims: DimImpl[]) => dims.map((d) => d.member(f, basis) ?? { key: NONE, label: '미상' });
@@ -295,6 +332,28 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
       }
       return 0;
     };
+    // D17: a single date axis of the SELECTED basis lists every calendar unit of the period (a gap is shown as
+    // 0 / null / no_data, never skipped). A date filter on that axis keeps only the picked members (explicit).
+    if (dims.length === 1 && dims[0].order === 'date') {
+      const d = dims[0];
+      const role = dims === rowDims ? 'row' as const : 'column' as const;
+      if (!d.id.startsWith(basisPrefix)) dateAxes.push({ dimension: d.id, role, mode: 'other_date' });
+      else if (spec.filters.some((f) => f.dimension === d.id)) dateAxes.push({ dimension: d.id, role, mode: 'explicit' });
+      else {
+        const spine = spineMembers(d.id, scope.start, scope.end);
+        if (spine) {
+          dateAxes.push({ dimension: d.id, role, mode: 'spine' });
+          for (const m of spine) {
+            const k = JSON.stringify([m.key]);
+            if (!map.has(k)) map.set(k, { key: [m.key], label: [m.label], n: 0 });
+            // a unit entirely outside the data window of the basis cannot be a real 0 (keys of one unit sort in time order)
+            const w = input.dataWindow;
+            const unitKey = (day: string) => d.member({ report_date: day, completed_date: day } as PrivateFact, basis)!.key;
+            if (w && ((w.max !== null && m.key > unitKey(w.max)) || (w.min !== null && m.key < unitKey(w.min)))) noData.add(`${role}:${m.key}`);
+          }
+        }
+      }
+    }
     return [...map.values()].sort(order);
   };
   const rowMembers = spec.rows.length ? collect(rowDims) : [{ key: [], label: [], n: 0 }];
@@ -319,12 +378,31 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
       (byRow.get(r) ?? byRow.set(r, []).get(r)!).push(f);
       (byCol.get(c) ?? byCol.set(c, []).get(c)!).push(f);
     }
+    const spineRow = dateAxes.some((a) => a.role === 'row' && a.mode === 'spine');
+    const spineCol = dateAxes.some((a) => a.role === 'column' && a.mode === 'spine');
+    const emptyValues = (reason: 'no_data' | null) => reason === 'no_data'
+      ? Object.fromEntries(spec.metrics.map((id) => [id, { value: null, numerator: null, denominator: null, reason: 'no_data' as const }])) as Record<string, StatValue>
+      : compute([]);
+    const gap = (rm: { key: string[] }, cm: { key: string[] }) =>
+      (spineRow && noData.has(`row:${rm.key[0]}`)) || (spineCol && noData.has(`column:${cm.key[0]}`)) ? 'no_data' as const : null;
     for (const rm of rowMembers) for (const cm of colMembers) {
       const g = groups.get(`${JSON.stringify(rm.key)}\u0000${JSON.stringify(cm.key)}`);
       if (g) cells.push({ row: rm.key, col: cm.key, side, values: compute(g) });
+      // a spine unit without reports: count 0 and rate null (zero denominator), or no_data outside the data window
+      else if ((spineRow && rm.key.length === 1 && !byRow.has(JSON.stringify(rm.key))) || (spineCol && cm.key.length === 1 && !byCol.has(JSON.stringify(cm.key)))) {
+        cells.push({ row: rm.key, col: cm.key, side, values: emptyValues(gap(rm, cm)) });
+      }
     }
-    if (spec.rows.length) for (const rm of rowMembers) { const g = byRow.get(JSON.stringify(rm.key)); if (g) rowTotals.push({ key: rm.key, side, values: compute(g) }); }
-    if (spec.columns.length) for (const cm of colMembers) { const g = byCol.get(JSON.stringify(cm.key)); if (g) colTotals.push({ key: cm.key, side, values: compute(g) }); }
+    if (spec.rows.length) for (const rm of rowMembers) {
+      const g = byRow.get(JSON.stringify(rm.key));
+      if (g) rowTotals.push({ key: rm.key, side, values: compute(g) });
+      else if (spineRow) rowTotals.push({ key: rm.key, side, values: emptyValues(noData.has(`row:${rm.key[0]}`) ? 'no_data' : null) });
+    }
+    if (spec.columns.length) for (const cm of colMembers) {
+      const g = byCol.get(JSON.stringify(cm.key));
+      if (g) colTotals.push({ key: cm.key, side, values: compute(g) });
+      else if (spineCol) colTotals.push({ key: cm.key, side, values: emptyValues(noData.has(`column:${cm.key[0]}`) ? 'no_data' : null) });
+    }
     grand.push({ key: [], side, values: compute(facts) });
   }
 
@@ -335,8 +413,8 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
   // the candidate list); nothing outside the viewer's permission is ever looked at
   const relaxed = relaxScope(scope);
   const period = spec.population === 'mine'
-    ? population(ownRepresentatives(scopeFacts(input.facts, relaxed).filter((f) => f.contributor_id === input.viewerId)), scope, { date_basis: basis, place_key: null }).facts
-    : population(scopeFacts(representatives(input.facts), relaxed), scope, { date_basis: basis, place_key: null }).facts;
+    ? population(ownRepresentatives(scopeFacts(input.facts, relaxed).filter((f) => f.contributor_id === input.viewerId)), scope, { date_basis: basis, place_key: null }, dateOf).facts
+    : population(scopeFacts(representatives(input.facts), relaxed), scope, { date_basis: basis, place_key: null }, dateOf).facts;
   for (const flt of spec.filters) {
     const d = DIM.get(flt.dimension)!;
     const others = pool.filter((f) => matches(f, spec.filters, basis, flt.dimension));
@@ -356,7 +434,11 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
     col_members: colMembers.map(({ key, label }) => ({ key, label })),
     cells, row_totals: rowTotals, col_totals: colTotals, grand_totals: grand,
     population_count: { all: filtered.all?.length ?? null, mine: filtered.mine?.length ?? null },
-    excluded: { no_report_date: (all?.noReportDate ?? 0) + (mine?.noReportDate ?? 0) },
+    // D11: each side's own count — the same report can be on both sides, so the two are never added
+    excluded: { no_report_date: all?.noReportDate ?? mine?.noReportDate ?? 0,
+      selected_date_missing: { all: all?.noReportDate ?? null, mine: mine?.noReportDate ?? null } },
+    date_axes: dateAxes,
+    cohort_policy_version: COHORT_POLICY_VERSION,
     filter_members: filterMembers,
     complete: true,
   };
@@ -374,11 +456,12 @@ export function statisticsCandidates(input: { facts: readonly PrivateFact[]; sco
   placeKey: string | null; keys: string[] }): StatCandidatesPage {
   const d = DIM.get(input.kind);
   if (!d || !CANDIDATE_KINDS.has(input.kind)) throw new StatsQueryError('INVALID_QUERY', 'kind');
-  const pop = population(scopeFacts(representatives(input.facts), input.scope), input.scope, { date_basis: input.basis, place_key: input.placeKey }).facts
+  const dateOf = cohortDateOf(input.facts, input.basis);
+  const pop = population(scopeFacts(representatives(input.facts), input.scope), input.scope, { date_basis: input.basis, place_key: input.placeKey }, dateOf).facts
     .filter((f) => matches(f, input.filters, input.basis, input.kind));
   const periodKeys = new Set<string>();
   for (const f of population(scopeFacts(representatives(input.facts), relaxScope(input.scope)),
-    input.scope, { date_basis: input.basis, place_key: null }).facts) { const m = d.member(f, input.basis); if (m) periodKeys.add(m.key); }
+    input.scope, { date_basis: input.basis, place_key: null }, dateOf).facts) { const m = d.member(f, input.basis); if (m) periodKeys.add(m.key); }
   const map = new Map<string, StatCandidate>();
   for (const f of pop) {
     const m = d.member(f, input.basis);

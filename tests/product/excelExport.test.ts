@@ -32,7 +32,7 @@ const write = (snap: ExportSnapshot): Insp => inspect(writeWorkbook(X, snap).byt
 const sv = (value: number | null, numerator: number | null = null, denominator: number | null = null, reason: StatValue['reason'] = null): StatValue => ({ value, numerator, denominator, reason });
 const pct = (n: number, d: number) => sv(d > 0 ? (n / d) * 100 : null, n, d, d > 0 ? null : 'zero_denominator');
 function result(spec: Partial<StatisticsSpec>, parts: Partial<StatisticsResult>): StatisticsResult {
-  return { schema_version: 1, dataset_version: 'v-test', scope: { start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null },
+  return { schema_version: 1, dataset_version: 'v-test', scope: { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null },
     spec: baseSpec({ columns: [], ...spec }), row_members: [], col_members: [], cells: [], row_totals: [], col_totals: [], grand_totals: [],
     population_count: { all: 20, mine: null }, excluded: { no_report_date: 0 }, filter_members: [], complete: true, ...parts };
 }

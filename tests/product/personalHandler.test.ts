@@ -26,7 +26,7 @@ function setup(over: Partial<PersonalDeps> = {}, source: Partial<PersonalSource>
     rpc: async (name, args) => {
       calls.rpc.push([name, args]);
       if (name === 'internal_community_ingest_rate_limit') return true;
-      if (name === 'internal_my_analytics_source') {
+      if (name === 'internal_my_analytics_cohort_source') {
         return { state, facts: demoFacts(), ...source,
           viewer: { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, ...viewer } };
       }
@@ -77,7 +77,7 @@ describe('my-analytics authentication and ownership', () => {
     const res = await handle(req(undefined, { auth: `Bearer ${token(claims)}` }));
     expect(res.status).toBe(status);
     expect((await body(res)).error.code).toBe(code);
-    expect(calls.rpc.filter(([n]) => n === 'internal_my_analytics_source')).toHaveLength(0);
+    expect(calls.rpc.filter(([n]) => n === 'internal_my_analytics_cohort_source')).toHaveLength(0);
   });
 
   it.each([
@@ -97,7 +97,7 @@ describe('my-analytics authentication and ownership', () => {
     expect(spoof.status).toBe(400);
     const res = await handle(req());
     expect(res.status).toBe(200);
-    const [, args] = calls.rpc.find(([n]) => n === 'internal_my_analytics_source')!;
+    const [, args] = calls.rpc.find(([n]) => n === 'internal_my_analytics_cohort_source')!;
     expect(args.p_user).toBe(DEMO_VIEWER_ID);
     expect(args.p_session).toBe(SESSION);
     expect(args).toMatchObject({ p_start: '2025-09-25', p_end: '2026-09-24', p_category: 'all', p_region_code: null, p_bbox: null });
@@ -158,7 +158,7 @@ describe('my-analytics response boundary', () => {
   it('computes all/mine from the one RPC snapshot it received (no second read)', async () => {
     const { handle, calls } = setup();
     await handle(req());
-    expect(calls.rpc.map(([n]) => n)).toEqual(['internal_community_ingest_rate_limit', 'internal_my_analytics_source']);
+    expect(calls.rpc.map(([n]) => n)).toEqual(['internal_community_ingest_rate_limit', 'internal_my_analytics_cohort_source']);
   });
 });
 

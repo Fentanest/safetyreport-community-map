@@ -37,6 +37,12 @@ export const PRESETS: Array<{ id: string; label: string; spec: Partial<Statistic
   { id: 'agency_month_fine', label: '기관 × 답변월 · 과태료 부과율', spec: { rows: ['agency'], columns: ['completed_month'], metrics: ['fine_rate'] } },
 ];
 
+/** One basis per recipe: the spec's explicit date_basis is the scope's too (an old recipe or saved session without a
+ *  scope basis keeps its own explicit spec basis — never silently moved to 답변일). */
+export function normalizeRecipe<T extends { scope: Scope; spec: StatisticsSpec }>(r: T): T {
+  return r.scope.date_basis === r.spec.date_basis ? r : { ...r, scope: { ...r.scope, date_basis: r.spec.date_basis } };
+}
+
 /** the dashboard's displayed conditions → a recipe. Agency/manager/region/law stay scope conditions (chips). */
 export function handoffRecipe(scope: Scope, opts: { origin: string; placeKey?: string | null; placeLabel?: string | null;
   metrics?: string[]; rows?: string[]; columns?: string[]; population?: StatisticsSpec['population'] } ): StatsRecipe {
@@ -44,7 +50,8 @@ export function handoffRecipe(scope: Scope, opts: { origin: string; placeKey?: s
   const columns = opts.columns ?? (opts.rows ? [] : ['law']);
   return {
     scope: { ...scope },
-    spec: baseSpec({ rows, columns, metrics: opts.metrics ?? ['fine_rate', 'completed_count'], place_key: opts.placeKey ?? null,
+    // D09: the dashboard's ONE date basis is handed over as the recipe's basis (never reset to 답변일)
+    spec: baseSpec({ date_basis: scope.date_basis, rows, columns, metrics: opts.metrics ?? ['fine_rate', 'completed_count'], place_key: opts.placeKey ?? null,
       population: opts.population ?? 'all' }),
     labels: opts.placeKey && opts.placeLabel ? { [opts.placeKey]: opts.placeLabel } : {},
     origin: opts.origin,

@@ -49,7 +49,7 @@ const fact = (law: string | null, patch: Partial<PrivateFact> = {}): PrivateFact
   agency_key: 'a1', agency_name: '기관1', manager_key: 'm1', manager_name: '담당1',
   amount_kind: 'unknown', amount_confirmed_won: null, amount_public: true, amount_stated: false, violation_law: law, ...patch,
 });
-const scope: Scope = { start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 const opts = { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-09-28T00:00:00Z', asOf: '2026-12-31', sample: false, dataMin: '2020-01-01' };
 // 제32조: 4 (two with a paragraph) · 제5조: 2 · 제5조의2: 1 · 자동차관리법 제29조: 2 (both with a paragraph) · 도로교통법 제29조: 1 · 형식 밖 1 · 미상 1
 const facts = [

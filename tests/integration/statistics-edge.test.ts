@@ -81,7 +81,7 @@ async function contributor(choice: string, n: number) {
   return s;
 }
 
-const SCOPE = { start: '2020-01-01', end: '2026-12-31', category: 'all' };
+const SCOPE = { date_basis: 'completed_date' as const, start: '2020-01-01', end: '2026-12-31', category: 'all' };
 const spec = (patch: Json = {}) => ({ version: 1, date_basis: 'completed_date', population: 'all', rows: ['agency'], columns: [], metrics: ['completed_count', 'accept_rate', 'fine_rate'], filters: [], place_key: null, ...patch });
 const q = (s: Json, extra: Record<string, string> = {}) => new URLSearchParams({ ...SCOPE, spec: JSON.stringify(s), ...extra }).toString();
 

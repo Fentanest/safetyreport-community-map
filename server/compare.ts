@@ -1,11 +1,12 @@
 /** Personal comparison: all vs mine over ONE scope selection. Server-only (my-analytics). */
 import {
-  monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, selectScope, kstDate, ratingSummary, type PrivateFact,
+  basisWindow, inDateRange, monthSpine, outcomes, ownRepresentatives, regionKeys, representatives, selectScope, ratingSummary, todayKst,
+  type PrivateFact,
 } from './aggregate.ts';
 import { distinctPlaces, groupPlaces, representativeOf } from './places.ts';
 import { durationDistribution, ratingDistribution } from './analyticsDistributions.ts';
 import { regionName } from './regions.ts';
-import type { Scope } from '../src/domain/public.ts';
+import { COHORT_POLICY_VERSION, type BasisBounds, type Scope } from '../src/domain/public.ts';
 import { durationSummary } from './duration.ts';
 import { fineAmountSummary } from './amount.ts';
 import type {
@@ -97,6 +98,8 @@ export interface CompareOptions {
   asOf: string;
   dataMin: string | null;
   viewer: ViewerState;
+  basisBounds?: BasisBounds | null;
+  today?: string;
 }
 
 /**
@@ -107,7 +110,8 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   if (!viewerId) throw new Error('viewer required');
   // Global side counts each shared identity once (representative rows); the personal side sees
   // every listed row so each account's own contribution is counted in its personal scope.
-  const { reported, done } = selectScope(representatives(input), scope);
+  const sel = selectScope(representatives(input), scope);
+  const { reported, done } = sel;
   const mineSel = selectScope(input, scope);
   const isMine = (fact: PrivateFact) => fact.contributor_id === viewerId;
   // Personal counts collapse the viewer's own second-dataset/restored rows to one per identity.
@@ -170,22 +174,26 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
   };
 
   // Monthly: same month coverage rules as the public series (no values outside the data window).
-  const monthly: CompareMonth[] = monthKeys(scope.start, scope.end).map(month => {
-    const outside = month > options.asOf.slice(0, 7) || (options.dataMin !== null && month < options.dataMin.slice(0, 7));
+  // Monthly: the cohort month of the SELECTED basis for both sides (one set per month, U01 1.8), on the same
+  // calendar spine and data window as the public series.
+  const monthOf = (fact: PrivateFact) => mineSel.dateOf(fact)?.slice(0, 7);
+  const spine = monthSpine(scope, basisWindow(scope.date_basis, { basisBounds: options.basisBounds, dataMin: options.dataMin, asOf: options.asOf }),
+    options.today ?? todayKst());
+  const monthly: CompareMonth[] = spine.map(({ month, no_data: outside }) => {
     if (outside) return { month, all_report_count: null, mine_report_count: null, all_completed_count: null,
       mine_completed_count: null, all_accept_rate: null, mine_accept_rate: null,
       all_duration_median_days: null, mine_duration_median_days: null, mine_outcomes: null, mine_fine_count: null };
-    const r = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
-    const d = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
-    const mr = myReported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
-    const md = myDone.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
+    const r = reported.filter(fact => monthOf(fact) === month);
+    const d = done.filter(fact => monthOf(fact) === month);
+    const mr = myReported.filter(fact => monthOf(fact) === month);
+    const md = myDone.filter(fact => monthOf(fact) === month);
     const a = side(r, d), m = side(mr, md);
     return { month, all_report_count: a.report_count, mine_report_count: m.report_count,
       all_completed_count: a.completed_count, mine_completed_count: m.completed_count,
       all_accept_rate: a.accept_rate, mine_accept_rate: m.accept_rate,
       all_duration_median_days: a.duration_median_days, mine_duration_median_days: m.duration_median_days,
       all_rating: a.rating, mine_rating: m.rating,
-      // A05: the viewer's own numerators/denominators of the month (completion month), never a re-averaged rate
+      // A05: the viewer's own numerators/denominators of the month (cohort month), never a re-averaged rate
       mine_outcomes: outcomes(md), mine_fine_count: md.filter(fact => fact.disposition === 'fine').length };
   });
 
@@ -209,6 +217,13 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
 
   return {
     schema_version: 2, dataset_version: options.datasetVersion, scope, viewer: options.viewer,
+    cohort_policy_version: COHORT_POLICY_VERSION,
+    // D11: each side's own missing-date diagnostics (never added together)
+    cohort: { all: sel.diagnostics, mine: { ...mineSel.diagnostics,
+      selected_date_missing: ownRepresentatives(mineSel.facts.filter(fact => isMine(fact) && mineSel.dateOf(fact) === null &&
+        inDateRange(scope.date_basis === 'report_date' ? fact.completed_date : fact.report_date, scope.start, scope.end))).length,
+      other_date_missing: ownRepresentatives(mineSel.cohort.filter(isMine)).filter(fact =>
+        (scope.date_basis === 'report_date' ? fact.completed_date : fact.report_date) === null).length } },
     all, mine, diff: diffOf(all, mine), regions,
     agencies: entities('agency'), managers: entities('manager'), monthly, my_points,
     // A01/A06 for the viewer's own cohort (own denominators; the public side is in the dashboard response)
