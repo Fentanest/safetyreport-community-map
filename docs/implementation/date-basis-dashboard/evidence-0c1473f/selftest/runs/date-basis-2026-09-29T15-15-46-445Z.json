@@ -1,0 +1,257 @@
+{
+  "run_id": "date-basis-2026-09-29T15-15-46-445Z",
+  "suite": "date-basis",
+  "commit": "0c1473f560555e29bb277be43a1cacd9aba8e0e2",
+  "working_tree_dirty": true,
+  "started_at": "2026-09-29T15:15:46.466Z",
+  "only": [
+    "zero"
+  ],
+  "selftest_wrong": "DT-13:no error banner",
+  "environment": {
+    "browser": "chromium 141.0.7390.37",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic: demoFacts + e2e extras, or the cohort oracle (docs/implementation/date-basis-dashboard/fixtures/cohort-oracle.json)",
+    "server": "local Vite middleware running server/publicHandler.ts + server/personalHandler.ts (Node, not Edge Runtime)",
+    "zoom": "browser zoom 100% (headless); LY-11 widths via viewport, not a real browser zoom"
+  },
+  "results": {
+    "DT-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-13": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": true,
+          "label": "normal 0 without moving the dates or the basis",
+          "actual": [
+            "0건",
+            "2025-10-01",
+            "report_date"
+          ],
+          "expected": [
+            "0건",
+            "2025-10-01",
+            "report_date"
+          ]
+        },
+        {
+          "ok": false,
+          "label": "no error banner",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-14": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-15": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "DT-16": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MP-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MP-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MP-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MP-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MP-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MP-11": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "KP-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "KP-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "KP-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "KP-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "KP-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "KP-12": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SO-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SO-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SO-13": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SO-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-08": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-09": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LY-11": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "EX-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "EX-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "EX-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "EX-11": {
+      "status": "NOT_RUN",
+      "checks": []
+    }
+  },
+  "steps": {
+    "basis-default": {
+      "status": "NOT_RUN"
+    },
+    "basis-top": {
+      "status": "NOT_RUN"
+    },
+    "drawer": {
+      "status": "NOT_RUN"
+    },
+    "oracle": {
+      "status": "NOT_RUN"
+    },
+    "zero": {
+      "status": "DONE",
+      "ids": [
+        "DT-13"
+      ],
+      "ms": 1176
+    },
+    "race": {
+      "status": "NOT_RUN"
+    },
+    "refine": {
+      "status": "NOT_RUN"
+    },
+    "focus": {
+      "status": "NOT_RUN"
+    },
+    "sort": {
+      "status": "NOT_RUN"
+    },
+    "layout": {
+      "status": "NOT_RUN"
+    },
+    "statistics": {
+      "status": "NOT_RUN"
+    },
+    "share-account": {
+      "status": "NOT_RUN"
+    },
+    "excel": {
+      "status": "NOT_RUN"
+    }
+  },
+  "finished_at": "2026-09-29T15:15:47.643Z",
+  "summary": {
+    "NOT_RUN": 39,
+    "FAIL": 1
+  }
+}

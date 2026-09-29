@@ -1,0 +1,1330 @@
+{
+  "run_id": "date-basis-2026-09-29T14-17-47-718Z",
+  "suite": "date-basis",
+  "commit": "0c1473f560555e29bb277be43a1cacd9aba8e0e2",
+  "working_tree_dirty": false,
+  "started_at": "2026-09-29T14:17:47.734Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 141.0.7390.37",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic: demoFacts + e2e extras, or the cohort oracle (docs/implementation/date-basis-dashboard/fixtures/cohort-oracle.json)",
+    "server": "local Vite middleware running server/publicHandler.ts + server/personalHandler.ts (Node, not Edge Runtime)",
+    "zoom": "browser zoom 100% (headless); LY-11 widths via viewport, not a real browser zoom"
+  },
+  "results": {
+    "DT-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "selector shows 답변일",
+          "actual": "completed_date",
+          "expected": "completed_date"
+        },
+        {
+          "ok": true,
+          "label": "request carries date_basis=completed_date",
+          "actual": "completed_date",
+          "expected": "completed_date"
+        },
+        {
+          "ok": true,
+          "label": "URL rewritten with the basis",
+          "actual": "completed_date",
+          "expected": "completed_date"
+        },
+        {
+          "ok": true,
+          "label": "period text names the basis",
+          "actual": "답변일 기준 · 2026.06.01 — 2026.08.31",
+          "expected": "(t) => t.startsWith('답변일 기준')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "exactly one dashboard request",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "same dates, new basis",
+          "actual": [
+            [
+              "report_date",
+              "2026-03-01",
+              "2026-08-31"
+            ]
+          ],
+          "expected": [
+            [
+              "report_date",
+              "2026-03-01",
+              "2026-08-31"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "drawer reopens on the applied basis",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "cancel sends nothing",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "top selector unchanged",
+          "actual": "completed_date",
+          "expected": "completed_date"
+        },
+        {
+          "ok": true,
+          "label": "reopen shows the applied basis and dates",
+          "actual": [
+            true,
+            "2026-03-01"
+          ],
+          "expected": [
+            true,
+            "2026-03-01"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "one request with basis, dates and law together",
+          "actual": [
+            [
+              "report_date",
+              "2026-04-01",
+              "2026-06-30",
+              "도로교통법 제32조"
+            ]
+          ],
+          "expected": [
+            [
+              "report_date",
+              "2026-04-01",
+              "2026-06-30",
+              "도로교통법 제32조"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "report basis: 3 reports, 계도 2 (C, E), places 2",
+          "actual": [
+            "3건",
+            "2건",
+            "2곳"
+          ],
+          "expected": [
+            "3건",
+            "2건",
+            "2곳"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "same count, different reports (pins differ)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "answer basis: 3 reports, 계도 1 (C), places 3",
+          "actual": [
+            "3건",
+            "1건",
+            "3곳"
+          ],
+          "expected": [
+            "3건",
+            "1건",
+            "3곳"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-07": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "report basis: July holds A with its September result",
+          "actual": [
+            "1",
+            "1"
+          ],
+          "expected": [
+            "1",
+            "1"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-13": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "normal 0 without moving the dates or the basis",
+          "actual": [
+            "0건",
+            "2025-10-01",
+            "report_date"
+          ],
+          "expected": [
+            "0건",
+            "2025-10-01",
+            "report_date"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no error banner",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-14": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "error shown, drawer open, input kept",
+          "actual": [
+            true,
+            "2026-09-01"
+          ],
+          "expected": [
+            true,
+            "2026-09-01"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no request for the invalid range",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-15": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "전체 기간 on 답변일 = answer-date bounds",
+          "actual": [
+            "2025-06-10",
+            "2025-09-03"
+          ],
+          "expected": [
+            "2025-06-10",
+            "2025-09-03"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "changing only the basis keeps the dates",
+          "actual": [
+            "2025-06-10",
+            "2025-09-03"
+          ],
+          "expected": [
+            "2025-06-10",
+            "2025-09-03"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "전체 기간 on 신고일 = report-date bounds",
+          "actual": [
+            "2025-05-20",
+            "2025-08-25"
+          ],
+          "expected": [
+            "2025-05-20",
+            "2025-08-25"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "DT-16": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "전체 분류 keeps basis and dates",
+          "actual": [
+            "report_date",
+            "2026-03-01",
+            "2026-08-31",
+            "all"
+          ],
+          "expected": [
+            "report_date",
+            "2026-03-01",
+            "2026-08-31",
+            "all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MP-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "report basis draws A's place (answered in September)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MP-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "screen shows the last choice (report basis: 계도 2)",
+          "actual": [
+            "report_date",
+            "2건"
+          ],
+          "expected": [
+            "report_date",
+            "2건"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MP-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "January report view is compacted (묶음 nodes)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "the report-date refinement did answer (late)",
+          "actual": [
+            200
+          ],
+          "expected": "(v) => v.length >= 1 && v.every((x) => x === 200)"
+        },
+        {
+          "ok": true,
+          "label": "answer-date view shows no pin of the late answer",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "KPI is the answer-date view (0 reports)",
+          "actual": "0건",
+          "expected": "0건"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MP-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no report-date refinement was sent after the switch",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no pin from the cancelled view",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MP-07": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "period text follows the displayed basis",
+          "actual": "신고일 기준 · 2025.07.01 — 2025.08.31",
+          "expected": "(t) => t.startsWith('신고일 기준')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MP-11": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "the other account sees the same public numbers",
+          "actual": "3건",
+          "expected": "3건"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "KP-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "one KPI strip, before the map, none in the side panel",
+          "actual": [
+            1,
+            true,
+            0
+          ],
+          "expected": [
+            1,
+            true,
+            0
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "KP-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "focus = the address (D only on the answer basis: 1 report, 2 participants)",
+          "actual": [
+            "서울특별시 용산구 예시로 3",
+            "1건",
+            "2명"
+          ],
+          "expected": "(v) => v[0].includes('용산구') && v[1] === '1건' && v[2] === '2명'"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "KP-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "P2 title with P2 numbers (B only: 1 report)",
+          "actual": [
+            "서울특별시 중구 예시로 2",
+            "1건"
+          ],
+          "expected": "(v) => v[0].includes('중구') && v[1] === '1건'"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "KP-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "back to the applied scope; the late address answer is not shown",
+          "actual": [
+            "전국",
+            "3건"
+          ],
+          "expected": "(v) => !v[0].includes('용산구') && v[1] === scopeReport"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "KP-07": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "Esc cleared the selection",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "KP-12": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1440px strip height 90–130px",
+          "actual": 128,
+          "expected": "(h) => h >= 90 && h <= 130"
+        },
+        {
+          "ok": true,
+          "label": "390px: all cells kept, the row scrolls inside",
+          "actual": [
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440px strip height 90–130px",
+          "actual": 128,
+          "expected": "(h) => h >= 90 && h <= 130"
+        },
+        {
+          "ok": true,
+          "label": "390px: all cells kept, the row scrolls inside",
+          "actual": [
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SO-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "four choices (count/rate × desc/asc)",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SO-07": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "first row = highest fine rate of the full list",
+          "actual": "예시 대구수성경찰서",
+          "expected": "예시 대구수성경찰서"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SO-13": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "opening the menu sends nothing",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "choosing sends one request with sort, value, dir and page 1",
+          "actual": [
+            [
+              "fine",
+              "rate",
+              "desc",
+              "1"
+            ]
+          ],
+          "expected": [
+            [
+              "fine",
+              "rate",
+              "desc",
+              "1"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "header, aria-sort and caption agree",
+          "actual": [
+            "descending",
+            " · 비율 ▼",
+            "기관 10곳 · 정렬 과태료 · 비율 ▼"
+          ],
+          "expected": "(v) => v[0] === 'descending' && v[1].includes('비율') && v[2].includes('과태료 · 비율 ▼')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SO-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "law table: one server request with the registry sort",
+          "actual": [
+            [
+              "fine",
+              "count",
+              "asc"
+            ]
+          ],
+          "expected": [
+            [
+              "fine",
+              "count",
+              "asc"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no layout buttons",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "old view parameter dropped, the rest kept",
+          "actual": [
+            null,
+            "parking",
+            "2026-06-01"
+          ],
+          "expected": [
+            null,
+            "parking",
+            "2026-06-01"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no layout attribute on main/body",
+          "actual": [
+            null,
+            null
+          ],
+          "expected": [
+            null,
+            null
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "screen=statistics kept",
+          "actual": "statistics",
+          "expected": "statistics"
+        },
+        {
+          "ok": true,
+          "label": "table/chart switch still there",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "DOM order: KPI → laws → entities → trend → regions",
+          "actual": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "laws and entities side by side on desktop",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "390px: laws → entities → trend → regions in DOM",
+          "actual": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390px: laws → entities → trend → regions in DOM",
+          "actual": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-08": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "menu 법규 → #laws below the sticky band, menu marks it",
+          "actual": [
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-09": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "back → 답변일 again, same dates",
+          "actual": [
+            "completed_date",
+            "2026-03-01"
+          ],
+          "expected": [
+            "completed_date",
+            "2026-03-01"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "forward → 신고일",
+          "actual": "report_date",
+          "expected": "report_date"
+        },
+        {
+          "ok": true,
+          "label": "the displayed numbers follow (last request basis)",
+          "actual": "report_date",
+          "expected": "report_date"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-10": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "hidden dashboard does not mark a section while 통계 is open",
+          "actual": null,
+          "expected": null
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LY-11": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920px dark: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "1440px dark: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "1280px dark: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "768px dark: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "390px dark: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "1920px light: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "1440px light: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "1280px light: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "768px light: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "390px light: no page overflow",
+          "actual": 0,
+          "expected": "(n) => n <= 0"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "answer basis: July 0, August B/C/D",
+          "actual": [
+            [
+              "0",
+              "0"
+            ],
+            [
+              "3",
+              "3"
+            ]
+          ],
+          "expected": [
+            [
+              "0",
+              "0"
+            ],
+            [
+              "3",
+              "3"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "card title names the month basis",
+          "actual": "신고월별 처리결과",
+          "expected": "(t) => t.startsWith('신고월별')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "hand-off: report_month rows with the report basis on both scope and recipe",
+          "actual": [
+            [
+              "report_month"
+            ],
+            "report_date",
+            "report_date"
+          ],
+          "expected": [
+            [
+              "report_month"
+            ],
+            "report_date",
+            "report_date"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-10": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "link keeps the basis and dates, no token or account id",
+          "actual": [
+            "report_date",
+            false,
+            false
+          ],
+          "expected": [
+            "report_date",
+            false,
+            false
+          ]
+        },
+        {
+          "ok": true,
+          "label": "another account restores the same basis",
+          "actual": "report_date",
+          "expected": "report_date"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-11": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "conditions name the basis and the fixed period",
+          "actual": [
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "month column is 신고월 (same model as the card)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    }
+  },
+  "steps": {
+    "basis-default": {
+      "status": "DONE",
+      "ids": [
+        "DT-01",
+        "LY-02"
+      ],
+      "ms": 1406
+    },
+    "basis-top": {
+      "status": "DONE",
+      "ids": [
+        "DT-02",
+        "DT-16",
+        "LY-09"
+      ],
+      "ms": 3751
+    },
+    "drawer": {
+      "status": "DONE",
+      "ids": [
+        "DT-03",
+        "DT-04",
+        "DT-14"
+      ],
+      "ms": 3882
+    },
+    "oracle": {
+      "status": "DONE",
+      "ids": [
+        "DT-05",
+        "DT-06",
+        "DT-07",
+        "MP-01",
+        "EX-01",
+        "DT-15"
+      ],
+      "ms": 3240
+    },
+    "zero": {
+      "status": "DONE",
+      "ids": [
+        "DT-13"
+      ],
+      "ms": 852
+    },
+    "race": {
+      "status": "DONE",
+      "ids": [
+        "MP-04",
+        "MP-07"
+      ],
+      "ms": 3770
+    },
+    "refine": {
+      "status": "DONE",
+      "ids": [
+        "MP-05",
+        "MP-06"
+      ],
+      "ms": 8092
+    },
+    "focus": {
+      "status": "DONE",
+      "ids": [
+        "KP-01",
+        "KP-02",
+        "KP-05",
+        "KP-06",
+        "KP-07"
+      ],
+      "ms": 6110
+    },
+    "sort": {
+      "status": "DONE",
+      "ids": [
+        "SO-01",
+        "SO-13",
+        "SO-07",
+        "SO-06"
+      ],
+      "ms": 3499
+    },
+    "layout": {
+      "status": "DONE",
+      "ids": [
+        "LY-01",
+        "LY-05",
+        "LY-06",
+        "LY-08",
+        "KP-12",
+        "LY-11"
+      ],
+      "ms": 16502
+    },
+    "statistics": {
+      "status": "DONE",
+      "ids": [
+        "LY-03",
+        "LY-10",
+        "EX-03"
+      ],
+      "ms": 1434
+    },
+    "share-account": {
+      "status": "DONE",
+      "ids": [
+        "EX-10",
+        "MP-11"
+      ],
+      "ms": 2051
+    },
+    "excel": {
+      "status": "DONE",
+      "ids": [
+        "EX-11"
+      ],
+      "ms": 2442
+    }
+  },
+  "finished_at": "2026-09-29T14:18:44.768Z",
+  "summary": {
+    "PASS": 40
+  }
+}
