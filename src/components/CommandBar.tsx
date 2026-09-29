@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import type { Category } from '../domain/public';
+import { LAW_NONE } from '../domain/public';
 import {
-  CATEGORY_LABEL, PRESETS, isValidDate, presetRange, regionLabel,
+  CATEGORY_LABEL, LAW_UNKNOWN_LABEL, PRESETS, presetRange, regionLabel,
   type DraftFilters,
 } from '../state/filters';
 import { fmtDate } from './format';
@@ -11,7 +12,13 @@ import RegionSelect from './RegionSelect';
 interface Props {
   draft: DraftFilters;
   onDraft: (d: DraftFilters) => void;
-  appliedLabel: string;
+  /** applied (requested) category / law: these controls apply at once (explicit selection, pushState) */
+  category: Category;
+  onCategory: (c: Category) => void;
+  law: string | null;
+  lawOptions: Array<{ law: string; count: number | null }>;
+  onLaw: (law: string | null) => void;
+  /** number of applied conditions besides the dates (상세 필터 button is inverted when > 0) */
   filterCount: number;
   minDate: string | null;
   maxDate: string | null;
@@ -48,23 +55,31 @@ export default function CommandBar(p: Props) {
           <button
             key={c}
             type="button"
-            className={p.draft.category === c ? 'selected' : ''}
-            aria-pressed={p.draft.category === c}
-            onClick={() => { p.onDraft({ ...p.draft, category: c }); }}
+            className={p.category === c ? 'selected' : ''}
+            aria-pressed={p.category === c}
+            onClick={() => p.onCategory(c)}
           >
             {CATEGORY_LABEL[c]}
           </button>
         ))}
       </div>
-      <span className="cm-chip" title="지금 보고 있는 지역">
-        <Icon name="pin" size={14} />
-        <span>{p.appliedLabel}</span>
-      </span>
+      <label className={`law-select${p.law ? ' filter-on' : ''}`}>
+        <span className="sr-only">위반법규</span>
+        <select value={p.law ?? ''} aria-label="위반법규" onChange={(e) => p.onLaw(e.target.value || null)}>
+          <option value="">법규 전체</option>
+          <option value={LAW_NONE}>{LAW_UNKNOWN_LABEL}</option>
+          {p.lawOptions.map((o) => (
+            <option key={o.law} value={o.law}>{o.count === null ? o.law : `${o.law} (${o.count.toLocaleString('ko-KR')})`}</option>
+          ))}
+        </select>
+      </label>
       {p.extra}
       <div className="command-end">
-        <button className="control control-extra" type="button" onClick={p.onOpenDrawer}>
-          <Icon name="filter" />
-          <span>상세 필터{p.filterCount > 0 ? ` ${p.filterCount}` : ''}</span>
+        <button className={`control control-extra${p.filterCount > 0 ? ' filter-active' : ''}`} type="button" onClick={p.onOpenDrawer}
+          aria-label={p.filterCount > 0 ? `상세 필터, 적용 중 ${p.filterCount}개` : '상세 필터'}>
+          {p.filterCount > 0 ? <span className="filter-check" aria-hidden="true">✓</span> : <Icon name="filter" />}
+          <span>상세 필터</span>
+          {p.filterCount > 0 && <span className="filter-count" aria-hidden="true">{p.filterCount}</span>}
         </button>
         <button className="icon-btn" type="button" onClick={p.onReset} aria-label="처음 상태로" title="처음 상태로">
           <Icon name="reset" />
@@ -109,11 +124,10 @@ export default function CommandBar(p: Props) {
           <button className="primary-button" type="button" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => { p.onApply(); setOpen(false); }}>
             적용
           </button>
-          {!isValidDate(p.draft.start) || !isValidDate(p.draft.end) ? null : null}
           {p.dateError && <span className="field-error" role="alert">{p.dateError}</span>}
           <span className="basis-note">
             신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. ‘적용’을 눌러야 화면이 바뀝니다.
-            선택: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]}
+            선택: {regionLabel(p.draft.region_code)}
           </span>
         </div>
       )}

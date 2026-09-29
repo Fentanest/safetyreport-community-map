@@ -52,14 +52,39 @@
       const tag = document.createElement('div');
       tag.textContent = 'MOCK 지도 · 실제 카카오 지도 아님';
       tag.style.cssText = 'position:absolute;right:6px;bottom:4px;font:11px system-ui;color:#334;background:#fff9;padding:1px 4px;border-radius:3px;pointer-events:none';
-      el.style.position = el.style.position || 'relative';
+      el.style.position = 'relative'; // like the real SDK: the app CSS must keep the host sized
       el.appendChild(tag);
       (window.__kakaoMaps ||= []).push(this);
       this.idleSoon();
     }
     idleSoon() {
       clearTimeout(this.t);
-      this.t = setTimeout(() => { stats.idle += 1; fire(this, 'idle'); }, 30);
+      this.t = setTimeout(() => { stats.idle += 1; this.__draw(); fire(this, 'idle'); }, 30);
+    }
+    /** draw live markers/polygon fills as DOM so screenshots show them (projection = linear) */
+    __draw() {
+      if (!this.layer) {
+        this.layer = document.createElement('div');
+        this.layer.style.cssText = 'position:absolute;inset:0;overflow:hidden;pointer-events:none';
+        this.el.appendChild(this.layer);
+      }
+      const { w, h } = this.size();
+      const d = degPx(this.level);
+      const xy = (lat, lng) => [w / 2 + (lng - this.center.lng) / d, h / 2 - (lat - this.center.lat) / (d * 0.8)];
+      let html = '';
+      for (const poly of stats.polygons) {
+        if (poly.map !== this) continue;
+        const rings = poly.opts.path || [];
+        const pts = (rings[0] || []).map((p) => xy(p.lat, p.lng).map((v) => v.toFixed(1)).join(',')).join(' ');
+        html += `<svg style="position:absolute;inset:0" width="${w}" height="${h}"><polygon points="${pts}" fill="${poly.opts.fillColor}" fill-opacity="${poly.opts.fillOpacity}" stroke="${poly.opts.strokeColor}" stroke-width="${poly.opts.strokeWeight}" stroke-opacity="${poly.opts.strokeOpacity}"/></svg>`;
+      }
+      for (const m of stats.live || []) {
+        if (m.map !== this) continue;
+        const [x, y] = xy(m.opts.position.lat, m.opts.position.lng);
+        const size = m.opts.image && m.opts.image.size ? m.opts.image.size.width : 40;
+        html += `<img src="${m.opts.image && m.opts.image.src}" title="${String(m.opts.title || '').replace(/"/g, '&quot;')}" style="position:absolute;left:${(x - size / 2).toFixed(1)}px;top:${(y - size / 2).toFixed(1)}px;width:${size}px;height:${size}px">`;
+      }
+      this.layer.innerHTML = html;
     }
     size() { return { w: this.el.clientWidth || 600, h: this.el.clientHeight || 400 }; }
     getBounds() {
@@ -102,15 +127,17 @@
     setMap(m) {
       if (m && !this.map) { stats.markersDrawn += 1; (stats.live ||= new Set()).add(this); }
       if (!m && stats.live) stats.live.delete(this);
+      const target = m || this.map;
       this.map = m;
+      if (target) { clearTimeout(target.dt); target.dt = setTimeout(() => target.__draw(), 0); }
     }
     getPosition() { return this.opts.position; }
     __click() { fire(this, 'click'); }
   }
   class Polygon {
-    constructor(opts) { this.opts = opts; this.map = opts.map || null; stats.polygons.push(this); }
+    constructor(opts) { this.opts = opts; this.map = opts.map || null; stats.polygons.push(this); if (this.map) { clearTimeout(this.map.dt); const t = this.map; t.dt = setTimeout(() => t.__draw(), 0); } }
     setMap(m) { this.map = m; if (!m) stats.polygons = stats.polygons.filter((p) => p !== this); }
-    setOptions(o) { Object.assign(this.opts, o); }
+    setOptions(o) { Object.assign(this.opts, o); if (this.map) { clearTimeout(this.map.dt); const t = this.map; t.dt = setTimeout(() => t.__draw(), 0); } }
     __hover() { fire(this, 'mouseover'); }
   }
   window.__kakaoLiveMarkers = () => [...(stats.live || [])].map((m) => ({

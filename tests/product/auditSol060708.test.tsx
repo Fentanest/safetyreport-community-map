@@ -5,7 +5,7 @@ import { placeKeyOf } from '../../server/places';
 import { createPublicHandler, type AnalyticsRepository, type AnalyticsState } from '../../server/publicHandler';
 import { entitiesResponseSchema } from '../../src/data/schema';
 import { loadEntities } from '../../src/data/client';
-import EntityTable, { type ServerEntityState } from '../../src/components/EntityTable';
+import EntityTable from '../../src/components/EntityTable';
 import type { Scope } from '../../src/domain/public';
 import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
 
@@ -175,15 +175,16 @@ describe('SOL-08 client and table connection', () => {
     const nav = await loadEntities(sept, { kind: 'agency', page: 2, pageSize: 100 }, 'af-map-entities');
     expect(nav.totalRows).toBe(105);
     expect(nav.items).toHaveLength(5);
-    const server: ServerEntityState = {
-      items: nav.items, total: nav.totalRows, page: nav.page, pageSize: nav.pageSize,
-      loading: false, error: null, q: '', sortKey: 'completed', dir: 'desc',
-      onSearch: () => {}, onSort: () => {}, onPage: () => {}, onRetry: () => {},
-    };
+    expect(nav.items.map((row) => row.agency_name)).toContain('테스트기관-100');
+    // The table's summary uses the dashboard rows without a request and says it shows only part of them;
+    // search/sort/page/전체 보기 switch to the full server list (R09, browser-verified).
+    const all = [...nav.items, ...(await loadEntities(sept, { kind: 'agency', page: 1, pageSize: 100 }, 'af-map-entities')).items];
     const html = renderToStaticMarkup(
-      <EntityTable agencies={[]} managers={[]} tab="agency" onTab={() => {}} onPick={() => {}} server={server} />,
+      <EntityTable agencies={all} managers={[]} tab="agency" onTab={() => {}} onPick={() => {}}
+        scope={sept} version="af-map-entities" serverList activeAgency={null} activeManager={null} />,
     );
-    expect(html).toContain('테스트기관-100');
-    expect(html).toContain('2 / 2쪽 · 전체 105곳');
+    expect(html).toContain('기관 105곳');
+    expect(html).toContain('8곳만 표시');
+    expect(html).toContain('전체 보기');
   });
 });

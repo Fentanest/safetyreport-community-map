@@ -1,6 +1,5 @@
 import type { PublicPoint } from '../domain/public';
 import type { MyPoint } from '../domain/personal';
-import type { PointFilter } from './view';
 
 export interface PointMark {
   /** contains at least one of my reports/completions in the current scope */
@@ -49,14 +48,4 @@ export function markPoints(points: readonly PublicPoint[], myPoints: readonly My
     marks.set(point.key, mine || isInterest ? { mine, shared, mineCount, interest: isInterest } : EMPTY);
   }
   return marks;
-}
-
-export function filterPoints(points: readonly PublicPoint[], marks: Map<string, PointMark>, filter: PointFilter): PublicPoint[] {
-  if (filter === 'all') return [...points];
-  return points.filter((point) => {
-    const mark = marks.get(point.key) ?? EMPTY;
-    if (filter === 'mine') return mark.mine;
-    if (filter === 'shared') return mark.shared;
-    return mark.interest;
-  });
 }

@@ -72,7 +72,7 @@ function installFakeKakao(levelHolder: { level: number }, idleCbs: Array<() => v
 const pts = (counts: number[]): KakaoPointInput[] =>
   counts.map((count, i) => ({
     key: `k${i}`, lat: 37.5 + i * 0.002, lng: 127.0 + i * 0.002,
-    label: `지점 ${i}`, count, selected: i === 0, metricValue: null,
+    label: `지점 ${i}`, kind: 'count' as const, num: count, den: 0, weight: count, selected: i === 0,
   }));
 
 describe('kakao map wiring (fake SDK)', () => {
@@ -105,6 +105,7 @@ describe('kakao map wiring (fake SDK)', () => {
     // Bubble number is the SUM (6), not the node count (3). The SVG is URL-encoded.
     expect(bubble.opts.image.src).toContain('%3E6%3C');
     expect(bubble.opts.title).toContain('3곳 묶음');
+    expect(bubble.opts.title).toContain('서로 다른 주소');
     bubble.handlers.get('click')!();
     expect(env.calls.setBounds + env.calls.setCenter).toBeGreaterThan(0);
     expect(selected).toHaveLength(0);

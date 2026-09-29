@@ -6,12 +6,10 @@
  */
 import { normalizeRegion, regionLabel } from '../data/regions';
 export type ViewMode = 'both' | 'map' | 'stats';
-export type PointFilter = 'all' | 'mine' | 'shared' | 'interest';
 
 export const VIEW_LABEL: Record<ViewMode, string> = { both: '지도+통계', map: '지도 크게', stats: '통계 크게' };
-export const POINT_FILTER_LABEL: Record<PointFilter, string> = {
-  all: '전체', mine: '내 신고가 있는 곳', shared: '함께 신고한 곳', interest: '관심 지역',
-};
+// R01: the map's place-filter tabs (전체/내 신고가 있는 곳/함께 신고한 곳/관심 지역) were removed. There is no
+// point-filter state any more, so an old URL/localStorage value can never hide pins.
 
 export function viewFromSearch(search: string): ViewMode {
   const value = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('view');

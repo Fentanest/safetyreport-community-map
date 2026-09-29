@@ -2,7 +2,7 @@ import { DEFAULT_SCOPE, DEMO_SCOPE, LAW_NONE, isLawParam, lawKey, parseBbox, typ
 import { normalizeRegion } from '../data/regions';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
-export type MapMetric = 'reports' | 'acceptance' | 'partial' | 'fine';
+export type { MapMetric } from '../components/mapMetrics';
 export type EntityTab = 'agency' | 'manager';
 
 export const THEME_KEY = 'cm-theme';

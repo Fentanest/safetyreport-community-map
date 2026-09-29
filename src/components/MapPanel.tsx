@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PublicPoint, PublicRegion } from '../domain/public';
-import { createKakaoMap, kakaoKey, type KakaoHandle } from '../lib/kakao';
+import type { MapUnplaced, PublicPoint, PublicRegion } from '../domain/public';
+import { createKakaoMap, kakaoKey, METRIC_NULL, METRIC_RAMP, colorScalar, type KakaoHandle, type KakaoPointInput } from '../lib/kakao';
 import { intersects, loadBoundaries, loadBoundaryMeta, type BoundaryFeature, type BoundaryLevel, type BoundaryMeta } from '../lib/boundaries';
 import { regionLabel } from '../data/regions';
-import type { MapMetric } from '../state/filters';
-import { POINT_FILTER_LABEL, type PointFilter } from '../state/view';
 import type { PointMark } from '../state/pointMarks';
-import { acceptRate, fmtInt, partialRate } from './format';
+import { MAP_METRICS, metricDef, metricParts, metricText, type MapMetric } from './mapMetrics';
+import { fmtInt } from './format';
 import Icon from './icons';
 
 interface Props {
@@ -16,24 +15,21 @@ interface Props {
   metric: MapMetric;
   onMetric: (m: MapMetric) => void;
   categoryLabel: string;
-  onApplyView: (bbox: [number, number, number, number]) => void;
+  /** a USER map move settled (drag, wheel, zoom buttons). Programmatic moves never call this (R04 §5). */
+  onUserViewport?: (bbox: [number, number, number, number], zoom: number) => void;
+  /** any settled view (user or programmatic), for display-only refinement of compacted nodes (R07/F04) */
+  onView?: (bbox: [number, number, number, number], zoom: number) => void;
   autoRefresh: boolean;
   onAutoRefresh: (v: boolean) => void;
   locationMissing?: number | null;
-  /** personal display marks (mine/shared/interest) keyed by point key */
+  unplaced?: MapUnplaced | null;
+  /** personal display marks keyed by place key (display only; no filter) */
   marks?: Map<string, PointMark>;
-  pointFilter?: PointFilter;
-  onPointFilter?: (f: PointFilter) => void;
-  /** which display filters can be used now (mine/shared need a ready comparison) */
-  filterAvailable?: Record<PointFilter, boolean>;
-  /** total points before the display filter */
-  totalPoints?: number;
-  /** region rows of the current data (boundary fill and hover numbers) */
   regions?: PublicRegion[] | null;
-  /** region used as a filter now (official code) */
   activeRegion?: string | null;
-  /** clicking a boundary changes the region condition (explicit, like the region list) */
   onPickRegion?: (code: string | null) => void;
+  /** a refresh is running for another scope; the map stays mounted and shows a small badge */
+  refreshing?: boolean;
 }
 
 const BOUNDARY_KEY = 'cm-boundaries';
@@ -57,97 +53,60 @@ function unionBbox(features: readonly BoundaryFeature[]): [number, number, numbe
   [Infinity, Infinity, -Infinity, -Infinity]);
 }
 
-const FILTER_REASON: Record<PointFilter, string> = {
-  all: '',
-  mine: '로그인하고 ‘내 신고와 비교’를 켜면 쓸 수 있습니다.',
-  shared: '로그인하고 ‘내 신고와 비교’를 켜면 쓸 수 있습니다.',
-  interest: '지역 목록에서 ★를 누르면 쓸 수 있습니다.',
-};
-
-/** Visible reason for disabled display filters (a disabled button's tooltip is not reliably shown). */
-function unavailableHint(available: Record<PointFilter, boolean> | undefined): string | null {
-  if (!available) return null;
-  const parts: string[] = [];
-  if (!available.mine) parts.push('내 신고가 있는 곳은 로그인 후 ‘내 신고와 비교’를 켜면 볼 수 있습니다');
-  if (!available.interest) parts.push('관심 지역은 지역 목록에서 ★를 누르세요');
-  return parts.length ? parts.join(' · ') : null;
-}
-
 function markLabel(mark: PointMark | undefined): string {
   if (!mark) return '';
   const parts: string[] = [];
   if (mark.mine) parts.push(`내 신고 ${mark.mineCount.toLocaleString('ko-KR')}건 포함`);
   if (mark.shared) parts.push('다른 사람과 함께 신고한 곳');
-  else if (mark.mine) parts.push('나만 신고한 곳');
   if (mark.interest) parts.push('관심 지역');
   return parts.length ? ` · ${parts.join(' · ')}` : '';
 }
 
-/** Text + ring-shape badges mirroring the real-map marker rings (never color-only). */
-function MarkBadges({ mark }: { mark: PointMark | undefined }) {
-  if (!mark || (!mark.mine && !mark.interest)) return null;
+/** Places drawn for a metric: reported places for 신고 수, answered places for the rates (weight > 0). */
+export function visiblePoints(points: readonly PublicPoint[], m: MapMetric): PublicPoint[] {
+  return points.filter((p) => metricParts(p, m).weight > 0);
+}
+
+export function placeName(p: PublicPoint): string {
+  return p.aggregate ? `서로 다른 주소 ${fmtInt(p.point_count ?? null)}곳 묶음` : (p.address ?? '주소 없음');
+}
+
+/** Tooltip/list label: place + metric value with its numerator/denominator (R03 §1). */
+export function pointTitle(p: PublicPoint, m: MapMetric): string {
+  const def = metricDef(m);
+  const parts = metricParts(p, m);
+  const sample = m === 'reports' ? '' : ` · 답변 ${fmtInt(p.completed_count)}건`;
+  return `${placeName(p)} · ${def.legend} ${metricText(parts, m)}${sample}`;
+}
+
+export function toKakaoInputs(points: readonly PublicPoint[], m: MapMetric, selectedKey: string | null,
+  marks?: Map<string, PointMark>): KakaoPointInput[] {
+  return visiblePoints(points, m).map((pt) => {
+    const parts = metricParts(pt, m);
+    const mark = marks?.get(pt.key);
+    return { key: pt.key, lat: pt.lat, lng: pt.lng, label: pointTitle(pt, m), ...parts, selected: pt.key === selectedKey,
+      mine: mark?.mine, shared: mark?.shared, interest: mark?.interest };
+  });
+}
+
+function Legend({ metric }: { metric: MapMetric }) {
+  const def = metricDef(metric);
+  const gradient = `linear-gradient(90deg, ${METRIC_RAMP.join(', ')})`;
   return (
-    <span className="pt-badges">
-      {mark.mine && (
-        <span className="pt-badge mine">
-          <i className={mark.shared ? 'ring shared' : 'ring mine'} aria-hidden="true" />
-          내 신고 {mark.mineCount.toLocaleString('ko-KR')}건 · {mark.shared ? '다른 사람과 함께 신고한 곳' : '나만 신고한 곳'}
-        </span>
-      )}
-      {mark.interest && (
-        <span className="pt-badge interest" aria-label="관심 지역">
-          <span aria-hidden="true">★</span> 관심 지역
-        </span>
+    <span className="legend-title map-legend" title={def.basis} aria-label={`범례: ${def.legend}`}>
+      <b>{def.legend}</b>
+      <span className="cm-muted">{def.kind === 'rate' ? '0%' : '적음'}</span>
+      <i className="gradient-scale" style={{ background: gradient }} aria-hidden="true" />
+      <span className="cm-muted">{def.kind === 'rate' ? '100%' : '많음'}</span>
+      {def.kind === 'rate' && (
+        <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />– 결과 없음</span>
       )}
     </span>
   );
 }
 
-const METRICS: Array<{ id: MapMetric; label: string; legend: string; basis: string }> = [
-  { id: 'reports', label: '신고 수', legend: '신고 수', basis: '신고한 날 기준' },
-  { id: 'acceptance', label: '수용률', legend: '수용률', basis: '답변 받은 날 기준 · 결과가 나온 신고 중 수용' },
-  { id: 'partial', label: '일부수용률', legend: '일부수용률', basis: '답변 받은 날 기준 · 결과가 나온 신고 중 일부 수용' },
-  { id: 'fine', label: '과태료', legend: '과태료 부과율', basis: '답변 받은 날 기준 · 답변 완료된 신고 중' },
-];
-
-function metricValue(p: PublicPoint, m: MapMetric): number | null {
-  if (m === 'reports') return p.report_count;
-  if (m === 'acceptance') {
-    const o = p.outcomes;
-    return acceptRate(o);
-  }
-  if (m === 'partial') return partialRate(p.outcomes);
-  if (p.fine_count == null || (p.completed_count ?? 0) === 0) return null;
-  return (p.fine_count / (p.completed_count ?? 1)) * 100;
-}
-
-/**
- * Number drawn on a map bubble for the active metric. Report metric uses the
- * report date count; every completion metric uses the completion-date count.
- * API data and stats totals are untouched — this only decides what is drawn.
- */
-export function displayCount(p: PublicPoint, m: MapMetric): number {
-  return m === 'reports' ? p.report_count : (p.completed_count ?? 0);
-}
-
-/** Points actually drawn: report metric hides completion-only (report 0) places;
- *  completion metrics draw places with completed_count > 0. Never draws 0-circles. */
-export function visiblePoints(points: readonly PublicPoint[], m: MapMetric): PublicPoint[] {
-  return points.filter((p) => displayCount(p, m) > 0);
-}
-
-/** Basis-accurate bubble/list label: never call a completion count a 신고. */
-export function pointCountLabel(p: PublicPoint, m: MapMetric): string {
-  return m === 'reports' ? `신고 ${fmtInt(p.report_count)}건` : `완료 ${fmtInt(p.completed_count ?? 0)}건`;
-}
-
-export function pointTitle(p: PublicPoint, m: MapMetric): string {
-  const name = p.aggregate ? `${p.point_count}곳 묶음` : (p.address ?? '주소 없음');
-  // Report metric keeps the historical label shape; completion metrics name the basis.
-  return m === 'reports' ? `${name} 신고 ${fmtInt(p.report_count)}건` : `${name} · 완료 ${fmtInt(p.completed_count ?? 0)}건`;
-}
-
 export default function MapPanel(p: Props) {
+  const canvasRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<KakaoHandle | null>(null);
   const [sdkState, setSdkState] = useState<'idle' | 'ready' | 'error'>(kakaoKey() ? 'idle' : 'error');
@@ -156,39 +115,35 @@ export default function MapPanel(p: Props) {
   );
   const [bbox, setBbox] = useState<[number, number, number, number] | null>(null);
   const [zoom, setZoom] = useState(13);
-  const applyViewRef = useRef(p.onApplyView);
-  applyViewRef.current = p.onApplyView;
-  // a move made by fitBounds (region picked) must not be applied as a "visible area" filter
-  const skipAutoRef = useRef(false);
   const [boundaryOn, setBoundaryOn] = useState(readBoundaryPref);
   const [layers, setLayers] = useState<Partial<Record<BoundaryLevel, BoundaryFeature[]>>>({});
   const [boundaryError, setBoundaryError] = useState(false);
   const [boundaryMeta, setBoundaryMeta] = useState<BoundaryMeta | null>(null);
   const [hover, setHover] = useState<string | null>(null);
-  const pickRef = useRef(p.onPickRegion);
-  pickRef.current = p.onPickRegion;
-  const activeRef = useRef(p.activeRegion ?? null);
-  activeRef.current = p.activeRegion ?? null;
+  // Latest callbacks for the long-lived SDK listeners (the map is created once per mount).
+  const cb = useRef(p);
+  cb.current = p;
   const mapOpts = {
-    onSelect: (key: string) => p.onSelect(key),
-    onIdle: (b: [number, number, number, number], z: number, programmatic: boolean) => {
-      if (programmatic) skipAutoRef.current = true;
+    onSelect: (key: string) => cb.current.onSelect(key),
+    onIdle: (b: [number, number, number, number], z: number, user: boolean) => {
       setBbox(b);
       setZoom(z);
+      cb.current.onView?.(b, z);
+      if (user) cb.current.onUserViewport?.(b, z);
     },
     onRegionHover: (code: string | null) => setHover(code),
     onRegionClick: (code: string) => {
-      const active = activeRef.current;
-      pickRef.current?.(active === code ? parentOf(code) : code);
+      const active = cb.current.activeRegion ?? null;
+      cb.current.onPickRegion?.(active === code ? parentOf(code) : code);
     },
   };
-  const active = METRICS.find((m) => m.id === p.metric)!;
+  const def = metricDef(p.metric);
   const shownPoints = useMemo(() => visiblePoints(p.points, p.metric), [p.points, p.metric]);
   const hiddenPoints = p.points.length - shownPoints.length;
   const hiddenNote = hiddenPoints > 0
     ? (p.metric === 'reports'
-      ? `신고 0건인 ${fmtInt(hiddenPoints)}곳은 지도에 표시하지 않습니다(완료 지표에서 확인)`
-      : `완료 0건인 ${fmtInt(hiddenPoints)}곳은 지도에 표시하지 않습니다`)
+      ? `이 기간에 신고가 없고 답변만 있는 ${fmtInt(hiddenPoints)}곳은 비율 지표에서 보입니다`
+      : `이 기간에 답변이 없는 ${fmtInt(hiddenPoints)}곳은 ‘신고 수’에서 보입니다`)
     : null;
 
   useEffect(() => {
@@ -197,18 +152,12 @@ export default function MapPanel(p: Props) {
     setSdkState('idle');
     createKakaoMap(hostRef.current, mapOpts)
       .then((h) => {
-        if (cancelled) {
-          h.destroy();
-          return;
-        }
+        if (cancelled) { h.destroy(); return; }
         handleRef.current = h;
         setSdkState('ready');
       })
       .catch((e: Error) => {
-        if (!cancelled) {
-          setSdkState('error');
-          setSdkError(e.message);
-        }
+        if (!cancelled) { setSdkState('error'); setSdkError(e.message); }
       });
     return () => {
       cancelled = true;
@@ -218,25 +167,27 @@ export default function MapPanel(p: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // metric / selection / data changes only redraw markers: no refetch, no new map (R03 §5)
   useEffect(() => {
-    handleRef.current?.setPoints(
-      shownPoints.map((pt) => ({
-        key: pt.key,
-        lat: pt.lat,
-        lng: pt.lng,
-        label: pointTitle(pt, p.metric),
-        count: displayCount(pt, p.metric),
-        selected: pt.key === p.selectedKey,
-        metricValue: metricValue(pt, p.metric),
-        ...p.marks?.get(pt.key),
-      })),
-    );
-  }, [shownPoints, p.selectedKey, p.metric, sdkState, p.marks]);
+    handleRef.current?.setPoints(toKakaoInputs(p.points, p.metric, p.selectedKey, p.marks));
+  }, [p.points, p.selectedKey, p.metric, sdkState, p.marks]);
 
+  // container size changes (view switch, window, side panel) → relayout only (R04 §12)
   useEffect(() => {
-    const onResize = () => handleRef.current?.relayout();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const el = canvasRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let last = '';
+    let t: number | undefined;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      const key = r ? `${Math.round(r.width)}x${Math.round(r.height)}` : '';
+      if (key === last) return;
+      last = key;
+      window.clearTimeout(t);
+      t = window.setTimeout(() => handleRef.current?.relayout(), 60);
+    });
+    ro.observe(el);
+    return () => { ro.disconnect(); window.clearTimeout(t); };
   }, []);
 
   // ---- boundary layer (display only; its failure never touches markers or statistics) ----
@@ -245,7 +196,7 @@ export default function MapPanel(p: Props) {
   const needed = useMemo(() => {
     const set = new Set<BoundaryLevel>();
     if (boundaryOn) set.add(level);
-    if (activeCode) set.add('sgg'); // fitting to a region uses the 시군구 shapes (a 시도 is the union of its 시군구)
+    if (activeCode) set.add('sgg');
     return [...set];
   }, [boundaryOn, level, activeCode]);
   useEffect(() => {
@@ -273,21 +224,30 @@ export default function MapPanel(p: Props) {
     const h = handleRef.current;
     if (!h || sdkState !== 'ready') return;
     if (!boundaryOn || !shown) { h.setBoundaries(null, { selected: null, weight: new Map() }); return; }
-    const counts = shown.map((f) => rowByCode.get(f.code)?.report_count ?? 0);
-    const max = Math.max(1, ...counts);
-    const weight = new Map<string, number>();
-    shown.forEach((f, i) => { if (rowByCode.has(f.code)) weight.set(f.code, counts[i] / max); });
+    // fill = the ACTIVE metric (R03-6): counts relative to the largest shown region, rates on the fixed 0..1 scale
+    const parts = shown.map((f) => { const row = rowByCode.get(f.code); return row ? metricParts(row, p.metric) : null; });
+    const max = Math.max(1, ...parts.map((x) => (x && x.kind === 'count' ? x.num : 0)));
+    const weight = new Map<string, number | null>();
+    shown.forEach((f, i) => {
+      const x = parts[i];
+      if (!x || x.weight <= 0) return;
+      weight.set(f.code, colorScalar(x.kind, x.num, x.den, max));
+    });
     h.setBoundaries(shown, { selected: activeCode, weight });
-  }, [boundaryOn, shown, rowByCode, activeCode, sdkState]);
+  }, [boundaryOn, shown, rowByCode, activeCode, sdkState, p.metric]);
 
-  // Move the map to a newly chosen region (from the list, the filter or a boundary click).
+  // Move the map to a newly chosen region (from the list, the filter or a boundary click). Programmatic move.
   const fittedRef = useRef<string | null>(null);
   useEffect(() => {
     const h = handleRef.current;
     if (!h || sdkState !== 'ready' || fittedRef.current === activeCode) return;
-    if (!activeCode) { fittedRef.current = null; h.fitBounds(KOREA); return; }
+    if (!activeCode) {
+      if (fittedRef.current !== null) h.fitBounds(KOREA);
+      fittedRef.current = null;
+      return;
+    }
     const sgg = layers.sgg;
-    if (!sgg) return; // fitted once the shapes arrive
+    if (!sgg) return;
     const target = unionBbox(sgg.filter((f) => (activeCode.length === 2 ? f.sido === activeCode : f.code === activeCode)));
     fittedRef.current = activeCode;
     if (target) h.fitBounds(target);
@@ -300,13 +260,6 @@ export default function MapPanel(p: Props) {
   };
   const retryBoundary = () => { setBoundaryError(false); setLayers((x) => ({ ...x })); };
   const hoverRow = hover ? rowByCode.get(hover) : undefined;
-
-  useEffect(() => {
-    if (!p.autoRefresh || !bbox) return;
-    if (skipAutoRef.current) { skipAutoRef.current = false; return; }
-    const timer = window.setTimeout(() => applyViewRef.current(bbox), 300);
-    return () => window.clearTimeout(timer);
-  }, [p.autoRefresh, bbox]);
 
   const retry = () => {
     if (!kakaoKey()) {
@@ -323,59 +276,45 @@ export default function MapPanel(p: Props) {
       .then((h) => {
         handleRef.current = h;
         setSdkState('ready');
-        handleRef.current.setPoints(
-          visiblePoints(p.points, p.metric).map((pt) => ({
-            key: pt.key, lat: pt.lat, lng: pt.lng,
-            label: pointTitle(pt, p.metric),
-            count: displayCount(pt, p.metric), selected: pt.key === p.selectedKey, metricValue: metricValue(pt, p.metric),
-            ...p.marks?.get(pt.key),
-          })),
-        );
       })
-      .catch((e: Error) => {
-        setSdkState('error');
-        setSdkError(e.message);
-      });
+      .catch((e: Error) => { setSdkState('error'); setSdkError(e.message); });
   };
 
+  const unplaced = p.unplaced;
+  const unplacedNote = unplaced
+    ? [unplaced.no_address.reported + unplaced.no_address.completed > 0 ? `주소가 없는 신고 ${fmtInt(unplaced.no_address.reported)}건(답변 ${fmtInt(unplaced.no_address.completed)}건)` : null,
+      unplaced.no_coordinates.reported + unplaced.no_coordinates.completed > 0 ? `주소는 있으나 위치를 찾지 못한 신고 ${fmtInt(unplaced.no_coordinates.reported)}건(답변 ${fmtInt(unplaced.no_coordinates.completed)}건)` : null]
+      .filter(Boolean).join(' · ')
+    : (p.locationMissing ? `위치 정보가 없는 ${fmtInt(p.locationMissing)}건` : '');
+
+  const pointButton = (pt: PublicPoint) => (
+    <li key={pt.key}>
+      <button type="button" aria-pressed={pt.key === p.selectedKey}
+        aria-label={`${pointTitle(pt, p.metric)}${markLabel(p.marks?.get(pt.key))} 선택`}
+        onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}>
+        <b>{placeName(pt)}</b>
+        <small>{def.legend} {metricText(metricParts(pt, p.metric), p.metric)}</small>
+      </button>
+    </li>
+  );
+
   return (
-    <article className="cm-panel map-card" aria-label="신고 지도">
+    <article className="cm-panel map-card" aria-label="신고 지도" aria-busy={p.refreshing || undefined}>
       <div className="panel-top">
         <div>
-          <h2>신고 지도</h2>
-          <span className="subtitle">{p.categoryLabel} · 멀리서 보면 가까운 장소를 묶음으로 보여 줍니다 · 묶음 숫자는 건수 합계{p.locationMissing ? ` · 위치 정보가 없는 ${p.locationMissing.toLocaleString('ko-KR')}건은 통계에만 들어갑니다` : ''}</span>
+          <h2>신고 지도 {p.refreshing && <span className="refresh-badge" role="status">갱신 중…</span>}</h2>
+          <span className="subtitle">{p.categoryLabel} · 같은 주소는 핀 하나 · 멀리서 보면 가까운 주소를 묶어 보여 줍니다</span>
         </div>
-        <div className="mini-segments" role="group" aria-label="지도에 표시할 값">
-          {METRICS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={p.metric === m.id ? 'selected' : ''}
-              aria-pressed={p.metric === m.id}
-              onClick={() => p.onMetric(m.id)}
-            >
+        <div className="mini-segments metric-switch" role="group" aria-label="지도에 표시할 값">
+          {MAP_METRICS.map((m) => (
+            <button key={m.id} type="button" className={p.metric === m.id ? 'selected' : ''} aria-pressed={p.metric === m.id}
+              title={m.basis} onClick={() => p.onMetric(m.id)}>
               {m.label}
             </button>
           ))}
         </div>
       </div>
-      {p.onPointFilter && (
-        <div className="point-filter" role="group" aria-label="지도에 보일 장소 (통계는 바뀌지 않음)">
-          {(['all', 'mine', 'shared', 'interest'] as PointFilter[]).map((f) => {
-            const available = p.filterAvailable?.[f] ?? f === 'all';
-            return (
-              <button key={f} type="button" className={p.pointFilter === f ? 'selected' : ''} aria-pressed={p.pointFilter === f}
-                disabled={!available} title={available ? undefined : FILTER_REASON[f]}
-                aria-describedby={available ? undefined : 'point-filter-hint'} onClick={() => p.onPointFilter!(f)}>
-                {POINT_FILTER_LABEL[f]}
-              </button>
-            );
-          })}
-          <span className="cm-muted">지도에 보이는 장소만 바뀌고 통계는 그대로입니다{p.pointFilter && p.pointFilter !== 'all' ? ` · ${fmtInt(p.totalPoints ?? p.points.length)}곳 중 ${fmtInt(p.points.length)}곳` : ''}</span>
-          {unavailableHint(p.filterAvailable) && <span className="cm-muted point-filter-hint" id="point-filter-hint">{unavailableHint(p.filterAvailable)}</span>}
-        </div>
-      )}
-      <div className={`map-canvas${sdkState === 'error' ? ' map-fallback-mode' : ''}`} role="region" aria-label={sdkState === 'ready' ? '카카오 지도' : '지도 대신 장소 목록'}>
+      <div ref={canvasRef} className={`map-canvas${sdkState === 'error' ? ' map-fallback-mode' : ''}`} role="region" aria-label={sdkState === 'ready' ? '카카오 지도' : '지도 대신 장소 목록'}>
         {kakaoKey() && <div ref={hostRef} className="map-sdk-host" aria-hidden={sdkState !== 'ready'} />}
         {sdkState === 'error' && (
           <div className="map-fallback">
@@ -386,38 +325,19 @@ export default function MapPanel(p: Props) {
               </span>
               <span className="map-error-actions">
                 <button className="ghost-btn" type="button" onClick={retry}>다시 시도</button>
-                <button
-                  className="ghost-btn" type="button"
-                  onClick={() => document.getElementById('cm-point-list')?.querySelector('button')?.focus()}
-                >
-                  장소 목록 보기
-                </button>
               </span>
             </div>
-            <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다.{hiddenNote ? ` ${hiddenNote}.` : ''}</p>
+            <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}{hiddenNote ? ` · ${hiddenNote}` : ''}</p>
             <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
               {shownPoints.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
-              {shownPoints.map((pt) => (
-                <li key={pt.key}>
-                  <button
-                    type="button"
-                    aria-pressed={pt.key === p.selectedKey}
-                    aria-label={`${pointTitle(pt, p.metric)}${markLabel(p.marks?.get(pt.key))} 선택`}
-                    onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}
-                  >
-                    <b>{pt.aggregate ? `가까운 ${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')}</b>
-                    <MarkBadges mark={p.marks?.get(pt.key)} />
-                    <small>{pointCountLabel(pt, p.metric)}</small>
-                  </button>
-                </li>
-              ))}
+              {shownPoints.map(pointButton)}
             </ul>
           </div>
         )}
         {sdkState === 'ready' && boundaryOn && hover && (
           <span className="map-hover" role="status">
             <b>{regionLabel(hover)}</b>
-            <span>{hoverRow ? `신고 ${fmtInt(hoverRow.report_count)}건` : '이 조건의 신고 없음'}</span>
+            <span>{hoverRow ? `${def.legend} ${metricText(metricParts(hoverRow, p.metric), p.metric)}` : '이 조건의 신고 없음'}</span>
             <small>{activeCode === hover ? '누르면 한 단계 위 지역으로' : '누르면 이 지역만 보기'}</small>
           </span>
         )}
@@ -425,45 +345,16 @@ export default function MapPanel(p: Props) {
           <span className="map-top-left">
             {sdkState !== 'ready' && <span className="map-status">장소 목록</span>}
             {activeCode && p.onPickRegion && (
-              <button
-                className="map-back" type="button"
+              <button className="map-back" type="button"
                 aria-label={parentOf(activeCode) ? `한 단계 위 지역으로: ${regionLabel(parentOf(activeCode))}` : '전국으로'}
                 title={parentOf(activeCode) ? `한 단계 위 지역으로: ${regionLabel(parentOf(activeCode))}` : '전국으로'}
-                onClick={() => p.onPickRegion!(parentOf(activeCode))}
-              >
+                onClick={() => p.onPickRegion!(parentOf(activeCode))}>
                 ← {parentOf(activeCode) ? regionLabel(parentOf(activeCode)) : '전국'}
               </button>
             )}
           </span>
-          <button
-            className="map-apply" type="button"
-            disabled={!bbox}
-            title={bbox ? '지금 지도에 보이는 지역의 통계만 봅니다' : '지도가 뜨면 쓸 수 있습니다'}
-            onClick={() => bbox && p.onApplyView(bbox)}
-          >
-            보이는 지역만 보기
-          </button>
         </div>
-      {(p.filterAvailable?.mine || p.filterAvailable?.shared || p.filterAvailable?.interest) && (
-        <p className="legend-marks" aria-label="지도 표시 안내">
-          {p.filterAvailable.mine && (
-            <span className="legend-mark" title="내 신고가 있는 곳">
-              <i className="ring mine" aria-hidden="true" />내 신고가 있는 곳
-            </span>
-          )}
-          {p.filterAvailable.shared && (
-            <span className="legend-mark" title="다른 사람과 함께 신고한 곳">
-              <i className="ring shared" aria-hidden="true" />함께 신고한 곳
-            </span>
-          )}
-          {p.filterAvailable.interest && (
-            <span className="legend-mark" title="관심 지역으로 표시한 곳">
-              <span className="legend-star" aria-hidden="true">★</span>관심 지역
-            </span>
-          )}
-        </p>
-      )}
-      {sdkState === 'ready' && (
+        {sdkState === 'ready' && (
           <div className="map-tools" role="group" aria-label="지도 확대·축소">
             <button className="map-button" type="button" aria-label="확대" onClick={() => handleRef.current?.zoomIn()}>+</button>
             <button className="map-button" type="button" aria-label="축소" onClick={() => handleRef.current?.zoomOut()}>−</button>
@@ -471,63 +362,35 @@ export default function MapPanel(p: Props) {
           </div>
         )}
         {sdkState !== 'error' && (
-        <div className="map-bottom">
-          <span className="legend-title" title={active.basis}>
-            <b>{active.legend}</b>
-            <span className="cm-muted">낮음</span>
-            <i className="gradient-scale" aria-hidden="true" />
-            <span className="cm-muted">높음</span>
-            <span className="cm-muted">{active.basis}</span>
-            {(p.filterAvailable?.mine || p.filterAvailable?.shared) && (
-              <span className="legend-mark" title="내 신고가 있는 곳">
-                <i className="ring mine" aria-hidden="true" />내 신고가 있는 곳
-              </span>
-            )}
-            {p.filterAvailable?.shared && (
-              <span className="legend-mark" title="다른 사람과 함께 신고한 곳">
-                <i className="ring shared" aria-hidden="true" />함께 신고한 곳
-              </span>
-            )}
-          </span>
-          {sdkState !== 'ready' && <span className="map-demo-label">지도 대신 목록으로 보여 드립니다</span>}
-        </div>
+          <div className="map-bottom">
+            <Legend metric={p.metric} />
+          </div>
         )}
+      </div>
+      <div className="map-options">
+        <label className="map-option">
+          <input type="checkbox" checked={p.autoRefresh} onChange={(e) => p.onAutoRefresh(e.target.checked)} />
+          지도를 움직이면 통계도 바꾸기
+        </label>
+        {sdkState === 'ready' && (
+          <label className="map-option">
+            <input type="checkbox" checked={boundaryOn} onChange={(e) => toggleBoundary(e.target.checked)} />
+            행정구역 경계{boundaryOn ? ` · ${level === 'sido' ? '시도' : '시군구'}` : ''}
+          </label>
+        )}
+        <span className="cm-muted map-option-note">
+          {p.autoRefresh ? '지도를 멈추면 잠시 뒤 보이는 범위의 통계로 바뀝니다.' : '지도를 움직여도 통계는 그대로입니다.'}
+          {unplacedNote ? ` 지도에 없는 신고: ${unplacedNote} (통계에는 포함).` : ''}
+        </span>
       </div>
       {sdkState === 'ready' && (
         <details className="map-point-alternative">
           <summary>장소 목록으로 보기 · {fmtInt(shownPoints.length)}곳{hiddenNote ? ` · ${hiddenNote}` : ''}</summary>
           <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
-            {shownPoints.map((pt) => (
-              <li key={pt.key}>
-                <button type="button" aria-pressed={pt.key === p.selectedKey}
-                  aria-label={`${pointTitle(pt, p.metric)}${markLabel(p.marks?.get(pt.key))} 선택`}
-                  onClick={() => p.onSelect(pt.key === p.selectedKey ? null : pt.key)}>
-                  <b>{pt.aggregate ? `가까운 ${pt.point_count}곳 묶음` : (pt.address ?? '주소 없음')}</b>
-                  <MarkBadges mark={p.marks?.get(pt.key)} />
-                  <small>{pointCountLabel(pt, p.metric)}</small>
-                </button>
-              </li>
-            ))}
+            {shownPoints.map(pointButton)}
           </ul>
         </details>
       )}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '0 16px 14px', flexWrap: 'wrap' }}>
-        <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center', fontSize: 13, color: 'var(--muted)' }}>
-          <input
-            type="checkbox" checked={p.autoRefresh}
-            onChange={(e) => p.onAutoRefresh(e.target.checked)}
-            style={{ width: 20, height: 20 }}
-          />
-          지도를 움직이면 통계도 바꾸기
-        </label>
-        {sdkState === 'ready' && (
-          <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center', fontSize: 13, color: 'var(--muted)' }}>
-            <input type="checkbox" checked={boundaryOn} onChange={(e) => toggleBoundary(e.target.checked)} style={{ width: 20, height: 20 }} />
-            행정구역 경계 보기{boundaryOn ? ` · ${level === 'sido' ? '시도' : '시군구'} 단위` : ''}
-          </label>
-        )}
-        <span className="cm-muted" style={{ fontSize: 12 }}>{p.autoRefresh ? '지도에 보이는 지역의 통계로 바로 바뀝니다.' : '지도를 움직여도 통계는 그대로입니다. ‘보이는 지역만 보기’를 누르면 바뀝니다.'}</span>
-      </div>
       {sdkState === 'ready' && boundaryOn && boundaryError && (
         <p className="boundary-note" role="alert">
           행정구역 경계선을 불러오지 못했습니다. 지도와 통계는 그대로 쓸 수 있습니다.{' '}
@@ -536,7 +399,7 @@ export default function MapPanel(p: Props) {
       )}
       {sdkState === 'ready' && boundaryOn && boundaryMeta && (
         <p className="boundary-note" title={boundaryMeta.attribution}>
-          경계선은 화면 표시용으로 단순화했습니다. 색이 진할수록 신고가 많은 곳이고, 거의 투명한 곳은 이 조건의 신고가 없는 곳입니다. {boundaryMeta.attribution}
+          경계선은 화면 표시용으로 단순화했고 색은 선택한 지표({def.legend})를 따릅니다. 거의 투명한 곳은 이 조건의 자료가 없는 곳입니다. {boundaryMeta.attribution}
         </p>
       )}
     </article>

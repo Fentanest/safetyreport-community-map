@@ -19,26 +19,62 @@ import type { BoundaryFeature } from './boundaries';
 export interface BoundaryStyle {
   /** the region currently used as a filter (thick outline) */
   selected: string | null;
-  /** 0..1 fill strength per code (share of the largest report count shown); missing = no data */
-  weight: Map<string, number>;
+  /** 0..1 colour scalar of the ACTIVE metric per code; null = the code has rows but no denominator;
+   *  missing = no data for the code (drawn almost clear) */
+  weight: Map<string, number | null>;
 }
 
+/**
+ * One drawable place for the active metric (R03). Display value and colour input are separate:
+ * - kind 'count': `num` = the count, `den` = 0; colour scalar = count on the metric's count scale;
+ * - kind 'rate':  `num`/`den` = numerator/denominator; value = num/den (0..1) — never a 0..100 number;
+ *   den 0 → no value (grey '–'), which is different from a real 0%.
+ * `weight` (> 0) decides whether the place is drawn at all and sizes cluster sums.
+ */
 export interface KakaoPointInput {
   key: string;
   lat: number;
   lng: number;
   label: string;
-  /** number drawn on the bubble: the display count for the active metric
-   *  (report_count in the report metric, completed_count in completion metrics).
-   *  Inputs with count <= 0 are never drawn (no 0-circles). */
-  count: number;
+  kind: 'count' | 'rate';
+  num: number;
+  den: number;
+  weight: number;
   selected: boolean;
-  metricValue: number | null;
   /** personal display marks (docs/personal-comparison.md §5.3); display only */
   mine?: boolean;
   shared?: boolean;
   interest?: boolean;
 }
+
+/** Text drawn on a pin/cluster: a count, or a whole percent for a rate, or '–' without a denominator. */
+export function pinText(kind: 'count' | 'rate', num: number, den: number): string {
+  if (kind === 'count') return num > 9999 ? '9999+' : String(num);
+  if (den <= 0) return '–';
+  return `${Math.round((num / den) * 100)}%`;
+}
+
+/** Colour scalar (0..1) or null (no denominator). Counts use a log scale against `maxCount`. */
+export function colorScalar(kind: 'count' | 'rate', num: number, den: number, maxCount: number): number | null {
+  if (kind === 'rate') return den > 0 ? Math.max(0, Math.min(1, num / den)) : null;
+  if (num <= 0) return 0;
+  return Math.max(0, Math.min(1, Math.log1p(num) / Math.log1p(Math.max(1, maxCount))));
+}
+
+/** Fixed sequential ramp (light → deep blue); the same stops as the CSS legend (--metric-0 … --metric-4). */
+export const METRIC_RAMP = ['#e0f2fe', '#7dd3fc', '#38bdf8', '#2563eb', '#1e3a8a'] as const;
+export const METRIC_NULL = '#9ca3af';
+export function rampColor(t: number | null): string {
+  if (t === null) return METRIC_NULL;
+  const x = Math.max(0, Math.min(1, t)) * (METRIC_RAMP.length - 1);
+  const i = Math.min(METRIC_RAMP.length - 2, Math.floor(x));
+  const f = x - i;
+  const a = METRIC_RAMP[i], b = METRIC_RAMP[i + 1];
+  const ch = (h: string, k: number) => parseInt(h.slice(1 + k * 2, 3 + k * 2), 16);
+  const mix = [0, 1, 2].map(k => Math.round(ch(a, k) + (ch(b, k) - ch(a, k)) * f));
+  return `#${mix.map(v => v.toString(16).padStart(2, '0')).join('')}`;
+}
+const inkFor = (t: number | null) => (t !== null && t > 0.6 ? '#FFFFFF' : '#0B1220');
 
 /**
  * Client-side grid clustering (pure; unit-tested without the SDK).
@@ -64,10 +100,12 @@ export function clusterCellDeg(level: number): number {
 
 export type ClusterGroup =
   | { kind: 'single'; point: KakaoPointInput }
-  | { kind: 'cluster'; members: KakaoPointInput[]; lat: number; lng: number; count: number };
+  /** num/den are the SUMS of the members' numerators/denominators (a rate is Σnum/Σden, never a mean of rates);
+   *  weight is the summed display weight; places = number of member places */
+  | { kind: 'cluster'; members: KakaoPointInput[]; lat: number; lng: number; count: number; num: number; den: number; places: number };
 
 export function clusterPoints(points: readonly KakaoPointInput[], level: number): ClusterGroup[] {
-  const live = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.count > 0);
+  const live = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.weight > 0);
   if (level < CLUSTER_LEVEL) return live.map((point) => ({ kind: 'single', point }));
   const cell = clusterCellDeg(level);
   const cells = new Map<string, KakaoPointInput[]>();
@@ -86,12 +124,16 @@ export function clusterPoints(points: readonly KakaoPointInput[], level: number)
     let lat = 0;
     let lng = 0;
     let count = 0;
+    let num = 0;
+    let den = 0;
     for (const m of members) {
       lat += m.lat;
       lng += m.lng;
-      count += m.count;
+      count += m.weight;
+      num += m.num;
+      den += m.den;
     }
-    out.push({ kind: 'cluster', members, lat: lat / members.length, lng: lng / members.length, count });
+    out.push({ kind: 'cluster', members, lat: lat / members.length, lng: lng / members.length, count, num, den, places: members.length });
   }
   return out;
 }
@@ -213,42 +255,38 @@ function markColors(): MarkColors {
   return { mineInk: cssVar('--brand-ink', '#60a5fa'), cyan: cssVar('--cyan', '#06B6D4'), partial: cssVar('--partial', '#F59E0B') };
 }
 
-function markerDataUrl(count: number, selected: boolean, ratio: number | null, colors: MarkColors, mark?: { mine?: boolean; shared?: boolean; interest?: boolean }): string {
+/** Place pin: fill = ramp(scalar), grey dashed when there is no denominator; the text is the metric value. */
+export function markerSvg(text: string, selected: boolean, scalar: number | null, colors: MarkColors, mark?: { mine?: boolean; shared?: boolean; interest?: boolean }): string {
   const size = 40;
-  const clamped = ratio == null ? 0.35 : Math.max(0.12, Math.min(1, ratio));
-  const r = Math.round(13 + 109 * (1 - clamped));
-  const g = Math.round(110 + 70 * clamped);
-  const b = 253;
+  const fill = rampColor(scalar);
   const { mineInk, cyan, partial } = colors;
-  const ring = selected ? '#F8FAFC' : 'rgba(248,250,252,0.55)';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
+  const ring = selected ? '#0B1220' : 'rgba(11,18,32,0.55)';
+  const fontSize = text.length >= 4 ? 10 : 11;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
     + (mark?.shared ? `<circle cx="20" cy="20" r="19" fill="none" stroke="${cyan}" stroke-width="1.5" stroke-dasharray="3 2"/>` : '')
-    + `<circle cx="20" cy="20" r="16" fill="rgba(${r},${g},${b},0.92)" stroke="${mark?.mine ? mineInk : ring}" stroke-width="${selected ? 3 : mark?.mine ? 2.5 : 1.5}"/>`
+    + `<circle cx="20" cy="20" r="16" fill="${fill}" fill-opacity="0.95" stroke="${mark?.mine ? mineInk : ring}" stroke-width="${selected ? 3.5 : mark?.mine ? 2.5 : 1.25}"${scalar === null ? ' stroke-dasharray="3 2"' : ''}/>`
     + (mark?.interest ? `<text x="33" y="10" font-size="10" fill="${partial}">★</text>` : '')
-    + `<text x="20" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#0B1220" font-family="system-ui">${count > 999 ? '999+' : String(count)}</text></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    + `<text x="20" y="24" text-anchor="middle" font-size="${fontSize}" font-weight="700" fill="${inkFor(scalar)}" font-family="system-ui">${text}</text></svg>`;
 }
+const svgUrl = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 
-/** Cluster bubble: larger than a point marker with a thick ring so aggregates never read as exact points. */
-function clusterDataUrl(sum: number, hasSelected: boolean, ratio: number | null): string {
+/** Cluster bubble: larger than a pin with a double ring so aggregates never read as one address. */
+export function clusterSvg(text: string, hasSelected: boolean, scalar: number | null): string {
   const size = 52;
-  const clamped = ratio == null ? 0.55 : Math.max(0.2, Math.min(1, ratio));
-  const r = Math.round(13 + 109 * (1 - clamped));
-  const g = Math.round(110 + 70 * clamped);
-  const text = sum > 9999 ? '9999+' : String(sum);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
-    + `<circle cx="26" cy="26" r="22" fill="rgba(${r},${g},253,0.95)" stroke="#F8FAFC" stroke-width="${hasSelected ? 4 : 3}"/>`
-    + `<circle cx="26" cy="26" r="17" fill="none" stroke="rgba(11,18,32,0.35)" stroke-width="1" stroke-dasharray="3 2"/>`
-    + `<text x="26" y="31" text-anchor="middle" font-size="13" font-weight="800" fill="#0B1220" font-family="system-ui">${text}</text></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const fill = rampColor(scalar);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
+    + `<circle cx="26" cy="26" r="22" fill="${fill}" fill-opacity="0.96" stroke="#F8FAFC" stroke-width="${hasSelected ? 4 : 3}"/>`
+    + `<circle cx="26" cy="26" r="17" fill="none" stroke="rgba(11,18,32,0.4)" stroke-width="1" stroke-dasharray="3 2"/>`
+    + `<text x="26" y="31" text-anchor="middle" font-size="${text.length >= 5 ? 11 : 13}" font-weight="800" fill="${inkFor(scalar)}" font-family="system-ui">${text}</text></svg>`;
 }
 
 export async function createKakaoMap(
   el: HTMLElement,
   opts: {
     onSelect(key: string): void;
-    /** `programmatic` is true for moves made by fitBounds (not by the user) */
-    onIdle?(bounds: [number, number, number, number], zoom: number, programmatic: boolean): void;
+    /** `user` is true only for moves the user made (drag, wheel, zoom buttons); map creation, fitBounds and
+     *  relayout are programmatic and never feed the statistics scope (R04 §5) */
+    onIdle?(bounds: [number, number, number, number], zoom: number, user: boolean): void;
     onRegionHover?(code: string | null): void;
     onRegionClick?(code: string): void;
   },
@@ -262,7 +300,8 @@ export async function createKakaoMap(
   let markers: KakaoMarkerInstance[] = [];
   let shapes: Array<{ code: string; polygons: KakaoPolygonInstance[] }> = [];
   let disposed = false;
-  let programmatic = false;
+  // the first idle after creation is the SDK settling, not a user move
+  let programmatic = true;
   let hovered: string | null = null;
   let boundaryStyle: BoundaryStyle = { selected: null, weight: new Map() };
   let lastInputs: KakaoPointInput[] = [];
@@ -291,14 +330,15 @@ export async function createKakaoMap(
       /* keep last known level */
     }
     const groups = clusterPoints(lastInputs, level);
-    const max = Math.max(1, ...groups.map((g) => (g.kind === 'single' ? g.point.count : g.count)));
+    // count scale: the largest drawn value at this zoom (clusters included), so colours stay comparable on screen
+    const maxCount = Math.max(1, ...groups.map((g) => (g.kind === 'single' ? g.point.num : g.num)));
     const colors = markColors();
     for (const g of groups) {
       if (g.kind === 'single') {
         const p = g.point;
         const pos = new kakao.LatLng(p.lat, p.lng);
         const img = new kakao.MarkerImage(
-          markerDataUrl(p.count, p.selected, p.metricValue ?? p.count / max, colors, p),
+          svgUrl(markerSvg(pinText(p.kind, p.num, p.den), p.selected, colorScalar(p.kind, p.num, p.den, maxCount), colors, p)),
           new kakao.Size(40, 40),
         );
         const marker = new kakao.Marker({ position: pos, image: img, title: p.label });
@@ -307,19 +347,21 @@ export async function createKakaoMap(
         markers.push(marker);
         continue;
       }
-      // Cluster bubble: number is the SUM of member display counts (not the node count).
-      // Position is the member mean, display-only; member coordinates stay exact.
-      const values = g.members.map((m) => m.metricValue).filter((v): v is number => v != null);
-      const ratio = values.length ? values.reduce((a, b) => a + b, 0) / values.length / max : g.count / max;
+      // Cluster bubble: counts are SUMS; a rate is Σnumerator/Σdenominator of the member places (F01).
+      // Position is the member mean, display-only; member positions stay as they are.
+      const kind = g.members[0].kind;
+      const text = pinText(kind, g.num, g.den);
       const pos = new kakao.LatLng(g.lat, g.lng);
       const img = new kakao.MarkerImage(
-        clusterDataUrl(g.count, g.members.some((m) => m.selected), ratio),
+        svgUrl(clusterSvg(text, g.members.some((m) => m.selected), colorScalar(kind, g.num, g.den, maxCount))),
         new kakao.Size(52, 52),
       );
       const marker = new kakao.Marker({
         position: pos,
         image: img,
-        title: `가까운 ${g.members.length}곳 묶음 · 합계 ${g.count.toLocaleString('ko-KR')}건 (눌러서 확대)`,
+        title: kind === 'count'
+          ? `서로 다른 주소 ${g.places.toLocaleString('ko-KR')}곳 묶음 · 합계 ${g.num.toLocaleString('ko-KR')}건 (눌러서 확대)`
+          : `서로 다른 주소 ${g.places.toLocaleString('ko-KR')}곳 묶음 · ${text} (${g.num.toLocaleString('ko-KR')}/${g.den.toLocaleString('ko-KR')}건, 눌러서 확대)`,
       });
       kakao.event.addListener(marker, 'click', () => zoomToMembers(g.members, g.lat, g.lng));
       marker.setMap(map);
@@ -369,30 +411,32 @@ export async function createKakaoMap(
       /* level unavailable — ignore */
     }
     if (!opts.onIdle) return;
-    const moved = programmatic;
+    const user = !programmatic;
     programmatic = false;
     try {
       const b = map.getBounds();
       const sw = b.getSouthWest();
       const ne = b.getNorthEast();
-      opts.onIdle([sw.getLng(), sw.getLat(), ne.getLng(), ne.getLat()], map.getLevel(), moved);
+      opts.onIdle([sw.getLng(), sw.getLat(), ne.getLng(), ne.getLat()], map.getLevel(), user);
     } catch {
       /* bounds unavailable — ignore */
     }
   };
 
   const shapeOptions = (code: string) => {
-    const w = boundaryStyle.weight.get(code);
+    const has = boundaryStyle.weight.has(code);
+    const w = boundaryStyle.weight.get(code) ?? null;
     const selected = boundaryStyle.selected === code;
     const hover = hovered === code;
     // The Kakao base map is light in both app themes, so outlines use fixed dark-enough colors, not theme tokens.
+    // Fill follows the ACTIVE metric's colour ramp (R03-6): no rows → almost clear; rows without a denominator
+    // → neutral grey; otherwise the same ramp as the pins.
     return {
       strokeWeight: selected ? 3 : hover ? 2.5 : 1.5,
       strokeColor: selected ? '#D97706' : '#1D4ED8',
       strokeOpacity: selected || hover ? 0.95 : 0.7,
-      fillColor: '#2563EB',
-      // no data → almost clear (never looks like a low value); data → 0.08..0.38 by share
-      fillOpacity: (w == null ? 0.02 : 0.08 + 0.3 * Math.max(0, Math.min(1, w))) + (hover ? 0.12 : 0),
+      fillColor: has ? rampColor(w) : '#2563EB',
+      fillOpacity: (!has ? 0.02 : w === null ? 0.18 : 0.22 + 0.3 * w) + (hover ? 0.12 : 0),
     };
   };
   const restyle = (code: string) => {
@@ -459,6 +503,9 @@ export async function createKakaoMap(
     },
     relayout() {
       try {
+        // a size change may emit idle; it is not a user move
+        programmatic = true;
+        window.setTimeout(() => { programmatic = false; }, 600);
         map.relayout();
       } catch {
         /* ignore */

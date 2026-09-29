@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { filterPoints, markPoints } from '../../src/state/pointMarks';
+import { markPoints } from '../../src/state/pointMarks';
+import * as pointMarks from '../../src/state/pointMarks';
 import { sanitizeInterest, toggleInterest, viewFromSearch } from '../../src/state/view';
 import type { PublicPoint } from '../../src/domain/public';
 import type { MyPoint } from '../../src/domain/personal';
@@ -26,12 +27,9 @@ describe('display marks never change the data', () => {
     expect(marks.get('cluster:1')).toMatchObject({ mine: true, shared: false, mineCount: 3 });
   });
 
-  it('filters for display only and returns copies', () => {
-    const marks = markPoints(points, my, ['26470']);
-    expect(filterPoints(points, marks, 'mine').map(p => p.key)).toEqual(['a', 'c', 'cluster:1']);
-    expect(filterPoints(points, marks, 'shared').map(p => p.key)).toEqual(['a']);
-    expect(filterPoints(points, marks, 'interest').map(p => p.key)).toEqual(['b']);
-    expect(filterPoints(points, marks, 'all')).toHaveLength(4);
+  it('R01: marks never filter — there is no point filter any more and every place stays drawable', () => {
+    markPoints(points, my, ['26470']);
+    expect('filterPoints' in pointMarks).toBe(false);
     expect(points).toHaveLength(4);
   });
 

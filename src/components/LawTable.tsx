@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { PublicLaw } from '../domain/public';
 import { lawLabel, lawValue } from '../state/filters';
 import { fmtFineAmount, fmtInt, fmtPercent, fmtWon, fmtRating } from './format';
@@ -13,16 +14,26 @@ interface Props {
 
 /** 위반법규별 현황 (docs/metrics-catalog.md law_results). Answer-date cohort, same scope and denominators as the
  *  rest of the dashboard. Rows come from the server in order (answers desc, then law; 법규 미상 last on ties). */
+const SUMMARY_ROWS = 8;
+
 export default function LawTable(p: Props) {
-  const rows = p.laws ?? [];
+  // summary density by default (4 key columns, 8 rows); 전체 보기 shows every row and column full width
+  const [expanded, setExpanded] = useState(false);
+  const all = p.laws ?? [];
+  const rows = expanded ? all : all.slice(0, SUMMARY_ROWS);
+  const full = expanded;
   return (
-    <section className="cm-panel laws" id="laws" aria-label="위반법규별 현황">
+    <section className={`cm-panel laws${expanded ? ' expanded' : ''}`} id="laws" aria-label="위반법규별 현황">
       <div className="panel-top">
         <div>
           <h2>위반법규별 현황</h2>
           <span className="subtitle">답변에 적힌 위반법규별 처리 결과입니다. 법규를 누르면 그 법규만 봅니다.</span>
         </div>
-        <span className="cm-chip" title="처리·과태료 수치는 답변 받은 날을 기준으로 셉니다">답변 받은 날 기준</span>
+        {all.length > 0 && (
+          <button className="ghost-btn" type="button" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+            {expanded ? '요약으로 보기' : '전체 보기'}
+          </button>
+        )}
       </div>
       {p.laws === null ? (
         <p className="empty-state">위반법규별 통계는 아직 준비되지 않았습니다.</p>
@@ -32,7 +43,7 @@ export default function LawTable(p: Props) {
         <div className="table-scroll">
           <table className="entity-table law-table">
             <caption className="cm-muted" style={{ textAlign: 'left', padding: '0 16px 8px', fontSize: 12 }}>
-              위반법규 {fmtInt(rows.length)}개 · 답변 많은 순
+              위반법규 {fmtInt(all.length)}개 · 답변 많은 순 · 답변 받은 날 기준{!expanded && all.length > rows.length ? ` · ${fmtInt(rows.length)}개만 표시` : ''}
             </caption>
             <thead>
               <tr>
@@ -40,10 +51,10 @@ export default function LawTable(p: Props) {
                 <th scope="col" className="num">답변 완료</th>
                 <th scope="col" className="num">수용률</th>
                 <th scope="col" className="num">과태료 부과율</th>
-                <th scope="col" className="num" title="답변에 적힌 과태료 금액 합계(금액이 확인되고 공개에 동의한 것만)">답변에 적힌 과태료 금액</th>
-                <th scope="col" className="num">범칙금</th>
-                <th scope="col" className="num">경고</th>
-                <th scope="col" className="num" title="공개에 동의한 숫자 별점만 집계">평균 별점 · 건수</th>
+                {full && <th scope="col" className="num" title="답변에 적힌 과태료 금액 합계(금액이 확인되고 공개에 동의한 것만)">답변에 적힌 과태료 금액</th>}
+                {full && <th scope="col" className="num">범칙금</th>}
+                <th scope="col" className="num" title="경고·계도 처분으로 확인된 신고">계도</th>
+                {full && <th scope="col" className="num" title="공개에 동의한 숫자 별점만 집계">평균 별점 · 건수</th>}
               </tr>
             </thead>
             <tbody>
@@ -56,7 +67,7 @@ export default function LawTable(p: Props) {
                   <tr key={value} className={active ? 'active' : undefined}>
                     <td>
                       <button
-                        type="button" className="mini-btn" style={{ textAlign: 'left', maxWidth: 280, whiteSpace: 'normal' }}
+                        type="button" className="mini-btn law-pick"
                         aria-pressed={active}
                         title={active ? '모든 법규 보기' : `${name}만 보기`}
                         onClick={() => p.onPickLaw(active ? null : value)}
@@ -76,15 +87,17 @@ export default function LawTable(p: Props) {
                       {fmtPercent(r.fine_rate)}
                       <small>과태료 {fmtInt(r.fine_count)}건</small>
                     </td>
-                    <td className="num">
-                      {fmtFineAmount(a)}
-                      {a.confirmed_count > 0 && (
-                        <small>평균 {fmtWon(a.mean_won)} · {fmtInt(a.fine_count)}건 중 {fmtInt(a.confirmed_count)}건{a.confirmed_count < a.fine_count ? '만 합산' : ''}</small>
-                      )}
-                    </td>
-                    <td className="num">{fmtInt(r.penalty_count)}</td>
+                    {full && (
+                      <td className="num">
+                        {fmtFineAmount(a)}
+                        {a.confirmed_count > 0 && (
+                          <small>평균 {fmtWon(a.mean_won)} · {fmtInt(a.fine_count)}건 중 {fmtInt(a.confirmed_count)}건{a.confirmed_count < a.fine_count ? '만 합산' : ''}</small>
+                        )}
+                      </td>
+                    )}
+                    {full && <td className="num">{fmtInt(r.penalty_count)}</td>}
                     <td className="num">{fmtInt(r.warning_count)}</td>
-                    <td className="num">{fmtRating(r.rating)}</td>
+                    {full && <td className="num">{fmtRating(r.rating)}</td>}
                   </tr>
                 );
               })}

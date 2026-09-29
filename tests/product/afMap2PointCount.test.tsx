@@ -62,18 +62,18 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     expect(kpi).not.toContain('내 신고');
     const reportMap = renderToStaticMarkup(
       <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="reports"
-        onMetric={() => {}} categoryLabel="전체 분류" onApplyView={() => {}} autoRefresh={false}
+        onMetric={() => {}} categoryLabel="전체 분류" autoRefresh={false}
         onAutoRefresh={() => {}} locationMissing={data.meta.location_missing ?? null} />,
     );
     expect(reportMap).not.toContain('예시 지점');
-    expect(reportMap).toContain('신고 0건인 1곳은 지도에 표시하지 않습니다');
+    expect(reportMap).toContain('이 기간에 신고가 없고 답변만 있는 1곳은 비율 지표에서 보입니다');
     const completionMap = renderToStaticMarkup(
       <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="acceptance"
-        onMetric={() => {}} categoryLabel="전체 분류" onApplyView={() => {}} autoRefresh={false}
+        onMetric={() => {}} categoryLabel="전체 분류" autoRefresh={false}
         onAutoRefresh={() => {}} locationMissing={data.meta.location_missing ?? null} />,
     );
     expect(completionMap).toContain('예시 지점');
-    expect(completionMap).toContain('완료 1건');
+    expect(completionMap).toContain('답변 1건');
     expect(renderToStaticMarkup(<DataGuide data={data} />)).toContain('답변만 받은 신고의 장소는 완료 지표를 고르면 볼 수 있습니다');
     // Dashboard renders the empty banner only when isEmptyResult is true.
     const banner = isEmptyResult(data)

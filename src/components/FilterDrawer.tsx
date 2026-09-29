@@ -14,6 +14,8 @@ interface Props {
   onApply: () => void;
   onReset: () => void;
   regionCounts: Map<string, number>;
+  /** validation message of the last 적용 (the draft is kept) */
+  dateError?: string | null;
   /** named laws of the current data (answered reports per law; null count = kept selection not in the data) */
   lawOptions: Array<{ law: string; count: number | null }>;
 }
@@ -51,16 +53,22 @@ function LawSelect({ value, options, onChange }: { value: string | null; options
 export default function FilterDrawer(p: Props) {
   const panelRef = useRef<HTMLElement>(null);
   const lastFocus = useRef<Element | null>(null);
+  // R10: the key handler reads the LATEST close callback from a ref, so the open effect below depends on `open`
+  // only. Before, it depended on `p.onClose` (a new function on every parent render), so each keystroke in a date
+  // field re-ran cleanup (focus restore) + setup (focus the first button) and stole focus from the input.
+  const onCloseRef = useRef(p.onClose);
+  onCloseRef.current = p.onClose;
 
   useEffect(() => {
     if (!p.open) return;
+    // remember where focus was once per opening, move it into the drawer once
     lastFocus.current = document.activeElement;
-    panelRef.current?.querySelector('button,input,select') instanceof HTMLElement &&
-      (panelRef.current.querySelector('button,input,select') as HTMLElement).focus();
+    const first = panelRef.current?.querySelector<HTMLElement>('button,input,select');
+    first?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        p.onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab' || !panelRef.current) return;
@@ -81,9 +89,11 @@ export default function FilterDrawer(p: Props) {
     document.addEventListener('keydown', onKey, true);
     return () => {
       document.removeEventListener('keydown', onKey, true);
-      if (lastFocus.current instanceof HTMLElement) lastFocus.current.focus();
+      const back = lastFocus.current;
+      lastFocus.current = null;
+      if (back instanceof HTMLElement && back.isConnected) back.focus();
     };
-  }, [p.open, p.onClose]);
+  }, [p.open]);
 
   if (!p.open) return null;
   return (
@@ -103,11 +113,16 @@ export default function FilterDrawer(p: Props) {
           ))}
         </div>
         <label>시작일
-          <input type="date" value={p.draft.start} onChange={(e) => p.onDraft({ ...p.draft, start: e.target.value })} />
+          <input type="date" value={p.draft.start} aria-invalid={!!p.dateError || undefined}
+            aria-describedby={p.dateError ? 'drawer-date-error' : undefined}
+            onChange={(e) => p.onDraft({ ...p.draft, start: e.target.value })} />
         </label>
         <label>종료일
-          <input type="date" value={p.draft.end} onChange={(e) => p.onDraft({ ...p.draft, end: e.target.value })} />
+          <input type="date" value={p.draft.end} aria-invalid={!!p.dateError || undefined}
+            aria-describedby={p.dateError ? 'drawer-date-error' : undefined}
+            onChange={(e) => p.onDraft({ ...p.draft, end: e.target.value })} />
         </label>
+        {p.dateError && <p className="field-error" id="drawer-date-error" role="alert">{p.dateError} 입력한 날짜는 그대로 두었습니다.</p>}
         <label>분류
           <select value={p.draft.category} onChange={(e) => p.onDraft({ ...p.draft, category: e.target.value as DraftFilters['category'] })}>
             {(Object.keys(CATEGORY_LABEL) as Array<keyof typeof CATEGORY_LABEL>).map((c) => (
