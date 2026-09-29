@@ -1,0 +1,11 @@
+{
+  "http_status": 429,
+  "body": {
+    "error": {
+      "code": "RATE_LIMITED",
+      "message": "잠시 후 다시 시도해 주세요.",
+      "retryable": true
+    },
+    "request_id": "00000000-0000-4000-8000-000000000000"
+  }
+}

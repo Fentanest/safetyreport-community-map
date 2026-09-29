@@ -1,0 +1,11 @@
+{
+  "http_status": 422,
+  "body": {
+    "error": {
+      "code": "NUMBERS_LIMIT_EXCEEDED",
+      "message": "한 번에 복사할 수 있는 신고번호 수를 넘었습니다.",
+      "retryable": false
+    },
+    "request_id": "00000000-0000-4000-8000-000000000000"
+  }
+}

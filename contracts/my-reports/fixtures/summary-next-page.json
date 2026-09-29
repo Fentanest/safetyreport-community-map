@@ -1,0 +1,47 @@
+{
+  "contract": "my-reports-v1",
+  "route": "summary",
+  "data_version": "da741b772aaf8bbadb82c3f622452f03",
+  "queried_at": "2026-09-29T15:00:01.000Z",
+  "timezone": "Asia/Seoul",
+  "recent_start": "2026-09-27",
+  "recent_end": "2026-09-29",
+  "account": {
+    "contributor": "active"
+  },
+  "summary": null,
+  "recent_summary": null,
+  "recent": {
+    "items": [
+      {
+        "report_number": "SPP-2609-00000003",
+        "source_report_id": "9100000003",
+        "official_url": "https://www.safetyreport.go.kr/#mypage/mysafereport/9100000003",
+        "vehicle_number": "12가3456",
+        "report_date": "2026-09-18",
+        "completed_date": "2026-09-27",
+        "category": "parking",
+        "status": "partial",
+        "status_label": "일부 수용",
+        "disposition": "warning",
+        "amount_kind": "unknown",
+        "confirmed_amount_won": null,
+        "penalty_points": null,
+        "address": "서울특별시 종로구 예시로 12",
+        "lat": null,
+        "lng": null,
+        "agency_key": "a1:example-g2",
+        "agency_name_original": "예시구청(구)",
+        "agency_name_current": "예시구청",
+        "manager_key": "m1:example-m2",
+        "manager_name": "김담당",
+        "violation_law": null,
+        "rating": 1
+      }
+    ],
+    "total": 3,
+    "page_size": 2,
+    "offset": 2,
+    "next_cursor": null
+  }
+}

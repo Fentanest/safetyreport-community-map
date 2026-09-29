@@ -1,0 +1,11 @@
+{
+  "http_status": 401,
+  "body": {
+    "error": {
+      "code": "SESSION_EXPIRED",
+      "message": "로그인이 만료되었습니다. 다시 로그인해 주세요.",
+      "retryable": true
+    },
+    "request_id": "00000000-0000-4000-8000-000000000000"
+  }
+}

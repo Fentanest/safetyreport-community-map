@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Copy contracts/community-ingest/ (canonical, this repo) into another repository and verify MANIFEST.sha256.
+"""Copy a canonical contract folder of this repo (contracts/community-ingest/ by default, or contracts/my-reports/)
+into another repository and verify MANIFEST.sha256.
 
-    python3 scripts/integration/sync_contract_copy.py --to <repo root> [--check]
+    python3 scripts/integration/sync_contract_copy.py --to <repo root> [--contract my-reports] [--check]
+    python3 scripts/integration/sync_contract_copy.py --manifest my-reports   # rewrite the canonical MANIFEST.sha256
 
 --check only verifies an existing copy (used by tests / CI in the consuming repository). Files are copied
 byte-for-byte; the copy must never be edited in place (edit the canonical folder, re-run this script).
@@ -12,7 +14,8 @@ import shutil
 import sys
 from pathlib import Path
 
-SRC = Path(__file__).resolve().parents[2] / "contracts" / "community-ingest"
+CONTRACTS = Path(__file__).resolve().parents[2] / "contracts"
+NAMES = ("community-ingest", "my-reports")
 
 
 def verify(folder: Path) -> list[str]:
@@ -37,10 +40,22 @@ def verify(folder: Path) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--to", required=True)
+    ap.add_argument("--to")
+    ap.add_argument("--contract", choices=NAMES, default="community-ingest")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--manifest", choices=NAMES, help="rewrite MANIFEST.sha256 of this canonical folder and exit")
     args = ap.parse_args()
-    dst = Path(args.to).resolve() / "contracts" / "community-ingest"
+    if args.manifest:
+        folder = CONTRACTS / args.manifest
+        files = sorted(p for p in folder.rglob("*") if p.is_file() and p.name != "MANIFEST.sha256")
+        lines = [f"{hashlib.sha256(p.read_bytes()).hexdigest()}  ./{p.relative_to(folder).as_posix()}" for p in files]
+        (folder / "MANIFEST.sha256").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print(f"manifest written: {folder / 'MANIFEST.sha256'} ({len(lines)} files)")
+        return 0
+    if not args.to:
+        ap.error("--to is required")
+    SRC = CONTRACTS / args.contract
+    dst = Path(args.to).resolve() / "contracts" / args.contract
     if not args.check:
         problems = verify(SRC)
         if problems:

@@ -1,0 +1,11 @@
+{
+  "http_status": 409,
+  "body": {
+    "error": {
+      "code": "DATASET_CHANGED",
+      "message": "그사이 내 신고 자료가 바뀌었습니다. 처음부터 다시 불러와 주세요.",
+      "retryable": true
+    },
+    "request_id": "00000000-0000-4000-8000-000000000000"
+  }
+}

@@ -19,7 +19,7 @@ const stack = resolve(opt('--stack', '.integration-stack'));
 const deno = opt('--deno', 'deno');
 const KONG = opt('--kong', 'http://127.0.0.1:56321');
 const GATEWAY_PORT = Number(opt('--port', '56999'));
-const FUNCTIONS = ['public-analytics', 'my-analytics', 'community-ingest', 'community-account', 'community-auth-relay'];
+const FUNCTIONS = ['public-analytics', 'my-analytics', 'community-ingest', 'community-account', 'community-auth-relay', 'my-reports'];
 
 // stack keys (never printed): `supabase status -o env`
 const statusEnv = Object.fromEntries(execFileSync('npx', ['supabase', 'status', '-o', 'env'], { cwd: stack, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
