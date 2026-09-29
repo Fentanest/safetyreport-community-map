@@ -58,7 +58,7 @@ export class QueryError extends Error {
 type Headers = Record<string, string>;
 const allowed = new Set([
   'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
-  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type', 'view_bbox',
+  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type', 'view_bbox', 'entity_limit',
 ]);
 // list-only parameters: never part of the statistics scope
 const ENTITY_ONLY = ['kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type'];
@@ -85,6 +85,7 @@ function errorWith(code: string, status: number, headers: Headers, details?: Vie
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
     code === 'AGGREGATE_NOT_READY' ? '공개 집계가 아직 준비되지 않았습니다.' :
       code === 'DATASET_CHANGED' ? '데이터 버전이 변경됐습니다. 다시 조회해 주세요.' :
+        code === 'RESULT_TOO_LARGE' ? '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.' :
         ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.',
     ...(details !== undefined ? { details } : {}) } }, status, headers);
   if (status === 429) res.headers.set('Retry-After', '60');
@@ -98,9 +99,12 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   for (const name of params.keys()) if (!names.has(name) || params.getAll(name).length !== 1) throw new QueryError('INVALID_QUERY', 400);
   const start = params.get('start'), end = params.get('end');
   if (!start || !end || !date.test(start) || !date.test(end)) throw new QueryError('INVALID_QUERY', 400);
+  // No length cap (2026-09-30): the whole shared history must be queryable. The only bounds are a real calendar
+  // range (start ≤ end) and a comparison window that stays on the calendar; the data volume is guarded by the
+  // repository's row budget (RESULT_TOO_LARGE), never by silently shortening the period.
   try {
     const previous = previousWindow(start, end);
-    if (Date.parse(end) - Date.parse(start) > 1826 * 86400000 || previous.start < '1900-01-01') throw new Error('range');
+    if (previous.start < '1900-01-01') throw new Error('range');
   } catch { throw new QueryError('INVALID_QUERY', 400); }
   if (state.data_min && end < state.data_min || state.data_max && start > state.data_max) throw new QueryError('INVALID_QUERY', 400);
   const category = params.get('category') || 'all';
@@ -233,6 +237,11 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       }
       // view_bbox = the map viewport of a display refinement (R07/F04); it never enters the statistics scope
       if (route !== 'places' && url.searchParams.has('view_bbox')) throw new QueryError('INVALID_QUERY', 400);
+      // entity_limit: how many agencies/managers a place detail returns (R3 "더 보기"); place detail only
+      if (!route.startsWith('places/') && url.searchParams.has('entity_limit')) throw new QueryError('INVALID_QUERY', 400);
+      const entityLimitRaw = url.searchParams.get('entity_limit');
+      const entityLimit = entityLimitRaw === null ? 100 : Number(entityLimitRaw);
+      if (!Number.isInteger(entityLimit) || entityLimit < 1 || entityLimit > 1000) throw new QueryError('INVALID_QUERY', 400);
       let viewBbox: [number, number, number, number] | null = null;
       if (route === 'places') {
         const raw = url.searchParams.get('view_bbox');
@@ -241,6 +250,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       }
       const scopeParams = new URLSearchParams(url.searchParams);
       scopeParams.delete('view_bbox');
+      scopeParams.delete('entity_limit');
       const scope = parseScope(scopeParams, state);
       if (url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) {
         throw new QueryError('DATASET_CHANGED', 409);
@@ -269,7 +279,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         if (!anchor) return errorResponse('NOT_FOUND', 404);
         const agencies = entityRows(own.done, 'agency'), managers = entityRows(own.done, 'manager');
         return json({ ...common, place: placeSummary(placeKey, own.reported, own.done, anchor),
-          agencies: agencies.slice(0, 100), managers: managers.slice(0, 100),
+          agencies: agencies.slice(0, entityLimit), managers: managers.slice(0, entityLimit),
           agency_total: agencies.length, manager_total: managers.length }, 200);
       }
       if (route === 'places') {
@@ -290,7 +300,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
-        regions: (data.regions ?? []).slice(0, 300), laws: (data.laws ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
+        regions: (data.regions ?? []).slice(0, 400), laws: (data.laws ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
         vehicle_identifiable_reports: data.vehicle_identifiable_reports,
         analytics: data.analytics ?? null, map_unplaced: data.map_unplaced ?? null }, 200);
       if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200);
@@ -330,6 +340,8 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       return point ? json({ ...common, point }, 200) : errorResponse('NOT_FOUND', 404);
     } catch (e) {
       if (e instanceof QueryError) return errorResponse(e.code, e.status);
+      // the repository refused to materialise more facts than its budget: say so (never a partial result)
+      if (e instanceof Error && e.message === 'RESULT_TOO_LARGE') return errorResponse('RESULT_TOO_LARGE', 422);
       if (e instanceof ViewerAuthError) {
         return e.code === 'service_unavailable' ? errorResponse('AGGREGATE_NOT_READY', 503)
           : errorResponse(e.code, e.code === 'kakao_required' ? 403 : 401);

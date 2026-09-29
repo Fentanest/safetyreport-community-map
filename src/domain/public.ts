@@ -291,7 +291,7 @@ export interface VehicleDayDistribution {
 }
 
 /** A06 처리결과별 별점 분포. counts[i] = number of (i+1)-point ratings; mean over rating_count. */
-export interface RatingRow { status: 'all' | 'accepted' | 'partial' | 'rejected' | 'unknown'; counts: [number, number, number, number, number]; rating_count: number; mean: number | null }
+export interface RatingRow { status: 'all' | 'accepted' | 'partial' | 'rejected' | 'fine' | 'unknown'; counts: [number, number, number, number, number]; rating_count: number; mean: number | null }
 export interface RatingDistribution { basis: 'completed_date'; rows: RatingRow[]; unrated: number }
 
 /** New analytics A01–A06 computed from ONE selection with the dashboard (same scope/version). A05 uses `monthly`. */

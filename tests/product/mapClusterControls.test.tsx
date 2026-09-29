@@ -151,12 +151,16 @@ describe('MapPanel markup (R01/R02/R03)', () => {
       expect(html).not.toContain(gone);
     }
   });
-  it('lists the places of the active metric and explains the hidden ones', () => {
+  it('신고 수 lists pins; rate metrics draw regions and list no place at all (R7)', () => {
     const html = renderToStaticMarkup(<MapPanel {...base} points={pts} metric="reports" />);
     expect(html).not.toContain('완료만 지점 0');
     expect(html).toContain('비율 지표에서 보입니다');
-    const done = renderToStaticMarkup(<MapPanel {...base} points={pts} metric="acceptance" />);
-    expect(done).toContain('완료만 지점 0');
+    for (const m of ['acceptance', 'rejection', 'fine'] as const) {
+      const done = renderToStaticMarkup(<MapPanel {...base} points={pts} metric={m} />);
+      expect(done).not.toContain('완료만 지점 0');
+      expect(done).not.toContain('예시 지점');
+      expect(done).toContain('시도별');
+    }
   });
   it('shows a one-step-up back button only when a region is active', () => {
     const none = renderToStaticMarkup(<MapPanel {...base} points={pts} metric="reports" activeRegion={null} onPickRegion={() => {}} />);

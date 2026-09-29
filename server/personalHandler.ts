@@ -41,6 +41,7 @@ const MESSAGES: Record<string, [number, string]> = {
   DATASET_CHANGED: [409, '데이터 버전이 변경됐습니다. 다시 조회해 주세요.'],
   rate_limited: [429, '잠시 후 다시 시도해 주세요.'],
   AGGREGATE_NOT_READY: [503, '공개 집계가 아직 준비되지 않았습니다.'],
+  RESULT_TOO_LARGE: [422, '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.'],
   service_unavailable: [503, '잠시 후 다시 시도해 주세요.'],
 };
 
@@ -111,7 +112,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       const expected = url.searchParams.get('expected_version');
       if (expected && expected !== state.dataset_version) fail('DATASET_CHANGED');
       if (!state.ready || !state.generated_at) fail('AGGREGATE_NOT_READY');
-      if (facts.length > 100000) fail('AGGREGATE_NOT_READY');
+      if (facts.length > 100000) fail('RESULT_TOO_LARGE');
 
       const body = aggregateCompare(facts, scope, uid, {
         datasetVersion: state.dataset_version, asOf: state.data_max || scope.end, dataMin: state.data_min,
@@ -122,6 +123,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
     } catch (e) {
       if (e instanceof Fail || e instanceof ViewerAuthError) return error(e.code);
       if (e instanceof QueryError) return error(e.code);
+      if (e instanceof Error && e.message === 'RESULT_TOO_LARGE') return error('RESULT_TOO_LARGE');
       return error('service_unavailable');
     }
   };

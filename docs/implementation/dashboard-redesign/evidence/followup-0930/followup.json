@@ -1,0 +1,264 @@
+{
+  "R1": {
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "allPresetTitle": "공유된 전체 자료 2014.12.03 — 2026.09.24 (바로 적용)",
+    "allPresetDisabled": false,
+    "afterAll": {
+      "requests": {
+        "dashboard": 1
+      },
+      "dashboardParams": [
+        "2014-12-03..2026-09-24"
+      ],
+      "statuses": [
+        200
+      ],
+      "button": "2014.12.03 — 2026.09.24",
+      "url": "?start=2014-12-03&end=2026-09-24&category=all",
+      "popoverOpen": 0,
+      "chips": "기간\n2014.12.03 — 2026.09.24\n×",
+      "errorBanner": [],
+      "kpi": "신고\n779건\n신고한 날 기준\n비교기간 자료 없음\n답변 완료\n779건\n답변 받은 날 · 결과가 나온 680건\n비교기간 자료 없음\n수용률\n52.4%\n356 / 680건\n일부수용률\n17.6%\n120 / 680건\n불수용률\n30.0%\n204 / 680건\n과태료 부과율\n30.7%\n과태료 239 / 답변 779건\n답변까지 걸린 기간\n19일\n중앙값 · 유효 779건\n참여한 사람\n24명\n신고를 공유한 사람 수 · 신고한 날\n비교기간 자료 없음"
+    },
+    "afterCategoryAll": {
+      "button": "2014.12.03 — 2026.09.24",
+      "url": "?start=2014-12-03&end=2026-09-24&category=all",
+      "categoryAllTitle": "전체 분류 (기간은 그대로)"
+    },
+    "typed": [
+      "2014-09-30",
+      "2026-09-29"
+    ],
+    "afterTyped": {
+      "requests": {
+        "dashboard": 1
+      },
+      "statuses": [
+        "dashboard:200"
+      ],
+      "button": "2014.09.30 — 2026.09.29",
+      "url": "?start=2014-09-30&end=2026-09-29&category=all",
+      "popoverOpen": 0,
+      "chips": "기간\n2014.09.30 — 2026.09.29\n×",
+      "alerts": []
+    },
+    "reversed": {
+      "popoverOpen": 1,
+      "error": "시작일은 종료일보다 늦을 수 없습니다.",
+      "draft": [
+        "2026-09-20",
+        "2026-09-01"
+      ],
+      "requests": {}
+    },
+    "back": {
+      "button": "2014.12.03 — 2026.09.24",
+      "url": "?start=2014-12-03&end=2026-09-24&category=all"
+    },
+    "failure": {
+      "stale": 1,
+      "kpiStill": true,
+      "alerts": [
+        "e2e injected (AGGREGATE_NOT_READY, HTTP 503) · 화면의 수치는 마지막으로 불러온 조건(2014.12.03 — 2026.09.24 · 전국)의 결과입니다.\n다시 시도"
+      ]
+    }
+  },
+  "R2_R3": {
+    "consoleErrors": [],
+    "rows": 2,
+    "firstRow": "예시 강남구청\n답변\n15건\n처리 결과 (결과 확인 12건)\n수용\n100.0%\n일부수용\n0.0%\n불수용\n0.0%\n과태료\n8건 | 53.3%\n계도\n1건\n계도처분율\n6.7%",
+    "nestedButtons": 0,
+    "pickTitle": "예시 강남구청 — 이 기관만 보기",
+    "boxFont": "15px",
+    "labelFont": "12px",
+    "overflowX": 0,
+    "chartCaption": "수용률 막대의 100%는 결과 확인 건수(수용+일부수용+불수용)입니다. 결과 미상은 막대에서 빠지므로 선(답변 완료)과 다를 수 있습니다. 담당자 표시 1명 / 전체 1명.",
+    "legend": "수용\n일부수용\n불수용\n답변 완료(건, 오른쪽 축)",
+    "fineLegend": "과태료 처분\n과태료 외(경고·범칙금·처분 없음·미확인)\n답변 완료(건, 오른쪽 축)",
+    "fineCaption": "과태료처분율 막대의 100%는 답변 완료 건수입니다. 금액이 없어도 처분이 과태료면 포함합니다. 담당자 표시 1명 / 전체 1명.",
+    "requestsOnRadio": {},
+    "tooltip": "이서윤\n답변 15건\n과태료 처분 8건 (53.3%)\n과태료 외 7건 (경고·범칙금·처분 없음·미확인 포함)",
+    "table": [
+      "담당자\t답변(건)\t결과 확인(건)\t결과 미상(건)\t수용률\t일부수용률\t불수용률\t과태료(건)\t과태료처분율",
+      "이서윤\t15\t12\t3\t100.0%\t0.0%\t0.0%\t8\t53.3%"
+    ]
+  },
+  "R3_crowd": {
+    "consoleErrors": [],
+    "place": "서울특별시 중구 세종대로 110 (합성 검수 주소)",
+    "captionFirst": "수용률 막대의 100%는 결과 확인 건수(수용+일부수용+불수용)입니다. 결과 미상은 막대에서 빠지므로 선(답변 완료)과 다를 수 있습니다. 담당자 표시 100명 / 전체 110명.나머지 담당자 불러오기",
+    "loadMore": {
+      "requests": {
+        "places/:key": 1
+      },
+      "entityLimit": [
+        "110"
+      ],
+      "caption": "수용률 막대의 100%는 결과 확인 건수(수용+일부수용+불수용)입니다. 결과 미상은 막대에서 빠지므로 선(답변 완료)과 다를 수 있습니다. 담당자 표시 110명 / 전체 110명.",
+      "stillSamePlace": "서울특별시 중구 세종대로 110 (합성 검수 주소)"
+    },
+    "tableRows": 110
+  },
+  "R4_R5_R6": {
+    "consoleErrors": [],
+    "heatHeader": "기관 도로교통법 제32조 도로교통법 제5조 도로교통법 제33조 도로교통법 제27조 도로교통법 제34조 도로교통법 제35조 자동차관리법 제10조 ",
+    "heatHasUnknown": false,
+    "ratingAria": "전체 평가 338건 · 평균 3.0점, 수용 평가 145건 · 평균 2.9점, 일부 수용 평가 58건 · 평균 3.0점, 불수용 평가 80건 · 평균 3.1점, 과태료 처분 평가 102건 · 평균 3.0점, 결과 미상 평가 55건 · 평균 2.9점",
+    "ratingAriaCompare": "모든 결과 · 전체 평가 338건 · 평균 3.0점, 모든 결과 · 내 신고 평가 23건 · 평균 3.3점, 수용 · 전체 평가 145건 · 평균 2.9점, 수용 · 내 신고 평가 17건 · 평균 3.5점, 일부 수용 · 전체 평가 58건 · 평균 3.0점, 일부 수용 · 내 신고 평가 1건 · 평균 2.0점, 불수용 · 전체 평가 80건 · 평균 3.1점, 불수용 · 내 신고 평가 3건 · 평균 3.7점, 과태료 처분 · 전체 평가 102건 · 평균 3.0점, 과태료 처분 · 내 신고 평가 7건 · 평균 3.0점, 결과 미상 · 전체 평가 55건 · 평균 2.9점, 결과 미상 · 내 신고 평가 2건 · 평균 1.5점",
+    "ratingTable": [
+      "모든 결과 · 전체\t47\t51\t154\t37\t49\t338\t3.0점",
+      "모든 결과 · 내 신고\t3\t4\t5\t6\t5\t23\t3.3점",
+      "수용 · 전체\t27\t25\t51\t19\t23\t145\t2.9점",
+      "수용 · 내 신고\t2\t1\t5\t5\t4\t17\t3.5점",
+      "일부 수용 · 전체\t3\t11\t32\t5\t7\t58\t3.0점",
+      "일부 수용 · 내 신고\t0\t1\t0\t0\t0\t1\t2.0점",
+      "불수용 · 전체\t9\t9\t39\t12\t11\t80\t3.1점",
+      "불수용 · 내 신고\t0\t1\t0\t1\t1\t3\t3.7점",
+      "과태료 처분 · 전체\t11\t15\t53\t9\t14\t102\t3.0점",
+      "과태료 처분 · 내 신고\t1\t1\t3\t1\t1\t7\t3.0점",
+      "결과 미상 · 전체\t8\t6\t32\t1\t8\t55\t2.9점",
+      "결과 미상 · 내 신고\t1\t1\t0\t0\t0\t2\t1.5점"
+    ],
+    "ratingRowsAfterOff": 6,
+    "sampleOne": 0,
+    "oneBadges": 0
+  },
+  "R7": {
+    "consoleErrors": [],
+    "pinsReports": 9,
+    "boundaryPrefBefore": true,
+    "boundaryPrefAfter": false,
+    "polygonsReportsBoundaryOff": 0,
+    "runs": {
+      "수용률": {
+        "pins": 0,
+        "polygons": 423,
+        "legend": "시도별 수용률\n0%\n100%\n계산 불가(분모 0)\n자료 없음",
+        "placeList": 0,
+        "boundaryNote": "시도 단위로 색칠 중 · 확대하면 시군구, 멀리서 보면 시도"
+      },
+      "불수용률": {
+        "pins": 0,
+        "polygons": 423,
+        "legend": "시도별 불수용률\n0%\n100%\n계산 불가(분모 0)\n자료 없음",
+        "placeList": 0,
+        "boundaryNote": "시도 단위로 색칠 중 · 확대하면 시군구, 멀리서 보면 시도"
+      },
+      "과태료": {
+        "pins": 0,
+        "polygons": 423,
+        "legend": "시도별 과태료 부과율\n0%\n100%\n계산 불가(분모 0)\n자료 없음",
+        "placeList": 0,
+        "boundaryNote": "시도 단위로 색칠 중 · 확대하면 시군구, 멀리서 보면 시도"
+      }
+    },
+    "levels": [
+      {
+        "zoom": 8,
+        "legend": "시군구별 과태료 부과율\n0%\n100%\n계산 불가(분모 0)\n자료 없음",
+        "polygons": 4,
+        "pins": 0
+      },
+      {
+        "zoom": 11,
+        "legend": "시도별 과태료 부과율\n0%\n100%\n계산 불가(분모 0)\n자료 없음",
+        "polygons": 423,
+        "pins": 0
+      },
+      {
+        "zoom": 7,
+        "legend": "시군구별 과태료 부과율\n0%\n100%\n계산 불가(분모 0)\n자료 없음",
+        "polygons": 3,
+        "pins": 0
+      }
+    ],
+    "hover": "서울특별시\n과태료 부과율 27.1% (32/118건) · 답변 118건 · 신고 112건\n누르면 이 지역만 보기",
+    "click": {
+      "url": "?start=2025-09-30&end=2026-09-29&category=all&region_code=11",
+      "requests": {
+        "dashboard": 1
+      },
+      "card": "선택한 지역\n서울특별시\n\n신고 위치의 행정구역 기준\n\n지역 해제\n신고\n112건\n답변\n118건\n수용률\n64.4% (65/101건)\n불수용률\n21.8% (22/101건)\n과태료 부과율\n27.1% (32/118건)",
+      "pins": 0,
+      "requestsAfterSettle": {
+        "dashboard": 1
+      }
+    },
+    "twenty": {
+      "maxPins": 0,
+      "requests": {},
+      "maps": 2,
+      "maps0": 2
+    },
+    "backToReports": {
+      "pins": 4,
+      "boundaryPref": false,
+      "polygons": 0
+    }
+  },
+  "widths": {
+    "1920-dark": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "1440-dark": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "1280-dark": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "768-dark": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "390-dark": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "1920-light": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "1440-light": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "1280-light": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "768-light": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    },
+    "390-light": {
+      "hOverflow": false,
+      "rowOverflow": 0,
+      "pinsRate": 0,
+      "consoleErrors": []
+    }
+  }
+}

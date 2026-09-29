@@ -72,8 +72,9 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
         onMetric={() => {}} categoryLabel="전체 분류" autoRefresh={false}
         onAutoRefresh={() => {}} locationMissing={data.meta.location_missing ?? null} />,
     );
-    expect(completionMap).toContain('예시 지점');
-    expect(completionMap).toContain('답변 1건');
+    // R7: a rate metric is a region map — the completion-only place is counted in the region rows, not drawn as a pin
+    expect(completionMap).not.toContain('예시 지점');
+    expect(completionMap).toContain('시도별 수용률');
     expect(renderToStaticMarkup(<DataGuide data={data} />)).toContain('답변만 받은 신고의 장소는 비율 지표(수용률·불수용률·과태료)를 고르면 볼 수 있습니다');
     // Dashboard renders the empty banner only when isEmptyResult is true.
     const banner = isEmptyResult(data)

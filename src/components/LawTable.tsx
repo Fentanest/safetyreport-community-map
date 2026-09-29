@@ -77,7 +77,7 @@ export default function LawTable(p: Props) {
                       </button>
                     </td>
                     <td className="num">
-                      {r.completed_count === 1 ? <span className="sample-one">1건</span> : `${fmtInt(r.completed_count)}건`}
+                      {`${fmtInt(r.completed_count)}건`}
                     </td>
                     <td className="num">
                       {fmtPercent(r.accept_rate)}

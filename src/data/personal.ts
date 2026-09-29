@@ -80,7 +80,7 @@ export const personalCompareSchema = z.strictObject({
 
 export type PersonalErrorCode =
   | 'unconfigured' | 'signed_out' | 'session_expired' | 'kakao_required' | 'account_ineligible'
-  | 'DATASET_CHANGED' | 'rate_limited' | 'AGGREGATE_NOT_READY' | 'network' | 'invalid_response' | 'service_unavailable';
+  | 'DATASET_CHANGED' | 'rate_limited' | 'AGGREGATE_NOT_READY' | 'RESULT_TOO_LARGE' | 'network' | 'invalid_response' | 'service_unavailable';
 
 export class PersonalApiError extends Error {
   constructor(readonly code: PersonalErrorCode, message: string, readonly retryAfter: number | null = null) {
@@ -98,6 +98,7 @@ const MESSAGE: Record<PersonalErrorCode, string> = {
   DATASET_CHANGED: '통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.',
   rate_limited: '요청이 많아 잠시 후 다시 시도해 주세요.',
   AGGREGATE_NOT_READY: '통계가 아직 준비되지 않았습니다.',
+  RESULT_TOO_LARGE: '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.',
   network: '네트워크 연결을 확인한 뒤 다시 시도해 주세요.',
   invalid_response: '내 신고를 불러오지 못했습니다. 다시 시도해 주세요.',
   service_unavailable: '내 신고를 불러오지 못했습니다. 전체 통계는 그대로 볼 수 있습니다.',
@@ -134,7 +135,7 @@ export function compareParams(scope: Scope, version: string): URLSearchParams {
 }
 
 const CODES = new Set<PersonalErrorCode>(['session_expired', 'kakao_required', 'account_ineligible', 'DATASET_CHANGED',
-  'rate_limited', 'AGGREGATE_NOT_READY']);
+  'rate_limited', 'AGGREGATE_NOT_READY', 'RESULT_TOO_LARGE']);
 
 async function fetchLive(scope: Scope, version: string, token: string, signal?: AbortSignal): Promise<Response> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');

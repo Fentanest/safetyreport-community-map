@@ -22,6 +22,10 @@ export interface BoundaryStyle {
   /** 0..1 colour scalar of the ACTIVE metric per code; null = the code has rows but no denominator;
    *  missing = no data for the code (drawn almost clear) */
   weight: Map<string, number | null>;
+  /** 'regions' = the choropleth IS the map (rate metrics, R7): strong fills; 'points' = light fills under pins */
+  mode?: 'points' | 'regions';
+  /** codes outside the applied region filter: drawn as 'out of range' (grey, dashed), never as 0% */
+  outOfScope?: Set<string>;
 }
 
 /**
@@ -428,15 +432,19 @@ export async function createKakaoMap(
     const w = boundaryStyle.weight.get(code) ?? null;
     const selected = boundaryStyle.selected === code;
     const hover = hovered === code;
+    const out = boundaryStyle.outOfScope?.has(code) ?? false;
+    const regions = boundaryStyle.mode === 'regions';
     // The Kakao base map is light in both app themes, so outlines use fixed dark-enough colors, not theme tokens.
-    // Fill follows the ACTIVE metric's colour ramp (R03-6): no rows → almost clear; rows without a denominator
-    // → neutral grey; otherwise the same ramp as the pins.
+    // States are kept apart (R7): value → ramp colour on the fixed 0..1 scale; denominator 0 → neutral grey;
+    // no data → almost clear; outside the applied region filter → pale grey with a dashed outline. Never 0% colour.
+    const fillOpacity = out ? 0.1 : !has ? 0.03 : w === null ? (regions ? 0.35 : 0.18) : (regions ? 0.5 + 0.3 * w : 0.22 + 0.3 * w);
     return {
-      strokeWeight: selected ? 3 : hover ? 2.5 : 1.5,
-      strokeColor: selected ? '#D97706' : '#1D4ED8',
-      strokeOpacity: selected || hover ? 0.95 : 0.7,
-      fillColor: has ? rampColor(w) : '#2563EB',
-      fillOpacity: (!has ? 0.02 : w === null ? 0.18 : 0.22 + 0.3 * w) + (hover ? 0.12 : 0),
+      strokeWeight: selected ? 3.5 : hover ? 2.5 : regions ? 1.2 : 1.5,
+      strokeColor: selected ? '#D97706' : out ? '#64748B' : '#1D4ED8',
+      strokeOpacity: selected || hover ? 0.95 : out ? 0.5 : 0.7,
+      strokeStyle: out ? 'shortdash' : 'solid',
+      fillColor: out ? '#CBD5E1' : has ? rampColor(w) : '#2563EB',
+      fillOpacity: fillOpacity + (hover ? 0.12 : 0),
     };
   };
   const restyle = (code: string) => {

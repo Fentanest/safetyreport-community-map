@@ -224,14 +224,14 @@ export function demoEntities(scope: Scope, query: EntitiesQuery): EntitiesPage {
 }
 
 /** Same rules as /places/{key}. */
-export function demoPlace(scope: Scope, key: string, version: string): PlaceDetail | null {
+export function demoPlace(scope: Scope, key: string, version: string, limit = 100): PlaceDetail | null {
   const selection = selectScope(representatives(demoFacts()), scope);
   const own = placeFacts(key, selection.reported, selection.done);
   const anchor = representativeOf([...own.reported, ...own.done]);
   if (!anchor) return null;
   const agencies = entityRows(own.done, 'agency'), managers = entityRows(own.done, 'manager');
   return { dataset_version: version, scope, place: placeSummary(key, own.reported, own.done, anchor),
-    agencies: agencies.slice(0, 100), managers: managers.slice(0, 100), agency_total: agencies.length, manager_total: managers.length };
+    agencies: agencies.slice(0, limit), managers: managers.slice(0, limit), agency_total: agencies.length, manager_total: managers.length };
 }
 
 /** Same rules as /places?view_bbox=… (display refinement only). */

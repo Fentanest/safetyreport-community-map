@@ -11,9 +11,11 @@ import TopBar from '../components/TopBar';
 import Rail from '../components/Rail';
 import CommandBar from '../components/CommandBar';
 import FilterDrawer from '../components/FilterDrawer';
-import MapPanel from '../components/MapPanel';
+import MapPanel, { renderModeOf } from '../components/MapPanel';
+import RegionSummaryCard from '../components/RegionSummaryCard';
 import type { MapMetric } from '../components/mapMetrics';
 import PlaceDetailsPanel, { type PlaceDetailState } from '../components/PlaceDetailsPanel';
+import PlaceEntityChart from '../components/PlaceEntityChart';
 import TrendCard from '../components/TrendCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable from '../components/EntityTable';
@@ -81,6 +83,9 @@ export default function Dashboard() {
   const [selection, setSelection] = useState<string | null>(null);
   const [placeDetail, setPlaceDetail] = useState<PlaceDetailState>({ status: 'loading' });
   const [placeReload, setPlaceReload] = useState(0);
+  // how many agencies/managers the place detail asks for (100 by default; "나머지 불러오기" raises it)
+  const [placeLimit, setPlaceLimit] = useState(100);
+  useEffect(() => { setPlaceLimit(100); }, [selection]);
   const [mapMetric, setMapMetric] = useState<MapMetric>('reports');
   const [entityTab, setEntityTab] = useState<EntityTab>('agency');
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -172,17 +177,26 @@ export default function Dashboard() {
     if (message) showToast(message);
   };
 
-  const apply = useCallback(() => {
-    const err = validateRange(draft.start, draft.end, data?.meta.data_min ?? null, data?.meta.data_max ?? null);
+  // whole-history bounds come from the dataset metadata (/meta), never from the last screen or a filtered response
+  const dataMin = dash.meta?.data_min ?? null;
+  const dataMax = dash.meta?.data_max ?? null;
+  const apply = useCallback((): boolean => {
+    const err = validateRange(draft.start, draft.end, dataMin, dataMax);
     setDateError(err);
-    if (err) { showToast(err); return; } // the draft is kept as typed
+    if (err) { showToast(err); return false; } // the draft, the popover/drawer and the focus stay as they are
     // dates/region/law from the draft; the other applied conditions stay (a new region replaces the map range)
     const next = { ...scopeFromDraft(draft, scope), agency_key: scope.agency_key, manager_key: scope.manager_key,
       bbox: draft.region_code !== scope.region_code ? null : scope.bbox };
     requestScope(next, 'explicit');
     pushUrl(next);
     setDrawer(false);
-  }, [draft, scope, data, showToast, requestScope]); // eslint-disable-line react-hooks/exhaustive-deps
+    return true;
+  }, [draft, scope, dataMin, dataMax, showToast, requestScope]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** quick period (incl. 전체 기간): dates only, applied at once — draft, chips, URL and one request together */
+  const applyPreset = (range: { start: string; end: string }) => {
+    setDateError(null);
+    explicit({ ...scope, start: range.start, end: range.end });
+  };
 
   const reset = useCallback(() => {
     const next: Scope = { ...baseScope(dataMode) };
@@ -279,17 +293,31 @@ export default function Dashboard() {
 
   // ── display-only refinement of server-compacted nodes (R07/F04) ─────────────────────────────────────
   const refineTimer = useRef<number | undefined>(undefined);
+  const renderModeRef = useRef<'points' | 'regions'>('points');
+  renderModeRef.current = renderModeOf(mapMetric);
+  // switching to a rate metric: no address is selected any more (its detail and manager chart go away with it)
+  useEffect(() => {
+    if (renderModeOf(mapMetric) === 'regions') {
+      setSelection(null);
+      refineAbort.current?.abort();
+      window.clearTimeout(refineTimer.current);
+      setRefined(null);
+    }
+  }, [mapMetric]);
   const refineAbort = useRef<AbortController | null>(null);
   const hasAggregates = !!data?.points.some((pt) => pt.aggregate);
+  const renderMode = renderModeOf(mapMetric);
   const onView = (b: [number, number, number, number], zoom: number) => {
     window.clearTimeout(refineTimer.current);
-    if (!hasAggregates || !shownScope || !version || zoom >= CLUSTER_LEVEL) { if (refined) setRefined(null); return; }
+    // pin refinement exists in the points (신고 수) mode only; a rate map never asks for or draws pins (R7)
+    if (renderMode !== 'points' || !hasAggregates || !shownScope || !version || zoom >= CLUSTER_LEVEL) { if (refined) setRefined(null); return; }
     refineTimer.current = window.setTimeout(() => {
       refineAbort.current?.abort();
       const ac = new AbortController();
       refineAbort.current = ac;
       loadPlacesInView(shownScope, roundBbox(b), version, ac.signal)
-        .then((r) => { if (!ac.signal.aborted) setRefined({ view: b, points: r.points, version }); })
+        // a late answer after switching to a rate metric is dropped (no pin can come back)
+        .then((r) => { if (!ac.signal.aborted && renderModeRef.current === 'points') setRefined({ view: b, points: r.points, version }); })
         .catch(() => undefined); // display refinement only: the compacted nodes stay drawn
     }, 600);
   };
@@ -317,7 +345,7 @@ export default function Dashboard() {
     if (!point.place_key) { setPlaceDetail({ status: 'unsupported' }); return; }
     const ac = new AbortController();
     setPlaceDetail({ status: 'loading' });
-    loadPlace(shownScope, selection, version, ac.signal)
+    loadPlace(shownScope, selection, version, ac.signal, placeLimit)
       .then((detail) => { if (!ac.signal.aborted) setPlaceDetail({ status: 'ready', detail }); })
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
@@ -327,7 +355,7 @@ export default function Dashboard() {
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection, point?.place_key, shownScope, version, placeReload]);
+  }, [selection, point?.place_key, shownScope, version, placeReload, placeLimit]);
 
   const resolvedTheme: 'dark' | 'light' = resolveTheme(theme);
 
@@ -441,8 +469,11 @@ export default function Dashboard() {
             lawOptions={lawChoices}
             onLaw={pickLaw}
             filterCount={filterCount}
-            minDate={data?.meta.data_min ?? null}
-            maxDate={data?.meta.data_max ?? null}
+            minDate={dataMin}
+            maxDate={dataMax}
+            appliedStart={scope.start}
+            appliedEnd={scope.end}
+            onPreset={applyPreset}
             onApply={apply}
             onReset={reset}
             onShare={share}
@@ -484,7 +515,7 @@ export default function Dashboard() {
                 <div className="banner" role="note"><span className="grow">예시: 신고가 1건뿐인 경우의 화면입니다.</span></div>
               )}
               {/* One stable grid for every view: the map host is never re-parented or remounted (R04 §12). */}
-              <div className="dash-grid" id="mapsection" data-view={view} data-selected={point ? 'place' : 'none'}>
+              <div className={`dash-grid${err && shownScope && JSON.stringify(shownScope) !== JSON.stringify(scope) ? ' stale' : ''}`} id="mapsection" data-view={view} data-selected={point ? 'place' : 'none'}>
                 <div className="area-map">
                   <MapPanel
                     points={mapPoints}
@@ -504,6 +535,7 @@ export default function Dashboard() {
                     activeRegion={scope.region_code}
                     onPickRegion={pickRegion}
                     refreshing={dash.isRefreshing}
+                    statsBbox={!!shownScope?.bbox}
                   />
                 </div>
                 <div className="area-side">
@@ -517,8 +549,26 @@ export default function Dashboard() {
                       onRetry={() => setPlaceReload((n) => n + 1)}
                       onPickEntity={pickEntity}
                       toast={showToast}
+                      activeAgency={scope.agency_key}
+                      activeManager={scope.manager_key}
                     />
-                  ) : (
+                  ) : null}
+                  {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
+                    <PlaceEntityChart
+                      key={point.key}
+                      managers={placeDetail.detail.managers}
+                      total={placeDetail.detail.manager_total}
+                      theme={resolvedTheme}
+                      loadingMore={false}
+                      onLoadMore={placeDetail.detail.manager_total > placeDetail.detail.managers.length
+                        ? () => setPlaceLimit(Math.min(1000, placeDetail.detail.manager_total)) : null}
+                    />
+                  )}
+                  {!point && renderMode === 'regions' && scope.region_code && (
+                    <RegionSummaryCard code={scope.region_code} regions={data.regions} metric={mapMetric}
+                      statsBbox={!!shownScope?.bbox} onClear={() => pickRegion(null)} />
+                  )}
+                  {!point && (
                     <KpiPanel
                       overview={data.overview}
                       personal={personal}
@@ -542,7 +592,10 @@ export default function Dashboard() {
                   <ScatterCard data={analytics?.scatter ?? null} theme={resolvedTheme}
                     mineKeys={showMine ? mineEntityKeys(compareData?.agencies, compareData?.managers) : null}
                     onPick={(kind, e) => pickEntity(kind, e)} />
-                  <RatingCard all={analytics?.rating ?? null} mine={showMine ? compareData?.analytics?.rating ?? null : null} theme={resolvedTheme} />
+                  <RatingCard all={analytics?.rating ?? null} mine={showMine ? compareData?.analytics?.rating ?? null : null} theme={resolvedTheme}
+                    mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
+                      : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
+                        : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'} />
                 </section>
                 <section className="area-tables" aria-label="표로 보는 현황">
                   <RegionList regions={data.regions} compare={showMine ? compareData?.regions ?? null : null} compareOn={showMine}

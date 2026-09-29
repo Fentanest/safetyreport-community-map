@@ -15,6 +15,7 @@ export function loadCharts(): Promise<(el: HTMLElement) => EChartsType> {
   ]).then(([core, charts, components, renderers]) => {
     core.use([charts.BarChart, charts.LineChart, charts.HeatmapChart, charts.ScatterChart,
       components.GridComponent, components.TooltipComponent, components.VisualMapComponent, components.MarkLineComponent,
+      components.DataZoomComponent,
       renderers.CanvasRenderer]);
     return core.init;
   });

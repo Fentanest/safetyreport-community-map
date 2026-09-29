@@ -12,6 +12,11 @@ import RegionSelect from './RegionSelect';
 interface Props {
   draft: DraftFilters;
   onDraft: (d: DraftFilters) => void;
+  /** applied (requested) period — the date button shows it; the inputs below edit the draft */
+  appliedStart: string;
+  appliedEnd: string;
+  /** a quick period applies at once (one request, chips/URL updated); null range = bounds still unknown */
+  onPreset: (range: { start: string; end: string }) => void;
   /** applied (requested) category / law: these controls apply at once (explicit selection, pushState) */
   category: Category;
   onCategory: (c: Category) => void;
@@ -22,7 +27,8 @@ interface Props {
   filterCount: number;
   minDate: string | null;
   maxDate: string | null;
-  onApply: () => void;
+  /** validates and applies the draft; false keeps the popover open with the typed values */
+  onApply: () => boolean;
   onReset: () => void;
   onShare: () => void;
   onOpenDrawer: () => void;
@@ -47,7 +53,7 @@ export default function CommandBar(p: Props) {
         title="기간을 고른 뒤 ‘적용’을 누르세요"
       >
         <span aria-hidden="true"><Icon name="calendar" /></span>
-        <span>{fmtDate(p.draft.start)} — {fmtDate(p.draft.end)}</span>
+        <span>{fmtDate(p.appliedStart)} — {fmtDate(p.appliedEnd)}</span>
         <span aria-hidden="true"><Icon name="chevron" /></span>
       </button>
       <div className="segments" role="group" aria-label="신고 분류">
@@ -57,6 +63,8 @@ export default function CommandBar(p: Props) {
             type="button"
             className={p.category === c ? 'selected' : ''}
             aria-pressed={p.category === c}
+            aria-label={c === 'all' ? '전체 분류' : undefined}
+            title={c === 'all' ? '전체 분류 (기간은 그대로)' : undefined}
             onClick={() => p.onCategory(c)}
           >
             {CATEGORY_LABEL[c]}
@@ -91,22 +99,27 @@ export default function CommandBar(p: Props) {
       {open && (
         <div className="date-pop" role="group" aria-label="기간 선택">
           <div className="preset-row" role="group" aria-label="빠른 기간 선택">
-            {PRESETS.map((pr) => (
-              <button
-                key={pr.id}
-                type="button"
-                onClick={() => {
-                  const r = presetRange(pr.days, p.minDate, p.maxDate);
-                  p.onDraft({ ...p.draft, start: r.start, end: r.end });
-                }}
-              >
-                {pr.label}
-              </button>
-            ))}
+            {PRESETS.map((pr) => {
+              const r = presetRange(pr.days, p.minDate, p.maxDate);
+              const active = !!r && r.start === p.appliedStart && r.end === p.appliedEnd;
+              return (
+                <button
+                  key={pr.id}
+                  type="button"
+                  className={active ? 'selected' : undefined}
+                  aria-pressed={active}
+                  disabled={!r}
+                  title={pr.days == null ? (r ? `공유된 전체 자료 ${fmtDate(r.start)} — ${fmtDate(r.end)} (바로 적용)` : '자료 범위를 불러오는 중입니다') : '바로 적용'}
+                  onClick={() => { if (r) { p.onPreset(r); setOpen(false); } }}
+                >
+                  {pr.label}
+                </button>
+              );
+            })}
           </div>
           <label>시작일
             <input
-              type="date" value={p.draft.start} min={p.minDate ?? undefined} max={p.draft.end || today}
+              type="date" value={p.draft.start} max={p.draft.end || today}
               onChange={(e) => p.onDraft({ ...p.draft, start: e.target.value })}
             />
           </label>
@@ -121,12 +134,13 @@ export default function CommandBar(p: Props) {
             onChange={(code) => p.onDraft({ ...p.draft, region_code: code })}
             selectStyle={{ minHeight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', padding: '6px 10px' }}
           />
-          <button className="primary-button" type="button" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => { p.onApply(); setOpen(false); }}>
+          <button className="primary-button" type="button" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => { if (p.onApply()) setOpen(false); }}>
             적용
           </button>
           {p.dateError && <span className="field-error" role="alert">{p.dateError}</span>}
           <span className="basis-note">
-            신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. ‘적용’을 눌러야 화면이 바뀝니다.
+            신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. 직접 고른 날짜는 ‘적용’을 눌러야 바뀌고, 빠른 기간은 바로 적용됩니다.
+            {p.minDate && p.maxDate ? ` 공유된 자료: ${fmtDate(p.minDate)} — ${fmtDate(p.maxDate)}.` : ''}
             선택: {regionLabel(p.draft.region_code)}
           </span>
         </div>

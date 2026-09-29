@@ -75,7 +75,14 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 ## 제한·오류
 기간은 meta.data_min~data_max 범위 지원. 넓은 범위 쿼리는 서버 집계로 처리하고 조용한 truncate 금지.
 기관/담당자 page_size<=100, vehicle limit=5 fixed, map node budget 별도. 429는 retry-after.
-400 INVALID_QUERY, 409 DATASET_CHANGED, 422 METRIC_UNAVAILABLE, 503 AGGREGATE_NOT_READY.
+400 INVALID_QUERY, 409 DATASET_CHANGED, 422 METRIC_UNAVAILABLE, 422 RESULT_TOO_LARGE, 503 AGGREGATE_NOT_READY.
+2026-09-30 장기간(R1): 기간 길이 상한(구 1826일)은 API·집계·SQL RPC 모두에서 없앴다. 2014-09-30..2026-09-29 같은 12년 범위도
+받는다. 역전·실제 없는 날짜만 400이다. 비교 기간(바로 앞 같은 길이)은 자료가 없어도 실패가 아니라 `previous: null`이다.
+대신 한 번에 모으는 후보 신고가 10만 건을 넘으면 잘라 내지 않고 **422 RESULT_TOO_LARGE**(메시지: 기간·지역·분류를 좁혀 달라)로
+거절한다(조용한 truncate 금지). `meta.data_min/data_max`는 운영자가 따로 넣지 않았으면 공개 가능한 신고의 최소·최대
+신고일/완료일로 계산한다(‘전체 기간’ 빠른 선택의 근거). 클라이언트 오류 문구에는 `(코드, HTTP 상태)`를 붙인다.
+`places/:place_key`는 `entity_limit`(1..1000, 기본 100)을 받는다. 기관·담당자 행을 그 수까지 보내고 총수는 `*_total`로 따로 준다.
+dashboard `regions[]`는 최대 400행(시도+시군구 전부).
 오류에 SQL/stack/private 요청값/원번호 포함 금지.
 초기 cache 제안: overview/series 60초, detail/entities/vehicles 30초 이하, meta 30초.
 삭제·version변경 시 invalidation 경로 구현. 헤더만 적어놓고 실제 CDN cache가 생긴다고 가정하지 않는다.

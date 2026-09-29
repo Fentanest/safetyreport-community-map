@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PlaceDetail, PublicEntity, PublicPoint } from '../domain/public';
 import type { PointMark } from '../state/pointMarks';
 import { acceptRate, fmtInt, fmtPercent } from './format';
+import { duplicateNames, entityLabel, entityRates } from './entityMetrics';
 
 export type PlaceDetailState =
   | { status: 'loading' }
@@ -19,43 +20,67 @@ interface Props {
   onRetry: () => void;
   onPickEntity: (kind: 'agency' | 'manager', entity: PublicEntity) => void;
   toast: (msg: string) => void;
+  /** currently applied agency/manager filter (active highlight) */
+  activeAgency?: string | null;
+  activeManager?: string | null;
 }
 
 const LIST_STEP = 6;
 const pct = (a: number, d: number) => (d > 0 ? (a / d) * 100 : null);
 
-function EntityList({ kind, rows, total, onPick }: { kind: 'agency' | 'manager'; rows: PublicEntity[]; total: number;
-  onPick: Props['onPickEntity'] }) {
+/** R2: name (the only button) + separate metric boxes; boxes are plain cells, never nested buttons. */
+function EntityMetricRow({ kind, e, label, active, onPick }: { kind: 'agency' | 'manager'; e: PublicEntity; label: string;
+  active: boolean; onPick: Props['onPickEntity'] }) {
+  const m = entityRates(e);
+  const full = kind === 'manager' ? `${e.manager_name ?? '이름 없음'} · ${e.agency_name}` : e.agency_name;
+  return (
+    <li className={`pe-row${active ? ' active' : ''}`}>
+      <div className="pe-name">
+        <button type="button" className="pe-pick" title={`${full} — 이 ${kind === 'agency' ? '기관' : '담당자'}만 보기`} aria-pressed={active}
+          disabled={!e.agency_key || (kind === 'manager' && !e.manager_key)} onClick={() => onPick(kind, e)}>
+          {label}
+        </button>
+        {kind === 'manager' && <small title={e.agency_name}>{e.agency_name}</small>}
+      </div>
+      <div className="pe-metrics">
+        <div className="pe-box"><span className="pe-label">답변</span><b className="pe-num cm-number">{fmtInt(m.C)}건</b></div>
+        <div className="pe-box pe-triple" title={`결과 확인 ${m.K}건 기준 · 결과 미상 ${m.U}건 제외`}>
+          <span className="pe-label">처리 결과 <small>(결과 확인 {fmtInt(m.K)}건)</small></span>
+          <div className="pe-cells">
+            <span><em>수용</em><b className="pe-num cm-number">{fmtPercent(m.accept)}</b></span>
+            <span><em>일부수용</em><b className="pe-num cm-number">{fmtPercent(m.partial)}</b></span>
+            <span><em>불수용</em><b className="pe-num cm-number">{fmtPercent(m.reject)}</b></span>
+          </div>
+        </div>
+        <div className="pe-box"><span className="pe-label">과태료</span>
+          <b className="pe-num cm-number">{m.F === null ? '—' : `${fmtInt(m.F)}건`} <i aria-hidden="true">|</i> {fmtPercent(m.fineRate)}</b></div>
+        <div className="pe-box"><span className="pe-label">계도</span><b className="pe-num cm-number">{m.W === null ? '—' : `${fmtInt(m.W)}건`}</b></div>
+        <div className="pe-box"><span className="pe-label">계도처분율</span><b className="pe-num cm-number">{fmtPercent(m.warnRate)}</b></div>
+      </div>
+    </li>
+  );
+}
+
+function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: { kind: 'agency' | 'manager'; rows: PublicEntity[]; total: number;
+  onPick: Props['onPickEntity']; activeAgency: string | null; activeManager: string | null }) {
   const [shown, setShown] = useState(LIST_STEP);
+  const dup = duplicateNames(rows);
   if (rows.length === 0) return <p className="cm-muted place-empty">이 주소의 답변 완료 신고에 {kind === 'agency' ? '기관' : '담당자'} 정보가 없습니다.</p>;
   return (
     <>
       <ul className="place-entities">
-        {rows.slice(0, shown).map((e) => {
-          const known = e.outcomes.result_known;
-          return (
-            <li key={e.key}>
-              <button type="button" className="place-entity" title="이 기관·담당자만 보기"
-                disabled={!e.agency_key || (kind === 'manager' && !e.manager_key)} onClick={() => onPick(kind, e)}>
-                <span className="place-entity-name">
-                  {kind === 'manager' ? (e.manager_name ?? '이름 없음') : e.agency_name}
-                  {kind === 'manager' && <small>{e.agency_name}</small>}
-                </span>
-                <span className="place-entity-nums cm-number">
-                  <b>{fmtInt(e.completed_count)}</b>건
-                  <small>수용 {fmtPercent(pct(e.outcomes.accepted, known))} · 불수용 {fmtPercent(pct(e.outcomes.rejected, known))} · 과태료 {fmtInt(e.fine_count)} · 계도 {e.warning_count == null ? '—' : fmtInt(e.warning_count)}</small>
-                </span>
-              </button>
-            </li>
-          );
-        })}
+        {rows.slice(0, shown).map((e) => (
+          <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, dup.has(e.manager_name ?? '이름 없음'))}
+            active={kind === 'agency' ? activeAgency === e.agency_key && !activeManager : activeManager === e.manager_key && activeAgency === e.agency_key}
+            onPick={onPick} />
+        ))}
       </ul>
       {(rows.length > shown || total > rows.length) && (
         <div className="place-more">
           {rows.length > shown && (
             <button type="button" className="mini-btn" onClick={() => setShown((n) => n + LIST_STEP)}>더 보기 · {fmtInt(rows.length - shown)}</button>
           )}
-          {total > rows.length && <span className="cm-muted">많은 순 {fmtInt(rows.length)}개만 표시 · 전체 {fmtInt(total)}개</span>}
+          {total > rows.length && <span className="cm-muted">많은 순 {fmtInt(rows.length)}개만 받음 · 전체 {fmtInt(total)}개</span>}
         </div>
       )}
     </>
@@ -144,11 +169,13 @@ export default function PlaceDetailsPanel(p: Props) {
         <>
           <section className="place-section" aria-label="처리 기관">
             <h3>처리 기관 <small>{fmtInt(p.detail.detail.agency_total)}곳 · 이 주소 신고만</small></h3>
-            <EntityList kind="agency" rows={p.detail.detail.agencies} total={p.detail.detail.agency_total} onPick={p.onPickEntity} />
+            <EntityList kind="agency" rows={p.detail.detail.agencies} total={p.detail.detail.agency_total} onPick={p.onPickEntity}
+              activeAgency={p.activeAgency ?? null} activeManager={p.activeManager ?? null} />
           </section>
           <section className="place-section" aria-label="담당자">
             <h3>담당자 <small>{fmtInt(p.detail.detail.manager_total)}명 · 소속 기관과 함께</small></h3>
-            <EntityList kind="manager" rows={p.detail.detail.managers} total={p.detail.detail.manager_total} onPick={p.onPickEntity} />
+            <EntityList kind="manager" rows={p.detail.detail.managers} total={p.detail.detail.manager_total} onPick={p.onPickEntity}
+              activeAgency={p.activeAgency ?? null} activeManager={p.activeManager ?? null} />
           </section>
         </>
       )}
