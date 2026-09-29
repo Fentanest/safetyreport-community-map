@@ -1,3 +1,139 @@
 {
-  "scenario_first_page_bytes": 7707
+  "scenario_first_page_bytes": 7707,
+  "runs": {
+    "heavy20k": {
+      "measured_at": "2026-09-29T16:54:51.186Z",
+      "environment": "local composed stack (Postgres 17.6 supabase image, Docker), synthetic rows; not production",
+      "volume": {
+        "facts_total": 240000,
+        "heavy_user_facts": 40000,
+        "heavy_user_reports": 20000,
+        "other_users": 400,
+        "per_other_user": 500,
+        "vehicle_matches": 2857
+      },
+      "db_rpc_median_ms_and_db_to_edge_bytes": {
+        "search_vehicle_first": {
+          "median_ms": 666,
+          "bytes": 18007
+        },
+        "search_address_first": {
+          "median_ms": 674.5,
+          "bytes": 15103
+        },
+        "search_vehicle_next": {
+          "median_ms": 609.3,
+          "bytes": 12487
+        },
+        "summary_first": {
+          "median_ms": 602.7,
+          "bytes": 13270
+        },
+        "numbers_page_500": {
+          "median_ms": 598.1,
+          "bytes": 10691
+        }
+      },
+      "draft_owner_index_present": true,
+      "edge_to_extension": {
+        "search_vehicle_first_20": {
+          "status": 200,
+          "code": null,
+          "bytes": 19526,
+          "ms": 713
+        },
+        "search_vehicle_first_50_managers_50": {
+          "status": 200,
+          "code": null,
+          "bytes": 58037,
+          "ms": 678
+        },
+        "search_address_first": {
+          "status": 200,
+          "code": null,
+          "bytes": 16671,
+          "ms": 675
+        },
+        "summary_first": {
+          "status": 200,
+          "code": null,
+          "bytes": 15007,
+          "ms": 616
+        },
+        "numbers_page_500": {
+          "status": 200,
+          "code": null,
+          "bytes": 10626,
+          "ms": 615
+        }
+      }
+    },
+    "typical500": {
+      "measured_at": "2026-09-29T16:56:37.671Z",
+      "environment": "local composed stack (Postgres 17.6 supabase image, Docker), synthetic rows; not production",
+      "volume": {
+        "facts_total": 201000,
+        "heavy_user_facts": 1000,
+        "heavy_user_reports": 500,
+        "other_users": 400,
+        "per_other_user": 500,
+        "vehicle_matches": 71
+      },
+      "db_rpc_median_ms_and_db_to_edge_bytes": {
+        "search_vehicle_first": {
+          "median_ms": 28.4,
+          "bytes": 17926
+        },
+        "search_address_first": {
+          "median_ms": 25.8,
+          "bytes": 2917
+        },
+        "search_vehicle_next": {
+          "median_ms": 24,
+          "bytes": 12448
+        },
+        "summary_first": {
+          "median_ms": 21.9,
+          "bytes": 1040
+        },
+        "numbers_page_500": {
+          "median_ms": 21.7,
+          "bytes": 1678
+        }
+      },
+      "draft_owner_index_present": true,
+      "edge_to_extension": {
+        "search_vehicle_first_20": {
+          "status": 200,
+          "code": null,
+          "bytes": 19437,
+          "ms": 116
+        },
+        "search_vehicle_first_50_managers_50": {
+          "status": 200,
+          "code": null,
+          "bytes": 57911,
+          "ms": 85
+        },
+        "search_address_first": {
+          "status": 200,
+          "code": null,
+          "bytes": 3096,
+          "ms": 72
+        },
+        "summary_first": {
+          "status": 200,
+          "code": null,
+          "bytes": 1156,
+          "ms": 85
+        },
+        "numbers_page_500": {
+          "status": 200,
+          "code": null,
+          "bytes": 1771,
+          "ms": 71
+        }
+      }
+    }
+  }
 }

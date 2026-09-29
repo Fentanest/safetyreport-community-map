@@ -22,22 +22,25 @@ begin;
 drop function if exists public.internal_my_reports(uuid, uuid, text, text, text, integer, integer, text);
 
 -- Normalisation, byte-identical to contracts/my-reports/types.ts (WHITESPACE = JS `\s`).
+-- The per-row helpers below are plain IMMUTABLE SQL without a SET clause so the planner inlines them (a SET clause or
+-- SECURITY DEFINER makes every row a separate nested call: measured 20k-report user, MEASUREMENTS.md). They touch no
+-- table and name every built-in as pg_catalog.*, so the caller's search_path cannot redirect them.
 create or replace function private.my_reports_norm_vehicle(p text)
-returns text language sql immutable parallel safe set search_path = '' as $$
-    select regexp_replace(normalize(p, NFC),
+returns text language sql immutable parallel safe as $$
+    select pg_catalog.regexp_replace(pg_catalog.normalize(p, 'NFC'),
         '[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]', '', 'g');
 $$;
 
 create or replace function private.my_reports_norm_address(p text)
-returns text language sql immutable parallel safe set search_path = '' as $$
-    select btrim(regexp_replace(normalize(p, NFC),
+returns text language sql immutable parallel safe as $$
+    select pg_catalog.btrim(pg_catalog.regexp_replace(pg_catalog.normalize(p, 'NFC'),
         '[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+', ' ', 'g'), ' ');
 $$;
 
 -- same-address key: the normalised address without ONE trailing " (…)" reference group
 create or replace function private.my_reports_address_base(p text)
-returns text language sql immutable parallel safe set search_path = '' as $$
-    select regexp_replace(private.my_reports_norm_address(p), '^(.*[^ ]) \([^()]*\)$', '\1');
+returns text language sql immutable parallel safe as $$
+    select pg_catalog.regexp_replace(private.my_reports_norm_address(p), '^(.*[^ ]) \([^()]*\)$', '\1');
 $$;
 
 create type private.my_reports_row as (
@@ -67,16 +70,27 @@ create type private.my_reports_row as (
 
 -- The user's own representative completed reports (one row per report identity, no search condition).
 create or replace function private.my_reports_own(p_user uuid)
-returns setof private.my_reports_row language sql stable security definer set search_path = '' as $$
-    with grants as (
-        select g.grant_id, private.community_lineage_active(g.grant_id) as active
-          from (select distinct f.consent_grant_id as grant_id
-                  from private.community_report_facts f where f.contributor_id = p_user) g
+returns setof private.my_reports_row language sql stable security definer set search_path = '' set work_mem = '32MB' as $$
+    -- the lineage check runs once per distinct grant (materialised: otherwise the planner pushes it into the
+    -- fact scan and calls it once per fact)
+    with grant_ids as materialized (
+        select distinct f.consent_grant_id as grant_id
+          from private.community_report_facts f where f.contributor_id = p_user
     ),
-    own as (
-        select f.*
+    grants as materialized (
+        select g.grant_id from grant_ids g where private.community_lineage_active(g.grant_id)
+    ),
+    own as materialized (
+        -- hex/ASCII keys sorted in byte order ("C"): the window sorts run over every own observation
+        select f.source_report_key collate "C" as source_report_key, f.dataset_key collate "C" as dataset_key,
+               f.report_number collate "C" as report_number, f.source_report_id, f.vehicle_raw, f.report_date,
+               f.completed_date, f.category, f.status, f.disposition, f.amount_kind, f.amount_confirmed_won,
+               f.penalty_points, f.address, f.lat, f.lng, f.agency_key, f.agency_name, f.agency_current_name,
+               f.manager_key, f.manager_name, f.violation_law, f.rating, f.payload_sha256 collate "C" as payload_sha256,
+               f.answer_accepted_at,
+               f.first_accepted_at
           from private.community_report_facts f
-          join grants g on g.grant_id = f.consent_grant_id and g.active
+          join grants g on g.grant_id = f.consent_grant_id
          where f.contributor_id = p_user
            and f.public_state = 'completed'
            and f.status in ('accepted', 'partial', 'rejected', 'completed_unknown')
@@ -112,7 +126,7 @@ $$;
 
 -- Aggregates of a set of reports (contract §5). One definition for the whole scope, a recent window and a manager.
 create or replace function private.my_reports_stats(p private.my_reports_row[])
-returns jsonb language sql immutable set search_path = '' as $$
+returns jsonb language sql immutable as $$
     with r as (
         select u.*,
                (u.disposition = 'fine' and u.amount_kind = 'fine' and u.status in ('accepted', 'partial')
@@ -151,7 +165,7 @@ $$;
 
 -- The row as the SQL half of the DTO (the Edge adds status_label and official_url from its allowlist).
 create or replace function private.my_reports_row_json(r private.my_reports_row)
-returns jsonb language sql immutable set search_path = '' as $$
+returns jsonb language sql immutable as $$
     select jsonb_build_object(
         'report_number', r.report_number, 'source_report_id', r.source_report_id,
         'vehicle_number', r.vehicle_raw, 'report_date', r.report_date, 'completed_date', r.completed_date,
@@ -166,9 +180,9 @@ $$;
 -- Personal data version: every returned field of every own report + the identity + the account state.
 -- Another account's upload cannot change it; a content/rating/amount/agency/manager/number/consent change does.
 create or replace function private.my_reports_version(p private.my_reports_row[], p_contributor text)
-returns text language sql immutable set search_path = '' as $$
+returns text language sql immutable as $$
     select left(encode(sha256(convert_to(
-        coalesce((select string_agg(to_jsonb(u)::text, E'\n' order by u.identity collate "C")
+        coalesce((select string_agg(u::text, E'\n' order by u.identity collate "C")
                     from unnest(coalesce(p, '{}'::private.my_reports_row[])) u), '')
         || E'\n#' || coalesce(p_contributor, ''), 'UTF8')), 'hex'), 32);
 $$;
@@ -201,7 +215,7 @@ end;
 $$;
 
 create or replace function private.my_reports_matches(r private.my_reports_row, p_kind text, p_query text)
-returns boolean language sql immutable set search_path = '' as $$
+returns boolean language sql immutable as $$
     select case p_kind
         when 'vehicle' then r.vehicle_raw is not null
                             and strpos(private.my_reports_norm_vehicle(r.vehicle_raw), p_query) > 0
@@ -230,7 +244,7 @@ $$;
 
 -- Page of report rows in the contract order.
 create or replace function private.my_reports_page(p private.my_reports_row[], p_offset integer, p_limit integer)
-returns jsonb language sql immutable set search_path = '' as $$
+returns jsonb language sql immutable as $$
     select coalesce(jsonb_agg(private.my_reports_row_json(s.x) order by s.ord), '[]'::jsonb)
       from (select u, row_number() over (order by u.completed_date desc nulls last, u.report_date desc nulls last,
                                                   u.report_number collate "C" desc nulls last, u.identity collate "C") as ord
@@ -240,7 +254,7 @@ $$;
 
 -- Page of manager groups (agency_key, manager_key) in the contract order.
 create or replace function private.my_reports_managers(p private.my_reports_row[], p_offset integer, p_limit integer)
-returns jsonb language sql immutable set search_path = '' as $$
+returns jsonb language sql immutable as $$
     with rows as (select u.* from unnest(coalesce(p, '{}'::private.my_reports_row[])) u where u.manager_key is not null),
     groups as (
         select g.agency_key, g.manager_key,

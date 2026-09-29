@@ -311,7 +311,7 @@
    "version": "202610020100",
    "repo": "map",
    "path": "supabase/migrations/202610020100_my_reports.sql",
-   "sha256": "7d7403130c3ff1fe8dcbf7faad8f44ee983f7b0be0006f4fb81e34fc334a8a3c",
+   "sha256": "85bf81e9a65514b33896326ecf9e2ca14e00c2eb42b3e90184f8bb2a1baa7222",
    "depends_on": [
     "202609300200",
     "202610010100"
