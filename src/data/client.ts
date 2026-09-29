@@ -1,7 +1,8 @@
-import type { DashboardData, PlaceDetail, PublicEntity, PublicMeta, PublicPoint, Scope } from '../domain/public';
+import { COHORT_POLICY_VERSION, type DashboardData, type PlaceDetail, type PublicEntity, type PublicLaw, type PublicMeta, type PublicPoint, type Scope } from '../domain/public';
+import { DEFAULT_SORT, type SortSpec } from '../domain/tableSort';
 import {
-  entitiesResponseSchema, errorResponseSchema, metaSchema, dashboardResponseSchema, placeDetailResponseSchema, placesResponseSchema,
-  type AccessErrorDetails,
+  entitiesResponseSchema, errorResponseSchema, lawsResponseSchema, metaSchema, dashboardResponseSchema, placeDetailResponseSchema,
+  placesResponseSchema, type AccessErrorDetails,
 } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
 
@@ -32,7 +33,8 @@ export const isAccessError = (e: unknown): e is PublicApiError & { code: AccessC
   e instanceof PublicApiError && (ACCESS_CODES as readonly string[]).includes(e.code ?? '');
 
 export function scopeParams(scope: Scope, version?: string, extra?: Record<string, string>): URLSearchParams {
-  const p = new URLSearchParams({ start: scope.start, end: scope.end, category: scope.category });
+  // U01: the date basis is part of every request (same range + another basis = another request)
+  const p = new URLSearchParams({ date_basis: scope.date_basis, start: scope.start, end: scope.end, category: scope.category });
   if (scope.region_code) p.set('region_code', scope.region_code);
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
   if (scope.manager_key) p.set('manager_key', scope.manager_key);
@@ -44,7 +46,7 @@ export function scopeParams(scope: Scope, version?: string, extra?: Record<strin
 }
 
 export function sameScope(a: Scope, b: Scope): boolean {
-  return a.start === b.start && a.end === b.end && a.category === b.category &&
+  return a.date_basis === b.date_basis && a.start === b.start && a.end === b.end && a.category === b.category &&
     a.region_code === b.region_code && a.agency_key === b.agency_key &&
     a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox) &&
     (a.law ?? null) === (b.law ?? null);
@@ -52,9 +54,9 @@ export function sameScope(a: Scope, b: Scope): boolean {
 
 // No static snapshot: while the map is contributor-only every read goes through the API's viewer check, and the
 // Pages artifact carries no data files (publish-pages.yml no longer exports one).
-async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
+export async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
-  if (!base) throw new PublicApiError('통계 서버에 연결할 수 없습니다.');
+  if (!base) throw new PublicApiError('통계를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
   const url = `${base}/public-analytics/${path}${params ? `?${params}` : ''}`;
   const auth = mapAuth();
   await auth.settled();
@@ -88,19 +90,32 @@ async function read(path: string, params: URLSearchParams | null, signal?: Abort
     } catch { /* not JSON */ }
     const access = (ACCESS_CODES as readonly string[]).includes(code ?? '');
     // the server's fixed messages for these codes are safe to show and tell the user what to change;
-    // the code is appended so a failure report carries the real cause
+    // an unknown failure carries its code in plain words so a report to us still names the real cause
     const known = code === 'RESULT_TOO_LARGE' || code === 'INVALID_QUERY' || code === 'AGGREGATE_NOT_READY';
     throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.'
       : access && message ? message
-        : known ? `${message ?? '통계를 불러오지 못했습니다.'} (${code}, HTTP ${res.status})`
-          : `통계를 불러오지 못했습니다.${code ? ` (${code}, HTTP ${res.status})` : ` (HTTP ${res.status})`}`,
+        : known ? message ?? '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
+          : `통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요. (오류 코드 ${code ?? res.status})`,
       res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code, details);
   }
   return res.json();
 }
 
+/**
+ * EX-09: every analytics response of the single-date contract echoes COHORT_POLICY_VERSION. A response without it
+ * comes from an older server whose report count used another set of reports; its numbers are refused (never shown
+ * under the new labels). Deploy order: DB → Edge → Pages (docs/implementation/date-basis-dashboard/MIGRATION.md).
+ */
+export function requirePolicy(raw: unknown): unknown {
+  const version = raw && typeof raw === 'object' ? (raw as { cohort_policy_version?: unknown }).cohort_policy_version : undefined;
+  if (version !== COHORT_POLICY_VERSION) {
+    throw new PublicApiError('서버가 아직 새 날짜 기준을 지원하지 않아 통계를 보여 드릴 수 없습니다. 잠시 뒤 다시 확인해 주세요.',
+      null, null, 'COHORT_POLICY_MISMATCH');
+  }
+  return raw;
+}
+
 export type EntityKind = 'agency' | 'manager';
-export type EntitySortKey = 'completed' | 'accepted' | 'partial' | 'rejected' | 'fine' | 'acceptRate';
 export type SortDir = 'asc' | 'desc';
 
 export type AgencyTypeFilter = 'all' | 'police' | 'non_police';
@@ -110,8 +125,8 @@ export interface EntitiesQuery {
   /** 경찰 구분 (R09); 'all' or undefined sends nothing */
   agencyType?: AgencyTypeFilter;
   q?: string;
-  sort?: EntitySortKey;
-  dir?: SortDir;
+  /** U03: column × value (count/rate/…) × direction; the server sorts the full list before paging */
+  sort?: SortSpec;
   page?: number;
   pageSize?: number;
 }
@@ -123,7 +138,27 @@ export interface EntitiesPage {
   totalRows: number;
   page: number;
   pageSize: number;
+  sort: SortSpec;
 }
+
+export interface LawsQuery { q?: string; sort?: SortSpec; page?: number; pageSize?: number }
+export interface LawsPage {
+  datasetVersion: string;
+  scope: Scope;
+  items: PublicLaw[];
+  totalRows: number;
+  page: number;
+  pageSize: number;
+  sort: SortSpec;
+}
+
+const sortParams = (sort: SortSpec | undefined, extra: Record<string, string>) => {
+  if (!sort) return;
+  extra.sort = sort.column;
+  extra.sort_value = sort.value;
+  extra.dir = sort.dir;
+};
+const sameSort = (a: SortSpec, b: SortSpec) => a.column === b.column && a.value === b.value && a.dir === b.dir;
 
 // SOL-08: full-list entity browsing over /entities (server search/sort/pagination). The dashboard
 // top-100 arrays stay summary-only; this is the table's data source in live mode.
@@ -134,24 +169,41 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
     page_size: String(query.pageSize ?? 50),
   };
   if (query.q !== undefined && query.q.trim() !== '') extra.q = query.q.trim();
-  if (query.sort !== undefined) extra.sort = query.sort;
-  if (query.dir !== undefined) extra.dir = query.dir;
+  sortParams(query.sort, extra);
   if (query.agencyType && query.agencyType !== 'all') extra.agency_type = query.agencyType;
   if (import.meta.env.VITE_DATA_MODE === 'demo') {
     const { demoEntities } = await import('./demoEngine');
     return demoEntities(scope, query);
   }
-  const parsed = entitiesResponseSchema.parse(await read('entities', scopeParams(scope, version, extra), signal));
+  const parsed = entitiesResponseSchema.parse(requirePolicy(await read('entities', scopeParams(scope, version, extra), signal)));
   if (version !== undefined && parsed.dataset_version !== version) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
-  if (!sameScope(parsed.scope, scope)) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+  if (!sameScope(parsed.scope, scope) || !sameSort(parsed.sort as SortSpec, query.sort ?? DEFAULT_SORT)) {
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return {
     datasetVersion: parsed.dataset_version, scope: parsed.scope, items: parsed.items,
-    totalRows: parsed.total_rows, page: parsed.page, pageSize: parsed.page_size,
+    totalRows: parsed.total_rows, page: parsed.page, pageSize: parsed.page_size, sort: parsed.sort as SortSpec,
   };
+}
+
+/** U03: the full law list of the scope, searched and sorted on the server, then paged. */
+export async function loadLaws(scope: Scope, query: LawsQuery, version?: string, signal?: AbortSignal): Promise<LawsPage> {
+  const extra: Record<string, string> = { page: String(query.page ?? 1), page_size: String(query.pageSize ?? 50) };
+  if (query.q !== undefined && query.q.trim() !== '') extra.q = query.q.trim();
+  sortParams(query.sort, extra);
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
+    const { demoLaws } = await import('./demoEngine');
+    return demoLaws(scope, query);
+  }
+  const parsed = lawsResponseSchema.parse(requirePolicy(await read('laws', scopeParams(scope, version, extra), signal)));
+  if ((version !== undefined && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope) ||
+    !sameSort(parsed.sort as SortSpec, query.sort ?? DEFAULT_SORT)) {
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
+  }
+  return { datasetVersion: parsed.dataset_version, scope: parsed.scope, items: parsed.items, totalRows: parsed.total_rows,
+    page: parsed.page, pageSize: parsed.page_size, sort: parsed.sort as SortSpec };
 }
 
 /** Dataset metadata (version, date bounds, capabilities). The dashboard hook keeps it for the signed-in
@@ -172,15 +224,16 @@ export async function loadMeta(signal?: AbortSignal): Promise<PublicMeta> {
 export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
   if (import.meta.env.VITE_DATA_MODE === 'demo') return loadDashboard(scope, signal);
   const q = scopeParams(scope, meta.dataset_version);
-  const result = dashboardResponseSchema.parse(await read('dashboard', q, signal));
+  const result = dashboardResponseSchema.parse(requirePolicy(await read('dashboard', q, signal)));
   if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
       !sameScope(result.scope, scope)) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return {
     meta: { ...meta, location_missing: result.location_missing ?? undefined },
     scope, overview: result.overview, points: result.points, monthly: result.monthly,
     agencies: result.agencies, managers: result.managers, regions: result.regions ?? null, laws: result.laws ?? null,
+    agency_total: result.agency_total, manager_total: result.manager_total,
     vehicles: result.vehicles,
     vehicle_total_scope_reports: result.vehicle_total_scope_reports,
     vehicle_identifiable_reports: result.vehicle_identifiable_reports,
@@ -200,7 +253,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     if (state === 'noupload') throw new PublicApiError('지도에 올라간 내 신고가 아직 없습니다.', 403, null, 'upload_required');
     if (state === 'offline') throw new PublicApiError('네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
     if (state === 'rate') throw new PublicApiError('요청이 많아 잠시 후 다시 시도해 주세요.', 429, 60);
-    if (state === 'stale') throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    if (state === 'stale') throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
     if (state === 'one' || state === 'empty') {
       const { demoDashboard } = await import('./demo');
       return demoDashboard(scope, state);
@@ -220,11 +273,12 @@ export async function loadPlace(scope: Scope, key: string, version: string, sign
     return detail;
   }
   const extra = entityLimit !== 100 ? { entity_limit: String(Math.min(1000, Math.max(1, entityLimit))) } : undefined;
-  const parsed = placeDetailResponseSchema.parse(await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version, extra), signal));
+  const parsed = placeDetailResponseSchema.parse(requirePolicy(await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version, extra), signal)));
   if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope) || parsed.place.key !== key) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
-  return { dataset_version: parsed.dataset_version, scope: parsed.scope, place: parsed.place,
+  return { dataset_version: parsed.dataset_version, scope: parsed.scope, cohort_policy_version: parsed.cohort_policy_version,
+    place: parsed.place, overview: parsed.overview,
     agencies: parsed.agencies, managers: parsed.managers, agency_total: parsed.agency_total, manager_total: parsed.manager_total };
 }
 
@@ -235,9 +289,9 @@ export async function loadPlacesInView(scope: Scope, view: [number, number, numb
     const { demoPlacesInView } = await import('./demoEngine');
     return demoPlacesInView(scope, view);
   }
-  const parsed = placesResponseSchema.parse(await read('places', scopeParams(scope, version, { view_bbox: view.join(',') }), signal));
+  const parsed = placesResponseSchema.parse(requirePolicy(await read('places', scopeParams(scope, version, { view_bbox: view.join(',') }), signal)));
   if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope)) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return { points: parsed.points, total: parsed.total_places, compacted: parsed.compacted };
 }

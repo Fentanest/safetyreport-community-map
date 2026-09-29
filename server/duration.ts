@@ -13,11 +13,13 @@
  *   scope — never an average of group medians or means.
  */
 import { kstDate, type PrivateFact, type Status } from './aggregate.ts';
+import type { DateBasis } from '../src/domain/public.ts';
 
 export const ANSWERED: ReadonlySet<Status> = new Set<Status>(['accepted', 'partial', 'rejected', 'completed_unknown']);
 
 export interface DurationSummary {
-  basis: 'completed_date';
+  /** cohort basis (the date that selected the reports); the days are always answer − report */
+  basis: DateBasis;
   /** facts with a valid duration */
   count: number;
   mean_days: number | null;
@@ -25,7 +27,7 @@ export interface DurationSummary {
   p90_days: number | null;
   min_days: number | null;
   max_days: number | null;
-  excluded: { no_report_date: number; reversed: number };
+  excluded: { no_report_date: number; reversed: number; no_answer_date: number };
 }
 
 const DAY = 86400000;
@@ -63,28 +65,30 @@ export function nearestRank(sorted: readonly number[], q: number): number | null
   return sorted[Math.min(n, Math.max(1, Math.ceil(q * n))) - 1];
 }
 
-/** `done` = the completion-date cohort of the scope (already filtered by period and dimensions). */
-export function durationSummary(done: readonly PrivateFact[]): DurationSummary {
+/** `done` = the completed part of the scope's cohort (already filtered by period and dimensions). The real
+ *  report and answer dates are used as they are (a report before the period start is never clipped). */
+export function durationSummary(done: readonly PrivateFact[], basis: DateBasis = 'completed_date'): DurationSummary {
   const days: number[] = [];
-  let noReport = 0, reversed = 0;
+  let noReport = 0, reversed = 0, noAnswer = 0;
   for (const fact of done) {
     const r = durationOf(fact);
     if ('days' in r) days.push(r.days);
     else if (r.reason === 'no_report_date') noReport++;
     else if (r.reason === 'reversed') reversed++;
+    else if (r.reason === 'no_answer_date') noAnswer++;
   }
   days.sort((a, b) => a - b);
   const n = days.length;
   return {
-    basis: 'completed_date', count: n,
+    basis, count: n,
     mean_days: n ? days.reduce((a, b) => a + b, 0) / n : null,
     median_days: median(days), p90_days: nearestRank(days, 0.9),
     min_days: n ? days[0] : null, max_days: n ? days[n - 1] : null,
-    excluded: { no_report_date: noReport, reversed },
+    excluded: { no_report_date: noReport, reversed, no_answer_date: noAnswer },
   };
 }
 
-/** Answered facts reported in the period that carry no answer date at all (their period is unknown). */
+/** Answered facts of the cohort that carry no answer date at all (report-date basis; 0 on the answer-date basis). */
 export function answerDateMissing(reported: readonly PrivateFact[]): number {
   return reported.filter(fact => ANSWERED.has(fact.status) && kstDate(fact.completed_date) === null).length;
 }

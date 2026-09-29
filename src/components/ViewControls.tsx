@@ -1,5 +1,3 @@
-import { VIEW_LABEL, type ViewMode } from '../state/view';
-
 interface Props {
   compareOn: boolean;
   onCompare: (on: boolean) => void;
@@ -7,12 +5,9 @@ interface Props {
   compareDisabledReason: string | null;
   /** personal data hidden because briefing mode is on */
   briefingHidden: boolean;
-  view: ViewMode;
-  onView: (v: ViewMode) => void;
 }
 
-const MODES: ViewMode[] = ['both', 'map', 'stats'];
-
+// U04: the layout switch (지도+통계 / 지도 크게 / 통계 크게) was removed; only the comparison toggle stays.
 /** Data wiring: Sol · visual implementation: Muse (docs/personal-comparison.md §5.1–5.2). */
 export default function ViewControls(p: Props) {
   return (
@@ -33,13 +28,6 @@ export default function ViewControls(p: Props) {
           <small className="compare-disabled-note" role="note">{p.compareDisabledReason}</small>
         )}
       </span>
-      <div className="segments view-switch" role="group" aria-label="보기 전환">
-        {MODES.map((mode) => (
-          <button key={mode} type="button" className={p.view === mode ? 'selected' : ''} aria-pressed={p.view === mode} onClick={() => p.onView(mode)}>
-            {VIEW_LABEL[mode]}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

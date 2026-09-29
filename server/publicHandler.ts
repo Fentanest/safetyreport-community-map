@@ -1,8 +1,16 @@
-import { aggregateDashboard, entityRows, mapNodes, previousWindow, representatives, selectScope, type PrivateFact } from './aggregate.ts';
-import { placeFacts, placeRows, placesInView, placeSummary, representativeOf } from './places.ts';
+import {
+  aggregateDashboard, basisWindow, entityRows, focusSelection, lawRows, mapNodes, overviewOf, previousWindow, representatives,
+  selectScope, todayKst, type PrivateFact,
+} from './aggregate.ts';
+import { placeKey as placeKeyOfFact, placeRows, placesInView, placeSummary, representativeOf } from './places.ts';
 import { codeForLegacyKey } from './regions.ts';
+import { aggregateStatistics, parseFilters, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from './statistics.ts';
 import { authenticate, mapViewerEligibility, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
-import { isLawParam, LAW_NONE, lawKey, parseBbox, type PublicEntity, type PublicMeta, type Scope } from '../src/domain/public.ts';
+import {
+  COHORT_POLICY_VERSION, DEFAULT_DATE_BASIS, isDateBasis, isLawParam, LAW_NONE, lawKey, parseBbox,
+  type BasisBounds, type PublicEntity, type PublicLaw, type PublicMeta, type Scope,
+} from '../src/domain/public.ts';
+import { compareRows, DEFAULT_SORT, isSortSpec, legacySort, type SortSpec, type SortValue } from '../src/domain/tableSort.ts';
 
 export interface AnalyticsState {
   dataset_version: string;
@@ -14,11 +22,19 @@ export interface AnalyticsState {
   data_max: string | null;
   coverage_note: string;
   dedupe_policy_version: string;
+  /** 전체 기간 per basis (internal_analytics_cohort_state); absent on the older state RPC */
+  basis_bounds?: BasisBounds | null;
+}
+
+export interface FactsOptions {
+  /** read the previous window too (only routes that show a comparison ask for it; D14) */
+  previous: boolean;
 }
 
 export interface AnalyticsRepository {
   getState(): Promise<AnalyticsState>;
-  getFacts(scope: Scope): Promise<PrivateFact[]>;
+  /** facts of the scope's cohort window on scope.date_basis (representative elected before the date condition) */
+  getFacts(scope: Scope, options?: FactsOptions): Promise<PrivateFact[]>;
   /** Rate limit the verified viewer. */
   allowRequest(request: Request, viewerId: string): Promise<boolean>;
 }
@@ -57,16 +73,16 @@ export class QueryError extends Error {
 
 type Headers = Record<string, string>;
 const allowed = new Set([
-  'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
-  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type', 'view_bbox', 'entity_limit',
+  'date_basis', 'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
+  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'sort_value', 'dir', 'agency_type', 'view_bbox', 'entity_limit',
 ]);
+/** 맞춤 통계 parameters (S05–S08): the declarative spec / candidate search; never part of the scope */
+export const STATS_ONLY = ['spec', 'kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key'];
 // list-only parameters: never part of the statistics scope
-const ENTITY_ONLY = ['kind', 'page', 'page_size', 'q', 'sort', 'dir', 'agency_type'];
+const ENTITY_ONLY = ['kind', 'page', 'page_size', 'q', 'sort', 'sort_value', 'dir', 'agency_type'];
+const LAW_LIST_ONLY = ['page', 'page_size', 'q', 'sort', 'sort_value', 'dir'];
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const key = /^[\p{L}\p{N}._:-]{1,160}$/u;
-// SOL-08: server-side search/sort keys for /entities. Value semantics mirror the EntityTable
-// client so summary and full-list ordering agree (nulls sort as -Infinity, as in the table).
-const entitySorts = new Set(['completed', 'accepted', 'partial', 'rejected', 'fine', 'acceptRate']);
 
 function json(body: unknown, status: number, headers: Headers): Response {
   return new Response(JSON.stringify(body), { status, headers });
@@ -83,8 +99,8 @@ const ACCESS_MESSAGES: Record<string, string> = {
 
 function errorWith(code: string, status: number, headers: Headers, details?: ViewerThresholdDetails): Response {
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
-    code === 'AGGREGATE_NOT_READY' ? '공개 집계가 아직 준비되지 않았습니다.' :
-      code === 'DATASET_CHANGED' ? '데이터 버전이 변경됐습니다. 다시 조회해 주세요.' :
+    code === 'AGGREGATE_NOT_READY' ? '통계가 아직 준비되지 않았습니다. 잠시 뒤 다시 확인해 주세요.' :
+      code === 'DATASET_CHANGED' ? '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.' :
         code === 'RESULT_TOO_LARGE' ? '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.' :
         ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.',
     ...(details !== undefined ? { details } : {}) } }, status, headers);
@@ -99,6 +115,10 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   for (const name of params.keys()) if (!names.has(name) || params.getAll(name).length !== 1) throw new QueryError('INVALID_QUERY', 400);
   const start = params.get('start'), end = params.get('end');
   if (!start || !end || !date.test(start) || !date.test(end)) throw new QueryError('INVALID_QUERY', 400);
+  // U01: one date selects the reports. An old link without it opens on the default (답변일); anything else is refused.
+  const basisRaw = params.get('date_basis');
+  if (basisRaw !== null && !isDateBasis(basisRaw)) throw new QueryError('INVALID_QUERY', 400);
+  const dateBasis = basisRaw ?? DEFAULT_DATE_BASIS;
   // No length cap (2026-09-30): the whole shared history must be queryable. The only bounds are a real calendar
   // range (start ≤ end) and a comparison window that stays on the calendar; the data volume is guarded by the
   // repository's row budget (RESULT_TOO_LARGE), never by silently shortening the period.
@@ -106,7 +126,9 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
     const previous = previousWindow(start, end);
     if (previous.start < '1900-01-01') throw new Error('range');
   } catch { throw new QueryError('INVALID_QUERY', 400); }
-  if (state.data_min && end < state.data_min || state.data_max && start > state.data_max) throw new QueryError('INVALID_QUERY', 400);
+  // A valid calendar range outside the data is a normal empty result (DT-13/DT-15), never an invalid query:
+  // `state` bounds are no longer used to refuse a period.
+  void state;
   const category = params.get('category') || 'all';
   if (!['all', 'traffic', 'parking', 'other'].includes(category)) throw new QueryError('INVALID_QUERY', 400);
   const optional = (name: string) => {
@@ -134,7 +156,7 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   // echoed and filtered as the 조 단위 key: '도로교통법 제32조제1항' selects (and echoes) '도로교통법 제32조'
   const law = rawLaw === null || rawLaw === LAW_NONE ? rawLaw : lawKey(rawLaw);
   if (rawLaw !== null && law === null) throw new QueryError('INVALID_QUERY', 400);
-  return { start, end, category: category as Scope['category'], region_code: regionCode,
+  return { date_basis: dateBasis, start, end, category: category as Scope['category'], region_code: regionCode,
     agency_key: optional('agency_key'), manager_key: optional('manager_key'), bbox, law };
 }
 
@@ -143,12 +165,14 @@ function meta(state: AnalyticsState): PublicMeta {
     status: supported ? 'supported' as const : 'missing' as const,
     reason, coverage: null,
   });
-  const reason = state.ready ? null : 'v2 원천 사실이 아직 제공되지 않았습니다.';
+  const reason = state.ready ? null : '통계 자료가 아직 준비되지 않았습니다.';
   return {
     schema_version: 2, dataset_version: state.dataset_version, sample: false,
     source_updated_at: state.source_updated_at, generated_at: state.generated_at,
     published_at: state.published_at, data_min: state.data_min, data_max: state.data_max,
     coverage_note: state.coverage_note, dedupe_policy_version: state.dedupe_policy_version,
+    // 전체 기간 of each basis (DT-15) and the server's KST today (D12); the policy version tells old servers apart
+    cohort_policy_version: COHORT_POLICY_VERSION, today_kst: todayKst(), basis_bounds: state.basis_bounds ?? null,
     capabilities: Object.fromEntries([
       'daily_report_dates', 'completion_dates', 'manager_status_cross', 'agency_status_cross', 'vehicle_top5',
       'fine_amount', 'processing_duration', 'region_boundaries', 'violation_law',
@@ -156,35 +180,80 @@ function meta(state: AnalyticsState): PublicMeta {
   };
 }
 
-function entityValue(row: PublicEntity, sort: string): number | null {
-  const known = row.outcomes.result_known;
-  switch (sort) {
-    case 'accepted': return row.outcomes.accepted;
-    case 'partial': return row.outcomes.partial;
-    case 'rejected': return row.outcomes.rejected;
-    case 'fine': return row.fine_count;
-    // 수용률 = 수용 ÷ 결과 확인 (일부 수용 제외, 화면 표와 같은 정의)
-    case 'acceptRate': return known > 0 ? (row.outcomes.accepted / known) * 100 : null;
-    default: return row.completed_count;
-  }
+/** U03: one sort spec from `sort`/`sort_value`/`dir` (registry allowlist; legacy SOL-08 keys still accepted). */
+function parseSort(params: URLSearchParams): SortSpec {
+  const rawSort = params.get('sort'), rawValue = params.get('sort_value'), rawDir = params.get('dir');
+  if (rawSort === null && rawValue === null && rawDir === null) return DEFAULT_SORT;
+  const legacy = legacySort(rawSort ?? DEFAULT_SORT.column);
+  if (!legacy) throw new QueryError('INVALID_QUERY', 400);
+  const value = (rawValue ?? legacy.value) as SortValue, dir = rawDir ?? 'desc';
+  if (!isSortSpec(legacy.column, value, dir)) throw new QueryError('INVALID_QUERY', 400);
+  return { column: legacy.column, value, dir: dir as SortSpec['dir'] };
 }
 
-function compareEntities(sort: string, dir: string): (a: PublicEntity, b: PublicEntity) => number {
-  return (a, b) => {
-    const va = entityValue(a, sort), vb = entityValue(b, sort);
-    const na = va === null ? -Infinity : va, nb = vb === null ? -Infinity : vb;
-    const primary = dir === 'desc' ? nb - na : na - nb;
-    if (primary !== 0) return primary;
-    return a.agency_name.localeCompare(b.agency_name, 'ko') ||
-      (a.manager_name ?? '').localeCompare(b.manager_name ?? '', 'ko') ||
-      (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
-  };
+function pageOf(params: URLSearchParams): { page: number; pageSize: number } {
+  const page = Number(params.get('page') || '1'), pageSize = Number(params.get('page_size') || '50');
+  if (!Number.isInteger(page) || page < 1 || page > 10000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new QueryError('INVALID_QUERY', 400);
+  }
+  return { page, pageSize };
 }
 
 function routeName(pathname: string): string {
   const marker = '/public-analytics/';
   const index = pathname.indexOf(marker);
   return index < 0 ? '' : pathname.slice(index + marker.length).replace(/\/+$/, '');
+}
+
+/** 맞춤 통계 routes of the PUBLIC API: population 'all' only (the viewer's own rows are served by my-analytics). */
+async function statisticsRoute(route: string, url: URL, state: AnalyticsState, repo: AnalyticsRepository): Promise<unknown> {
+  const statsAllowed = new Set([...allowed, ...STATS_ONLY].filter(n => !['page', 'page_size', 'sort', 'dir', 'agency_type', 'view_bbox', 'entity_limit'].includes(n)));
+  for (const name of url.searchParams.keys()) if (!statsAllowed.has(name) || url.searchParams.getAll(name).length !== 1) throw new QueryError('INVALID_QUERY', 400);
+  const scopeParams = new URLSearchParams(url.searchParams);
+  for (const n of STATS_ONLY) scopeParams.delete(n);
+  const scopeBasisGiven = scopeParams.has('date_basis');
+  let scope = parseScope(scopeParams, state);
+  if (url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) throw new QueryError('DATASET_CHANGED', 409);
+  if (!state.ready || !state.generated_at) throw new QueryError('AGGREGATE_NOT_READY', 503);
+  if (route === 'statistics/query') {
+    for (const n of ['kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key']) if (url.searchParams.has(n)) throw new QueryError('INVALID_QUERY', 400);
+    const spec = parseSpec(url.searchParams.get('spec'));
+    if (spec.population !== 'all') throw new QueryError('INVALID_QUERY', 400);
+    scope = unifyBasis(scope, scopeBasisGiven, spec.date_basis);
+    const facts = await repo.getFacts(scope, { previous: false });
+    return aggregateStatistics({ facts, scope, spec, datasetVersion: state.dataset_version, dataWindow: basisWindow(scope.date_basis, windowOptions(state)) });
+  }
+  if (url.searchParams.has('spec')) throw new QueryError('INVALID_QUERY', 400);
+  const q = url.searchParams.get('q') ?? '';
+  if (q.length > 80) throw new QueryError('INVALID_QUERY', 400);
+  const cursor = Number(url.searchParams.get('cursor') ?? '0'), limit = Number(url.searchParams.get('limit') ?? '30');
+  if (!Number.isInteger(cursor) || cursor < 0 || cursor > 100000 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw new QueryError('INVALID_QUERY', 400);
+  const basisParam = url.searchParams.get('basis');
+  if (basisParam !== null && !isDateBasis(basisParam)) throw new QueryError('INVALID_QUERY', 400);
+  scope = unifyBasis(scope, scopeBasisGiven, basisParam ?? scope.date_basis);
+  const basis = scope.date_basis;
+  const placeKey = url.searchParams.get('place_key');
+  if (placeKey !== null && !/^pl1:[0-9a-f]{16}$/.test(placeKey)) throw new QueryError('INVALID_QUERY', 400);
+  let keys: string[] = [];
+  const rawKeys = url.searchParams.get('keys');
+  if (rawKeys !== null) {
+    try { keys = JSON.parse(rawKeys); } catch { throw new QueryError('INVALID_QUERY', 400); }
+    if (!Array.isArray(keys) || keys.length > 50 || keys.some(k => typeof k !== 'string' || k.length > 160)) throw new QueryError('INVALID_QUERY', 400);
+  }
+  const facts = await repo.getFacts(scope, { previous: false });
+  return statisticsCandidates({ facts, scope, datasetVersion: state.dataset_version, kind: url.searchParams.get('kind') ?? '', q, cursor, limit,
+    filters: parseFilters(url.searchParams.get('filters')), basis, placeKey, keys });
+}
+
+/** EX-08: the scope's date_basis and the recipe's date_basis are ONE value. Two different values are refused
+ *  (never silently choosing one); a request without the scope value uses the recipe's (old recipes keep theirs). */
+export function unifyBasis(scope: Scope, scopeGiven: boolean, specBasis: Scope['date_basis']): Scope {
+  if (scopeGiven && scope.date_basis !== specBasis) throw new QueryError('BASIS_CONFLICT', 400);
+  return { ...scope, date_basis: specBasis };
+}
+
+export function windowOptions(state: AnalyticsState) {
+  return { basisBounds: state.basis_bounds ?? null, dataMin: state.data_min, asOf: state.data_max ?? '' };
 }
 
 export function createPublicHandler(repo: AnalyticsRepository, access: PublicAccess) {
@@ -207,7 +276,8 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
     if (request.method !== 'GET') return errorResponse('METHOD_NOT_ALLOWED', 405);
     const url = new URL(request.url);
     const route = routeName(url.pathname);
-    if (!['meta', 'dashboard', 'overview', 'map', 'series', 'entities', 'vehicles/top', 'places'].includes(route) &&
+    if (!['meta', 'dashboard', 'overview', 'map', 'series', 'entities', 'laws', 'vehicles/top', 'places',
+      'statistics/catalog', 'statistics/query', 'statistics/candidates'].includes(route) &&
       !route.startsWith('points/') && !route.startsWith('places/')) {
       return errorResponse('NOT_FOUND', 404);
     }
@@ -232,7 +302,12 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
         return json(meta(state), 200);
       }
-      if (route !== 'entities' && ENTITY_ONLY.some(name => url.searchParams.has(name))) {
+      if (route === 'statistics/catalog') {
+        if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
+        return json(statisticsCatalog(), 200);
+      }
+      if (route === 'statistics/query' || route === 'statistics/candidates') return json(await statisticsRoute(route, url, state, repo), 200);
+      if (route !== 'entities' && ENTITY_ONLY.some(name => url.searchParams.has(name) && !(route === 'laws' && LAW_LIST_ONLY.includes(name)))) {
         throw new QueryError('INVALID_QUERY', 400);
       }
       // view_bbox = the map viewport of a display refinement (R07/F04); it never enters the statistics scope
@@ -268,24 +343,47 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         catch { throw new QueryError('INVALID_QUERY', 400); }
         if (!/^pl1:[0-9a-f]{16}$/.test(placeKey)) throw new QueryError('INVALID_QUERY', 400);
       }
-      const facts = await repo.getFacts(scope);
-      const common = { schema_version: 2, dataset_version: state.dataset_version, sample: false, scope };
+      // D14: only the routes that show a comparison read the previous window
+      const previous = route === 'dashboard' || route === 'overview' || placeKey !== null;
+      const facts = await repo.getFacts(scope, { previous });
+      const common = { schema_version: 2, dataset_version: state.dataset_version, sample: false, scope,
+        cohort_policy_version: COHORT_POLICY_VERSION };
+      const window = basisWindow(scope.date_basis, windowOptions(state));
       if (placeKey !== null) {
-        // R05/R07: one address, every fact of the place key under the scope (never a coordinate bbox)
-        const selection = selectScope(representatives(facts), scope);
-        const own = placeFacts(placeKey, selection.reported, selection.done);
-        const anchor = representativeOf([...own.reported, ...own.done]);
+        // R05/R07 + U02: one address, every fact of the place key under the scope (never a coordinate bbox);
+        // the focus overview uses the SAME builder as the dashboard, restricted to this address
+        const key = placeKey;
+        const inPlace = (fact: PrivateFact) => placeKeyOfFact(fact) === key;
+        const selection = focusSelection(selectScope(representatives(facts), scope), inPlace);
+        const full = focusSelection(selectScope(facts, scope), inPlace);
+        const anchor = representativeOf(selection.cohort);
         // only drawable places have a detail (a place without any coordinate is counted in map_unplaced)
         if (!anchor) return errorResponse('NOT_FOUND', 404);
-        const agencies = entityRows(own.done, 'agency'), managers = entityRows(own.done, 'manager');
-        return json({ ...common, place: placeSummary(placeKey, own.reported, own.done, anchor),
+        const agencies = entityRows(selection.done, 'agency'), managers = entityRows(selection.done, 'manager');
+        const overview = overviewOf({ sel: selection, full, comparisonCovered: window.min === null || selection.prev.start >= window.min });
+        return json({ ...common, place: placeSummary(placeKey, selection.cohort, selection.done, anchor), overview,
           agencies: agencies.slice(0, entityLimit), managers: managers.slice(0, entityLimit),
           agency_total: agencies.length, manager_total: managers.length }, 200);
+      }
+      if (route === 'laws') {
+        // U03: the full law list of the scope, searched and sorted on the server, then paged
+        const { page, pageSize } = pageOf(url.searchParams);
+        const rawQ = url.searchParams.get('q');
+        if (rawQ !== null && rawQ.length > 160) throw new QueryError('INVALID_QUERY', 400);
+        const needle = (rawQ || '').trim();
+        const sort = parseSort(url.searchParams);
+        const selection = selectScope(representatives(facts), scope);
+        const nameOf = (row: PublicLaw) => row.law ?? '법규 미상';
+        let rows = lawRows(selection.done);
+        if (needle) rows = rows.filter(row => nameOf(row).includes(needle));
+        rows = [...rows].sort(compareRows(sort, nameOf, row => row.law ?? '\uffff'));
+        return json({ ...common, sort, items: rows.slice((page - 1) * pageSize, page * pageSize),
+          total_rows: rows.length, page, page_size: pageSize }, 200);
       }
       if (route === 'places') {
         // display refinement of the map only: exact address places inside the viewport under the SAME scope
         const selection = selectScope(representatives(facts), scope);
-        const inView = placesInView(placeRows(selection.reported, selection.done).places, viewBbox!);
+        const inView = placesInView(placeRows(selection.cohort, selection.done).places, viewBbox!);
         const nodes = mapNodes(inView);
         return json({ ...common, view_bbox: viewBbox, points: nodes, total_places: inView.length,
           compacted: nodes.length < inView.length }, 200);
@@ -293,43 +391,36 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       const data = aggregateDashboard(facts, scope, {
         datasetVersion: state.dataset_version, sourceUpdatedAt: state.source_updated_at,
         generatedAt: state.generated_at, asOf: state.data_max || scope.end, sample: false,
-        dataMin: state.data_min,
+        dataMin: state.data_min, basisBounds: state.basis_bounds ?? null, today: todayKst(),
       });
       // location_missing: unique facts actually in the current range's report/completion indicators
       // but without coordinates (SOL-07 basis: comparison-window-only facts excluded, counted once).
       if (route === 'dashboard') return json({ ...common, location_missing: data.meta.location_missing ?? 0,
         overview: data.overview, points: data.points,
         monthly: data.monthly, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
+        agency_total: data.agencies.length, manager_total: data.managers.length,
         regions: (data.regions ?? []).slice(0, 400), laws: (data.laws ?? []).slice(0, 300), vehicles: data.vehicles, vehicle_total_scope_reports: data.vehicle_total_scope_reports,
         vehicle_identifiable_reports: data.vehicle_identifiable_reports,
         analytics: data.analytics ?? null, map_unplaced: data.map_unplaced ?? null }, 200);
       if (route === 'overview') return json({ ...common, location_missing: data.meta.location_missing ?? 0, overview: data.overview }, 200);
       if (route === 'map') return json({ ...common, points: data.points }, 200);
       if (route === 'series') return json({ ...common, monthly: data.monthly }, 200);
-      if (route === 'vehicles/top') return json({ ...common, time_basis: 'report_date',
+      if (route === 'vehicles/top') return json({ ...common, time_basis: scope.date_basis,
         total_scope_reports: data.vehicle_total_scope_reports, identifiable_reports: data.vehicle_identifiable_reports,
         items: data.vehicles }, 200);
       if (route === 'entities') {
-        const page = Number(url.searchParams.get('page') || '1'), pageSize = Number(url.searchParams.get('page_size') || '50');
-        if (!Number.isInteger(page) || page < 1 || page > 10000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-          throw new QueryError('INVALID_QUERY', 400);
-        }
-        // SOL-08: backward-compatible server search/sort over the full entity list. Existing callers
-        // that omit q/sort/dir get the previous ordering and page shape unchanged (no response fields removed).
+        const { page, pageSize } = pageOf(url.searchParams);
+        // U03: filter → the full entity list of the scope → sort (count or exact rate, nulls last) → page
         const rawQ = url.searchParams.get('q');
         if (rawQ !== null && rawQ.length > 160) throw new QueryError('INVALID_QUERY', 400);
         const needle = (rawQ || '').trim();
-        const sort = url.searchParams.get('sort') || 'completed';
-        const dir = url.searchParams.get('dir') || 'desc';
-        if (!entitySorts.has(sort) || (dir !== 'asc' && dir !== 'desc')) throw new QueryError('INVALID_QUERY', 400);
+        const sort = parseSort(url.searchParams);
         let rows = url.searchParams.get('kind') === 'agency' ? data.agencies : data.managers;
         const agencyType = url.searchParams.get('agency_type');
         if (agencyType) rows = rows.filter(row => row.agency_type === agencyType);
         if (needle) rows = rows.filter(row => row.agency_name.includes(needle) || (row.manager_name ?? '').includes(needle));
-        if (needle || agencyType || url.searchParams.get('sort') !== null || url.searchParams.get('dir') !== null) {
-          rows = [...rows].sort(compareEntities(sort, dir));
-        }
-        return json({ ...common, items: rows.slice((page - 1) * pageSize, page * pageSize),
+        rows = [...rows].sort(compareRows<PublicEntity>(sort, row => `${row.agency_name}\u0000${row.manager_name ?? ''}`, row => row.key));
+        return json({ ...common, sort, items: rows.slice((page - 1) * pageSize, page * pageSize),
           total_rows: rows.length, page, page_size: pageSize }, 200);
       }
       let pointKey: string;
@@ -339,7 +430,17 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       const point = data.points.find(row => row.key === pointKey);
       return point ? json({ ...common, point }, 200) : errorResponse('NOT_FOUND', 404);
     } catch (e) {
-      if (e instanceof QueryError) return errorResponse(e.code, e.status);
+      if (e instanceof QueryError) return e.code === 'BASIS_CONFLICT'
+        ? json({ error: { code: 'BASIS_CONFLICT', message: '조회 조건의 날짜 기준과 맞춤 통계 구성의 날짜 기준이 다릅니다. 하나로 맞춰 다시 요청해 주세요.' } }, 400)
+        : errorResponse(e.code, e.status);
+      if (e instanceof StatsQueryError) {
+        // the budget message tells the user how to narrow the query (never a raw SQL/stack detail)
+        if (e.code === 'RESULT_TOO_LARGE') {
+          const res = errorResponse('RESULT_TOO_LARGE', 422);
+          return new Response(JSON.stringify({ error: { code: 'RESULT_TOO_LARGE', message: e.message } }), { status: 422, headers: res.headers });
+        }
+        return errorResponse('INVALID_QUERY', 400);
+      }
       // the repository refused to materialise more facts than its budget: say so (never a partial result)
       if (e instanceof Error && e.message === 'RESULT_TOO_LARGE') return errorResponse('RESULT_TOO_LARGE', 422);
       if (e instanceof ViewerAuthError) {

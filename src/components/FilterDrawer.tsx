@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LAW_NONE } from '../domain/public';
-import { CATEGORY_LABEL, LAW_UNKNOWN_LABEL, lawLabel, regionLabel, type DraftFilters } from '../state/filters';
+import { CATEGORY_LABEL, DATE_BASIS_LABEL, LAW_UNKNOWN_LABEL, lawLabel, regionLabel, type DraftFilters } from '../state/filters';
+import type { DateBasis } from '../domain/public';
 import Icon from './icons';
 import RegionSelect from './RegionSelect';
 
@@ -112,6 +113,18 @@ export default function FilterDrawer(p: Props) {
             <span key={c} className="cm-chip">{c}</span>
           ))}
         </div>
+        <fieldset className="basis-field">
+          <legend>날짜 기준</legend>
+          <div className="segments" role="radiogroup" aria-label="날짜 기준 (적용을 눌러야 바뀜)">
+            {(['completed_date', 'report_date'] as DateBasis[]).map((b) => (
+              <label key={b} className={p.draft.date_basis === b ? 'selected' : ''}>
+                <input type="radio" name="drawer-basis" value={b} checked={p.draft.date_basis === b}
+                  onChange={() => p.onDraft({ ...p.draft, date_basis: b })} />
+                {DATE_BASIS_LABEL[b]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <label>시작일
           <input type="date" value={p.draft.start} aria-invalid={!!p.dateError || undefined}
             aria-describedby={p.dateError ? 'drawer-date-error' : undefined}
@@ -134,8 +147,8 @@ export default function FilterDrawer(p: Props) {
           onChange={(code) => p.onDraft({ ...p.draft, region_code: code })} />
         <LawSelect value={p.draft.law} options={p.lawOptions} onChange={(law) => p.onDraft({ ...p.draft, law })} />
         <div className="drawer-notice">
-          신고 건수는 신고한 날, 답변·과태료는 답변 받은 날을 기준으로 셉니다. 1건뿐인 결과도 그대로 보여 드립니다.
-          현재 선택: {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]} · {lawLabel(p.draft.law)}
+          {DATE_BASIS_LABEL[p.draft.date_basis]}이 이 기간 안인 신고 하나의 묶음으로 모든 수치를 셉니다. 다른 날짜가 기간 밖이어도 그 신고는 빠지지 않습니다. 1건뿐인 결과도 그대로 보여 드립니다.
+          현재 선택: {DATE_BASIS_LABEL[p.draft.date_basis]} 기준 · {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]} · {lawLabel(p.draft.law)}
         </div>
         {p.unsupportedNote && (
           <div className="banner warn" role="note">

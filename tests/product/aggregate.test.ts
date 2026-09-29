@@ -12,12 +12,12 @@ const base: PrivateFact = {
   region_code: '11', agency_key: 'agency-1', agency_name: '예시 기관',
   manager_key: 'manager-1', manager_name: '김하늘',
 };
-const scope = (start: string, end: string): Scope => ({
-  start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null,
+const scope = (start: string, end: string, date_basis: Scope['date_basis'] = 'completed_date'): Scope => ({
+  date_basis, start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null,
 });
 const options = { datasetVersion: 'test-v2', sourceUpdatedAt: null, generatedAt: '2026-09-24T00:00:00Z', asOf: '2026-09-24', sample: true };
-const aggregate = (facts: PrivateFact[], start = '2026-01-01', end = '2026-02-28') =>
-  aggregateDashboard(facts, scope(start, end), options);
+const aggregate = (facts: PrivateFact[], start = '2026-01-01', end = '2026-02-28', basis: Scope['date_basis'] = 'completed_date') =>
+  aggregateDashboard(facts, scope(start, end, basis), options);
 const fact = (id: number, patch: Partial<PrivateFact> = {}): PrivateFact => ({
   ...base, fact_identity: `f${id}`, contributor_id: `private-user-${id}`, ...patch,
 });
@@ -35,13 +35,21 @@ describe('report and completion axes', () => {
     expect(data.laws?.[0].rating).toEqual({ count: 2, mean: 3 });
     expect(data.monthly[1].rating).toEqual({ count: 2, mean: 3 });
   });
-  it('puts a January report and February completion in different monthly buckets', () => {
-    const data = aggregate([base]);
-    expect(data.monthly.map(row => [row.month, row.report_count, row.completed_count])).toEqual([
-      ['2026-01', 1, 0], ['2026-02', 0, 1],
+  // Migrated 2026-09-29 (date-basis-dashboard §0.2): the old rule counted the report in its report month and the
+  // answer in its answer month (two sets). Now ONE date selects the report and the whole report (count and result)
+  // sits in that date's month.
+  it('puts a January report / February answer in ONE month of the selected basis (count and result together)', () => {
+    // answer basis: January is before the first answer date of the data → no_data (null), never an invented 0
+    expect(aggregate([base]).monthly.map(row => [row.month, row.report_count, row.completed_count])).toEqual([
+      ['2026-01', null, null], ['2026-02', 1, 1],
     ]);
-    expect(aggregate([base], '2026-01-01', '2026-01-31').overview.completed_count.value).toBe(0);
-    expect(aggregate([base], '2026-02-01', '2026-02-28').overview.report_count.value).toBe(0);
+    expect(aggregate([base], '2026-01-01', '2026-02-28', 'report_date').monthly.map(row => [row.month, row.report_count, row.completed_count])).toEqual([
+      ['2026-01', 1, 1], ['2026-02', 0, 0],
+    ]);
+    // answer basis: the January-only range does not hold it at all; report basis: January holds it WITH its answer
+    expect(aggregate([base], '2026-01-01', '2026-01-31').overview.report_count.value).toBe(0);
+    expect(aggregate([base], '2026-01-01', '2026-01-31', 'report_date').overview.completed_count.value).toBe(1);
+    expect(aggregate([base], '2026-02-01', '2026-02-28', 'report_date').overview.report_count.value).toBe(0);
   });
   it('uses the result-known denominator and keeps unknown separate', () => {
     const facts = [
@@ -54,11 +62,19 @@ describe('report and completion axes', () => {
     expect(data.overview.accepted_including_partial).toMatchObject({ value: 200 / 3, numerator: 2, denominator: 3, missing: 1 });
   });
   it('leaves 0 denominator as null, without manufacturing a completed date', () => {
-    const data = aggregate([fact(1, { completed_date: null, status: 'accepted' })]);
+    const undated = fact(1, { completed_date: null, status: 'accepted' });
+    const data = aggregate([undated]);
     expect(data.overview.completed_count.value).toBe(0);
-    expect(data.overview.completed_count.missing).toBe(1);
+    // answer basis: its answer date is unknown, so it belongs to no period (diagnostic only, never a count)
+    expect(data.overview.report_count.missing).toBe(1);
+    expect(data.overview.cohort).toMatchObject({ selected_date_missing: 1, other_date_missing: 0 });
     expect(data.overview.accepted_including_partial.value).toBeNull();
     expect(data.overview.accepted_including_partial.denominator).toBe(0);
+    // report basis (DT-10): an officially completed report without an answer date stays in, answer date not invented
+    const onReport = aggregate([undated], '2026-01-01', '2026-02-28', 'report_date');
+    expect(onReport.overview.completed_count).toMatchObject({ value: 1, missing: 1 });
+    expect(onReport.overview.accepted_including_partial).toMatchObject({ value: 100, denominator: 1 });
+    expect(onReport.overview.processing_duration).toMatchObject({ count: 0, excluded: { no_answer_date: 1 } });
   });
   it('uses KST at year and leap-day boundaries and a preceding equal-duration window', () => {
     expect(kstDate('2025-12-31T15:01:00Z')).toBe('2026-01-01');
@@ -178,7 +194,9 @@ describe('identity, scope and public projection', () => {
   it('rejects private or unknown response fields instead of silently projecting them', () => {
     const data = aggregate([base]);
     const good = { schema_version: 2, dataset_version: data.meta.dataset_version, scope: data.scope,
-      sample: true, overview: data.overview };
+      cohort_policy_version: 'single-date-v1', sample: true, overview: data.overview };
+    // EX-09: an older server's answer without the policy version is refused
+    expect(overviewResponseSchema.safeParse({ ...good, cohort_policy_version: undefined }).success).toBe(false);
     expect(overviewResponseSchema.safeParse(good).success).toBe(true);
     expect(overviewResponseSchema.safeParse({ ...good, contributor_id: 'private-user-1' }).success).toBe(false);
   });
@@ -205,7 +223,7 @@ describe('community ingest facts without coordinates (S-01)', () => {
   });
   it('a viewport filter keeps only located facts', () => {
     const facts = [fact(1), fact(2, { lat: null, lng: null, point_key: null })];
-    const data = aggregateDashboard(facts, { start: '2026-01-01', end: '2026-02-28', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: [124, 32, 132, 39.5], law: null },
+    const data = aggregateDashboard(facts, { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-02-28', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: [124, 32, 132, 39.5], law: null },
       { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-03-01T00:00:00Z', asOf: '2026-02-28', sample: false });
     expect(data.overview.report_count.value).toBe(1);
   });

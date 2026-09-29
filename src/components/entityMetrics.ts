@@ -2,7 +2,7 @@
  * One calculation for an agency/manager row (R2 metric boxes, R3 chart and its table). Same set, same definitions:
  *   C 답변 완료, A 수용, P 일부 수용, R 불수용, K = A+P+R 결과 확인, U = C−K 결과 미상,
  *   F 과태료 처분(disposition 'fine'), W 경고·계도 처분(disposition 'warning').
- *   수용률 A/K, 일부수용률 P/K, 불수용률 R/K, 과태료처분율 F/C, 계도처분율 W/C (×100).
+ *   수용률 A/K, 일부수용률 P/K, 불수용률 R/K, 과태료 부과율 F/C, 경고·계도 비율 W/C (×100).
  * A zero denominator, or a count the server does not provide (older server: undefined/null), is null — never 0.
  */
 import type { PublicEntity } from '../domain/public';

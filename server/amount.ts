@@ -19,7 +19,7 @@ import type { PrivateFact } from './aggregate.ts';
 export type AmountClass = 'confirmed' | 'undisclosed' | 'unconfirmed' | 'conflict' | 'penalty' | 'combined' | 'none';
 
 export interface FineAmountSummary {
-  basis: 'completed_date';
+  basis: 'report_date' | 'completed_date';
   /** F: facts with a 과태료 disposition in the cohort */
   fine_count: number;
   confirmed_count: number;
@@ -67,7 +67,7 @@ function medianOf(sorted: readonly number[]): number | null {
   return n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-export function fineAmountSummary(done: readonly PrivateFact[]): FineAmountSummary {
+export function fineAmountSummary(done: readonly PrivateFact[], basis: FineAmountSummary['basis'] = 'completed_date'): FineAmountSummary {
   const values: number[] = [];
   const counts = { fine: 0, zero: 0, unconfirmed: 0, undisclosed: 0, conflict: 0, penalty: 0, combined: 0 };
   for (const fact of done) {
@@ -83,7 +83,7 @@ export function fineAmountSummary(done: readonly PrivateFact[]): FineAmountSumma
   const n = values.length;
   const sum = values.reduce((a, b) => a + b, 0);
   return {
-    basis: 'completed_date', fine_count: counts.fine, confirmed_count: n,
+    basis, fine_count: counts.fine, confirmed_count: n,
     sum_won: n ? sum : null, mean_won: n ? sum / n : null, median_won: medianOf(values),
     zero_count: counts.zero, unconfirmed_count: counts.unconfirmed, undisclosed_count: counts.undisclosed,
     conflict_count: counts.conflict, penalty_count: counts.penalty, combined_count: counts.combined,

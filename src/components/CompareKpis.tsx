@@ -1,3 +1,4 @@
+import { DATE_BASIS_LABEL } from '../domain/public';
 import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
@@ -40,9 +41,9 @@ function rows(o: Overview): Row[] {
   const d = out?.result_known ?? 0;
   const c = o.completed_count.value ?? 0;
   return [
-    { id: 'report', label: '신고', basis: '신고한 날 기준', all: fmtInt(o.report_count.value), allNote: null,
+    { id: 'report', label: '신고', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준`, all: fmtInt(o.report_count.value), allNote: null,
       mine: m => fmtInt(m.report_count), mineNote: () => null, diff: x => fmtShare(x.diff.report_share), diffKind: 'share' },
-    { id: 'completed', label: '답변 완료', basis: '답변 받은 날 기준', all: fmtInt(o.completed_count.value),
+    { id: 'completed', label: '답변 완료', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준 · 같은 신고 중 답변 확인`, all: fmtInt(o.completed_count.value),
       allNote: out ? `결과가 나온 ${fmtInt(d)}건` : null,
       mine: m => fmtInt(m.completed_count), mineNote: m => `결과가 나온 ${fmtInt(m.result_known)}건`,
       diff: x => fmtShare(x.diff.completed_share), diffKind: 'share' },
@@ -75,7 +76,7 @@ function rows(o: Overview): Row[] {
       mine: m => fmtFineAmount(m.fine_amount), mineNote: m => amountNote(m.fine_amount),
       diff: x => fmtShare(x.diff.fine_amount_sum_share), diffKind: 'share',
       diffNote: x => x.diff.fine_amount_mean_won_diff == null ? null : `평균 ${fmtWonDiff(x.diff.fine_amount_mean_won_diff)}` },
-    { id: 'rating', label: '답변 만족도 별점', basis: '답변 받은 날 기준 · 공개 동의한 숫자 별점만',
+    { id: 'rating', label: '답변 만족도 별점', basis: '공개 동의한 숫자 별점만',
       all: fmtRating(o.rating), allNote: null,
       mine: m => fmtRating(m.rating), mineNote: () => null,
       diff: () => '—', diffKind: 'none' },
@@ -134,7 +135,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
                 <td className="num diff-col">
                   {data ? (<><b className="cm-number">{row.diff(data)}</b>
                     {row.diffNote?.(data) && <small>{row.diffNote(data)}</small>}
-                    <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나 − 전체' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나 − 전체') : ''}</small></>)
+                    <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나와 전체의 차이' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나와 전체의 차이') : ''}</small></>)
                     : <span className="cm-muted">—</span>}
                 </td>
               )}

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import AccessGate from '../../src/components/AccessGate';
 import type { AuthSnapshot } from '../../src/auth/mapAuth';
 
-const signedIn: AuthSnapshot = { status: 'signed_in', displayName: '예시 사용자', synthetic: false, message: null };
+const signedIn: AuthSnapshot = { status: 'signed_in', displayName: '예시 사용자', viewerId: null, synthetic: false, message: null };
 const noop = () => {};
 
 describe('AccessGate viewer threshold (user decision 2026-09-28)', () => {

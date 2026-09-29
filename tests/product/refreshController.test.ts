@@ -4,7 +4,7 @@ import { PublicApiError } from '../../src/data/client';
 import type { DashboardData, PublicMeta, Scope } from '../../src/domain/public';
 
 /** R04 / P02 / P03 / P04 request policy with a manual clock (no real timers, no network). */
-const base: Scope = { start: '2026-01-01', end: '2026-09-24', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const base: Scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-09-24', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 const bbox = (i: number): Scope => ({ ...base, bbox: [126 + i * 0.01, 37, 127 + i * 0.01, 38] });
 const meta = (version = 'v1'): PublicMeta => ({ schema_version: 2, dataset_version: version, sample: false, source_updated_at: null,
   generated_at: null, published_at: null, data_min: null, data_max: null, coverage_note: '', dedupe_policy_version: 't', capabilities: {} });
@@ -183,5 +183,67 @@ describe('failures (P03/P04)', () => {
     h.c.request(base);
     await h.flush();
     expect(h.metaCalls()).toBe(2);
+  });
+});
+
+describe('S10 request phases (display reads them; nothing new is fetched)', () => {
+  it('debounce wait → fetching → idle; a 429 is retry_wait with its own time, not "fetching"', async () => {
+    const h = harness();
+    h.c.request(base, 'initial');
+    await h.flush();
+    expect(h.c.snapshot()).toMatchObject({ fetching: true, wait: null });
+    h.pending.shift()!.resolve(dataFor(base));
+    await h.flush();
+    expect(h.c.snapshot()).toMatchObject({ fetching: false, wait: null, refreshing: false });
+    h.c.request(bbox(1), 'auto');
+    expect(h.c.snapshot()).toMatchObject({ fetching: false, wait: 'debounce', scheduled: true });
+    await h.advance(2000);
+    expect(h.c.snapshot()).toMatchObject({ fetching: true, wait: null });
+    h.pending.shift()!.reject(new PublicApiError('rate', 429, 5, 'RATE_LIMITED'));
+    await h.flush();
+    expect(h.c.snapshot()).toMatchObject({ fetching: false, wait: 'rate_limit' });
+    expect(h.c.snapshot().pausedUntil).toBeGreaterThan(0);
+    await h.advance(5000);
+    expect(h.c.snapshot()).toMatchObject({ fetching: true, wait: null });
+  });
+  it('LD-16/17: A→B→C with answers in reverse order — only C lands, and A/B never end C\'s fetching', async () => {
+    const h = harness();
+    h.c.request(base, 'initial');
+    await h.flush();
+    h.pending.shift()!.resolve(dataFor(base));
+    await h.flush();
+    h.c.request(bbox(1), 'explicit'); await h.flush();
+    h.c.request(bbox(2), 'explicit'); await h.flush();
+    h.c.request(bbox(3), 'explicit'); await h.flush();
+    const [a, b, c] = h.pending.splice(0);
+    b.resolve(dataFor(bbox(2))); a.resolve(dataFor(bbox(1)));
+    await h.flush();
+    expect(h.c.snapshot().fetching).toBe(true);
+    expect(h.c.snapshot().displayed!.scope).toEqual(base);
+    c.resolve(dataFor(bbox(3)));
+    await h.flush();
+    expect(h.c.snapshot()).toMatchObject({ fetching: false, refreshing: false });
+    expect(h.c.snapshot().displayed!.scope).toEqual(bbox(3));
+  });
+  it('LD-34: back to the displayed scope cancels the wait and the flight at once', async () => {
+    const h = harness();
+    h.c.request(base, 'initial'); await h.flush();
+    h.pending.shift()!.resolve(dataFor(base)); await h.flush();
+    h.c.request(bbox(1), 'explicit'); await h.flush();
+    expect(h.c.snapshot().fetching).toBe(true);
+    h.c.request(base, 'explicit');
+    expect(h.c.snapshot()).toMatchObject({ fetching: false, wait: null, refreshing: false });
+  });
+  it('LD-18: one transient retry is a visible wait, then a stop with the error (no loop)', async () => {
+    const h = harness();
+    h.c.request(base, 'initial'); await h.flush();
+    h.pending.shift()!.reject(new PublicApiError('down', 503, null, 'AGGREGATE_NOT_READY')); await h.flush();
+    expect(h.c.snapshot()).toMatchObject({ wait: 'retry', fetching: false });
+    await h.advance(2000);
+    h.pending.shift()!.reject(new PublicApiError('down', 503, null, 'AGGREGATE_NOT_READY')); await h.flush();
+    expect(h.c.snapshot()).toMatchObject({ wait: null, fetching: false, refreshing: false });
+    expect(h.c.snapshot().error?.status).toBe(503);
+    await h.advance(60_000);
+    expect(h.pending).toHaveLength(0);
   });
 });

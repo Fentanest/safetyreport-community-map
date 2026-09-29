@@ -10,7 +10,7 @@ const fact = (report: string | null, done: string | null, patch: Partial<Private
   vehicle_raw: null, point_key: null, lat: null, lng: null, address: null, region_code: '서울 중구',
   agency_key: 'a1', agency_name: '기관1', manager_key: 'm1', manager_name: '담당1', ...patch,
 });
-const scope = (start: string, end: string): Scope => ({ start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null });
+const scope = (start: string, end: string): Scope => ({ date_basis: 'completed_date', start, end, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null });
 const opts = { datasetVersion: 'v', sourceUpdatedAt: null, generatedAt: '2026-09-27T00:00:00Z', asOf: '2026-12-31', sample: false, dataMin: '2020-01-01' };
 
 describe('duration of one report (KST calendar days)', () => {
@@ -64,7 +64,15 @@ describe('scope integration', () => {
       fact('2026-09-10', '2026-10-02'), // answered after the period → not in this cohort
       fact('2026-09-05', null, { status: 'completed_unknown' }), // answered status but no answer date → period unknown
     ], scope('2026-09-01', '2026-09-30'), opts);
-    expect(data.overview.processing_duration).toMatchObject({ count: 1, median_days: 14, answer_date_missing: 1 });
+    // single-date-v1: the undated answer is not in the answer-date set at all (its period is unknown — a
+    // diagnostic, see cohort.selected_date_missing); answer_date_missing counts it only in a report-date set
+    expect(data.overview.processing_duration).toMatchObject({ count: 1, median_days: 14, answer_date_missing: 0 });
+    expect(data.overview.cohort?.selected_date_missing).toBe(1);
+    const onReport = aggregateDashboard([
+      fact('2026-08-20', '2026-09-03'), fact('2026-09-10', '2026-10-02'), fact('2026-09-05', null, { status: 'completed_unknown' }),
+    ], { ...scope('2026-09-01', '2026-09-30'), date_basis: 'report_date' }, opts);
+    // report basis: the October answer's real 22 days are used (the period end never clips a duration)
+    expect(onReport.overview.processing_duration).toMatchObject({ count: 1, median_days: 22, answer_date_missing: 1, excluded: { no_answer_date: 1 } });
     expect(data.meta.capabilities.processing_duration.status).toBe('supported');
   });
   it('says "no computable reports" (count 0, nulls) instead of unsupported when the period is empty', () => {

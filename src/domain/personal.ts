@@ -1,4 +1,4 @@
-import type { DurationDistribution, OutcomeCounts, RatingDistribution, Scope } from './public.ts';
+import type { CohortDiagnostics, DurationDistribution, OutcomeCounts, RatingDistribution, Scope } from './public.ts';
 
 /**
  * Personal comparison (my-analytics) DTO. Returned only to the verified signed-in user, never
@@ -167,6 +167,10 @@ export interface PersonalCompare {
   managers: CompareEntityRow[];
   monthly: CompareMonth[];
   my_points: MyPoint[];
-  /** A01/A06 of the viewer's own completion cohort; absent on older servers */
+  /** A01/A06 of the viewer's own cohort; absent on older servers */
   analytics?: { duration: DurationDistribution; rating: RatingDistribution };
+  /** COHORT_POLICY_VERSION (single-date-v1); absent = an older dual-set server */
+  cohort_policy_version?: string;
+  /** missing-date diagnostics per side (D11: never added into one number) */
+  cohort?: { all: CohortDiagnostics; mine: CohortDiagnostics };
 }

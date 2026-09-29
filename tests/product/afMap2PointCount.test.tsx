@@ -11,7 +11,7 @@ import type { Scope } from '../../src/domain/public';
 // AF-MAP2: August report / September completion with coordinates, viewed in September.
 // Real aggregation input, no mocks.
 const sept: Scope = {
-  start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
+  date_basis: 'completed_date' as const, start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
   agency_key: null, manager_key: null, bbox: null, law: null,
 };
 const aopts = {
@@ -30,22 +30,23 @@ const crossFact: PrivateFact = {
 };
 
 describe('AF-MAP2 point_count meaning and completion-only range', () => {
-  it('keeps point_count on the report-date basis while the map keeps the union point', () => {
+  // Migrated 2026-09-29 (date-basis-dashboard §0.2): point_count, the map and every count follow the ONE date basis.
+  it('keeps point_count on the selected basis, the same set the map draws', () => {
     const data = aggregateDashboard([crossFact], sept, aopts);
-    expect(data.overview.report_count.value).toBe(0);
+    expect(data.overview.report_count.value).toBe(1);
     expect(data.overview.completed_count.value).toBe(1);
-    // point_count is the report-date location count again, matching basis + denominator.
-    expect(data.overview.point_count).toMatchObject({ value: 0, basis: 'report_date', denominator: 0 });
+    expect(data.overview.point_count).toMatchObject({ value: 1, basis: 'completed_date', denominator: 1 });
     // The August report predates data_min (2026-08-10), so the equal-duration comparison
     // window is only partly covered and previous is null — same rule as the other indicators.
     expect(data.overview.point_count.previous).toBeNull();
-    // With a fully covered comparison window the previous value is the report-date location
-    // count (previousReported), not the union.
+    // With a fully covered comparison window the previous value is the previous window of the SAME basis
+    // (August answers: none) — never the other date's set.
     const covered = aggregateDashboard([crossFact], sept, { ...aopts, dataMin: '2026-01-01' });
-    expect(covered.overview.point_count.previous).toBe(1);
-    // The drawn map point is the union: the completion-only location is still shown.
+    expect(covered.overview.point_count.previous).toBe(0);
+    expect(aggregateDashboard([crossFact], { ...sept, date_basis: 'report_date', start: '2026-09-01' }, { ...aopts, dataMin: '2026-01-01' })
+      .overview.point_count.previous).toBe(1); // report basis: the August report is in the previous window
     expect(data.points).toHaveLength(1);
-    expect(data.points[0]).toMatchObject({ key: placeKeyOf('예시 지점'), report_count: 0, completed_count: 1 });
+    expect(data.points[0]).toMatchObject({ key: placeKeyOf('예시 지점'), report_count: 1, completed_count: 1 });
   });
 
   it('shows the result screen instead of the empty banner (render test, no mocks)', () => {
@@ -55,18 +56,19 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     // The comparison table replaced the 6-KPI row (docs/personal-comparison.md §5.1); public column only here.
     const kpi = renderToStaticMarkup(<CompareKpis overview={data.overview} compareOn={false} unsupported={false}
       personal={{ status: 'off', data: null, error: null, retry: () => {} }} onSignIn={() => {}}
-      auth={{ status: 'signed_out', displayName: null, synthetic: false, message: null }} />);
-    expect(kpi).toContain('신고한 날 기준');
+      auth={{ status: 'signed_out', displayName: null, viewerId: null, synthetic: false, message: null }} />);
+    expect(kpi).toContain('답변일 기준');
     expect(kpi).toContain('신고 장소');
-    expect(kpi).toMatch(/<b class="cm-number">0<\/b>/);
+    expect(kpi).toMatch(/<b class="cm-number">1<\/b>/);
     expect(kpi).not.toContain('내 신고');
     const reportMap = renderToStaticMarkup(
       <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="reports"
         onMetric={() => {}} categoryLabel="전체 분류" autoRefresh={false}
         onAutoRefresh={() => {}} locationMissing={data.meta.location_missing ?? null} />,
     );
-    expect(reportMap).not.toContain('예시 지점');
-    expect(reportMap).toContain('이 기간에 신고가 없고 답변만 있는 1곳은 비율 지표에서 보입니다');
+    // MP-01: the place is listed (nothing hidden for its other date) and the old note is gone
+    expect(reportMap).toContain('예시 지점');
+    expect(reportMap).not.toContain('답변만 있는');
     const completionMap = renderToStaticMarkup(
       <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="acceptance"
         onMetric={() => {}} categoryLabel="전체 분류" autoRefresh={false}
@@ -75,7 +77,9 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     // R7: a rate metric is a region map — the completion-only place is counted in the region rows, not drawn as a pin
     expect(completionMap).not.toContain('예시 지점');
     expect(completionMap).toContain('시도별 수용률');
-    expect(renderToStaticMarkup(<DataGuide data={data} />)).toContain('답변만 받은 신고의 장소는 비율 지표(수용률·불수용률·과태료)를 고르면 볼 수 있습니다');
+    const guide = renderToStaticMarkup(<DataGuide data={data} />);
+    expect(guide).not.toContain('답변만 받은 신고의 장소');
+    expect(guide).toContain('다른 날짜가 기간 밖이어도 그 신고는 빠지지 않습니다');
     // Dashboard renders the empty banner only when isEmptyResult is true.
     const banner = isEmptyResult(data)
       ? `<div class="banner warn"><span class="grow">${bannerText}. 조건을 해제하면 전국 집계를 볼 수 있습니다.</span></div>`

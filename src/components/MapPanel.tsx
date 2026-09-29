@@ -32,6 +32,8 @@ interface Props {
   refreshing?: boolean;
   /** the statistics scope carries a map range (auto refresh): region colours are 'within the range' numbers */
   statsBbox?: boolean;
+  /** S02: a click on the bare map (never a marker/cluster/polygon/control click or the end of a drag) */
+  onBlankClick?: () => void;
 }
 
 /** R7: rate metrics draw the regions (choropleth) and NO pins; 신고 수 draws address pins. */
@@ -119,7 +121,7 @@ function Legend({ metric, level, statsBbox, filtered }: { metric: MapMetric; lev
       <span className="cm-muted">{def.kind === 'rate' ? '100%' : '많음'}</span>
       {regions && (
         <>
-          <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(분모 0)</span>
+          <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(기준 신고 0건)</span>
           <span className="legend-null"><i className="legend-empty" aria-hidden="true" />자료 없음</span>
           {filtered && <span className="legend-null"><i className="legend-out" aria-hidden="true" />범위 밖</span>}
           {statsBbox && <span className="cm-muted">화면 범위 내 신고 기준</span>}
@@ -156,6 +158,7 @@ export default function MapPanel(p: Props) {
       if (user) cb.current.onUserViewport?.(b, z);
     },
     onRegionHover: (code: string | null) => setHover(code),
+    onMapClick: () => cb.current.onBlankClick?.(),
     onRegionClick: (code: string) => {
       const active = cb.current.activeRegion ?? null;
       cb.current.onPickRegion?.(active === code ? parentOf(code) : code);
@@ -165,12 +168,11 @@ export default function MapPanel(p: Props) {
   const renderMode = renderModeOf(p.metric);
   // points mode only: in regions mode there is no place list, marker or cluster at all
   const shownPoints = useMemo(() => (renderMode === 'points' ? visiblePoints(p.points, p.metric) : []), [p.points, p.metric, renderMode]);
-  const hiddenPoints = p.points.length - shownPoints.length;
-  const hiddenNote = hiddenPoints > 0
-    ? (p.metric === 'reports'
-      ? `이 기간에 신고가 없고 답변만 있는 ${fmtInt(hiddenPoints)}곳은 비율 지표에서 보입니다`
-      : `이 기간에 답변이 없는 ${fmtInt(hiddenPoints)}곳은 ‘신고 수’에서 보입니다`)
-    : null;
+  // U01/D02: every place of the ONE cohort is drawn — nothing is hidden because of its other date (the old
+  // "답변만 있는 곳은 비율 지표에서 보임" note and its branch were removed). D02/MP-03: the place count is the number
+  // of distinct addresses (a compacted node counts its member addresses), never the number of drawn nodes.
+  const placeCount = shownPoints.reduce((n, pt) => n + (pt.aggregate ? pt.point_count ?? 1 : 1), 0);
+  const compactedNodes = shownPoints.some((pt) => pt.aggregate);
 
   useEffect(() => {
     if (!kakaoKey() || !hostRef.current) return;
@@ -337,7 +339,7 @@ export default function MapPanel(p: Props) {
           <h2>신고 지도 {p.refreshing && <span className="refresh-badge" role="status">갱신 중…</span>}</h2>
           <span className="subtitle">{p.categoryLabel} · {renderMode === 'points'
             ? '같은 주소는 핀 하나 · 멀리서 보면 가까운 주소를 묶어 보여 줍니다'
-            : `${LEVEL_LABEL[level]}별 ${def.legend} · 신고 위치의 행정구역 기준 · 분자/분모 합으로 계산`}</span>
+            : `${LEVEL_LABEL[level]}별 ${def.legend} · 신고 위치의 행정구역 기준 · 지역 안 신고를 모두 합쳐 계산`}</span>
         </div>
         <div className="mini-segments metric-switch" role="group" aria-label="지도에 표시할 값">
           {MAP_METRICS.map((m) => (
@@ -363,7 +365,7 @@ export default function MapPanel(p: Props) {
             </div>
             {renderMode === 'points' ? (
               <>
-                <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}{hiddenNote ? ` · ${hiddenNote}` : ''}</p>
+                <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}</p>
                 <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
                   {shownPoints.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
                   {shownPoints.map(pointButton)}
@@ -442,7 +444,7 @@ export default function MapPanel(p: Props) {
       </div>
       {sdkState === 'ready' && renderMode === 'points' && (
         <details className="map-point-alternative">
-          <summary>장소 목록으로 보기 · {fmtInt(shownPoints.length)}곳{hiddenNote ? ` · ${hiddenNote}` : ''}</summary>
+          <summary>장소 목록으로 보기 · 주소 {fmtInt(placeCount)}곳{compactedNodes ? ` (가까운 주소를 묶은 점 포함 ${fmtInt(shownPoints.length)}개)` : ''}</summary>
           <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
             {shownPoints.map(pointButton)}
           </ul>

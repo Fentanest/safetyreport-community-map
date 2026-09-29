@@ -13,6 +13,21 @@ def jwt(role: str) -> str:
 
 
 class ScanTests(unittest.TestCase):
+    def test_only_the_pinned_excelize_wasm_binary_is_accepted(self):
+        import gzip
+        from scripts.scan_public_dist import PINNED_WASM
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / 'assets').mkdir()
+            (Path(tmp) / 'assets' / 'excelize.wasm-AbC123.gz').write_bytes(PINNED_WASM.read_bytes())
+            self.assertEqual(scan(Path(tmp)), [])
+        with tempfile.TemporaryDirectory() as tmp:  # same name, other bytes (a tampered or different build)
+            (Path(tmp) / 'assets').mkdir()
+            (Path(tmp) / 'assets' / 'excelize.wasm-AbC123.gz').write_bytes(gzip.compress(b'\0asm\x01\0\0\0'))
+            self.assertTrue(any('not byte-identical' in f for f in scan(Path(tmp))))
+        with tempfile.TemporaryDirectory() as tmp:  # any other binary archive is still refused
+            (Path(tmp) / 'other.gz').write_bytes(gzip.compress(b'\0asm\x01\0\0\0\xff\xfe'))
+            self.assertTrue(scan(Path(tmp)))
+
     def run_scan(self, name: str, text: str) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / name).write_text(text, encoding='utf-8')

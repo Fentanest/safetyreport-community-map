@@ -29,3 +29,4 @@ supabase/.temp/
 .agent-runs/
 # 통합 검토 증거 로그(키·JWT redacted)는 추적한다 — Sol 2차 M-03
 !docs/integration/community-ingest/evidence/**/*.log
+docs/.verify-dist/

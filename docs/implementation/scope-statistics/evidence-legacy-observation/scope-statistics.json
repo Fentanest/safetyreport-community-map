@@ -1,0 +1,346 @@
+{
+  "MT": {
+    "consoleErrors": [],
+    "default": [
+      "rate:accept:all"
+    ],
+    "four": [
+      "rate:accept:all",
+      "rate:reject:all",
+      "rate:partial:all",
+      "rate:fine:all"
+    ],
+    "after20": {
+      "requests": {},
+      "sameInstance": true,
+      "series": []
+    },
+    "none": {
+      "note": "비교할 지표를 선택해 주세요.",
+      "checks": 4,
+      "statusDuring": ""
+    },
+    "minePending": {
+      "note": "내 신고를 불러오는 중",
+      "top": "내 신고를 비교하는 중",
+      "series": [
+        "rate:accept:all",
+        "rate:reject:all",
+        "rate:partial:all",
+        "rate:fine:all"
+      ]
+    },
+    "eight": [
+      "rate:accept:all",
+      "rate:accept:mine",
+      "rate:reject:all",
+      "rate:reject:mine",
+      "rate:partial:all",
+      "rate:partial:mine",
+      "rate:fine:all",
+      "rate:fine:mine"
+    ],
+    "tableHead": "월 수용률 전체 수용률 내 신고 불수용률 전체 불수용률 내 신고 일부수용률 전체 일부수용률 내 신고 과태료처분율 전체 과태료처분율 내 신고 비고 ",
+    "tableFirst": "2025.09 100.0% (1/1건) 분모 없음 0.0% (0/1건) 분모 없음 0.0% (0/1건) 분모 없음 0.0% (0/1건) 분모 없음 ",
+    "tooltip": "2026.04\n수용률 · 전체 72.4% (21/29건)\n수용률 · 내 신고 100.0% (4/4건)\n불수용률 · 전체 24.1% (7/29건)\n불수용률 · 내 신고 0.0% (0/4건)\n일부수용률 · 전체 3.4% (1/29건)\n일부수용률 · 내 신고 0.0% (0/4건)\n과태료처분율 · 전체 31.3% (10/32건)\n과태료처분율 · 내 신고 25.0% (1/4건)",
+    "keptAfterViewSwitch": 4
+  },
+  "LD": {
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 429 (Too Many Requests)"
+    ],
+    "during": {
+      "top": "새 조건으로 통계를 불러오는 중\n· 화면은 이전 조건(2025.09.30 — 2026.09.29 · 전국)",
+      "sideBusy": "true",
+      "line": 1,
+      "kpiStill": 1,
+      "trendBusy": "true"
+    },
+    "bottomVisible": true,
+    "after": {
+      "top": "",
+      "line": 0,
+      "requests": {
+        "dashboard": 1
+      },
+      "maps": 2,
+      "maps0": 2
+    },
+    "placeDuring": {
+      "top": "주소 상세를 불러오는 중",
+      "panel": "주소 상세를 불러오는 중"
+    },
+    "placeAfter": {
+      "title": "경기도 수원시 예시로 2길",
+      "p1": "경기도 수원시 예시로 1길 · 신고 수 9건",
+      "p2": "경기도 수원시 예시로 2길 · 신고 수 7건",
+      "top": "",
+      "panelStatus": 0
+    },
+    "cancelled": {
+      "top": "",
+      "scopePanel": 1
+    },
+    "autoOffPans": {
+      "requests": {},
+      "top": ""
+    },
+    "rateLimited": {
+      "top": "요청이 많아 잠시 기다리는 중\n·\n4초 후 다시 시도\n잠시 후 다시 시도\n· 화면은 이전 조건(2025.09.30 — 2026.09.29 · 전국 · 주정차)",
+      "phase": "query-status on phase-retry_wait"
+    },
+    "afterRetry": {
+      "requests": {
+        "dashboard": 1
+      },
+      "top": ""
+    }
+  },
+  "PI": {
+    "consoleErrors": [],
+    "first": {
+      "selected": [
+        {
+          "title": "경기도 수원시 예시로 1길 · 신고 수 18건 (선택됨)",
+          "z": 10
+        }
+      ],
+      "panel": "경기도 수원시 예시로 1길"
+    },
+    "reclick": {
+      "selected": [],
+      "scopePanel": "전국"
+    },
+    "swap": {
+      "selected": 1
+    },
+    "blankRightAfterMarker": 1,
+    "blankClick": 0,
+    "escWithDrawer": {
+      "drawerOpen": 0,
+      "selected": 1
+    },
+    "escClears": 0,
+    "afterDrag": 1,
+    "rateMode": {
+      "pins": 0,
+      "selected": 0
+    },
+    "after30": {
+      "live": 32,
+      "maps": 2
+    }
+  },
+  "SC_PG": {
+    "consoleErrors": [],
+    "nation": {
+      "h2": "전국",
+      "children": 8,
+      "agencies": 5,
+      "shownOfTotal": "표시 5 / 전체 10"
+    },
+    "seoul": {
+      "url": "?start=2025-09-30&end=2026-09-29&category=all&region_code=11",
+      "h2": "서울특별시",
+      "trail": "전국\n서울특별시",
+      "children": 2
+    },
+    "sgg": {
+      "url": "?start=2025-09-30&end=2026-09-29&category=all&region_code=11140",
+      "h2": "중구",
+      "trail": "전국 서울특별시 중구"
+    },
+    "search": {
+      "requests": {
+        "entities": 1
+      },
+      "rows": 1
+    },
+    "backToNation": {
+      "url": "?start=2025-09-30&end=2026-09-29&category=all",
+      "h2": "전국"
+    },
+    "handoff": {
+      "url": "?start=2025-09-30&end=2026-09-29&category=all&region_code=11&screen=statistics",
+      "h1": "맞춤 통계",
+      "focus": "stats-title",
+      "chips": "지역\n서울특별시\n×",
+      "resultHead": "기관 × 위반법규 · 과태료처분율, 답변 건수",
+      "rows": 2,
+      "railCurrent": "통계"
+    },
+    "reload": {
+      "h1": "맞춤 통계",
+      "rows": 2,
+      "url": "?start=2025-09-30&end=2026-09-29&category=all&region_code=11&screen=statistics"
+    },
+    "back": {
+      "screen": "dashboard",
+      "url": "?start=2025-09-30&end=2026-09-29&category=all&region_code=11"
+    },
+    "backToMap": {
+      "screen": "dashboard",
+      "maps": 2,
+      "maps0": 2
+    },
+    "placeHandoff": {
+      "chips": "지역\n서울특별시\n×\n주소\n서울특별시 강남구 예시로 1길\n×",
+      "total": "2025.09.30 — 2026.09.29 · 답변일 기준 · 지역 서울특별시 · 답변 18건"
+    }
+  },
+  "NV": {
+    "390": {
+      "기관": {
+        "topbarBottom": 56,
+        "sectionTop": 68,
+        "inset": "68px"
+      },
+      "추이": {
+        "topbarBottom": 56,
+        "sectionTop": 68,
+        "inset": "68px"
+      },
+      "지역": {
+        "topbarBottom": 56,
+        "sectionTop": 68,
+        "inset": "68px"
+      },
+      "지도": {
+        "topbarBottom": 56,
+        "sectionTop": 68,
+        "inset": "68px"
+      }
+    },
+    "1440": {
+      "기관": {
+        "topbarBottom": 64,
+        "sectionTop": 76,
+        "inset": "76px"
+      },
+      "추이": {
+        "topbarBottom": 64,
+        "sectionTop": 76,
+        "inset": "76px"
+      },
+      "지역": {
+        "topbarBottom": 64,
+        "sectionTop": 76,
+        "inset": "76px"
+      },
+      "지도": {
+        "topbarBottom": 64,
+        "sectionTop": 76,
+        "inset": "76px"
+      }
+    }
+  },
+  "MS_CH": {
+    "consoleErrors": [],
+    "firstPage": 10,
+    "searchRequests": {
+      "statistics/candidates": 1
+    },
+    "searchFocus": "기관 검색",
+    "keptAfterSearchChange": 3,
+    "runButton": "만드는 중…",
+    "running": {
+      "status": "선택한 조건으로 통계를 만드는 중 · 아래는 이전 조건의 결과",
+      "top": "선택한 조건으로 통계를 다시 만드는 중"
+    },
+    "result": {
+      "requests": {
+        "statistics/query": 1
+      },
+      "rows": 3,
+      "chips": "기관\n예시 대구수성경찰서\n예시 서울중부경찰서\n예시 인천남동경찰서\n×"
+    },
+    "chart": {
+      "series": [
+        "heatmap:fine_rate:all"
+      ],
+      "requests": {}
+    },
+    "tableSameAfterRoundTrip": true,
+    "unapplied": "적용 전 변경사항이 있습니다",
+    "monthLine": {
+      "series": 3,
+      "typeOptions": [
+        "자동(꺾은선)",
+        "막대",
+        "가로 막대 (이 조합 불가)",
+        "꺾은선",
+        "누적 막대 (이 조합 불가)",
+        "100% 누적 (이 조합 불가)",
+        "히트맵",
+        "산점도 (이 조합 불가)"
+      ]
+    },
+    "escClosesPickerOnly": {
+      "dialogs": 0,
+      "screen": "statistics"
+    }
+  },
+  "MT21": {
+    "consoleErrors": [],
+    "head": "답변 월 · 수용률, 불수용률, 일부수용률, 과태료처분율",
+    "rows": 13,
+    "series": [
+      "accept_rate:all",
+      "reject_rate:all",
+      "partial_rate:all",
+      "fine_rate:all"
+    ]
+  },
+  "widths": {
+    "1920-dark": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "1440-dark": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "1280-dark": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "768-dark": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "390-dark": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "1920-light": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "1440-light": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "1280-light": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "768-light": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    },
+    "390-light": {
+      "overflowDash": false,
+      "overflowStats": false,
+      "consoleErrors": []
+    }
+  }
+}

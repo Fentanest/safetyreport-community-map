@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import type { PlaceDetail, PublicEntity, PublicPoint } from '../domain/public';
 import type { PointMark } from '../state/pointMarks';
-import { acceptRate, fmtInt, fmtPercent } from './format';
-import { duplicateNames, entityLabel, entityRates } from './entityMetrics';
+import { fmtInt, fmtPercent } from './format';
+import { duplicateNames, entityLabel } from './entityMetrics';
+import EntityMetricRow from './EntityMetricRow';
+import PanelStatus from './PanelStatus';
+import { regionTrail } from './ScopeDetailsPanel';
 
 export type PlaceDetailState =
   | { status: 'loading' }
@@ -23,43 +26,16 @@ interface Props {
   /** currently applied agency/manager filter (active highlight) */
   activeAgency?: string | null;
   activeManager?: string | null;
+  /** S01: explicit move to an ancestor region of this address (clears the address selection) */
+  onBreadcrumb?: (code: string | null) => void;
+  /** S04: hand the displayed conditions + this address to 맞춤 통계 */
+  onMakeStatistics?: () => void;
+  /** the applied region filter (to tell the address's own region path from the current condition) */
+  appliedRegion?: string | null;
 }
 
 const LIST_STEP = 6;
 const pct = (a: number, d: number) => (d > 0 ? (a / d) * 100 : null);
-
-/** R2: name (the only button) + separate metric boxes; boxes are plain cells, never nested buttons. */
-function EntityMetricRow({ kind, e, label, active, onPick }: { kind: 'agency' | 'manager'; e: PublicEntity; label: string;
-  active: boolean; onPick: Props['onPickEntity'] }) {
-  const m = entityRates(e);
-  const full = kind === 'manager' ? `${e.manager_name ?? '이름 없음'} · ${e.agency_name}` : e.agency_name;
-  return (
-    <li className={`pe-row${active ? ' active' : ''}`}>
-      <div className="pe-name">
-        <button type="button" className="pe-pick" title={`${full} — 이 ${kind === 'agency' ? '기관' : '담당자'}만 보기`} aria-pressed={active}
-          disabled={!e.agency_key || (kind === 'manager' && !e.manager_key)} onClick={() => onPick(kind, e)}>
-          {label}
-        </button>
-        {kind === 'manager' && <small title={e.agency_name}>{e.agency_name}</small>}
-      </div>
-      <div className="pe-metrics">
-        <div className="pe-box"><span className="pe-label">답변</span><b className="pe-num cm-number">{fmtInt(m.C)}건</b></div>
-        <div className="pe-box pe-triple" title={`결과 확인 ${m.K}건 기준 · 결과 미상 ${m.U}건 제외`}>
-          <span className="pe-label">처리 결과 <small>(결과 확인 {fmtInt(m.K)}건)</small></span>
-          <div className="pe-cells">
-            <span><em>수용</em><b className="pe-num cm-number">{fmtPercent(m.accept)}</b></span>
-            <span><em>일부수용</em><b className="pe-num cm-number">{fmtPercent(m.partial)}</b></span>
-            <span><em>불수용</em><b className="pe-num cm-number">{fmtPercent(m.reject)}</b></span>
-          </div>
-        </div>
-        <div className="pe-box"><span className="pe-label">과태료</span>
-          <b className="pe-num cm-number">{m.F === null ? '—' : `${fmtInt(m.F)}건`} <i aria-hidden="true">|</i> {fmtPercent(m.fineRate)}</b></div>
-        <div className="pe-box"><span className="pe-label">계도</span><b className="pe-num cm-number">{m.W === null ? '—' : `${fmtInt(m.W)}건`}</b></div>
-        <div className="pe-box"><span className="pe-label">계도처분율</span><b className="pe-num cm-number">{fmtPercent(m.warnRate)}</b></div>
-      </div>
-    </li>
-  );
-}
 
 function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: { kind: 'agency' | 'manager'; rows: PublicEntity[]; total: number;
   onPick: Props['onPickEntity']; activeAgency: string | null; activeManager: string | null }) {
@@ -80,7 +56,7 @@ function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: 
           {rows.length > shown && (
             <button type="button" className="mini-btn" onClick={() => setShown((n) => n + LIST_STEP)}>더 보기 · {fmtInt(rows.length - shown)}</button>
           )}
-          {total > rows.length && <span className="cm-muted">많은 순 {fmtInt(rows.length)}개만 받음 · 전체 {fmtInt(total)}개</span>}
+          {total > rows.length && <span className="cm-muted">많은 순 {fmtInt(rows.length)}개만 불러옴 · 전체 {fmtInt(total)}개</span>}
         </div>
       )}
     </>
@@ -100,7 +76,6 @@ export default function PlaceDetailsPanel(p: Props) {
       p.toast('복사에 실패했습니다. 직접 선택해 복사해 주세요.');
     }
   };
-  const warning = pt.warning_count;
   const rows = [
     { label: '수용', v: o?.accepted ?? 0, color: 'var(--accepted)' },
     { label: '일부 수용', v: o?.partial ?? 0, color: 'var(--partial)' },
@@ -111,29 +86,30 @@ export default function PlaceDetailsPanel(p: Props) {
       <header className="place-head">
         <div>
           <span className="overline">선택한 주소</span>
+          {p.onBreadcrumb && (
+            <nav className="scope-trail" aria-label="주소의 지역 경로">
+              <ol>
+                {regionTrail(pt.region_code).map((t) => (
+                  <li key={t.code ?? 'all'}><button type="button" className="link-btn" onClick={() => p.onBreadcrumb!(t.code)}
+                    title={`${t.label} 상세로 이동(주소 선택 해제)`}>{t.label}</button></li>
+                ))}
+                <li><span aria-current="location">선택 주소</span></li>
+              </ol>
+            </nav>
+          )}
           <h2>{pt.address ?? '주소 없음'}</h2>
-          <p className="subtitle">{p.scopeLabel}</p>
+          <p className="subtitle">현재 조건: {p.scopeLabel}</p>
+          <PanelStatus busy={p.detail.status === 'loading'} label="주소 상세를 불러오는 중" />
         </div>
         <div className="place-actions">
+          <button className="mini-btn select-clear" type="button" onClick={p.onClose} aria-label="주소 선택 해제 (Esc)">선택 해제</button>
           <button className="mini-btn" type="button" onClick={copy} disabled={!pt.address}>주소 복사</button>
-          <button className="mini-btn" type="button" onClick={p.onClose} aria-label="선택한 주소 닫기">닫기</button>
+          {p.onMakeStatistics && <button className="mini-btn primary-mini" type="button" onClick={p.onMakeStatistics}>이 조건으로 통계 만들기</button>}
         </div>
       </header>
       {p.mark?.mine && (
         <p className="mine-note" role="note">이 주소에 내 신고 {fmtInt(p.mark.mineCount)}건 · {p.mark.shared ? '다른 사람과 함께 신고한 곳' : '나만 신고한 곳'}</p>
       )}
-
-      <section className="place-summary" aria-label="요약">
-        <div><small>신고</small><b className="cm-number">{fmtInt(pt.report_count)}</b><span>건 · 신고한 날</span></div>
-        <div title="경고·계도 처분으로 확인된 신고 (답변 받은 날 기준)">
-          <small>계도</small>
-          <b className="cm-number">{warning === undefined ? '—' : fmtInt(warning)}</b>
-          <span>{warning === undefined ? '서버 미지원' : '건 · 경고·계도 처분'}</span>
-        </div>
-        <div><small>과태료</small><b className="cm-number">{fmtInt(pt.fine_count)}</b><span>건 · 답변 받은 날</span></div>
-        <div><small>수용률</small><b className="cm-number">{fmtPercent(acceptRate(o))}</b><span>{fmtInt(o?.accepted ?? null)}/{fmtInt(known)}건</span></div>
-        <div><small>불수용률</small><b className="cm-number">{fmtPercent(pct(o?.rejected ?? 0, known))}</b><span>{fmtInt(o?.rejected ?? null)}/{fmtInt(known)}건</span></div>
-      </section>
 
       <section className="place-section" aria-label="처리 결과">
         <h3>처리 결과 <small>답변 {fmtInt(pt.completed_count)}건 중 결과가 나온 {fmtInt(known)}건</small></h3>
@@ -164,7 +140,7 @@ export default function PlaceDetailsPanel(p: Props) {
           <button className="mini-btn" type="button" onClick={p.onRetry}>다시 시도</button>
         </section>
       ) : p.detail.status === 'unsupported' ? (
-        <section className="place-section"><p className="cm-muted place-empty">이 서버는 주소별 기관·담당자 목록을 아직 제공하지 않습니다.</p></section>
+        <section className="place-section"><p className="cm-muted place-empty">주소별 기관·담당자 목록은 아직 제공하지 않습니다.</p></section>
       ) : (
         <>
           <section className="place-section" aria-label="처리 기관">
@@ -180,7 +156,7 @@ export default function PlaceDetailsPanel(p: Props) {
         </>
       )}
       <p className="place-note">
-        신고는 신고한 날, 처리 결과·계도·과태료는 답변 받은 날 기준입니다. 같은 주소의 신고를 하나로 묶었고, 지도 위치는 표시용 대표 위치입니다.
+        이 주소의 모든 수치(위 ‘주요 통계’ 포함)는 적용한 날짜 기준 하나로 고른 같은 신고 묶음에서 셉니다. 같은 주소의 신고를 하나로 묶었고, 지도 위치는 표시용 대표 위치입니다.
         이름·기관은 처리 결과 비교용이며 평가가 아닙니다.
       </p>
     </aside>

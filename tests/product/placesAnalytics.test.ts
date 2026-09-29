@@ -10,7 +10,7 @@ import { personalCompareSchema } from '../../src/data/personal';
 import { LAW_NONE, type PublicPoint, type Scope } from '../../src/domain/public';
 
 /** Synthetic regression fixtures of docs/implementation/dashboard-redesign/ACCEPTANCE_TESTS.md (F01–F04, A01–A06). */
-const scope: Scope = { start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
+const scope: Scope = { date_basis: 'completed_date' as const, start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
   agency_key: null, manager_key: null, bbox: null, law: null };
 const opts = { datasetVersion: 'redesign-test', sourceUpdatedAt: null, generatedAt: '2026-09-30T00:00:00Z', asOf: '2026-09-30', sample: false };
 let n = 0;
@@ -219,7 +219,9 @@ describe('A05 monthly outcome rates on the completion month', () => {
       f({ report_date: '2026-09-02', completed_date: '2026-09-05', status: 'rejected' })];
     const data = aggregateDashboard(facts, { ...scope, start: '2026-08-01' }, opts);
     const aug = data.monthly.find(m => m.month === '2026-08')!, sep = data.monthly.find(m => m.month === '2026-09')!;
-    expect(aug.outcomes!.result_known).toBe(0); // no answers → rate null, not 0%
+    // single-date-v1 + D17: August is before the first answer date of this data → no_data (null), never 0%
+    expect(aug.outcomes).toBeNull();
+    expect(aug.report_count).toBeNull();
     expect(sep.outcomes).toMatchObject({ accepted: 1, rejected: 1, result_known: 2 });
     const cmp = aggregateCompare(facts, { ...scope, start: '2026-08-01' }, facts[0].contributor_id, { datasetVersion: 'v', asOf: '2026-09-30', dataMin: null, viewer: { contributor: 'active', has_public_facts: true } });
     expect(cmp.monthly.find(m => m.month === '2026-09')!.mine_outcomes).toMatchObject({ accepted: 1, result_known: 1 });
@@ -246,7 +248,7 @@ describe('dashboard DTO carries the bundle', () => {
   it('validates strictly and contains no private fields', () => {
     const data = aggregateDashboard([f({ vehicle_raw: '서울12가3456', rating: 4, violation_law: '도로교통법 제32조' })], scope, opts);
     expect(analyticsSchema.safeParse(JSON.parse(JSON.stringify(data.analytics))).success).toBe(true);
-    const body = { schema_version: 2, dataset_version: 'v', sample: false, scope, overview: data.overview, points: data.points,
+    const body = { schema_version: 2, dataset_version: 'v', sample: false, scope, cohort_policy_version: 'single-date-v1', overview: data.overview, points: data.points,
       monthly: data.monthly, agencies: data.agencies, managers: data.managers, regions: data.regions, laws: data.laws,
       vehicles: data.vehicles, vehicle_total_scope_reports: 1, vehicle_identifiable_reports: 1, location_missing: 0,
       analytics: data.analytics, map_unplaced: data.map_unplaced };

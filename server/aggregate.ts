@@ -1,9 +1,9 @@
 /** Exact private-fact aggregation. This module must run behind the public API only. */
 import type {
-  Category, CountMetric, DashboardAnalytics, DashboardData, MonthlyBucket, OutcomeCounts,
-  PublicEntity, PublicLaw, PublicMeta, PublicPoint, PublicRegion, Scope,
+  BasisBounds, Category, CohortDiagnostics, CountMetric, DashboardAnalytics, DashboardData, DateBasis, MonthlyBucket,
+  OutcomeCounts, Overview, PublicEntity, PublicLaw, PublicMeta, PublicPoint, PublicRegion, Scope,
 } from '../src/domain/public.ts';
-import { LAW_NONE, lawKey } from '../src/domain/public.ts';
+import { COHORT_POLICY_VERSION, LAW_NONE, lawKey } from '../src/domain/public.ts';
 import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
 import { fineAmountBrief, fineAmountSummary } from './amount.ts';
@@ -65,6 +65,10 @@ export interface PrivateFact {
   report_number?: string | null;
   /** when this contribution row was first stored (elects the per-account representative) */
   first_accepted_at?: string | null;
+  /** the identity representative's dates (SQL single-date-v1): membership in a period uses the representative
+   *  elected BEFORE any date condition, so every row of one identity belongs to the same periods */
+  identity_report_date?: string | null;
+  identity_completed_date?: string | null;
 }
 
 const terminal = new Set<Status>(['accepted', 'partial', 'rejected', 'withdrawn', 'transferred', 'completed_unknown']);
@@ -163,8 +167,47 @@ function dimensions(fact: PrivateFact, scope: Scope): boolean {
   return true;
 }
 
-function completed(fact: PrivateFact, start: string, end: string): boolean {
-  return terminal.has(fact.status) && inRange(fact.completed_date, start, end);
+/** answered (terminal status) with a completion date. Kept for callers that need a dated answer; the cohort
+ *  itself never uses it (an officially completed report without an answer date stays in a report-date cohort). */
+export function answered(fact: PrivateFact): boolean {
+  return terminal.has(fact.status) && kstDate(fact.completed_date) !== null;
+}
+
+/** 답변 완료로 확인된 신고 (C): the status decides, independent of whether the answer date is known (U01 1.1). */
+export function isCompleted(fact: PrivateFact): boolean {
+  return terminal.has(fact.status);
+}
+
+/** report identity (legacy rows: the fact identity) */
+export const identityOf = (fact: PrivateFact): string => fact.report_identity ?? fact.source_report_key ?? fact.fact_identity;
+
+/**
+ * The cohort date of a row on a basis: the identity representative's date (so a co-contributor's older copy
+ * never moves the identity into another period), from the SQL projection when present, else from the
+ * representative row found in the same input, else the row itself (legacy rows without identity fields).
+ */
+export function cohortDateOf(input: readonly PrivateFact[], basis: DateBasis): (fact: PrivateFact) => string | null {
+  const reps = new Map<string, PrivateFact>();
+  for (const fact of input) {
+    if (fact.is_representative === true && fact.report_identity && !reps.has(fact.report_identity)) reps.set(fact.report_identity, fact);
+  }
+  const projected = basis === 'report_date' ? 'identity_report_date' : 'identity_completed_date';
+  return (fact) => {
+    if (fact[projected] !== undefined) return kstDate(fact[projected] ?? null);
+    const rep = fact.report_identity ? reps.get(fact.report_identity) ?? fact : fact;
+    return kstDate(rep[basis]);
+  };
+}
+
+const otherBasis = (basis: DateBasis): DateBasis => basis === 'report_date' ? 'completed_date' : 'report_date';
+
+/** S05: the scope's non-date filters (category, region, agency, manager, law, bbox) over the active facts */
+export function scopeFacts(input: readonly PrivateFact[], scope: Scope): PrivateFact[] {
+  return activeFacts(input).filter(fact => dimensions(fact, scope));
+}
+
+export function inDateRange(day: string | null, start: string, end: string): boolean {
+  return inRange(day, start, end);
 }
 
 export function outcomes(facts: readonly PrivateFact[]): OutcomeCounts {
@@ -189,7 +232,7 @@ export function growth(current: number, previous: number) {
   return { delta: current - previous, delta_percent: (current - previous) * 100 / previous, delta_reason: null };
 }
 
-function countMetric(value: number, basis: 'report_date' | 'completed_date', previous: number | null, missing = 0, denominator: number | null = null): CountMetric {
+function countMetric(value: number, basis: DateBasis, previous: number | null, missing = 0, denominator: number | null = null): CountMetric {
   return { value, basis, denominator, eligible: value, missing, previous,
     ...(previous === null ? { delta: null, delta_percent: null, delta_reason: null, note: '비교기간 자료 없음' } : growth(value, previous)) };
 }
@@ -398,20 +441,72 @@ export interface AggregateOptions {
   datasetVersion: string;
   sourceUpdatedAt: string | null;
   generatedAt: string;
+  /** latest data day (whole history); used when the per-basis bounds are unknown */
   asOf: string;
   sample: boolean;
   dataMin?: string | null;
+  /** 전체 기간 of each basis (internal_analytics_cohort_state); null = unknown (old state RPC) */
+  basisBounds?: BasisBounds | null;
+  /** KST calendar day of "now" (injectable for tests); defaults to the real clock */
+  today?: string;
 }
 
-/** One scope selection shared by the public dashboard and the personal comparison, so both read
- *  exactly the same population (active facts, scope dimensions, report/completion date bases). */
+/** KST calendar day of an instant (default: now). */
+export function todayKst(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: KST, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
+
+function monthEnd(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+}
+
+/** Data window of the selected basis: the basis bounds when known, else the combined history bounds. */
+export function basisWindow(basis: DateBasis, options: Pick<AggregateOptions, 'basisBounds' | 'dataMin' | 'asOf'>): { min: string | null; max: string | null } {
+  const b = options.basisBounds?.[basis];
+  if (b && (b.min !== null || b.max !== null)) return { min: b.min, max: b.max };
+  return { min: options.dataMin ?? null, max: options.asOf ?? null };
+}
+
+/**
+ * Calendar spine of the selected range (D12/D17): every month appears, with its covered interval. Months the data
+ * cannot cover are `no_data` (null values); a month with data coverage and no report is a real 0.
+ */
+export function monthSpine(scope: Pick<Scope, 'start' | 'end'>, window: { min: string | null; max: string | null }, today: string) {
+  return monthKeys(scope.start, scope.end).map(month => {
+    const first = `${month}-01`, last = monthEnd(month);
+    const intervalStart = scope.start > first ? scope.start : first, intervalEnd = scope.end < last ? scope.end : last;
+    const noData = (window.max !== null && month > window.max.slice(0, 7)) ? '데이터 제공 종료 이후' :
+      (window.min !== null && month < window.min.slice(0, 7)) ? '데이터 제공 시작 전' : null;
+    const note = noData ?? (window.min && month === window.min.slice(0, 7) && window.min > first ? `자료 시작 월(${window.min.slice(5).replace('-', '.')}부터)` :
+      window.max && month === window.max.slice(0, 7) && window.max < intervalEnd ? `자료 마지막 월(${window.max.slice(5).replace('-', '.')}까지)` : null);
+    return { month, interval_start: intervalStart, interval_end: intervalEnd,
+      range_partial: intervalStart !== first || intervalEnd !== last, in_progress: month === today.slice(0, 7),
+      no_data: noData !== null, coverage_note: note };
+  });
+}
+
+/**
+ * One scope selection shared by the public dashboard, the place focus, the personal comparison and 맞춤 통계
+ * (single-date-v1). ONE date — scope.date_basis of the identity representative — decides membership; the other
+ * date never filters. `reported` is the cohort N (kept under its old name for the row builders) and `done` its
+ * completed part C (status only: a completed report without an answer date stays in a report-date cohort).
+ */
 export interface ScopeSelection {
+  basis: DateBasis;
+  range: { start: string; end: string };
   prev: { start: string; end: string };
+  /** active facts after the non-date filters */
   facts: PrivateFact[];
+  /** the cohort N (same array as `reported`) */
+  cohort: PrivateFact[];
   reported: PrivateFact[];
   done: PrivateFact[];
   previousReported: PrivateFact[];
   previousDone: PrivateFact[];
+  /** cohort date of a row (the representative's selected date) */
+  dateOf(fact: PrivateFact): string | null;
+  diagnostics: CohortDiagnostics;
 }
 
 export function selectScope(input: readonly PrivateFact[], scope: Scope): ScopeSelection {
@@ -419,85 +514,143 @@ export function selectScope(input: readonly PrivateFact[], scope: Scope): ScopeS
   // no upper bound on the period (2026-09-30): the whole history is a valid scope
   if (length <= 0) throw new Error('reversed date range');
   if (scope.bbox && (scope.bbox[0] > scope.bbox[2] || scope.bbox[1] > scope.bbox[3])) throw new Error('invalid bbox');
+  const basis = scope.date_basis;
+  if (basis !== 'report_date' && basis !== 'completed_date') throw new Error('invalid date basis');
   const prev = previousWindow(scope.start, scope.end);
-  const facts = activeFacts(input).filter(fact => dimensions(fact, scope));
+  const active = activeFacts(input);
+  const dateOf = cohortDateOf(active, basis);
+  const facts = active.filter(fact => dimensions(fact, scope));
+  const within = (fact: PrivateFact, start: string, end: string) => {
+    const day = dateOf(fact);
+    return day !== null && day >= start && day <= end;
+  };
+  const cohort = facts.filter(fact => within(fact, scope.start, scope.end));
+  const previousCohort = facts.filter(fact => within(fact, prev.start, prev.end));
+  const other = otherBasis(basis);
   return {
-    prev, facts,
-    reported: facts.filter(fact => inRange(fact.report_date, scope.start, scope.end)),
-    done: facts.filter(fact => completed(fact, scope.start, scope.end)),
-    previousReported: facts.filter(fact => inRange(fact.report_date, prev.start, prev.end)),
-    previousDone: facts.filter(fact => completed(fact, prev.start, prev.end)),
+    basis, range: { start: scope.start, end: scope.end }, prev, facts, cohort, reported: cohort, done: cohort.filter(isCompleted),
+    previousReported: previousCohort, previousDone: previousCohort.filter(isCompleted), dateOf,
+    diagnostics: {
+      date_basis: basis,
+      // only reports whose OTHER date lies in the current range: rows read for the comparison window never count here
+      selected_date_missing: facts.filter(fact => dateOf(fact) === null && inRange(fact[other], scope.start, scope.end)).length,
+      other_date_missing: cohort.filter(fact => kstDate(fact[other]) === null).length,
+    },
+  };
+}
+
+/** Restrict a selection to one address place (U02 focus): the same cohort, prev window and diagnostics rules. */
+export function focusSelection(sel: ScopeSelection, keep: (fact: PrivateFact) => boolean): ScopeSelection {
+  const cohort = sel.cohort.filter(keep), previousReported = sel.previousReported.filter(keep);
+  const other = otherBasis(sel.basis);
+  return {
+    ...sel, facts: sel.facts.filter(keep), cohort, reported: cohort, done: cohort.filter(isCompleted),
+    previousReported, previousDone: previousReported.filter(isCompleted),
+    diagnostics: { date_basis: sel.basis,
+      selected_date_missing: sel.facts.filter(fact => keep(fact) && sel.dateOf(fact) === null &&
+        inRange(fact[other], sel.range.start, sel.range.end)).length,
+      other_date_missing: cohort.filter(fact => kstDate(fact[other]) === null).length },
+  };
+}
+
+export interface OverviewInput {
+  sel: ScopeSelection;
+  /** every listed row of the same identities (co-contributors), for the participant count */
+  full: ScopeSelection;
+  comparisonCovered: boolean;
+}
+
+/** The one overview builder (dashboard, address focus): N, C, K, F, W, duration, amount, rating, places, participants. */
+export function overviewOf({ sel, full, comparisonCovered }: OverviewInput): Overview {
+  const { cohort, done, previousReported, previousDone, basis } = sel;
+  const result = outcomes(done), D = result.result_known;
+  const priorResult = outcomes(previousDone), priorD = priorResult.result_known;
+  const fine = done.filter(fact => fact.disposition === 'fine').length;
+  const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
+  const people = (rows: readonly PrivateFact[]) => new Set(rows.map(fact => fact.contributor_id)).size;
+  return {
+    report_count: countMetric(cohort.length, basis, comparisonCovered ? previousReported.length : null, sel.diagnostics.selected_date_missing),
+    completed_count: countMetric(done.length, basis, comparisonCovered ? previousDone.length : null,
+      done.filter(fact => kstDate(fact.completed_date) === null).length, cohort.length),
+    accepted_including_partial: {
+      value: D ? (result.accepted + result.partial) * 100 / D : null,
+      basis, denominator: D, numerator: result.accepted + result.partial,
+      unit: 'percent', eligible: D, missing: done.length - D,
+      previous: comparisonCovered && priorD ? (priorResult.accepted + priorResult.partial) * 100 / priorD : null,
+      delta: D && priorD && comparisonCovered ? ((result.accepted + result.partial) * 100 / D) -
+        ((priorResult.accepted + priorResult.partial) * 100 / priorD) : null,
+      delta_percent: null, delta_reason: !comparisonCovered ? null : priorD ? null : D ? 'new' : 'no_baseline',
+    },
+    fine_count: countMetric(fine, basis, comparisonCovered ? priorFine : null, 0, done.length),
+    point_count: countMetric(distinctPlaces(cohort), basis, comparisonCovered ? distinctPlaces(previousReported) : null, 0, cohort.length),
+    // participants: accounts linked to the SAME identities (every listed row), never only the representative owner
+    contributor_count: countMetric(people(full.cohort), basis, comparisonCovered ? people(full.previousReported) : null, 0, full.cohort.length),
+    outcomes: result,
+    processing_duration: { ...durationSummary(done, basis), answer_date_missing: answerDateMissing(cohort) },
+    fine_amount: fineAmountSummary(done, basis),
+    rating: ratingSummary(done),
+    warning_count: done.filter(fact => fact.disposition === 'warning').length,
+    cohort: sel.diagnostics,
   };
 }
 
 export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, options: AggregateOptions): DashboardData {
-  const { prev, facts, reported, done, previousReported, previousDone } = selectScope(representatives(input), scope);
-  // contributor_count keeps its meaning (accounts with a listed fact in scope on the report-date basis),
-  // counted over every listed row — representatives alone would hide co-contributors.
+  const sel = selectScope(representatives(input), scope);
+  const { facts, cohort, done } = sel;
+  const basis = scope.date_basis;
+  // participants are counted over every listed row of the cohort identities (representatives alone hide co-contributors)
   const full = selectScope(input, scope);
-  const result = outcomes(done), D = result.result_known;
-  const duration = { ...durationSummary(done), answer_date_missing: answerDateMissing(reported) };
-  const fineAmount = fineAmountSummary(done);
-  const priorResult = outcomes(previousDone), priorD = priorResult.result_known;
-  const fine = done.filter(fact => fact.disposition === 'fine').length;
-  const priorFine = previousDone.filter(fact => fact.disposition === 'fine').length;
-  // R07: one pin per normalized address (server/places.ts). The map draws the union of report-date and
-  // completion-date places; facts that cannot be drawn are counted by reason in map_unplaced.
-  const { places: exactPlaces, unplaced } = placeRows(reported, done);
+  const today = options.today ?? todayKst();
+  const declared = basisWindow(basis, options);
+  // unknown bounds (no state value): the earliest selected date of the input, never the other date
+  const fallbackMin = declared.min ?? (activeFacts(input).map(fact => kstDate(fact[basis])).filter((d): d is string => d !== null).sort()[0] ?? null);
+  const window = { min: fallbackMin, max: declared.max };
+  const comparisonCovered = window.min === null || sel.prev.start >= window.min;
+  const overview = overviewOf({ sel, full, comparisonCovered });
+  // R07: one pin per normalized address of the cohort (no place is hidden for its other date)
+  const { places: exactPlaces, unplaced } = placeRows(cohort, done);
   const points = mapNodes(exactPlaces);
-  // AF-MAP2 + R07: point_count is the report-date count of distinct address places (the same key the map, the
-  // place list and the personal marks use), so it matches basis='report_date' and the report-count denominator.
-  const reportedPlaces = distinctPlaces(reported);
-  const previousReportedPlaces = distinctPlaces(previousReported);
-  const vehicles = vehicleRows(reported);
-  const sourceDates = activeFacts(input).flatMap(fact => [kstDate(fact.report_date), kstDate(fact.completed_date)])
-    .filter((day): day is string => day !== null).sort();
-  const dataMin = options.dataMin || sourceDates[0] || null;
-  const comparisonCovered = dataMin === null || prev.start >= dataMin;
-  const months: MonthlyBucket[] = monthKeys(scope.start, scope.end).map(month => {
-    if (month > options.asOf.slice(0, 7)) return {
-      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null, fine_amount: null,
-      partial: false, coverage_note: '데이터 제공 종료 이후',
-    };
-    if (dataMin && month < dataMin.slice(0, 7)) return {
-      month, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null, fine_amount: null,
-      partial: false, coverage_note: '데이터 제공 시작 전',
-    };
-    const monthlyReports = reported.filter(fact => kstDate(fact.report_date)?.slice(0, 7) === month);
-    const monthlyDone = done.filter(fact => kstDate(fact.completed_date)?.slice(0, 7) === month);
-    return { month, report_count: monthlyReports.length, completed_count: monthlyDone.length,
+  const vehicles = vehicleRows(cohort);
+  const monthOf = (fact: PrivateFact) => sel.dateOf(fact)?.slice(0, 7);
+  const months: MonthlyBucket[] = monthSpine(scope, window, today).map(slot => {
+    const frame = { month: slot.month, interval_start: slot.interval_start, interval_end: slot.interval_end,
+      range_partial: slot.range_partial, in_progress: slot.in_progress,
+      partial: slot.range_partial || slot.in_progress, coverage_note: slot.coverage_note };
+    if (slot.no_data) return { ...frame, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null, fine_amount: null };
+    // one month of the cohort date: the count and every result share the same reports (U01 1.8)
+    const monthly = cohort.filter(fact => monthOf(fact) === slot.month);
+    const monthlyDone = monthly.filter(isCompleted);
+    return { ...frame, report_count: monthly.length, completed_count: monthlyDone.length,
       fine_count: monthlyDone.filter(fact => fact.disposition === 'fine').length,
-      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone), rating: ratingSummary(monthlyDone),
-      partial: month === options.asOf.slice(0, 7) && scope.end >= options.asOf,
-      coverage_note: dataMin && month === dataMin.slice(0, 7) && dataMin.slice(8) !== '01' ? '제공 시작 월(부분)' : null };
+      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone), rating: ratingSummary(monthlyDone) };
   });
   const capability = (status: 'supported' | 'missing', reason: string | null = null) => ({
     status, reason, coverage: status === 'supported' ? { eligible: facts.length, total: facts.length } : null,
   });
-  // SOL-07 basis: unique facts actually included in the current range's report-date or
-  // completion-date indicators that lack coordinates. Facts belonging only to the comparison
-  // window are excluded, and a fact present in both indicators is counted once.
-  const inScopeFacts = new Map<string, PrivateFact>();
-  for (const fact of [...reported, ...done]) inScopeFacts.set(`${fact.contributor_id}\u0000${fact.fact_identity}`, fact);
-  // facts of the current range that are not on any address pin (no address, or an address without any coordinate)
+  // facts of the cohort that are not on any address pin (no address, or an address without any coordinate)
   const placedKeys = new Set(exactPlaces.map(place => place.key));
-  const locationMissing = [...inScopeFacts.values()].filter(fact => {
+  const locationMissing = cohort.filter(fact => {
     const key = placeKey(fact);
     return key === null || !placedKeys.has(key);
   }).length;
+  const duration = overview.processing_duration!;
+  const fineAmount = overview.fine_amount!;
   const meta: PublicMeta = {
     schema_version: 2, dataset_version: options.datasetVersion, sample: options.sample,
     source_updated_at: options.sourceUpdatedAt, generated_at: options.generatedAt, published_at: null,
-    data_min: dataMin, data_max: options.asOf,
+    data_min: window.min, data_max: window.max,
     coverage_note: '커뮤니티 사용자가 공유한 답변 완료 신고만 집계합니다. 전국 전체 신고나 미완료 신고를 대표하지 않습니다.',
     population: 'shared_completed_reports',
     location_missing: locationMissing,
-    dedupe_policy_version: 'contribution-dedupe-v1', capabilities: {
+    dedupe_policy_version: 'contribution-dedupe-v1',
+    cohort_policy_version: COHORT_POLICY_VERSION, today_kst: today, basis_bounds: options.basisBounds ?? null,
+    capabilities: {
       daily_report_dates: capability('supported'), completion_dates: capability('supported'),
       manager_status_cross: capability('supported'), agency_status_cross: capability('supported'),
       vehicle_top5: capability('supported'),
       fine_amount: { status: 'supported', reason: null, coverage: { eligible: fineAmount.confirmed_count, total: fineAmount.fine_count } },
-      processing_duration: { status: 'supported', reason: null, coverage: { eligible: duration.count, total: duration.count + duration.excluded.no_report_date + duration.excluded.reversed } },
+      processing_duration: { status: 'supported', reason: null, coverage: { eligible: duration.count,
+        total: duration.count + duration.excluded.no_report_date + duration.excluded.reversed + (duration.excluded.no_answer_date ?? 0) } },
       region_boundaries: { status: 'supported', reason: null, coverage: null },
       // coverage = answered reports with a published law / C (the rest are 법규 미상)
       violation_law: { status: 'supported', reason: null,
@@ -507,46 +660,24 @@ export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, 
     },
   };
   return {
-    meta, scope,
-    overview: {
-      report_count: countMetric(reported.length, 'report_date', comparisonCovered ? previousReported.length : null,
-        facts.filter(fact => fact.report_date === null).length),
-      completed_count: countMetric(done.length, 'completed_date', comparisonCovered ? previousDone.length : null,
-        facts.filter(fact => terminal.has(fact.status) && fact.completed_date === null).length),
-      accepted_including_partial: {
-        value: D ? (result.accepted + result.partial) * 100 / D : null,
-        basis: 'completed_date', denominator: D, numerator: result.accepted + result.partial,
-        unit: 'percent', eligible: D, missing: done.length - D,
-        previous: comparisonCovered && priorD ? (priorResult.accepted + priorResult.partial) * 100 / priorD : null,
-        delta: D && priorD && comparisonCovered ? ((result.accepted + result.partial) * 100 / D) -
-          ((priorResult.accepted + priorResult.partial) * 100 / priorD) : null,
-        delta_percent: null, delta_reason: !comparisonCovered ? null : priorD ? null : D ? 'new' : 'no_baseline',
-      },
-      fine_count: countMetric(fine, 'completed_date', comparisonCovered ? priorFine : null, 0, done.length),
-      point_count: countMetric(reportedPlaces, 'report_date', comparisonCovered ? previousReportedPlaces : null, 0, reported.length),
-      contributor_count: countMetric(new Set(full.reported.map(fact => fact.contributor_id)).size, 'report_date',
-        comparisonCovered ? new Set(full.previousReported.map(fact => fact.contributor_id)).size : null, 0, full.reported.length),
-      outcomes: result,
-      processing_duration: duration,
-      fine_amount: fineAmount,
-      rating: ratingSummary(done),
-    },
+    meta, scope, overview,
     points, monthly: months, agencies: entityRows(done, 'agency'), managers: entityRows(done, 'manager'),
-    regions: regionRows(reported, done), laws: lawRows(done),
-    vehicles: vehicles.items, vehicle_total_scope_reports: reported.length,
+    regions: regionRows(cohort, done), laws: lawRows(done),
+    vehicles: vehicles.items, vehicle_total_scope_reports: cohort.length,
     vehicle_identifiable_reports: vehicles.identifiable,
-    analytics: dashboardAnalytics(done, scope),
+    analytics: dashboardAnalytics(sel, scope),
     map_unplaced: unplaced,
   };
 }
 
-/** A01–A04, A06 from the same completion cohort as every other completion-basis indicator of the dashboard. */
-export function dashboardAnalytics(done: readonly PrivateFact[], scope: Scope): DashboardAnalytics {
+/** A01–A04, A06 from the same cohort as every other indicator of the dashboard. */
+export function dashboardAnalytics(sel: Pick<ScopeSelection, 'cohort' | 'done' | 'basis'>, scope: Scope): DashboardAnalytics {
   return {
-    duration: durationDistribution(done),
-    heatmap: lawHeatmap(done, scope.agency_key !== null),
-    scatter: entityScatter(done),
-    vehicle_days: vehicleDayDistribution(done),
-    rating: ratingDistribution(done),
+    duration: durationDistribution(sel.done, sel.basis),
+    heatmap: lawHeatmap(sel.done, scope.agency_key !== null),
+    scatter: entityScatter(sel.done),
+    // repeat report DAYS are the reports' own report dates over the same cohort (never the answer date)
+    vehicle_days: vehicleDayDistribution(sel.cohort, sel.basis),
+    rating: ratingDistribution(sel.done, sel.basis),
   };
 }

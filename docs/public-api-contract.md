@@ -1,4 +1,17 @@
 # 공개 읽기 API · 제안 계약
+
+> **2026-09-29 single-date-v1 (정본: docs/implementation/date-basis-dashboard/)** — 아래의 “신고 지표는 신고일, 처리 지표는
+> 완료일로 따로 거른다”, “지도 점 = 신고일·완료일 위치의 합집합”, “point_count 는 신고일 기준” 같은 설명은 **폐기**됐다.
+> 모든 경로는 `date_basis=report_date|completed_date`(없으면 `completed_date`, 잘못된 값 400)를 받고, 그 날짜 **하나**로 고른
+> 신고 묶음(대표를 먼저 정한 뒤 대표의 선택 날짜로 판정)에서 모든 값을 계산한다. 다른 날짜는 기간 밖이어도 거르지 않는다.
+> 응답은 `scope.date_basis`와 `cohort_policy_version: "single-date-v1"`을 돌려주고, 새 클라이언트는 이 값이 없으면 받지 않는다.
+> 추가/변경: `GET /laws`(q·sort·sort_value·dir·page·page_size, 전체 목록을 서버에서 정렬 후 페이지), `/entities` 의
+> `sort_value=count|rate|median|sum|mean`(src/domain/tableSort.ts 레지스트리, 비율은 분자·분모 정확 비교, 계산 불가는 방향과 무관하게
+> 마지막), `/places/{key}` 의 `overview`(주소 포커스 요약, 대시보드와 같은 함수), `meta.basis_bounds`·`meta.today_kst`,
+> `overview.cohort`(선택 날짜 결측 진단), 월별 `interval_start/interval_end/range_partial/in_progress`, 맞춤 통계의
+> `excluded.selected_date_missing{all,mine}`·`date_axes`. scope 의 `date_basis` 와 맞춤 통계 `spec.date_basis` 가 다르면
+> 400 `BASIS_CONFLICT`(scope 에 없으면 spec 값을 쓴다). 기간이 자료 범위 밖이어도 올바른 달력 날짜면 400 이 아니라 0건이다.
+
 모든 경로명은 이 프로젝트의 구현 계약이다. 인증 전용 수정본의 운영 반영 상태는 `docs/reviews/edge-auth-2026-09-27.md`를 따른다.
 base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽을 수 있는지는 아래 §열람 조건(2026-09-27부터 공유자 전용).
 
@@ -142,3 +155,14 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 
 ## 숫자 별점 공개(2026-09-28)
 공개 fact projection의 `rating`은 정책 공개 플래그가 참인 계보에서만 1..5이고, 그 밖은 null이다. API는 숫자 자체를 행 단위로 외부에 보내지 않고 완료일 cohort의 `rating: {count, mean}` 집계만 반환한다. .1/.2 동의만으로는 공개하지 않는다. 기관·담당자·지역·법규·월·개인 비교는 같은 필터와 분모를 쓴다. 별점사유는 payload·DB fact·API에 없다.
+
+## 맞춤 통계 (scope-statistics-2026-09-29.2, S05–S08)
+- `GET /public-analytics/statistics/catalog` — 허용 차원·지표 registry(id, 한글 label, 역할, 단위, 분모). 비공개 필드(차량 원번호, 신고번호, 계정, 벌점 등)는 없다.
+- `GET /public-analytics/statistics/query?<scope>&spec=<JSON>` — `spec = {version:1, date_basis, population:'all', rows[≤3], columns[≤2], metrics[1..6], filters[≤8]{dimension, members[≤50]}, place_key}`.
+  registry id만 받는다(SQL·열 이름·알 수 없는 필드는 400). 같은 차원 안은 OR, 차원끼리는 AND. 담당자는 `기관키|담당자키` 복합 키.
+  응답: 행·열 member(key+label), 조합이 있는 cell만(없는 조합은 0이 아니라 '해당 없음'), 행/열/전체 합계(원 신고에서 재계산), population_count, excluded.no_report_date,
+  filter_members(선택 대상의 현재 조건 건수, 0 포함), complete:true. 행×열이 5,000칸을 넘으면 잘라 내지 않고 **422 RESULT_TOO_LARGE**(좁히는 방법 안내).
+- `GET /public-analytics/statistics/candidates?<scope>&kind=agency|manager|sido|sgg|law|place&q=&cursor=&limit[≤100]&filters=&basis=&place_key=&keys=` —
+  현재 조건의 전체 후보에서 서버 검색·페이지. 자기 차원의 선택은 후보를 좁히지 않는다(facet). `selected`는 이미 고른 key의 현재 건수(0 포함).
+- `GET /my-analytics/statistics?<scope>&spec=` — population `mine`/`compare` 전용. 내 신고는 JWT로 확인한 사용자만(요청의 사용자 id는 받지 않음). 공개 API에 mine/compare를 보내면 400.
+- 기존 엔드포인트 추가 필드(선택, 구 클라이언트 호환): dashboard `agency_total`, `manager_total`, `overview.warning_count`.

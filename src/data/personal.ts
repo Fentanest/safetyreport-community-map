@@ -8,7 +8,9 @@ import { z } from 'zod';
 import type { Scope } from '../domain/public';
 import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
+import { COHORT_POLICY_VERSION } from '../domain/public';
 import { durationDistributionSchema, ratingDistributionSchema, scopeSchema } from './schema';
+const cohortDiagnostics = z.strictObject({ date_basis: z.enum(['report_date', 'completed_date']), selected_date_missing: z.number().int().nonnegative(), other_date_missing: z.number().int().nonnegative() });
 
 const count = z.number().int().nonnegative();
 const rate = z.number().min(0).max(100).nullable();
@@ -70,12 +72,15 @@ export const personalCompareSchema = z.strictObject({
     all_rating: rating, mine_rating: rating,
     mine_outcomes: z.strictObject({ accepted: count, partial: count, rejected: count, result_known: count, result_unknown: count }).nullable().optional(),
     mine_fine_count: count.nullable().optional(),
-  })).max(80),
+  })).max(2400), // one row per calendar month of the period (the whole history is allowed; 80 cut periods over 6.6 years)
   my_points: z.array(z.strictObject({
     key: z.string().max(160), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
     region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean(),
   })).max(1000),
   analytics: z.strictObject({ duration: durationDistributionSchema, rating: ratingDistributionSchema }).optional(),
+  // EX-09: required — an older (dual-set) server's comparison is refused, never shown under the new labels
+  cohort_policy_version: z.literal(COHORT_POLICY_VERSION),
+  cohort: z.strictObject({ all: cohortDiagnostics, mine: cohortDiagnostics }),
 });
 
 export type PersonalErrorCode =
@@ -95,7 +100,7 @@ const MESSAGE: Record<PersonalErrorCode, string> = {
   session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.',
   kakao_required: '카카오 계정으로 로그인해야 내 신고를 볼 수 있습니다.',
   account_ineligible: '이 계정으로는 내 신고를 볼 수 없습니다.',
-  DATASET_CHANGED: '통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.',
+  DATASET_CHANGED: '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.',
   rate_limited: '요청이 많아 잠시 후 다시 시도해 주세요.',
   AGGREGATE_NOT_READY: '통계가 아직 준비되지 않았습니다.',
   RESULT_TOO_LARGE: '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.',
@@ -108,7 +113,7 @@ export const personalError = (code: PersonalErrorCode, retryAfter: number | null
   new PersonalApiError(code, MESSAGE[code], retryAfter);
 
 export function sameScope(a: Scope, b: Scope): boolean {
-  return a.start === b.start && a.end === b.end && a.category === b.category &&
+  return a.date_basis === b.date_basis && a.start === b.start && a.end === b.end && a.category === b.category &&
     a.region_code === b.region_code && a.agency_key === b.agency_key &&
     a.manager_key === b.manager_key && JSON.stringify(a.bbox) === JSON.stringify(b.bbox) &&
     (a.law ?? null) === (b.law ?? null);
@@ -125,7 +130,7 @@ export function acceptCompare(raw: unknown, scope: Scope, version: string): Pers
 }
 
 export function compareParams(scope: Scope, version: string): URLSearchParams {
-  const p = new URLSearchParams({ start: scope.start, end: scope.end, category: scope.category, expected_version: version });
+  const p = new URLSearchParams({ date_basis: scope.date_basis, start: scope.start, end: scope.end, category: scope.category, expected_version: version });
   if (scope.region_code) p.set('region_code', scope.region_code);
   if (scope.agency_key) p.set('agency_key', scope.agency_key);
   if (scope.manager_key) p.set('manager_key', scope.manager_key);
@@ -198,4 +203,36 @@ export function consistentWithPublic(c: PersonalCompare, overview: import('../do
     overview.point_count.value === c.all.point_count &&
     (!overview.fine_amount || (overview.fine_amount.confirmed_count === c.all.fine_amount.confirmed_count &&
       overview.fine_amount.sum_won === c.all.fine_amount.sum_won));
+}
+
+/**
+ * 맞춤 통계 with population mine/compare (S05): the same credential rules as the comparison — the viewer is the
+ * verified JWT user, no user id is sent, no cookies. Errors keep their code; the page shows them in its result area.
+ */
+export async function readPersonalStatistics(params: URLSearchParams, signal?: AbortSignal): Promise<unknown> {
+  const { PublicApiError } = await import('./client');
+  const { mapAuth } = await import('../hooks/usePersonal');
+  const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
+  if (!base) throw new PublicApiError('내 신고를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
+  const auth = mapAuth();
+  await auth.settled();
+  let token = await auth.accessToken();
+  if (!token) throw new PublicApiError('내 신고를 보려면 로그인이 필요합니다.', 401, null, 'auth_required');
+  const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)?.trim();
+  const send = (t: string) => fetch(`${base}/my-analytics/statistics?${params}`, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${t}`, ...(key ? { apikey: key } : {}) } });
+  let res = await send(token);
+  if (res.status === 401) {
+    token = await auth.refreshToken();
+    if (!token) throw new PublicApiError('로그인이 만료되었습니다. 다시 로그인해 주세요.', 401, null, 'session_expired');
+    res = await send(token);
+  }
+  if (!res.ok) {
+    let code: string | null = null, message: string | null = null;
+    try { const b = await res.json() as { error?: { code?: string; message?: string } }; code = b.error?.code ?? null; message = b.error?.message ?? null; } catch { /* ignore */ }
+    const retry = Number(res.headers.get('retry-after'));
+    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : message ?? '내 신고 통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
+      res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code);
+  }
+  return res.json();
 }

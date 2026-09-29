@@ -1,0 +1,59 @@
+{
+  "commit": "de54876",
+  "reported_ids": [
+    "A",
+    "C",
+    "E"
+  ],
+  "done_ids": [
+    "B",
+    "C",
+    "D"
+  ],
+  "overview": {
+    "report_count": 3,
+    "completed_count": 3,
+    "outcomes": {
+      "accepted": 1,
+      "partial": 1,
+      "rejected": 1,
+      "result_known": 3,
+      "result_unknown": 0
+    },
+    "fine": 1,
+    "warning": 1,
+    "duration": {
+      "count": 2,
+      "median": 41
+    }
+  },
+  "monthly": [
+    [
+      "2025-07",
+      1,
+      0
+    ],
+    [
+      "2025-08",
+      2,
+      3
+    ]
+  ],
+  "points": [
+    [
+      "서울특별시 종로구 예시로 1",
+      2,
+      1
+    ],
+    [
+      "서울특별시 용산구 예시로 3",
+      1,
+      1
+    ],
+    [
+      "서울특별시 중구 예시로 2",
+      0,
+      1
+    ]
+  ]
+}

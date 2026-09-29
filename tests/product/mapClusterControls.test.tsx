@@ -154,7 +154,8 @@ describe('MapPanel markup (R01/R02/R03)', () => {
   it('신고 수 lists pins; rate metrics draw regions and list no place at all (R7)', () => {
     const html = renderToStaticMarkup(<MapPanel {...base} points={pts} metric="reports" />);
     expect(html).not.toContain('완료만 지점 0');
-    expect(html).toContain('비율 지표에서 보입니다');
+    // MP-01 (2026-09-29): nothing is hidden for its other date, so the old note is gone
+    expect(html).not.toContain('비율 지표에서 보입니다');
     for (const m of ['acceptance', 'rejection', 'fine'] as const) {
       const done = renderToStaticMarkup(<MapPanel {...base} points={pts} metric={m} />);
       expect(done).not.toContain('완료만 지점 0');

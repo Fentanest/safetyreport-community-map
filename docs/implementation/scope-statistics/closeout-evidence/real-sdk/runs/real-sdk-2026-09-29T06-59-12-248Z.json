@@ -1,0 +1,78 @@
+{
+  "run_id": "real-sdk-2026-09-29T06-59-12-248Z",
+  "suite": "real-sdk",
+  "commit": "39552e3a2f5056857c07e35673f67fa5262839df",
+  "working_tree_dirty": true,
+  "started_at": "2026-09-29T06:59:12.265Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 141.0.7390.37",
+    "sdk": "REAL (dapi.kakao.com)",
+    "base": "http://127.0.0.1:5190/",
+    "data": "unspecified",
+    "sdk_probe": "no-response"
+  },
+  "results": {
+    "SDK-LOAD": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-SELECT": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-RECLICK": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-FAST-RECLICK": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-BLANK": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-DRAG": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-WHEEL": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-BUTTONS": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-CLUSTER": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-REGIONS": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    },
+    "SDK-KEYBOARD": {
+      "status": "BLOCKED",
+      "reason": "real Kakao SDK not reachable here: the environment network policy refuses dapi.kakao.com (proxy CONNECT 403); a JS key with this origin registered is also required",
+      "checks": []
+    }
+  },
+  "steps": {},
+  "finished_at": "2026-09-29T06:59:42.469Z",
+  "summary": {
+    "BLOCKED": 11
+  }
+}

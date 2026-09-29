@@ -5,7 +5,7 @@
  * plate hashes or account ids ever leave this module. A05 (monthly outcome rates) uses the existing monthly rows.
  */
 import type {
-  DurationBucket, DurationDistribution, EntityScatter, HeatmapCell, HeatmapRow, LawHeatmap, OutcomeCounts,
+  DateBasis, DurationBucket, DurationDistribution, EntityScatter, HeatmapCell, HeatmapRow, LawHeatmap, OutcomeCounts,
   RatingDistribution, RatingRow, ScatterEntity, VehicleDayBucket, VehicleDayDistribution,
 } from '../src/domain/public.ts';
 import { lawKey } from '../src/domain/public.ts';
@@ -19,7 +19,7 @@ const pct = (n: number, d: number): number | null => (d > 0 ? (n * 100) / d : nu
 export const DURATION_BUCKET_DAYS = 7;
 export const DURATION_BUCKETS = 12;
 
-export function durationDistribution(done: readonly PrivateFact[]): DurationDistribution {
+export function durationDistribution(done: readonly PrivateFact[], basis: DateBasis = 'completed_date'): DurationDistribution {
   const days: number[] = [];
   let noReport = 0, reversed = 0;
   for (const fact of done) {
@@ -39,7 +39,7 @@ export function durationDistribution(done: readonly PrivateFact[]): DurationDist
     return { lower, upper, label: upper === null ? `${lower}일 이상` : `${lower}~${upper}일`, count, percentage: pct(count, n) };
   });
   return {
-    basis: 'completed_date', bucket_width_days: w, buckets, valid_count: n,
+    basis, bucket_width_days: w, buckets, valid_count: n,
     excluded: { no_report_date: noReport, reversed },
     median_days: median(days), mean_days: n ? days.reduce((a, b) => a + b, 0) / n : null, p90_days: nearestRank(days, 0.9),
   };
@@ -126,7 +126,7 @@ export const VEHICLE_DAY_BUCKETS: ReadonlyArray<{ label: string; min: number; ma
 ];
 
 /** A04: distinct report days per parsed plate (server-only identity). Undated reports never become "1일". */
-export function vehicleDayDistribution(done: readonly PrivateFact[]): VehicleDayDistribution {
+export function vehicleDayDistribution(done: readonly PrivateFact[], basis: DateBasis = 'completed_date'): VehicleDayDistribution {
   let noPlate = 0, noDate = 0;
   const days = new Map<string, Set<string>>();
   for (const fact of done) {
@@ -147,7 +147,7 @@ export function vehicleDayDistribution(done: readonly PrivateFact[]): VehicleDay
   }
   const buckets: VehicleDayBucket[] = VEHICLE_DAY_BUCKETS.map((b, i) => ({ ...b, vehicle_count: counts[i], percentage: pct(counts[i], vehicleCount) }));
   const repeat = vehicleCount - counts[0];
-  return { basis: 'completed_date', buckets, vehicle_count: vehicleCount, repeat_vehicle_count: repeat,
+  return { basis, buckets, vehicle_count: vehicleCount, repeat_vehicle_count: repeat,
     repeat_share: pct(repeat, vehicleCount), excluded: { no_plate: noPlate, no_report_date: noDate } };
 }
 
@@ -168,10 +168,10 @@ function ratingRow(status: RatingRow['status'], facts: readonly PrivateFact[]): 
 /** A06: numeric ratings disclosed by consent only (1..5); unrated/undisclosed/out-of-range are never 0점.
  *  Rows are keyed by `status`: outcome rows (accepted/partial/rejected/unknown) partition the cohort; 'fine'
  *  (disposition = 과태료 처분) is a separate, overlapping cut — never added to the outcome rows. */
-export function ratingDistribution(done: readonly PrivateFact[]): RatingDistribution {
+export function ratingDistribution(done: readonly PrivateFact[], basis: DateBasis = 'completed_date'): RatingDistribution {
   const by = (s: string) => done.filter(f => f.status === s);
   const unknown = done.filter(f => f.status !== 'accepted' && f.status !== 'partial' && f.status !== 'rejected');
   const rows = [ratingRow('all', done), ratingRow('accepted', by('accepted')), ratingRow('partial', by('partial')),
     ratingRow('rejected', by('rejected')), ratingRow('fine', done.filter(f => f.disposition === 'fine')), ratingRow('unknown', unknown)];
-  return { basis: 'completed_date', rows, unrated: done.length - rows[0].rating_count };
+  return { basis, rows, unrated: done.length - rows[0].rating_count };
 }

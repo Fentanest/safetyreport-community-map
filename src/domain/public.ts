@@ -1,8 +1,22 @@
 export type Category = 'all' | 'traffic' | 'parking' | 'other';
 export type CapabilityState = 'supported' | 'partial' | 'missing';
 export type TimeBasis = 'report_date' | 'completed_date';
+/** The one date that selects the report set of every indicator (U01, docs/implementation/date-basis-dashboard). */
+export type DateBasis = TimeBasis;
+export const DATE_BASIS_LABEL: Record<DateBasis, string> = { report_date: '신고일', completed_date: '답변일' };
+export const DEFAULT_DATE_BASIS: DateBasis = 'completed_date';
+export const isDateBasis = (value: unknown): value is DateBasis => value === 'report_date' || value === 'completed_date';
+/**
+ * Cohort policy of every analytics response (echoed as `cohort_policy_version`). single-date-v1:
+ * the identity's representative is elected first (latest answer), then ONLY the scope's date_basis date of that
+ * representative decides membership in [start, end]. The other date never filters. A client refuses a response
+ * without this value (an older server mixed a report-date set and an answer-date set).
+ */
+export const COHORT_POLICY_VERSION = 'single-date-v1';
 
 export interface Scope {
+  /** which date selects the report set (신고일 / 답변일) — one basis for every indicator of the request */
+  date_basis: DateBasis;
   start: string;
   end: string;
   category: Category;
@@ -81,6 +95,30 @@ export interface PublicMeta {
   location_missing?: number;
   dedupe_policy_version: string;
   capabilities: Record<string, Capability>;
+  /** COHORT_POLICY_VERSION of the server that built the numbers; absent = an older (dual-set) server */
+  cohort_policy_version?: string;
+  /** KST calendar day of the server clock when the response was built (never the latest data day) */
+  today_kst?: string;
+  /** whole publicly listed history per date basis (전체 기간 of each basis); null = unknown */
+  basis_bounds?: BasisBounds | null;
+}
+
+export interface BasisBounds {
+  report_date: { min: string | null; max: string | null };
+  completed_date: { min: string | null; max: string | null };
+}
+
+/**
+ * Missing-date diagnostics of ONE request, never added across all/mine or across periods (D11/D15).
+ * - selected_date_missing: reports of the non-date filters whose SELECTED date is empty while their other date
+ *   falls inside [start, end] (a diagnostic only: they cannot belong to the period and are not in any count)
+ * - other_date_missing: reports IN the cohort whose other date is empty (kept in every count; only the
+ *   indicators needing that date — duration, report-day distinct counts — leave them out)
+ */
+export interface CohortDiagnostics {
+  date_basis: DateBasis;
+  selected_date_missing: number;
+  other_date_missing: number;
 }
 
 export interface CountMetric {
@@ -111,15 +149,16 @@ export interface OutcomeCounts {
 
 /** 답변까지 걸린 기간 (docs/metrics-catalog.md processing_duration). Days, answer-date cohort. */
 export interface DurationSummary {
-  basis: 'completed_date';
+  /** the cohort basis (which date selected the reports); days are always answer date − report date */
+  basis: DateBasis;
   count: number;
   mean_days: number | null;
   median_days: number | null;
   p90_days: number | null;
   min_days: number | null;
   max_days: number | null;
-  excluded: { no_report_date: number; reversed: number };
-  /** answered reports of the report-date period without any answer date (period unknown) */
+  excluded: { no_report_date: number; reversed: number; no_answer_date?: number };
+  /** answered reports of the cohort without any answer date (report-date basis only; duration not computable) */
   answer_date_missing: number;
 }
 
@@ -132,7 +171,7 @@ export interface DurationBrief {
 
 /** 답변에 적힌 과태료 금액 (docs/metrics-catalog.md fine_amount). Not a paid or legally final amount. */
 export interface FineAmountSummary {
-  basis: 'completed_date';
+  basis: DateBasis;
   fine_count: number;
   confirmed_count: number;
   sum_won: number | null;
@@ -169,6 +208,10 @@ export interface Overview {
   processing_duration?: DurationSummary | null;
   fine_amount?: FineAmountSummary | null;
   rating?: RatingBrief | null;
+  /** S01: 계도(경고) count of the cohort; undefined = older server (shown as 서버 미지원, never 0) */
+  warning_count?: number | null;
+  /** missing-date diagnostics of this cohort (single-date-v1) */
+  cohort?: CohortDiagnostics | null;
 }
 
 /** Map place grouping (R07). 'address-v1' = one pin per normalized full address (server/places.ts).
@@ -212,7 +255,11 @@ export interface MapUnplaced {
 export interface PlaceDetail {
   dataset_version: string;
   scope: Scope;
+  cohort_policy_version?: string;
   place: PublicPoint;
+  /** U02 focus summary: the full overview of this address under the same scope (same functions as the
+   *  dashboard overview; comparison = the same address in the previous window of the same basis) */
+  overview?: Overview | null;
   agencies: PublicEntity[];
   managers: PublicEntity[];
   agency_total: number;
@@ -222,7 +269,7 @@ export interface PlaceDetail {
 /** A01 답변까지 걸린 기간 구간별 건수 (completion cohort). Equal-width bins plus one open tail bin. */
 export interface DurationBucket { lower: number; upper: number | null; label: string; count: number; percentage: number | null }
 export interface DurationDistribution {
-  basis: 'completed_date';
+  basis: DateBasis;
   bucket_width_days: number;
   buckets: DurationBucket[];
   valid_count: number;
@@ -282,7 +329,7 @@ export interface EntityScatter {
 /** A04 차량별 서로 다른 신고일 수 분포 (completion cohort, parsed plates only; no plate text or hash). */
 export interface VehicleDayBucket { label: string; min: number; max: number | null; vehicle_count: number; percentage: number | null }
 export interface VehicleDayDistribution {
-  basis: 'completed_date';
+  basis: DateBasis;
   buckets: VehicleDayBucket[];
   vehicle_count: number;
   repeat_vehicle_count: number;
@@ -292,7 +339,7 @@ export interface VehicleDayDistribution {
 
 /** A06 처리결과별 별점 분포. counts[i] = number of (i+1)-point ratings; mean over rating_count. */
 export interface RatingRow { status: 'all' | 'accepted' | 'partial' | 'rejected' | 'fine' | 'unknown'; counts: [number, number, number, number, number]; rating_count: number; mean: number | null }
-export interface RatingDistribution { basis: 'completed_date'; rows: RatingRow[]; unrated: number }
+export interface RatingDistribution { basis: DateBasis; rows: RatingRow[]; unrated: number }
 
 /** New analytics A01–A06 computed from ONE selection with the dashboard (same scope/version). A05 uses `monthly`. */
 export interface DashboardAnalytics {
@@ -304,7 +351,15 @@ export interface DashboardAnalytics {
 }
 
 export interface MonthlyBucket {
+  /** month of the cohort date (신고월 on report_date, 답변월 on completed_date) */
   month: string;
+  /** days of this month inside the selected range (a partial first/last month says so) */
+  interval_start?: string;
+  interval_end?: string;
+  /** the selected range covers only part of this calendar month */
+  range_partial?: boolean;
+  /** this month is the CURRENT KST month (today), not merely the latest data month */
+  in_progress?: boolean;
   report_count: number | null;
   completed_count: number | null;
   fine_count: number | null;
@@ -390,6 +445,10 @@ export interface DashboardData {
   monthly: MonthlyBucket[];
   agencies: PublicEntity[];
   managers: PublicEntity[];
+  /** S01: how many agencies/managers the scope really has (the arrays are a first page of at most 100);
+   *  undefined = older server (the UI then says "많은 순 N개" without claiming a total) */
+  agency_total?: number;
+  manager_total?: number;
   /** null = the source did not provide region rows (never replaced by an empty list). */
   regions: PublicRegion[] | null;
   /** 위반법규별 현황; null = the source did not provide law rows (never replaced by an empty list) */
@@ -404,7 +463,7 @@ export interface DashboardData {
 }
 
 export const DEMO_SCOPE: Scope = {
-  start: '2025-09-25', end: '2026-09-24', category: 'all', region_code: null,
+  date_basis: DEFAULT_DATE_BASIS, start: '2025-09-25', end: '2026-09-24', category: 'all', region_code: null,
   agency_key: null, manager_key: null, bbox: null, law: null,
 };
 

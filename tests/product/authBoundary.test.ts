@@ -116,7 +116,7 @@ describe('session-expired guidance (docs/personal-comparison.md §6)', () => {
 });
 
 describe('personal client', () => {
-  const scope = { start: '2025-09-25', end: '2026-09-24', category: 'all' as const, region_code: '서울 중구', agency_key: null, manager_key: null, bbox: null, law: null };
+  const scope = { date_basis: 'completed_date' as const, start: '2025-09-25', end: '2026-09-24', category: 'all' as const, region_code: '서울 중구', agency_key: null, manager_key: null, bbox: null, law: null };
   async function sample() {
     const { aggregateCompare } = await import('../../server/compare');
     const { demoFacts, DEMO_AS_OF, DEMO_DATA_MIN, DEMO_VIEWER_ID } = await import('../../src/data/demoEngine');
@@ -124,7 +124,7 @@ describe('personal client', () => {
       datasetVersion: 'v1', asOf: DEMO_AS_OF, dataMin: DEMO_DATA_MIN, viewer: { contributor: 'active', has_public_facts: true } })));
   }
   const fakeAuth = (tokens: Array<string | null>) => ({
-    snapshot: () => ({ status: 'signed_in' as const, displayName: null, synthetic: false, message: null }),
+    snapshot: () => ({ status: 'signed_in' as const, displayName: null, viewerId: null, synthetic: false, message: null }),
     subscribe: () => () => {}, signIn: async () => {}, signOut: async () => {},
     accessToken: async () => 'token-1', refreshToken: vi.fn(async () => tokens.shift() ?? null), settled: async () => undefined,
   });
@@ -207,8 +207,10 @@ describe('source boundaries', () => {
   it('keeps personal comparison out of share URLs', async () => {
     const { scopeToSearch } = await import('../../src/state/filters');
     const { DEMO_SCOPE } = await import('../../src/domain/public');
-    const search = scopeToSearch(DEMO_SCOPE, { view: 'map' });
-    expect(search).toContain('view=map');
+    // U04: the old layout parameter is never written; the date basis always is
+    const search = scopeToSearch(DEMO_SCOPE, {});
+    expect(search).not.toContain('view=');
+    expect(search).toContain('date_basis=completed_date');
     expect(search).not.toMatch(/compare|mine|me=|user|token/);
   });
 });

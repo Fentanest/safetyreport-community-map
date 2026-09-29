@@ -4,11 +4,18 @@
  * production. Nothing here is a real report, account, vehicle or place record. Imported only behind
  * `import.meta.env.VITE_DATA_MODE === 'demo'`, so live builds drop this chunk (checked by the dist scan test).
  */
-import { aggregateDashboard, entityRows, mapNodes, representatives, selectScope, type PrivateFact, type Status, type Disposition } from '../../server/aggregate';
+import {
+  aggregateDashboard, entityRows, focusSelection, kstDate, lawRows, mapNodes, overviewOf, representatives, selectScope,
+  type PrivateFact, type Status, type Disposition,
+} from '../../server/aggregate';
 import { aggregateCompare } from '../../server/compare';
-import { placeFacts, placeRows, placesInView, placeSummary, representativeOf } from '../../server/places';
-import type { DashboardData, PlaceDetail, PublicEntity, PublicMeta, PublicPoint, Scope } from '../domain/public';
-import type { EntitiesPage, EntitiesQuery } from './client';
+import { aggregateStatistics, statisticsCandidates } from '../../server/statistics';
+import type { StatisticsSpec, StatsFilter } from '../domain/statistics';
+import { placeKey, placeRows, placesInView, placeSummary, representativeOf } from '../../server/places';
+import { COHORT_POLICY_VERSION, type BasisBounds, type DashboardData, type PlaceDetail, type PublicEntity, type PublicLaw, type PublicMeta, type PublicPoint, type Scope } from '../domain/public';
+import { compareRows, DEFAULT_SORT } from '../domain/tableSort';
+import type { EntitiesPage, EntitiesQuery, LawsPage, LawsQuery } from './client';
+import { oracleDemoFacts, ORACLE_TODAY } from './demoOracle';
 import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
 import { demoViewerFromSearch } from '../auth/mapAuth';
@@ -57,7 +64,12 @@ const SPAN = dayIndex(DEMO_AS_OF) - dayIndex(DEMO_DATA_MIN);
 
 let cache: PrivateFact[] | null = null;
 
+/** ?fixture=oracle: the independent cohort oracle (docs/implementation/date-basis-dashboard/fixtures) instead of
+ *  the synthetic year — used by the browser checks of DT-05..DT-10 / EX-01 (MOCK, never a production pass). */
+const oracleMode = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('fixture') === 'oracle';
+
 export function demoFacts(): PrivateFact[] {
+  if (oracleMode()) return oracleDemoFacts();
   if (cache) return cache;
   const rand = mulberry32(20260927);
   const pick = <T,>(list: readonly T[]) => list[Math.floor(rand() * list.length)];
@@ -157,10 +169,20 @@ export function demoFacts(): PrivateFact[] {
   return facts;
 }
 
+/** 전체 기간 of each basis over the demo facts (same meaning as internal_analytics_cohort_state.basis_bounds). */
+export function demoBasisBounds(): BasisBounds {
+  const span = (field: 'report_date' | 'completed_date') => {
+    const days = demoFacts().map(f => kstDate(f[field])).filter((d): d is string => d !== null).sort();
+    return { min: days[0] ?? null, max: days[days.length - 1] ?? null };
+  };
+  return { report_date: span('report_date'), completed_date: span('completed_date') };
+}
+const demoToday = () => oracleMode() ? ORACLE_TODAY : undefined;
+
 export function demoEngineDashboard(scope: Scope): DashboardData {
   const data = aggregateDashboard(demoFacts(), scope, {
     datasetVersion: DEMO_VERSION, sourceUpdatedAt: null, generatedAt: '2026-09-27T00:00:00Z',
-    asOf: DEMO_AS_OF, sample: true, dataMin: DEMO_DATA_MIN,
+    asOf: DEMO_AS_OF, sample: true, dataMin: DEMO_DATA_MIN, basisBounds: demoBasisBounds(), today: demoToday(),
   });
   data.meta.coverage_note = '합성 예시 자료입니다. 실제 신고 통계가 아닙니다.';
   data.meta.dedupe_policy_version = 'fixture-v2';
@@ -183,7 +205,7 @@ export async function demoCompare(scope: Scope, version: string, auth: MapAuth):
   // A suspended contributor's facts are not in the public population, exactly like production.
   const viewer = fixture === 'empty' || fixture === 'suspended' ? 'synthetic-viewer-without-public-reports' : DEMO_VIEWER_ID;
   const result = aggregateCompare(demoFacts(), scope, viewer, {
-    datasetVersion: version, asOf: DEMO_AS_OF, dataMin: DEMO_DATA_MIN,
+    datasetVersion: version, asOf: DEMO_AS_OF, dataMin: DEMO_DATA_MIN, basisBounds: demoBasisBounds(), today: demoToday(),
     viewer: fixture === 'empty' ? { contributor: 'none', has_public_facts: false }
       : fixture === 'suspended' ? { contributor: 'suspended', has_public_facts: false }
         : { contributor: 'active', has_public_facts: true },
@@ -193,7 +215,7 @@ export async function demoCompare(scope: Scope, version: string, auth: MapAuth):
 
 /** Demo metadata (same shape as /meta). */
 export function demoMeta(): PublicMeta {
-  const meta = demoEngineDashboard({ start: DEMO_AS_OF, end: DEMO_AS_OF, category: 'all', region_code: null,
+  const meta = demoEngineDashboard({ date_basis: 'completed_date', start: DEMO_AS_OF, end: DEMO_AS_OF, category: 'all', region_code: null,
     agency_key: null, manager_key: null, bbox: null, law: null }).meta;
   return { ...meta, location_missing: undefined };
 }
@@ -205,39 +227,55 @@ export function demoEntities(scope: Scope, query: EntitiesQuery): EntitiesPage {
   if (query.agencyType && query.agencyType !== 'all') rows = rows.filter(row => row.agency_type === query.agencyType);
   const needle = (query.q ?? '').trim();
   if (needle) rows = rows.filter(row => row.agency_name.includes(needle) || (row.manager_name ?? '').includes(needle));
-  const sort = query.sort ?? 'completed', dir = query.dir ?? 'desc';
-  const value = (row: PublicEntity): number => {
-    const known = row.outcomes.result_known;
-    switch (sort) {
-      case 'accepted': return row.outcomes.accepted;
-      case 'partial': return row.outcomes.partial;
-      case 'rejected': return row.outcomes.rejected;
-      case 'fine': return row.fine_count ?? -Infinity;
-      case 'acceptRate': return known > 0 ? (row.outcomes.accepted / known) * 100 : -Infinity;
-      default: return row.completed_count;
-    }
-  };
-  rows = [...rows].sort((a, b) => (dir === 'desc' ? value(b) - value(a) : value(a) - value(b)) ||
-    a.agency_name.localeCompare(b.agency_name, 'ko') || (a.manager_name ?? '').localeCompare(b.manager_name ?? '', 'ko') || (a.key < b.key ? -1 : 1));
+  const sort = query.sort ?? DEFAULT_SORT;
+  rows = [...rows].sort(compareRows<PublicEntity>(sort, row => `${row.agency_name}\u0000${row.manager_name ?? ''}`, row => row.key));
   const page = query.page ?? 1, pageSize = query.pageSize ?? 50;
-  return { datasetVersion: DEMO_VERSION, scope, items: rows.slice((page - 1) * pageSize, page * pageSize), totalRows: rows.length, page, pageSize };
+  return { datasetVersion: DEMO_VERSION, scope, items: rows.slice((page - 1) * pageSize, page * pageSize), totalRows: rows.length, page, pageSize, sort };
 }
 
-/** Same rules as /places/{key}. */
-export function demoPlace(scope: Scope, key: string, version: string, limit = 100): PlaceDetail | null {
+/** Same rules as the /laws route. */
+export function demoLaws(scope: Scope, query: LawsQuery): LawsPage {
   const selection = selectScope(representatives(demoFacts()), scope);
-  const own = placeFacts(key, selection.reported, selection.done);
-  const anchor = representativeOf([...own.reported, ...own.done]);
+  const nameOf = (row: PublicLaw) => row.law ?? '법규 미상';
+  const needle = (query.q ?? '').trim();
+  let rows = lawRows(selection.done);
+  if (needle) rows = rows.filter(row => nameOf(row).includes(needle));
+  const sort = query.sort ?? DEFAULT_SORT;
+  rows = [...rows].sort(compareRows(sort, nameOf, row => row.law ?? '\uffff'));
+  const page = query.page ?? 1, pageSize = query.pageSize ?? 50;
+  return { datasetVersion: DEMO_VERSION, scope, items: rows.slice((page - 1) * pageSize, page * pageSize), totalRows: rows.length, page, pageSize, sort };
+}
+
+/** Same rules as /places/{key} (focus overview from the same builder as the dashboard). */
+export function demoPlace(scope: Scope, key: string, version: string, limit = 100): PlaceDetail | null {
+  const inPlace = (fact: PrivateFact) => placeKey(fact) === key;
+  const selection = focusSelection(selectScope(representatives(demoFacts()), scope), inPlace);
+  const full = focusSelection(selectScope(demoFacts(), scope), inPlace);
+  const anchor = representativeOf(selection.cohort);
   if (!anchor) return null;
-  const agencies = entityRows(own.done, 'agency'), managers = entityRows(own.done, 'manager');
-  return { dataset_version: version, scope, place: placeSummary(key, own.reported, own.done, anchor),
+  const agencies = entityRows(selection.done, 'agency'), managers = entityRows(selection.done, 'manager');
+  const min = demoBasisBounds()[scope.date_basis].min;
+  const overview = overviewOf({ sel: selection, full, comparisonCovered: min === null || selection.prev.start >= min });
+  return { dataset_version: version, scope, cohort_policy_version: COHORT_POLICY_VERSION,
+    place: placeSummary(key, selection.cohort, selection.done, anchor), overview,
     agencies: agencies.slice(0, limit), managers: managers.slice(0, limit), agency_total: agencies.length, manager_total: managers.length };
 }
 
 /** Same rules as /places?view_bbox=… (display refinement only). */
 export function demoPlacesInView(scope: Scope, view: [number, number, number, number]): { points: PublicPoint[]; total: number; compacted: boolean } {
   const selection = selectScope(representatives(demoFacts()), scope);
-  const inView = placesInView(placeRows(selection.reported, selection.done).places, view);
+  const inView = placesInView(placeRows(selection.cohort, selection.done).places, view);
   const points = mapNodes(inView);
   return { points, total: inView.length, compacted: points.length < inView.length };
+}
+
+/** 맞춤 통계 over the synthetic facts (demo builds only; the same server aggregator as the live API). */
+export function demoStatistics(scope: Scope, spec: StatisticsSpec) {
+  const w = demoBasisBounds()[spec.date_basis];
+  return aggregateStatistics({ facts: demoFacts(), scope, spec, datasetVersion: demoMeta().dataset_version,
+    viewerId: spec.population === 'all' ? null : DEMO_VIEWER_ID, dataWindow: { min: w.min, max: w.max } });
+}
+export function demoCandidates(scope: Scope, q: { kind: string; q: string; cursor: number; limit: number; filters: StatsFilter[];
+  basis: StatisticsSpec['date_basis']; placeKey: string | null; keys: string[] }) {
+  return statisticsCandidates({ facts: demoFacts(), scope, datasetVersion: demoMeta().dataset_version, ...q });
 }

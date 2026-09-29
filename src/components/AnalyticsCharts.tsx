@@ -48,7 +48,7 @@ function Seg<T extends string>({ value, options, onChange, label }: { value: T; 
   );
 }
 
-const Unsupported = ({ what }: { what: string }) => <div className="empty-state">{what}은(는) 이 서버가 아직 제공하지 않습니다.</div>;
+const Unsupported = ({ what }: { what: string }) => <div className="empty-state">{what} 정보는 아직 제공하지 않습니다.</div>;
 
 // ── A01 ─────────────────────────────────────────────────────────────────────────────────────────────
 export function DurationCard({ all, mine, theme }: { all: DurationDistribution | null; mine: DurationDistribution | null; theme: string }) {
@@ -164,7 +164,7 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
       </>}
       caption={data && <>
         {data.row_kind === 'manager' ? '담당자' : '기관'} {fmtInt(data.total_rows)}개 중 {fmtInt(rows.length)}개 · 법규 {fmtInt(data.total_laws)}개 중 {fmtInt(laws.length)}개(답변 많은 순)
-        {data.total_rows > data.rows.length || data.total_laws > data.laws.length ? ` · 서버는 상위 ${fmtInt(data.rows.length)}×${fmtInt(data.laws.length)}까지 제공합니다` : ''}.
+        {data.total_rows > data.rows.length || data.total_laws > data.laws.length ? ` · 많은 순으로 ${fmtInt(data.rows.length)}×${fmtInt(data.laws.length)}까지만 보여 줍니다` : ''}.
         {' '}빈 칸은 그 조합의 신고가 없다는 뜻이고, ‘–’는 결과가 나온 신고가 없어 비율을 계산할 수 없다는 뜻입니다.{' '}
         {(data.rows.length > 8 || data.laws.length > laws.length) && (
           <button type="button" className="link-btn" onClick={() => setExpanded((v) => !v)}>{expanded ? '줄여 보기' : '더 넓게 보기'}</button>
@@ -307,12 +307,12 @@ export function ratingLines(all: RatingDistribution, mine: RatingDistribution | 
   for (const key of RATING_KEYS) {
     const a = pick(all, key);
     lines.push({ key, side: 'all', label: state === 'off' ? RATING_LABEL[key] : `${pairName(key)} · 전체`, row: a,
-      note: a ? null : '서버 미지원' });
+      note: a ? null : '제공 안 됨' });
     if (state === 'off') continue;
     const m = state === 'ready' ? pick(mine, key) : null;
     lines.push({ key, side: 'mine', label: `${pairName(key)} · 내 신고`, row: m,
       note: m ? null : state === 'loading' ? '불러오는 중' : state === 'error' ? '불러오지 못함'
-        : state === 'signed_out' ? '로그인하면 볼 수 있음' : '서버 미지원' });
+        : state === 'signed_out' ? '로그인하면 볼 수 있음' : '제공 안 됨' });
   }
   return lines;
 }
@@ -352,7 +352,7 @@ export function RatingCard({ all, mine, mineState, theme }: { all: RatingDistrib
       caption={all && <>
         <span className="rating-legend">{[1, 2, 3, 4, 5].map((s) => <span key={s}><i className="dot" style={{ background: METRIC_RAMP[s - 1] }} />{s}점</span>)}</span>
         {' '}평가하지 않았거나 공개하지 않은 {fmtInt(all.unrated)}건은 0점으로 넣지 않고 뺐습니다. ‘과태료 처분’은 처분이 과태료인 신고로, 수용·일부 수용 등과 겹칠 수 있어 다른 행과 더하지 않습니다.
-        {mineState === 'ready' && !mine && ' 이 서버는 내 신고 별점 분포를 아직 제공하지 않습니다.'}</>}>
+        {mineState === 'ready' && !mine && ' 내 신고 별점 분포는 아직 제공하지 않습니다.'}</>}>
       {!all ? <Unsupported what="별점 분포" /> : allTotal === 0 ? <div className="empty-state">공개된 별점이 아직 없습니다.</div> : null}
       <div ref={hostRef} className="chart-host" style={{ height: Math.max(200, lines.length * 38 + 40) }} hidden={table || !all || allTotal === 0 || !!error} role="img"
         aria-label={lines.map((l) => `${l.label} ${lineText(l)}`).join(', ')} />

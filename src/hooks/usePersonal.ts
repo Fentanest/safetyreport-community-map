@@ -53,6 +53,14 @@ export function usePersonalCompare(scope: Scope, version: string | null, enabled
   const abort = useRef<AbortController | null>(null);
   const scopeKey = JSON.stringify(scope);
 
+  // C01: another account (same nickname or not) never sees these numbers, even for a moment
+  const viewer = auth.status === 'signed_in' ? auth.viewerId : null;
+  const lastViewer = useRef(viewer);
+  if (lastViewer.current !== viewer) {
+    lastViewer.current = viewer;
+    if (data !== null) setData(null);
+    if (error !== null) setError(null);
+  }
   useEffect(() => {
     abort.current?.abort();
     if (!enabled || auth.status !== 'signed_in' || !version) {
@@ -84,7 +92,7 @@ export function usePersonalCompare(scope: Scope, version: string | null, enabled
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scopeKey, version, enabled, auth.status, reload]);
+  }, [scopeKey, version, enabled, auth.status, viewer, reload]);
 
   const retry = useCallback(() => setReload((n) => n + 1), []);
 

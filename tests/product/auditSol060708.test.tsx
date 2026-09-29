@@ -14,7 +14,7 @@ vi.mock('../../src/hooks/usePersonal', () => ({
 }));
 
 const sept: Scope = {
-  start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
+  date_basis: 'completed_date' as const, start: '2026-09-01', end: '2026-09-30', category: 'all', region_code: null,
   agency_key: null, manager_key: null, bbox: null, law: null,
 };
 const aopts = {
@@ -41,56 +41,64 @@ const located = (key: string): Partial<PrivateFact> =>
   ({ point_key: key, lat: 37.5, lng: 127.0, address: `예시 지점 ${key}` });
 const place = (key: string) => placeKeyOf(`예시 지점 ${key}`);
 
-describe('SOL-06 completion-only points', () => {
-  it('keeps a completion whose report date is out of range as its own point', () => {
+// Migrated 2026-09-29 (date-basis-dashboard §0.2 / U01): SOL-06/07 described two sets (report-date reports and
+// answer-date completions) drawn together. Now ONE date of the scope selects the reports, and each drawn place
+// carries the same reports for its count and its results (no report_count-0 "completion-only" place any more).
+const onReport: Scope = { ...sept, date_basis: 'report_date' };
+describe('SOL-06 → single cohort: places carry the same reports for counts and results', () => {
+  it('an August report answered in September is IN the September answer-date set with its report counted (MP-01)', () => {
     const data = aggregateDashboard([
       mkFact({ report_date: '2026-08-10', completed_date: '2026-09-05', ...located('pt-cross') }),
     ], sept, aopts);
-    expect(data.overview.report_count.value).toBe(0);
+    expect(data.overview.report_count.value).toBe(1);
     expect(data.overview.completed_count.value).toBe(1);
     expect(data.points).toHaveLength(1);
-    expect(data.points[0]).toMatchObject({ key: place('pt-cross'), report_count: 0, completed_count: 1 });
-    // invariant: overview.completed = sum(points.completed) + unlocated completions
-    expect(data.points.reduce((n, row) => n + (row.completed_count ?? 0), 0)).toBe(1);
+    expect(data.points[0]).toMatchObject({ key: place('pt-cross'), report_count: 1, completed_count: 1 });
+    // …and it is NOT in the September report-date set (its report date is August)
+    expect(aggregateDashboard([mkFact({ report_date: '2026-08-10', completed_date: '2026-09-05', ...located('pt-cross2') })], onReport, aopts)
+      .overview.report_count.value).toBe(0);
   });
-  it('counts report and completion bases independently across mixed points', () => {
-    const data = aggregateDashboard([
+  it('mixed places: each basis draws exactly its own reports', () => {
+    const facts = [
       mkFact({ report_date: '2026-09-05', completed_date: '2026-09-06', ...located('pt-a') }),
       mkFact({ report_date: '2026-08-10', completed_date: '2026-09-07', ...located('pt-b') }),
       mkFact({ report_date: '2026-09-08', completed_date: null, status: 'processing', ...located('pt-c') }),
       mkFact({ report_date: '2026-09-09', completed_date: '2026-09-10' }),
-    ], sept, aopts);
-    expect(data.overview.report_count.value).toBe(3);
-    expect(data.overview.completed_count.value).toBe(3);
-    expect(data.points).toHaveLength(3);
-    const expected = [[place('pt-a'), 1, 1], [place('pt-c'), 1, 0], [place('pt-b'), 0, 1]];
-    expect(data.points.map(row => [row.key, row.report_count, row.completed_count])).toEqual(expected);
-    const pointReports = data.points.reduce((n, row) => n + row.report_count, 0);
-    const pointDone = data.points.reduce((n, row) => n + (row.completed_count ?? 0), 0);
-    expect(pointReports + 1).toBe(3); // +1 unlocated report
-    expect(pointDone + 1).toBe(3); // +1 unlocated completion
+    ];
+    const answer = aggregateDashboard(facts, sept, aopts);
+    expect([answer.overview.report_count.value, answer.overview.completed_count.value]).toEqual([3, 3]);
+    expect(answer.points.map(row => [row.key, row.report_count, row.completed_count]).sort())
+      .toEqual([[place('pt-a'), 1, 1], [place('pt-b'), 1, 1]].sort());
+    expect(answer.overview.cohort?.selected_date_missing).toBe(1); // pt-c: no answer date, report date in range
+    const report = aggregateDashboard(facts, onReport, aopts);
+    expect([report.overview.report_count.value, report.overview.completed_count.value]).toEqual([3, 2]);
+    expect(report.points.map(row => [row.key, row.report_count, row.completed_count]).sort())
+      .toEqual([[place('pt-a'), 1, 1], [place('pt-c'), 1, 0]].sort());
+    // invariant: drawn + unplaced = the cohort
+    expect(report.points.reduce((n, row) => n + row.report_count, 0) + 1).toBe(3);
   });
 });
 
-describe('SOL-07 location_missing basis', () => {
+describe('SOL-07 location_missing basis (the cohort only)', () => {
   it('ignores a location-less fact that belongs only to the comparison window', () => {
     const data = aggregateDashboard([
       mkFact({ report_date: '2026-08-10', completed_date: null, status: 'processing' }),
-    ], sept, aopts);
+    ], onReport, aopts);
     expect(data.overview.report_count.value).toBe(0);
     expect(data.overview.completed_count.value).toBe(0);
     expect(data.meta.location_missing).toBe(0);
   });
-  it('counts unique in-range facts once and excludes located completions', () => {
-    const data = aggregateDashboard([
+  it('counts unique cohort facts once and excludes located ones', () => {
+    const facts = [
       mkFact({ report_date: '2026-08-10', completed_date: null, status: 'processing' }), // prev only
-      mkFact({ report_date: '2026-09-05', completed_date: null, status: 'processing' }), // current report
-      mkFact({ report_date: '2026-09-05', completed_date: '2026-09-06' }), // both indicators, still one fact
+      mkFact({ report_date: '2026-09-05', completed_date: null, status: 'processing' }), // report basis only
+      mkFact({ report_date: '2026-09-05', completed_date: '2026-09-06' }), // both bases, one fact
       mkFact({ report_date: '2026-09-05', completed_date: '2026-09-06', ...located('pt-ok') }), // located
-    ], sept, aopts);
-    expect(data.overview.report_count.value).toBe(3);
-    expect(data.overview.completed_count.value).toBe(2);
-    expect(data.meta.location_missing).toBe(2);
+    ];
+    const report = aggregateDashboard(facts, onReport, aopts);
+    expect([report.overview.report_count.value, report.overview.completed_count.value, report.meta.location_missing]).toEqual([3, 2, 2]);
+    const answer = aggregateDashboard(facts, sept, aopts);
+    expect([answer.overview.report_count.value, answer.overview.completed_count.value, answer.meta.location_missing]).toEqual([2, 2, 1]);
   });
 });
 
@@ -168,7 +176,7 @@ describe('SOL-08 client and table connection', () => {
     vi.stubEnv('VITE_PUBLIC_ANALYTICS_URL', 'https://example.test');
     vi.stubGlobal('fetch', (...args: any[]) => ehandler(viewerRequest(String(args[0]))));
     const page = await loadEntities(sept,
-      { kind: 'agency', q: '테스트기관-100', sort: 'completed', dir: 'asc', page: 1, pageSize: 50 },
+      { kind: 'agency', q: '테스트기관-100', sort: { column: 'completed', value: 'count', dir: 'asc' }, page: 1, pageSize: 50 },
       'af-map-entities');
     expect(page.totalRows).toBe(1);
     expect(page.items[0].agency_name).toBe('테스트기관-100');

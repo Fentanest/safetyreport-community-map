@@ -8,7 +8,7 @@ vi.mock('../../src/hooks/usePersonal', () => ({ mapAuth: () => auth.current }));
 
 function fakeAuth(token: string | null, refreshed: string | null = null): MapAuth {
   return {
-    snapshot: () => ({ status: token ? 'signed_in' : 'signed_out', displayName: null, synthetic: false, message: null }),
+    snapshot: () => ({ status: token ? 'signed_in' : 'signed_out', displayName: null, viewerId: null, synthetic: false, message: null }),
     subscribe: () => () => undefined, signIn: async () => undefined, signOut: async () => undefined,
     accessToken: async () => token, refreshToken: vi.fn(async () => refreshed), settled: async () => undefined,
   };
@@ -19,7 +19,7 @@ const refusal = (status: number, code: string) =>
 beforeEach(() => { vi.stubEnv('VITE_PUBLIC_ANALYTICS_URL', 'https://p.supabase.co/functions/v1'); });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetModules(); });
 
-const scope = { start: '2026-01-01', end: '2026-01-31', category: 'all' as const, region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+const scope = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-01-31', category: 'all' as const, region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
 
 describe('statistics client while the map is contributor-only', () => {
   it('sends the signed-in token to the analytics URL only, without cookies', async () => {
@@ -61,7 +61,7 @@ describe('statistics client while the map is contributor-only', () => {
     const error = await loadDashboard(scope).catch((e: unknown) => e);
     expect(isAccessError(error)).toBe(false);
     expect(error).toMatchObject({ status: 503, code: 'AGGREGATE_NOT_READY' });
-    // the real cause is carried in the message for failure reports (R1: the old generic text hid a 400)
-    expect((error as Error).message).toContain('(AGGREGATE_NOT_READY, HTTP 503)');
+    // the real cause stays on the error (code/status) and the message is plain language (no HTTP jargon)
+    expect((error as Error).message).not.toMatch(/HTTP/);
   });
 });
