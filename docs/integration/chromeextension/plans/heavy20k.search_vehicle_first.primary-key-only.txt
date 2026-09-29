@@ -1,0 +1,288 @@
+LOG:  duration: 482.788 ms  plan:
+Query Text: 
+    -- the lineage check runs once per distinct grant (materialised: otherwise the planner pushes it into the
+    -- fact scan and calls it once per fact)
+    with grant_ids as materialized (
+        select distinct f.consent_grant_id as grant_id
+          from private.community_report_facts f where f.contributor_id = p_user
+    ),
+    grants as materialized (
+        select g.grant_id from grant_ids g where private.community_lineage_active(g.grant_id)
+    ),
+    own as materialized (
+        -- hex/ASCII keys sorted in byte order ("C"): the window sorts run over every own observation
+        select f.source_report_key collate "C" as source_report_key, f.dataset_key collate "C" as dataset_key,
+               f.report_number collate "C" as report_number, f.source_report_id, f.vehicle_raw, f.report_date,
+               f.completed_date, f.category, f.status, f.disposition, f.amount_kind, f.amount_confirmed_won,
+               f.penalty_points, f.address, f.lat, f.lng, f.agency_key, f.agency_name, f.agency_current_name,
+               f.manager_key, f.manager_name, f.violation_law, f.rating, f.payload_sha256 collate "C" as payload_sha256,
+               f.answer_accepted_at,
+               f.first_accepted_at
+          from private.community_report_facts f
+          join grants g on g.grant_id = f.consent_grant_id
+         where f.contributor_id = p_user
+           and f.public_state = 'completed'
+           and f.status in ('accepted', 'partial', 'rejected', 'completed_unknown')
+    ),
+    -- the number a key was first seen with, over the user's own consent-active completed history only
+    key_numbers as (
+        select distinct on (o.source_report_key) o.source_report_key, o.report_number as key_number
+          from own o
+         order by o.source_report_key, (o.report_number is null), o.first_accepted_at, o.dataset_key
+    ),
+    identified as (
+        select o.*,
+               o.source_report_key || '|' || coalesce(o.report_number, k.key_number, 'legacy') as rid,
+               max(o.answer_accepted_at) over (
+                   partition by o.source_report_key, coalesce(o.report_number, k.key_number, 'legacy'), o.payload_sha256
+               ) as answer_time
+          from own o join key_numbers k using (source_report_key)
+    ),
+    ranked as (
+        select i.*,
+               row_number() over (partition by i.rid
+                                  order by i.answer_time desc, i.completed_date desc nulls last,
+                                           i.first_accepted_at, i.dataset_key) as rn
+          from identified i
+    )
+    select (r.rid, r.report_number, r.source_report_id, r.vehicle_raw, r.report_date, r.completed_date, r.category,
+            r.status, r.disposition, r.amount_kind, r.amount_confirmed_won, r.penalty_points, r.address, r.lat, r.lng,
+            r.agency_key, r.agency_name, r.agency_current_name, r.manager_key, r.manager_name, r.violation_law,
+            r.rating)::private.my_reports_row
+      from ranked r
+     where r.rn = 1;
+
+Subquery Scan on r  (cost=4718.95..4725.15 rows=1 width=32) (actual time=388.757..477.633 rows=20000 loops=1)
+  Filter: (r.rn = 1)
+  Buffers: shared hit=8167
+  CTE grant_ids
+    ->  HashAggregate  (cost=2294.05..2297.16 rows=311 width=16) (actual time=26.128..31.220 rows=1 loops=1)
+          Group Key: f.consent_grant_id
+          Batches: 1  Memory Usage: 37kB
+          Buffers: shared hit=4063
+          ->  Bitmap Heap Scan on community_report_facts f  (cost=157.18..2292.55 rows=598 width=16) (actual time=7.080..24.252 rows=40000 loops=1)
+                Recheck Cond: (contributor_id = $1)
+                Heap Blocks: exact=2858
+                Buffers: shared hit=4063
+                ->  Bitmap Index Scan on community_report_facts_pkey  (cost=0.00..157.03 rows=598 width=0) (actual time=6.682..7.706 rows=40000 loops=1)
+                      Index Cond: (contributor_id = $1)
+                      Buffers: shared hit=1205
+  CTE grants
+    ->  CTE Scan on grant_ids g  (cost=0.00..83.97 rows=104 width=16) (actual time=26.657..27.581 rows=1 loops=1)
+          Filter: private.community_lineage_active(grant_id)
+          Buffers: shared hit=4090
+  CTE own
+    ->  Hash Join  (cost=160.56..2304.21 rows=155 width=373) (actual time=31.622..76.083 rows=40000 loops=1)
+          Hash Cond: (f_1.consent_grant_id = g_1.grant_id)
+          Buffers: shared hit=8153
+          ->  Bitmap Heap Scan on community_report_facts f_1  (cost=157.18..2297.04 rows=598 width=474) (actual time=4.932..33.883 rows=40000 loops=1)
+                Recheck Cond: (contributor_id = $1)
+                Filter: ((public_state = 'completed'::text) AND (status = ANY ('{accepted,partial,rejected,completed_unknown}'::text[])))
+                Heap Blocks: exact=2858
+                Buffers: shared hit=4063
+                ->  Bitmap Index Scan on community_report_facts_pkey  (cost=0.00..157.03 rows=598 width=0) (actual time=4.549..5.479 rows=40000 loops=1)
+                      Index Cond: (contributor_id = $1)
+                      Buffers: shared hit=1205
+          ->  Hash  (cost=2.08..2.08 rows=104 width=16) (actual time=26.668..29.633 rows=1 loops=1)
+                Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                Buffers: shared hit=4090
+                ->  CTE Scan on grants g_1  (cost=0.00..2.08 rows=104 width=16) (actual time=26.659..27.562 rows=1 loops=1)
+                      Buffers: shared hit=4090
+  ->  WindowAgg  (cost=33.61..37.87 rows=155 width=648) (actual time=388.751..439.705 rows=20000 loops=1)
+        Run Condition: (row_number() OVER (?) <= 1)
+        Buffers: shared hit=8167
+        ->  Sort  (cost=33.61..34.00 rows=155 width=568) (actual time=388.737..415.276 rows=40000 loops=1)
+              Sort Key: i.rid COLLATE "C", i.answer_time DESC, i.completed_date DESC NULLS LAST, i.first_accepted_at, i.dataset_key COLLATE "C"
+              Sort Method: quicksort  Memory: 16895kB
+              Buffers: shared hit=8167
+              ->  Subquery Scan on i  (cost=22.16..27.97 rows=155 width=568) (actual time=286.220..361.173 rows=40000 loops=1)
+                    Buffers: shared hit=8158
+                    ->  WindowAgg  (cost=22.16..26.42 rows=155 width=672) (actual time=286.218..352.879 rows=40000 loops=1)
+                          Buffers: shared hit=8158
+                          ->  Sort  (cost=22.16..22.55 rows=155 width=664) (actual time=286.199..310.106 rows=40000 loops=1)
+                                Sort Key: o.source_report_key COLLATE "C", (COALESCE(o.report_number, k.key_number, 'legacy'::text)) COLLATE "C", o.payload_sha256 COLLATE "C"
+                                Sort Method: quicksort  Memory: 20020kB
+                                Buffers: shared hit=8158
+                                ->  Hash Join  (cost=13.00..16.52 rows=155 width=664) (actual time=198.062..237.477 rows=40000 loops=1)
+                                      Hash Cond: (o.source_report_key = k.source_report_key)
+                                      Buffers: shared hit=8158
+                                      ->  CTE Scan on own o  (cost=0.00..3.10 rows=155 width=600) (actual time=31.627..38.419 rows=40000 loops=1)
+                                            Buffers: shared hit=5296
+                                      ->  Hash  (cost=11.06..11.06 rows=155 width=64) (actual time=166.417..175.226 rows=20000 loops=1)
+                                            Buckets: 32768 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 2503kB
+                                            Buffers: shared hit=2862
+                                            ->  Subquery Scan on k  (cost=8.74..11.06 rows=155 width=64) (actual time=145.200..166.896 rows=20000 loops=1)
+                                                  Buffers: shared hit=2862
+                                                  ->  Unique  (cost=8.74..9.51 rows=155 width=105) (actual time=145.195..162.625 rows=20000 loops=1)
+                                                        Buffers: shared hit=2862
+                                                        ->  Sort  (cost=8.74..9.13 rows=155 width=105) (actual time=145.162..152.683 rows=40000 loops=1)
+                                                              Sort Key: o_1.source_report_key COLLATE "C", ((o_1.report_number IS NULL)), o_1.first_accepted_at, o_1.dataset_key COLLATE "C"
+                                                              Sort Method: quicksort  Memory: 8724kB
+                                                              Buffers: shared hit=2862
+                                                              ->  CTE Scan on own o_1  (cost=0.00..3.10 rows=155 width=105) (actual time=0.002..119.702 rows=40000 loops=1)
+                                                                    Buffers: shared hit=2857
+LOG:  duration: 537.089 ms  plan:
+Query Text: select array_agg(o)            from private.my_reports_own(p_user) o
+Aggregate  (cost=12.75..12.76 rows=1 width=32) (actual time=533.294..533.296 rows=1 loops=1)
+  Buffers: shared hit=8971, temp read=714 written=714
+  ->  Function Scan on my_reports_own o  (cost=0.25..10.25 rows=1000 width=24) (actual time=508.704..522.751 rows=20000 loops=1)
+        Buffers: shared hit=8971, temp read=714 written=714
+LOG:  duration: 92.072 ms  plan:
+Query Text: 
+    select left(encode(sha256(convert_to(
+        coalesce((select string_agg(u::text, E'\n' order by u.identity collate "C")
+                    from unnest(coalesce(p, '{}'::private.my_reports_row[])) u), '')
+        || E'\n#' || coalesce(p_contributor, ''), 'UTF8')), 'hex'), 32);
+
+Result  (cost=0.38..0.41 rows=1 width=32) (actual time=92.065..92.067 rows=1 loops=1)
+  Buffers: temp read=1692 written=1694
+  InitPlan 1
+    ->  Aggregate  (cost=0.37..0.38 rows=1 width=32) (actual time=74.067..74.069 rows=1 loops=1)
+          Buffers: temp read=1692 written=1694
+          ->  Sort  (cost=0.27..0.29 rows=10 width=88) (actual time=29.165..32.370 rows=20000 loops=1)
+                Sort Key: u.identity COLLATE "C"
+                Sort Method: external merge  Disk: 7824kB
+                Buffers: temp read=1692 written=1694
+                ->  Function Scan on unnest u  (cost=0.00..0.10 rows=10 width=88) (actual time=4.904..18.943 rows=20000 loops=1)
+                      Buffers: temp read=714 written=714
+LOG:  duration: 28.357 ms  plan:
+Query Text: select array_agg(u)            from unnest(coalesce(v_own, '{}'::private.my_reports_row[])) u
+     where private.my_reports_matches(u, p_kind, v_query)
+Aggregate  (cost=416.59..416.60 rows=1 width=32) (actual time=27.826..27.827 rows=1 loops=1)
+  Buffers: temp read=714 written=714
+  ->  Function Scan on unnest u  (cost=0.00..400.00 rows=6633 width=24) (actual time=5.503..26.194 rows=2857 loops=1)
+        Filter: ((vehicle_raw IS NOT NULL) AND (strpos(regexp_replace("normalize"(vehicle_raw, 'NFC'::text), '[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]'::text, ''::text, 'g'::text), '12가3456'::text) > 0))
+        Rows Removed by Filter: 17143
+        Buffers: temp read=714 written=714
+LOG:  duration: 2.289 ms  plan:
+Query Text: 
+    with r as (
+        select u.*,
+               (u.disposition = 'fine' and u.amount_kind = 'fine' and u.status in ('accepted', 'partial')
+                and u.amount_confirmed_won is not null) as confirmed
+          from unnest(coalesce(p, '{}'::private.my_reports_row[])) u
+    )
+    select jsonb_build_object(
+        'total', count(*),
+        'status', jsonb_build_object(
+            'accepted', count(*) filter (where status = 'accepted'),
+            'partial', count(*) filter (where status = 'partial'),
+            'rejected', count(*) filter (where status = 'rejected'),
+            'completed_unknown', count(*) filter (where status = 'completed_unknown')),
+        'accept_rate', case when count(*) = 0 then null
+                            else round(count(*) filter (where status = 'accepted') * 100.0 / count(*), 1) end,
+        'disposition', jsonb_build_object(
+            'fine', count(*) filter (where disposition = 'fine'),
+            'warning', count(*) filter (where disposition = 'warning'),
+            'penalty', count(*) filter (where disposition = 'penalty'),
+            'none', count(*) filter (where disposition = 'none'),
+            'unknown', count(*) filter (where disposition = 'unknown')),
+        'fine_amount', jsonb_build_object(
+            'fine_count', count(*) filter (where disposition = 'fine'),
+            'confirmed_count', count(*) filter (where confirmed),
+            'confirmed_sum_won', (sum(amount_confirmed_won) filter (where confirmed))::bigint,
+            'unconfirmed_count', count(*) filter (where disposition = 'fine' and amount_confirmed_won is null),
+            'other_count', count(*) filter (where disposition = 'fine' and amount_confirmed_won is not null and not confirmed)),
+        'category', jsonb_build_object(
+            'traffic', count(*) filter (where category = 'traffic'),
+            'parking', count(*) filter (where category = 'parking'),
+            'other', count(*) filter (where category = 'other')),
+        'completed_date_missing', count(*) filter (where completed_date is null),
+        'report_number_missing', count(*) filter (where report_number is null))
+      from r;
+
+Aggregate  (cost=1.16..1.20 rows=1 width=32) (actual time=2.286..2.287 rows=1 loops=1)
+  ->  Function Scan on unnest u  (cost=0.00..0.10 rows=10 width=172) (actual time=0.713..0.876 rows=2857 loops=1)
+LOG:  duration: 5.006 ms  plan:
+Query Text: 
+    select coalesce(jsonb_agg(private.my_reports_row_json(s.x) order by s.ord), '[]'::jsonb)
+      from (select u, row_number() over (order by u.completed_date desc nulls last, u.report_date desc nulls last,
+                                                  u.report_number collate "C" desc nulls last, u.identity collate "C") as ord
+              from unnest(coalesce(p, '{}'::private.my_reports_row[])) u) s(x, ord)
+     where s.ord > p_offset and s.ord <= p_offset + p_limit;
+
+Aggregate  (cost=1.43..1.44 rows=1 width=32) (actual time=4.992..4.994 rows=1 loops=1)
+  Buffers: shared hit=3
+  ->  Sort  (cost=0.67..0.67 rows=3 width=104) (actual time=3.852..3.855 rows=20 loops=1)
+        Sort Key: s.ord
+        Sort Method: quicksort  Memory: 31kB
+        Buffers: shared hit=3
+        ->  Subquery Scan on s  (cost=0.29..0.64 rows=3 width=104) (actual time=3.819..3.831 rows=20 loops=1)
+              Filter: (s.ord > $2)
+              ->  WindowAgg  (cost=0.29..0.52 rows=10 width=176) (actual time=3.818..3.827 rows=20 loops=1)
+                    Run Condition: (row_number() OVER (?) <= ($2 + $3))
+                    ->  Sort  (cost=0.27..0.29 rows=10 width=168) (actual time=3.811..3.812 rows=21 loops=1)
+                          Sort Key: u.completed_date DESC NULLS LAST, u.report_date DESC NULLS LAST, ((u.report_number)::text) COLLATE "C" DESC NULLS LAST, ((u.identity)::text) COLLATE "C"
+                          Sort Method: quicksort  Memory: 1318kB
+                          ->  Function Scan on unnest u  (cost=0.00..0.10 rows=10 width=168) (actual time=0.550..2.322 rows=2857 loops=1)
+LOG:  duration: 50.870 ms  plan:
+Query Text: 
+    with rows as (select u.* from unnest(coalesce(p, '{}'::private.my_reports_row[])) u where u.manager_key is not null),
+    groups as (
+        select g.agency_key, g.manager_key,
+               private.my_reports_stats(array_agg(g::private.my_reports_row)) as st,
+               (array_agg(g.manager_name order by g.completed_date desc nulls last, g.report_date desc nulls last,
+                          g.identity collate "C"))[1] as manager_name,
+               (array_agg(g.agency_name order by g.completed_date desc nulls last, g.report_date desc nulls last,
+                          g.identity collate "C"))[1] as agency_name,
+               (array_agg(g.agency_current_name order by g.completed_date desc nulls last, g.report_date desc nulls last,
+                          g.identity collate "C"))[1] as agency_current_name
+          from rows g
+         group by g.agency_key, g.manager_key
+    ),
+    ordered as (
+        select gr.*, row_number() over (order by (gr.st->>'total')::integer desc, gr.manager_name collate "C" nulls last,
+                                                  gr.agency_key collate "C" nulls last, gr.manager_key collate "C") as ord
+          from groups gr
+    )
+    select jsonb_build_object(
+        'items', coalesce((select jsonb_agg(jsonb_build_object(
+                    'agency_key', o.agency_key, 'manager_key', o.manager_key, 'manager_name', o.manager_name,
+                    'agency_name_original', o.agency_name, 'agency_name_current', o.agency_current_name,
+                    'total', o.st->'total', 'status', o.st->'status', 'accept_rate', o.st->'accept_rate',
+                    'disposition', o.st->'disposition', 'fine_amount', o.st->'fine_amount') order by o.ord)
+                  from ordered o where o.ord > p_offset and o.ord <= p_offset + p_limit), '[]'::jsonb),
+        'total_managers', (select count(*) from groups),
+        'unassigned_count', (select count(*) from unnest(coalesce(p, '{}'::private.my_reports_row[])) u where u.manager_key is null));
+
+Result  (cost=4.48..4.49 rows=1 width=32) (actual time=50.862..50.866 rows=1 loops=1)
+  Buffers: shared hit=3
+  CTE groups
+    ->  GroupAggregate  (cost=0.27..3.14 rows=10 width=192) (actual time=7.299..48.264 rows=400 loops=1)
+          Group Key: u.agency_key, u.manager_key
+          ->  Sort  (cost=0.27..0.29 rows=10 width=520) (actual time=6.718..7.132 rows=2857 loops=1)
+                Sort Key: u.agency_key, u.manager_key, u.completed_date DESC NULLS LAST, u.report_date DESC NULLS LAST, u.identity COLLATE "C"
+                Sort Method: quicksort  Memory: 942kB
+                ->  Function Scan on unnest u  (cost=0.00..0.10 rows=10 width=520) (actual time=0.298..0.817 rows=2857 loops=1)
+                      Filter: (manager_key IS NOT NULL)
+  InitPlan 2
+    ->  Aggregate  (cost=0.98..0.99 rows=1 width=32) (actual time=49.595..49.597 rows=1 loops=1)
+          Buffers: shared hit=3
+          ->  Sort  (cost=0.91..0.92 rows=3 width=200) (actual time=49.455..49.457 rows=10 loops=1)
+                Sort Key: o.ord
+                Sort Method: quicksort  Memory: 32kB
+                Buffers: shared hit=3
+                ->  Subquery Scan on o  (cost=0.47..0.89 rows=3 width=200) (actual time=49.433..49.444 rows=10 loops=1)
+                      Filter: (o.ord > $2)
+                      Buffers: shared hit=3
+                      ->  WindowAgg  (cost=0.47..0.77 rows=10 width=300) (actual time=49.431..49.440 rows=10 loops=1)
+                            Run Condition: (row_number() OVER (?) <= ($2 + $3))
+                            Buffers: shared hit=3
+                            ->  Sort  (cost=0.44..0.47 rows=10 width=292) (actual time=49.425..49.427 rows=11 loops=1)
+                                  Sort Key: (((gr.st ->> 'total'::text))::integer) DESC, ((gr.manager_name)::text) COLLATE "C", ((gr.agency_key)::text) COLLATE "C", ((gr.manager_key)::text) COLLATE "C"
+                                  Sort Method: quicksort  Memory: 330kB
+                                  Buffers: shared hit=3
+                                  ->  CTE Scan on groups gr  (cost=0.00..0.28 rows=10 width=292) (actual time=7.304..48.992 rows=400 loops=1)
+  InitPlan 3
+    ->  Aggregate  (cost=0.23..0.24 rows=1 width=8) (actual time=0.079..0.079 rows=1 loops=1)
+          ->  CTE Scan on groups  (cost=0.00..0.20 rows=10 width=0) (actual time=0.000..0.054 rows=400 loops=1)
+  InitPlan 4
+    ->  Aggregate  (cost=0.11..0.12 rows=1 width=8) (actual time=1.118..1.118 rows=1 loops=1)
+          ->  Function Scan on unnest u_1  (cost=0.00..0.10 rows=1 width=0) (actual time=1.115..1.115 rows=0 loops=1)
+                Filter: (manager_key IS NULL)
+                Rows Removed by Filter: 2857
+LOG:  duration: 743.815 ms  plan:
+Query Text: select octet_length(public.internal_my_reports_search('1ede8feb-52b1-4951-bfdd-0b7ae200e081'::uuid, '56ff875b-d97c-4726-839e-2215c34f57d0'::uuid, 'vehicle', '12가3456', true, 0, 20, 0, 10, null)::text);
+Result  (cost=0.00..0.27 rows=1 width=4) (actual time=743.809..743.810 rows=1 loops=1)
+  Buffers: shared hit=10346, temp read=3120 written=3122
+18007

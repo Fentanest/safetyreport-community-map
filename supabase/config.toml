@@ -9,6 +9,7 @@ verify_jwt = true
 [functions.my-analytics]
 verify_jwt = true
 
-# Extension personal completed-report read API: gateway and handler both verify the user JWT.
+# User-only read of the user's own completed reports (Chrome extension, contracts/my-reports): platform JWT check AND
+# getUser + claims in server/myReports/handler.ts AND the DB identity/session gate in internal_my_reports_*.
 [functions.my-reports]
 verify_jwt = true

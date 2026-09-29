@@ -1,0 +1,132 @@
+{
+  "contract": "my-reports-v1",
+  "route": "summary",
+  "data_version": "da741b772aaf8bbadb82c3f622452f03",
+  "queried_at": "2026-09-29T03:00:00.000Z",
+  "timezone": "Asia/Seoul",
+  "recent_start": "2026-09-27",
+  "recent_end": "2026-09-29",
+  "account": {
+    "contributor": "active"
+  },
+  "summary": {
+    "total": 12,
+    "status": {
+      "accepted": 7,
+      "partial": 1,
+      "rejected": 3,
+      "completed_unknown": 1
+    },
+    "accept_rate": 58.3,
+    "disposition": {
+      "fine": 3,
+      "warning": 1,
+      "penalty": 1,
+      "none": 6,
+      "unknown": 1
+    },
+    "fine_amount": {
+      "fine_count": 3,
+      "confirmed_count": 2,
+      "confirmed_sum_won": 40000,
+      "unconfirmed_count": 1,
+      "other_count": 0
+    },
+    "category": {
+      "traffic": 2,
+      "parking": 10,
+      "other": 0
+    },
+    "completed_date_missing": 1,
+    "report_number_missing": 1
+  },
+  "recent_summary": {
+    "total": 3,
+    "status": {
+      "accepted": 1,
+      "partial": 1,
+      "rejected": 1,
+      "completed_unknown": 0
+    },
+    "accept_rate": 33.3,
+    "disposition": {
+      "fine": 1,
+      "warning": 1,
+      "penalty": 0,
+      "none": 1,
+      "unknown": 0
+    },
+    "fine_amount": {
+      "fine_count": 1,
+      "confirmed_count": 1,
+      "confirmed_sum_won": 40000,
+      "unconfirmed_count": 0,
+      "other_count": 0
+    },
+    "category": {
+      "traffic": 0,
+      "parking": 3,
+      "other": 0
+    },
+    "completed_date_missing": 0,
+    "report_number_missing": 0
+  },
+  "recent": {
+    "items": [
+      {
+        "report_number": "SPP-2609-00000001",
+        "source_report_id": "9100000001",
+        "official_url": "https://www.safetyreport.go.kr/#mypage/mysafereport/9100000001",
+        "vehicle_number": "12가3456",
+        "report_date": "2026-09-20",
+        "completed_date": "2026-09-29",
+        "category": "parking",
+        "status": "accepted",
+        "status_label": "수용",
+        "disposition": "fine",
+        "amount_kind": "fine",
+        "confirmed_amount_won": 40000,
+        "penalty_points": null,
+        "address": "서울특별시 종로구 예시로 1",
+        "lat": 37.5731,
+        "lng": 126.9794,
+        "agency_key": "inst:9000001",
+        "agency_name_original": "예시 종로경찰서",
+        "agency_name_current": "예시 종로경찰서",
+        "manager_key": "m1:example-m1",
+        "manager_name": "박담당",
+        "violation_law": "도로교통법 제32조",
+        "rating": 5
+      },
+      {
+        "report_number": "SPP-2609-00000002",
+        "source_report_id": "9100000002",
+        "official_url": "https://www.safetyreport.go.kr/#mypage/mysafereport/9100000002",
+        "vehicle_number": "12가3456",
+        "report_date": "2026-09-19",
+        "completed_date": "2026-09-28",
+        "category": "parking",
+        "status": "rejected",
+        "status_label": "불수용",
+        "disposition": "none",
+        "amount_kind": "unknown",
+        "confirmed_amount_won": null,
+        "penalty_points": null,
+        "address": "서울특별시 종로구 예시로 1 (예시동)",
+        "lat": null,
+        "lng": null,
+        "agency_key": "inst:9000001",
+        "agency_name_original": "예시 종로경찰서",
+        "agency_name_current": "예시 종로경찰서",
+        "manager_key": "m1:example-m1",
+        "manager_name": "박담당",
+        "violation_law": null,
+        "rating": null
+      }
+    ],
+    "total": 3,
+    "page_size": 2,
+    "offset": 0,
+    "next_cursor": "eyJ2IjoxLCJyIjoic3VtbWFyeS5yZWNlbnQiLCJ1IjoiYjg2YTlhZjkxMDU2MzcyNjg5OTE2Nzc5YjI0ODVkYTAiLCJxIjoiIiwiZHYiOiJkYTc0MWI3NzJhYWY4YmJhZGI4MmMzZjYyMjQ1MmYwMyIsIm8iOjIsIm4iOjIsInJzIjoiMjAyNi0wOS0yNyIsInJlIjoiMjAyNi0wOS0yOSIsImV4IjoxNzkwNjUxNzAwfQ.WIRDFLZxyaT2gXSsV2cRjjGYzVNbrj6if2FyE2vOU0g"
+  }
+}

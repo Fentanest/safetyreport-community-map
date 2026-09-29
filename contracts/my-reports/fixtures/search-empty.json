@@ -1,0 +1,57 @@
+{
+  "contract": "my-reports-v1",
+  "route": "search",
+  "kind": "address",
+  "query_normalized": "부산광역시 중구 예시로 7",
+  "data_version": "da741b772aaf8bbadb82c3f622452f03",
+  "queried_at": "2026-09-29T03:00:00.000Z",
+  "account": {
+    "contributor": "active"
+  },
+  "summary": {
+    "total": 0,
+    "status": {
+      "accepted": 0,
+      "partial": 0,
+      "rejected": 0,
+      "completed_unknown": 0
+    },
+    "accept_rate": null,
+    "disposition": {
+      "fine": 0,
+      "warning": 0,
+      "penalty": 0,
+      "none": 0,
+      "unknown": 0
+    },
+    "fine_amount": {
+      "fine_count": 0,
+      "confirmed_count": 0,
+      "confirmed_sum_won": null,
+      "unconfirmed_count": 0,
+      "other_count": 0
+    },
+    "category": {
+      "traffic": 0,
+      "parking": 0,
+      "other": 0
+    },
+    "completed_date_missing": 0,
+    "report_number_missing": 0
+  },
+  "reports": {
+    "items": [],
+    "total": 0,
+    "page_size": 20,
+    "offset": 0,
+    "next_cursor": null
+  },
+  "managers": {
+    "items": [],
+    "total_managers": 0,
+    "unassigned_count": 0,
+    "page_size": 10,
+    "offset": 0,
+    "next_cursor": null
+  }
+}

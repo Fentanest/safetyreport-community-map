@@ -1,0 +1,11 @@
+{
+  "http_status": 400,
+  "body": {
+    "error": {
+      "code": "INVALID_CURSOR",
+      "message": "페이지 정보가 올바르지 않습니다. 처음부터 다시 조회해 주세요.",
+      "retryable": false
+    },
+    "request_id": "00000000-0000-4000-8000-000000000000"
+  }
+}

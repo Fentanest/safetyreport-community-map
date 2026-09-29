@@ -1,0 +1,11 @@
+{
+  "http_status": 400,
+  "body": {
+    "error": {
+      "code": "QUERY_LENGTH",
+      "message": "검색어 길이가 조건에 맞지 않습니다.",
+      "retryable": false
+    },
+    "request_id": "00000000-0000-4000-8000-000000000000"
+  }
+}

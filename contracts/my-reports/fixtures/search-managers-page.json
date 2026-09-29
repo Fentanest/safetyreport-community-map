@@ -1,0 +1,51 @@
+{
+  "contract": "my-reports-v1",
+  "route": "search",
+  "kind": "vehicle",
+  "query_normalized": "12가3456",
+  "data_version": "da741b772aaf8bbadb82c3f622452f03",
+  "queried_at": "2026-09-29T03:00:00.000Z",
+  "account": {
+    "contributor": "active"
+  },
+  "summary": null,
+  "reports": null,
+  "managers": {
+    "items": [
+      {
+        "agency_key": "a1:example-g2",
+        "manager_key": "m1:example-m2",
+        "manager_name": "김담당",
+        "agency_name_original": "예시구청(구)",
+        "agency_name_current": "예시구청",
+        "total": 2,
+        "status": {
+          "accepted": 1,
+          "partial": 1,
+          "rejected": 0,
+          "completed_unknown": 0
+        },
+        "accept_rate": 50,
+        "disposition": {
+          "fine": 1,
+          "warning": 1,
+          "penalty": 0,
+          "none": 0,
+          "unknown": 0
+        },
+        "fine_amount": {
+          "fine_count": 1,
+          "confirmed_count": 0,
+          "confirmed_sum_won": null,
+          "unconfirmed_count": 1,
+          "other_count": 0
+        }
+      }
+    ],
+    "total_managers": 2,
+    "unassigned_count": 3,
+    "page_size": 1,
+    "offset": 1,
+    "next_cursor": null
+  }
+}

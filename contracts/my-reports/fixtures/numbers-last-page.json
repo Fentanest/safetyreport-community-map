@@ -1,0 +1,21 @@
+{
+  "contract": "my-reports-v1",
+  "route": "numbers",
+  "kind": "vehicle",
+  "query_normalized": "12가3456",
+  "data_version": "da741b772aaf8bbadb82c3f622452f03",
+  "queried_at": "2026-09-29T03:00:00.000Z",
+  "account": {
+    "contributor": "active"
+  },
+  "matched_reports": 10,
+  "without_number": 1,
+  "unique_numbers": 9,
+  "items": [
+    "SPP-2512-00000007"
+  ],
+  "page_size": 4,
+  "offset": 8,
+  "next_cursor": null,
+  "complete": true
+}

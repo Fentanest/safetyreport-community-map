@@ -1,0 +1,925 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://safemap.worklazy.net/contracts/my-reports/my-reports-v1.schema.json",
+  "title": "my-reports-v1",
+  "description": "Canonical request/response shapes of POST /functions/v1/my-reports/{search,summary,numbers}. Prose: README.md. Types: types.ts.",
+  "$defs": {
+    "Kind": {
+      "enum": [
+        "vehicle",
+        "address"
+      ]
+    },
+    "Status": {
+      "enum": [
+        "accepted",
+        "partial",
+        "rejected",
+        "completed_unknown"
+      ]
+    },
+    "Disposition": {
+      "enum": [
+        "fine",
+        "warning",
+        "penalty",
+        "none",
+        "unknown"
+      ]
+    },
+    "Category": {
+      "enum": [
+        "traffic",
+        "parking",
+        "other"
+      ]
+    },
+    "AmountKind": {
+      "enum": [
+        "fine",
+        "penalty",
+        "combined",
+        "unknown"
+      ]
+    },
+    "DataVersion": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "StatusCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accepted",
+        "partial",
+        "rejected",
+        "completed_unknown"
+      ],
+      "properties": {
+        "accepted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "partial": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completed_unknown": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "DispositionCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fine",
+        "warning",
+        "penalty",
+        "none",
+        "unknown"
+      ],
+      "properties": {
+        "fine": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warning": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "penalty": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "none": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknown": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "CategoryCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "traffic",
+        "parking",
+        "other"
+      ],
+      "properties": {
+        "traffic": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "parking": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "other": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "FineAmount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fine_count",
+        "confirmed_count",
+        "confirmed_sum_won",
+        "unconfirmed_count",
+        "other_count"
+      ],
+      "properties": {
+        "fine_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confirmed_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confirmed_sum_won": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "unconfirmed_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "other_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "Summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "status",
+        "accept_rate",
+        "disposition",
+        "fine_amount",
+        "category",
+        "completed_date_missing",
+        "report_number_missing"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "$ref": "#/$defs/StatusCounts"
+        },
+        "accept_rate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "disposition": {
+          "$ref": "#/$defs/DispositionCounts"
+        },
+        "fine_amount": {
+          "$ref": "#/$defs/FineAmount"
+        },
+        "category": {
+          "$ref": "#/$defs/CategoryCounts"
+        },
+        "completed_date_missing": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "report_number_missing": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "ReportRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_number",
+        "source_report_id",
+        "official_url",
+        "vehicle_number",
+        "report_date",
+        "completed_date",
+        "category",
+        "status",
+        "status_label",
+        "disposition",
+        "amount_kind",
+        "confirmed_amount_won",
+        "penalty_points",
+        "address",
+        "lat",
+        "lng",
+        "agency_key",
+        "agency_name_original",
+        "agency_name_current",
+        "manager_key",
+        "manager_name",
+        "violation_law",
+        "rating"
+      ],
+      "properties": {
+        "report_number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^SPP-[0-9]{4,6}-[0-9]{6,8}$"
+        },
+        "source_report_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "official_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^https://www\\.safetyreport\\.go\\.kr/#mypage/mysafereport/[0-9A-Za-z_-]{1,40}$"
+        },
+        "vehicle_number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "report_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "completed_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "category": {
+          "$ref": "#/$defs/Category"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "status_label": {
+          "enum": [
+            "수용",
+            "일부 수용",
+            "불수용",
+            "결과 미상"
+          ]
+        },
+        "disposition": {
+          "$ref": "#/$defs/Disposition"
+        },
+        "amount_kind": {
+          "$ref": "#/$defs/AmountKind"
+        },
+        "confirmed_amount_won": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "penalty_points": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "address": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "lat": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "lng": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "agency_key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agency_name_original": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agency_name_current": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "manager_key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "manager_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "violation_law": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rating": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        }
+      }
+    },
+    "ManagerRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agency_key",
+        "manager_key",
+        "manager_name",
+        "agency_name_original",
+        "agency_name_current",
+        "total",
+        "status",
+        "accept_rate",
+        "disposition",
+        "fine_amount"
+      ],
+      "properties": {
+        "agency_key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "manager_key": {
+          "type": "string"
+        },
+        "manager_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agency_name_original": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "agency_name_current": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "$ref": "#/$defs/StatusCounts"
+        },
+        "accept_rate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "disposition": {
+          "$ref": "#/$defs/DispositionCounts"
+        },
+        "fine_amount": {
+          "$ref": "#/$defs/FineAmount"
+        }
+      }
+    },
+    "ReportPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "total",
+        "page_size",
+        "offset",
+        "next_cursor"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/ReportRow"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "next_cursor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    },
+    "ManagerPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "total_managers",
+        "unassigned_count",
+        "page_size",
+        "offset",
+        "next_cursor"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/ManagerRow"
+          }
+        },
+        "total_managers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unassigned_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "next_cursor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    },
+    "Account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contributor"
+      ],
+      "properties": {
+        "contributor": {
+          "enum": [
+            "active",
+            "none",
+            "revoked"
+          ]
+        }
+      }
+    },
+    "SearchRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "query"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "query": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "part": {
+          "enum": [
+            "reports",
+            "managers"
+          ]
+        },
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "managers_page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      }
+    },
+    "SummaryRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      }
+    },
+    "NumbersRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "query"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "query": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "cursor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        }
+      }
+    },
+    "SearchResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "route",
+        "kind",
+        "query_normalized",
+        "data_version",
+        "queried_at",
+        "account",
+        "summary",
+        "reports",
+        "managers"
+      ],
+      "properties": {
+        "contract": {
+          "const": "my-reports-v1"
+        },
+        "route": {
+          "const": "search"
+        },
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "query_normalized": {
+          "type": "string"
+        },
+        "data_version": {
+          "$ref": "#/$defs/DataVersion"
+        },
+        "queried_at": {
+          "$ref": "#/$defs/Instant"
+        },
+        "account": {
+          "$ref": "#/$defs/Account"
+        },
+        "summary": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Summary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reports": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ReportPage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "managers": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ManagerPage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SummaryResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "route",
+        "data_version",
+        "queried_at",
+        "timezone",
+        "recent_start",
+        "recent_end",
+        "account",
+        "summary",
+        "recent_summary",
+        "recent"
+      ],
+      "properties": {
+        "contract": {
+          "const": "my-reports-v1"
+        },
+        "route": {
+          "const": "summary"
+        },
+        "data_version": {
+          "$ref": "#/$defs/DataVersion"
+        },
+        "queried_at": {
+          "$ref": "#/$defs/Instant"
+        },
+        "timezone": {
+          "const": "Asia/Seoul"
+        },
+        "recent_start": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "recent_end": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "account": {
+          "$ref": "#/$defs/Account"
+        },
+        "summary": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Summary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recent_summary": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Summary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recent": {
+          "$ref": "#/$defs/ReportPage"
+        }
+      }
+    },
+    "NumbersResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "route",
+        "kind",
+        "query_normalized",
+        "data_version",
+        "queried_at",
+        "account",
+        "matched_reports",
+        "without_number",
+        "unique_numbers",
+        "items",
+        "page_size",
+        "offset",
+        "next_cursor",
+        "complete"
+      ],
+      "properties": {
+        "contract": {
+          "const": "my-reports-v1"
+        },
+        "route": {
+          "const": "numbers"
+        },
+        "kind": {
+          "$ref": "#/$defs/Kind"
+        },
+        "query_normalized": {
+          "type": "string"
+        },
+        "data_version": {
+          "$ref": "#/$defs/DataVersion"
+        },
+        "queried_at": {
+          "$ref": "#/$defs/Instant"
+        },
+        "account": {
+          "$ref": "#/$defs/Account"
+        },
+        "matched_reports": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "without_number": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unique_numbers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "string",
+            "pattern": "^SPP-[0-9]{4,6}-[0-9]{6,8}$"
+          }
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "next_cursor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "error",
+        "request_id"
+      ],
+      "properties": {
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "INVALID_REQUEST",
+                "QUERY_LENGTH",
+                "INVALID_CURSOR",
+                "AUTH_REQUIRED",
+                "SESSION_EXPIRED",
+                "KAKAO_REQUIRED",
+                "ACCOUNT_INELIGIBLE",
+                "ORIGIN_FORBIDDEN",
+                "NOT_FOUND",
+                "METHOD_NOT_ALLOWED",
+                "PAYLOAD_TOO_LARGE",
+                "UNSUPPORTED_MEDIA_TYPE",
+                "DATASET_CHANGED",
+                "CURSOR_EXPIRED",
+                "NUMBERS_LIMIT_EXCEEDED",
+                "RESULT_TOO_LARGE",
+                "RATE_LIMITED",
+                "SERVICE_UNAVAILABLE",
+                "QUERY_TIMEOUT"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

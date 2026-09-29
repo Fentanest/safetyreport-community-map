@@ -249,9 +249,12 @@ function compose(manifest) {
     ? JSON.parse(readFileSync(join(outDir, '.stack-secrets.json'), 'utf8'))
     : { AUTH_RELAY_HASH_PEPPER: randomBytes(32).toString('base64url'), AUTH_RELAY_ENCRYPTION_KEY: randomBytes(32).toString('base64url'),
         ANALYTICS_RATE_SALT: randomBytes(24).toString('base64url'), KAKAO_SECRET: randomBytes(24).toString('base64url') };
+  // added later than the other secrets: an existing .stack-secrets.json gets it on the next compose
+  if (!secrets.MY_REPORTS_CURSOR_SECRET) secrets.MY_REPORTS_CURSOR_SECRET = randomBytes(32).toString('base64url');
   writeFileSync(join(outDir, '.stack-secrets.json'), JSON.stringify(secrets), { mode: 0o600 });
   const fnEnv = { ...st.function_env, AUTH_RELAY_HASH_PEPPER: secrets.AUTH_RELAY_HASH_PEPPER,
-    AUTH_RELAY_ENCRYPTION_KEY: secrets.AUTH_RELAY_ENCRYPTION_KEY, ANALYTICS_RATE_SALT: secrets.ANALYTICS_RATE_SALT };
+    AUTH_RELAY_ENCRYPTION_KEY: secrets.AUTH_RELAY_ENCRYPTION_KEY, ANALYTICS_RATE_SALT: secrets.ANALYTICS_RATE_SALT,
+    MY_REPORTS_CURSOR_SECRET: secrets.MY_REPORTS_CURSOR_SECRET };
   writeFileSync(envFile, Object.entries(fnEnv).map(([k, v]) => `${k}=${v}`).join('\n') + '\n', { mode: 0o600 });
   chmodSync(envFile, 0o600);
   const p = st.ports;

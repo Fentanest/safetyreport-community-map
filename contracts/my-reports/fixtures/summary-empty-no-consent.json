@@ -1,0 +1,81 @@
+{
+  "contract": "my-reports-v1",
+  "route": "summary",
+  "data_version": "184831ebbd6c1bbe258065124452097a",
+  "queried_at": "2026-09-29T03:00:00.000Z",
+  "timezone": "Asia/Seoul",
+  "recent_start": "2026-09-27",
+  "recent_end": "2026-09-29",
+  "account": {
+    "contributor": "none"
+  },
+  "summary": {
+    "total": 0,
+    "status": {
+      "accepted": 0,
+      "partial": 0,
+      "rejected": 0,
+      "completed_unknown": 0
+    },
+    "accept_rate": null,
+    "disposition": {
+      "fine": 0,
+      "warning": 0,
+      "penalty": 0,
+      "none": 0,
+      "unknown": 0
+    },
+    "fine_amount": {
+      "fine_count": 0,
+      "confirmed_count": 0,
+      "confirmed_sum_won": null,
+      "unconfirmed_count": 0,
+      "other_count": 0
+    },
+    "category": {
+      "traffic": 0,
+      "parking": 0,
+      "other": 0
+    },
+    "completed_date_missing": 0,
+    "report_number_missing": 0
+  },
+  "recent_summary": {
+    "total": 0,
+    "status": {
+      "accepted": 0,
+      "partial": 0,
+      "rejected": 0,
+      "completed_unknown": 0
+    },
+    "accept_rate": null,
+    "disposition": {
+      "fine": 0,
+      "warning": 0,
+      "penalty": 0,
+      "none": 0,
+      "unknown": 0
+    },
+    "fine_amount": {
+      "fine_count": 0,
+      "confirmed_count": 0,
+      "confirmed_sum_won": null,
+      "unconfirmed_count": 0,
+      "other_count": 0
+    },
+    "category": {
+      "traffic": 0,
+      "parking": 0,
+      "other": 0
+    },
+    "completed_date_missing": 0,
+    "report_number_missing": 0
+  },
+  "recent": {
+    "items": [],
+    "total": 0,
+    "page_size": 20,
+    "offset": 0,
+    "next_cursor": null
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "contract": "my-reports-v1",
+  "route": "numbers",
+  "kind": "vehicle",
+  "query_normalized": "12가3456",
+  "data_version": "da741b772aaf8bbadb82c3f622452f03",
+  "queried_at": "2026-09-29T03:00:00.000Z",
+  "account": {
+    "contributor": "active"
+  },
+  "matched_reports": 10,
+  "without_number": 1,
+  "unique_numbers": 9,
+  "items": [
+    "SPP-2609-00000011",
+    "SPP-2609-00000010",
+    "SPP-2609-00000006",
+    "SPP-2609-00000004"
+  ],
+  "page_size": 4,
+  "offset": 0,
+  "next_cursor": "eyJ2IjoxLCJyIjoibnVtYmVycyIsInUiOiJiODZhOWFmOTEwNTYzNzI2ODk5MTY3NzliMjQ4NWRhMCIsInEiOiI0NDUxYjg1ODliMDI5MmYxNTVjMzc0OTEzZTU5YTk1NiIsImR2IjoiZGE3NDFiNzcyYWFmOGJiYWRiODJjM2Y2MjI0NTJmMDMiLCJvIjo0LCJuIjo0LCJleCI6MTc5MDY1MTcwMH0.6yp9bwrfRMvaG0fd27vV-tmOBYjiW4RO9MHOLSfyOzY",
+  "complete": false
+}

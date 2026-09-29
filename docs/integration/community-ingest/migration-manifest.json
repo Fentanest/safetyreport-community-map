@@ -23,7 +23,8 @@
    "AUTH_BROWSER_ORIGIN": "http://127.0.0.1:56480",
    "COMMUNITY_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490",
    "AUTH_PUBLIC_SUPABASE_URL": "http://127.0.0.1:56321",
-   "MY_ANALYTICS_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490"
+   "MY_ANALYTICS_ALLOWED_ORIGINS": "http://127.0.0.1:56480,http://127.0.0.1:56490",
+   "MY_REPORTS_ALLOWED_ORIGINS": "chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   }
  },
  "migrations": [
@@ -287,6 +288,34 @@
    "depends_on": [
     "202609290400"
    ]
+  },
+  {
+   "version": "202609300200",
+   "repo": "map",
+   "path": "supabase/migrations/202609300200_my_reports.sql",
+   "sha256": "5c61e37a82bb51c03205d79771788abdb5d418e5328970c5c1570c375850d0f8",
+   "depends_on": [
+    "202609300100"
+   ]
+  },
+  {
+   "version": "202610010100",
+   "repo": "map",
+   "path": "supabase/migrations/202610010100_single_date_cohort.sql",
+   "sha256": "342d72b93ebe0521ac0e038a93c48434d9e1637393cff90d0695b24642e32216",
+   "depends_on": [
+    "202609300100"
+   ]
+  },
+  {
+   "version": "202610020100",
+   "repo": "map",
+   "path": "supabase/migrations/202610020100_my_reports.sql",
+   "sha256": "85bf81e9a65514b33896326ecf9e2ca14e00c2eb42b3e90184f8bb2a1baa7222",
+   "depends_on": [
+    "202609300200",
+    "202610010100"
+   ]
   }
  ],
  "functions": [
@@ -295,8 +324,8 @@
    "repo": "map",
    "verify_jwt": true,
    "shared": [
-    "server/aggregate.ts",
     "server/agencyType.ts",
+    "server/aggregate.ts",
     "server/amount.ts",
     "server/analyticsDistributions.ts",
     "server/duration.ts",
@@ -308,7 +337,8 @@
     "server/viewerAuth.ts",
     "contracts/regions/regions-20260701.json",
     "src/domain/public.ts",
-    "src/domain/statistics.ts"
+    "src/domain/statistics.ts",
+    "src/domain/tableSort.ts"
    ]
   },
   {
@@ -372,7 +402,19 @@
     "contracts/regions/regions-20260701.json",
     "src/domain/personal.ts",
     "src/domain/public.ts",
-    "src/domain/statistics.ts"
+    "src/domain/statistics.ts",
+    "src/domain/tableSort.ts"
+   ]
+  },
+  {
+   "name": "my-reports",
+   "repo": "map",
+   "verify_jwt": true,
+   "shared": [
+    "contracts/my-reports/types.ts",
+    "server/myReports/cursor.ts",
+    "server/myReports/handler.ts",
+    "server/viewerAuth.ts"
    ]
   }
  ]
