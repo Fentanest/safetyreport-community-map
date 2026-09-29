@@ -166,7 +166,7 @@ describe('R5 ratings: fine row and paired mine rows', () => {
     const old = { ...all, rows: all.rows.filter(x => x.status !== 'fine') };
     const oldLine = ratingLines(old, null, 'off').find(l => l.key === 'fine')!;
     expect(oldLine.row).toBeNull();
-    expect(oldLine.note).toBe('서버 미지원');
+    expect(oldLine.note).toBe('제공 안 됨');
   });
 });
 

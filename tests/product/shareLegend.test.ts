@@ -48,7 +48,7 @@ describe('F02 share link', () => {
     const enc = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
     expect(decodeShare(enc({ ...good, extra: 1 })).ok).toBe(false);
     expect(decodeShare(enc({ ...good, spec: { ...good.spec, metrics: ["fine_rate'; drop table x;--"] } })).ok).toBe(false);
-    expect(decodeShare(enc({ ...good, v: 2 }))).toEqual({ ok: false, reason: '지원하지 않는 공유 링크 버전입니다.' });
+    expect(decodeShare(enc({ ...good, v: 2 }))).toEqual({ ok: false, reason: '이 사이트에서 열 수 없는 형식의 링크입니다.' });
     expect(decodeShare(enc({ ...good, scope: { ...good.scope, start: '2026-07-01' } })).ok).toBe(false);
     expect(decodeShare('%%%').ok).toBe(false);
     expect(decodeShare('A'.repeat(SHARE_LIMITS.encodedChars + 1)).ok).toBe(false);

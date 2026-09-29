@@ -67,27 +67,27 @@ const dateDims = (which: 'report' | 'completed', word: string): DimImpl[] => {
 
 const DIMS: DimImpl[] = [
   { id: 'sido', label: '시도', group: '지역·장소', roles: ['row', 'column', 'filter'], order: 'count', searchable: true,
-    description: '신고 위치의 시도(현재 행정경계)',
+    description: '신고 위치의 시도(지금의 행정구역 기준)',
     member: (f) => { const k = regionKeys(f).sido; return k ? { key: k, label: regionName(k) ?? k } : { key: NONE, label: '지역 미상' }; } },
   { id: 'sgg', label: '시군구', group: '지역·장소', roles: ['row', 'column', 'filter'], order: 'count', searchable: true,
-    description: '신고 위치의 시군구(현재 행정경계)',
+    description: '신고 위치의 시군구(지금의 행정구역 기준)',
     member: (f) => { const k = regionKeys(f).sgg; return k ? { key: k, label: regionName(k) ?? k } : { key: NONE, label: '지역 미상' }; } },
   { id: 'place', label: '주소', group: '지역·장소', roles: ['row', 'filter'], order: 'count', searchable: true,
-    description: '정규화한 신고 주소(같은 주소는 하나로 묶음)',
+    description: '신고 주소(같은 주소는 하나로 묶음)',
     member: (f) => { const k = placeKey(f); return k ? { key: k, label: f.address ?? '주소' } : { key: NONE, label: '주소 없음' }; } },
   { id: 'agency', label: '기관', group: '기관·담당자', roles: ['row', 'column', 'filter'], order: 'count', searchable: true,
-    description: '처리 기관(현행 표시명, 확인된 승계만 반영)',
+    description: '처리 기관(지금 쓰는 기관 이름)',
     member: (f) => (f.agency_key ? { key: f.agency_key, label: f.agency_current_name ?? f.agency_name ?? '기관' } : { key: NONE, label: '기관 없음' }) },
   { id: 'agency_type', label: '기관 유형', group: '기관·담당자', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
-    description: '경찰 / 경찰 외', natural: ['police', 'non_police', 'unknown'],
+    description: '경찰인지 아닌지', natural: ['police', 'non_police', 'unknown'],
     member: (f) => { const t = agencyTypeOf(f.agency_key, f.agency_name); return { key: t, label: t === 'police' ? '경찰' : t === 'non_police' ? '경찰 외' : '유형 미상' }; } },
   { id: 'manager', label: '담당자', group: '기관·담당자', roles: ['row', 'column', 'filter'], order: 'count', searchable: true,
-    description: '기관+담당자(다른 기관의 같은 이름은 별개)',
+    description: '담당자(기관이 다르면 이름이 같아도 다른 사람)',
     member: (f) => (f.agency_key && f.manager_key
       ? { key: `${f.agency_key}|${f.manager_key}`, label: `${f.manager_name ?? '이름 없음'} · ${f.agency_current_name ?? f.agency_name ?? '기관'}` }
       : { key: NONE, label: '담당자 없음' }) },
   { id: 'law', label: '위반법규', group: '법규·분류', roles: ['row', 'column', 'filter'], order: 'count', searchable: true,
-    description: '공개 허용된 위반법규(조 단위)',
+    description: '위반법규(조 단위)',
     member: (f) => { const k = lawKey(f.violation_law); return k ? { key: k, label: k } : { key: LAW_NONE, label: '법규 미상' }; } },
   { id: 'category', label: '신고 분류', group: '법규·분류', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
     description: '교통위반 / 주정차 / 기타', natural: ['traffic', 'parking', 'other'],
@@ -101,10 +101,10 @@ const DIMS: DimImpl[] = [
   ...dateDims('completed', '답변'),
   ...dateDims('report', '신고'),
   { id: 'rating', label: '별점', group: '구간', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
-    description: '공개 동의된 1~5점(없음·비공개는 따로)', natural: ['1', '2', '3', '4', '5', NONE],
+    description: '공개에 동의한 1~5점(별점이 없거나 비공개인 신고는 따로 셈)', natural: ['1', '2', '3', '4', '5', NONE],
     member: (f) => (f.rating != null && f.rating >= 1 && f.rating <= 5 ? { key: String(f.rating), label: `${f.rating}점` } : { key: NONE, label: '평가 없음·비공개' }) },
   { id: 'duration_bin', label: '처리기간 구간', group: '구간', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
-    description: `신고일→답변일 ${DURATION_BUCKET_DAYS}일 단위(계산 불가는 따로)`,
+    description: `신고한 날부터 답변 받은 날까지 걸린 기간, ${DURATION_BUCKET_DAYS}일 단위(계산할 수 없는 신고는 따로 셈)`,
     natural: [...Array.from({ length: DURATION_BUCKETS + 1 }, (_, i) => `d${i}`), NONE],
     member: (f) => {
       const r = durationOf(f);
@@ -113,7 +113,7 @@ const DIMS: DimImpl[] = [
       return { key: `d${i}`, label: i === DURATION_BUCKETS ? `${i * DURATION_BUCKET_DAYS}일 이상` : `${i * DURATION_BUCKET_DAYS}~${i * DURATION_BUCKET_DAYS + DURATION_BUCKET_DAYS - 1}일` };
     } },
   { id: 'amount_bin', label: '확인 과태료 금액 구간', group: '구간', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
-    description: '공개 동의되고 확인된 과태료 금액만(추정·미확인은 따로)', natural: [...AMOUNT_BINS.map((b) => b.key), NONE],
+    description: '공개에 동의하고 금액이 확인된 과태료만(확인되지 않은 금액은 따로 셈)', natural: [...AMOUNT_BINS.map((b) => b.key), NONE],
     member: (f) => {
       if (classifyAmount(f) !== 'confirmed' || f.amount_confirmed_won == null) return { key: NONE, label: '확인 금액 없음' };
       const won = f.amount_confirmed_won;
@@ -121,8 +121,8 @@ const DIMS: DimImpl[] = [
       return { key: b.key, label: b.label };
     } },
   { id: 'located', label: '위치 자료', group: '구간', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
-    description: '지도 좌표가 있는 신고인지', natural: ['yes', 'no'],
-    member: (f) => (f.lat !== null && f.lng !== null ? { key: 'yes', label: '좌표 있음' } : { key: 'no', label: '좌표 없음' }) },
+    description: '지도에 위치가 있는 신고인지', natural: ['yes', 'no'],
+    member: (f) => (f.lat !== null && f.lng !== null ? { key: 'yes', label: '위치 있음' } : { key: 'no', label: '위치 없음' }) },
 ];
 const DIM = new Map(DIMS.map((d) => [d.id, d]));
 
@@ -138,33 +138,33 @@ const days = (facts: readonly PrivateFact[]) => facts.map(durationOf).filter((r)
 const ratings = (facts: readonly PrivateFact[]) => facts.map((f) => f.rating).filter((r): r is number => r != null && r >= 1 && r <= 5);
 
 const METRICS: MetricImpl[] = [
-  { id: 'completed_count', label: '답변 건수', unit: 'count', kind: 'count', denominator: null, description: '답변 완료된 신고 수(C)', compute: (f) => count(f.length) },
-  { id: 'accepted_count', label: '수용 건수', unit: 'count', kind: 'count', denominator: null, description: 'A', compute: (f) => count(outcomes(f).accepted) },
-  { id: 'partial_count', label: '일부 수용 건수', unit: 'count', kind: 'count', denominator: null, description: 'P', compute: (f) => count(outcomes(f).partial) },
-  { id: 'rejected_count', label: '불수용 건수', unit: 'count', kind: 'count', denominator: null, description: 'R', compute: (f) => count(outcomes(f).rejected) },
-  { id: 'unknown_count', label: '결과 미상 건수', unit: 'count', kind: 'count', denominator: null, description: '결과가 확인되지 않은 답변', compute: (f) => count(outcomes(f).result_unknown) },
-  { id: 'fine_count', label: '과태료 건수', unit: 'count', kind: 'count', denominator: null, description: '처분이 과태료(F)', compute: (f) => count(disp(f, 'fine')) },
-  { id: 'warning_count', label: '계도 건수', unit: 'count', kind: 'count', denominator: null, description: '처분이 경고·계도(W)', compute: (f) => count(disp(f, 'warning')) },
-  { id: 'penalty_count', label: '범칙금 건수', unit: 'count', kind: 'count', denominator: null, description: '처분이 범칙금(B)', compute: (f) => count(disp(f, 'penalty')) },
-  { id: 'accept_rate', label: '수용률', unit: 'percent', kind: 'rate', denominator: 'K', description: 'A ÷ K(결과 확인)', compute: (f) => { const o = outcomes(f); return ratio(o.accepted, o.result_known); } },
-  { id: 'partial_rate', label: '일부수용률', unit: 'percent', kind: 'rate', denominator: 'K', description: 'P ÷ K', compute: (f) => { const o = outcomes(f); return ratio(o.partial, o.result_known); } },
-  { id: 'reject_rate', label: '불수용률', unit: 'percent', kind: 'rate', denominator: 'K', description: 'R ÷ K', compute: (f) => { const o = outcomes(f); return ratio(o.rejected, o.result_known); } },
-  { id: 'fine_rate', label: '과태료처분율', unit: 'percent', kind: 'rate', denominator: 'C', description: 'F ÷ C(답변 완료)', compute: (f) => ratio(disp(f, 'fine'), f.length) },
-  { id: 'warning_rate', label: '계도처분율', unit: 'percent', kind: 'rate', denominator: 'C', description: 'W ÷ C', compute: (f) => ratio(disp(f, 'warning'), f.length) },
-  { id: 'penalty_rate', label: '범칙금처분율', unit: 'percent', kind: 'rate', denominator: 'C', description: 'B ÷ C', compute: (f) => ratio(disp(f, 'penalty'), f.length) },
-  { id: 'amount_sum', label: '확인 과태료 합계', unit: 'won', kind: 'stat', denominator: 'amount', description: '공개 동의·확인된 과태료만(범칙금·혼합 제외)', compute: (f) => { const w = confirmedWon(f); return stat(w.length ? w.reduce((a, b) => a + b, 0) : null, w.length); } },
-  { id: 'amount_mean', label: '확인 과태료 평균', unit: 'won', kind: 'stat', denominator: 'amount', description: '확인 금액 평균', compute: (f) => { const w = confirmedWon(f); return stat(w.length ? w.reduce((a, b) => a + b, 0) / w.length : null, w.length); } },
-  { id: 'amount_median', label: '확인 과태료 중앙값', unit: 'won', kind: 'stat', denominator: 'amount', description: '확인 금액 중앙값', compute: (f) => { const w = confirmedWon(f); return stat(median(w), w.length); } },
+  { id: 'completed_count', label: '답변 건수', unit: 'count', kind: 'count', denominator: null, description: '답변 완료된 신고 수', compute: (f) => count(f.length) },
+  { id: 'accepted_count', label: '수용 건수', unit: 'count', kind: 'count', denominator: null, description: '처리 결과가 수용인 신고 수', compute: (f) => count(outcomes(f).accepted) },
+  { id: 'partial_count', label: '일부 수용 건수', unit: 'count', kind: 'count', denominator: null, description: '처리 결과가 일부 수용인 신고 수', compute: (f) => count(outcomes(f).partial) },
+  { id: 'rejected_count', label: '불수용 건수', unit: 'count', kind: 'count', denominator: null, description: '처리 결과가 불수용인 신고 수', compute: (f) => count(outcomes(f).rejected) },
+  { id: 'unknown_count', label: '결과 미상 건수', unit: 'count', kind: 'count', denominator: null, description: '처리 결과를 알 수 없는 답변 수', compute: (f) => count(outcomes(f).result_unknown) },
+  { id: 'fine_count', label: '과태료 건수', unit: 'count', kind: 'count', denominator: null, description: '처분이 과태료인 신고 수', compute: (f) => count(disp(f, 'fine')) },
+  { id: 'warning_count', label: '계도 건수', unit: 'count', kind: 'count', denominator: null, description: '처분이 경고·계도인 신고 수', compute: (f) => count(disp(f, 'warning')) },
+  { id: 'penalty_count', label: '범칙금 건수', unit: 'count', kind: 'count', denominator: null, description: '처분이 범칙금인 신고 수', compute: (f) => count(disp(f, 'penalty')) },
+  { id: 'accept_rate', label: '수용률', unit: 'percent', kind: 'rate', denominator: 'K', description: '결과가 나온 신고(수용+일부 수용+불수용) 중 수용의 비율', compute: (f) => { const o = outcomes(f); return ratio(o.accepted, o.result_known); } },
+  { id: 'partial_rate', label: '일부수용률', unit: 'percent', kind: 'rate', denominator: 'K', description: '결과가 나온 신고 중 일부 수용의 비율', compute: (f) => { const o = outcomes(f); return ratio(o.partial, o.result_known); } },
+  { id: 'reject_rate', label: '불수용률', unit: 'percent', kind: 'rate', denominator: 'K', description: '결과가 나온 신고 중 불수용의 비율', compute: (f) => { const o = outcomes(f); return ratio(o.rejected, o.result_known); } },
+  { id: 'fine_rate', label: '과태료 부과율', unit: 'percent', kind: 'rate', denominator: 'C', description: '답변 완료 신고 중 과태료 처분의 비율', compute: (f) => ratio(disp(f, 'fine'), f.length) },
+  { id: 'warning_rate', label: '경고·계도 비율', unit: 'percent', kind: 'rate', denominator: 'C', description: '답변 완료 신고 중 경고·계도 처분의 비율', compute: (f) => ratio(disp(f, 'warning'), f.length) },
+  { id: 'penalty_rate', label: '범칙금 부과율', unit: 'percent', kind: 'rate', denominator: 'C', description: '답변 완료 신고 중 범칙금 처분의 비율', compute: (f) => ratio(disp(f, 'penalty'), f.length) },
+  { id: 'amount_sum', label: '확인 과태료 합계', unit: 'won', kind: 'stat', denominator: 'amount', description: '공개에 동의하고 금액이 확인된 과태료만 더함(범칙금이나 섞인 금액은 제외)', compute: (f) => { const w = confirmedWon(f); return stat(w.length ? w.reduce((a, b) => a + b, 0) : null, w.length); } },
+  { id: 'amount_mean', label: '확인 과태료 평균', unit: 'won', kind: 'stat', denominator: 'amount', description: '금액이 확인된 과태료의 평균', compute: (f) => { const w = confirmedWon(f); return stat(w.length ? w.reduce((a, b) => a + b, 0) / w.length : null, w.length); } },
+  { id: 'amount_median', label: '확인 과태료 중앙값', unit: 'won', kind: 'stat', denominator: 'amount', description: '금액이 확인된 과태료의 중앙값', compute: (f) => { const w = confirmedWon(f); return stat(median(w), w.length); } },
   { id: 'amount_confirmed', label: '금액 확인 건수', unit: 'count', kind: 'count', denominator: null, description: '금액이 확인된 과태료 건수', compute: (f) => count(confirmedWon(f).length) },
-  { id: 'duration_mean', label: '처리기간 평균', unit: 'days', kind: 'stat', denominator: 'duration', description: '신고일→답변일(역전·결측 제외)', compute: (f) => { const d = days(f); return stat(d.length ? d.reduce((a, b) => a + b, 0) / d.length : null, d.length); } },
-  { id: 'duration_median', label: '처리기간 중앙값', unit: 'days', kind: 'stat', denominator: 'duration', description: '중앙값', compute: (f) => { const d = days(f); return stat(median(d), d.length); } },
-  { id: 'duration_p90', label: '처리기간 90%', unit: 'days', kind: 'stat', denominator: 'duration', description: '90번째 백분위(nearest rank)', compute: (f) => { const d = days(f); return stat(nearestRank(d, 0.9), d.length); } },
-  { id: 'duration_count', label: '처리기간 계산 가능 건수', unit: 'count', kind: 'count', denominator: null, description: '신고일·답변일이 모두 있고 역전되지 않은 답변', compute: (f) => count(days(f).length) },
-  { id: 'rating_mean', label: '평균 별점', unit: 'score', kind: 'stat', denominator: 'rating', description: '공개 동의된 1~5점 평균', compute: (f) => { const r = ratings(f); return stat(r.length ? r.reduce((a, b) => a + b, 0) / r.length : null, r.length); } },
-  { id: 'rating_count', label: '평가 건수', unit: 'count', kind: 'count', denominator: null, description: '공개 별점이 있는 답변', compute: (f) => count(ratings(f).length) },
-  { id: 'vehicle_distinct', label: '식별 차량 수', unit: 'count', kind: 'distinct', denominator: null, description: '번호판으로 식별 가능한 서로 다른 차량(원번호는 내보내지 않음)',
+  { id: 'duration_mean', label: '처리기간 평균', unit: 'days', kind: 'stat', denominator: 'duration', description: '신고한 날부터 답변 받은 날까지 걸린 날수의 평균(날짜가 없거나 순서가 뒤바뀐 신고는 제외)', compute: (f) => { const d = days(f); return stat(d.length ? d.reduce((a, b) => a + b, 0) / d.length : null, d.length); } },
+  { id: 'duration_median', label: '처리기간 중앙값', unit: 'days', kind: 'stat', denominator: 'duration', description: '걸린 날수를 순서대로 놓았을 때 가운데 값', compute: (f) => { const d = days(f); return stat(median(d), d.length); } },
+  { id: 'duration_p90', label: '처리기간 90% 기준', unit: 'days', kind: 'stat', denominator: 'duration', description: '신고의 90%가 이 기간 안에 답변을 받음', compute: (f) => { const d = days(f); return stat(nearestRank(d, 0.9), d.length); } },
+  { id: 'duration_count', label: '처리기간 계산 가능 건수', unit: 'count', kind: 'count', denominator: null, description: '신고한 날과 답변 받은 날이 모두 있어 기간을 계산할 수 있는 답변 수', compute: (f) => count(days(f).length) },
+  { id: 'rating_mean', label: '평균 별점', unit: 'score', kind: 'stat', denominator: 'rating', description: '공개에 동의한 1~5점 별점의 평균', compute: (f) => { const r = ratings(f); return stat(r.length ? r.reduce((a, b) => a + b, 0) / r.length : null, r.length); } },
+  { id: 'rating_count', label: '평가 건수', unit: 'count', kind: 'count', denominator: null, description: '공개된 별점이 있는 답변 수', compute: (f) => count(ratings(f).length) },
+  { id: 'vehicle_distinct', label: '차량 수', unit: 'count', kind: 'distinct', denominator: null, description: '번호로 구별할 수 있는 서로 다른 차량 수(번호 자체는 보여 주지 않음)',
     compute: (f) => count(new Set(f.map((x) => parsePlate(x.vehicle_raw)?.canonical).filter((v): v is string => !!v)).size) },
-  { id: 'place_distinct', label: '주소 수', unit: 'count', kind: 'distinct', denominator: null, description: '서로 다른 신고 주소',
+  { id: 'place_distinct', label: '주소 수', unit: 'count', kind: 'distinct', denominator: null, description: '서로 다른 신고 주소 수',
     compute: (f) => count(new Set(f.map(placeKey).filter((v): v is string => !!v)).size) },
 ];
 const METRIC = new Map(METRICS.map((m) => [m.id, m]));
@@ -302,7 +302,7 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
   const cellsBudget = rowMembers.length * colMembers.length * (spec.population === 'compare' ? 2 : 1);
   if (cellsBudget > STAT_LIMITS.cells) {
     throw new StatsQueryError('RESULT_TOO_LARGE',
-      `행·열 조합이 ${cellsBudget.toLocaleString('ko-KR')}칸으로 한도(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. 비교 대상을 고르거나 기간·차원을 줄여 주세요.`);
+      `표가 ${cellsBudget.toLocaleString('ko-KR')}칸이 되어 한 번에 만들 수 있는 크기(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. 비교 대상을 고르거나, 기간 또는 행·열 항목을 줄여 주세요.`);
   }
   const compute = (facts: readonly PrivateFact[]) =>
     Object.fromEntries(spec.metrics.map((id) => [id, METRIC.get(id)!.compute(facts)])) as Record<string, StatValue>;

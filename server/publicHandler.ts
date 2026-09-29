@@ -86,8 +86,8 @@ const ACCESS_MESSAGES: Record<string, string> = {
 
 function errorWith(code: string, status: number, headers: Headers, details?: ViewerThresholdDetails): Response {
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
-    code === 'AGGREGATE_NOT_READY' ? '공개 집계가 아직 준비되지 않았습니다.' :
-      code === 'DATASET_CHANGED' ? '데이터 버전이 변경됐습니다. 다시 조회해 주세요.' :
+    code === 'AGGREGATE_NOT_READY' ? '통계가 아직 준비되지 않았습니다. 잠시 뒤 다시 확인해 주세요.' :
+      code === 'DATASET_CHANGED' ? '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.' :
         code === 'RESULT_TOO_LARGE' ? '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.' :
         ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.',
     ...(details !== undefined ? { details } : {}) } }, status, headers);
@@ -146,7 +146,7 @@ function meta(state: AnalyticsState): PublicMeta {
     status: supported ? 'supported' as const : 'missing' as const,
     reason, coverage: null,
   });
-  const reason = state.ready ? null : 'v2 원천 사실이 아직 제공되지 않았습니다.';
+  const reason = state.ready ? null : '통계 자료가 아직 준비되지 않았습니다.';
   return {
     schema_version: 2, dataset_version: state.dataset_version, sample: false,
     source_updated_at: state.source_updated_at, generated_at: state.generated_at,

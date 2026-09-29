@@ -143,7 +143,7 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
               <PanelStatus busy={state === 'loading'} label="검색 중" />
             </div>
             <label className="picker-only"><input type="checkbox" checked={onlySelected} onChange={(e) => setOnlySelected(e.target.checked)} />선택한 항목만 보기</label>
-            {state === 'error' && <p role="alert" className="place-empty">후보를 불러오지 못했습니다. 선택한 항목은 그대로입니다.</p>}
+            {state === 'error' && <p role="alert" className="place-empty">목록을 불러오지 못했습니다. 이미 고른 항목은 그대로 있습니다.</p>}
             <ul className="picker-list">
               {shown.map((c) => (
                 <li key={c.key}>
@@ -165,15 +165,15 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
             )}
           </section>
           <section className="picker-selected" aria-label="선택한 항목">
-            <h3>선택한 {kindLabel} {draft.length}개 <small className="cm-muted">(같은 종류는 ‘또는’, 다른 종류끼리는 ‘그리고’)</small></h3>
-            {draft.length === 0 && <p className="cm-muted">선택하지 않으면 전체가 대상입니다. 비교는 보통 2~10개가 읽기 좋지만 1개도 됩니다.</p>}
+            <h3>선택한 {kindLabel} {draft.length}개 <small className="cm-muted">(같은 종류끼리는 하나라도 해당하면, 다른 종류끼리는 모두 해당해야 포함됩니다)</small></h3>
+            {draft.length === 0 && <p className="cm-muted">고르지 않으면 전체가 대상입니다. 2~10개 정도가 보기 좋고, 1개만 골라도 됩니다.</p>}
             <ol className="picker-chosen">
               {draft.map((d, i) => (
                 <li key={d.key}>
                   <span className="picker-name">{d.label}</span>
-                  {state === 'error' ? <small className="picker-zero">확인 실패</small>
+                  {state === 'error' ? <small className="picker-zero">확인하지 못함</small>
                     : state === 'loading' && !statuses.has(d.key) ? <small className="cm-muted">확인 중</small>
-                      : statuses.get(d.key) === 'unconfirmed' ? <small className="picker-unavailable" title="이 기간·현재 권한에서 확인할 수 없는 대상입니다(자세한 이유는 표시하지 않습니다)">확인할 수 없음</small>
+                      : statuses.get(d.key) === 'unconfirmed' ? <small className="picker-unavailable" title="이 기간에는 확인할 수 없는 대상입니다">확인할 수 없음</small>
                         : statuses.get(d.key) === 'zero' ? <small className="picker-zero">현재 조건 0건</small> : null}
                   <span className="picker-order">
                     <button type="button" className="mini-btn" aria-label={`${d.label} 위로`} disabled={i === 0} onClick={() => move(i, -1)}>↑</button>

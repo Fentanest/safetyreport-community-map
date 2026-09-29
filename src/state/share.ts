@@ -72,12 +72,12 @@ export type EncodeResult = { ok: true; url: string; chars: number } | { ok: fals
 /** the link (absolute, same page) or why it cannot be made — a too-long recipe is refused, never truncated */
 export function shareUrl(payload: SharePayload, base: { origin: string; pathname: string }): EncodeResult {
   const parsed = payloadSchema.safeParse(payload);
-  if (!parsed.success) return { ok: false, reason: '공유할 수 없는 구성입니다(허용되지 않은 값).' };
+  if (!parsed.success) return { ok: false, reason: '공유할 수 없는 값이 들어 있어 링크를 만들지 못했습니다.' };
   const json = JSON.stringify(parsed.data);
   const bytes = new TextEncoder().encode(json);
-  if (bytes.length > SHARE_LIMITS.jsonBytes) return { ok: false, reason: `구성이 너무 큽니다(${bytes.length}바이트). 비교 대상을 줄여 주세요.` };
+  if (bytes.length > SHARE_LIMITS.jsonBytes) return { ok: false, reason: '설정이 너무 많아 링크를 만들 수 없습니다. 비교 대상을 줄여 주세요.' };
   const enc = b64url(bytes);
-  if (enc.length > SHARE_LIMITS.encodedChars) return { ok: false, reason: `링크가 너무 깁니다(${enc.length}자, 최대 ${SHARE_LIMITS.encodedChars}자). 비교 대상을 줄여 주세요.` };
+  if (enc.length > SHARE_LIMITS.encodedChars) return { ok: false, reason: '링크가 너무 길어집니다. 비교 대상을 줄여 주세요.' };
   const p = new URLSearchParams({ screen: 'statistics', [SHARE_PARAM]: enc });
   return { ok: true, url: `${base.origin}${base.pathname}?${p.toString()}`, chars: enc.length };
 }
@@ -85,27 +85,27 @@ export function shareUrl(payload: SharePayload, base: { origin: string; pathname
 export type DecodeResult = { ok: true; payload: SharePayload } | { ok: false; reason: string };
 /** size-checked decode + strict schema; catalog checks come after (checkAgainstCatalog) */
 export function decodeShare(raw: string | null): DecodeResult {
-  if (raw === null) return { ok: false, reason: '공유 구성이 없습니다.' };
-  if (raw.length === 0 || raw.length > SHARE_LIMITS.encodedChars) return { ok: false, reason: '공유 링크가 너무 길거나 비어 있습니다.' };
+  if (raw === null) return { ok: false, reason: '링크에 공유된 설정이 없습니다.' };
+  if (raw.length === 0 || raw.length > SHARE_LIMITS.encodedChars) return { ok: false, reason: '링크가 너무 길거나 비어 있습니다. 받은 링크 전체를 복사했는지 확인해 주세요.' };
   if (!/^[A-Za-z0-9_-]+$/.test(raw)) return { ok: false, reason: '공유 링크의 형식이 올바르지 않습니다.' };
   let json: string;
   try {
     const bytes = fromB64url(raw);
-    if (bytes.length > SHARE_LIMITS.jsonBytes) return { ok: false, reason: '공유 구성이 너무 큽니다.' };
+    if (bytes.length > SHARE_LIMITS.jsonBytes) return { ok: false, reason: '링크에 담긴 설정이 너무 많습니다.' };
     json = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch { return { ok: false, reason: '공유 링크의 형식이 올바르지 않습니다.' }; }
   let data: unknown;
   try { data = JSON.parse(json); } catch { return { ok: false, reason: '공유 링크의 형식이 올바르지 않습니다.' }; }
-  if (data && typeof data === 'object' && 'v' in data && (data as { v: unknown }).v !== 1) return { ok: false, reason: '지원하지 않는 공유 링크 버전입니다.' };
+  if (data && typeof data === 'object' && 'v' in data && (data as { v: unknown }).v !== 1) return { ok: false, reason: '이 사이트에서 열 수 없는 형식의 링크입니다.' };
   const parsed = payloadSchema.safeParse(data);
-  if (!parsed.success) return { ok: false, reason: '공유 구성에 허용되지 않은 항목이나 값이 있습니다.' };
+  if (!parsed.success) return { ok: false, reason: '링크에 이 사이트에서 쓰지 않는 값이 들어 있습니다.' };
   const s = parsed.data.scope;
-  if (s.start > s.end) return { ok: false, reason: '공유 구성의 기간이 올바르지 않습니다.' };
-  if (s.region_code !== null && normalizeRegion(s.region_code) !== s.region_code) return { ok: false, reason: '공유 구성의 지역 코드를 알 수 없습니다.' };
+  if (s.start > s.end) return { ok: false, reason: '링크의 기간이 올바르지 않습니다.' };
+  if (s.region_code !== null && normalizeRegion(s.region_code) !== s.region_code) return { ok: false, reason: '링크의 지역을 알 수 없습니다.' };
   const sp = parsed.data.spec;
   const dims = [...sp.rows, ...sp.columns];
   if (new Set(dims).size !== dims.length || new Set(sp.metrics).size !== sp.metrics.length || new Set(sp.filters.map((f) => f.dimension)).size !== sp.filters.length) {
-    return { ok: false, reason: '공유 구성에 같은 항목이 두 번 있습니다.' };
+    return { ok: false, reason: '링크에 같은 항목이 두 번 들어 있습니다.' };
   }
   return { ok: true, payload: parsed.data };
 }
@@ -113,13 +113,13 @@ export function decodeShare(raw: string | null): DecodeResult {
 /** the registry of THIS server decides: unknown ids / roles / limits are refused with the reason */
 export function checkAgainstCatalog(p: SharePayload, catalog: StatCatalog): string | null {
   const dim = (x: string) => catalog.dimensions.find((d) => d.id === x);
-  for (const r of p.spec.rows) if (!dim(r)?.roles.includes('row')) return `행 항목 ‘${r}’을(를) 쓸 수 없습니다.`;
-  for (const c of p.spec.columns) if (!dim(c)?.roles.includes('column')) return `열 항목 ‘${c}’을(를) 쓸 수 없습니다.`;
-  for (const m of p.spec.metrics) if (!catalog.metrics.some((x) => x.id === m)) return `지표 ‘${m}’을(를) 쓸 수 없습니다.`;
-  for (const f of p.spec.filters) if (!dim(f.dimension)?.roles.includes('filter')) return `비교 대상 종류 ‘${f.dimension}’을(를) 쓸 수 없습니다.`;
+  for (const r of p.spec.rows) if (!dim(r)?.roles.includes('row')) return '링크에 지금은 쓸 수 없는 행 항목이 있습니다.';
+  for (const c of p.spec.columns) if (!dim(c)?.roles.includes('column')) return '링크에 지금은 쓸 수 없는 열 항목이 있습니다.';
+  for (const m of p.spec.metrics) if (!catalog.metrics.some((x) => x.id === m)) return '링크에 지금은 쓸 수 없는 지표가 있습니다.';
+  for (const f of p.spec.filters) if (!dim(f.dimension)?.roles.includes('filter')) return '링크에 지금은 쓸 수 없는 비교 대상이 있습니다.';
   if (p.spec.rows.length > catalog.limits.rows || p.spec.columns.length > catalog.limits.columns || p.spec.metrics.length > catalog.limits.metrics
-    || p.spec.filters.length > catalog.limits.filters || p.spec.filters.some((f) => f.members.length > catalog.limits.members)) return '공유 구성이 허용 한도를 넘습니다.';
-  if (p.chart.primary !== null && !p.spec.metrics.includes(p.chart.primary)) return '공유 구성의 주 지표가 지표 목록에 없습니다.';
+    || p.spec.filters.length > catalog.limits.filters || p.spec.filters.some((f) => f.members.length > catalog.limits.members)) return '링크의 설정이 고를 수 있는 개수를 넘습니다.';
+  if (p.chart.primary !== null && !p.spec.metrics.includes(p.chart.primary)) return '링크의 기준 지표가 지표 목록에 없습니다.';
   return null;
 }
 

@@ -155,7 +155,7 @@ describe('PV-08/PV-10: populations and the registry', () => {
   });
   it('PV-14 over-budget grids are refused with a readable message (never truncated)', () => {
     const many = Array.from({ length: 80 }, (_, i) => f({ agency_key: `a1:${i}`, agency_name: `기관${i}`, completed_date: `2026-0${1 + (i % 6)}-${String(1 + (i % 28)).padStart(2, '0')}` }));
-    expect(() => run(many, { rows: ['agency'], columns: ['completed_day'] })).toThrow(/한도/);
+    expect(() => run(many, { rows: ['agency'], columns: ['completed_day'] })).toThrow(/한 번에 만들 수 있는 크기/);
   });
 });
 

@@ -97,12 +97,12 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
       <div className="panel-top">
         <div>
           <h2>{title}</h2>
-          <span className="subtitle">{title.startsWith('이 주소') ? '선택한 주소의 신고만' : '선택 범위의 신고만 · 목록에서 불러온 담당자'} · 막대는 100% 비율, 선은 답변 완료 건수</span>
+          <span className="subtitle">{title.startsWith('이 주소') ? '선택한 주소의 신고만' : '선택 범위의 신고만 · 목록에 불러온 담당자만'} · 막대는 100% 비율, 선은 답변 완료 건수</span>
         </div>
         <div className="card-tools">
           <div className="radio-group" role="radiogroup" aria-label="막대 기준">
             <label><input type="radio" name="place-chart-mode" checked={mode === 'accept'} onChange={() => setMode('accept')} />수용률</label>
-            <label><input type="radio" name="place-chart-mode" checked={mode === 'fine'} onChange={() => setMode('fine')} />과태료처분율</label>
+            <label><input type="radio" name="place-chart-mode" checked={mode === 'fine'} onChange={() => setMode('fine')} />과태료 부과율</label>
           </div>
           <button className="icon-btn" type="button" aria-label={table ? '그래프로 보기' : '표로 보기'} aria-pressed={table} onClick={() => setTable((v) => !v)}>
             <Icon name="table" />
@@ -115,12 +115,12 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
       </div>
       {managers.length === 0 && <div className="empty-state">이 주소의 답변 완료 신고에 담당자 정보가 없습니다.</div>}
       <div ref={hostRef} className="chart-host" hidden={table || managers.length === 0 || !!error} role="img"
-        aria-label={`담당자 ${managers.length}명의 ${mode === 'accept' ? '수용률' : '과태료처분율'} 막대와 답변 건수`} />
+        aria-label={`담당자 ${managers.length}명의 ${mode === 'accept' ? '수용률' : '과태료 부과율'} 막대와 답변 건수`} />
       {error && !table && <div className="empty-state" role="alert">{error}</div>}
       {table && (
         <div className="trend-table"><table>
-          <thead><tr><th scope="col">담당자</th><th scope="col">답변(건)</th><th scope="col">결과 확인(건)</th><th scope="col">결과 미상(건)</th>
-            <th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료(건)</th><th scope="col">과태료처분율</th></tr></thead>
+          <thead><tr><th scope="col">담당자</th><th scope="col">답변(건)</th><th scope="col">결과 나온 신고(건)</th><th scope="col">결과 미상(건)</th>
+            <th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료(건)</th><th scope="col">과태료 부과율</th></tr></thead>
           <tbody>{rows.map((r, i) => (
             <tr key={managers[i].key}><td>{labels[i]}</td><td>{fmtInt(r.m.C)}</td><td>{fmtInt(r.m.K)}</td><td>{fmtInt(r.m.U)}</td>
               <td>{fmtPercent(r.m.accept)}</td><td>{fmtPercent(r.m.partial)}</td><td>{fmtPercent(r.m.reject)}</td>
@@ -135,8 +135,8 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
       )}
       <p className="chart-caption">
         {mode === 'accept'
-          ? '수용률 막대의 100%는 결과 확인 건수(수용+일부수용+불수용)입니다. 결과 미상은 막대에서 빠지므로 선(답변 완료)과 다를 수 있습니다.'
-          : '과태료처분율 막대의 100%는 답변 완료 건수입니다. 금액이 없어도 처분이 과태료면 포함합니다.'}
+          ? '수용률 막대 전체(100%)는 결과가 나온 신고(수용+일부 수용+불수용)입니다. 결과 미상은 막대에서 빠지므로 선(답변 완료)과 다를 수 있습니다.'
+          : '과태료 부과율 막대 전체(100%)는 답변 완료 신고입니다. 금액이 적혀 있지 않아도 처분이 과태료면 포함합니다.'}
         {' '}담당자 표시 {fmtInt(managers.length)}명 / 전체 {fmtInt(Math.max(total, managers.length))}명.
         {total > managers.length && onLoadMore && (
           <button type="button" className="link-btn" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? ' 불러오는 중…' : ' 나머지 담당자 불러오기'}</button>

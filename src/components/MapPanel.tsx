@@ -121,7 +121,7 @@ function Legend({ metric, level, statsBbox, filtered }: { metric: MapMetric; lev
       <span className="cm-muted">{def.kind === 'rate' ? '100%' : '많음'}</span>
       {regions && (
         <>
-          <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(분모 0)</span>
+          <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(기준 신고 0건)</span>
           <span className="legend-null"><i className="legend-empty" aria-hidden="true" />자료 없음</span>
           {filtered && <span className="legend-null"><i className="legend-out" aria-hidden="true" />범위 밖</span>}
           {statsBbox && <span className="cm-muted">화면 범위 내 신고 기준</span>}
@@ -340,7 +340,7 @@ export default function MapPanel(p: Props) {
           <h2>신고 지도 {p.refreshing && <span className="refresh-badge" role="status">갱신 중…</span>}</h2>
           <span className="subtitle">{p.categoryLabel} · {renderMode === 'points'
             ? '같은 주소는 핀 하나 · 멀리서 보면 가까운 주소를 묶어 보여 줍니다'
-            : `${LEVEL_LABEL[level]}별 ${def.legend} · 신고 위치의 행정구역 기준 · 분자/분모 합으로 계산`}</span>
+            : `${LEVEL_LABEL[level]}별 ${def.legend} · 신고 위치의 행정구역 기준 · 지역 안 신고를 모두 합쳐 계산`}</span>
         </div>
         <div className="mini-segments metric-switch" role="group" aria-label="지도에 표시할 값">
           {MAP_METRICS.map((m) => (

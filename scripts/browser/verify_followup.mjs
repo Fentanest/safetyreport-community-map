@@ -139,7 +139,7 @@ try {
     res.legend = await chart.locator('.chart-legend').innerText();
     await chart.screenshot({ path: join(dir, 'R3-chart-accept-1440.png') });
     const n0 = (await log()).length;
-    await chart.getByText('과태료처분율', { exact: true }).click();
+    await chart.getByText('과태료 부과율', { exact: true }).click();
     await sleep(500);
     res.fineLegend = await chart.locator('.chart-legend').innerText();
     res.fineCaption = await chart.locator('.chart-caption').innerText();

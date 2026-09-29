@@ -62,7 +62,7 @@ export default function KpiPanel({ overview: o, personal, showMine, unsupported,
           <h2>주요 통계</h2>
           <span className="subtitle">{scopeLabel}{unsupported ? ' · 이 조건의 통계는 아직 없습니다' : ''}</span>
         </div>
-        {showMine && <span className="cm-chip mine-chip" title="같은 조건·같은 데이터 버전의 내 신고">내 신고와 비교 중</span>}
+        {showMine && <span className="cm-chip mine-chip" title="같은 조건의 내 신고">내 신고와 비교 중</span>}
       </div>
       <div className="kpi-grid">
         {cards.map((k) => (

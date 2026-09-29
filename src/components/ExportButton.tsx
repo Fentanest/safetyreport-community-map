@@ -20,7 +20,7 @@ export default function ExportButton({ source, capture, blocked, extra }: {
   const mine = st.source === source;
   const otherRunning = st.status === 'running' && !mine;
   useReportActivity(`export:${source}`, st.status === 'running' && mine
-    ? { resource: 'export', phase: 'processing', label: `엑셀 파일 만드는 중 · ${st.stage === 'queued' ? '준비' : STAGE_LABEL[st.stage]}`, scope: 'local' } : null);
+    ? { resource: 'export', phase: 'processing', label: `엑셀 파일 만드는 중 · ${st.stage === 'queued' ? '준비 중' : STAGE_LABEL[st.stage]}`, scope: 'local' } : null);
   const start = () => { const snap = capture(); if (snap) exportController.start(snap); };
   return (
     <div className="export-box" data-export-source={source}>
@@ -39,13 +39,13 @@ export default function ExportButton({ source, capture, blocked, extra }: {
       {st.status === 'running' && mine && (
         <span className="export-progress" role="status">
           <span className="spinner" aria-hidden="true" />
-          {st.stage === 'queued' ? '엑셀 기능 준비 중' : STAGE_LABEL[st.stage]}…
+          {st.stage === 'queued' ? '엑셀 준비 중' : STAGE_LABEL[st.stage]}…
           <button type="button" className="link-btn" onClick={() => exportController.cancel()}>취소</button>
         </span>
       )}
       {st.status === 'ready' && mine && (
         <span className="export-ready" role="status">
-          파일 준비 완료 ({kb(st.size)}){st.saved > 0 ? ' · 저장을 시작했습니다' : ''}
+          파일이 준비됐습니다 ({kb(st.size)}).{st.saved > 0 ? ' 다운로드가 시작되지 않았다면 ‘파일 저장’을 누르세요.' : ''}
           <button type="button" className="mini-btn" onClick={() => exportController.save()}>파일 저장</button>
           <button type="button" className="link-btn" onClick={() => exportController.dismiss()}>닫기</button>
         </span>

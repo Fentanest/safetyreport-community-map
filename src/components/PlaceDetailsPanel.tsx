@@ -56,7 +56,7 @@ function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: 
           {rows.length > shown && (
             <button type="button" className="mini-btn" onClick={() => setShown((n) => n + LIST_STEP)}>더 보기 · {fmtInt(rows.length - shown)}</button>
           )}
-          {total > rows.length && <span className="cm-muted">많은 순 {fmtInt(rows.length)}개만 받음 · 전체 {fmtInt(total)}개</span>}
+          {total > rows.length && <span className="cm-muted">많은 순 {fmtInt(rows.length)}개만 불러옴 · 전체 {fmtInt(total)}개</span>}
         </div>
       )}
     </>
@@ -117,7 +117,7 @@ export default function PlaceDetailsPanel(p: Props) {
         <div title="경고·계도 처분으로 확인된 신고 (답변 받은 날 기준)">
           <small>계도</small>
           <b className="cm-number">{warning === undefined ? '—' : fmtInt(warning)}</b>
-          <span>{warning === undefined ? '서버 미지원' : '건 · 경고·계도 처분'}</span>
+          <span>{warning === undefined ? '제공 안 됨' : '건 · 경고·계도 처분'}</span>
         </div>
         <div><small>과태료</small><b className="cm-number">{fmtInt(pt.fine_count)}</b><span>건 · 답변 받은 날</span></div>
         <div><small>수용률</small><b className="cm-number">{fmtPercent(acceptRate(o))}</b><span>{fmtInt(o?.accepted ?? null)}/{fmtInt(known)}건</span></div>
@@ -153,7 +153,7 @@ export default function PlaceDetailsPanel(p: Props) {
           <button className="mini-btn" type="button" onClick={p.onRetry}>다시 시도</button>
         </section>
       ) : p.detail.status === 'unsupported' ? (
-        <section className="place-section"><p className="cm-muted place-empty">이 서버는 주소별 기관·담당자 목록을 아직 제공하지 않습니다.</p></section>
+        <section className="place-section"><p className="cm-muted place-empty">주소별 기관·담당자 목록은 아직 제공하지 않습니다.</p></section>
       ) : (
         <>
           <section className="place-section" aria-label="처리 기관">

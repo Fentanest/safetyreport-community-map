@@ -63,7 +63,7 @@ describe('excelize-wasm 0.1.3 contract', () => {
     expect(JSON.parse(readFileSync(new URL('../../node_modules/excelize-wasm/package.json', import.meta.url), 'utf8')).version).toBe('0.1.3');
   });
   it('file name and Asia/Seoul time', () => {
-    expect(kst(AT).text).toBe('2026-09-29 15:30:00 (Asia/Seoul)');
+    expect(kst(AT).text).toBe('2026-09-29 15:30:00 (한국 시간)');
     expect(fileName({ fileStem: '커뮤니티신고지도_맞춤통계', capturedAt: AT })).toBe('커뮤니티신고지도_맞춤통계_20260929_153000.xlsx');
     expect(monthSerial('2026-01')).toBe(46023); // 2026-01-01 in the 1900 date system, no timezone shift
   });
@@ -78,7 +78,7 @@ describe('F06 statistics workbook', () => {
   it('EX-09 G rates are =분자/분모 formulas with 0–1 values in % format; four sheets', () => {
     const x = write(statsSnap(g));
     expect(Object.keys(x.sheets)).toEqual(['통계표', '차트', '차트 데이터', '조회 조건']);
-    const expect_ = { 수용률: [12, 18], 일부수용률: [3, 18], 불수용률: [3, 18], 과태료처분율: [8, 20], 계도처분율: [5, 20] } as const;
+    const expect_ = { 수용률: [12, 18], 일부수용률: [3, 18], 불수용률: [3, 18], '과태료 부과율': [8, 20], '경고·계도 비율': [5, 20] } as const;
     for (const [label, [n, d]] of Object.entries(expect_)) {
       const c = tableCell(x, 'G기관', `${label} · 비율`);
       expect(c.num, label).toBeCloseTo(n / d, 12);
@@ -144,7 +144,7 @@ describe('F06 statistics workbook', () => {
     expect(shares[0] + shares[1]).toBeCloseTo(5 / 6, 12);
     expect(x.charts[0].valAx[0].max).toBe('1');
     // the hidden series stays in 차트 데이터 (labelled) and in the table
-    expect(x.allText).toContain('불수용 건수 (그래프에서 숨김)');
+    expect(x.allText).toContain('불수용 건수 (화면에서 숨긴 항목)');
     expect(tableCell(x, 'G기관', '불수용 건수 · 값').value).toBe(3);
     const d = x.sheets['차트 데이터'].cells as Record<string, { formula: string | null }>;
     expect(Object.values(d).some((c) => c.formula && /SUM\(/.test(c.formula))).toBe(true);
@@ -155,7 +155,7 @@ describe('F06 statistics workbook', () => {
     });
     const x = write(statsSnap(r, { chart: { type: 'bar', primary: null, overlay: true }, hidden: ['accept_rate:all', 'fine_rate:all'] }));
     expect(x.charts).toHaveLength(0);
-    expect(x.allText).toContain('현재 모든 계열을 그래프에서 숨겼습니다');
+    expect(x.allText).toContain('화면에서 모든 항목을 숨긴 상태로 내려받았습니다');
     expect(tableCell(x, 'G기관', '수용률 · 비율').num).toBeCloseTo(12 / 18, 12);
     const y = write(statsSnap(r, { chart: { type: 'bar', primary: null, overlay: true }, hidden: ['accept_rate:all', 'fine_rate:all'], includeHidden: true }));
     expect(y.charts[0].groups[0].series).toHaveLength(2); // EX-23: only when explicitly asked
@@ -212,7 +212,7 @@ describe('F06 trend workbook (월별 추이)', () => {
     expect(vals[0]).toBeCloseTo(4 / 6, 12);
     expect(vals[1]).toBeNull();
     expect(vals[2]).toBe(0);
-    expect(x.allText).toContain('분모 없음');
+    expect(x.allText).toContain('계산 불가');
   });
   it('EX-06 count view keeps 신고/답변 counts on their own date basis (no rate axis)', () => {
     const x = write(snap('count', ['accept']));
@@ -237,8 +237,8 @@ describe('F06 managers workbook (주소/범위 담당자)', () => {
     expect(x.charts[0].valAx.some((a: { crosses: string }) => a.crosses === 'max')).toBe(true);
     expect(x.allText).toContain('김철수 (갑서)');
     expect(x.allText).toContain('김철수 (을서)');
-    expect(x.allText).toContain('일부: 화면에서 불러온 담당자 2명 / 전체 5명');
-    expect(x.allText).toContain('서버 미지원');
+    expect(x.allText).toContain('일부만 담음: 화면에 불러온 2명 (전체 5명');
+    expect(x.allText).toContain('제공 안 됨');
   });
 });
 

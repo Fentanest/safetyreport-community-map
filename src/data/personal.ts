@@ -95,7 +95,7 @@ const MESSAGE: Record<PersonalErrorCode, string> = {
   session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.',
   kakao_required: '카카오 계정으로 로그인해야 내 신고를 볼 수 있습니다.',
   account_ineligible: '이 계정으로는 내 신고를 볼 수 없습니다.',
-  DATASET_CHANGED: '통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.',
+  DATASET_CHANGED: '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.',
   rate_limited: '요청이 많아 잠시 후 다시 시도해 주세요.',
   AGGREGATE_NOT_READY: '통계가 아직 준비되지 않았습니다.',
   RESULT_TOO_LARGE: '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.',
@@ -208,7 +208,7 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
   const { PublicApiError } = await import('./client');
   const { mapAuth } = await import('../hooks/usePersonal');
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
-  if (!base) throw new PublicApiError('통계 서버에 연결할 수 없습니다.');
+  if (!base) throw new PublicApiError('내 신고를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
   const auth = mapAuth();
   await auth.settled();
   let token = await auth.accessToken();
@@ -226,7 +226,7 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
     let code: string | null = null, message: string | null = null;
     try { const b = await res.json() as { error?: { code?: string; message?: string } }; code = b.error?.code ?? null; message = b.error?.message ?? null; } catch { /* ignore */ }
     const retry = Number(res.headers.get('retry-after'));
-    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : `${message ?? '내 신고 통계를 불러오지 못했습니다.'} (${code ?? 'error'}, HTTP ${res.status})`,
+    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : message ?? '내 신고 통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
       res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code);
   }
   return res.json();

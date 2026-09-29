@@ -209,12 +209,12 @@ function loadSdk(key: string): Promise<void> {
       window.kakao.maps.load(() => resolve());
       return;
     }
-    const timer = window.setTimeout(() => reject(new Error('Kakao SDK 로딩 시간이 초과되었습니다.')), 12000);
+    const timer = window.setTimeout(() => reject(new Error('카카오 지도를 불러오는 데 시간이 너무 오래 걸립니다.')), 12000);
     const script = document.querySelector<HTMLScriptElement>('script[data-cm-kakao]');
     const done = () => {
       window.clearTimeout(timer);
       if (!window.kakao?.maps) {
-        reject(new Error('Kakao SDK를 초기화할 수 없습니다.'));
+        reject(new Error('카카오 지도를 시작하지 못했습니다.'));
         return;
       }
       window.kakao.maps.load(() => resolve());
@@ -223,7 +223,7 @@ function loadSdk(key: string): Promise<void> {
       script.addEventListener('load', done, { once: true });
       script.addEventListener('error', () => {
         window.clearTimeout(timer);
-        reject(new Error('Kakao SDK 스크립트를 불러오지 못했습니다.'));
+        reject(new Error('카카오 지도를 불러오지 못했습니다.'));
       }, { once: true });
       return;
     }
@@ -234,7 +234,7 @@ function loadSdk(key: string): Promise<void> {
     el.addEventListener('load', done, { once: true });
     el.addEventListener('error', () => {
       window.clearTimeout(timer);
-      reject(new Error('Kakao SDK 스크립트를 불러오지 못했습니다.'));
+      reject(new Error('카카오 지도를 불러오지 못했습니다.'));
     }, { once: true });
     document.head.appendChild(el);
   });
@@ -317,7 +317,7 @@ export async function createKakaoMap(
   },
 ): Promise<KakaoHandle> {
   const key = kakaoKey();
-  if (!key) throw new Error('Kakao JavaScript 키가 설정되지 않았습니다.');
+  if (!key) throw new Error('지도 설정이 빠져 있어 지도를 표시할 수 없습니다.');
   await loadSdk(key);
   const kakao = window.kakao!.maps;
   const center = new kakao.LatLng(36.35, 127.9);

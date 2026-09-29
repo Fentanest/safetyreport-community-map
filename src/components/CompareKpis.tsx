@@ -134,7 +134,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
                 <td className="num diff-col">
                   {data ? (<><b className="cm-number">{row.diff(data)}</b>
                     {row.diffNote?.(data) && <small>{row.diffNote(data)}</small>}
-                    <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나 − 전체' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나 − 전체') : ''}</small></>)
+                    <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나와 전체의 차이' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나와 전체의 차이') : ''}</small></>)
                     : <span className="cm-muted">—</span>}
                 </td>
               )}

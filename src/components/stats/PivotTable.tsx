@@ -103,8 +103,8 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
           <button type="button" className="ghost-btn" disabled={page >= pages - 1} onClick={() => setPage((p) => p + 1)}>다음</button>
         </div>
       )}
-      <p className="chart-caption">합계는 칸을 더하거나 평균한 값이 아니라 원 신고에서 다시 계산했습니다. ‘—’는 그 조합의 답변 신고가 없다는 뜻이며 0이 아닙니다.
-        {result.spec.population === 'compare' ? ' 전체와 내 신고는 겹치는 집합이라 더하지 않습니다.' : ''}</p>
+      <p className="chart-caption">합계는 칸을 더하거나 평균 낸 값이 아니라, 해당 신고 전체로 다시 계산한 값입니다. ‘—’는 해당하는 답변 신고가 없다는 뜻입니다(0이 아님).
+        {result.spec.population === 'compare' ? ' 내 신고는 전체에 포함되므로 둘을 더하지 않습니다.' : ''}</p>
     </div>
   );
 }

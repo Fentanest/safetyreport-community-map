@@ -58,7 +58,7 @@ export const ENTITY_COLUMNS: Col[] = [
     cell: (e) => <>{fmtInt(e.outcomes.partial)}<small>{share(e.outcomes.partial, e.outcomes.result_known)}</small></> },
   { id: 'rejected', label: '불수용', sort: 'rejected', num: true, defaultOn: false,
     cell: (e) => <>{fmtInt(e.outcomes.rejected)}<small>{share(e.outcomes.rejected, e.outcomes.result_known)}</small></> },
-  { id: 'known', label: '결과 확인', num: true, defaultOn: false, title: '결과가 나온 신고(비율의 분모)',
+  { id: 'known', label: '결과 확인', num: true, defaultOn: false, title: '결과가 나온 신고(비율을 계산하는 기준)',
     cell: (e) => fmtInt(e.outcomes.result_known) },
   { id: 'warning', label: '계도', num: true, defaultOn: false, title: '경고·계도 처분으로 확인된 신고',
     cell: (e) => (e.warning_count == null ? '—' : fmtInt(e.warning_count)) },

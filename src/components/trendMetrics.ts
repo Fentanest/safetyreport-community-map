@@ -1,6 +1,6 @@
 /**
  * S09 monthly 처리결과 비율 — one definition for the lines, the tooltip, the table and the 맞춤 통계 hand-off.
- *   수용률 A/K · 불수용률 R/K · 일부수용률 P/K (K = A+P+R, 결과 미상 excluded) · 과태료처분율 F/C (C = 답변 완료).
+ *   수용률 A/K · 불수용률 R/K · 일부수용률 P/K (K = A+P+R, 결과 미상 excluded) · 과태료 부과율 F/C (C = 답변 완료).
  * A value is null with a reason whenever it cannot be computed; a real 0/positive denominator is a normal 0%.
  * Support is decided per metric (a missing fine field never hides the outcome lines, and vice versa).
  */
@@ -11,7 +11,7 @@ export type TrendRate = 'accept' | 'reject' | 'partial' | 'fine';
 /** display / legend / table order (also the order of the checkboxes) */
 export const TREND_RATES: readonly TrendRate[] = ['accept', 'reject', 'partial', 'fine'];
 export const TREND_RATE_LABEL: Record<TrendRate, string> = {
-  accept: '수용률', reject: '불수용률', partial: '일부수용률', fine: '과태료처분율',
+  accept: '수용률', reject: '불수용률', partial: '일부수용률', fine: '과태료 부과율',
 };
 /** semantic colour token of each metric (never by position, so a metric keeps its colour whatever else is checked) */
 export const TREND_RATE_TOKEN: Record<TrendRate, 'accepted' | 'rejected' | 'partial' | 'fine'> = {
@@ -85,7 +85,7 @@ export function trendRateRows(monthly: readonly MonthlyBucket[], mine: readonly 
 }
 
 export const REASON_TEXT: Record<RateReason, string> = {
-  zero_denominator: '분모 없음', missing_field: '서버 미지원', missing_outcomes: '서버 미지원', no_data: '자료 없음',
+  zero_denominator: '계산 불가', missing_field: '제공 안 됨', missing_outcomes: '제공 안 됨', no_data: '자료 없음',
 };
 
 /** '66.7% (12/18건)' or the reason; rounding happens here only */

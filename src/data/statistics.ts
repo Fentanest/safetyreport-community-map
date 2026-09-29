@@ -51,7 +51,7 @@ export const catalogSchema = z.strictObject({
   limits: z.strictObject({ rows: count, columns: count, metrics: count, filters: count, members: count, cells: count, specChars: count }),
 });
 
-const changed = () => new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 만들어 주세요.', 409, null, 'DATASET_CHANGED');
+const changed = () => new PublicApiError('그사이 새 자료가 들어왔습니다. 통계를 다시 만들어 주세요.', 409, null, 'DATASET_CHANGED');
 
 export async function loadCatalog(signal?: AbortSignal): Promise<StatCatalog> {
   if (import.meta.env.VITE_DATA_MODE === 'demo') { const { statisticsCatalog } = await import('../../server/statistics'); return statisticsCatalog(); }

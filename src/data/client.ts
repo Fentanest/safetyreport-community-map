@@ -54,7 +54,7 @@ export function sameScope(a: Scope, b: Scope): boolean {
 // Pages artifact carries no data files (publish-pages.yml no longer exports one).
 export async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
-  if (!base) throw new PublicApiError('통계 서버에 연결할 수 없습니다.');
+  if (!base) throw new PublicApiError('통계를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
   const url = `${base}/public-analytics/${path}${params ? `?${params}` : ''}`;
   const auth = mapAuth();
   await auth.settled();
@@ -88,12 +88,12 @@ export async function read(path: string, params: URLSearchParams | null, signal?
     } catch { /* not JSON */ }
     const access = (ACCESS_CODES as readonly string[]).includes(code ?? '');
     // the server's fixed messages for these codes are safe to show and tell the user what to change;
-    // the code is appended so a failure report carries the real cause
+    // an unknown failure carries its code in plain words so a report to us still names the real cause
     const known = code === 'RESULT_TOO_LARGE' || code === 'INVALID_QUERY' || code === 'AGGREGATE_NOT_READY';
     throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.'
       : access && message ? message
-        : known ? `${message ?? '통계를 불러오지 못했습니다.'} (${code}, HTTP ${res.status})`
-          : `통계를 불러오지 못했습니다.${code ? ` (${code}, HTTP ${res.status})` : ` (HTTP ${res.status})`}`,
+        : known ? message ?? '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
+          : `통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요. (오류 코드 ${code ?? res.status})`,
       res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code, details);
   }
   return res.json();
@@ -143,10 +143,10 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
   }
   const parsed = entitiesResponseSchema.parse(await read('entities', scopeParams(scope, version, extra), signal));
   if (version !== undefined && parsed.dataset_version !== version) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   if (!sameScope(parsed.scope, scope)) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return {
     datasetVersion: parsed.dataset_version, scope: parsed.scope, items: parsed.items,
@@ -175,7 +175,7 @@ export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?:
   const result = dashboardResponseSchema.parse(await read('dashboard', q, signal));
   if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
       !sameScope(result.scope, scope)) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return {
     meta: { ...meta, location_missing: result.location_missing ?? undefined },
@@ -201,7 +201,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     if (state === 'noupload') throw new PublicApiError('지도에 올라간 내 신고가 아직 없습니다.', 403, null, 'upload_required');
     if (state === 'offline') throw new PublicApiError('네트워크 연결을 확인한 뒤 다시 시도해 주세요.');
     if (state === 'rate') throw new PublicApiError('요청이 많아 잠시 후 다시 시도해 주세요.', 429, 60);
-    if (state === 'stale') throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    if (state === 'stale') throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
     if (state === 'one' || state === 'empty') {
       const { demoDashboard } = await import('./demo');
       return demoDashboard(scope, state);
@@ -223,7 +223,7 @@ export async function loadPlace(scope: Scope, key: string, version: string, sign
   const extra = entityLimit !== 100 ? { entity_limit: String(Math.min(1000, Math.max(1, entityLimit))) } : undefined;
   const parsed = placeDetailResponseSchema.parse(await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version, extra), signal));
   if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope) || parsed.place.key !== key) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return { dataset_version: parsed.dataset_version, scope: parsed.scope, place: parsed.place,
     agencies: parsed.agencies, managers: parsed.managers, agency_total: parsed.agency_total, manager_total: parsed.manager_total };
@@ -238,7 +238,7 @@ export async function loadPlacesInView(scope: Scope, view: [number, number, numb
   }
   const parsed = placesResponseSchema.parse(await read('places', scopeParams(scope, version, { view_bbox: view.join(',') }), signal));
   if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope)) {
-    throw new PublicApiError('통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', 409);
+    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return { points: parsed.points, total: parsed.total_places, compacted: parsed.compacted };
 }

@@ -61,7 +61,7 @@ describe('statistics client while the map is contributor-only', () => {
     const error = await loadDashboard(scope).catch((e: unknown) => e);
     expect(isAccessError(error)).toBe(false);
     expect(error).toMatchObject({ status: 503, code: 'AGGREGATE_NOT_READY' });
-    // the real cause is carried in the message for failure reports (R1: the old generic text hid a 400)
-    expect((error as Error).message).toContain('(AGGREGATE_NOT_READY, HTTP 503)');
+    // the real cause stays on the error (code/status) and the message is plain language (no HTTP jargon)
+    expect((error as Error).message).not.toMatch(/HTTP/);
   });
 });

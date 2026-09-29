@@ -113,22 +113,22 @@ export const SHEETS = { table: '통계표', chart: '차트', conditions: '조회
 
 export type ExportStage = 'prepare' | 'table' | 'chart' | 'finalize';
 export const STAGE_LABEL: Record<ExportStage, string> = {
-  prepare: '엑셀 기능 준비 중', table: '통계표 작성 중', chart: '차트 작성 중', finalize: '파일 만드는 중',
+  prepare: '엑셀 준비 중', table: '통계표 작성 중', chart: '차트 작성 중', finalize: '파일 만드는 중',
 };
 export type ExportErrorCode =
   | 'asset_network' | 'asset_http' | 'asset_not_wasm' | 'init_failed' | 'unsupported' | 'worker_failed'
   | 'out_of_memory' | 'write_failed' | 'invalid_output' | 'cancelled';
 export const ERROR_TEXT: Record<ExportErrorCode, string> = {
-  asset_network: '엑셀 기능 파일을 내려받지 못했습니다(네트워크).',
-  asset_http: '엑셀 기능 파일을 찾지 못했습니다.',
-  asset_not_wasm: '엑셀 기능 파일이 손상되었거나 잘못된 형식으로 전달되었습니다.',
-  init_failed: '엑셀 기능을 시작하지 못했습니다.',
-  unsupported: '이 브라우저에서는 엑셀 파일을 만들 수 없습니다(WebAssembly 미지원).',
-  worker_failed: '파일을 만드는 작업이 중단되었습니다.',
+  asset_network: '엑셀 기능을 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.',
+  asset_http: '엑셀 기능을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
+  asset_not_wasm: '엑셀 기능 파일이 제대로 받아지지 않았습니다. 새로고침한 뒤 다시 시도해 주세요.',
+  init_failed: '엑셀 기능을 시작하지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.',
+  unsupported: '이 브라우저에서는 엑셀 파일을 만들 수 없습니다. 최신 크롬, 엣지, 사파리, 파이어폭스에서 다시 시도해 주세요.',
+  worker_failed: '파일을 만드는 도중에 멈췄습니다. 다시 시도해 주세요.',
   out_of_memory: '파일이 너무 커서 만들지 못했습니다. 비교 대상이나 기간을 줄여 주세요.',
-  write_failed: '엑셀 파일을 쓰는 중 오류가 났습니다.',
-  invalid_output: '만들어진 파일이 올바른 엑셀 파일이 아닙니다.',
-  cancelled: '파일 만들기를 취소했습니다.',
+  write_failed: '엑셀 파일을 만드는 중 오류가 났습니다. 다시 시도해 주세요.',
+  invalid_output: '엑셀 파일이 제대로 만들어지지 않았습니다. 다시 시도해 주세요.',
+  cancelled: '엑셀 파일 만들기를 취소했습니다.',
 };
 export class ExportError extends Error {
   constructor(public code: ExportErrorCode, detail?: string) { super(detail ? `${ERROR_TEXT[code]} (${detail})` : ERROR_TEXT[code]); }
@@ -139,7 +139,7 @@ export function kst(iso: string): { text: string; stamp: string } {
   const d = new Date(new Date(iso).getTime() + 9 * 3600_000);
   const p = (n: number) => String(n).padStart(2, '0');
   const y = d.getUTCFullYear(), mo = p(d.getUTCMonth() + 1), da = p(d.getUTCDate()), h = p(d.getUTCHours()), mi = p(d.getUTCMinutes()), s = p(d.getUTCSeconds());
-  return { text: `${y}-${mo}-${da} ${h}:${mi}:${s} (Asia/Seoul)`, stamp: `${y}${mo}${da}_${h}${mi}${s}` };
+  return { text: `${y}-${mo}-${da} ${h}:${mi}:${s} (한국 시간)`, stamp: `${y}${mo}${da}_${h}${mi}${s}` };
 }
 export const fileName = (snap: Pick<ExportSnapshot, 'fileStem' | 'capturedAt'>) => `${snap.fileStem}_${kst(snap.capturedAt).stamp}.xlsx`;
 

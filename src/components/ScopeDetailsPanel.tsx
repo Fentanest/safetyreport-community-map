@@ -98,7 +98,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
           onCompositionEnd={(e) => { composing.current = false; setInput((e.target as HTMLInputElement).value); }} />
         <PanelStatus busy={state === 'loading'} label={q ? '검색 중' : '불러오는 중'} />
       </div>
-      {state === 'error' && <p className="place-empty" role="alert">{noun} 목록을 불러오지 못했습니다. 화면의 목록은 이전 결과입니다.</p>}
+      {state === 'error' && <p className="place-empty" role="alert">{noun} 목록을 불러오지 못했습니다. 지금 보이는 목록은 이전 결과입니다.</p>}
       {rows.length === 0 && state !== 'loading' && (
         <p className="cm-muted place-empty">{q ? `‘${q}’에 맞는 ${noun}가 없습니다.` : `이 범위의 답변 완료 신고에 ${noun} 정보가 없습니다.`}</p>
       )}
@@ -110,7 +110,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
         ))}
       </ul>
       <div className="place-more">
-        <span className="cm-muted">표시 {fmtInt(Math.min(shown, rows.length))} / {all === undefined ? `많은 순 ${fmtInt(rows.length)}개(전체 수 서버 미지원)` : `전체 ${fmtInt(all)}`}</span>
+        <span className="cm-muted">표시 {fmtInt(Math.min(shown, rows.length))} / {all === undefined ? `많은 순 ${fmtInt(rows.length)}개 (전체 수는 알 수 없음)` : `전체 ${fmtInt(all)}`}</span>
         {rows.length > shown && <button type="button" className="mini-btn" onClick={() => setShown((n) => n + 10)}>더 보기</button>}
         {rows.length <= shown && all !== undefined && all > rows.length && (
           <button type="button" className="mini-btn" disabled={state === 'loading'} onClick={() => { setPages((n) => n + 1); setShown((n) => n + 10); }}>
@@ -176,7 +176,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
           </nav>
           <h2>{name}{scope.bbox ? <small className="scope-bbox"> × {autoRefresh ? '현재 지도 범위' : '마지막으로 적용한 지도 범위'}</small> : null}</h2>
           <p className="subtitle">{fmtDate(scope.start)} — {fmtDate(scope.end)}{conditions ? ` · ${conditions}` : ''}</p>
-          <PanelStatus busy={busy} label="새 조건으로 갱신 중 · 아래 숫자는 이전 조건" />
+          <PanelStatus busy={busy} label="새 조건으로 바꾸는 중 · 아래 숫자는 이전 조건의 결과" />
         </div>
         <div className="place-actions">
           <button className="mini-btn primary-mini" type="button" onClick={onMakeStatistics}>이 조건으로 통계 만들기</button>
@@ -194,7 +194,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
         <div className="pe-box"><span className="pe-label">과태료</span><b className="pe-num cm-number">{fmtInt(F)}건 <i aria-hidden="true">|</i> {fmtPercent(pct(F, C))}</b><small>÷ 답변 {fmtInt(C)}건</small></div>
         <div className="pe-box"><span className="pe-label">계도</span>
           <b className="pe-num cm-number">{W === undefined ? '—' : `${fmtInt(W)}건`}{W != null ? <> <i aria-hidden="true">|</i> {fmtPercent(pct(W, C))}</> : null}</b>
-          <small>{W === undefined ? '서버 미지원' : '경고·계도 처분 ÷ 답변'}</small></div>
+          <small>{W === undefined ? '제공 안 됨' : '경고·계도 처분 ÷ 답변'}</small></div>
       </section>
         </>
       ) : (
@@ -208,7 +208,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
         <div className="pe-box"><span className="pe-label">과태료</span><b className="pe-num cm-number">{fmtInt(F)}건 <i aria-hidden="true">|</i> {fmtPercent(pct(F, C))}</b><small>÷ 답변 {fmtInt(C)}건</small></div>
         <div className="pe-box"><span className="pe-label">계도</span>
           <b className="pe-num cm-number">{W === undefined ? '—' : `${fmtInt(W)}건`}{W != null ? <> <i aria-hidden="true">|</i> {fmtPercent(pct(W, C))}</> : null}</b>
-          <small>{W === undefined ? '서버 미지원' : '경고·계도 처분 ÷ 답변'}</small></div>
+          <small>{W === undefined ? '제공 안 됨' : '경고·계도 처분 ÷ 답변'}</small></div>
       </section>
 
       <section className="place-section" aria-label="처리 결과">

@@ -80,9 +80,9 @@ try {
       { note: '비교할 지표를 선택해 주세요.', series: [] });
     check('MT-05', 'checkboxes stay usable', await card.locator('.rate-check input:not([disabled])').count(), 4);
     await card.getByRole('button', { name: '전체 선택' }).click();
-    await card.locator('.rate-check', { hasText: '과태료처분율' }).click();
+    await card.locator('.rate-check', { hasText: '과태료 부과율' }).click();
     check('MT-04', 'unchecking fine removes only its lines', await waitFor(() => series(page, host), (x) => x.length === 3), ['rate:accept:all', 'rate:reject:all', 'rate:partial:all']);
-    await card.locator('.rate-check', { hasText: '과태료처분율' }).click();
+    await card.locator('.rate-check', { hasText: '과태료 부과율' }).click();
     // compare ON with a slow personal answer: public lines stay, the pending state is named, nothing copied
     await api('delay', { 'my-analytics': 2500 });
     await page.locator('.compare-toggle input').check();
@@ -97,10 +97,10 @@ try {
     const box = await page.locator(host).boundingBox();
     await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
     const tip = await waitFor(() => page.evaluate(() => [...document.querySelectorAll('.trend-card .chart-host div')].map((d) => d.innerText).find((t) => t && t.includes('내 신고')) ?? ''), (t) => !!t);
-    check('MT-16', 'tooltip lists 8 values with num/den or a reason', tip.split('\n').filter((l) => / · (전체|내 신고) /.test(l) && (/\(\d+\/\d+건\)/.test(l) || /분모 없음|자료 없음|서버 미지원/.test(l))).length, 8);
+    check('MT-16', 'tooltip lists 8 values with num/den or a reason', tip.split('\n').filter((l) => / · (전체|내 신고) /.test(l) && (/\(\d+\/\d+건\)/.test(l) || /계산 불가|자료 없음|제공 안 됨/.test(l))).length, 8);
     await card.getByRole('button', { name: '표로 보기' }).click();
     const head = (await card.locator('thead').innerText()).replace(/\s+/g, ' ');
-    check('MT-20', 'table has all/mine per checked rate', ['수용률 전체', '수용률 내 신고', '불수용률 전체', '불수용률 내 신고', '일부수용률 전체', '일부수용률 내 신고', '과태료처분율 전체', '과태료처분율 내 신고'].every((h) => head.includes(h)), true);
+    check('MT-20', 'table has all/mine per checked rate', ['수용률 전체', '수용률 내 신고', '불수용률 전체', '불수용률 내 신고', '일부수용률 전체', '일부수용률 내 신고', '과태료 부과율 전체', '과태료 부과율 내 신고'].every((h) => head.includes(h)), true);
     await card.getByRole('button', { name: '그래프로 보기' }).click();
     await card.getByRole('button', { name: '건수', exact: true }).click();
     await card.getByRole('button', { name: '처리결과 비율' }).click();
@@ -354,7 +354,7 @@ try {
     await page.waitForSelector('.pivot-table tbody tr', { timeout: 15000 });
     const chip = await waitFor(() => page.locator('.stats-member.unavailable').innerText().catch(() => ''), (t) => !!t);
     check('MS-10', 'unknown key shown as 확인할 수 없음 with the saved label', chip, '예전에 저장한 기관 (확인할 수 없음)');
-    check('MS-10', 'exclusion stated, not switched to 전체', { banner: await page.locator('.banner.warn', { hasText: '확인할 수 없는' }).count(), rows: (await page.locator('.pivot-table tbody th').count()) }, { banner: 1, rows: 3 });
+    check('MS-10', 'exclusion stated, not switched to 전체', { banner: await page.locator('.banner.warn', { hasText: '확인할 수 없어 결과에서 뺐습니다' }).count(), rows: (await page.locator('.pivot-table tbody th').count()) }, { banner: 1, rows: 3 });
     const c0 = (await log()).length;
     await page.locator('.stats-result').getByRole('button', { name: '그래프', exact: true }).click();
     check('CH-01', 'heatmap of the same result', await waitFor(() => series(page, '.stats-chart-host'), (x) => x.length === 1), ['heatmap:fine_rate:all']);
@@ -385,7 +385,7 @@ try {
     await card.getByRole('button', { name: '전체 선택' }).click();
     await card.getByRole('button', { name: '이 조건으로 통계 만들기' }).click();
     await page.waitForSelector('.pivot-table tbody tr');
-    check('MT-21', 'rows = 답변 월, four rate metrics', await page.locator('.stats-result-head h2').innerText(), '답변 월 · 수용률, 불수용률, 일부수용률, 과태료처분율');
+    check('MT-21', 'rows = 답변 월, four rate metrics', await page.locator('.stats-result-head h2').innerText(), '답변 월 · 수용률, 불수용률, 일부수용률, 과태료 부과율');
     await page.locator('.stats-result').getByRole('button', { name: '그래프', exact: true }).click();
     check('MT-21', 'overlaid percent lines', await waitFor(() => series(page, '.stats-chart-host'), (x) => x.length === 4), ['accept_rate:all', 'reject_rate:all', 'partial_rate:all', 'fine_rate:all']);
     await context.close();

@@ -65,7 +65,7 @@ const NUMFMT: Record<XUnit, string> = {
   count: '#,##0"건"', percent: '0.0%', won: '#,##0"원"', days: '0.0"일"', score: '0.00"점"', month: 'yyyy-mm', text: '@',
 };
 const AXIS_FMT: Record<XUnit, string> = { count: '#,##0', percent: '0%', won: '#,##0', days: '0.0', score: '0.0', month: 'yyyy-mm', text: 'General' };
-export const UNIT_TEXT: Record<XUnit, string> = { count: '건', percent: '비율(0~100%)', won: '원', days: '일', score: '점', month: '월', text: '' };
+export const UNIT_TEXT: Record<XUnit, string> = { count: '건', percent: '%', won: '원', days: '일', score: '점', month: '월', text: '' };
 
 export interface WriteResult { bytes: Uint8Array; stats: { tableCells: number; formulas: number; charts: number; heatmaps: number } }
 
@@ -112,7 +112,7 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
   const cols = snap.table.columns;
   const colIndex = new Map(cols.map((c, i) => [c.id, i + 1]));
   str(T, 'A1', snap.title, S.title);
-  str(T, 'A2', `${kst(snap.capturedAt).text} 기준 집계 snapshot · 조건은 ‘${SHEETS.conditions}’ 시트`, S.flow);
+  str(T, 'A2', `${kst(snap.capturedAt).text}에 내려받은 결과입니다. 조건은 ‘${SHEETS.conditions}’ 시트에 있습니다.`, S.flow);
   const levels = Math.max(1, ...cols.map((c) => c.header.length));
   const headTop = 4;
   const headerRows = levels; // hierarchy rows; the last one is the unique column name
@@ -177,7 +177,7 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
   onStage('chart');
   const D = SHEETS.data, C = SHEETS.chart;
   str(D, 'A1', '차트 데이터', S.title);
-  str(D, 'A2', `차트가 읽는 집계 칸입니다(개별 신고가 아닙니다). 값 칸은 ‘${T}’ 시트의 칸을 가리키는 수식이라 통계표의 분자·분모를 고치면 차트도 바뀝니다. 이 시트의 값 칸에 숫자를 직접 넣어도 차트에 반영되지만 통계표와는 달라집니다. 빈 칸은 값이 없다는 뜻(0 아님)입니다.`, S.flow);
+  str(D, 'A2', `차트가 그리는 숫자입니다(개별 신고가 아닙니다). 이 숫자들은 ‘${T}’ 시트에서 그대로 가져오므로, 통계표의 건수를 고치면 차트도 함께 바뀝니다. 여기에 숫자를 직접 넣어도 차트는 바뀌지만 통계표와는 달라집니다. 빈 칸은 값이 없다는 뜻입니다(0이 아님).`, S.flow);
   ok(f.SetColWidth(D, 'A', 'A', 26), 'width');
   ok(f.SetColWidth(D, 'B', 'Z', 16), 'width');
   str(C, 'A1', `${snap.title} · 차트`, S.title);
@@ -192,7 +192,7 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
     str(D, addr(1, dRow), title, S.key);
     const head = dRow + 1;
     str(D, addr(1, head), categoryTitle, S.head);
-    series.forEach((s, i) => str(D, addr(i + 2, head), s.hidden && !includeHidden ? `${s.name} (그래프에서 숨김)` : s.name, S.head));
+    series.forEach((s, i) => str(D, addr(i + 2, head), s.hidden && !includeHidden ? `${s.name} (화면에서 숨긴 항목)` : s.name, S.head));
     categories.forEach((cat, k) => {
       const rr = head + 1 + k;
       if (typeof cat === 'number') num(D, addr(1, rr), cat, S.num[categoryUnit]);
@@ -263,7 +263,7 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
     const drawnCombo = (ch.combo?.series ?? []).filter((s) => includeHidden || !s.hidden);
     placeTitle(ch.title, ch.note);
     if (drawn.length === 0 && drawnCombo.length === 0) {
-      str(C, addr(1, cRow), '현재 모든 계열을 숨겼습니다. 표와 차트 데이터에는 전부 있습니다(0건이 아닙니다). 웹에서 범례의 ‘전체 보기’를 누르거나 다운로드할 때 ‘숨긴 계열도 차트에 포함’을 고르세요.', S.flow);
+      str(C, addr(1, cRow), '화면에서 모든 항목을 숨긴 상태라 차트를 넣지 않았습니다(0건이라는 뜻이 아닙니다). 숫자는 통계표와 차트 데이터 시트에 모두 있습니다. 차트가 필요하면 화면에서 ‘전체 보기’를 누르거나 ‘숨긴 항목도 엑셀 차트에 넣기’를 켜고 다시 받아 주세요.', S.flow);
       cRow += 3;
       return;
     }
@@ -306,7 +306,7 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
     }
     dRow = rr + 2;
     placeTitle(ch.title, ch.note);
-    if (rr === head) { str(C, addr(1, cRow), '두 지표가 모두 있는 항목이 없어 산점도를 그리지 않았습니다.', S.flow); cRow += 2; return; }
+    if (rr === head) { str(C, addr(1, cRow), '두 값이 모두 있는 항목이 없어 산점도를 넣지 않았습니다.', S.flow); cRow += 2; return; }
     ok(f.AddChart(C, addr(2, cRow), {
       Type: CHART.Scatter,
       Series: [{ Name: ref(D, 1, head - 1), Categories: range(D, 2, head + 1, 2, rr), Values: range(D, 3, head + 1, 3, rr),
@@ -352,15 +352,15 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
   ok(f.SetColWidth(Q, 'A', 'A', 22), 'width');
   ok(f.SetColWidth(Q, 'B', 'B', 96), 'width');
   const rows: Array<{ label: string; value: string }> = [
-    { label: '내보낸 시각', value: kst(snap.capturedAt).text },
+    { label: '내려받은 시각', value: kst(snap.capturedAt).text },
     { label: '자료 버전', value: snap.datasetVersion ?? '—' },
     ...snap.conditions,
   ];
   if (snap.legend) {
-    rows.push({ label: '그래프 범례', value: snap.legend.hidden.length === 0 ? '모든 계열 표시'
-      : `그래프에서 숨긴 계열: ${snap.legend.hidden.join(', ')} — ${snap.legend.includeHidden ? '이 파일의 차트에는 포함했습니다' : '이 파일의 차트에서도 빠져 있고, 통계표와 차트 데이터에는 포함되어 있습니다'}` });
+    rows.push({ label: '화면에서 숨긴 항목', value: snap.legend.hidden.length === 0 ? '없음'
+      : `${snap.legend.hidden.join(', ')} — ${snap.legend.includeHidden ? '이 파일의 차트에는 넣었습니다' : '이 파일의 차트에서도 뺐습니다. 숫자는 통계표와 차트 데이터 시트에 있습니다'}` });
   }
-  rows.push({ label: '이 파일', value: '조회 당시 집계 결과의 snapshot입니다. Excel에서 자료를 다시 불러오지 않으며, 지도 사이트의 최신 자료와 다를 수 있습니다. 개별 신고·차량번호·신고번호·계정 정보는 들어 있지 않습니다. 파일을 다른 사람에게 보내면 그 안의 집계와 이름을 볼 수 있습니다.' });
+  rows.push({ label: '이 파일에 대해', value: '내려받은 시점의 결과입니다. 엑셀에서 자료를 새로 불러오지 않으므로 지금 사이트의 숫자와 다를 수 있습니다. 개별 신고, 차량 번호, 신고 번호, 계정 정보는 들어 있지 않습니다. 파일을 다른 사람에게 보내면 파일 안의 통계와 이름을 그 사람도 볼 수 있습니다.' });
   rows.forEach((r, i) => { str(Q, addr(1, 3 + i), r.label, S.key); str(Q, addr(2, 3 + i), r.value, S.note); });
 
   // ── properties: no personal data; recalculate formulas when opened ─────────────────────────────────────
@@ -388,7 +388,7 @@ export function toBytes(b: unknown): Uint8Array {
   return copy;
 }
 
-/** the last header level becomes a unique, readable column name (e.g. '강남서 · 과태료처분율 · 전체 · 비율') */
+/** the last header level becomes a unique, readable column name (e.g. '강남서 · 과태료 부과율 · 전체 · 비율') */
 export function uniqueHeaders(cols: XColumn[]): string[] {
   const names = cols.map((c) => c.header.filter(Boolean).join(' · ') || c.id);
   const seen = new Map<string, number>();

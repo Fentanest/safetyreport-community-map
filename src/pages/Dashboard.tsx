@@ -453,7 +453,7 @@ export default function Dashboard() {
   const rawPersonal = usePersonalCompare(shownScope ?? scope, version, compareActive);
   const personal: PersonalState = rawPersonal.status === 'ready' && rawPersonal.data && data && !consistentWithPublic(rawPersonal.data, data.overview)
     ? { status: 'error', data: null, retry: rawPersonal.retry,
-      error: { code: 'DATASET_CHANGED', message: '통계가 방금 새로 바뀌었습니다. 다시 불러와 주세요.', retryAfter: null } }
+      error: { code: 'DATASET_CHANGED', message: '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', retryAfter: null } }
     : rawPersonal;
   const compareData = personal.status === 'ready' ? personal.data : null;
   const showMine = compareOn && !compareDisabledReason && !briefingHidden;
@@ -497,7 +497,7 @@ export default function Dashboard() {
     : dash.wait === 'rate_limit' ? { resource: 'dashboard', phase: 'retry_wait', label: '요청이 많아 잠시 기다리는 중', retryAt: dash.pausedUntil, displayedLabel: displayedText }
       : dash.fetching ? { resource: 'dashboard', phase: 'fetching', label: shown ? '새 조건으로 통계를 불러오는 중' : '통계를 불러오는 중', displayedLabel: shown ? displayedText : null }
         : dash.wait === 'retry' ? { resource: 'dashboard', phase: 'retry_wait', label: '연결이 불안정해 곧 한 번 더 시도하는 중', displayedLabel: displayedText }
-          : dash.wait === 'debounce' ? { resource: 'dashboard', phase: 'scheduled', label: '선택한 범위로 갱신 준비 중', displayedLabel: displayedText }
+          : dash.wait === 'debounce' ? { resource: 'dashboard', phase: 'scheduled', label: '고른 범위로 바꿀 준비 중', displayedLabel: displayedText }
             : dash.error ? { resource: 'dashboard', phase: 'error', label: '통계를 불러오지 못했습니다' } : null;
   useReportActivity('dashboard', dashActivity, activity);
   useReportActivity('personal', showMine && personal.status === 'loading'
@@ -563,9 +563,9 @@ export default function Dashboard() {
   const conditionsText = (s: Scope | null) => (s ? scopeChips(s).map((c) => `${c.kind} ${c.label}`).join(' · ') : '');
   /** F06: 조회 조건 rows of a dashboard card file (the DISPLAYED scope, fixed dates) */
   const exportConditions = (s: Scope, address?: string) => [
-    { label: '기간', value: `${s.start} — ${s.end} (Asia/Seoul 날짜, 양 끝 포함)` },
+    { label: '기간', value: `${s.start} — ${s.end} (시작일·종료일 포함)` },
     { label: '대상 범위', value: scopeChips(s).filter((c) => c.id !== 'bbox').map((c) => `${c.kind} ${c.label}`).join(' · ') || '전국 · 모든 분류' },
-    ...(s.bbox ? [{ label: '지도 범위', value: `적용(경도 ${s.bbox[0]}~${s.bbox[2]}, 위도 ${s.bbox[1]}~${s.bbox[3]})` }] : []),
+    ...(s.bbox ? [{ label: '지도 범위', value: `지도에서 고른 범위 (경도 ${s.bbox[0]}~${s.bbox[2]}, 위도 ${s.bbox[1]}~${s.bbox[3]})` }] : []),
     ...(address ? [{ label: '주소', value: address }] : []),
   ];
 
@@ -584,7 +584,7 @@ export default function Dashboard() {
 
   const stamp = data?.meta.data_max ? fmtDate(data.meta.data_max) : fmtDate(baseScope(dataMode).end);
   const err = dash.error;
-  const errText = err ? `${err.status === 429 ? '요청이 많아 잠시 쉬고 있습니다' : err.message}${err.status === 429 && err.retryAfter ? ` · ${err.retryAfter}초 뒤 최신 범위로 자동으로 다시 불러옵니다` : ''}` : null;
+  const errText = err ? `${err.status === 429 ? '요청이 많아 잠시 기다리는 중입니다' : err.message}${err.status === 429 && err.retryAfter ? ` · ${err.retryAfter}초 뒤 최신 범위로 자동으로 다시 불러옵니다` : ''}` : null;
   const entitiesLive = entitiesAvailable() && !(dataMode === 'demo' && (fixture === 'one' || fixture === 'empty'));
   const analytics = data?.analytics ?? null;
 
@@ -761,7 +761,7 @@ export default function Dashboard() {
                     <PlaceEntityChart
                       key={point.key}
                       exportCtx={shownScope ? { conditions: exportConditions(shownScope, point.address ?? '선택한 주소'), datasetVersion: version,
-                        blocked: dash.isRefreshing ? '새 조건 결과를 기다리는 중입니다' : null } : undefined}
+                        blocked: dash.isRefreshing ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다' : null } : undefined}
                       managers={placeDetail.detail.managers}
                       total={placeDetail.detail.manager_total}
                       theme={resolvedTheme}
@@ -774,7 +774,7 @@ export default function Dashboard() {
                     <PlaceEntityChart
                       key={scopeManagers.key}
                       title="이 범위의 담당자별 처리 현황"
-                      exportCtx={{ conditions: exportConditions(shownScope), datasetVersion: version, blocked: dash.isRefreshing ? '새 조건 결과를 기다리는 중입니다' : null }}
+                      exportCtx={{ conditions: exportConditions(shownScope), datasetVersion: version, blocked: dash.isRefreshing ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다' : null }}
                       managers={scopeManagers.rows}
                       total={scopeManagers.total}
                       theme={resolvedTheme}

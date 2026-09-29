@@ -78,7 +78,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     if (!active || catalog) return;
     const ac = new AbortController();
     loadCatalog(ac.signal).then((c) => { if (!ac.signal.aborted) setCatalog(c); })
-      .catch(() => { if (!ac.signal.aborted) setCatalogError('통계 항목 목록을 불러오지 못했습니다.'); });
+      .catch(() => { if (!ac.signal.aborted) setCatalogError('고를 수 있는 통계 항목을 불러오지 못했습니다. 새로고침해 주세요.'); });
     return () => ac.abort();
   }, [active, catalog]);
 
@@ -184,8 +184,8 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   }, [active, hasDraft]);
   const plan = useMemo(() => (result && catalog ? planChart(result.spec, catalog, chart) : null), [result, catalog, chart]);
   // F06: the file is the APPLIED result on screen (never the draft); a newer run in flight locks the button
-  const exportBlocked = !result || !applied || !catalog ? '먼저 통계를 만들어 주세요(내보낼 결과가 없습니다)'
-    : run.status === 'loading' ? '새 조건 결과를 기다리는 중입니다' : null;
+  const exportBlocked = !result || !applied || !catalog ? '통계를 만든 뒤에 받을 수 있습니다'
+    : run.status === 'loading' ? '새 결과를 만드는 중이라 잠시 뒤에 받을 수 있습니다' : null;
   const captureExport = () => {
     if (!result || !applied || !catalog) return null;
     const dl = (id: string) => catalog.dimensions.find((d) => d.id === id)?.label ?? id;
@@ -193,21 +193,21 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     const chipsText = scopeChips(applied.scope).filter((c) => c.id !== 'bbox').map((c) => `${c.kind} ${c.label}`).join(' · ');
     const p = planChart(result.spec, catalog, chart);
     const conditions = [
-      { label: '기간', value: `${applied.scope.start} — ${applied.scope.end} (Asia/Seoul 날짜, 양 끝 포함)` },
+      { label: '기간', value: `${applied.scope.start} — ${applied.scope.end} (시작일·종료일 포함)` },
       { label: '날짜 기준', value: applied.spec.date_basis === 'completed_date' ? '답변 받은 날' : '신고한 날' },
       { label: '대상 범위', value: chipsText || '전국 · 모든 분류' },
-      ...(applied.scope.bbox ? [{ label: '지도 범위', value: `적용(경도 ${applied.scope.bbox[0]}~${applied.scope.bbox[2]}, 위도 ${applied.scope.bbox[1]}~${applied.scope.bbox[3]})` }] : []),
+      ...(applied.scope.bbox ? [{ label: '지도 범위', value: `지도에서 고른 범위 (경도 ${applied.scope.bbox[0]}~${applied.scope.bbox[2]}, 위도 ${applied.scope.bbox[1]}~${applied.scope.bbox[3]})` }] : []),
       ...(applied.spec.place_key ? [{ label: '주소', value: applied.labels[applied.spec.place_key] ?? '선택한 주소' }] : []),
-      { label: '누구의 신고', value: applied.spec.population === 'all' ? '전체' : applied.spec.population === 'mine' ? '내 신고(이 파일을 내보낸 사람)' : '전체와 내 신고(내보낸 사람) 비교' },
+      { label: '누구의 신고', value: applied.spec.population === 'all' ? '전체' : applied.spec.population === 'mine' ? '내 신고 (이 파일을 내려받은 계정의 신고)' : '전체와 내 신고 함께 (이 파일을 내려받은 계정의 신고)' },
       { label: '행', value: applied.spec.rows.map(dl).join(' › ') || '없음' },
       { label: '열', value: applied.spec.columns.map(dl).join(' › ') || '없음' },
       { label: '지표', value: applied.spec.metrics.map(ml).join(', ') },
-      { label: '답변 신고', value: `${result.population_count.all !== null ? `전체 ${result.population_count.all.toLocaleString('ko-KR')}건` : ''}${result.population_count.mine !== null ? ` 내 신고 ${result.population_count.mine.toLocaleString('ko-KR')}건` : ''}`.trim() },
-      ...(result.excluded.no_report_date > 0 ? [{ label: '제외', value: `신고일이 없는 ${result.excluded.no_report_date.toLocaleString('ko-KR')}건(신고일 기준이라 제외)` }] : []),
-      { label: '표 정렬', value: sort.metric ? `${ml(sort.metric)} ${sort.dir === 'desc' ? '큰 값부터' : '작은 값부터'}` : '서버 순서' },
-      { label: '그래프', value: `${CHART_LABEL[chart.type]} 요청 → ${CHART_LABEL[p.type]}${p.refusal ? ` (${p.refusal})` : ''}` },
+      { label: '답변 신고', value: [result.population_count.all !== null ? `전체 ${result.population_count.all.toLocaleString('ko-KR')}건` : '', result.population_count.mine !== null ? `내 신고 ${result.population_count.mine.toLocaleString('ko-KR')}건` : ''].filter(Boolean).join(' · ') },
+      ...(result.excluded.no_report_date > 0 ? [{ label: '제외', value: `신고일이 없는 ${result.excluded.no_report_date.toLocaleString('ko-KR')}건 (신고한 날 기준이라 뺐습니다)` }] : []),
+      { label: '표 정렬', value: sort.metric ? `${ml(sort.metric)} ${sort.dir === 'desc' ? '큰 값부터' : '작은 값부터'}` : '기본 순서' },
+      { label: '그래프', value: chart.type === 'auto' ? `${CHART_LABEL[p.type]} (자동 선택)` : p.refusal ? `${CHART_LABEL[p.type]} (고른 ${CHART_LABEL[chart.type]} 그래프는 이 설정에서 쓸 수 없어 바꿨습니다)` : CHART_LABEL[p.type] },
       { label: '지표 정의', value: applied.spec.metrics.map((m) => `${ml(m)}: ${catalog.metrics.find((x) => x.id === m)?.description ?? ''}`).join(' · ') },
-      { label: '빈 값', value: '‘—’ 해당 조합 신고 없음 · ‘분모 없음’ 분모가 0 · ‘자료 없음’ 계산할 자료가 없음. 모두 0이 아닙니다.' },
+      { label: '빈 칸의 뜻', value: '‘—’는 해당하는 신고가 없음, ‘계산 불가’는 비율의 기준이 되는 신고가 0건, ‘자료 없음’은 계산할 자료가 없다는 뜻입니다. 모두 0과 다릅니다.' },
     ];
     return statisticsSnapshot({ result, catalog, chart, sort, hidden, includeHidden, conditions, title: `맞춤 통계 · ${describe(applied)}`, capturedAt: new Date().toISOString() });
   };
@@ -217,19 +217,19 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     <>
       {share.status === 'error' && (
         <div className="banner error share-banner" role="alert">
-          <span className="grow">공유 링크를 열 수 없습니다: {share.reason} 다른 구성으로 바꾸지 않았습니다.</span>
-          <button type="button" className="ghost-btn" onClick={closeShareError}>닫고 기본 화면으로</button>
+          <span className="grow">공유 링크를 열 수 없습니다. {share.reason}</span>
+          <button type="button" className="ghost-btn" onClick={closeShareError}>기본 화면 보기</button>
         </div>
       )}
       {share.status === 'waiting_login' && (
         <div className="banner warn share-banner" role="note">
-          <span className="grow">이 링크는 ‘{share.payload.spec.population === 'mine' ? '내 신고' : '전체와 내 신고 비교'}’ 구성입니다. 내 신고는 링크를 연 사람의 신고로 계산하므로 로그인이 필요합니다. 공유한 사람의 값은 볼 수 없습니다.</span>
+          <span className="grow">이 링크는 내 신고를 함께 보는 설정입니다. 로그인하면 내 신고로 계산해 보여 드립니다. 공유한 사람의 신고는 보이지 않습니다.</span>
           {onSignIn && <button type="button" className="ghost-btn" onClick={onSignIn}>로그인</button>}
         </div>
       )}
       {share.status === 'applied' && (
         <div className="banner info share-banner" role="note">
-          <span className="grow">공유받은 분석 구성으로 다시 계산했습니다. 링크에는 결과 수치가 없고, 지금 자료와 내 권한으로 계산합니다{share.mine ? ' · 내 신고는 링크를 연 사람(나)의 신고입니다' : ''}. 주소·지도 범위 조건은 링크에 포함되지 않습니다.</span>
+          <span className="grow">공유받은 설정으로 통계를 만들었습니다. 숫자는 지금 자료로 새로 계산한 것이라 공유한 사람이 본 숫자와 다를 수 있습니다{share.mine ? '. 내 신고는 내 계정의 신고로 계산했습니다' : ''}.</span>
           <button type="button" className="link-btn" onClick={() => setShare({ status: 'none' })}>닫기</button>
         </div>
       )}
@@ -240,7 +240,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       <section className="stats-page" aria-labelledby="stats-title" hidden={!active}>
         <h1 id="stats-title" tabIndex={-1}>맞춤 통계</h1>
         {shareBanners}
-        {share.status !== 'error' && <p className="cm-muted">지도의 통계를 먼저 불러오는 중입니다…</p>}
+        {share.status !== 'error' && <p className="cm-muted">통계를 준비하는 중입니다…</p>}
       </section>
     );
   }
@@ -334,7 +334,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       {shareBanners}
       <div className="stats-layout">
         <aside className="cm-panel stats-builder" aria-label="통계 설정">
-          <label className="stats-field">예시 구성
+          <label className="stats-field">예시 설정
             <select value="" onChange={(e) => {
               const p = PRESETS.find((x) => x.id === e.target.value);
               if (p) setDraft((d) => d && { ...d, spec: { ...d.spec, ...p.spec, filters: d.spec.filters }, origin: p.label });
@@ -384,8 +384,8 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
                     const st = fm?.status;
                     const label = fm?.label ?? draft.labels[k] ?? k;
                     return <span key={k} className={`stats-member${st === 'zero' ? ' zero' : st === 'unconfirmed' ? ' unavailable' : ''}`}
-                      title={st === 'unconfirmed' ? '저장된 이름입니다. 이 기간·현재 권한에서 확인할 수 없어 결과에 포함되지 않았습니다.' : undefined}>
-                      {label}{st === 'zero' ? ' (현재 조건 0건)' : st === 'unconfirmed' ? ' (확인할 수 없음)' : !fm && result ? ' (적용 전)' : ''}</span>;
+                      title={st === 'unconfirmed' ? '이 기간에는 확인할 수 없는 대상이라 결과에서 뺐습니다.' : undefined}>
+                      {label}{st === 'zero' ? ' (현재 조건 0건)' : st === 'unconfirmed' ? ' (확인할 수 없음)' : !fm && result ? ' (아직 반영 안 됨)' : ''}</span>;
                   })}
                   <button type="button" aria-label={`${dimLabel(f.dimension)} 선택 해제`} onClick={() => edit({ filters: spec.filters.filter((x) => x !== f) })}>×</button></span>
               ))}
@@ -396,15 +396,15 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           <div className="stats-run">
             <button type="button" className="primary-button" disabled={!catalog || !!sameAsRunning || (!unapplied && run.status !== 'error')}
               onClick={() => draft && execute(draft)}>{sameAsRunning ? '만드는 중…' : '통계 만들기'}</button>
-            {unapplied && <span className="unapplied-note" role="status">적용 전 변경사항이 있습니다</span>}
+            {unapplied && <span className="unapplied-note" role="status">바꾼 설정이 아직 반영되지 않았습니다</span>}
           </div>
           <details className="stats-save">
-            <summary>구성 저장·불러오기</summary>
+            <summary>설정 저장·불러오기</summary>
             <div className="stats-save-row">
-              <input value={saveName} placeholder="이름" aria-label="구성 이름" maxLength={40} onChange={(e) => setSaveName(e.target.value)} />
+              <input value={saveName} placeholder="이름" aria-label="설정 이름" maxLength={40} onChange={(e) => setSaveName(e.target.value)} />
               <button type="button" className="mini-btn" disabled={!saveName.trim()} onClick={() => { setSaved(saveRecipe(viewer, saveName.trim(), draft, chart)); setSaveName(''); }}>저장</button>
             </div>
-            <small className="cm-muted">이 브라우저에만 저장합니다(주소·내 신고 설정은 저장하지 않음).</small>
+            <small className="cm-muted">이 브라우저에만 저장합니다. 주소와 내 신고 선택은 저장하지 않습니다.</small>
             <ul>
               {saved.map((r) => (
                 <li key={r.name}><button type="button" className="link-btn" onClick={() => { setDraft((d) => d && { ...d, spec: { ...r.spec }, labels: { ...d.labels, ...r.labels }, origin: r.name }); setChart(r.chart); }}>{r.name}</button></li>
@@ -435,12 +435,12 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
                     <select value={chart.type} onChange={(e) => setChart((c) => ({ ...c, type: e.target.value as ChartSettings['type'] }))}>
                       <option value="auto">자동({CHART_LABEL[planChart(result!.spec, catalog, { ...chart, type: 'auto' }).type]})</option>
                       {(['bar', 'hbar', 'line', 'stack', 'stack100', 'heatmap', 'scatter'] as const).map((t) => (
-                        <option key={t} value={t} disabled={!plan.compatible.includes(t)}>{CHART_LABEL[t]}{plan.compatible.includes(t) ? '' : ' (이 조합 불가)'}</option>
+                        <option key={t} value={t} disabled={!plan.compatible.includes(t)}>{CHART_LABEL[t]}{plan.compatible.includes(t) ? '' : ' (지금 설정에선 못 씀)'}</option>
                       ))}
                     </select>
                   </label>
                   {result!.spec.metrics.length > 1 && (
-                    <label className="inline-select">주 지표
+                    <label className="inline-select">기준 지표
                       <select value={chart.primary ?? result!.spec.metrics[0]} onChange={(e) => setChart((c) => ({ ...c, primary: e.target.value }))}>
                         {result!.spec.metrics.map((m) => <option key={m} value={m}>{metricLabel(m)}</option>)}
                       </select>
@@ -454,7 +454,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           <div className="stats-actions">
             <ExportButton source="statistics" blocked={exportBlocked} capture={captureExport}
               extra={hidden.length > 0 && view === 'chart' ? (
-                <label className="inline-check export-option"><input type="checkbox" checked={includeHidden} onChange={(e) => setIncludeHidden(e.target.checked)} />숨긴 계열도 차트에 포함</label>
+                <label className="inline-check export-option"><input type="checkbox" checked={includeHidden} onChange={(e) => setIncludeHidden(e.target.checked)} />숨긴 항목도 엑셀 차트에 넣기</label>
               ) : null} />
             <button type="button" className="mini-btn" aria-expanded={shareOpen} disabled={!applied && !draft} onClick={() => setShareOpen((o) => !o)}>공유 링크</button>
           </div>
@@ -464,7 +464,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           )}
           {result && result.filter_members.some((m) => m.status === 'unconfirmed') && (
             <div className="banner warn" role="note">
-              <span className="grow">확인할 수 없는 비교 대상 {result.filter_members.filter((m) => m.status === 'unconfirmed').length}개는 이 결과에 포함되지 않았습니다(전체로 바꾸지 않았습니다). 설정에서 대상을 정리해 주세요.</span>
+              <span className="grow">비교 대상 {result.filter_members.filter((m) => m.status === 'unconfirmed').length}개는 이 기간에 확인할 수 없어 결과에서 뺐습니다. 필요 없으면 설정에서 지워 주세요.</span>
             </div>
           )}
           {run.status === 'error' && (
@@ -477,7 +477,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           {result && catalog && (view === 'table'
             ? <PivotTable result={result} catalog={catalog} sort={sort} onSort={setSort} onPick={(row, col) => setPick({ row, col })} />
             : <PivotChart result={result} catalog={catalog} settings={chart} theme={theme} hidden={hidden} onHidden={setHidden} onPick={(row, col) => setPick({ row, col })} />)}
-          {result && result.population_count.all === 0 && result.population_count.mine !== null && result.population_count.mine === 0 && <p className="cm-muted">이 조건에 맞는 답변 신고가 없습니다(0건).</p>}
+          {result && result.population_count.all === 0 && result.population_count.mine !== null && result.population_count.mine === 0 && <p className="cm-muted">이 조건에 맞는 답변 신고가 없습니다.</p>}
           {pick && result && (
             <div className="stats-pick" role="dialog" aria-label="이 항목으로 좁히기">
               <p><b>{[...(result.row_members.find((m) => JSON.stringify(m.key) === JSON.stringify(pick.row))?.label ?? []),

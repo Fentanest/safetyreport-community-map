@@ -116,9 +116,9 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
   const noRates = view === 'rate' && rates.length === 0;
   const allNull = view === 'rate' && rates.length > 0 && rows.every((r) => rates.every((k) => r.all[k].value === null));
   // F06: the file follows the card (view, checked rates, 전체/내 신고); it waits instead of saving a half comparison
-  const exportBlocked = monthly.length === 0 ? '월별 자료가 없습니다' : busy ? '새 조건 결과를 기다리는 중입니다'
-    : mineState === 'loading' ? '내 신고 비교를 불러오는 중입니다(끝나면 누를 수 있습니다)'
-      : mineState === 'error' ? '내 신고를 불러오지 못했습니다(비교를 끄면 전체만 저장할 수 있습니다)'
+  const exportBlocked = monthly.length === 0 ? '월별 자료가 없습니다' : busy ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다'
+    : mineState === 'loading' ? '내 신고를 불러오는 중입니다. 끝나면 받을 수 있습니다'
+      : mineState === 'error' ? '내 신고를 불러오지 못했습니다. ‘내 신고와 비교’를 끄면 전체만 받을 수 있습니다'
         : view === 'rate' && rates.length === 0 ? '표시할 지표를 선택해 주세요' : null;
   const captureExport = () => (exportCtx ? trendSnapshot({ monthly, mine: withMine ? mine : null, view, rates, conditions: exportCtx.conditions,
     datasetVersion: exportCtx.datasetVersion, capturedAt: new Date().toISOString() }) : null);
@@ -129,7 +129,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
         <div>
           <h2>월별 추이 <PanelStatus busy={busy} label="월별 자료를 불러오는 중" /></h2>
           <span className="subtitle">{view === 'count' ? '신고는 신고한 달, 답변은 답변 받은 달에 셉니다'
-            : '답변 받은 달 기준 · 그 달의 실제 분자/분모 · 수용 계열은 결과 확인 건수, 과태료는 답변 완료 건수가 분모'}</span>
+            : '답변 받은 달 기준 · 수용·일부수용·불수용은 결과가 나온 신고 중 비율, 과태료는 답변 완료 신고 중 비율'}</span>
         </div>
         <div className="card-tools">
           <div className="mini-segments" role="group" aria-label="월별 추이 보기">
@@ -159,21 +159,21 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
         {last?.partial && <span className="cm-chip">이번 달은 진행 중</span>}
         {onMakeStatistics && (
           <button type="button" className="link-btn trend-to-stats" onClick={() => onMakeStatistics(view === 'rate' ? rates : ['accept'])}
-            title="지금 조건과 체크한 비율을 맞춤 통계로 넘깁니다">이 조건으로 통계 만들기</button>
+            title="지금 조건과 고른 비율로 맞춤 통계를 엽니다">이 조건으로 통계 만들기</button>
         )}
       </div>
       <div ref={hostRef} className="chart-host" hidden={table || monthly.length === 0 || !!error || noRates || allNull} role="img"
         aria-label={view === 'count' ? `월별 신고 ${monthly.map((m) => `${fmtMonth(m.month)} ${m.report_count ?? '자료 없음'}`).join(', ')}`
           : `월별 ${rates.map((k) => TREND_RATE_LABEL[k]).join('·')} ${rows.map((r) => `${fmtMonth(r.month)} ${rates.map((k) => `${TREND_RATE_LABEL[k]} ${r.all[k].value === null ? '자료 없음' : `${r.all[k].value!.toFixed(1)}%`}`).join(' ')}`).join(', ')}`} />
       {!table && noRates && <div className="empty-state" role="note">비교할 지표를 선택해 주세요.</div>}
-      {!table && allNull && <div className="empty-state" role="note">선택한 지표를 계산할 수 있는 달이 없습니다(분모 없음). 다른 지표를 골라 보세요.</div>}
+      {!table && allNull && <div className="empty-state" role="note">고른 지표를 계산할 수 있는 달이 없습니다. 다른 지표를 골라 보세요.</div>}
       {!table && error && <div className="empty-state" role="alert"><span>{error}</span><button className="ghost-btn" type="button" onClick={() => setTable(true)}>표로 보기</button></div>}
       {!table && monthly.length === 0 && <div className="empty-state">이 조건에는 월별 자료가 없습니다.</div>}
       {table && view === 'rate' && (
         <div className="trend-table">
           <table>
             <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>
-              {rates.length === 0 ? '비교할 지표를 선택해 주세요.' : '비율(분자/분모). 분모가 없거나 자료가 없는 달은 이유를 적습니다. 0%는 실제 0입니다.'}
+              {rates.length === 0 ? '비교할 지표를 선택해 주세요.' : '비율 (해당 건수/기준 건수). 계산할 수 없는 달은 이유를 적었습니다. 0%는 실제로 0인 경우입니다.'}
             </caption>
             <thead><tr><th scope="col">월</th>{rates.flatMap((k) => [
               <th key={`${k}-all`} scope="col">{TREND_RATE_LABEL[k]} 전체</th>,
@@ -197,7 +197,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
       {table && view === 'count' && (
         <div className="trend-table">
           <table>
-            <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>자료가 없는 달은 ‘—’로 표시합니다. 비율은 그 달의 실제 분자/분모입니다.</caption>
+            <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>자료가 없는 달은 ‘—’로 표시합니다. 비율은 그 달의 건수로 계산합니다.</caption>
             <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 완료</th><th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료</th><th scope="col">과태료 금액</th><th scope="col">평균 별점 · 건수</th><th scope="col">답변까지(중앙값)</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
             <tbody>
               {monthly.map((m) => (
@@ -223,7 +223,7 @@ export default function TrendCard({ monthly, theme, mine = null, mineState = min
       )}
       {exportCtx && <ExportButton source="trend" blocked={exportBlocked} capture={captureExport} />}
       <p className="chart-caption">{view === 'rate'
-        ? '선마다 분모가 다릅니다(수용·일부·불수용=결과 확인, 과태료=답변 완료). 과태료는 처리결과와 겹치므로 네 선을 더해 100%가 되지 않습니다. 답변이 없는 달은 선을 끊습니다.'
+        ? '선마다 기준이 다릅니다. 수용·일부수용·불수용은 결과가 나온 신고, 과태료는 답변 완료 신고가 기준입니다. 과태료는 처리 결과와 겹치므로 네 선을 더해도 100%가 되지 않습니다. 답변이 없는 달은 선을 끊었습니다.'
         : '이번 달은 아직 끝나지 않아 다른 달보다 적게 보일 수 있습니다.'}</p>
     </article>
   );

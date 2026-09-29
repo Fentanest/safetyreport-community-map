@@ -39,9 +39,9 @@ const MESSAGES: Record<string, [number, string]> = {
   not_found: [404, '요청을 처리할 수 없습니다.'],
   method_not_allowed: [405, '요청을 처리할 수 없습니다.'],
   INVALID_QUERY: [400, '요청을 처리할 수 없습니다.'],
-  DATASET_CHANGED: [409, '데이터 버전이 변경됐습니다. 다시 조회해 주세요.'],
+  DATASET_CHANGED: [409, '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.'],
   rate_limited: [429, '잠시 후 다시 시도해 주세요.'],
-  AGGREGATE_NOT_READY: [503, '공개 집계가 아직 준비되지 않았습니다.'],
+  AGGREGATE_NOT_READY: [503, '통계가 아직 준비되지 않았습니다. 잠시 뒤 다시 확인해 주세요.'],
   RESULT_TOO_LARGE: [422, '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.'],
   service_unavailable: [503, '잠시 후 다시 시도해 주세요.'],
 };

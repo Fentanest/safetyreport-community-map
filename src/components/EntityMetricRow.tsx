@@ -29,7 +29,7 @@ export default function EntityMetricRow({ kind, e, label, active, onPick }: { ki
         <div className="pe-box"><span className="pe-label">과태료</span>
           <b className="pe-num cm-number">{m.F === null ? '—' : `${fmtInt(m.F)}건`} <i aria-hidden="true">|</i> {fmtPercent(m.fineRate)}</b></div>
         <div className="pe-box"><span className="pe-label">계도</span><b className="pe-num cm-number">{m.W === null ? '—' : `${fmtInt(m.W)}건`}</b></div>
-        <div className="pe-box"><span className="pe-label">계도처분율</span><b className="pe-num cm-number">{fmtPercent(m.warnRate)}</b></div>
+        <div className="pe-box"><span className="pe-label">경고·계도 비율</span><b className="pe-num cm-number">{fmtPercent(m.warnRate)}</b></div>
       </div>
     </li>
   );

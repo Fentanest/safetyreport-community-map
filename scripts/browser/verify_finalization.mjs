@@ -177,7 +177,7 @@ try {
   await step('F03', ['FN-11', 'FN-12', 'FN-13', 'FN-14'], async (ctx) => {
     const s = await statsPage(ctx);
     const { page } = s;
-    await page.locator('.stats-builder').getByLabel('예시 구성').selectOption('month_rates');
+    await page.locator('.stats-builder').getByLabel('예시 설정').selectOption('month_rates');
     await runStats(page);
     const tableBefore = await page.locator('.pivot-table').innerText();
     await toStats(page);
@@ -221,7 +221,7 @@ try {
     check('FN-13', '수용 share unchanged when 불수용 is hidden (no re-normalisation)', JSON.stringify(accAfter) === JSON.stringify(accBefore), true);
     const sums = accAfter.map((v, i) => (v ?? 0) + (parBefore[i] ?? 0));
     check('FN-13', 'remaining bars ≤ 100% (some < 100 where 불수용 > 0)', sums.every((v) => v <= 100.0001) && sums.some((v) => v < 99.99), true);
-    check('FN-13', 'note about the fixed denominator', await page.locator('.stats-result .chart-caption').allInnerTexts(), (t) => t.some((x) => x.includes('원래 분모')));
+    check('FN-13', 'note about the fixed denominator', await page.locator('.stats-result .chart-caption').allInnerTexts(), (t) => t.some((x) => x.includes('숨긴 항목까지 합친 전체를 100%로')));
     // compare: hide 내 신고 only
     await page.locator('.stats-builder').getByLabel('전체와 비교').check();
     await setList(page, 2, ['accept_rate']);
@@ -252,7 +252,7 @@ try {
     const p1 = decode(url1);
     check('FN-05', 'default = the APPLIED analysis (draft row not included)', p1.spec.rows, ['agency']);
     check('FN-05', 'clipboard holds the same link', await page.evaluate(() => navigator.clipboard.readText()), url1);
-    await page.locator('.share-panel').getByLabel('작성 중인 구성(아직 적용 전)').check();
+    await page.locator('.share-panel').getByLabel('고치는 중인 설정(아직 반영 전)').check();
     await page.locator('.share-panel').getByRole('button', { name: '링크 만들기' }).click();
     check('FN-05', 'the draft only when explicitly chosen', decode(await page.locator('.share-result input').inputValue()).spec.rows, ['agency', 'sido']);
     check('FN-06', 'link carries no labels, tokens, user ids, place or bbox', JSON.stringify(p1), (t) => !/[0-9a-f]{8}-[0-9a-f]{4}-|eyJ|place_key|bbox|로컬검수|label/.test(t));
@@ -265,7 +265,7 @@ try {
     check('FN-06', 'rows/columns/metrics order restored', { r: await list(o.page, 0), c: await list(o.page, 1), m: await list(o.page, 2) },
       { r: await list(page, 0).then((x) => x.slice(0, 1)), c: await list(page, 1), m: await list(page, 2) });
     check('FN-06', 'chart view + type restored', { type: await o.page.locator('.stats-result').getByLabel('유형').inputValue(), bars: (await series(o.page)).length > 0 }, { type: 'bar', bars: true });
-    check('FN-06', 'banner says it was re-computed with my permission', await o.page.locator('.share-banner').innerText(), (t) => t.includes('다시 계산했습니다'));
+    check('FN-06', 'banner says it was re-computed with my permission', await o.page.locator('.share-banner').innerText(), (t) => t.includes('공유받은 설정으로 통계를 만들었습니다'));
     check('FN-10', 'sr parameter removed after the run; screen kept', new URL(o.page.url()).searchParams.has('sr') ? 'sr' : new URL(o.page.url()).searchParams.get('screen'), 'statistics');
     await o.page.reload();
     await o.page.waitForSelector('.pivot-table tbody tr, .stats-result .stats-chart-host', { timeout: 20000 });
@@ -275,15 +275,15 @@ try {
     await api('reset');
     const bad = await openPage(browser, { search: '?screen=statistics&sr=eyJ2IjoyfQ', height: 900 });
     captureConsole(bad.page, ctx);
-    check('FN-09', 'unsupported version refused with the reason', await waitFor(() => bad.page.locator('.share-banner').innerText().catch(() => ''), (t) => !!t), (t) => t.includes('지원하지 않는 공유 링크 버전'));
+    check('FN-09', 'unsupported version refused with the reason', await waitFor(() => bad.page.locator('.share-banner').innerText().catch(() => ''), (t) => !!t), (t) => t.includes('열 수 없는 형식의 링크'));
     await sleep(1500);
     check('FN-09', 'no statistics request (no silent default)', statsReq(await log()).length, 0);
     const sqlish = Buffer.from(JSON.stringify({ v: 1, ...p1, spec: { ...p1.spec, metrics: ["x'; drop table t;--"] } })).toString('base64url');
     await bad.page.goto(`${ORIGIN}/?screen=statistics&sr=${sqlish}`);
-    check('FN-09', 'SQL-like id refused', await waitFor(() => bad.page.locator('.share-banner').innerText().catch(() => ''), (t) => !!t), (t) => t.includes('허용되지 않은'));
+    check('FN-09', 'SQL-like id refused', await waitFor(() => bad.page.locator('.share-banner').innerText().catch(() => ''), (t) => !!t), (t) => t.includes('쓰지 않는 값'));
     await bad.page.goto(`${ORIGIN}/?screen=statistics&sr=${'A'.repeat(5000)}`);
     check('FN-09', 'oversized link refused', await waitFor(() => bad.page.locator('.share-banner').innerText().catch(() => ''), (t) => !!t), (t) => t.includes('너무 길'));
-    await bad.page.locator('.share-banner').getByRole('button', { name: '닫고 기본 화면으로' }).click();
+    await bad.page.locator('.share-banner').getByRole('button', { name: '기본 화면 보기' }).click();
     check('FN-09', 'closing the error runs the default once (explicit)', await waitFor(async () => statsReq(await log()).length, (n) => n >= 1), 1);
     await bad.context.close();
     // compare link opened by another account: B's own numbers, nothing of A in the URL
@@ -292,7 +292,7 @@ try {
     await page.locator('.stats-actions').getByRole('button', { name: '공유 링크' }).click().catch(() => undefined);
     if (!(await page.locator('.share-panel').count())) await page.locator('.stats-actions').getByRole('button', { name: '공유 링크' }).click();
     check('FN-08', 'mine/compare needs an explicit confirmation', await page.locator('.share-panel').getByRole('button', { name: '링크 만들기' }).isDisabled(), true);
-    await page.locator('.share-panel').getByLabel('위 내용을 확인했고 이대로 공유합니다').check();
+    await page.locator('.share-panel').getByLabel('확인했습니다. 이대로 공유할게요').check();
     await page.locator('.share-panel').getByRole('button', { name: '링크 만들기' }).click();
     const url2 = await page.locator('.share-result input').inputValue();
     check('FN-08', 'link has population compare and no account data', { pop: decode(url2).spec.population, clean: !url2.includes(E2E_UID) && !/[0-9a-f]{8}-[0-9a-f]{4}-|access_token|eyJhbGci|로컬검수/.test(JSON.stringify(decode(url2))) }, { pop: 'compare', clean: true });
@@ -319,7 +319,7 @@ try {
     check('FN-10', 'no statistics request while waiting for sign-in', statsReq(await log()).length, 0);
     await so.page.evaluate((sess) => localStorage.setItem('cm-map-auth-v1', JSON.stringify(sess)), fakeSession(E2E_UID));
     await so.page.reload(); // what the OAuth redirect does: the same URL (sr kept, OAuth params stripped) with a session
-    check('FN-10', 'after sign-in the shared compare recipe runs with my permission', await waitFor(() => so.page.locator('.share-banner').innerText().catch(() => ''), (t) => t.includes('다시 계산했습니다')), (t) => t.includes('링크를 연 사람(나)'));
+    check('FN-10', 'after sign-in the shared compare recipe runs with my permission', await waitFor(() => so.page.locator('.share-banner').innerText().catch(() => ''), (t) => t.includes('통계를 만들었습니다')), (t) => t.includes('내 신고는 내 계정의 신고로 계산했습니다'));
     await so.context.close();
     // address condition: the sharer must confirm that the address is left out
     await api('reset');
@@ -334,8 +334,8 @@ try {
     await m.page.waitForSelector('.pivot-table tbody tr', { timeout: 20000 });
     await m.page.locator('.stats-actions').getByRole('button', { name: '공유 링크' }).click();
     check('FN-07', 'address exclusion is stated and must be confirmed', { note: await m.page.locator('.share-warn').innerText(), disabled: await m.page.locator('.share-panel').getByRole('button', { name: '링크 만들기' }).isDisabled() },
-      (x) => x.note.includes('주소 조건') && x.disabled === true);
-    await m.page.locator('.share-panel').getByLabel('위 내용을 확인했고 이대로 공유합니다').check();
+      (x) => x.note.includes('주소(') && x.disabled === true);
+    await m.page.locator('.share-panel').getByLabel('확인했습니다. 이대로 공유할게요').check();
     await m.page.locator('.share-panel').getByRole('button', { name: '링크 만들기' }).click();
     check('FN-07', 'confirmed link has no place key', JSON.stringify(decode(await m.page.locator('.share-result input').inputValue())), (t) => !t.includes('pl1:') && !t.includes('place'));
     await m.context.close();
@@ -373,7 +373,7 @@ try {
     const mismatches = [];
     for (const c of resp.cells.filter((x) => x.side === 'all')) {
       const fr = c.values.fine_rate, cc = c.values.completed_count;
-      const r = tnum(tcell(f1.x, rowLabel(c.row), `${colLabel(c.col)} · 과태료처분율 · 비율`));
+      const r = tnum(tcell(f1.x, rowLabel(c.row), `${colLabel(c.col)} · 과태료 부과율 · 비율`));
       const expected = fr.denominator > 0 ? fr.numerator / fr.denominator : undefined;
       if (expected !== undefined && Math.abs(r - expected) > 1e-12) mismatches.push({ row: c.row, col: c.col, r, expected });
       const n = tnum(tcell(f1.x, rowLabel(c.row), `${colLabel(c.col)} · 답변 건수 · 값`));
@@ -381,7 +381,7 @@ try {
       compared += 2;
     }
     check('EX-55', `table = server numbers (${compared} values; rates as 0–1 of numerator/denominator)`, mismatches, []);
-    check('EX-55', 'grand total rate is the server total (not a mean)', tnum(tcell(f1.x, '합계', '행 합계 · 과태료처분율 · 비율')), (() => { const g = resp.grand_totals.find((t) => t.side === 'all').values.fine_rate; return g.numerator / g.denominator; })());
+    check('EX-55', 'grand total rate is the server total (not a mean)', tnum(tcell(f1.x, '합계', '행 합계 · 과태료 부과율 · 비율')), (() => { const g = resp.grand_totals.find((t) => t.side === 'all').values.fine_rate; return g.numerator / g.denominator; })());
     check('EX-02', 'table view → recommended chart of the same result (heatmap cells + colour scale)', { cf: f1.x.sheets['차트'].cf.length, charts: f1.x.charts.length }, { cf: 1, charts: 0 });
     check('EX-51', 'heatmap: numeric formula cells + colorScale 0..1', f1.x.sheets['차트'].cf[0].rules[0], (r) => r.type === 'colorScale' && r.cfvo[0].val === '0' && r.cfvo[1].val === '1');
     // chart view (bar) — same numbers, native chart referencing 차트 데이터
@@ -431,14 +431,14 @@ try {
     for (const k of ['accepted_count:all', 'partial_count:all']) await page.locator(`.series-toggle[data-series-key="${k}"]`).click();
     await page.locator('[data-export-source="statistics"] .export-ready .link-btn').click().catch(() => undefined);
     const f5 = await download(s, 'statistics', 'stats-all-hidden');
-    check('EX-22', 'all hidden: table kept, no chart, notice (not 0건)', { charts: f5.x.charts.length, notice: f5.x.allText.includes('모든 계열'), rows: Object.keys(f5.x.sheets['통계표'].cells).length > 20 }, { charts: 0, notice: true, rows: true });
+    check('EX-22', 'all hidden: table kept, no chart, notice (not 0건)', { charts: f5.x.charts.length, notice: f5.x.allText.includes('모든 항목을 숨긴'), rows: Object.keys(f5.x.sheets['통계표'].cells).length > 20 }, { charts: 0, notice: true, rows: true });
     await page.locator('[data-export-source="statistics"] .export-ready .link-btn').click();
-    await page.locator('.stats-actions').getByLabel('숨긴 계열도 차트에 포함').check();
+    await page.locator('.stats-actions').getByLabel('숨긴 항목도 엑셀 차트에 넣기').check();
     const f6 = await download(s, 'statistics', 'stats-include-hidden');
     check('EX-23', 'explicit "숨긴 계열도 차트에 포함" draws all series; the table is identical', { n: f6.x.charts[0]?.groups[0].series.length, same: tbl(f6.x) === tbl(f5.x) }, { n: 3, same: true });
     // click → then a new run: the file keeps the clicked snapshot
     await page.locator('[data-export-source="statistics"] .export-ready .link-btn').click();
-    await page.locator('.stats-builder').getByLabel('예시 구성').selectOption('region_outcome');
+    await page.locator('.stats-builder').getByLabel('예시 설정').selectOption('region_outcome');
     await api('delay', { 'statistics/query': 800 });
     const title = await page.locator('.stats-result-head h2').innerText();
     const before = s.downloads.length;
@@ -477,7 +477,7 @@ try {
     const m = dash[dash.length - 1].monthly;
     const expAccept = m.map((x) => (x.outcomes && x.outcomes.result_known > 0 ? x.outcomes.accepted / x.outcomes.result_known : null));
     const g1 = f1.x.charts[0].groups[0];
-    check('EX-04', 'only the 2 checked rates are chart series', g1.series.map((x) => f1.x.sheets['차트 데이터'].cells[x.tx.f.split('!')[1].replace(/\$/g, '')]?.value), ['수용률 · 전체', '과태료처분율 · 전체']);
+    check('EX-04', 'only the 2 checked rates are chart series', g1.series.map((x) => f1.x.sheets['차트 데이터'].cells[x.tx.f.split('!')[1].replace(/\$/g, '')]?.value), ['수용률 · 전체', '과태료 부과율 · 전체']);
     check('EX-04', '수용률 values = accepted ÷ result_known of each month (gaps where K=0)', rangeValues(f1.x, g1.series[0].val.f).map((v) => (v === null ? null : Math.round(v * 1e9) / 1e9)), expAccept.map((v) => (v === null ? null : Math.round(v * 1e9) / 1e9)));
     await page.locator('[data-export-source="trend"] .export-ready .link-btn').click();
     // my comparison: waits while it loads, then 4 rates × 전체/내 = 8 lines
@@ -485,7 +485,7 @@ try {
     await api('delay', { 'my-analytics': 2500 });
     const compareToggle = page.getByRole('switch', { name: /내 신고/ }).first();
     if (await compareToggle.count()) await compareToggle.click(); else await page.getByLabel(/내 신고 비교|내 신고 함께/).first().check();
-    check('EX-32', 'while my comparison loads the export waits (no half file)', await waitFor(() => page.locator('[data-export-source="trend"] .export-hint').innerText(), (t) => t.includes('내 신고 비교를 불러오는 중')), (t) => t.includes('불러오는 중'));
+    check('EX-32', 'while my comparison loads the export waits (no half file)', await waitFor(() => page.locator('[data-export-source="trend"] .export-hint').innerText(), (t) => t.includes('내 신고를 불러오는 중')), (t) => t.includes('불러오는 중'));
     check('EX-32', 'button disabled meanwhile', await page.locator('[data-export-source="trend"] .export-btn').isDisabled(), true);
     await api('delay', {});
     await waitFor(() => page.locator('[data-export-source="trend"] .export-btn').isDisabled(), (d) => d === false, { timeout: 10000 });
@@ -506,7 +506,7 @@ try {
     const f4 = await download(s, 'place-managers', 'range-managers');
     const nRows = Object.keys(f4.x.sheets['통계표'].cells).filter((k) => /^A\d+$/.test(k)).length;
     const [, shown, total] = /담당자 표시 ([\d,]+)명 \/ 전체 ([\d,]+)명/.exec(shownN) ?? [];
-    check('EX-07', 'managers in the file = the card list; full/partial stated', { rows: nRows - 6, state: f4.x.allText.includes(Number(shown.replace(/,/g, '')) < Number(total.replace(/,/g, '')) ? '일부:' : `전체 ${shown}명`) },
+    check('EX-07', 'managers in the file = the card list; full/partial stated', { rows: nRows - 6, state: f4.x.allText.includes(Number(shown.replace(/,/g, '')) < Number(total.replace(/,/g, '')) ? '일부만 담음' : `전체 ${shown}명`) },
       { rows: Number(shown.replace(/,/g, '')), state: true });
     check('EX-07', '100% bars + answered line on a secondary axis', f4.x.charts[0].groups.map((g) => `${g.type}:${g.grouping}`), ['barChart:stacked', 'lineChart:standard']);
     for (const f of [f1, f2, f3, f4]) check('EX-49', `structure ok (${f.name})`, structural(f.x), STRUCT_OK);
@@ -535,11 +535,11 @@ try {
     const WASM = (u) => /excelize\.wasm(-[\w-]+)?\.gz$/.test(u.pathname) && !u.search.includes('import');
     const slowWasm = async (ms) => context.route(WASM, async (route) => { await sleep(ms); await route.continue(); });
     // EX-31 locked while a new result is on the way
-    await page.locator('.stats-builder').getByLabel('예시 구성').selectOption('region_outcome');
+    await page.locator('.stats-builder').getByLabel('예시 설정').selectOption('region_outcome');
     await api('delay', { 'statistics/query': 2500 });
     await page.locator('.stats-run .primary-button').click();
     check('EX-31', 'a running query locks the export with the reason', { disabled: await page.locator('[data-export-source="statistics"] .export-btn').isDisabled(), why: await page.locator('[data-export-source="statistics"] .export-hint').innerText() },
-      { disabled: true, why: '새 조건 결과를 기다리는 중입니다' });
+      { disabled: true, why: '새 결과를 만드는 중이라 잠시 뒤에 받을 수 있습니다' });
     await api('delay', {});
     await waitFor(() => page.locator('[data-export-source="statistics"] .export-btn').isDisabled(), (d) => !d, { timeout: 10000 });
     // EX-43 cancel (a slow first load): only the export stops
