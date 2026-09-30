@@ -9,9 +9,14 @@ interface Props {
   briefing: boolean;
 }
 
-/** Data wiring: Sol · visual implementation: Muse. Never shows an email, id or token. */
+/** The account's own ID (user decision 2026-09-30) instead of the Kakao nickname: the Supabase user id is the
+ *  `contributor_id` of every shared report, so the viewer can quote it when asking about their reports. Shown only to
+ *  that viewer, hidden in briefing mode. Never an email or a token. */
+export const shortId = (id: string) => id.replace(/-/g, '').slice(0, 8);
 export default function AccountMenu({ auth, onSignIn, onSignOut, briefing }: Props) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (!open) setCopied(false); }, [open]);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -36,10 +41,19 @@ export default function AccountMenu({ auth, onSignIn, onSignOut, briefing }: Pro
   return (
     <div className="account-menu" ref={ref}>
       <button className="quiet-btn account-name" type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(v => !v)}>
-        <span className="account-name-text">{briefing ? '내 계정' : (auth.displayName ?? '내 계정')}{auth.synthetic ? ' · 예시' : ''}</span>
+        <span className="account-name-text">{briefing || !auth.viewerId ? '내 계정' : `ID ${shortId(auth.viewerId)}`}{auth.synthetic ? ' · 예시' : ''}</span>
       </button>
       {open && (
         <div className="account-pop" role="menu">
+          {auth.viewerId && !briefing && (
+            <div className="account-id">
+              <span className="cm-muted">내 ID</span>
+              <code>{auth.viewerId}</code>
+              <button type="button" role="menuitem" className="mini-btn" onClick={() => {
+                navigator.clipboard?.writeText(auth.viewerId!).then(() => setCopied(true), () => setCopied(false));
+              }}>{copied ? '복사됨' : '복사'}</button>
+            </div>
+          )}
           <button type="button" role="menuitem" className="ghost-btn" onClick={() => { setOpen(false); onSignOut(); }}>
             로그아웃
           </button>
