@@ -1,0 +1,1375 @@
+{
+  "run_id": "sort-chart-ux-2026-09-30T02-17-44-901Z",
+  "suite": "sort-chart-ux",
+  "commit": "7cce87f22c386c8f0a058118d8777a737306e801",
+  "working_tree_dirty": false,
+  "started_at": "2026-09-30T02:17:44.914Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 141.0.7390.37",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic (demoFacts + e2e extras)",
+    "server": "local Vite middleware running server/publicHandler.ts (Node, not Edge Runtime)"
+  },
+  "results": {
+    "SM-VERT": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "light 1920: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 1920: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "light 1440: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 1440: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "light 1280: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 1280: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "light 768: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 768: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "light 390: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 390: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "dark 1920: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 1920: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "dark 1440: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 1440: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "dark 1280: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 1280: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "dark 768: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 768: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "dark 390: 4 items, one per line, floating (portal in body)",
+          "actual": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          },
+          "expected": {
+            "vertical": true,
+            "inBody": true,
+            "n": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 390: opening the menu sends nothing",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-WORDS": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "light 1920: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "light 1440: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "light 1280: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "light 768: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "light 390: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "dark 1920: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "dark 1440: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "dark 1280: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "dark 768: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "dark 390: words only, no arrows",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "건수 많은 순: header and caption state the order in words",
+          "actual": {
+            "head": "건수 많은 순",
+            "cap": true,
+            "arrows": false
+          },
+          "expected": {
+            "head": "건수 많은 순",
+            "cap": true,
+            "arrows": false
+          }
+        },
+        {
+          "ok": true,
+          "label": "건수 적은 순: header and caption state the order in words",
+          "actual": {
+            "head": "건수 적은 순",
+            "cap": true,
+            "arrows": false
+          },
+          "expected": {
+            "head": "건수 적은 순",
+            "cap": true,
+            "arrows": false
+          }
+        },
+        {
+          "ok": true,
+          "label": "비율 높은 순: header and caption state the order in words",
+          "actual": {
+            "head": "비율 높은 순",
+            "cap": true,
+            "arrows": false
+          },
+          "expected": {
+            "head": "비율 높은 순",
+            "cap": true,
+            "arrows": false
+          }
+        },
+        {
+          "ok": true,
+          "label": "비율 낮은 순: header and caption state the order in words",
+          "actual": {
+            "head": "비율 낮은 순",
+            "cap": true,
+            "arrows": false
+          },
+          "expected": {
+            "head": "비율 낮은 순",
+            "cap": true,
+            "arrows": false
+          }
+        }
+      ]
+    },
+    "SM-STABLE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "light 1920: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "light 1440: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "light 1280: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "light 768: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "light 390: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "dark 1920: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "dark 1440: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "dark 1280: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "dark 768: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "dark 390: header columns / header height / table width / row height / page width unchanged",
+          "actual": {
+            "same": true,
+            "overflow": 0
+          },
+          "expected": "(x) => x.same && x.overflow === 0"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-VIEWPORT": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "light 1920: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 1920: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "light 1440: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 1440: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "light 1280: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 1280: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "light 768: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 768: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "light 390: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "light 390: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "dark 1920: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 1920: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "dark 1440: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 1440: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "dark 1280: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 1280: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "dark 768: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 768: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "dark 390: menu inside the viewport, 36–40px items, width 160–240",
+          "actual": {
+            "inside": true,
+            "h": true,
+            "w": true
+          },
+          "expected": {
+            "inside": true,
+            "h": true,
+            "w": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "dark 390: rightmost column menu inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-CLOSE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "outside click closes",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "Esc closes and returns focus to the header",
+          "actual": {
+            "menus": 0,
+            "focus": "sort-head"
+          },
+          "expected": {
+            "menus": 0,
+            "focus": "sort-head"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-SWITCH": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "opening column B closes A and opens B",
+          "actual": {
+            "count": 1,
+            "items": [
+              "비율 높은 순",
+              "비율 낮은 순"
+            ]
+          },
+          "expected": {
+            "count": 1,
+            "items": [
+              "비율 높은 순",
+              "비율 낮은 순"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-SCROLL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "after horizontal table scroll: menu right under its header, inside the viewport",
+          "actual": {
+            "dy": 4,
+            "inside": true
+          },
+          "expected": "(x) => x.dy >= 0 && x.dy <= 8 && x.inside"
+        },
+        {
+          "ok": true,
+          "label": "page scrolled while open: menu follows the header",
+          "actual": {
+            "dy": 4,
+            "inside": true
+          },
+          "expected": "(x) => (x.dy >= 0 && x.dy <= 8) || x.dy < -100"
+        },
+        {
+          "ok": true,
+          "label": "window resized while open: still under the header, inside",
+          "actual": {
+            "dy": 4,
+            "inside": true
+          },
+          "expected": "(x) => x.dy >= 0 && x.dy <= 8 && x.inside"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-REQ": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "건수 많은 순: one request, sort=fine sort_value=count dir=desc page=1",
+          "actual": [
+            [
+              "fine",
+              "count",
+              "desc",
+              "1"
+            ]
+          ],
+          "expected": [
+            [
+              "fine",
+              "count",
+              "desc",
+              "1"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "건수 많은 순: menu closed after the choice",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "건수 적은 순: one request, sort=fine sort_value=count dir=asc page=1",
+          "actual": [
+            [
+              "fine",
+              "count",
+              "asc",
+              "1"
+            ]
+          ],
+          "expected": [
+            [
+              "fine",
+              "count",
+              "asc",
+              "1"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "건수 적은 순: menu closed after the choice",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "비율 높은 순: one request, sort=fine sort_value=rate dir=desc page=1",
+          "actual": [
+            [
+              "fine",
+              "rate",
+              "desc",
+              "1"
+            ]
+          ],
+          "expected": [
+            [
+              "fine",
+              "rate",
+              "desc",
+              "1"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "비율 높은 순: menu closed after the choice",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "비율 낮은 순: one request, sort=fine sort_value=rate dir=asc page=1",
+          "actual": [
+            [
+              "fine",
+              "rate",
+              "asc",
+              "1"
+            ]
+          ],
+          "expected": [
+            [
+              "fine",
+              "rate",
+              "asc",
+              "1"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "비율 낮은 순: menu closed after the choice",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-FULL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "건수 많은 순: first row holds the largest value of the whole list",
+          "actual": 47,
+          "expected": "(v) => v !== null && Math.abs(v - want) < 1e-12"
+        },
+        {
+          "ok": true,
+          "label": "건수 적은 순: first row holds the smallest value of the whole list",
+          "actual": 3,
+          "expected": "(v) => v !== null && Math.abs(v - want) < 1e-12"
+        },
+        {
+          "ok": true,
+          "label": "비율 높은 순: first row holds the largest value of the whole list",
+          "actual": 0.3560606060606061,
+          "expected": "(v) => v !== null && Math.abs(v - want) < 1e-12"
+        },
+        {
+          "ok": true,
+          "label": "비율 낮은 순: first row holds the smallest value of the whole list",
+          "actual": 0.15789473684210525,
+          "expected": "(v) => v !== null && Math.abs(v - want) < 1e-12"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-OPTIONS": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "답변까지 (median shown) → 기간 긴/짧은 순 only",
+          "actual": [
+            "기간 긴 순",
+            "기간 짧은 순"
+          ],
+          "expected": [
+            "기간 긴 순",
+            "기간 짧은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "답변(건) → 건수 많은/적은 순 only",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "law table 평균 별점",
+          "actual": [
+            "별점 높은 순",
+            "별점 낮은 순",
+            "평가 많은 순",
+            "평가 적은 순"
+          ],
+          "expected": [
+            "별점 높은 순",
+            "별점 낮은 순",
+            "평가 많은 순",
+            "평가 적은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "law table 과태료 금액",
+          "actual": [
+            "금액 많은 순",
+            "금액 적은 순"
+          ],
+          "expected": [
+            "금액 많은 순",
+            "금액 적은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "law table 수용",
+          "actual": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ],
+          "expected": [
+            "건수 많은 순",
+            "건수 적은 순",
+            "비율 높은 순",
+            "비율 낮은 순"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SM-A11Y": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "menu focus on the checked (or first) item; ArrowDown moves",
+          "actual": "menuitemradio",
+          "expected": "menuitemradio"
+        },
+        {
+          "ok": true,
+          "label": "items are menuitemradio with visible names (no direction words added)",
+          "actual": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "expected": [
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CP-AVAIL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "기관 × 위반법규: 막대·히트맵 usable; 가로 막대 blocked",
+          "actual": {
+            "u": [
+              "자동 · 히트맵",
+              "막대",
+              "히트맵"
+            ],
+            "b": [
+              "가로 막대",
+              "누적 막대",
+              "100% 누적",
+              "산점도",
+              "꺾은선"
+            ]
+          },
+          "expected": "(x) => x.u.includes('막대') && x.u.includes('히트맵') && !x.u.includes('가로 막대') && x.b.includes('가로 막대')"
+        },
+        {
+          "ok": true,
+          "label": "기관·시도 × 위반법규: only the heatmap",
+          "actual": [
+            "히트맵"
+          ],
+          "expected": [
+            "히트맵"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "답변 월 × 기관: 꺾은선 usable",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "기관 + 두 지표: 산점도 usable; 100% 누적 blocked with the rate names",
+          "actual": {
+            "sc": true,
+            "s100": {
+              "name": "100% 누적",
+              "reason": "과태료 부과율·수용률은 비율·통계 지표라 100% 누적에 쓸 수 없습니다.",
+              "fix": "수용·일부 수용·불수용 건수(결과 미상까지 넣으면 답변 전체)처럼 합하면 하나의 전체가 되는 건수를 함께 고르세요."
+            }
+          },
+          "expected": "(x) => x.sc && x.s100 && /비율·통계 지표/.test(x.s100.reason) && /합하면 하나의 전체/.test(x.s100.fix)"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CP-REASON": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "reasons name the chosen items; no generic \"지금 설정에선 못 씀\"",
+          "actual": [
+            {
+              "name": "가로 막대",
+              "reason": "기관·위반법규, 총 2개 기준으로 나누고 있습니다.",
+              "fix": "가로 막대는 분류 기준 1개에서 쓸 수 있습니다. 행·열 항목을 1개로 줄이면 볼 수 있습니다."
+            },
+            {
+              "name": "누적 막대",
+              "reason": "기관·위반법규, 총 2개 기준으로 나누고 있습니다.",
+              "fix": "누적 막대는 분류 기준 1개에서 쓸 수 있습니다. 행·열 항목을 1개로 줄이면 볼 수 있습니다."
+            },
+            {
+              "name": "100% 누적",
+              "reason": "기관·위반법규, 총 2개 기준으로 나누고 있습니다.",
+              "fix": "100% 누적는 분류 기준 1개에서 쓸 수 있습니다. 행·열 항목을 1개로 줄이면 볼 수 있습니다."
+            },
+            {
+              "name": "산점도",
+              "reason": "기관·위반법규, 총 2개 기준으로 나누고 있습니다.",
+              "fix": "산점도는 분류 기준 1개에서 쓸 수 있습니다. 행·열 항목을 1개로 줄이면 볼 수 있습니다."
+            },
+            {
+              "name": "꺾은선",
+              "reason": "기관·위반법규는 날짜 항목이 아닙니다.",
+              "fix": "꺾은선을 쓰려면 행 또는 열에 연도·분기·월·일 같은 날짜 항목을 추가하세요."
+            }
+          ],
+          "expected": "(b) => b.every((x) => x.reason && !/지금 설정에선 못 씀|지원 안 됨/.test(`${x.reason}${x.fix}`)) && b.find((x) => x.name === '꺾은선').fix.includes('날짜 항목')"
+        },
+        {
+          "ok": true,
+          "label": "bar reason lists the three items and the 2-item limit",
+          "actual": {
+            "name": "막대",
+            "reason": "기관·시도·위반법규, 총 3개 기준으로 나누고 있습니다.",
+            "fix": "막대는 2개 기준까지 지원합니다. 항목을 2개 이하로 줄이거나 표·히트맵으로 보세요."
+          },
+          "expected": "(x) => /·.*·.*총 3개 기준/.test(x.reason) && /2개 기준까지/.test(x.fix)"
+        },
+        {
+          "ok": true,
+          "label": "light: picker inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "dark: picker inside the viewport",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CP-NOREQ": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "open/close/blocked click: 0 API requests",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CP-NOCHANGE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "blocked item → hint only; menu stays open",
+          "actual": "꺾은선: 꺾은선은 날짜 항목을 포함해 2개 기준까지 지원합니다. 표·히트맵으로 보세요.",
+          "expected": "(t) => t.startsWith('꺾은선:') && t.includes('날짜')"
+        },
+        {
+          "ok": true,
+          "label": "rows/columns/metrics/population unchanged",
+          "actual": "[{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\",\"sido\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\"],\"filters\":[],\"place_key\":null},{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\",\"sido\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\"],\"filters\":[],\"place_key\":null}]",
+          "expected": "[{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\",\"sido\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\"],\"filters\":[],\"place_key\":null},{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\",\"sido\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\"],\"filters\":[],\"place_key\":null}]"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CP-SELECT": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "usable type chosen → button shows it, spec unchanged, 0 requests",
+          "actual": {
+            "btn": "산점도\n▾",
+            "spec": true,
+            "req": {}
+          },
+          "expected": "(x) => x.btn.startsWith('산점도') && x.spec && Object.keys(x.req).length === 0"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CP-REGRESS": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "table↔chart switch and the share panel: no request (share/Excel flows: verify_finalization)",
+          "actual": {
+            "req": {},
+            "panel": 1,
+            "chart": 1
+          },
+          "expected": "(x) => Object.keys(x.req).length === 0 && x.panel === 1 && x.chart === 1"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    }
+  },
+  "steps": {
+    "sort-viewports": {
+      "status": "DONE",
+      "ids": [
+        "SM-VERT",
+        "SM-WORDS",
+        "SM-STABLE",
+        "SM-VIEWPORT",
+        "SM-OPTIONS"
+      ],
+      "ms": 22959
+    },
+    "sort-behaviour": {
+      "status": "DONE",
+      "ids": [
+        "SM-CLOSE",
+        "SM-SWITCH",
+        "SM-SCROLL",
+        "SM-REQ",
+        "SM-FULL",
+        "SM-A11Y"
+      ],
+      "ms": 5962
+    },
+    "chart-picker": {
+      "status": "DONE",
+      "ids": [
+        "CP-AVAIL",
+        "CP-REASON",
+        "CP-NOREQ",
+        "CP-NOCHANGE",
+        "CP-SELECT",
+        "CP-REGRESS"
+      ],
+      "notes": {
+        "month_dimension": "completed_month"
+      },
+      "ms": 8044
+    }
+  },
+  "finished_at": "2026-09-30T02:18:21.879Z",
+  "summary": {
+    "PASS": 17
+  }
+}

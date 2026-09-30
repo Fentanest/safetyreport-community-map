@@ -294,17 +294,18 @@ try {
     const n0 = (await log()).filter((e) => e.route === 'entities').length;
     const fineHead = page.locator('#entities th').filter({ hasText: '과태료' }).first();
     await fineHead.locator('.sort-head').click();
-    const items = await page.locator('#entities .sort-menu [role="menuitemradio"]').allInnerTexts();
-    check('SO-01', 'four choices (count/rate × desc/asc)', items.map((t) => t.replace(/\s*[↓↑]$/, '').trim()), ['건수 많은 순', '건수 적은 순', '비율 높은 순', '비율 낮은 순']);
+    // the menu floats in <body> (FloatingMenu, 2026-09-30); words only, no arrows
+    const items = await page.locator('.floating-menu.sort-menu [role="menuitemradio"]').allInnerTexts();
+    check('SO-01', 'four choices (count/rate × desc/asc)', items.map((t) => t.trim()), ['건수 많은 순', '건수 적은 순', '비율 높은 순', '비율 낮은 순']);
     await sleep(300);
     check('SO-13', 'opening the menu sends nothing', (await log()).filter((e) => e.route === 'entities').length - n0, 0);
-    await page.locator('#entities .sort-menu [role="menuitemradio"]', { hasText: '비율 높은 순' }).click();
+    await page.locator('.floating-menu.sort-menu [role="menuitemradio"]', { hasText: '비율 높은 순' }).click();
     await waitFor(() => log().then((l) => l.filter((e) => e.route === 'entities').length - n0), (n) => n >= 1);
     await sleep(600);
     const reqs = (await log()).filter((e) => e.route === 'entities').slice(n0);
     check('SO-13', 'choosing sends one request with sort, value, dir and page 1', reqs.map((r) => [r.params.sort, r.params.sort_value, r.params.dir, r.params.page]), [['fine', 'rate', 'desc', '1']]);
-    check('SO-13', 'header, aria-sort and caption agree', [await fineHead.getAttribute('aria-sort'), await fineHead.locator('.sort-mark').innerText(), await page.locator('#entities caption').innerText()],
-      (v) => v[0] === 'descending' && v[1].includes('비율') && v[2].includes('과태료 · 비율 ▼'));
+    check('SO-13', 'header, aria-sort and caption agree', [await fineHead.getAttribute('aria-sort'), await fineHead.locator('.sort-now-label').innerText(), await page.locator('#entities caption').innerText()],
+      (v) => v[0] === 'descending' && v[1].trim() === '비율 높은 순' && v[2].includes('과태료 · 비율 높은 순'));
     // SO-07: the first row is the highest exact rate of the FULL list (asked directly from the same API)
     const full = await page.evaluate(async () => {
       const token = JSON.parse(localStorage.getItem('cm-map-auth-v1')).access_token;
@@ -321,7 +322,7 @@ try {
     // SO-06: the law table has the same menu and a server sort
     const l0 = (await log()).filter((e) => e.route === 'laws').length;
     await page.locator('#laws th').filter({ hasText: '과태료' }).first().locator('.sort-head').click();
-    await page.locator('#laws .sort-menu [role="menuitemradio"]', { hasText: '건수 적은 순' }).click();
+    await page.locator('.floating-menu.sort-menu [role="menuitemradio"]', { hasText: '건수 적은 순' }).click();
     await waitFor(() => log().then((l) => l.filter((e) => e.route === 'laws').length - l0), (n) => n >= 1);
     const lr = (await log()).filter((e) => e.route === 'laws').slice(l0);
     check('SO-06', 'law table: one server request with the registry sort', lr.map((r) => [r.params.sort, r.params.sort_value, r.params.dir]), [['fine', 'count', 'asc']]);
