@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { PlaceDetail, PublicEntity, PublicPoint } from '../domain/public';
 import type { PointMark } from '../state/pointMarks';
 import { fmtInt, fmtPercent } from './format';
-import { duplicateNames, entityLabel } from './entityMetrics';
+import { entityLabel } from './entityMetrics';
+import { sameNameIndex } from '../domain/managerNames';
 import EntityMetricRow from './EntityMetricRow';
 import PanelStatus from './PanelStatus';
 import { regionTrail } from './ScopeDetailsPanel';
@@ -40,13 +41,13 @@ const pct = (a: number, d: number) => (d > 0 ? (a / d) * 100 : null);
 function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: { kind: 'agency' | 'manager'; rows: PublicEntity[]; total: number;
   onPick: Props['onPickEntity']; activeAgency: string | null; activeManager: string | null }) {
   const [shown, setShown] = useState(LIST_STEP);
-  const dup = duplicateNames(rows);
+  const same = sameNameIndex(rows);
   if (rows.length === 0) return <p className="cm-muted place-empty">이 주소의 답변 완료 신고에 {kind === 'agency' ? '기관' : '담당자'} 정보가 없습니다.</p>;
   return (
     <>
       <ul className="place-entities">
         {rows.slice(0, shown).map((e) => (
-          <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, dup.has(e.manager_name ?? '이름 없음'))}
+          <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, kind === 'manager' ? same.get(e) : null)} same={kind === 'manager' ? same.get(e) : null}
             active={kind === 'agency' ? activeAgency === e.agency_key && !activeManager : activeManager === e.manager_key && activeAgency === e.agency_key}
             onPick={onPick} />
         ))}

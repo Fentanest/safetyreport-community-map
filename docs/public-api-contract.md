@@ -43,6 +43,12 @@ base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽
   주소와 없는 key는 404. 응답 `{place, agencies[≤100], managers[≤100], agency_total, manager_total}`.
 - `places?view_bbox=w,s,e,n`: `view_bbox`는 이 경로에서만 허용되고 statistics scope(`bbox`)와 분리된다. 자동 통계 갱신이
   꺼져 있어도 서버에서 압축된 노드를 확대해 주소 핀으로 풀 수 있다(응답 scope.bbox는 그대로).
+- 담당자 행 `same_name`(2026-09-30, 선택 필드): 같은 조회 조건의 **전체** 담당자 목록(페이지·검색·기관 유형 조건 적용 전)에서
+  같은 이름(NFC·trim, 이름 없음='이름 없음')이 서로 다른 identity(행 key = `agency_key:manager_key`)에 2개 이상일 때
+  `{count, label, peers[≤12], same_agency}`, 아니면 `null`. `label`은 소속 기관 현행 표시명의 뒤쪽 **공백 단위 구간**만으로 만든
+  짧은 이름(예: '서울특별시경찰청 서울강서경찰서' → '서울강서경찰서')이고, 기관 이름까지 같은 identity는 row key 순서 번호(`· 2`)를
+  붙인다. 규칙은 `src/domain/managerNames.ts` 한 곳(서버 `entityRows`·클라이언트 공용). dashboard·entities·places 담당자 행 모두
+  같은 값이고, 필드가 없으면(구 서버) 클라이언트는 불러온 행만으로 판정하고 '(불러온 담당자 기준)'이라고 적는다. 기관 행에는 없다.
 - `entities`의 `agency_type=police|non_police`: 서버 전체 목록에 적용되는 표 도구 조건(Scope 아님). 경찰은 기관명이 경찰
   조직일 때만, 비경찰은 registry 확인 기관(`inst:`) 또는 지자체·공사 이름일 때만이며 확인 불가 기관은 어느 쪽에도 넣지 않는다.
 - 요청 정책(클라이언트 `src/data/refreshController.ts`): meta는 세션당 1회(409 때만 1회 재조회), 자동 지도 갱신은 500ms

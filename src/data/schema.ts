@@ -101,6 +101,8 @@ export const entitySchema = z.strictObject({
   agency_name: z.string(), manager_name: z.string().nullable(),
   completed_count: count, outcomes, fine_count: nullableCount, duration: durationBrief, fine_amount: fineBrief, rating,
   warning_count: nullableCount.optional(), agency_type: z.enum(['police', 'non_police', 'unknown']).optional(),
+  same_name: z.strictObject({ count: z.number().int().min(2), label: z.string().min(1).max(200),
+    peers: z.array(z.string().max(200)).max(12), same_agency: z.boolean() }).nullable().optional(),
 });
 
 export const regionSchema = z.strictObject({

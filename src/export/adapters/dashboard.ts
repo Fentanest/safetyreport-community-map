@@ -6,7 +6,8 @@
 import type { DateBasis, MonthlyBucket, PublicEntity } from '../../domain/public';
 import type { CompareMonth } from '../../domain/personal';
 import { TREND_RATES, TREND_RATE_LABEL, TREND_RATE_TOKEN, REASON_TEXT, monthNote, trendRateRows, type TrendRate } from '../../components/trendMetrics';
-import { duplicateNames, entityLabel, entityRates } from '../../components/entityMetrics';
+import { entityLabel, entityRates } from '../../components/entityMetrics';
+import { sameNameIndex } from '../../domain/managerNames';
 import { FILE_COLOR } from './statistics';
 import { monthSerial, type ExportSnapshot, type XCategoryChart, type XColumn, type XRow, type XSeries } from '../model';
 
@@ -118,8 +119,10 @@ export interface PlaceExportInput {
 const CHUNK = 40;
 
 export function placeManagersSnapshot(input: PlaceExportInput): ExportSnapshot {
-  const dup = duplicateNames(input.managers);
-  const labels = input.managers.map((e) => entityLabel(e, 'manager', dup.has(e.manager_name ?? '이름 없음')));
+  // the SAME names as the chart and its table (server 동명이인 metadata over the scope's full list)
+  const same = sameNameIndex(input.managers);
+  const labels = input.managers.map((e) => entityLabel(e, 'manager', same.get(e)));
+  const namesakes = input.managers.filter((e) => same.get(e)).length;
   const columns: XColumn[] = [
     { id: 'name', header: ['담당자'], unit: 'text', label: true, width: 26 },
     { id: 'agency', header: ['소속 기관'], unit: 'text', label: true, width: 22 },
@@ -164,7 +167,8 @@ export function placeManagersSnapshot(input: PlaceExportInput): ExportSnapshot {
       { label: '담당자', value: partial ? `일부만 담음: 화면에 불러온 ${n.toLocaleString('ko-KR')}명 (전체 ${input.total.toLocaleString('ko-KR')}명, 나머지는 이 파일에 없습니다)` : `전체 ${n.toLocaleString('ko-KR')}명` },
       { label: '막대 기준', value: input.mode === 'accept' ? '수용률 (결과가 나온 신고 전체를 100%로)' : '과태료 부과율 (답변 완료 신고 전체를 100%로)' },
       { label: '계산 방법', value: '결과 나온 신고 = 수용 + 일부 수용 + 불수용. 수용률·일부수용률·불수용률은 결과 나온 신고 중 비율, 과태료 부과율은 답변 완료 신고 중 과태료 처분의 비율입니다. 기준이 되는 신고가 0건이면 비율 칸을 비웠습니다.' }],
-    table: { columns, rows, notes: ['비율은 같은 줄의 ‘해당 건수 ÷ 기준 건수’로 계산하는 수식입니다. 이름이 같은 담당자는 소속 기관으로 구분했습니다.', ...(partial ? [`전체 담당자 ${input.total.toLocaleString('ko-KR')}명 중 화면에 불러온 ${n.toLocaleString('ko-KR')}명만 담았습니다.`] : [])] },
+    table: { columns, rows, notes: ['비율은 같은 줄의 ‘해당 건수 ÷ 기준 건수’로 계산하는 수식입니다.',
+      ...(namesakes > 0 ? [`이름이 같은 다른 담당자가 이 조건 안에 있는 ${namesakes.toLocaleString('ko-KR')}명은 담당자 칸에 소속 기관을 짧게 붙였습니다(화면과 같은 이름). 정식 기관명은 소속 기관 칸에 있습니다. 같은 이름이어도 기관·담당자 식별이 다르면 합치지 않았습니다.`] : []), ...(partial ? [`전체 담당자 ${input.total.toLocaleString('ko-KR')}명 중 화면에 불러온 ${n.toLocaleString('ko-KR')}명만 담았습니다.`] : [])] },
     charts, chartNotice: n === 0 ? '담당자 정보가 있는 답변 신고가 없습니다.' : null, legend: null,
   };
 }

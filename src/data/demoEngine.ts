@@ -68,8 +68,56 @@ let cache: PrivateFact[] | null = null;
  *  the synthetic year — used by the browser checks of DT-05..DT-10 / EX-01 (MOCK, never a production pass). */
 const oracleMode = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('fixture') === 'oracle';
 
+/** ?fixture=managers: many managers at ONE address (MOCK for the 담당자별 처리 현황 navigation / 동명이인 checks). */
+export const managersMode = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('fixture') === 'managers';
+
+/**
+ * 118 synthetic managers, all answered at one address. Counts fall strictly with the index (no ties), so the order is
+ * fixed: 김지원 (서울강서경찰서) is 4th and 김지원 (서울양천경찰서) 105th — beyond the first 100 the dashboard sends;
+ * 박서준 is 2nd and 50th (other agencies); 정민호 appears twice under the SAME agency name with two agency keys (a code
+ * that resolved and one that did not) — 30th and 31st. Everyone else has a unique name.
+ */
+export function managersFacts(): PrivateFact[] {
+  const SURNAME = '김이박최정강조윤장임한오서신권황안송류홍';
+  const GIVEN = ['민준', '서연', '도윤', '하은', '시우', '지유', '예준', '수아', '주원', '서윤', '하준', '지아', '은우', '채원', '건우', '다은', '우진', '예린', '선우', '유나'];
+  const STATIONS = ['서울강남경찰서', '서울서초경찰서', '서울송파경찰서', '서울관악경찰서', '서울마포경찰서', '서울용산경찰서', '서울은평경찰서', '서울노원경찰서'];
+  const special: Record<number, { name: string; agency: string; key: string }> = {
+    3: { name: '김지원', agency: '서울특별시경찰청 서울강서경찰서', key: 'inst:gangseo' },
+    104: { name: '김지원', agency: '서울특별시경찰청 서울양천경찰서', key: 'inst:yangcheon' },
+    1: { name: '박서준', agency: '서울특별시경찰청 서울중부경찰서', key: 'inst:jungbu' },
+    49: { name: '박서준', agency: '서울특별시 강서구 교통행정과', key: 'inst:gangseo-gu-traffic' },
+    29: { name: '정민호', agency: '서울특별시경찰청 서울마포경찰서', key: 'inst:mapo' },
+    30: { name: '정민호', agency: '서울특별시경찰청 서울마포경찰서', key: 'src:mapo-unresolved' },
+  };
+  const facts: PrivateFact[] = [];
+  let id = 0;
+  for (let r = 0; r < 118; r++) {
+    const sp = special[r];
+    const name = sp?.name ?? `${SURNAME[r % SURNAME.length]}${GIVEN[Math.floor(r / SURNAME.length) % GIVEN.length]}${r >= 120 ? r : ''}`;
+    const agency = sp?.agency ?? `서울특별시경찰청 ${STATIONS[r % STATIONS.length]}`;
+    const agencyKey = sp?.key ?? `inst:station-${r % STATIONS.length}`;
+    const count = 125 - r;
+    for (let i = 0; i < count; i++) {
+      const pick = (i * 7 + r * 3) % 10;
+      const status: Status = pick < 5 ? 'accepted' : pick < 7 ? 'partial' : pick < 9 ? 'rejected' : 'completed_unknown';
+      const day = addDays('2026-06-01', (i * 5 + r) % 110);
+      facts.push({
+        fact_identity: `managers-${id++}`, contributor_id: `synthetic-c${String(1 + (i % 14)).padStart(2, '0')}`, snapshot_id: 'managers', snapshot_generation: 1,
+        report_date: day, completed_date: addDays(day, 5), category: 'parking', status,
+        disposition: status === 'accepted' && i % 3 === 0 ? 'fine' : status === 'rejected' ? 'none' : 'warning',
+        vehicle_raw: null, point_key: 'synthetic:managers', lat: 37.5509, lng: 126.8495, address: '서울특별시 강서구 예시로 1길', region_code: '서울 강서구',
+        agency_key: agencyKey, agency_name: agency, manager_key: `m1:${agencyKey}:${name}`, manager_name: name,
+        amount_kind: 'unknown', amount_confirmed_won: null, amount_public: true, amount_stated: false, violation_law: '도로교통법 제32조',
+      });
+    }
+  }
+  return facts;
+}
+let managersCache: PrivateFact[] | null = null;
+
 export function demoFacts(): PrivateFact[] {
   if (oracleMode()) return oracleDemoFacts();
+  if (managersMode()) return (managersCache ??= managersFacts());
   if (cache) return cache;
   const rand = mulberry32(20260927);
   const pick = <T,>(list: readonly T[]) => list[Math.floor(rand() * list.length)];

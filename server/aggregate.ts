@@ -4,6 +4,7 @@ import type {
   OutcomeCounts, Overview, PublicEntity, PublicLaw, PublicMeta, PublicPoint, PublicRegion, Scope,
 } from '../src/domain/public.ts';
 import { COHORT_POLICY_VERSION, LAW_NONE, lawKey } from '../src/domain/public.ts';
+import { computeSameNames } from '../src/domain/managerNames.ts';
 import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
 import { fineAmountBrief, fineAmountSummary } from './amount.ts';
@@ -249,6 +250,14 @@ export function monthKeys(start: string, end: string): string[] {
 }
 
 export function entityRows(facts: readonly PrivateFact[], kind: 'agency' | 'manager'): PublicEntity[] {
+  const rows = entityRowsOnly(facts, kind);
+  if (kind === 'agency') return rows;
+  // 동명이인 over the FULL list of this selection, before any page/search/type slice (src/domain/managerNames.ts)
+  const same = computeSameNames(rows);
+  return rows.map(row => ({ ...row, same_name: same.get(row.key) ?? null }));
+}
+
+function entityRowsOnly(facts: readonly PrivateFact[], kind: 'agency' | 'manager'): PublicEntity[] {
   const groups = new Map<string, PrivateFact[]>();
   for (const fact of facts) {
     const key = kind === 'agency' ? (fact.agency_key || 'agency-unknown') :

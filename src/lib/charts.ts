@@ -52,7 +52,7 @@ export function baseOption(t: ChartTheme) {
 
 /** dev/e2e only (the calls sit behind import.meta.env.DEV and are stripped from production): live chart instances and
  *  ResizeObservers, so the browser check can prove that switching renderers 20× leaves nothing behind (F01) */
-function devCount(name: '__cmChartLive' | '__cmChartObservers', d: number) {
+function devCount(name: '__cmChartLive' | '__cmChartObservers' | '__cmChartZoomListeners', d: number) {
   const g = globalThis as unknown as Record<string, number>;
   g[name] = (g[name] ?? 0) + d;
 }
@@ -62,13 +62,19 @@ function devCount(name: '__cmChartLive' | '__cmChartObservers', d: number) {
  * is created once when that component mounts and disposed when it unmounts.
  * @param build returns the full option for the current data (called again when `deps` or the theme change)
  * @param onClick optional series click handler (data index + series index)
+ * @param events optional extra handlers, bound ONCE per instance (never re-bound per render): `datazoom` fires after
+ *   every window change (slider, inside zoom, dispatchAction) and after each setOption; `axis` receives mouse events
+ *   on a category axis label (needs `triggerEvent: true` on that axis)
  */
 export function useEChart(build: (t: ChartTheme) => Record<string, unknown> | null, deps: readonly unknown[],
-  theme: string, onClick?: (params: { dataIndex: number; seriesIndex: number; data: unknown }) => void) {
+  theme: string, onClick?: (params: { dataIndex: number; seriesIndex: number; data: unknown }) => void,
+  events?: { datazoom?: (chart: EChartsType) => void; axis?: (chart: EChartsType, e: { type: string; value: unknown }) => void }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<EChartsType | null>(null);
   const clickRef = useRef(onClick);
   clickRef.current = onClick;
+  const eventsRef = useRef(events);
+  eventsRef.current = events;
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -87,7 +93,17 @@ export function useEChart(build: (t: ChartTheme) => Record<string, unknown> | nu
         (el as unknown as { __chart?: EChartsType }).__chart = chart;
         devCount('__cmChartLive', 1);
       }
-      chart.on('click', (params) => clickRef.current?.(params as unknown as { dataIndex: number; seriesIndex: number; data: unknown }));
+      chart.on('click', (params) => {
+        const p = params as unknown as { componentType?: string; dataIndex: number; seriesIndex: number; data: unknown; value: unknown };
+        if (p.componentType === 'xAxis') eventsRef.current?.axis?.(chart, { type: 'click', value: p.value });
+        else clickRef.current?.(p);
+      });
+      chart.on('mouseover', (params) => {
+        const p = params as unknown as { componentType?: string; value: unknown };
+        if (p.componentType === 'xAxis') eventsRef.current?.axis?.(chart, { type: 'mouseover', value: p.value });
+      });
+      chart.on('datazoom', () => eventsRef.current?.datazoom?.(chart));
+      if (import.meta.env.DEV) devCount('__cmChartZoomListeners', 1);
       if (typeof ResizeObserver !== 'undefined') {
         ro = new ResizeObserver(() => chart.resize());
         ro.observe(el);
@@ -99,7 +115,7 @@ export function useEChart(build: (t: ChartTheme) => Record<string, unknown> | nu
       dead = true;
       if (import.meta.env.DEV) {
         if (ro) devCount('__cmChartObservers', -1);
-        if (chartRef.current) devCount('__cmChartLive', -1);
+        if (chartRef.current) { devCount('__cmChartLive', -1); devCount('__cmChartZoomListeners', -1); }
       }
       ro?.disconnect();
       chartRef.current?.dispose();
@@ -115,8 +131,9 @@ export function useEChart(build: (t: ChartTheme) => Record<string, unknown> | nu
     const option = build(chartTheme());
     if (option) chart.setOption(option, { notMerge: true });
     else chart.clear();
+    eventsRef.current?.datazoom?.(chart);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, theme, ...deps]);
 
-  return { hostRef, error };
+  return { hostRef, error, chartRef };
 }
