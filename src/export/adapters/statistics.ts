@@ -103,12 +103,8 @@ export function statisticsSnapshot(input: StatisticsExportInput): ExportSnapshot
   rows.push(total);
 
   const notes = [
-    '합계는 칸을 더하거나 평균 낸 값이 아니라, 해당 신고 전체로 다시 계산한 값입니다. 예를 들어 1건 중 1건(100%)과 99건 중 9건(9.1%)을 합치면 100건 중 10건, 10%입니다.',
-    '비율은 같은 줄의 ‘해당 건수 ÷ 기준 건수’로 계산하는 수식입니다. 기준 건수가 0이면 계산하지 않고 ‘계산 불가’로 적었습니다.',
-    '중앙값, 상위 90% 값, 서로 다른 개수처럼 이 파일의 숫자로 다시 계산할 수 없는 값은 계산된 결과를 그대로 넣었습니다.',
-    `‘${NONE}’는 해당하는 답변 신고가 없다는 뜻입니다(0이 아님).`,
-    ...(result.spec.population === 'compare' ? ['내 신고는 전체에 포함되므로 둘을 더하지 않습니다. ‘내 신고’는 이 파일을 내려받은 계정의 신고입니다.'] : []),
-    ...(result.spec.population === 'mine' ? ['‘내 신고’는 이 파일을 내려받은 계정의 신고입니다. 다른 사람이 이 파일을 열어도 바뀌지 않습니다.'] : []),
+    '합계는 칸을 더한 값이 아니라 해당 신고 전체로 다시 계산한 값입니다.',
+    '비율은 같은 줄의 ‘해당 건수 ÷ 기준 건수’ 수식입니다.',
   ];
 
   // ── charts (the same plan and the same series as the web chart) ──────────────────────────────────────────
@@ -120,11 +116,11 @@ export function statisticsSnapshot(input: StatisticsExportInput): ExportSnapshot
   let chartNotice: string | null = null;
   const unitOf = (m: string) => (metric(m)?.unit ?? 'count') as XUnit;
   const blockedReason = chartBlockedReason(result, plan);
-  const refusal = plan.refusal ? `${plan.refusal} 그래서 이 파일에도 화면과 같은 그래프(${CHART_LABEL[plan.type]})를 넣었습니다.` : undefined;
+  const refusal = plan.refusal ? `${plan.refusal} 대신 ${CHART_LABEL[plan.type]}로 넣었습니다.` : undefined;
   if (plan.type === 'summary') {
     chartNotice = '행과 열을 고르지 않은 숫자 요약이라 차트는 넣지 않았습니다. 결과는 ‘통계표’ 시트의 합계 줄에 있습니다.';
   } else if (blockedReason) {
-    chartNotice = `${blockedReason} 모든 숫자는 ‘통계표’ 시트에 있습니다.`;
+    chartNotice = blockedReason;
   } else if (plan.type === 'heatmap') {
     const m = plan.metrics[0];
     const { xs, ys, rowOf, colOf } = heatmapAxes(result);
@@ -135,7 +131,7 @@ export function statisticsSnapshot(input: StatisticsExportInput): ExportSnapshot
         unit: unitOf(m), min: 0, max, rowTitle: hasCols ? rowDims.map(dimLabel).join(' · ') : dimLabel(rowDims[0]),
         rows: ys.map((y) => y.label.join(' · ')), cols: xs.map((x) => x.label.join(' · ')),
         cells: ys.map((y) => xs.map((x) => (cell(s, rowOf(y.key, x.key), colOf(x.key))?.values[m] ? refOf(rowOf(y.key, x.key), colOf(x.key), m, s) : null))),
-        note: `색은 값에 따라 자동으로 칠해집니다(숫자를 고치면 색도 바뀝니다). 색 기준 ${pct ? '0~100%' : `0~${max.toLocaleString('ko-KR')}${sides.length > 1 ? '(전체와 내 신고 같은 기준)' : ''}`}. 빈 칸은 해당하는 신고가 없다는 뜻입니다(0이 아님).${sides.length > 1 ? ' 전체 표와 내 신고 표는 행·열 순서가 같습니다.' : ''}${refusal ? ` ${refusal}` : ''}` });
+        note: `색 기준 ${pct ? '0~100%' : `0~${max.toLocaleString('ko-KR')}`}.${refusal ? ` ${refusal}` : ''}` });
     }
   } else if (plan.type === 'scatter') {
     const sm = scatterModel(result, plan)!;
@@ -156,8 +152,7 @@ export function statisticsSnapshot(input: StatisticsExportInput): ExportSnapshot
       }) } : {}),
     }));
     const note = [
-      model.type === 'stack100' ? '막대 전체(100%)는 숨긴 항목까지 합친 건수입니다. 숨긴 항목이 있으면 막대가 100%까지 차지 않습니다.' : '',
-      model.type === 'line' ? '값이 없는 구간은 선을 끊었습니다(0으로 잇지 않음). 0%로 찍힌 점은 실제로 0인 경우입니다.' : '',
+      model.type === 'stack100' ? '숨긴 항목이 있으면 막대가 100%까지 차지 않습니다.' : '',
       plan.note ?? '', refusal ?? '',
     ].filter(Boolean).join(' ');
     const categories = model.categories.map((c) => c.label);
@@ -168,9 +163,9 @@ export function statisticsSnapshot(input: StatisticsExportInput): ExportSnapshot
       categoryTitle: hasRows ? rowDims.map(dimLabel).join(' · ') : colDims.map(dimLabel).join(' · '),
       categories: categories.slice(a, b), unit: pct ? 'percent' : model.unit as XUnit, axis: pct ? { min: 0, max: 1 } : { min: 0 },
       series: series.map((s) => ({ ...s, points: s.points.slice(a, b), ...(s.shareOf ? { shareOf: s.shareOf.slice(a, b) } : {}) })),
-      note: `${note}${chunks.length > 1 ? ` 항목이 많아 ${CHUNK}개씩 나눠 그렸습니다(빠진 항목 없음).` : ''}`.trim() || undefined,
+      note: `${note}${chunks.length > 1 ? ` 항목이 많아 ${CHUNK}개씩 나눠 그렸습니다.` : ''}`.trim() || undefined,
     }));
-    if (series.length > 0 && series.every((s) => s.hidden) && !input.includeHidden) chartNotice = '화면에서 모든 항목을 숨긴 상태로 내려받았습니다(0건이라는 뜻이 아닙니다). 숫자는 통계표와 차트 데이터 시트에 모두 있습니다.';
+    if (series.length > 0 && series.every((s) => s.hidden) && !input.includeHidden) chartNotice = '화면에서 모든 항목을 숨긴 상태로 내려받았습니다.';
   }
   const hiddenNames = plan.type === 'heatmap' || plan.type === 'scatter' || plan.type === 'summary' ? []
     : (cartesianModel(result, catalog, plan)?.series ?? []).filter((s) => hiddenSet.has(s.key)).map((s) => s.name);

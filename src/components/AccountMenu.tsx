@@ -28,7 +28,7 @@ export default function AccountMenu({ auth, onSignIn, onSignOut, briefing }: Pro
   if (auth.status === 'loading') return <span className="account-chip muted" role="status">로그인 확인 중…</span>;
   if (auth.status !== 'signed_in') {
     return (
-      <button className="quiet-btn account-login" type="button" onClick={onSignIn} title="지금은 신고내용 공유에 동의한 분만 지도를 볼 수 있습니다. 앱에서 쓰는 카카오 계정으로 로그인하세요.">
+      <button className="quiet-btn account-login" type="button" onClick={onSignIn} title="앱에서 쓰는 카카오 계정으로 로그인">
         카카오 로그인{auth.synthetic ? ' (예시)' : ''}
       </button>
     );
@@ -40,11 +40,9 @@ export default function AccountMenu({ auth, onSignIn, onSignOut, briefing }: Pro
       </button>
       {open && (
         <div className="account-pop" role="menu">
-          <p className="cm-muted">이 브라우저에서만 로그인되어 있습니다.</p>
           <button type="button" role="menuitem" className="ghost-btn" onClick={() => { setOpen(false); onSignOut(); }}>
             로그아웃
           </button>
-          <small className="cm-muted">로그아웃해도 앱의 자동 업로드는 계속됩니다.</small>
         </div>
       )}
     </div>

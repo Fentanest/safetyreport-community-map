@@ -111,7 +111,7 @@ export function managerLabel(e: Pick<PublicEntity, 'manager_name'>, same: SameNa
 /** Plain-text explanation of a same-name label (chart tooltip, list title, file note). */
 export function sameNameNote(same: SameNameInfo): string[] {
   const lines = ['동명이인 구분을 위해 소속 기관을 함께 표시합니다.'];
-  if (same.same_agency) lines.push('같은 기관 이름 아래 따로 집계된 담당자가 있어 번호로 구분했습니다(합치지 않음).');
+  if (same.same_agency) lines.push('같은 기관 이름의 다른 담당자가 있어 번호로 구분했습니다.');
   const more = same.count - same.peers.length;
   lines.push(`같은 이름의 담당자 ${same.count}명: ${same.peers.join(', ')}${more > 0 ? ` 외 ${more}명` : ''}`);
   return lines;

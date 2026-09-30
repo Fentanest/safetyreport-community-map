@@ -178,7 +178,7 @@ describe('the card: nav, load-more, table and file use the same names', () => {
   it('8 or fewer managers and nothing more: no nav at all', () => {
     const html = renderToStaticMarkup(<PlaceEntityChart managers={first.slice(0, 8)} total={8} theme="dark" loadingMore={false} onLoadMore={null} />);
     expect(html).not.toContain('pe-nav');
-    expect(html).toContain('담당자 8명.');
+    expect(html).toContain('담당자 8명');
   });
   it('the table shows every loaded row with the chart names, and offers the rest', () => {
     // a table render starts in chart mode; the table rows use `labels` — check the file adapter's names instead

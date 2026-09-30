@@ -105,13 +105,13 @@ describe('map web login (separate from relay and app sessions)', () => {
 });
 
 describe('session-expired guidance (docs/personal-comparison.md §6)', () => {
-  it('tells the viewer that the app upload connection is not affected', async () => {
+  it('tells the viewer to sign in again', async () => {
     installWindow('?me=expired');
     const { createDemoAuth } = await import('../../src/auth/mapAuth');
     const auth = createDemoAuth('?me=expired');
     expect(await auth.refreshToken()).toBeNull();
     expect(auth.snapshot()).toMatchObject({ status: 'signed_out' });
-    expect(auth.snapshot().message).toContain('앱의 자동 업로드는 그대로 계속됩니다');
+    expect(auth.snapshot().message).toBe('로그인이 만료되었습니다. 다시 로그인해 주세요.');
   });
 });
 

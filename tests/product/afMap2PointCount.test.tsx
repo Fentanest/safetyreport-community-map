@@ -79,7 +79,7 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     expect(completionMap).toContain('시도별 수용률');
     const guide = renderToStaticMarkup(<DataGuide data={data} />);
     expect(guide).not.toContain('답변만 받은 신고의 장소');
-    expect(guide).toContain('다른 날짜가 기간 밖이어도 그 신고는 빠지지 않습니다');
+    expect(guide).toContain('날짜 기준(신고일 또는 답변일)이 기간 안인 신고로 모든 수치를 셉니다');
     // Dashboard renders the empty banner only when isEmptyResult is true.
     const banner = isEmptyResult(data)
       ? `<div class="banner warn"><span class="grow">${bannerText}. 조건을 해제하면 전국 집계를 볼 수 있습니다.</span></div>`

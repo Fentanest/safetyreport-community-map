@@ -149,9 +149,9 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
             : `<b>${esc(labels[i])}</b> <span style="opacity:.8">· ${esc(managers[i].agency_name)}</span>`;
           const head = `${who}<br/>답변 ${fmtInt(m.C)}건`;
           if (mode === 'accept') {
-            return `${head} · 결과 확인 ${fmtInt(m.K)}건 · 결과 미상 ${fmtInt(m.U)}건<br/>`
+            return `${head} · 미분류 ${fmtInt(m.U)}건<br/>`
               + `수용 ${fmtInt(m.A)}건 (${fmtPercent(m.accept)})<br/>일부수용 ${fmtInt(m.P)}건 (${fmtPercent(m.partial)})<br/>불수용 ${fmtInt(m.R)}건 (${fmtPercent(m.reject)})`
-              + (m.K === 0 ? '<br/>결과가 나온 신고가 없어 비율을 계산할 수 없습니다' : '');
+              + (m.K === 0 ? '<br/>수용 여부가 분류된 답변이 없어 비율을 계산할 수 없습니다' : '');
           }
           return `${head}<br/>과태료 처분 ${m.F === null ? '—' : `${fmtInt(m.F)}건`} (${fmtPercent(m.fineRate)})`
             + `<br/>과태료 외 ${m.F === null ? '—' : `${fmtInt(m.C - m.F)}건`} (경고·범칙금·처분 없음·미확인 포함)`;
@@ -210,7 +210,6 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
       <div className="panel-top">
         <div>
           <h2>{title}</h2>
-          <span className="subtitle">{title.startsWith('이 주소') ? '선택한 주소의 신고만' : '선택 범위의 신고만 · 목록에 불러온 담당자만'} · 막대는 100% 비율, 선은 답변 완료 건수</span>
         </div>
         <div className="card-tools">
           <div className="radio-group" role="radiogroup" aria-label="막대 기준">
@@ -226,13 +225,13 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
         {series.map((s) => <span key={s.key}><i className="dot" style={{ background: `var(--${s.color === 'unknown' ? 'unknown' : s.color})` }} />{s.name}</span>)}
         <span><i className="dash solid" aria-hidden="true" />답변 완료(건, 오른쪽 축)</span>
       </div>
-      {n === 0 && <div className="empty-state">이 주소의 답변 완료 신고에 담당자 정보가 없습니다.</div>}
+      {n === 0 && <div className="empty-state">담당자 정보가 있는 답변이 없습니다.</div>}
       <div ref={hostRef} className="chart-host" hidden={table || n === 0 || !!error} role="img"
         aria-label={`담당자 ${n}명 중 ${fmtInt(view.start + 1)}–${fmtInt(view.end + 1)}번째의 ${mode === 'accept' ? '수용률' : '과태료 부과율'} 막대와 답변 건수`} />
       {error && !table && <div className="empty-state" role="alert">{error}</div>}
       {table && (
         <div className="trend-table"><table>
-          <thead><tr><th scope="col">담당자</th><th scope="col">답변(건)</th><th scope="col">결과 나온 신고(건)</th><th scope="col">결과 미상(건)</th>
+          <thead><tr><th scope="col">담당자</th><th scope="col">답변(건)</th><th scope="col">분류된 답변(건)</th><th scope="col">미분류(건)</th>
             <th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료(건)</th><th scope="col">과태료 부과율</th></tr></thead>
           <tbody>{rows.map((r, i) => (
             <tr key={managers[i].key}><td title={sameOf[i] ? `${managers[i].agency_name}\n${sameNameNote(sameOf[i]!).join('\n')}` : managers[i].agency_name}>{labels[i]}</td><td>{fmtInt(r.m.C)}</td><td>{fmtInt(r.m.K)}</td><td>{fmtInt(r.m.U)}</td>
@@ -252,17 +251,16 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
             <button type="button" className="mini-btn pe-nav-more" disabled={loadingMore} aria-busy={loadingMore} onClick={() => onLoadMore?.()}>{loadLabel}</button>
           )}
           {atEnd && canLoad && loadError && !loadingMore && (
-            <span className="pe-nav-error" role="alert">담당자를 더 불러오지 못했습니다. 지금 보이는 {fmtInt(n)}명은 그대로입니다.</span>
+            <span className="pe-nav-error" role="alert">담당자를 더 불러오지 못했습니다.</span>
           )}
           {remaining > 0 && !onLoadMore && <span className="cm-muted pe-nav-note">나머지 {fmtInt(remaining)}명은 이 그래프에 없습니다</span>}
         </div>
       )}
       {namesakes.size > 0 && (
         <p className="pe-namesake" role="note">
-          <b>기관명이 붙은 이름</b>은 이 조건 안에 같은 이름의 담당자가 둘 이상이라 소속 기관으로 구분한 것입니다
-          {!same.fromServer && ' (불러온 담당자 기준)'}.
+          <b>기관명이 붙은 이름</b>은 같은 이름의 담당자가 있어 소속 기관으로 구분한 것입니다{!same.fromServer && ' (불러온 담당자 기준)'}.
           {[...namesakes].map(([name, sn]) => (
-            <span key={name} className="pe-namesake-item"><b>{name}</b> {fmtInt(sn.count)}명: {sn.peers.join(' · ')}{sn.count > sn.peers.length ? ` 외 ${fmtInt(sn.count - sn.peers.length)}명` : ''}{sn.same_agency ? ' (같은 기관 이름은 번호로 구분, 따로 집계)' : ''}</span>
+            <span key={name} className="pe-namesake-item"><b>{name}</b> {fmtInt(sn.count)}명: {sn.peers.join(' · ')}{sn.count > sn.peers.length ? ` 외 ${fmtInt(sn.count - sn.peers.length)}명` : ''}{sn.same_agency ? ' (같은 기관은 번호로 구분)' : ''}</span>
           ))}
         </p>
       )}
@@ -271,12 +269,7 @@ export default function PlaceEntityChart({ managers, total, theme, loadingMore, 
           capture={() => placeManagersSnapshot({ managers, total, mode, scopeTitle: title, conditions: exportCtx.conditions,
             datasetVersion: exportCtx.datasetVersion, capturedAt: new Date().toISOString() })} />
       )}
-      <p className="chart-caption">
-        {mode === 'accept'
-          ? '수용률 막대 전체(100%)는 결과가 나온 신고(수용+일부 수용+불수용)입니다. 결과 미상은 막대에서 빠지므로 선(답변 완료)과 다를 수 있습니다.'
-          : '과태료 부과율 막대 전체(100%)는 답변 완료 신고입니다. 금액이 적혀 있지 않아도 처분이 과태료면 포함합니다.'}
-        {!showNav && ` 담당자 ${fmtInt(n)}명.`}
-      </p>
+      {!showNav && <p className="chart-caption">담당자 {fmtInt(n)}명</p>}
     </article>
   );
 }

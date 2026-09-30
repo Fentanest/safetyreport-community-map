@@ -69,7 +69,7 @@ export default function LawTable(p: Props) {
       <div className="panel-top">
         <div>
           <h2>위반법규별 현황</h2>
-          <span className="subtitle">답변에 적힌 위반법규별 처리 결과입니다. 법규를 누르면 그 법규만 봅니다.</span>
+          <span className="subtitle">법규를 누르면 그 법규만 봅니다</span>
         </div>
         {all.length > 0 && (
           <button className="ghost-btn" type="button" aria-expanded={expanded} onClick={() => { setExpanded((v) => !v); setQuery((q) => ({ ...q, page: 1 })); }}>
@@ -86,11 +86,11 @@ export default function LawTable(p: Props) {
           <span className="cm-muted sort-now" aria-live="polite">정렬 {sortLabel(query.sort)}</span>
         </div>
       )}
-      {state === 'error' && <div className="banner error" role="alert"><span className="grow">위반법규 목록을 불러오지 못했습니다. 다른 통계는 그대로입니다.</span></div>}
+      {state === 'error' && <div className="banner error" role="alert"><span className="grow">위반법규 목록을 불러오지 못했습니다.</span></div>}
       {p.laws === null ? (
         <p className="empty-state">위반법규별 통계는 아직 준비되지 않았습니다.</p>
       ) : rows.length === 0 ? (
-        <p className="empty-state">{state === 'loading' ? '불러오는 중입니다…' : query.q ? `‘${query.q}’에 맞는 위반법규가 없습니다.` : '지금 조건에 맞는 답변 완료 신고가 없습니다.'}</p>
+        <p className="empty-state">{state === 'loading' ? '불러오는 중입니다…' : query.q ? `‘${query.q}’에 맞는 위반법규가 없습니다.` : '지금 조건에 맞는 답변이 없습니다.'}</p>
       ) : (
         <div className="table-scroll">
           <table className="entity-table law-table">
@@ -101,12 +101,12 @@ export default function LawTable(p: Props) {
               <tr>
                 <th scope="col">위반법규</th>
                 <SortHeader column="completed" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="답변 완료" />
-                <SortHeader column="accepted" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="수용" title="건수와 수용률(÷ 결과가 나온 신고)" />
-                <SortHeader column="fine" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="과태료" title="건수와 부과율(÷ 답변 완료)" />
-                {full && <SortHeader column="amount" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="답변에 적힌 과태료 금액" title="답변에 적힌 과태료 금액 합계(금액이 확인되고 공개에 동의한 것만)" />}
+                <SortHeader column="accepted" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="수용" title="건수와 수용률(÷ (수용+일부수용+불수용))" />
+                <SortHeader column="fine" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="과태료" title="건수와 부과율(÷ 답변)" />
+                {full && <SortHeader column="amount" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="답변에 적힌 과태료 금액" title="답변에 적힌 과태료 금액 합계" />}
                 {full && <SortHeader column="penalty" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="범칙금" />}
-                <SortHeader column="warning" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="계도" title="경고·계도 처분 건수와 비율(÷ 답변 완료)" />
-                {full && <SortHeader column="rating" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="평균 별점 · 건수" title="공개에 동의한 숫자 별점만 집계" />}
+                <SortHeader column="warning" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="계도" title="경고·계도 처분 건수와 비율(÷ 답변)" />
+                {full && <SortHeader column="rating" current={query.sort} onSort={sortBy} enabled={sortable} className="num" label="평균 별점 · 건수" />}
               </tr>
             </thead>
             <tbody>
@@ -157,12 +157,6 @@ export default function LawTable(p: Props) {
           </table>
         </div>
       )}
-      {rows.length > 0 && (
-        <p className="chart-caption">
-          수용률·일부수용률 = 수용·일부 수용 ÷ 결과가 나온 신고(수용+일부 수용+불수용). 과태료 부과율 = 과태료 ÷ 답변 완료.
-          금액은 금액이 확인되고 공개에 동의한 과태료만 더합니다.
-        </p>
-      )}
       {server && pages > 1 && (
         <div className="table-footer">
           <span className="table-pager">
@@ -173,8 +167,7 @@ export default function LawTable(p: Props) {
         </div>
       )}
       <div className="table-footer">
-        <span>법규 미상: 답변에서 위반법규를 찾지 못했거나, 위반법규를 보내기 전 앱이나 동의로 공유된 신고입니다.</span>
-        <span>과태료 금액은 답변에 적힌 금액이며 실제 납부액이 아닙니다.</span>
+        <span>법규 미상: 답변에서 위반법규를 찾지 못한 신고</span>
       </div>
     </section>
   );

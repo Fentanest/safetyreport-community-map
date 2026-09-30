@@ -237,7 +237,7 @@ describe('F06 managers workbook (주소/범위 담당자)', () => {
     expect(x.charts[0].valAx.some((a: { crosses: string }) => a.crosses === 'max')).toBe(true);
     expect(x.allText).toContain('김철수 (갑서)');
     expect(x.allText).toContain('김철수 (을서)');
-    expect(x.allText).toContain('일부만 담음: 화면에 불러온 2명 (전체 5명');
+    expect(x.allText).toContain('불러온 2명 (전체 5명)');
     expect(x.allText).toContain('제공 안 됨');
   });
 });

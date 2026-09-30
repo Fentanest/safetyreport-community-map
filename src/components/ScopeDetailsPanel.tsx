@@ -101,15 +101,15 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   return (
     <>
       <div className="scope-entity-tools">
-        <input type="search" value={input} placeholder={`${noun} 이름 검색 (전체에서)`} aria-label={`${noun} 이름 검색`}
+        <input type="search" value={input} placeholder={`${noun} 이름 검색`} aria-label={`${noun} 이름 검색`}
           onChange={(e) => setInput(e.target.value)}
           onCompositionStart={() => { composing.current = true; }}
           onCompositionEnd={(e) => { composing.current = false; setInput((e.target as HTMLInputElement).value); }} />
         <PanelStatus busy={state === 'loading'} label={q ? '검색 중' : '불러오는 중'} />
       </div>
-      {state === 'error' && <p className="place-empty" role="alert">{noun} 목록을 불러오지 못했습니다. 지금 보이는 목록은 이전 결과입니다.</p>}
+      {state === 'error' && <p className="place-empty" role="alert">{noun} 목록을 불러오지 못했습니다.</p>}
       {rows.length === 0 && state !== 'loading' && (
-        <p className="cm-muted place-empty">{q ? `‘${q}’에 맞는 ${noun}가 없습니다.` : `이 범위의 답변 완료 신고에 ${noun} 정보가 없습니다.`}</p>
+        <p className="cm-muted place-empty">{q ? `‘${q}’에 맞는 ${noun}가 없습니다.` : `이 범위의 답변에 ${noun} 정보가 없습니다.`}</p>
       )}
       <ul className="place-entities">
         {rows.slice(0, shown).map((e) => (
@@ -187,13 +187,9 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
           <button className="mini-btn primary-mini" type="button" onClick={onMakeStatistics}>이 조건으로 통계 만들기</button>
         </div>
       </header>
-      {scope.bbox && (
-        <p className="scope-note" role="note">{autoRefresh ? '지도에 보이는 범위(자동 갱신)에 든 신고만 셉니다. 지역 전체 수치가 아닙니다.'
-          : '마지막으로 적용한 지도 범위의 신고만 셉니다. 지도만 움직여서는 바뀌지 않습니다.'}</p>
-      )}
 
       <section className="place-section" aria-label="처리 결과">
-        <h3>처리 결과 <small>답변 {fmtInt(C)}건 중 결과가 나온 {fmtInt(known)}건</small></h3>
+        <h3>처리 결과 <small>답변 {fmtInt(C)}건</small></h3>
         {known > 0 ? (
           <>
             <div className="stack" role="img" aria-label={bars.map((r) => `${r.label} ${r.v}건`).join(', ')}>
@@ -201,15 +197,15 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
             </div>
             <div className="place-dist">
               {bars.map((r) => <span key={r.label}><i className="dot" style={{ background: r.color }} />{r.label} <b className="cm-number">{fmtInt(r.v)}</b> <small>{fmtPercent(pct(r.v, known))}</small></span>)}
-              <span><i className="dot" style={{ background: 'var(--unknown)' }} />결과 미상 <b className="cm-number">{fmtInt(o?.result_unknown ?? 0)}</b> <small>비율에서 제외</small></span>
+              <span title="안전신문고 처리 상태가 ‘답변완료’·‘기타’라 수용 여부가 없는 답변"><i className="dot" style={{ background: 'var(--unknown)' }} />미분류 <b className="cm-number">{fmtInt(o?.result_unknown ?? 0)}</b></span>
             </div>
           </>
-        ) : <p className="cm-muted place-empty">이 범위에는 결과가 나온 답변이 아직 없습니다.</p>}
+        ) : <p className="cm-muted place-empty">이 범위에는 수용 여부가 분류된 답변이 아직 없습니다.</p>}
       </section>
 
       {children.length > 0 && (
         <section className="place-section" aria-label={scope.region_code ? '시군구별' : '시도별'}>
-          <h3>{scope.region_code ? '시군구별' : '시도별'} <small>누르면 그 지역 상세로 이동 · 신고 위치 기준</small></h3>
+          <h3>{scope.region_code ? '시군구별' : '시도별'}</h3>
           <ul className="scope-children">
             {children.slice(0, childShown).map((r) => (
               <li key={r.region_code ?? r.name}>
@@ -227,16 +223,15 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
       )}
 
       <section className="place-section" aria-label="처리 기관">
-        <h3>처리 기관 <small>{data.agency_total !== undefined ? `${fmtInt(data.agency_total)}곳` : ''} · 이 범위 신고만</small></h3>
+        <h3>처리 기관 {data.agency_total !== undefined && <small>{fmtInt(data.agency_total)}곳</small>}</h3>
         <ScopeEntities kind="agency" first={data.agencies} total={data.agency_total} scope={scope} version={version} onPick={onPickEntity}
           activeAgency={activeAgency} activeManager={activeManager} />
       </section>
       <section className="place-section" aria-label="담당자">
-        <h3>담당자 <small>{data.manager_total !== undefined ? `${fmtInt(data.manager_total)}명` : ''} · 소속 기관과 함께</small></h3>
+        <h3>담당자 {data.manager_total !== undefined && <small>{fmtInt(data.manager_total)}명</small>}</h3>
         <ScopeEntities kind="manager" first={data.managers} total={data.manager_total} scope={scope} version={version} onPick={onPickEntity}
           activeAgency={activeAgency} activeManager={activeManager} onRows={onManagers} />
       </section>
-      <p className="place-note">지역은 신고 위치의 행정구역 기준입니다(처리 기관 소재지가 아님). 모든 수치는 {DATE_BASIS_LABEL[scope.date_basis]}이 기간 안인 같은 신고 묶음에서 셉니다. 주요 수치는 지도 위 ‘주요 통계’에 있습니다.</p>
     </aside>
   );
 }

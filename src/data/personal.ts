@@ -97,7 +97,7 @@ export class PersonalApiError extends Error {
 const MESSAGE: Record<PersonalErrorCode, string> = {
   unconfigured: '지금은 로그인 기능을 쓸 수 없습니다.',
   signed_out: '로그인하면 내 신고와 비교할 수 있습니다.',
-  session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요. 앱의 자동 업로드는 그대로 계속됩니다.',
+  session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
   kakao_required: '카카오 계정으로 로그인해야 내 신고를 볼 수 있습니다.',
   account_ineligible: '이 계정으로는 내 신고를 볼 수 없습니다.',
   DATASET_CHANGED: '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.',
@@ -106,7 +106,7 @@ const MESSAGE: Record<PersonalErrorCode, string> = {
   RESULT_TOO_LARGE: '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.',
   network: '네트워크 연결을 확인한 뒤 다시 시도해 주세요.',
   invalid_response: '내 신고를 불러오지 못했습니다. 다시 시도해 주세요.',
-  service_unavailable: '내 신고를 불러오지 못했습니다. 전체 통계는 그대로 볼 수 있습니다.',
+  service_unavailable: '내 신고를 불러오지 못했습니다.',
 };
 
 export const personalError = (code: PersonalErrorCode, retryAfter: number | null = null) =>

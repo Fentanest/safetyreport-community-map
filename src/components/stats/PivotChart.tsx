@@ -29,10 +29,10 @@ export function chartBlocked(result: StatisticsResult, plan: ChartPlan): string 
   }
   if (rows.length + columns.length === 1) {
     const members = rows.length ? result.row_members : result.col_members;
-    return members.length > MAX_CATEGORIES ? `항목이 ${members.length.toLocaleString('ko-KR')}개라 그래프로 그리기 어렵습니다. 비교 대상을 고르면 그래프로 볼 수 있고, 표에는 모두 있습니다.` : null;
+    return members.length > MAX_CATEGORIES ? `항목이 ${members.length.toLocaleString('ko-KR')}개라 그래프로 그리기 어렵습니다. 비교 대상을 고르면 그래프로 볼 수 있습니다.` : null;
   }
   const seriesCount = (columns.length ? result.col_members.length : result.row_members.length) * plan.metrics.length * sides.length;
-  return seriesCount > MAX_SERIES ? `선이 ${seriesCount}개나 되어 그리지 않았습니다(최대 ${MAX_SERIES}개). 비교 대상이나 지표를 줄여 주세요. 표에는 모두 있습니다.` : null;
+  return seriesCount > MAX_SERIES ? `선이 ${seriesCount}개나 되어 그리지 않았습니다(최대 ${MAX_SERIES}개). 비교 대상이나 지표를 줄여 주세요.` : null;
 }
 
 /**
@@ -96,7 +96,7 @@ export function SeriesLegend({ series, hidden, onHidden, theme }: {
     <div className="series-legend" role="group" aria-label="그래프에 보일 항목 (표에는 영향 없음)" data-theme-name={theme}>
       {series.map((s) => (
         <button key={s.key} type="button" className={`series-toggle${hiddenSet.has(s.key) ? ' off' : ''}`} aria-pressed={!hiddenSet.has(s.key)}
-          data-series-key={s.key} title={hiddenSet.has(s.key) ? '누르면 다시 보입니다' : '누르면 그래프에서 숨깁니다. 표는 그대로입니다'} onClick={() => toggle(s.key)}>
+          data-series-key={s.key} title={hiddenSet.has(s.key) ? '누르면 다시 보입니다' : '누르면 숨깁니다'} onClick={() => toggle(s.key)}>
           <i className={s.dashed ? 'dash' : 'dot'} style={s.dashed ? { borderColor: s.color } : { background: s.color }} aria-hidden="true" />{s.name}
         </button>
       ))}
@@ -156,7 +156,7 @@ function CartesianChart({ result, catalog, model, theme, hidden, onHidden, onPic
       {model.series.length > 1 && <SeriesLegend series={legendItems} hidden={hidden} onHidden={onHidden} theme={theme} />}
       {allHidden && (
         <div className="empty-state" role="note">
-          <span>표시할 항목을 선택해 주세요. 지금은 모든 항목을 숨긴 상태이며, 표에는 그대로 있습니다.</span>
+          <span>모든 항목을 숨겼습니다.</span>
           <button type="button" className="ghost-btn" onClick={() => onHidden([])}>전체 보기</button>
         </div>
       )}
@@ -215,8 +215,7 @@ function HeatmapPair({ result, catalog, metricId, theme, onPick }: {
             title={compare ? (p.side === 'all' ? '전체' : '내 신고') : null} side={p.side} />
         ))}
       </div>
-      {compare && <p className="chart-caption">왼쪽(좁은 화면에서는 위)이 전체, 오른쪽(아래)이 내 신고입니다. 두 표는 행·열 순서와 색 기준이 같습니다({m?.unit === 'percent' ? '0~100%' : `0~${max.toLocaleString('ko-KR')}, 전체와 내 신고 같은 기준`}). 빈 칸은 해당하는 신고가 없다는 뜻입니다(0이 아님).</p>}
-      <p className="chart-caption">아래 색 막대는 값의 크기를 나타냅니다. 눌러서 숨기는 버튼이 아닙니다.</p>
+      {compare && <p className="chart-caption">왼쪽(좁은 화면에서는 위)이 전체, 오른쪽(아래)이 내 신고입니다.</p>}
     </>
   );
 }

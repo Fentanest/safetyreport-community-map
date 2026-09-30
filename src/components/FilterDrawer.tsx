@@ -135,7 +135,7 @@ export default function FilterDrawer(p: Props) {
             aria-describedby={p.dateError ? 'drawer-date-error' : undefined}
             onChange={(e) => p.onDraft({ ...p.draft, end: e.target.value })} />
         </label>
-        {p.dateError && <p className="field-error" id="drawer-date-error" role="alert">{p.dateError} 입력한 날짜는 그대로 두었습니다.</p>}
+        {p.dateError && <p className="field-error" id="drawer-date-error" role="alert">{p.dateError}</p>}
         <label>분류
           <select value={p.draft.category} onChange={(e) => p.onDraft({ ...p.draft, category: e.target.value as DraftFilters['category'] })}>
             {(Object.keys(CATEGORY_LABEL) as Array<keyof typeof CATEGORY_LABEL>).map((c) => (
@@ -147,7 +147,6 @@ export default function FilterDrawer(p: Props) {
           onChange={(code) => p.onDraft({ ...p.draft, region_code: code })} />
         <LawSelect value={p.draft.law} options={p.lawOptions} onChange={(law) => p.onDraft({ ...p.draft, law })} />
         <div className="drawer-notice">
-          {DATE_BASIS_LABEL[p.draft.date_basis]}이 이 기간 안인 신고 하나의 묶음으로 모든 수치를 셉니다. 다른 날짜가 기간 밖이어도 그 신고는 빠지지 않습니다. 1건뿐인 결과도 그대로 보여 드립니다.
           현재 선택: {DATE_BASIS_LABEL[p.draft.date_basis]} 기준 · {regionLabel(p.draft.region_code)} · {CATEGORY_LABEL[p.draft.category]} · {lawLabel(p.draft.law)}
         </div>
         {p.unsupportedNote && (

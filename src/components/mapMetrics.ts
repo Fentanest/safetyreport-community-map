@@ -22,9 +22,9 @@ export interface MetricDef {
 
 export const MAP_METRICS: readonly MetricDef[] = [
   { id: 'reports', label: '신고 수', legend: '신고 수', basis: '적용한 날짜 기준의 신고', kind: 'count', denLabel: '' },
-  { id: 'acceptance', label: '수용률', legend: '수용률', basis: '수용 ÷ 결과가 나온 신고', kind: 'rate', denLabel: '결과가 나온 신고' },
-  { id: 'rejection', label: '불수용률', legend: '불수용률', basis: '불수용 ÷ 결과가 나온 신고', kind: 'rate', denLabel: '결과가 나온 신고' },
-  { id: 'fine', label: '과태료', legend: '과태료 부과율', basis: '과태료 ÷ 답변 완료', kind: 'rate', denLabel: '답변 완료' },
+  { id: 'acceptance', label: '수용률', legend: '수용률', basis: '수용 ÷ (수용+일부수용+불수용)', kind: 'rate', denLabel: '분류된 답변' },
+  { id: 'rejection', label: '불수용률', legend: '불수용률', basis: '불수용 ÷ (수용+일부수용+불수용)', kind: 'rate', denLabel: '분류된 답변' },
+  { id: 'fine', label: '과태료', legend: '과태료 부과율', basis: '과태료 ÷ 답변', kind: 'rate', denLabel: '답변' },
 ];
 export const metricDef = (m: MapMetric): MetricDef => MAP_METRICS.find((d) => d.id === m) ?? MAP_METRICS[0];
 

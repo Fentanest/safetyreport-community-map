@@ -43,24 +43,24 @@ function rows(o: Overview): Row[] {
   return [
     { id: 'report', label: '신고', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준`, all: fmtInt(o.report_count.value), allNote: null,
       mine: m => fmtInt(m.report_count), mineNote: () => null, diff: x => fmtShare(x.diff.report_share), diffKind: 'share' },
-    { id: 'completed', label: '답변 완료', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준 · 같은 신고 중 답변 확인`, all: fmtInt(o.completed_count.value),
-      allNote: out ? `결과가 나온 ${fmtInt(d)}건` : null,
-      mine: m => fmtInt(m.completed_count), mineNote: m => `결과가 나온 ${fmtInt(m.result_known)}건`,
+    { id: 'completed', label: '답변 완료', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준`, all: fmtInt(o.completed_count.value),
+      allNote: out ? `미분류 제외 ${fmtInt(d)}건` : null,
+      mine: m => fmtInt(m.completed_count), mineNote: m => `미분류 제외 ${fmtInt(m.result_known)}건`,
       diff: x => fmtShare(x.diff.completed_share), diffKind: 'share' },
-    { id: 'accept', label: '수용률', basis: '결과가 나온 신고 중 수용',
+    { id: 'accept', label: '수용률', basis: '수용 ÷ (수용+일부수용+불수용)',
       all: fmtPercent(acceptRate(out)),
       allNote: out ? `${fmtInt(out.accepted)} / ${fmtInt(d)}건` : null,
       mine: m => fmtPercent(m.accept_rate), mineNote: m => `${fmtInt(m.accepted)} / ${fmtInt(m.result_known)}건`,
       diff: x => fmtPp(x.diff.accept_rate_pp), diffKind: 'pp' },
-    { id: 'partial', label: '일부수용률', basis: '결과가 나온 신고 중 일부 수용',
+    { id: 'partial', label: '일부수용률', basis: '일부수용 ÷ (수용+일부수용+불수용)',
       all: fmtPercent(partialRate(out)), allNote: out ? `${fmtInt(out.partial)} / ${fmtInt(d)}건` : null,
       mine: m => fmtPercent(m.partial_rate), mineNote: m => `${fmtInt(m.partial)} / ${fmtInt(m.result_known)}건`,
       diff: x => fmtPp(x.diff.partial_rate_pp), diffKind: 'pp' },
-    { id: 'reject', label: '불수용률', basis: '결과가 나온 신고 중',
+    { id: 'reject', label: '불수용률', basis: '불수용 ÷ (수용+일부수용+불수용)',
       all: fmtPercent(out ? pct(out.rejected, d) : null), allNote: out ? `${fmtInt(out.rejected)} / ${fmtInt(d)}건` : null,
       mine: m => fmtPercent(m.reject_rate), mineNote: m => `${fmtInt(m.rejected)} / ${fmtInt(m.result_known)}건`,
       diff: x => fmtPp(x.diff.reject_rate_pp), diffKind: 'pp' },
-    { id: 'fine', label: '과태료 부과율', basis: '답변 완료된 신고 중',
+    { id: 'fine', label: '과태료 부과율', basis: '과태료 ÷ 답변',
       all: fmtPercent(pct(o.fine_count.value ?? 0, c)), allNote: `${fmtInt(o.fine_count.value)}건`,
       mine: m => fmtPercent(m.fine_rate), mineNote: m => `${fmtInt(m.fine_count)}건`,
       diff: x => fmtPp(x.diff.fine_rate_pp), diffKind: 'pp' },
@@ -71,18 +71,18 @@ function rows(o: Overview): Row[] {
       mine: m => (m.duration.count ? fmtDays(m.duration.median_days) : '계산할 신고 없음'),
       mineNote: m => (m.duration.count ? `평균 ${fmtDays(m.duration.mean_days)} · ${fmtInt(m.duration.count)}건` : null),
       diff: x => fmtDaysDiff(x.diff.duration_median_days_diff), diffKind: 'days' },
-    { id: 'amount', label: '답변에 적힌 과태료 금액', basis: '합계 · 금액이 확인된 과태료만',
+    { id: 'amount', label: '답변에 적힌 과태료 금액', basis: '합계',
       all: fmtFineAmount(o.fine_amount), allNote: amountNote(o.fine_amount),
       mine: m => fmtFineAmount(m.fine_amount), mineNote: m => amountNote(m.fine_amount),
       diff: x => fmtShare(x.diff.fine_amount_sum_share), diffKind: 'share',
       diffNote: x => x.diff.fine_amount_mean_won_diff == null ? null : `평균 ${fmtWonDiff(x.diff.fine_amount_mean_won_diff)}` },
-    { id: 'rating', label: '답변 만족도 별점', basis: '공개 동의한 숫자 별점만',
+    { id: 'rating', label: '답변 만족도 별점', basis: '1~5점',
       all: fmtRating(o.rating), allNote: null,
       mine: m => fmtRating(m.rating), mineNote: () => null,
       diff: () => '—', diffKind: 'none' },
-    { id: 'points', label: '신고 장소', basis: '서로 다른 장소 수', all: fmtInt(o.point_count.value), allNote: null,
+    { id: 'points', label: '신고 장소', basis: '', all: fmtInt(o.point_count.value), allNote: null,
       mine: m => fmtInt(m.point_count), mineNote: () => null, diff: x => fmtShare(x.diff.point_share), diffKind: 'share' },
-    { id: 'contributors', label: '참여한 사람', basis: '신고를 공유한 사람 수', all: fmtInt(o.contributor_count.value), allNote: null,
+    { id: 'contributors', label: '참여한 사람', basis: '', all: fmtInt(o.contributor_count.value), allNote: null,
       mine: () => '—', mineNote: () => null, diff: () => '—', diffKind: 'none' },
   ];
 }
@@ -106,7 +106,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
       <div className="panel-top">
         <div>
           <h2>{showMine ? '전체와 내 신고 비교' : '주요 통계'}</h2>
-          <span className="subtitle">지금 고른 기간·지역·기관·담당자 기준{unsupported ? ' · 이 조건의 통계는 아직 없습니다' : ''}</span>
+          {unsupported && <span className="subtitle">이 조건의 통계는 아직 없습니다</span>}
         </div>
       </div>
       <table className="compare-table">
@@ -143,22 +143,6 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
           ))}
         </tbody>
       </table>
-      {overview.processing_duration && (overview.processing_duration.excluded.no_report_date + overview.processing_duration.excluded.reversed + overview.processing_duration.answer_date_missing) > 0 && (
-        <p className="chart-caption">
-          답변까지 걸린 기간에서 뺀 신고: 날짜가 맞지 않음 {fmtInt(overview.processing_duration.excluded.no_report_date + overview.processing_duration.excluded.reversed)}건
-          {overview.processing_duration.answer_date_missing > 0 && ` · 답변일이 없어 기간을 알 수 없음 ${fmtInt(overview.processing_duration.answer_date_missing)}건`}
-        </p>
-      )}
-      {overview.fine_amount && overview.fine_amount.fine_count > 0 && (
-        <p className="chart-caption">
-          과태료 금액은 답변에 적힌 금액입니다. 실제로 내거나 걷힌 금액이 아닙니다. 금액이 적히지 않은 답변을 0원으로 치지 않고, 범칙금이나 과태료와 범칙금이 섞인 금액은 더하지 않습니다.
-          {overview.fine_amount.unconfirmed_count > 0 && ` 금액이 적히지 않음 ${fmtInt(overview.fine_amount.unconfirmed_count)}건.`}
-          {overview.fine_amount.undisclosed_count > 0 && ` 금액 공개에 동의하지 않은 자료 ${fmtInt(overview.fine_amount.undisclosed_count)}건.`}
-          {overview.fine_amount.conflict_count > 0 && ` 답변 내용이 서로 맞지 않아 뺀 자료 ${fmtInt(overview.fine_amount.conflict_count)}건.`}
-          {overview.fine_amount.penalty_count + overview.fine_amount.combined_count > 0 && ` 범칙금·섞인 금액 ${fmtInt(overview.fine_amount.penalty_count + overview.fine_amount.combined_count)}건.`}
-          {overview.fine_amount.zero_count > 0 && ` 0원으로 적힌 답변 ${fmtInt(overview.fine_amount.zero_count)}건 포함.`}
-        </p>
-      )}
       {message && (
         <div className="compare-note" role={personal.status === 'error' ? 'alert' : 'note'}>
           <span>{message}{personal.error?.retryAfter ? ` (${personal.error.retryAfter}초 후)` : ''}</span>
@@ -176,7 +160,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
         </p>
       )}
       {showMine && data && (
-        <p className="chart-caption">내 신고는 지도에 공유된 내 신고만 셉니다. 비율의 차이는 %p(퍼센트포인트)로, 건수는 전체 중 내 신고가 차지하는 비율로 보여 줍니다. 담당자나 기관을 평가하는 숫자가 아닙니다.</p>
+        <p className="chart-caption">비율 차이는 %p, 건수는 전체 중 내 신고의 비중입니다.</p>
       )}
     </section>
   );

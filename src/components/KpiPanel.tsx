@@ -85,7 +85,7 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
       sub: sameNC ? `답변 확인 ${fmtInt(C)}건` : `${basisWord} 기준`,
       mine: placeFocus ? (placeMine ? `내 신고 ${fmtInt(placeMine.reports)}건` : null) : mine && `내 신고 ${fmtInt(mine.report_count)}건`,
       delta: deltaText(o.report_count, 'count') });
-    if (!sameNC) cells.push({ id: 'completed', label: '답변 확인', value: `${fmtInt(C)}건`, tone: 'cyan', sub: `결과 확인 ${fmtInt(K)}건`,
+    if (!sameNC) cells.push({ id: 'completed', label: '답변 확인', value: `${fmtInt(C)}건`, tone: 'cyan', sub: `미분류 ${fmtInt(out?.result_unknown ?? null)}건`,
       mine: mine && `내 ${fmtInt(mine.completed_count)}건`, delta: deltaText(o.completed_count, 'count') });
     cells.push({ id: 'accept', label: '수용률', value: fmtPercent(acceptRate(out)), sub: `${fmtInt(out?.accepted ?? null)} / ${fmtInt(K)}건`, tone: 'accepted',
       mine: mine && `내 ${fmtPercent(mine.accept_rate)} (${fmtPp(diff?.accept_rate_pp)})` });
@@ -103,9 +103,9 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
       mine: mine && (mine.duration.count ? `내 ${fmtDays(mine.duration.median_days)}` : '내 계산 불가') });
     cells.push({ id: 'amount', label: '확인 과태료 금액', tone: 'fine', value: fmtFineAmount(o.fine_amount), sub: o.fine_amount ? `확인 ${fmtInt(o.fine_amount.confirmed_count)}건` : '제공 안 됨' });
     cells.push({ id: 'rating', label: '평균 별점', tone: 'muted', value: fmtRating(o.rating), sub: o.rating ? `평가 ${fmtInt(o.rating.count)}건` : '제공 안 됨' });
-    cells.push({ id: 'places', label: '장소', tone: 'muted', value: `${fmtInt(o.point_count.value)}곳`, sub: '서로 다른 주소',
+    cells.push({ id: 'places', label: '장소', tone: 'muted', value: `${fmtInt(o.point_count.value)}곳`, sub: '',
       mine: mine && `내 ${fmtInt(mine.point_count)}곳` });
-    cells.push({ id: 'contributors', label: '참여자', tone: 'muted', value: `${fmtInt(o.contributor_count.value)}명`, sub: '같은 신고의 공동 신고자 포함',
+    cells.push({ id: 'contributors', label: '참여자', tone: 'muted', value: `${fmtInt(o.contributor_count.value)}명`, sub: '',
       delta: deltaText(o.contributor_count, 'count') });
   }
   return (
@@ -136,7 +136,7 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
             <div key={k.id} className={`kpi-cell tone-${k.tone}`} data-kpi={k.id}>
               <span className="kpi-label">{k.label}</span>
               <b className="kpi-value cm-number">{k.value}</b>
-              <small className="kpi-basis">{k.sub}{k.delta ? ` · ${k.delta}` : ''}</small>
+              <small className="kpi-basis">{[k.sub, k.delta].filter(Boolean).join(' · ')}</small>
               {showMine && k.mine != null && <small className="kpi-mine mine-col">{k.mine}</small>}
             </div>
           )) : Array.from({ length: 6 }).map((_, i) => <div key={i} className="kpi-cell skeleton" role="status" aria-label="불러오는 중" />)}

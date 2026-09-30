@@ -34,7 +34,7 @@ export default function SharePanel({ applied, draft, unapplied, chart, view, pla
   };
   return (
     <div className="share-panel" role="dialog" aria-label="통계 설정 공유">
-      <p className="share-lead">링크에는 <b>표·그래프 설정과 조건</b>만 담깁니다. 숫자나 계정 정보는 담기지 않고, 링크를 연 사람의 화면에서 그때의 자료로 다시 계산합니다. 그래서 나중에 열면 숫자가 달라질 수 있습니다.</p>
+      <p className="share-lead">링크에는 <b>설정과 조건</b>만 담깁니다. 숫자는 링크를 연 때의 자료로 다시 계산합니다.</p>
       {unapplied && applied && (
         <fieldset className="radio-row">
           <legend>무엇을 공유할까요</legend>

@@ -32,7 +32,7 @@ function missingRows(result: StatisticsResult, basis: StatisticsSpec['date_basis
   const word = basis === 'completed_date' ? '답변일' : '신고일';
   const sides = result.excluded.selected_date_missing ?? { all: result.excluded.no_report_date, mine: null };
   const parts = [sides.all ? `전체 ${sides.all.toLocaleString('ko-KR')}건` : '', sides.mine ? `내 신고 ${sides.mine.toLocaleString('ko-KR')}건` : ''].filter(Boolean);
-  return parts.length ? [{ label: '제외', value: `${word}이 없어 이 기간에 넣을 수 없는 신고: ${parts.join(', ')} (각각 따로 센 수)` }] : [];
+  return parts.length ? [{ label: '제외', value: `${word}이 없어 이 기간에 넣을 수 없는 신고: ${parts.join(', ')}` }] : [];
 }
 
 export default function StatisticsPage({ active, handoff, fallbackScope, version, viewer, canMine, theme, scopeChips, onBack, shared = null, onSharedDone, onSignIn }: {
@@ -206,25 +206,24 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     const chipsText = scopeChips(applied.scope).filter((c) => c.id !== 'bbox').map((c) => `${c.kind} ${c.label}`).join(' · ');
     const p = planChart(result.spec, catalog, chart);
     const conditions = [
-      { label: '기간', value: `${applied.scope.start} — ${applied.scope.end} (시작일·종료일 포함)` },
-      { label: '날짜 기준', value: `${applied.spec.date_basis === 'completed_date' ? '답변일' : '신고일'} — 이 날짜가 기간 안인 신고만 모았습니다(다른 날짜는 기간 밖이어도 포함)` },
+      { label: '기간', value: `${applied.scope.start} — ${applied.scope.end}` },
+      { label: '날짜 기준', value: applied.spec.date_basis === 'completed_date' ? '답변일' : '신고일' },
       ...(result.date_axes ?? []).map((a) => ({ label: `${a.role === 'row' ? '행' : '열'} 날짜 축`, value: a.mode === 'spine'
-        ? `${dl(a.dimension)}: 기간의 모든 단위를 빠짐없이 보여 줍니다(신고 0건은 0, 비율을 셀 수 없으면 빈 칸, 자료가 없는 구간은 ‘자료 없음’)`
-        : a.mode === 'explicit' ? `${dl(a.dimension)}: 고른 단위만 보여 줍니다(사이의 빠진 단위는 조회하지 않았습니다)`
-          : `${dl(a.dimension)}: ${applied.spec.date_basis === 'completed_date' ? '답변일' : '신고일'} 기준으로 모은 신고를 이 날짜로 나눠 본 것입니다` })),
+        ? `${dl(a.dimension)}: 기간의 모든 단위`
+        : a.mode === 'explicit' ? `${dl(a.dimension)}: 고른 단위만` : dl(a.dimension) })),
       { label: '대상 범위', value: chipsText || '전국 · 모든 분류' },
       ...(applied.scope.bbox ? [{ label: '지도 범위', value: `지도에서 고른 범위 (경도 ${applied.scope.bbox[0]}~${applied.scope.bbox[2]}, 위도 ${applied.scope.bbox[1]}~${applied.scope.bbox[3]})` }] : []),
       ...(applied.spec.place_key ? [{ label: '주소', value: applied.labels[applied.spec.place_key] ?? '선택한 주소' }] : []),
-      { label: '누구의 신고', value: applied.spec.population === 'all' ? '전체' : applied.spec.population === 'mine' ? '내 신고 (이 파일을 내려받은 계정의 신고)' : '전체와 내 신고 함께 (이 파일을 내려받은 계정의 신고)' },
+      { label: '누구의 신고', value: applied.spec.population === 'all' ? '전체' : applied.spec.population === 'mine' ? '내 신고' : '전체와 내 신고' },
       { label: '행', value: applied.spec.rows.map(dl).join(' › ') || '없음' },
       { label: '열', value: applied.spec.columns.map(dl).join(' › ') || '없음' },
       { label: '지표', value: applied.spec.metrics.map(ml).join(', ') },
       { label: '답변 신고', value: [result.population_count.all !== null ? `전체 ${result.population_count.all.toLocaleString('ko-KR')}건` : '', result.population_count.mine !== null ? `내 신고 ${result.population_count.mine.toLocaleString('ko-KR')}건` : ''].filter(Boolean).join(' · ') },
       ...missingRows(result, applied.spec.date_basis),
       { label: '표 정렬', value: sort.metric ? `${ml(sort.metric)} ${sort.dir === 'desc' ? '큰 값부터' : '작은 값부터'}` : '기본 순서' },
-      { label: '그래프', value: chart.type === 'auto' ? `${CHART_LABEL[p.type]} (자동 선택)` : p.refusal ? `${CHART_LABEL[p.type]} (고른 ${CHART_LABEL[chart.type]} 그래프는 이 설정에서 쓸 수 없어 바꿨습니다)` : CHART_LABEL[p.type] },
+      { label: '그래프', value: chart.type === 'auto' ? `${CHART_LABEL[p.type]} (자동 선택)` : p.refusal ? `${CHART_LABEL[p.type]} (${CHART_LABEL[chart.type]} 대신)` : CHART_LABEL[p.type] },
       { label: '지표 정의', value: applied.spec.metrics.map((m) => `${ml(m)}: ${catalog.metrics.find((x) => x.id === m)?.description ?? ''}`).join(' · ') },
-      { label: '빈 칸의 뜻', value: '‘—’는 해당하는 신고가 없음, ‘계산 불가’는 비율의 기준이 되는 신고가 0건, ‘자료 없음’은 계산할 자료가 없다는 뜻입니다. 모두 0과 다릅니다.' },
+      { label: '빈 칸의 뜻', value: '— : 해당 신고 없음 · 계산 불가: 기준 신고 0건 · 자료 없음: 계산할 자료 없음' },
     ];
     return statisticsSnapshot({ result, catalog, chart, sort, hidden, includeHidden, conditions, title: `맞춤 통계 · ${describe(applied)}`, capturedAt: new Date().toISOString() });
   };
@@ -240,13 +239,13 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       )}
       {share.status === 'waiting_login' && (
         <div className="banner warn share-banner" role="note">
-          <span className="grow">이 링크는 내 신고를 함께 보는 설정입니다. 로그인하면 내 신고로 계산해 보여 드립니다. 공유한 사람의 신고는 보이지 않습니다.</span>
+          <span className="grow">이 링크는 내 신고를 함께 보는 설정입니다. 로그인하면 내 신고로 계산합니다.</span>
           {onSignIn && <button type="button" className="ghost-btn" onClick={onSignIn}>로그인</button>}
         </div>
       )}
       {share.status === 'applied' && (
         <div className="banner info share-banner" role="note">
-          <span className="grow">공유받은 설정으로 통계를 만들었습니다. 숫자는 지금 자료로 새로 계산한 것이라 공유한 사람이 본 숫자와 다를 수 있습니다{share.mine ? '. 내 신고는 내 계정의 신고로 계산했습니다' : ''}.</span>
+          <span className="grow">공유받은 설정으로 통계를 만들었습니다.</span>
           <button type="button" className="link-btn" onClick={() => setShare({ status: 'none' })}>닫기</button>
         </div>
       )}
@@ -476,7 +475,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           )}
           {result && result.filter_members.some((m) => m.status === 'unconfirmed') && (
             <div className="banner warn" role="note">
-              <span className="grow">비교 대상 {result.filter_members.filter((m) => m.status === 'unconfirmed').length}개는 이 기간에 확인할 수 없어 결과에서 뺐습니다. 필요 없으면 설정에서 지워 주세요.</span>
+              <span className="grow">비교 대상 {result.filter_members.filter((m) => m.status === 'unconfirmed').length}개는 이 기간에 확인할 수 없어 결과에서 뺐습니다.</span>
             </div>
           )}
           {run.status === 'error' && (

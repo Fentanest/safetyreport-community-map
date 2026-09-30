@@ -124,7 +124,7 @@ function Legend({ metric, level, statsBbox, filtered }: { metric: MapMetric; lev
           <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(기준 신고 0건)</span>
           <span className="legend-null"><i className="legend-empty" aria-hidden="true" />자료 없음</span>
           {filtered && <span className="legend-null"><i className="legend-out" aria-hidden="true" />범위 밖</span>}
-          {statsBbox && <span className="cm-muted">화면 범위 내 신고 기준</span>}
+          {statsBbox && <span className="cm-muted">지도 범위 안 신고만</span>}
         </>
       )}
     </span>
@@ -337,9 +337,7 @@ export default function MapPanel(p: Props) {
       <div className="panel-top">
         <div>
           <h2>신고 지도 {p.refreshing && <span className="refresh-badge" role="status">갱신 중…</span>}</h2>
-          <span className="subtitle">{p.categoryLabel} · {renderMode === 'points'
-            ? '같은 주소는 핀 하나 · 멀리서 보면 가까운 주소를 묶어 보여 줍니다'
-            : `${LEVEL_LABEL[level]}별 ${def.legend} · 신고 위치의 행정구역 기준 · 지역 안 신고를 모두 합쳐 계산`}</span>
+          <span className="subtitle">{p.categoryLabel}{renderMode === 'points' ? '' : ` · ${LEVEL_LABEL[level]}별 ${def.legend}`}</span>
         </div>
         <div className="mini-segments metric-switch" role="group" aria-label="지도에 표시할 값">
           {MAP_METRICS.map((m) => (
@@ -357,7 +355,7 @@ export default function MapPanel(p: Props) {
             <div className="map-error-card compact" role="alert" title={sdkError ?? undefined}>
               <span className="grow">
                 <b>지도를 불러오지 못했습니다.</b>{' '}
-                아래 목록에서 같은 장소를 볼 수 있고, 다른 통계는 그대로 쓸 수 있습니다.
+                아래 목록에서 장소를 볼 수 있습니다.
               </span>
               <span className="map-error-actions">
                 <button className="ghost-btn" type="button" onClick={retry}>다시 시도</button>
@@ -365,7 +363,6 @@ export default function MapPanel(p: Props) {
             </div>
             {renderMode === 'points' ? (
               <>
-                <p className="map-points-note">지도에 표시되는 장소와 같은 목록입니다 · {def.legend}</p>
                 <ul className="point-list" id="cm-point-list" aria-label="신고 장소 목록">
                   {shownPoints.length === 0 && <li className="cm-muted" style={{ fontSize: 13 }}>표시할 장소가 없습니다.</li>}
                   {shownPoints.map(pointButton)}
@@ -373,7 +370,6 @@ export default function MapPanel(p: Props) {
               </>
             ) : (
               <>
-                <p className="map-points-note">지도 대신 시도별 {def.legend} 목록입니다.</p>
                 <ul className="point-list" aria-label={`시도별 ${def.legend}`}>
                   {(p.regions ?? []).filter((r) => r.level === 'sido').map((r) => (
                     <li key={r.region_code}><button type="button" onClick={() => p.onPickRegion?.(r.region_code)}>
@@ -391,7 +387,7 @@ export default function MapPanel(p: Props) {
             <span>{hoverOut ? '적용한 지역 조건 밖' : hoverRow
               ? `${def.legend} ${metricText(metricParts(hoverRow, p.metric), p.metric)}${p.metric !== 'reports' ? ` · 답변 ${fmtInt(hoverRow.completed_count)}건 · 신고 ${fmtInt(hoverRow.report_count)}건` : ''}`
               : '이 조건의 자료 없음'}</span>
-            {p.statsBbox && <small>화면 범위 내 신고 기준 (지역 전체 수치 아님)</small>}
+            {p.statsBbox && <small>지도 범위 안 신고만</small>}
             <small>{activeCode === hover ? '누르면 한 단계 위 지역으로' : '누르면 이 지역만 보기'}</small>
           </span>
         )}
@@ -438,8 +434,7 @@ export default function MapPanel(p: Props) {
           </label>
         ))}
         <span className="cm-muted map-option-note">
-          {p.autoRefresh ? '지도를 멈추면 잠시 뒤 보이는 범위의 통계로 바뀝니다.' : '지도를 움직여도 통계는 그대로입니다.'}
-          {unplacedNote ? ` 지도에 없는 신고: ${unplacedNote} (통계에는 포함).` : ''}
+          {unplacedNote ? `지도에 없는 신고: ${unplacedNote}` : ''}
         </span>
       </div>
       {sdkState === 'ready' && renderMode === 'points' && (
@@ -452,15 +447,14 @@ export default function MapPanel(p: Props) {
       )}
       {sdkState === 'ready' && boundaryShown && boundaryError && (
         <p className="boundary-note" role="alert">
-          {renderMode === 'regions' ? '행정구역 경계를 불러오지 못해 비율 지도를 그릴 수 없습니다(핀으로 대신 보여 주지 않습니다). 다른 통계는 그대로입니다.'
-            : '행정구역 경계선을 불러오지 못했습니다. 지도와 통계는 그대로 쓸 수 있습니다.'}{' '}
+          {renderMode === 'regions' ? '행정구역 경계를 불러오지 못해 비율 지도를 그릴 수 없습니다.' : '행정구역 경계선을 불러오지 못했습니다.'}{' '}
           <button className="mini-btn" type="button" onClick={retryBoundary}>다시 시도</button>
         </p>
       )}
       {sdkState === 'ready' && boundaryShown && boundaryMeta && (
         <details className="boundary-note">
-          <summary>경계선 안내·출처</summary>
-          경계선은 화면 표시용으로 단순화했고 색은 선택한 지표({def.legend})를 따릅니다. 거의 투명한 곳은 이 조건의 자료가 없는 곳입니다. {boundaryMeta.attribution}
+          <summary>경계선 출처</summary>
+          {boundaryMeta.attribution}
         </details>
       )}
     </article>
