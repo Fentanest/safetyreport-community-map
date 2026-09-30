@@ -25,6 +25,10 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 | count | fact=1; joint cube면 1 이상의 가중치 |
 
 manager 동명이인이 같은 기관에도 존재할 수 있다. 별도 ID가 없으면 '기관·성명 기준 묶음'임을 표시하고 동일인으로 단정하지 않는다.
+현재 `manager_key`는 `hash(agency_key | NFC 이름)`(server/ingest/observation.ts)라서, 같은 `agency_key` 안의 같은 이름은 항상 한 identity다
+(같은 기관의 실제 동명이인 두 사람은 upstream 담당자 ID가 없어 구분할 수 없다 — 데이터 한계, UI에서 나눌 수 없음). 반대로 같은 기관
+**표시명**에 `agency_key`가 둘(registry 확인 `inst:`와 미확정 `src:`/`a1:` 이름 키 등)이면 같은 이름이 두 identity로 남는다. 이때는
+병합하지 않고 화면·파일에서 번호(`서울마포경찰서 1번`/`2번`)로 구분하며 '같은 기관 이름 아래 따로 집계'라고 설명한다(`same_name.same_agency`).
 담당자 미상은 '담당자 정보 없음'으로 별도 유지하며 0건으로 버리지 않는다.
 
 ## B. 절대 금지 추론

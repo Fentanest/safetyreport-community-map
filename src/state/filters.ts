@@ -168,9 +168,9 @@ export function scopeFromSearch(search: string, fallback: Scope): Scope {
   };
 }
 
-export function fixtureFromSearch(search: string): 'overview' | 'one' | 'empty' | 'offline' | 'rate' | 'stale' | 'login' | 'noshare' | 'noupload' | 'oracle' {
+export function fixtureFromSearch(search: string): 'overview' | 'one' | 'empty' | 'offline' | 'rate' | 'stale' | 'login' | 'noshare' | 'noupload' | 'oracle' | 'managers' {
   const f = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('fixture');
-  return f === 'one' || f === 'empty' || f === 'offline' || f === 'rate' || f === 'stale' || f === 'login' || f === 'noshare' || f === 'noupload' || f === 'oracle' ? f : 'overview';
+  return f === 'one' || f === 'empty' || f === 'offline' || f === 'rate' || f === 'stale' || f === 'login' || f === 'noshare' || f === 'noupload' || f === 'oracle' || f === 'managers' ? f : 'overview';
 }
 
 export const PRESETS: Array<{ id: string; label: string; days: number | null }> = [

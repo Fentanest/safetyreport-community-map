@@ -12,7 +12,7 @@ import Rail from '../components/Rail';
 import CommandBar from '../components/CommandBar';
 import FilterDrawer from '../components/FilterDrawer';
 import MapPanel, { renderModeOf } from '../components/MapPanel';
-import ScopeDetailsPanel from '../components/ScopeDetailsPanel';
+import ScopeDetailsPanel, { type ManagerPaging } from '../components/ScopeDetailsPanel';
 import StatisticsPage, { type ScopeChip } from './StatisticsPage';
 import { clearSession as clearStatsSession, dropLegacyStatsStorage, handoffRecipe, type StatsRecipe } from '../state/statistics';
 import { SPY_SECTIONS, currentSection, scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
@@ -22,6 +22,7 @@ import { TREND_RATE_METRIC_ID } from '../components/trendMetrics';
 import type { MapMetric } from '../components/mapMetrics';
 import PlaceDetailsPanel, { type PlaceDetailState } from '../components/PlaceDetailsPanel';
 import PlaceEntityChart from '../components/PlaceEntityChart';
+import CoupangAd from '../components/CoupangAd';
 import TrendCard from '../components/TrendCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable from '../components/EntityTable';
@@ -126,9 +127,12 @@ export default function Dashboard() {
   const [selection, setSelection] = useState<string | null>(null);
   const [placeDetail, setPlaceDetail] = useState<PlaceDetailState>({ status: 'loading' });
   const [placeReload, setPlaceReload] = useState(0);
-  // how many agencies/managers the place detail asks for (100 by default; "나머지 불러오기" raises it)
-  const [placeLimit, setPlaceLimit] = useState(100);
-  useEffect(() => { setPlaceLimit(100); }, [selection]);
+  // how many agencies/managers the place detail asks for (100 by default; the chart's "나머지 불러오기" raises it)
+  const placeLimit = useRef(100);
+  useEffect(() => { placeLimit.current = 100; }, [selection]);
+  // the chart's request for more managers of the SAME address/scope/version: the detail on screen stays until it lands
+  const [placeMore, setPlaceMore] = useState<{ key: string; state: 'loading' | 'error' } | null>(null);
+  const placeMoreAbort = useRef<AbortController | null>(null);
   const [mapMetric, setMapMetric] = useState<MapMetric>('reports');
   const [entityTab, setEntityTab] = useState<EntityTab>('agency');
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -496,8 +500,10 @@ export default function Dashboard() {
     if (!selection || !point || point.aggregate || !shownScope || !version) return;
     if (!point.place_key) { setPlaceDetail({ status: 'unsupported' }); return; }
     const ac = new AbortController();
+    placeMoreAbort.current?.abort();
+    setPlaceMore(null);
     setPlaceDetail({ status: 'loading' });
-    loadPlace(shownScope, selection, version, ac.signal, placeLimit)
+    loadPlace(shownScope, selection, version, ac.signal, placeLimit.current)
       .then((detail) => { if (!ac.signal.aborted) setPlaceDetail({ status: 'ready', detail }); })
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
@@ -507,7 +513,25 @@ export default function Dashboard() {
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection, point?.place_key, shownScope, version, placeReload, placeLimit]);
+  }, [selection, point?.place_key, shownScope, version, placeReload]);
+  const placeMoreKey = `${selection}|${JSON.stringify(shownScope)}|${version}`;
+  const loadMorePlaceManagers = (total: number) => {
+    if (!selection || !shownScope || !version) return;
+    const key = placeMoreKey, scopeNow = shownScope, sel = selection, ver = version;
+    const limit = Math.min(1000, total);
+    placeMoreAbort.current?.abort();
+    const ac = new AbortController();
+    placeMoreAbort.current = ac;
+    setPlaceMore({ key, state: 'loading' });
+    loadPlace(scopeNow, sel, ver, ac.signal, limit)
+      .then((detail) => {
+        if (ac.signal.aborted) return;
+        placeLimit.current = limit;
+        setPlaceDetail({ status: 'ready', detail });
+        setPlaceMore(null);
+      })
+      .catch(() => { if (!ac.signal.aborted) setPlaceMore({ key, state: 'error' }); });
+  };
 
   const resolvedTheme: 'dark' | 'light' = resolveTheme(theme);
 
@@ -584,6 +608,8 @@ export default function Dashboard() {
     setRefined(null);
     setEntityNames(new Map());
     setScopeManagers(null);
+    placeMoreAbort.current?.abort();
+    setPlaceMore(null);
     setHandoff(null);
     refineAbort.current?.abort();
   }, [activity, sessionKey]);
@@ -637,7 +663,7 @@ export default function Dashboard() {
     if (s.bbox) out.push({ id: 'bbox', kind: '지도 범위', label: '적용한 지도 범위', remove: (x) => ({ ...x, bbox: null }) });
     return out;
   };
-  const [scopeManagers, setScopeManagers] = useState<{ key: string; rows: PublicEntity[]; total: number } | null>(null);
+  const [scopeManagers, setScopeManagers] = useState<{ key: string; rows: PublicEntity[]; total: number; more: ManagerPaging } | null>(null);
   const conditionsText = (s: Scope | null) => (s ? scopeChips(s).map((c) => `${c.kind} ${c.label}`).join(' · ') : '');
   /** F06: 조회 조건 rows of a dashboard card file (the DISPLAYED scope, fixed dates) */
   const exportConditions = (s: Scope, address?: string) => [
@@ -841,6 +867,7 @@ export default function Dashboard() {
                     refreshing={dash.isRefreshing}
                     statsBbox={!!shownScope?.bbox}
                   />
+                  <CoupangAd id="1034404" width={1030} height={250} minScale={0.6} className="ad-map" />
                 </div>
                 <div className="area-side">
                   {point ? (
@@ -872,7 +899,7 @@ export default function Dashboard() {
                       activeAgency={scope.agency_key}
                       activeManager={scope.manager_key}
                       conditions={conditionsText(shownScope)}
-                      onManagers={(rows, total) => setScopeManagers({ key: `${JSON.stringify(shownScope)}|${version}`, rows, total })}
+                      onManagers={(rows, total, more) => setScopeManagers({ key: `${JSON.stringify(shownScope)}|${version}`, rows, total, more })}
                     />
                   ) : null}
                   {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
@@ -883,9 +910,11 @@ export default function Dashboard() {
                       managers={placeDetail.detail.managers}
                       total={placeDetail.detail.manager_total}
                       theme={resolvedTheme}
-                      loadingMore={false}
-                      onLoadMore={placeDetail.detail.manager_total > placeDetail.detail.managers.length
-                        ? () => setPlaceLimit(Math.min(1000, placeDetail.detail.manager_total)) : null}
+                      loadingMore={placeMore?.key === placeMoreKey && placeMore.state === 'loading'}
+                      loadError={placeMore?.key === placeMoreKey && placeMore.state === 'error'}
+                      loadStep={Math.max(0, Math.min(1000, placeDetail.detail.manager_total) - placeDetail.detail.managers.length)}
+                      onLoadMore={Math.min(1000, placeDetail.detail.manager_total) > placeDetail.detail.managers.length
+                        ? () => loadMorePlaceManagers(placeDetail.detail.manager_total) : null}
                     />
                   )}
                   {!point && shownScope && version && scopeManagers?.key === `${JSON.stringify(shownScope)}|${version}` && scopeManagers.rows.length > 0 && (
@@ -896,8 +925,10 @@ export default function Dashboard() {
                       managers={scopeManagers.rows}
                       total={scopeManagers.total}
                       theme={resolvedTheme}
-                      loadingMore={false}
-                      onLoadMore={null}
+                      loadingMore={scopeManagers.more.state === 'loading'}
+                      loadError={scopeManagers.more.state === 'error'}
+                      loadStep={scopeManagers.more.pageSize}
+                      onLoadMore={scopeManagers.total > scopeManagers.rows.length ? scopeManagers.more.load : null}
                     />
                   )}
                 </div>

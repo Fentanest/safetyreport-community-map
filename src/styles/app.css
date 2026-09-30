@@ -495,3 +495,11 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 .access-actions .primary-button { width: auto; }
 .access-foot { font-size: 12px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
 @media (max-width: 480px) { .access-card { padding: 20px 16px; } .access-gate { padding: 24px 0 48px; } }
+
+/* 쿠팡 파트너스 배너 (components/CoupangAd.tsx): fixed-size widget, scaled down to fit, disclosure always shown */
+.ad-slot { width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ad-frame-box { width: 100%; overflow: hidden; }
+.ad-frame-box iframe { display: block; border: 0; transform-origin: 0 0; }
+.ad-disclosure { margin: 0; font-size: 11px; line-height: 1.5; color: var(--muted); }
+.ad-gate { width: min(640px, 100%); margin-top: 16px; }
+.ad-map { margin-top: var(--card-gap, 16px); }

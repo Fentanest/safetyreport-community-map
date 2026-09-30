@@ -1,16 +1,19 @@
-import type { PublicEntity } from '../domain/public';
+import type { PublicEntity, SameNameInfo } from '../domain/public';
+import { sameNameNote } from '../domain/managerNames';
 import { fmtInt, fmtPercent } from './format';
 import { entityRates } from './entityMetrics';
 
 /** R2: name (the only button) + separate metric boxes; boxes are plain cells, never nested buttons. */
-export default function EntityMetricRow({ kind, e, label, active, onPick }: { kind: 'agency' | 'manager'; e: PublicEntity; label: string;
+export default function EntityMetricRow({ kind, e, label, same = null, active, onPick }: { kind: 'agency' | 'manager'; e: PublicEntity; label: string;
+  /** 동명이인 metadata of a manager (its label carries the short agency; the title explains why) */
+  same?: SameNameInfo | null;
   active: boolean; onPick: (kind: 'agency' | 'manager', entity: PublicEntity) => void }) {
   const m = entityRates(e);
   const full = kind === 'manager' ? `${e.manager_name ?? '이름 없음'} · ${e.agency_name}` : e.agency_name;
   return (
     <li className={`pe-row${active ? ' active' : ''}`}>
       <div className="pe-name">
-        <button type="button" className="pe-pick" title={`${full} — 이 ${kind === 'agency' ? '기관' : '담당자'}만 보기`} aria-pressed={active}
+        <button type="button" className="pe-pick" title={`${full} — 이 ${kind === 'agency' ? '기관' : '담당자'}만 보기${same ? `\n${sameNameNote(same).join('\n')}` : ''}`} aria-pressed={active}
           disabled={!e.agency_key || (kind === 'manager' && !e.manager_key)} onClick={() => onPick(kind, e)}>
           {label}
         </button>

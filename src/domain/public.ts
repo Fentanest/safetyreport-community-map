@@ -387,6 +387,21 @@ export interface PublicEntity {
   duration?: DurationBrief | null;
   fine_amount?: FineAmountBrief | null;
   rating?: RatingBrief | null;
+  /** managers only: other identities with the same name in the scope's FULL list (src/domain/managerNames.ts).
+   *  null = no namesake; undefined = older server (the UI then decides from the loaded rows only). */
+  same_name?: SameNameInfo | null;
+}
+
+/** 동명이인 metadata of one manager row, computed by the server over the scope's full manager list. */
+export interface SameNameInfo {
+  /** identities (distinct row keys) with this name in the scope, this one included (≥ 2) */
+  count: number;
+  /** short agency name that tells this identity apart ('서울강서경찰서', or '서울강서경찰서 2번' when the agency name is shared too) */
+  label: string;
+  /** labels of the namesakes (this one included), at most 12 */
+  peers: string[];
+  /** another identity with this name has the SAME agency name (told apart by the ordinal only) */
+  same_agency: boolean;
 }
 
 /** Region row at one level (docs/region-boundaries.md). region_code = official 2026-07-01 법정 code

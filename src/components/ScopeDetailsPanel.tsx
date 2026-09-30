@@ -4,7 +4,8 @@ import { SIDO_LIST, regionLabel, sggName, sidoOf } from '../data/regions';
 import { loadEntities } from '../data/client';
 import { useReportActivity } from '../data/queryActivity';
 import { acceptRate, fmtDate, fmtInt, fmtPercent } from './format';
-import { duplicateNames, entityLabel } from './entityMetrics';
+import { entityLabel } from './entityMetrics';
+import { sameNameIndex } from '../domain/managerNames';
 import EntityMetricRow from './EntityMetricRow';
 import PanelStatus from './PanelStatus';
 
@@ -28,6 +29,9 @@ export function childRegions(regions: readonly PublicRegion[] | null, code: stri
 const PREVIEW = 5;
 const PAGE = 100;
 
+/** how the scope chart asks the manager list for its next server page */
+export interface ManagerPaging { state: 'idle' | 'loading' | 'error'; pageSize: number; load: () => void }
+
 /** Agencies or managers of the scope: first page from the dashboard; search and "더 보기" read the full server list. */
 function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgency, activeManager, onRows }: {
   kind: 'agency' | 'manager';
@@ -38,8 +42,8 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   onPick: (kind: 'agency' | 'manager', e: PublicEntity) => void;
   activeAgency: string | null;
   activeManager: string | null;
-  /** managers loaded so far (for the chart); called with the loaded list */
-  onRows?: (rows: PublicEntity[], total: number) => void;
+  /** managers loaded so far (for the chart); called with the loaded list and how the chart asks for more */
+  onRows?: (rows: PublicEntity[], total: number, more: ManagerPaging) => void;
 }) {
   const [shown, setShown] = useState(PREVIEW);
   const [input, setInput] = useState('');
@@ -47,9 +51,10 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   const [pages, setPages] = useState(0); // extra server pages beyond the dashboard's first page (search: from page 1)
   const [server, setServer] = useState<{ key: string; items: PublicEntity[]; total: number } | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [retry, setRetry] = useState(0); // the chart's "다시 시도": the same pages again, never one page further
   const composing = useRef(false);
   const scopeKey = `${JSON.stringify(scope)}|${version}`;
-  useEffect(() => { setShown(PREVIEW); setPages(0); setServer(null); setInput(''); setQ(''); }, [scopeKey]);
+  useEffect(() => { setShown(PREVIEW); setPages(0); setServer(null); setInput(''); setQ(''); setRetry(0); }, [scopeKey]);
   useEffect(() => {
     if (composing.current) return;
     const t = window.setTimeout(() => { if (input.trim() !== q) { setQ(input.trim()); setPages(0); setServer(null); } }, 300);
@@ -57,7 +62,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   }, [input, q]);
   const needServer = q !== '' || pages > 0;
   const wantPages = q !== '' ? Math.max(1, pages) : pages + 1;
-  const reqKey = `${scopeKey}|${kind}|${q}|${wantPages}`;
+  const reqKey = `${scopeKey}|${kind}|${q}|${wantPages}|${retry}`;
   useEffect(() => {
     if (!needServer) { setState('idle'); return; }
     const ac = new AbortController();
@@ -86,8 +91,12 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   // while a new page/search loads, the rows already on screen stay (never replaced by "검색 결과 없음")
   const rows = needServer ? (server?.items ?? (q ? [] : first)) : first;
   const all = needServer ? server?.total ?? total : total;
-  useEffect(() => { if (kind === 'manager' && !q) onRows?.(rows, all ?? rows.length); }, [rows, all]); // eslint-disable-line react-hooks/exhaustive-deps
-  const dup = duplicateNames(rows);
+  // the chart (PlaceEntityChart) pages through the same server list: one more page per click, a failed page retried as is
+  const loadMore = () => { if (state === 'error') setRetry((r) => r + 1); else setPages((p) => p + 1); };
+  useEffect(() => {
+    if (kind === 'manager' && !q) onRows?.(rows, all ?? rows.length, { state, pageSize: PAGE, load: loadMore });
+  }, [rows, all, state]); // eslint-disable-line react-hooks/exhaustive-deps
+  const same = sameNameIndex(rows);
   const noun = kind === 'agency' ? '기관' : '담당자';
   return (
     <>
@@ -104,7 +113,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
       )}
       <ul className="place-entities">
         {rows.slice(0, shown).map((e) => (
-          <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, dup.has(e.manager_name ?? '이름 없음'))}
+          <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, kind === 'manager' ? same.get(e) : null)} same={kind === 'manager' ? same.get(e) : null}
             active={kind === 'agency' ? activeAgency === e.agency_key && !activeManager : activeManager === e.manager_key && activeAgency === e.agency_key}
             onPick={onPick} />
         ))}
@@ -139,7 +148,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
   activeManager: string | null;
   /** human text of the applied conditions (period · category · law · agency) */
   conditions: string;
-  onManagers?: (rows: PublicEntity[], total: number) => void;
+  onManagers?: (rows: PublicEntity[], total: number, more: ManagerPaging) => void;
 }) {
   const trail = regionTrail(scope.region_code);
   const name = trail[trail.length - 1].label;

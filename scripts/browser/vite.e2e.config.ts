@@ -39,7 +39,7 @@ function e2eApi(): Plugin {
   let version = 'e2e-synthetic-1';
   let access: 'ok' | 'revoked' = 'ok';
   /** date-basis-dashboard: 'oracle' serves the cohort oracle (u1 → E2E_UID, u2 → E2E_UID_B) instead of the synthetic year */
-  let dataset: 'synthetic' | 'oracle' | 'dense' = 'synthetic';
+  let dataset: 'synthetic' | 'oracle' | 'dense' | 'managers' = 'synthetic';
 
   return {
     name: 'cm-e2e-api',
@@ -67,6 +67,13 @@ function e2eApi(): Plugin {
             report_date: `2026-01-${String(1 + (i % 28)).padStart(2, '0')}`, completed_date: `2026-03-${String(1 + (i % 28)).padStart(2, '0')}` }));
           basisBounds = boundsOf(facts);
           bounds = { min: '2026-01-01', max: '2026-03-28' };
+          return { pub, per, facts };
+        }
+        if (dataset === 'managers') {
+          // 담당자별 처리 현황 (2026-09-30): 118 managers at one address; 김지원 4th (강서) and 105th (양천, beyond the first 100)
+          const facts = (demo.managersFacts() as Array<Record<string, unknown>>).map((f, i) => ({ ...f, contributor_id: i % 5 === 0 ? E2E_UID : f.contributor_id }));
+          basisBounds = boundsOf(facts);
+          bounds = { min: '2026-06-01', max: '2026-09-24' };
           return { pub, per, facts };
         }
         if (dataset === 'oracle') {
@@ -136,7 +143,7 @@ function e2eApi(): Plugin {
           const cmd = url.pathname.slice('/__e2e/'.length);
           if (cmd === 'log') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(log)); return; }
           if (cmd === 'reset') { log.length = 0; injections = []; delays = {}; windows.clear(); version = 'e2e-synthetic-1'; access = 'ok'; dataset = 'synthetic'; res.end('{}'); return; }
-          if (cmd === 'dataset') { const n = JSON.parse(body).name; dataset = n === 'oracle' || n === 'dense' ? n : 'synthetic'; version = `e2e-${dataset}-1`; res.end('{}'); return; }
+          if (cmd === 'dataset') { const n = JSON.parse(body).name; dataset = n === 'oracle' || n === 'dense' || n === 'managers' ? n : 'synthetic'; version = `e2e-${dataset}-1`; res.end('{}'); return; }
           if (cmd === 'inject') { injections.push(JSON.parse(body)); res.end('{}'); return; }
           if (cmd === 'delay') { delays = JSON.parse(body); res.end('{}'); return; }
           if (cmd === 'version') { version = JSON.parse(body).version; res.end('{}'); return; }

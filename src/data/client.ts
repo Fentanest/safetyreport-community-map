@@ -258,8 +258,11 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
       const { demoDashboard } = await import('./demo');
       return demoDashboard(scope, state);
     }
-    const { demoEngineDashboard } = await import('./demoEngine');
-    return demoEngineDashboard(scope);
+    const { demoEngineDashboard, managersMode } = await import('./demoEngine');
+    const data = demoEngineDashboard(scope);
+    // ?fixture=managers: the first page only, like the live /dashboard route (100 rows + totals)
+    return managersMode() ? { ...data, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
+      agency_total: data.agencies.length, manager_total: data.managers.length } : data;
   }
   return loadDashboardWith(await loadMeta(signal), scope, signal);
 }

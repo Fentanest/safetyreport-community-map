@@ -1,0 +1,1152 @@
+{
+  "run_id": "manager-chart-2026-09-30T05-06-08-638Z",
+  "suite": "manager-chart",
+  "commit": "dbb7b906b05cf2c49f4546eb8d4c229056d79485",
+  "working_tree_dirty": false,
+  "started_at": "2026-09-30T05:06:08.655Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 141.0.7390.37",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic (demoEngine.managersFacts, 118 managers)",
+    "server": "local Vite middleware running server/publicHandler.ts (Node, not Edge Runtime)"
+  },
+  "results": {
+    "MC-NAME-FIRST": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "4th manager: 김지원 carries 서울강서경찰서 though the other 김지원 is 105th (not loaded)",
+          "actual": "김지원 (서울강서경찰서)",
+          "expected": "김지원 (서울강서경찰서)"
+        },
+        {
+          "ok": true,
+          "label": "unique names carry no agency",
+          "actual": 5,
+          "expected": 5
+        },
+        {
+          "ok": true,
+          "label": "100 loaded",
+          "actual": 100,
+          "expected": 100
+        },
+        {
+          "ok": true,
+          "label": "namesake note under the chart",
+          "actual": "기관명이 붙은 이름은 이 조건 안에 같은 이름의 담당자가 둘 이상이라 소속 기관으로 구분한 것입니다.\n박서준 2명: 강서구 교통행정과 · 서울중부경찰서\n김지원 2명: 서울강서경찰서 · 서울양천경찰서",
+          "expected": "(t) => t.includes('김지원 2명: 서울강서경찰서 · 서울양천경찰서')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-NAME-FAR": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "105th: the other 김지원 with 서울양천경찰서",
+          "actual": "김지원 (서울양천경찰서)",
+          "expected": "김지원 (서울양천경찰서)"
+        },
+        {
+          "ok": true,
+          "label": "the 4th keeps its label",
+          "actual": "김지원 (서울강서경찰서)",
+          "expected": "김지원 (서울강서경찰서)"
+        },
+        {
+          "ok": true,
+          "label": "drawn axis names are 101–108 (incl. 김지원 (서울양천경찰서) on two lines)",
+          "actual": "[\"김지유\",\"이지유\",\"박지유\",\"최지유\",\"김지원 (서울양천경찰서)\",\"강지유\",\"조지유\",\"윤지유\"]",
+          "expected": "[\"김지유\",\"이지유\",\"박지유\",\"최지유\",\"김지원 (서울양천경찰서)\",\"강지유\",\"조지유\",\"윤지유\"]"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-NAME-ORDINAL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "same agency name, two identities → ordinal, never merged",
+          "actual": [
+            "정민호 (서울마포경찰서 1번)",
+            "정민호 (서울마포경찰서 2번)"
+          ],
+          "expected": [
+            "정민호 (서울마포경찰서 1번)",
+            "정민호 (서울마포경찰서 2번)"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "note says they are told apart by number",
+          "actual": "기관명이 붙은 이름은 이 조건 안에 같은 이름의 담당자가 둘 이상이라 소속 기관으로 구분한 것입니다.\n정민호 2명: 서울마포경찰서 1번 · 서울마포경찰서 2번 (같은 기관 이름은 번호로 구분, 따로 집계)",
+          "expected": "(t) => t.includes('번호로 구분')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-TIP-BAR": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "bar tooltip: name, full agency, why, namesakes",
+          "actual": "김지원\n서울특별시경찰청 서울강서경찰서\n동명이인 구분을 위해 소속 기관을 함께 표시합니다.\n같은 이름의 담당자 2명: 서울강서경찰서, 서울양천경찰서\n답변 122건 · 결과 확인 109건 · 결과 미상 13건\n수용 60건 (55.0%)\n일부수용 25건 (22.9%)\n불수용 24건 (22.0%)",
+          "expected": "(t) => t.includes('김지원') && t.includes('서울특별시경찰청 서울강서경찰서')\n      && t.includes('동명이인 구분을 위해 소속 기관을 함께 표시합니다.') && t.includes('같은 이름의 담당자 2명: 서울강서경찰서, 서울양천경찰서')"
+        },
+        {
+          "ok": true,
+          "label": "a unique name: no namesake text",
+          "actual": "김민준 · 서울특별시경찰청 서울강남경찰서\n답변 125건 · 결과 확인 113건 · 결과 미상 12건\n수용 63건 (55.8%)\n일부수용 24건 (21.2%)\n불수용 26건 (23.0%)",
+          "expected": "(t) => !t.includes('동명이인') && t.includes('서울특별시경찰청')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-TIP-AXIS": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "axis-label hover shows the namesake tooltip",
+          "actual": "김지원\n서울특별시경찰청 서울강서경찰서\n동명이인 구분을 위해 소속 기관을 함께 표시합니다.\n같은 이름의 담당자 2명: 서울강서경찰서, 서울양천경찰서\n답변 122건 · 결과 확인 109건 · 결과 미상 13건\n수용 60건 (55.0%)\n일부수용 25건 (22.9%)\n불수용 24건 (22.0%)",
+          "expected": "(t) => t.includes('동명이인 구분을 위해') && t.includes('서울특별시경찰청 서울강서경찰서')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-TIP-TOUCH": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "390px tap: namesake tooltip",
+          "actual": "김지원\n서울특별시경찰청 서울강서경찰서\n동명이인 구분을 위해 소속 기관을 함께 표시합니다.\n같은 이름의 담당자 2명: 서울강서경찰서, 서울양천경찰서\n답변 122건 · 결과 확인 109건 · 결과 미상 13건\n수용 60건 (55.0%)\n일부수용 25건 (22.9%)\n불수용 24건 (22.0%)",
+          "expected": "(x) => x.includes('동명이인 구분을 위해')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-NAV-FIRST": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "range text",
+          "actual": "담당자 1–8 / 불러온 100명 · 전체 118명",
+          "expected": "담당자 1–8 / 불러온 100명 · 전체 118명"
+        },
+        {
+          "ok": true,
+          "label": "chart dataZoom = 0..7 (both components)",
+          "actual": [
+            [
+              0,
+              7
+            ],
+            [
+              0,
+              7
+            ]
+          ],
+          "expected": [
+            [
+              0,
+              7
+            ],
+            [
+              0,
+              7
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "prev disabled, next enabled",
+          "actual": [
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-NAV-STEP": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "next → 9–16",
+          "actual": [
+            "담당자 9–16 / 불러온 100명 · 전체 118명",
+            [
+              [
+                8,
+                15
+              ],
+              [
+                8,
+                15
+              ]
+            ]
+          ],
+          "expected": [
+            "담당자 9–16 / 불러온 100명 · 전체 118명",
+            [
+              [
+                8,
+                15
+              ],
+              [
+                8,
+                15
+              ]
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "the drawn axis names are categories 9–16",
+          "actual": "[\"장민준\",\"임민준\",\"한민준\",\"오민준\",\"서민준\",\"신민준\",\"권민준\",\"황민준\"]",
+          "expected": "[\"장민준\",\"임민준\",\"한민준\",\"오민준\",\"서민준\",\"신민준\",\"권민준\",\"황민준\"]"
+        },
+        {
+          "ok": true,
+          "label": "prev → 1–8, prev disabled again",
+          "actual": [
+            "담당자 1–8 / 불러온 100명 · 전체 118명",
+            true
+          ],
+          "expected": [
+            "담당자 1–8 / 불러온 100명 · 전체 118명",
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-NAV-SLIDER": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "slider moved the window",
+          "actual": 44,
+          "expected": "(v) => v > 30"
+        },
+        {
+          "ok": true,
+          "label": "range text = chart window (1-based)",
+          "actual": "담당자 45–52 / 불러온 100명 · 전체 118명",
+          "expected": "담당자 45–52 / 불러온 100명 · 전체 118명"
+        },
+        {
+          "ok": true,
+          "label": "next after drag starts right after the dragged window",
+          "actual": 52,
+          "expected": 52
+        },
+        {
+          "ok": true,
+          "label": "text follows",
+          "actual": "담당자 53–60 / 불러온 100명 · 전체 118명",
+          "expected": "담당자 53–60 / 불러온 100명 · 전체 118명"
+        },
+        {
+          "ok": true,
+          "label": "drawn axis names follow the window",
+          "actual": "[\"서도윤\",\"신도윤\",\"권도윤\",\"황도윤\",\"안도윤\",\"송도윤\",\"류도윤\",\"홍도윤\"]",
+          "expected": "[\"서도윤\",\"신도윤\",\"권도윤\",\"황도윤\",\"안도윤\",\"송도윤\",\"류도윤\",\"홍도윤\"]"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-NAV-SMALL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "14 managers (≤ 16): nav reflects the size",
+          "actual": "담당자 1–8 / 14명",
+          "expected": "담당자 1–8 / 14명"
+        },
+        {
+          "ok": true,
+          "label": "next → 9–n, then disabled",
+          "actual": [
+            "담당자 9–14 / 14명",
+            true
+          ],
+          "expected": [
+            "담당자 9–14 / 14명",
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-LOAD-SCOPE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "end of the loaded list",
+          "actual": "담당자 97–100 / 불러온 100명 · 전체 118명",
+          "expected": "담당자 97–100 / 불러온 100명 · 전체 118명"
+        },
+        {
+          "ok": true,
+          "label": "next replaced by load-rest",
+          "actual": [
+            0,
+            "나머지 18명 불러오기"
+          ],
+          "expected": [
+            0,
+            "나머지 18명 불러오기"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "loading: button says so, chart and range stay",
+          "actual": [
+            "불러오는 중…",
+            true,
+            true,
+            "담당자 97–100 / 불러온 100명 · 전체 118명"
+          ],
+          "expected": [
+            "불러오는 중…",
+            true,
+            true,
+            "담당자 97–100 / 불러온 100명 · 전체 118명"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "one click → the existing server pages (1 and 2, 100 each)",
+          "actual": [
+            [
+              "manager",
+              "1",
+              "100"
+            ],
+            [
+              "manager",
+              "2",
+              "100"
+            ]
+          ],
+          "expected": [
+            [
+              "manager",
+              "1",
+              "100"
+            ],
+            [
+              "manager",
+              "2",
+              "100"
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "window kept after the list grew",
+          "actual": [
+            "담당자 97–100 / 118명",
+            [
+              [
+                96,
+                99
+              ],
+              [
+                96,
+                99
+              ]
+            ]
+          ],
+          "expected": [
+            "담당자 97–100 / 118명",
+            [
+              [
+                96,
+                99
+              ],
+              [
+                96,
+                99
+              ]
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "109–116",
+          "actual": "담당자 109–116 / 118명",
+          "expected": "담당자 109–116 / 118명"
+        },
+        {
+          "ok": true,
+          "label": "last window 117–118, next disabled, nothing more to load",
+          "actual": [
+            "담당자 117–118 / 118명",
+            true,
+            0
+          ],
+          "expected": [
+            "담당자 117–118 / 118명",
+            true,
+            0
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-LOAD-FAIL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "error shown, the 100 stay, same window",
+          "actual": [
+            "담당자를 더 불러오지 못했습니다. 지금 보이는 100명은 그대로입니다.",
+            "담당자 97–100 / 불러온 100명 · 전체 118명",
+            100
+          ],
+          "expected": [
+            "담당자를 더 불러오지 못했습니다. 지금 보이는 100명은 그대로입니다.",
+            "담당자 97–100 / 불러온 100명 · 전체 118명",
+            100
+          ]
+        },
+        {
+          "ok": true,
+          "label": "retry button",
+          "actual": "다시 시도",
+          "expected": "다시 시도"
+        },
+        {
+          "ok": true,
+          "label": "retry asks the same pages again (not one page further)",
+          "actual": [
+            "1",
+            "2"
+          ],
+          "expected": "(p) => p.at(-1) === '2' && !p.includes('3')"
+        },
+        {
+          "ok": true,
+          "label": "after retry: 118, window kept",
+          "actual": "담당자 97–100 / 118명",
+          "expected": "담당자 97–100 / 118명"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-LOAD-PLACE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "address chart: first 100 of 118",
+          "actual": "담당자 1–8 / 불러온 100명 · 전체 118명",
+          "expected": "담당자 1–8 / 불러온 100명 · 전체 118명"
+        },
+        {
+          "ok": true,
+          "label": "namesake label from the address list metadata",
+          "actual": "김지원 (서울강서경찰서)",
+          "expected": "김지원 (서울강서경찰서)"
+        },
+        {
+          "ok": true,
+          "label": "while loading the chart and the address panel stay",
+          "actual": [
+            true,
+            true,
+            "불러오는 중…"
+          ],
+          "expected": [
+            true,
+            true,
+            "불러오는 중…"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "one request with entity_limit=118",
+          "actual": [
+            "118"
+          ],
+          "expected": [
+            "118"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "window kept (not back to 1–8)",
+          "actual": "담당자 97–100 / 118명",
+          "expected": "담당자 97–100 / 118명"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-LOAD-NOAUTO": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no extra manager page requested without a click",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-MODE-KEEP": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "fine mode keeps 25–32",
+          "actual": [
+            "담당자 25–32 / 불러온 100명 · 전체 118명",
+            [
+              [
+                24,
+                31
+              ],
+              [
+                24,
+                31
+              ]
+            ]
+          ],
+          "expected": [
+            "담당자 25–32 / 불러온 100명 · 전체 118명",
+            [
+              [
+                24,
+                31
+              ],
+              [
+                24,
+                31
+              ]
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "accept mode again keeps 25–32",
+          "actual": [
+            [
+              24,
+              31
+            ],
+            [
+              24,
+              31
+            ]
+          ],
+          "expected": [
+            [
+              24,
+              31
+            ],
+            [
+              24,
+              31
+            ]
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-SCOPE-RESET": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "a new scope starts at 1–8",
+          "actual": "담당자 1–8 / 불러온 100명 · 전체 118명",
+          "expected": "(t) => t.startsWith('담당자 1–8 / 불러온 100명')"
+        },
+        {
+          "ok": true,
+          "label": "duplicate state recomputed for the new scope (one 김지원 → plain name, no note)",
+          "actual": [
+            "김지원",
+            0
+          ],
+          "expected": [
+            "김지원",
+            0
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no nav for one manager",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-SCOPE-LATE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "the late page of the old scope did not replace the new list",
+          "actual": [
+            "김지원"
+          ],
+          "expected": [
+            "김지원"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-TABLE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "table rows = loaded rows",
+          "actual": 118,
+          "expected": 118
+        },
+        {
+          "ok": true,
+          "label": "table names = chart names",
+          "actual": "[\"김민준\",\"박서준 (서울중부경찰서)\",\"박민준\",\"김지원 (서울강서경찰서)\",\"정민준\",\"강민준\",\"조민준\",\"윤민준\",\"장민준\",\"임민준\",\"한민준\",\"오민준\",\"서민준\",\"신민준\",\"권민준\",\"황민준\",\"안민준\",\"송민준\",\"류민준\",\"홍민준\",\"김서연\",\"이서연\",\"박서연\",\"최서연\",\"정서연\",\"강서연\",\"조서연\",\"윤서연\",\"장서연\",\"정민호 (서울마포경찰서 1번)\",\"정민호 (서울마포경찰서 2번)\",\"오서연\",\"서서연\",\"신서연\",\"권서연\",\"황서연\",\"안서연\",\"송서연\",\"류서연\",\"홍서연\",\"김도윤\",\"이도윤\",\"박도윤\",\"최도윤\",\"정도윤\",\"강도윤\",\"조도윤\",\"윤도윤\",\"장도윤\",\"박서준 (강서구 교통행정과)\",\"한도윤\",\"오도윤\",\"서도윤\",\"신도윤\",\"권도윤\",\"황도윤\",\"안도윤\",\"송도윤\",\"류도윤\",\"홍도윤\",\"김하은\",\"이하은\",\"박하은\",\"최하은\",\"정하은\",\"강하은\",\"조하은\",\"윤하은\",\"장하은\",\"임하은\",\"한하은\",\"오하은\",\"서하은\",\"신하은\",\"권하은\",\"황하은\",\"안하은\",\"송하은\",\"류하은\",\"홍하은\",\"김시우\",\"이시우\",\"박시우\",\"최시우\",\"정시우\",\"강시우\",\"조시우\",\"윤시우\",\"장시우\",\"임시우\",\"한시우\",\"오시우\",\"서시우\",\"신시우\",\"권시우\",\"황시우\",\"안시우\",\"송시우\",\"류시우\",\"홍시우\",\"김지유\",\"이지유\",\"박지유\",\"최지유\",\"김지원 (서울양천경찰서)\",\"강지유\",\"조지유\",\"윤지유\",\"장지유\",\"임지유\",\"한지유\",\"오지유\",\"서지유\",\"신지유\",\"권지유\",\"황지유\",\"안지유\",\"송지유\"]",
+          "expected": "[\"김민준\",\"박서준 (서울중부경찰서)\",\"박민준\",\"김지원 (서울강서경찰서)\",\"정민준\",\"강민준\",\"조민준\",\"윤민준\",\"장민준\",\"임민준\",\"한민준\",\"오민준\",\"서민준\",\"신민준\",\"권민준\",\"황민준\",\"안민준\",\"송민준\",\"류민준\",\"홍민준\",\"김서연\",\"이서연\",\"박서연\",\"최서연\",\"정서연\",\"강서연\",\"조서연\",\"윤서연\",\"장서연\",\"정민호 (서울마포경찰서 1번)\",\"정민호 (서울마포경찰서 2번)\",\"오서연\",\"서서연\",\"신서연\",\"권서연\",\"황서연\",\"안서연\",\"송서연\",\"류서연\",\"홍서연\",\"김도윤\",\"이도윤\",\"박도윤\",\"최도윤\",\"정도윤\",\"강도윤\",\"조도윤\",\"윤도윤\",\"장도윤\",\"박서준 (강서구 교통행정과)\",\"한도윤\",\"오도윤\",\"서도윤\",\"신도윤\",\"권도윤\",\"황도윤\",\"안도윤\",\"송도윤\",\"류도윤\",\"홍도윤\",\"김하은\",\"이하은\",\"박하은\",\"최하은\",\"정하은\",\"강하은\",\"조하은\",\"윤하은\",\"장하은\",\"임하은\",\"한하은\",\"오하은\",\"서하은\",\"신하은\",\"권하은\",\"황하은\",\"안하은\",\"송하은\",\"류하은\",\"홍하은\",\"김시우\",\"이시우\",\"박시우\",\"최시우\",\"정시우\",\"강시우\",\"조시우\",\"윤시우\",\"장시우\",\"임시우\",\"한시우\",\"오시우\",\"서시우\",\"신시우\",\"권시우\",\"황시우\",\"안시우\",\"송시우\",\"류시우\",\"홍시우\",\"김지유\",\"이지유\",\"박지유\",\"최지유\",\"김지원 (서울양천경찰서)\",\"강지유\",\"조지유\",\"윤지유\",\"장지유\",\"임지유\",\"한지유\",\"오지유\",\"서지유\",\"신지유\",\"권지유\",\"황지유\",\"안지유\",\"송지유\"]"
+        },
+        {
+          "ok": true,
+          "label": "table range text",
+          "actual": "표: 담당자 118명",
+          "expected": "표: 담당자 118명"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-EXCEL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "name cells = chart names",
+          "actual": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "agency column keeps the official name",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "note explains the short agency on namesakes",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-LEAK": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "30 next/prev (+ 12 more each way) + 20 mode switches: no new chart instance / listener / observer",
+          "actual": [
+            7,
+            7,
+            7
+          ],
+          "expected": [
+            7,
+            7,
+            7
+          ]
+        },
+        {
+          "ok": true,
+          "label": "10 scope changes: instances = mounted chart hosts, listeners = instances",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-LAYOUT": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920 dark: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440 dark: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1280 dark: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "768 dark: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390 dark: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920 light: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440 light: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1280 light: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "768 light: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390 light: no overflow, nav inside the card under the chart, buttons ≥ 32px",
+          "actual": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MC-ESC": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "Esc with a tooltip open: no error, card intact",
+          "actual": "담당자 1–8 / 불러온 100명 · 전체 118명",
+          "expected": "(t) => t.startsWith('담당자 1–8')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    }
+  },
+  "steps": {
+    "names-first": {
+      "status": "DONE",
+      "ids": [
+        "MC-NAME-FIRST",
+        "MC-NAV-FIRST",
+        "MC-TIP-BAR",
+        "MC-TIP-AXIS",
+        "MC-LOAD-NOAUTO"
+      ],
+      "ms": 4222
+    },
+    "nav-step-slider": {
+      "status": "DONE",
+      "ids": [
+        "MC-NAV-STEP",
+        "MC-NAV-SLIDER",
+        "MC-MODE-KEEP",
+        "MC-NAME-ORDINAL"
+      ],
+      "notes": {
+        "afterDrag": {
+          "z": [
+            [
+              44,
+              51
+            ],
+            [
+              44,
+              51
+            ]
+          ],
+          "txt": "담당자 45–52 / 불러온 100명 · 전체 118명"
+        }
+      },
+      "ms": 5114
+    },
+    "load-scope": {
+      "status": "DONE",
+      "ids": [
+        "MC-LOAD-SCOPE",
+        "MC-NAME-FAR",
+        "MC-TABLE"
+      ],
+      "ms": 10194
+    },
+    "load-fail": {
+      "status": "DONE",
+      "ids": [
+        "MC-LOAD-FAIL"
+      ],
+      "ms": 6224
+    },
+    "load-place": {
+      "status": "DONE",
+      "ids": [
+        "MC-LOAD-PLACE"
+      ],
+      "ms": 8413
+    },
+    "scope-reset-late": {
+      "status": "DONE",
+      "ids": [
+        "MC-SCOPE-RESET",
+        "MC-SCOPE-LATE"
+      ],
+      "ms": 9840
+    },
+    "small-lists": {
+      "status": "DONE",
+      "ids": [
+        "MC-NAV-SMALL"
+      ],
+      "notes": {
+        "managersInAgency": 14
+      },
+      "ms": 4393
+    },
+    "excel": {
+      "status": "DONE",
+      "ids": [
+        "MC-EXCEL"
+      ],
+      "ms": 4129
+    },
+    "leak-esc-touch": {
+      "status": "DONE",
+      "ids": [
+        "MC-LEAK",
+        "MC-ESC",
+        "MC-TIP-TOUCH"
+      ],
+      "notes": {
+        "counters": {
+          "before": {
+            "live": 7,
+            "observers": 7,
+            "zoom": 7,
+            "charts": 7
+          },
+          "mid": {
+            "live": 7,
+            "observers": 7,
+            "zoom": 7,
+            "charts": 7
+          },
+          "after": {
+            "live": 7,
+            "observers": 7,
+            "zoom": 7,
+            "charts": 7
+          }
+        }
+      },
+      "ms": 13705
+    },
+    "layout": {
+      "status": "DONE",
+      "ids": [
+        "MC-LAYOUT"
+      ],
+      "ms": 26320
+    }
+  },
+  "finished_at": "2026-09-30T05:07:41.211Z",
+  "summary": {
+    "PASS": 22
+  }
+}

@@ -5,7 +5,8 @@ import { lawHeatmap, ratingDistribution, HEATMAP_MAX_LAWS } from '../../server/a
 import { aggregateCompare } from '../../server/compare';
 import { createPublicHandler, parseScope, type AnalyticsRepository } from '../../server/publicHandler';
 import { presetRange, validateRange } from '../../src/state/filters';
-import { entityRates, duplicateNames, entityLabel } from '../../src/components/entityMetrics';
+import { entityRates, entityLabel } from '../../src/components/entityMetrics';
+import { sameNameIndex } from '../../src/domain/managerNames';
 import { placeChartSegments } from '../../src/components/PlaceEntityChart';
 import { ratingLines } from '../../src/components/AnalyticsCharts';
 import { boundaryLevelFor, outOfScopeCodes, renderModeOf } from '../../src/components/MapPanel';
@@ -110,9 +111,10 @@ describe('R2/R3 manager metrics and chart denominators', () => {
   });
   it('same names are told apart by agency', () => {
     const rows = [{ ...e }, { ...e, key: 'm2', agency_name: '을 구청' }, { ...e, key: 'm3', manager_name: '박도윤' }];
-    const dup = duplicateNames(rows);
-    expect(entityLabel(rows[0], 'manager', dup.has('김하늘'))).toBe('김하늘 (갑 경찰서)');
-    expect(entityLabel(rows[2], 'manager', dup.has('박도윤'))).toBe('박도윤');
+    const same = sameNameIndex(rows);
+    expect(entityLabel(rows[0], 'manager', same.get(rows[0]))).toBe('김하늘 (갑 경찰서)');
+    expect(entityLabel(rows[1], 'manager', same.get(rows[1]))).toBe('김하늘 (을 구청)');
+    expect(entityLabel(rows[2], 'manager', same.get(rows[2]))).toBe('박도윤');
   });
 });
 

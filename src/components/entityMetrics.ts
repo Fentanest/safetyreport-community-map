@@ -5,7 +5,8 @@
  *   수용률 A/K, 일부수용률 P/K, 불수용률 R/K, 과태료 부과율 F/C, 경고·계도 비율 W/C (×100).
  * A zero denominator, or a count the server does not provide (older server: undefined/null), is null — never 0.
  */
-import type { PublicEntity } from '../domain/public';
+import type { PublicEntity, SameNameInfo } from '../domain/public';
+import { managerLabel } from '../domain/managerNames';
 
 export interface EntityRates {
   C: number;
@@ -35,16 +36,8 @@ export function entityRates(e: Pick<PublicEntity, 'completed_count' | 'outcomes'
     accept: rate(A, K), partial: rate(P, K), reject: rate(R, K), fineRate: rate(F, C), warnRate: rate(W, C) };
 }
 
-/** Display name of a manager; people with the same name are told apart by their agency. */
-export function entityLabel(e: Pick<PublicEntity, 'manager_name' | 'agency_name'>, kind: 'agency' | 'manager', duplicate: boolean): string {
-  if (kind === 'agency') return e.agency_name;
-  const name = e.manager_name ?? '이름 없음';
-  return duplicate ? `${name} (${e.agency_name})` : name;
-}
-
-/** Names that occur more than once among the rows (same name, different agency). */
-export function duplicateNames(rows: ReadonlyArray<Pick<PublicEntity, 'manager_name'>>): Set<string> {
-  const seen = new Map<string, number>();
-  for (const r of rows) { const k = r.manager_name ?? '이름 없음'; seen.set(k, (seen.get(k) ?? 0) + 1); }
-  return new Set([...seen].filter(([, n]) => n > 1).map(([k]) => k));
+/** Display name of an agency or manager row. A manager gets its short agency only when another identity of the scope
+ *  has the same name (`same`: sameNameIndex in src/domain/managerNames.ts — never decided by the visible rows alone). */
+export function entityLabel(e: Pick<PublicEntity, 'manager_name' | 'agency_name'>, kind: 'agency' | 'manager', same: SameNameInfo | null): string {
+  return kind === 'agency' ? e.agency_name : managerLabel(e, same);
 }
