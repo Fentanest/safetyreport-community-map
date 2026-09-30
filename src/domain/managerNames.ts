@@ -13,7 +13,7 @@
  * A trailing department segment (…과/팀/계/실/반/부/국) keeps its parent ('강서구 교통행정과'), a trailing word shorter
  * than 4 characters too ('갑 경찰서'). A '(구)' name keeps its mark.
  * When two identities share the SAME agency name too (e.g. one agency under two keys — a code that did not resolve
- * and one that did), the agency alone cannot tell them apart: they get an ordinal (`서울강서경찰서 · 2`, order of the
+ * and one that did), the agency alone cannot tell them apart: they get an ordinal (`서울강서경찰서 2번`, order of the
  * row key) and the explanation says they are counted separately.
  */
 import type { PublicEntity, SameNameInfo } from './public.ts';
@@ -80,7 +80,7 @@ export function computeSameNames(rows: readonly Row[]): Map<string, SameNameInfo
       if ((sameAgency.get(r.agency_name) ?? 0) < 2) return short[i];
       const n = (seen.get(r.agency_name) ?? 0) + 1;
       seen.set(r.agency_name, n);
-      return `${short[i]} · ${n}`;
+      return `${short[i]} ${n}번`;
     });
     const peers = labels.slice(0, SAME_NAME_PEERS_MAX);
     const agencyShared = sorted.map((r) => (sameAgency.get(r.agency_name) ?? 0) > 1);

@@ -396,7 +396,7 @@ export interface PublicEntity {
 export interface SameNameInfo {
   /** identities (distinct row keys) with this name in the scope, this one included (≥ 2) */
   count: number;
-  /** short agency name that tells this identity apart ('서울강서경찰서', or '서울강서경찰서 · 2' when the agency name is shared too) */
+  /** short agency name that tells this identity apart ('서울강서경찰서', or '서울강서경찰서 2번' when the agency name is shared too) */
   label: string;
   /** labels of the namesakes (this one included), at most 12 */
   peers: string[];

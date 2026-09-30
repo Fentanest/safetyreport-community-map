@@ -42,7 +42,7 @@ describe('동명이인: same name on DIFFERENT identities of the full list', () 
     const labels = rows.map((r) => entityLabel(r, 'manager', same.get(r)));
     expect(new Set(labels).size).toBe(2);
     // order of the row key: inst-mapo:1 → 1, src-mapo:2 → 2 (stable whatever order the rows arrive in)
-    expect(labels).toEqual(['정민호 (서울마포경찰서 · 2)', '정민호 (서울마포경찰서 · 1)']);
+    expect(labels).toEqual(['정민호 (서울마포경찰서 2번)', '정민호 (서울마포경찰서 1번)']);
     expect(same.get(rows[0])!.same_agency).toBe(true);
     expect(sameNameNote(same.get(rows[0])!).join(' ')).toMatch(/번호로 구분/);
   });
@@ -186,7 +186,7 @@ describe('the card: nav, load-more, table and file use the same names', () => {
     const names = snap.table.rows.map((r) => r.cells.name);
     expect(names).toContain('김지원 (서울강서경찰서)');
     expect(names).toContain('박서준 (서울중부경찰서)');
-    expect(names.filter((x) => String(x).startsWith('정민호'))).toEqual(['정민호 (서울마포경찰서 · 1)', '정민호 (서울마포경찰서 · 2)']);
+    expect(names.filter((x) => String(x).startsWith('정민호'))).toEqual(['정민호 (서울마포경찰서 1번)', '정민호 (서울마포경찰서 2번)']);
     expect(snap.table.notes.join(' ')).toMatch(/소속 기관을 짧게/);
     // the agency column keeps the official name; nobody is merged
     expect(new Set(snap.table.rows.map((r) => r.id)).size).toBe(100);

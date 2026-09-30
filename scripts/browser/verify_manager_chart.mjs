@@ -123,8 +123,9 @@ try {
     for (let i = 0; i < 3; i++) await nextBtn(page).click();
     await waitFor(() => rangeTextOf(page), (t) => t.startsWith('담당자 25–32'));
     const axis = await axisOf(page);
-    check('MC-NAME-ORDINAL', 'same agency name, two identities → ordinal, never merged', [axis[29], axis[30]], ['정민호 (서울마포경찰서 · 1)', '정민호 (서울마포경찰서 · 2)']);
+    check('MC-NAME-ORDINAL', 'same agency name, two identities → ordinal, never merged', [axis[29], axis[30]], ['정민호 (서울마포경찰서 1번)', '정민호 (서울마포경찰서 2번)']);
     check('MC-NAME-ORDINAL', 'note says they are told apart by number', await c.locator('.pe-namesake').innerText(), (t) => t.includes('번호로 구분'));
+    await sleep(500); // let the dataZoom transition finish before the capture
     await c.screenshot({ path: join(dir, 'shots', 'ordinal-25-32-1440-dark.png') });
     // mode: the window stays
     await c.getByLabel('과태료 부과율').check();
@@ -319,7 +320,7 @@ try {
     await d.saveAs(path);
     const x = inspect(readFileSync(path));
     const values = Object.values(x.sheets['통계표'].cells).map((v) => String(v.value ?? ''));
-    check('MC-EXCEL', 'name cells = chart names', ['김지원 (서울강서경찰서)', '박서준 (서울중부경찰서)', '정민호 (서울마포경찰서 · 1)', '정민호 (서울마포경찰서 · 2)'].map((s) => values.includes(s)), [true, true, true, true]);
+    check('MC-EXCEL', 'name cells = chart names', ['김지원 (서울강서경찰서)', '박서준 (서울중부경찰서)', '정민호 (서울마포경찰서 1번)', '정민호 (서울마포경찰서 2번)'].map((s) => values.includes(s)), [true, true, true, true]);
     check('MC-EXCEL', 'agency column keeps the official name', values.includes('서울특별시경찰청 서울강서경찰서'), true);
     check('MC-EXCEL', 'note explains the short agency on namesakes', values.some((v) => v.includes('소속 기관을 짧게')), true);
     await context.close();
