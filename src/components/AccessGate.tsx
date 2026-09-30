@@ -1,6 +1,7 @@
 import type { AuthSnapshot } from '../auth/mapAuth';
 import type { AccessCode } from '../data/client';
 import { ISSUES_URL } from './DataGuide';
+import CoupangAd from './CoupangAd';
 
 interface Props {
   code: AccessCode;
@@ -92,6 +93,7 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
           문의는 <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">문의 게시판(GitHub Issues)</a>에 남겨 주세요(공개 게시판이니 개인정보는 적지 마세요).
         </p>
       </section>
+      <CoupangAd id="1034414" width={640} height={200} className="ad-gate" />
     </main>
   );
 }

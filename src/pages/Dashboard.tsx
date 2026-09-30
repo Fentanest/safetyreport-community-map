@@ -22,6 +22,7 @@ import { TREND_RATE_METRIC_ID } from '../components/trendMetrics';
 import type { MapMetric } from '../components/mapMetrics';
 import PlaceDetailsPanel, { type PlaceDetailState } from '../components/PlaceDetailsPanel';
 import PlaceEntityChart from '../components/PlaceEntityChart';
+import CoupangAd from '../components/CoupangAd';
 import TrendCard from '../components/TrendCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable from '../components/EntityTable';
@@ -866,6 +867,7 @@ export default function Dashboard() {
                     refreshing={dash.isRefreshing}
                     statsBbox={!!shownScope?.bbox}
                   />
+                  <CoupangAd id="1034404" width={1030} height={250} minScale={0.6} className="ad-map" />
                 </div>
                 <div className="area-side">
                   {point ? (
