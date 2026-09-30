@@ -149,3 +149,20 @@ LANG=C.UTF-8 node scripts/browser/verify_manager_chart.mjs docs/implementation/m
 
 - 데모 모드에서는 `?fixture=managers`로 같은 118명 합성 자료를 볼 수 있다. dashboard가 서버처럼 첫 100명만 준다.
 - `scripts/browser/verify_followup.mjs` R3_crowd는 예전 문구 '나머지 담당자 불러오기'를 누른다. 이 흐름은 이제 마지막 구간의 `나머지 N명 불러오기`이고, MC-LOAD-PLACE가 대체한다.
+
+## 추가: 쿠팡 파트너스 배너 (같은 날, 커밋 `dd8a382`)
+
+- 위치와 크기:
+  - 로그인 안내 카드 아래: 640×200 (위젯 id 1034414). 카드와 같은 폭이다.
+  - 지도 카드 아래: 1030×250 (위젯 id 1034404).
+    - 1920 폭: 원래 크기
+    - 1440 폭: 약 0.75배
+    - 768 폭: 약 0.64배
+    - 지도 칸이 위젯 폭의 60% 미만(390 폭)이면 감춘다.
+- 안전장치:
+  - iframe 위젯만 쓴다. 광고 코드가 쿠팡 도메인에서 돌아서 로그인 세션을 읽지 못한다.
+  - referrer는 `strict-origin`이다. 쿠팡이 준 코드의 `unsafe-url` 대신 도메인만 보내고 조회 조건 주소는 보내지 않는다.
+- 대가성 문구: 두 광고 모두 아래에 '이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.'를 표시한다.
+- 검증: `ad-evidence/`에 4/4 PASS 결과가 있다(commit `dd8a382`, clean).
+  - 위젯은 **STUB**으로 대체했다. 검수 환경에서 ads-partners.coupang.com 접속이 차단된다.
+  - 실제 쿠팡 위젯 렌더링과 클릭은 운영 화면에서 확인해야 한다(NOT_RUN).

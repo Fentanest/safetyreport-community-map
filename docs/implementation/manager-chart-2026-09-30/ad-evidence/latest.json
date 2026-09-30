@@ -1,0 +1,568 @@
+{
+  "run_id": "coupang-ad-2026-09-30T05-21-16-445Z",
+  "suite": "coupang-ad",
+  "commit": "dd8a382e5df80c4274271d2a4ec63a7ec70218d8",
+  "working_tree_dirty": false,
+  "started_at": "2026-09-30T05:21:16.470Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 141.0.7390.37",
+    "widget": "STUB (ads-partners.coupang.com routed to a local page)",
+    "sdk": "MOCK"
+  },
+  "results": {
+    "AD-GATE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920: below the login card, same left edge and width",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920: widget 640×200 at scale 1.00",
+          "actual": [
+            640,
+            200
+          ],
+          "expected": [
+            640,
+            200
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920: widget id 1034414, origin-only referrer, no page overflow",
+          "actual": [
+            "1034414",
+            "strict-origin",
+            true
+          ],
+          "expected": [
+            "1034414",
+            "strict-origin",
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390: below the login card, same left edge and width",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390: widget 640×200 at scale 0.61",
+          "actual": [
+            390,
+            122
+          ],
+          "expected": [
+            390,
+            122
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390: widget id 1034414, origin-only referrer, no page overflow",
+          "actual": [
+            "1034414",
+            "strict-origin",
+            true
+          ],
+          "expected": [
+            "1034414",
+            "strict-origin",
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "AD-MAP": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920: under the map card, centred in its column, never wider",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920: 1030×250 scaled 1.00",
+          "actual": [
+            1030,
+            250
+          ],
+          "expected": [
+            1030,
+            250
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920: lazy widget loads when scrolled to; referer is the origin only (no query)",
+          "actual": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/",
+          "expected": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/"
+        },
+        {
+          "ok": true,
+          "label": "1440: under the map card, centred in its column, never wider",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440: 1030×250 scaled 0.75",
+          "actual": [
+            768,
+            186
+          ],
+          "expected": [
+            768,
+            186
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440: lazy widget loads when scrolled to; referer is the origin only (no query)",
+          "actual": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/",
+          "expected": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/"
+        },
+        {
+          "ok": true,
+          "label": "1280: under the map card, centred in its column, never wider",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1280: 1030×250 scaled 1.00",
+          "actual": [
+            1030,
+            250
+          ],
+          "expected": [
+            1030,
+            250
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1280: lazy widget loads when scrolled to; referer is the origin only (no query)",
+          "actual": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/",
+          "expected": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/"
+        },
+        {
+          "ok": true,
+          "label": "768: under the map card, centred in its column, never wider",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "768: 1030×250 scaled 0.64",
+          "actual": [
+            656,
+            159
+          ],
+          "expected": [
+            656,
+            159
+          ]
+        },
+        {
+          "ok": true,
+          "label": "768: lazy widget loads when scrolled to; referer is the origin only (no query)",
+          "actual": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/",
+          "expected": "STUB coupang 1034404 1030×250 referer=http://127.0.0.1:5190/"
+        },
+        {
+          "ok": true,
+          "label": "390: column 358px < 60% of the widget → hidden (no frame, no disclosure)",
+          "actual": [
+            null,
+            null
+          ],
+          "expected": [
+            null,
+            null
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "AD-DISCLOSURE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920: gate disclosure",
+          "actual": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+          "expected": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+        },
+        {
+          "ok": true,
+          "label": "390: gate disclosure",
+          "actual": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+          "expected": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "1920: map disclosure",
+          "actual": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+          "expected": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+        },
+        {
+          "ok": true,
+          "label": "1440: map disclosure",
+          "actual": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+          "expected": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+        },
+        {
+          "ok": true,
+          "label": "1280: map disclosure",
+          "actual": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+          "expected": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+        },
+        {
+          "ok": true,
+          "label": "768: map disclosure",
+          "actual": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+          "expected": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "AD-LAYOUT": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920 light: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "1440 dark: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "1280 light: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "768 dark: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "390 light: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    }
+  },
+  "steps": {
+    "gate": {
+      "status": "DONE",
+      "ids": [
+        "AD-GATE",
+        "AD-DISCLOSURE"
+      ],
+      "notes": {
+        "gate-1920": {
+          "s": {
+            "slot": {
+              "l": 640,
+              "t": 451,
+              "w": 640,
+              "h": 223,
+              "b": 674
+            },
+            "frame": {
+              "l": 640,
+              "t": 451,
+              "w": 640,
+              "h": 200,
+              "b": 651
+            },
+            "src": "https://ads-partners.coupang.com/widgets.html?id=1034414&template=carousel&trackingCode=AF9752254&subId=&width=640&height=200&tsource=",
+            "referrerpolicy": "strict-origin",
+            "sandbox": null,
+            "disclosure": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+            "overflow": 0
+          },
+          "card": {
+            "l": 640,
+            "w": 640,
+            "b": 415
+          }
+        },
+        "gate-390": {
+          "s": {
+            "slot": {
+              "l": 0,
+              "t": 485,
+              "w": 390,
+              "h": 161,
+              "b": 646
+            },
+            "frame": {
+              "l": 0,
+              "t": 485,
+              "w": 390,
+              "h": 122,
+              "b": 607
+            },
+            "src": "https://ads-partners.coupang.com/widgets.html?id=1034414&template=carousel&trackingCode=AF9752254&subId=&width=640&height=200&tsource=",
+            "referrerpolicy": "strict-origin",
+            "sandbox": null,
+            "disclosure": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+            "overflow": 0
+          },
+          "card": {
+            "l": 0,
+            "w": 390,
+            "b": 453
+          }
+        }
+      },
+      "ms": 1970
+    },
+    "map": {
+      "status": "DONE",
+      "ids": [
+        "AD-MAP",
+        "AD-DISCLOSURE",
+        "AD-LAYOUT"
+      ],
+      "notes": {
+        "map-1920": {
+          "s": {
+            "slot": {
+              "l": 102,
+              "t": 1180,
+              "w": 1030,
+              "h": 273,
+              "b": 1452
+            },
+            "frame": {
+              "l": 102,
+              "t": 1180,
+              "w": 1030,
+              "h": 250,
+              "b": 1430
+            },
+            "src": "https://ads-partners.coupang.com/widgets.html?id=1034404&template=carousel&trackingCode=AF9752254&subId=&width=1030&height=250&tsource=",
+            "referrerpolicy": "strict-origin",
+            "sandbox": null,
+            "disclosure": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+            "overflow": 0
+          },
+          "map": {
+            "l": 96,
+            "w": 1042,
+            "b": 1160
+          }
+        },
+        "map-1440": {
+          "s": {
+            "slot": {
+              "l": 92,
+              "t": 1222,
+              "w": 768,
+              "h": 209,
+              "b": 1430
+            },
+            "frame": {
+              "l": 92,
+              "t": 1222,
+              "w": 768,
+              "h": 186,
+              "b": 1408
+            },
+            "src": "https://ads-partners.coupang.com/widgets.html?id=1034404&template=carousel&trackingCode=AF9752254&subId=&width=1030&height=250&tsource=",
+            "referrerpolicy": "strict-origin",
+            "sandbox": null,
+            "disclosure": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+            "overflow": 0
+          },
+          "map": {
+            "l": 92,
+            "w": 768,
+            "b": 1206
+          }
+        },
+        "map-1280": {
+          "s": {
+            "slot": {
+              "l": 161,
+              "t": 1222,
+              "w": 1030,
+              "h": 273,
+              "b": 1494
+            },
+            "frame": {
+              "l": 161,
+              "t": 1222,
+              "w": 1030,
+              "h": 250,
+              "b": 1472
+            },
+            "src": "https://ads-partners.coupang.com/widgets.html?id=1034404&template=carousel&trackingCode=AF9752254&subId=&width=1030&height=250&tsource=",
+            "referrerpolicy": "strict-origin",
+            "sandbox": null,
+            "disclosure": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+            "overflow": 0
+          },
+          "map": {
+            "l": 92,
+            "w": 1168,
+            "b": 1206
+          }
+        },
+        "map-768": {
+          "s": {
+            "slot": {
+              "l": 92,
+              "t": 1434,
+              "w": 656,
+              "h": 182,
+              "b": 1616
+            },
+            "frame": {
+              "l": 92,
+              "t": 1434,
+              "w": 656,
+              "h": 159,
+              "b": 1593
+            },
+            "src": "https://ads-partners.coupang.com/widgets.html?id=1034404&template=carousel&trackingCode=AF9752254&subId=&width=1030&height=250&tsource=",
+            "referrerpolicy": "strict-origin",
+            "sandbox": null,
+            "disclosure": "이 페이지는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.",
+            "overflow": 0
+          },
+          "map": {
+            "l": 92,
+            "w": 656,
+            "b": 1418
+          }
+        },
+        "map-390": {
+          "s": {
+            "slot": {
+              "l": 16,
+              "t": 1680,
+              "w": 358,
+              "h": 0,
+              "b": 1680
+            },
+            "frame": null,
+            "src": null,
+            "referrerpolicy": null,
+            "disclosure": null,
+            "overflow": 0
+          },
+          "map": {
+            "l": 16,
+            "w": 358,
+            "b": 1664
+          }
+        }
+      },
+      "ms": 13777
+    }
+  },
+  "finished_at": "2026-09-30T05:21:32.217Z",
+  "summary": {
+    "PASS": 4
+  }
+}
