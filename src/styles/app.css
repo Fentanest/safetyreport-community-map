@@ -469,6 +469,9 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 .account-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; width: 280px; padding: 14px; border: 1px solid var(--border); border-radius: 12px;
   background: var(--surface); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
 .account-pop p { margin: 0; }
+.account-id { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; margin-bottom: 10px; font-size: 12px; }
+.account-id > span { grid-column: 1 / -1; }
+.account-id code { font-size: 11.5px; word-break: break-all; user-select: all; }
 .account-chip { font-size: 12px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
 .account-login { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .mine-note { margin: 0; font-size: 13px; color: var(--brand-ink); }
