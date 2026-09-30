@@ -215,7 +215,7 @@ try {
     await moreBtn(page).click();
     await waitFor(() => c.locator('.pe-nav-error').count(), (n) => n > 0, { timeout: 8000 });
     check('MC-LOAD-FAIL', 'error shown, the 100 stay, same window', [await c.locator('.pe-nav-error').innerText(), await rangeTextOf(page), (await axisOf(page)).length],
-      ['담당자를 더 불러오지 못했습니다. 지금 보이는 100명은 그대로입니다.', '담당자 97–100 / 불러온 100명 · 전체 118명', 100]);
+      ['담당자를 더 불러오지 못했습니다.', '담당자 97–100 / 불러온 100명 · 전체 118명', 100]);
     check('MC-LOAD-FAIL', 'retry button', await moreBtn(page).innerText(), '다시 시도');
     await sleep(400);
     await c.screenshot({ path: join(dir, 'shots', 'load-failed-1440-dark.png') });

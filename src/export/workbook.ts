@@ -177,7 +177,7 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
   onStage('chart');
   const D = SHEETS.data, C = SHEETS.chart;
   str(D, 'A1', '차트 데이터', S.title);
-  str(D, 'A2', `차트가 그리는 숫자입니다(개별 신고가 아닙니다). 이 숫자들은 ‘${T}’ 시트에서 그대로 가져오므로, 통계표의 건수를 고치면 차트도 함께 바뀝니다. 여기에 숫자를 직접 넣어도 차트는 바뀌지만 통계표와는 달라집니다. 빈 칸은 값이 없다는 뜻입니다(0이 아님).`, S.flow);
+  str(D, 'A2', `차트가 그리는 숫자입니다. ‘${T}’ 시트에서 가져옵니다.`, S.flow);
   ok(f.SetColWidth(D, 'A', 'A', 26), 'width');
   ok(f.SetColWidth(D, 'B', 'Z', 16), 'width');
   str(C, 'A1', `${snap.title} · 차트`, S.title);
@@ -263,7 +263,7 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
     const drawnCombo = (ch.combo?.series ?? []).filter((s) => includeHidden || !s.hidden);
     placeTitle(ch.title, ch.note);
     if (drawn.length === 0 && drawnCombo.length === 0) {
-      str(C, addr(1, cRow), '화면에서 모든 항목을 숨긴 상태라 차트를 넣지 않았습니다(0건이라는 뜻이 아닙니다). 숫자는 통계표와 차트 데이터 시트에 모두 있습니다. 차트가 필요하면 화면에서 ‘전체 보기’를 누르거나 ‘숨긴 항목도 엑셀 차트에 넣기’를 켜고 다시 받아 주세요.', S.flow);
+      str(C, addr(1, cRow), '화면에서 모든 항목을 숨겨 차트를 넣지 않았습니다.', S.flow);
       cRow += 3;
       return;
     }
@@ -358,9 +358,9 @@ export function writeWorkbook(x: XModule, snap: ExportSnapshot, onStage: (s: Exp
   ];
   if (snap.legend) {
     rows.push({ label: '화면에서 숨긴 항목', value: snap.legend.hidden.length === 0 ? '없음'
-      : `${snap.legend.hidden.join(', ')} — ${snap.legend.includeHidden ? '이 파일의 차트에는 넣었습니다' : '이 파일의 차트에서도 뺐습니다. 숫자는 통계표와 차트 데이터 시트에 있습니다'}` });
+      : `${snap.legend.hidden.join(', ')} — ${snap.legend.includeHidden ? '이 파일의 차트에는 넣었습니다' : '이 파일의 차트에서도 뺐습니다'}` });
   }
-  rows.push({ label: '이 파일에 대해', value: '내려받은 시점의 결과입니다. 엑셀에서 자료를 새로 불러오지 않으므로 지금 사이트의 숫자와 다를 수 있습니다. 개별 신고, 차량 번호, 신고 번호, 계정 정보는 들어 있지 않습니다. 파일을 다른 사람에게 보내면 파일 안의 통계와 이름을 그 사람도 볼 수 있습니다.' });
+  rows.push({ label: '이 파일에 대해', value: '내려받은 시점의 결과입니다.' });
   rows.forEach((r, i) => { str(Q, addr(1, 3 + i), r.label, S.key); str(Q, addr(2, 3 + i), r.value, S.note); });
 
   // ── properties: no personal data; recalculate formulas when opened ─────────────────────────────────────

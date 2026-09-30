@@ -63,8 +63,8 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
               <p className="cm-muted" role="status">지금 {progress.current}건 / {progress.required}건 공유됨</p>
             )}
             <p>
-              앱이 답변 완료된 신고를 수집하면 바로, 또는 신고 지도 탭의 ‘지금 업로드’, 매일 0시에 자동으로 올립니다.
-              답변이 완료된 신고가 있는데도 이 화면이 보이면 앱에서 ‘지금 업로드’를 눌러 보세요.
+              앱이 답변 받은 신고를 수집하면 바로, 또는 신고 지도 탭의 ‘지금 업로드’, 매일 0시에 자동으로 올립니다.
+              답변 받은 신고가 있는데도 이 화면이 보이면 앱에서 ‘지금 업로드’를 눌러 보세요.
             </p>
             <div className="access-actions">
               <button className="primary-button" type="button" onClick={onRetry}>다시 확인</button>
@@ -79,7 +79,7 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
             <ol className="access-steps">
               <li>나만의 안전신문고 앱(PC·Docker 또는 모바일)에서 같은 카카오 계정으로 로그인합니다.</li>
               <li>[필수] 신고 결과 공유 동의를 읽고 동의합니다.</li>
-              <li>답변 완료된 신고가 열 건 이상 지도에 올라가면, 여기로 돌아와 ‘다시 확인’을 누릅니다.</li>
+              <li>답변 받은 신고가 열 건 이상 지도에 올라가면, 여기로 돌아와 ‘다시 확인’을 누릅니다.</li>
             </ol>
             <div className="access-actions">
               <button className="primary-button" type="button" onClick={onRetry}>다시 확인</button>
@@ -89,7 +89,6 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
         )}
 
         <p className="cm-muted access-foot">
-          이 로그인은 지도를 보기 위한 것이고 앱의 자동 업로드와는 따로 동작합니다. 여기서 로그아웃해도 앱의 업로드는 그대로입니다.
           문의는 <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">문의 게시판(GitHub Issues)</a>에 남겨 주세요(공개 게시판이니 개인정보는 적지 마세요).
         </p>
       </section>

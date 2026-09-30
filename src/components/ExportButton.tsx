@@ -31,9 +31,9 @@ export default function ExportButton({ source, capture, blocked, extra }: {
           엑셀 다운로드
         </button>
       )}
-      <small id={`export-hint-${source}`} className="cm-muted export-hint">
-        {blocked ?? (otherRunning ? '다른 엑셀 파일을 만드는 중입니다' : '통계표 · 편집 가능한 차트 · 조회 조건')}
-      </small>
+      {(blocked || otherRunning) && (
+        <small id={`export-hint-${source}`} className="cm-muted export-hint">{blocked ?? '다른 엑셀 파일을 만드는 중입니다'}</small>
+      )}
       <a className="link-btn export-license" href={`${import.meta.env.BASE_URL}licenses/excel-export-third-party.txt`} target="_blank" rel="noreferrer">오픈소스 고지</a>
       {extra}
       {st.status === 'running' && mine && (

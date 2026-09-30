@@ -93,7 +93,7 @@ const ACCESS_MESSAGES: Record<string, string> = {
   session_expired: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
   kakao_required: '카카오 계정으로 로그인해 주세요.',
   contributor_required: '지금은 신고내용 공유에 동의한 사람만 볼 수 있습니다.',
-  upload_required: '지도에 올라간 내 신고가 10건 이상이면 볼 수 있습니다. 앱에서 답변 완료 신고를 공유하면 볼 수 있습니다.',
+  upload_required: '지도에 올라간 내 신고가 10건 이상이면 볼 수 있습니다. 앱에서 답변 받은 신고를 공유하면 볼 수 있습니다.',
   origin_forbidden: '허용되지 않은 요청입니다.',
 };
 

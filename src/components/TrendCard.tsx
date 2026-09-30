@@ -135,8 +135,7 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
       <div className="panel-top">
         <div>
           <h2>{monthWord}별 처리결과 <PanelStatus busy={busy} label="월별 자료를 불러오는 중" /></h2>
-          <span className="subtitle">{view === 'count' ? `${monthWord}마다 그 달에 든 같은 신고의 건수입니다`
-            : `${monthWord} 기준 · 수용·일부수용·불수용은 결과가 나온 신고 중 비율, 과태료는 답변 완료 신고 중 비율`}</span>
+          {view === 'rate' && <span className="subtitle">수용·일부수용·불수용은 미분류를 뺀 답변 중, 과태료는 전체 답변 중 비율</span>}
         </div>
         <div className="card-tools">
           <div className="mini-segments" role="group" aria-label="월별 추이 보기">
@@ -180,9 +179,7 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
       {table && view === 'rate' && (
         <div className="trend-table">
           <table>
-            <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>
-              {rates.length === 0 ? '비교할 지표를 선택해 주세요.' : '비율 (해당 건수/기준 건수). 계산할 수 없는 달은 이유를 적었습니다. 0%는 실제로 0인 경우입니다.'}
-            </caption>
+            {rates.length === 0 && <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>비교할 지표를 선택해 주세요.</caption>}
             <thead><tr><th scope="col">월</th>{rates.flatMap((k) => [
               <th key={`${k}-all`} scope="col">{TREND_RATE_LABEL[k]} 전체</th>,
               ...(withMine ? [<th key={`${k}-mine`} scope="col">{TREND_RATE_LABEL[k]} 내 신고</th>] : []),
@@ -205,7 +202,6 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
       {table && view === 'count' && (
         <div className="trend-table">
           <table>
-            <caption className="cm-muted" style={{ captionSide: 'bottom', padding: 8, fontSize: 12 }}>자료가 없는 달은 ‘—’로 표시합니다. 비율은 그 달의 건수로 계산합니다.</caption>
             <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 확인</th><th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료</th><th scope="col">과태료 금액</th><th scope="col">평균 별점 · 건수</th><th scope="col">답변까지(중앙값)</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
             <tbody>
               {monthly.map((m) => (
@@ -230,9 +226,6 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
         </div>
       )}
       {exportCtx && <ExportButton source="trend" blocked={exportBlocked} capture={captureExport} />}
-      <p className="chart-caption">{view === 'rate'
-        ? '선마다 기준이 다릅니다. 수용·일부수용·불수용은 결과가 나온 신고, 과태료는 답변 완료 신고가 기준입니다. 과태료는 처리 결과와 겹치므로 네 선을 더해도 100%가 되지 않습니다. 답변이 없는 달은 선을 끊었습니다.'
-        : `${monthWord}로 모은 신고입니다. 이번 달(오늘 기준)은 아직 끝나지 않았고, 기간의 첫·마지막 달은 일부 날짜만 들어 있을 수 있습니다. 신고가 없는 달은 0, 자료가 없는 달은 비워 둡니다.`}</p>
     </article>
   );
 }

@@ -667,9 +667,9 @@ export default function Dashboard() {
   const conditionsText = (s: Scope | null) => (s ? scopeChips(s).map((c) => `${c.kind} ${c.label}`).join(' · ') : '');
   /** F06: 조회 조건 rows of a dashboard card file (the DISPLAYED scope, fixed dates) */
   const exportConditions = (s: Scope, address?: string) => [
-    { label: '날짜 기준', value: `${DATE_BASIS_LABEL[s.date_basis]} — 이 날짜가 기간 안인 신고만 모았습니다(다른 날짜는 기간 밖이어도 포함)` },
-    { label: '기간', value: `${s.start} — ${s.end} (시작일·종료일 포함)${partialNote(s)}` },
-    ...(version ? [{ label: '자료 버전', value: `${version} · 기준 규칙 single-date-v1` }] : []),
+    { label: '날짜 기준', value: DATE_BASIS_LABEL[s.date_basis] },
+    { label: '기간', value: `${s.start} — ${s.end}${partialNote(s)}` },
+    ...(version ? [{ label: '자료 버전', value: version }] : []),
     { label: '대상 범위', value: scopeChips(s).filter((c) => c.id !== 'bbox').map((c) => `${c.kind} ${c.label}`).join(' · ') || '전국 · 모든 분류' },
     ...(s.bbox ? [{ label: '지도 범위', value: `지도에서 고른 범위 (경도 ${s.bbox[0]}~${s.bbox[2]}, 위도 ${s.bbox[1]}~${s.bbox[3]})` }] : []),
     ...(address ? [{ label: '주소', value: address }] : []),
@@ -700,7 +700,7 @@ export default function Dashboard() {
   const stamp = data?.meta.data_max ? fmtDate(data.meta.data_max) : fmtDate(baseScope(dataMode).end);
   // D12: the latest data day of the basis is told apart from today (never "this month in progress" for old data)
   const today = data?.meta.today_kst ?? null;
-  const freshness = dataMax && today && dataMax < today && scope.end > dataMax ? ` · 최근 자료: ${fmtDate(dataMax)} (${DATE_BASIS_LABEL[scope.date_basis]} 기준, 그 뒤는 아직 없음)` : '';
+  const freshness = dataMax && today && dataMax < today && scope.end > dataMax ? ` · 최근 자료 ${fmtDate(dataMax)}` : '';
 
   // ── U02: the focus of the key-figure strip ─────────────────────────────────────────────────────────────
   const placeFocus = !!point && !point.aggregate;
@@ -935,7 +935,7 @@ export default function Dashboard() {
               </div>
               </div>
               {/* KP-04: the tables and charts below always describe the APPLIED scope (never the selected address) */}
-              <p className="scope-strip" role="note">아래 표와 그래프: {scopeLabel(shownScope)}{point && !point.aggregate ? ' · 선택한 주소가 아니라 적용한 조건 전체입니다' : ''}{freshness}</p>
+              <p className="scope-strip" role="note">아래 표와 그래프: {scopeLabel(shownScope)}{freshness}</p>
               {/* U05: 위반법규별 현황 (left) | 기관·담당자 처리 결과 (right), then 월별 추이 | 답변까지 걸린 기간 */}
               <section className="area-pair area-tables-top" aria-label="표로 보는 현황">
                 <LawTable laws={data.laws} activeLaw={scope.law} onPickLaw={pickLaw} scope={shownScope} version={version} serverList={entitiesLive} />
@@ -982,7 +982,6 @@ export default function Dashboard() {
 
           <footer className="page-footer">
             <span>나만의 안전신문고 <b>커뮤니티 신고 지도</b>{dataMode === 'demo' ? ' · 예시 데이터' : ''}</span>
-            <span>이용자가 공유한 신고만 모았습니다. 전체 신고를 대표하지는 않습니다.</span>
           </footer>
         </main>
       </div>

@@ -47,9 +47,9 @@ export const ENTITY_COLUMNS: Col[] = [
   // R6: every count is rendered the same way (unit in the header); a value of 1 gets no special badge
   { id: 'completed', label: '답변(건)', sort: { column: 'completed' }, num: true, defaultOn: true,
     cell: (e) => fmtInt(e.completed_count) },
-  { id: 'acceptRate', label: '수용률', sort: { column: 'accepted', values: ['rate'] }, num: true, defaultOn: true, title: '수용 ÷ 결과가 나온 신고',
+  { id: 'acceptRate', label: '수용률', sort: { column: 'accepted', values: ['rate'] }, num: true, defaultOn: true, title: '수용 ÷ (수용+일부수용+불수용)',
     cell: (e) => fmtPercent(acceptRate(e.outcomes)) },
-  { id: 'rejectRate', label: '불수용률', sort: { column: 'rejected', values: ['rate'] }, num: true, defaultOn: true, title: '불수용 ÷ 결과가 나온 신고',
+  { id: 'rejectRate', label: '불수용률', sort: { column: 'rejected', values: ['rate'] }, num: true, defaultOn: true, title: '불수용 ÷ (수용+일부수용+불수용)',
     cell: (e) => share(e.outcomes.rejected, e.outcomes.result_known) },
   // SO-10: an unreported count is '—' with no rate (never 0 / 0%)
   { id: 'fine', label: '과태료', sort: { column: 'fine' }, num: true, defaultOn: true, title: '건수와 비율(과태료 ÷ 답변)',
@@ -62,13 +62,13 @@ export const ENTITY_COLUMNS: Col[] = [
     cell: (e) => <>{fmtInt(e.outcomes.partial)}<small>{share(e.outcomes.partial, e.outcomes.result_known)}</small></> },
   { id: 'rejected', label: '불수용', sort: { column: 'rejected' }, num: true, defaultOn: false,
     cell: (e) => <>{fmtInt(e.outcomes.rejected)}<small>{share(e.outcomes.rejected, e.outcomes.result_known)}</small></> },
-  { id: 'known', label: '결과 확인', num: true, defaultOn: false, title: '결과가 나온 신고(비율을 계산하는 기준)',
+  { id: 'known', label: '분류된 답변', num: true, defaultOn: false, title: '(수용+일부수용+불수용) · 비율 기준',
     cell: (e) => fmtInt(e.outcomes.result_known) },
   { id: 'warning', label: '계도', sort: { column: 'warning' }, num: true, defaultOn: false, title: '경고·계도 처분 건수와 비율(÷ 답변)',
     cell: (e) => <>{e.warning_count == null ? '—' : fmtInt(e.warning_count)}<small>{share(e.warning_count, e.completed_count)}</small></> },
   { id: 'amount', label: '과태료 금액', sort: { column: 'amount' }, num: true, defaultOn: false, title: '답변에 적힌 과태료 금액 합계(확인된 것만)',
     cell: (e) => (e.fine_amount && e.fine_amount.confirmed_count > 0 ? fmtWon(e.fine_amount.sum_won) : '—') },
-  { id: 'rating', label: '평균 별점', sort: { column: 'rating' }, num: true, defaultOn: false, title: '공개에 동의한 숫자 별점만 (평균 점수 · 평가 건수)',
+  { id: 'rating', label: '평균 별점', sort: { column: 'rating' }, num: true, defaultOn: false, title: '평균 점수 · 평가 건수',
     cell: (e) => <>{fmtRating(e.rating)}<small>{e.rating ? `${fmtInt(e.rating.count)}건` : ''}</small></> },
   { id: 'bar', label: '결과 비율', num: false, defaultOn: false,
     cell: (e) => {
@@ -181,7 +181,6 @@ export default function EntityTable(p: Props) {
       <div className="panel-top">
         <div>
           <h2>기관·담당자 처리 결과</h2>
-          <span className="subtitle">공유된 신고의 처리 결과입니다. 기관이나 담당자를 평가하는 표가 아닙니다.</span>
         </div>
         {p.serverList && (
           <button className="ghost-btn" type="button" aria-expanded={expanded} onClick={() => { setExpanded((v) => !v); setQuery((q) => ({ ...q, page: 1 })); }}>
@@ -226,7 +225,7 @@ export default function EntityTable(p: Props) {
       </div>
       {error && (
         <div className="banner error" role="alert">
-          <span className="grow">기관·담당자 목록을 불러오지 못했습니다. 지도와 다른 통계는 그대로입니다.</span>
+          <span className="grow">기관·담당자 목록을 불러오지 못했습니다.</span>
           <button className="ghost-btn" type="button" onClick={() => setReload((n) => n + 1)}>다시 시도</button>
         </div>
       )}
@@ -271,7 +270,6 @@ export default function EntityTable(p: Props) {
         </table>
       </div>
       <div className="table-footer">
-        <span>이름이 같아도 소속 기관이 다르면 따로 보여 드립니다. 순위나 우수 표시는 하지 않습니다.</span>
         {needServer && (
           <span className="table-pager">
             <span className="cm-muted" aria-live="polite">{query.page} / {pages}쪽{loading ? ' · 불러오는 중…' : ''}</span>

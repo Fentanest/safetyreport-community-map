@@ -122,7 +122,7 @@ export function chartAvailability(spec: StatisticsSpec, catalog: StatCatalog | n
   const group = sameDisjointGroup(spec.metrics);
   const notCounts = spec.metrics.filter((m) => !DISJOINT.has(m));
   const mixesOutcomeAndDisposition = notCounts.length === 0 && spec.metrics.some((m) => C_PARTITION.includes(m)) && spec.metrics.some((m) => !C_PARTITION.includes(m));
-  const countsOnly = '수용·일부 수용·불수용·결과 미상·과태료·계도·범칙금 건수처럼 서로 겹치지 않는 건수만 고르세요.';
+  const countsOnly = '수용·일부 수용·불수용·미분류·과태료·계도·범칙금 건수처럼 서로 겹치지 않는 건수만 고르세요.';
   const onlyOneDim = (label: string) => (n === 0 ? no(counted, needOne)
     : no(counted, `${label}는 분류 기준 1개에서 쓸 수 있습니다. 행·열 항목을 1개로 줄이면 볼 수 있습니다.`));
 
@@ -136,14 +136,14 @@ export function chartAvailability(spec: StatisticsSpec, catalog: StatCatalog | n
   const stack = n !== 1 ? onlyOneDim('누적 막대')
     : group ? OK
       : notCounts.length ? no(`${topic(joinKo(notCounts.map(metricLabel)))} 건수가 아니라 쌓을 수 없습니다.`, countsOnly)
-        : mixesOutcomeAndDisposition ? no('처리 결과 건수와 처분 건수는 같은 신고를 두 번 세므로 함께 쌓지 않습니다.', '처리 결과(수용·일부 수용·불수용·결과 미상)나 처분(과태료·계도·범칙금) 중 한쪽만 고르세요.')
+        : mixesOutcomeAndDisposition ? no('처리 결과 건수와 처분 건수는 같은 신고를 두 번 세므로 함께 쌓지 않습니다.', '처리 결과(수용·일부 수용·불수용·미분류)나 처분(과태료·계도·범칙금) 중 한쪽만 고르세요.')
           : no('선택한 건수가 서로 겹칩니다.', countsOnly);
   const stack100 = n !== 1 ? onlyOneDim('100% 누적')
     : group === 'K' || group === 'C' ? OK
       : notCounts.length ? no(`${topic(joinKo(notCounts.map(metricLabel)))} 비율·통계 지표라 100% 누적에 쓸 수 없습니다.`,
-        '수용·일부 수용·불수용 건수(결과 미상까지 넣으면 답변 전체)처럼 합하면 하나의 전체가 되는 건수를 함께 고르세요.')
+        '수용·일부 수용·불수용 건수(미분류까지 넣으면 답변 전체)처럼 합하면 하나의 전체가 되는 건수를 함께 고르세요.')
         : no(`${joinKo(spec.metrics.map(metricLabel))}${spec.metrics.length > 1 ? ' 건수를 합해도' : '만으로는'} 하나의 전체가 되지 않습니다.`,
-          '수용·일부 수용·불수용 건수(결과 미상까지 넣으면 답변 전체)를 함께 고르세요.');
+          '수용·일부 수용·불수용 건수(미분류까지 넣으면 답변 전체)를 함께 고르세요.');
   const scatter = spec.population === 'compare'
     ? no('전체와 내 신고를 비교하는 중에는 산점도를 쓸 수 없습니다.', '보기 대상을 전체 또는 내 신고 하나로 바꾸면 쓸 수 있습니다.')
     : n !== 1 ? onlyOneDim('산점도')
@@ -178,7 +178,7 @@ export function planChart(spec: StatisticsSpec, catalog: StatCatalog | null, set
   const overlay = settings.overlay && sameUnit.length > 1 && dims.length === 1 && (type === 'line' || type === 'bar' || type === 'hbar');
   const metrics = type === 'stack' || type === 'stack100' ? spec.metrics : type === 'scatter' ? spec.metrics.slice(0, 2) : overlay ? sameUnit : [primary];
   const note = hasDate && spec.columns.length && !spec.columns.some(isDate) && type === 'line'
-    ? '날짜를 가로축에 두고 나머지 항목을 선으로 그렸습니다. 표의 행·열은 그대로입니다.'
+    ? '날짜를 가로축에 두고 나머지 항목을 선으로 그렸습니다.'
     : type === 'heatmap' && dims.length >= 3 ? `히트맵에는 앞의 두 기준(${joinKo(dims.slice(0, 2).map((d) => catalog?.dimensions.find((x) => x.id === d)?.label ?? d))})만 그립니다. 전체는 표에서 보세요.` : null;
   return { type, metrics, refusal, compatible, availability, note };
 }

@@ -42,7 +42,7 @@ function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: 
   onPick: Props['onPickEntity']; activeAgency: string | null; activeManager: string | null }) {
   const [shown, setShown] = useState(LIST_STEP);
   const same = sameNameIndex(rows);
-  if (rows.length === 0) return <p className="cm-muted place-empty">이 주소의 답변 완료 신고에 {kind === 'agency' ? '기관' : '담당자'} 정보가 없습니다.</p>;
+  if (rows.length === 0) return <p className="cm-muted place-empty">이 주소의 답변에 {kind === 'agency' ? '기관' : '담당자'} 정보가 없습니다.</p>;
   return (
     <>
       <ul className="place-entities">
@@ -113,7 +113,7 @@ export default function PlaceDetailsPanel(p: Props) {
       )}
 
       <section className="place-section" aria-label="처리 결과">
-        <h3>처리 결과 <small>답변 {fmtInt(pt.completed_count)}건 중 결과가 나온 {fmtInt(known)}건</small></h3>
+        <h3>처리 결과 <small>답변 {fmtInt(pt.completed_count)}건</small></h3>
         {known > 0 ? (
           <>
             <div className="stack" role="img" aria-label={rows.map((r) => `${r.label} ${r.v}건`).join(', ')}>
@@ -123,10 +123,10 @@ export default function PlaceDetailsPanel(p: Props) {
               {rows.map((r) => (
                 <span key={r.label}><i className="dot" style={{ background: r.color }} />{r.label} <b className="cm-number">{fmtInt(r.v)}</b> <small>{fmtPercent(pct(r.v, known))}</small></span>
               ))}
-              <span><i className="dot" style={{ background: 'var(--unknown)' }} />결과 미상 <b className="cm-number">{fmtInt(o?.result_unknown ?? 0)}</b> <small>비율에서 제외</small></span>
+              <span title="안전신문고 처리 상태가 ‘답변완료’·‘기타’라 수용 여부가 없는 답변"><i className="dot" style={{ background: 'var(--unknown)' }} />미분류 <b className="cm-number">{fmtInt(o?.result_unknown ?? 0)}</b></span>
             </div>
           </>
-        ) : <p className="cm-muted place-empty">이 주소에는 결과가 나온 답변이 아직 없습니다.</p>}
+        ) : <p className="cm-muted place-empty">이 주소에는 수용 여부가 분류된 답변이 아직 없습니다.</p>}
       </section>
 
       {pt.aggregate ? (
@@ -145,21 +145,17 @@ export default function PlaceDetailsPanel(p: Props) {
       ) : (
         <>
           <section className="place-section" aria-label="처리 기관">
-            <h3>처리 기관 <small>{fmtInt(p.detail.detail.agency_total)}곳 · 이 주소 신고만</small></h3>
+            <h3>처리 기관 <small>{fmtInt(p.detail.detail.agency_total)}곳</small></h3>
             <EntityList kind="agency" rows={p.detail.detail.agencies} total={p.detail.detail.agency_total} onPick={p.onPickEntity}
               activeAgency={p.activeAgency ?? null} activeManager={p.activeManager ?? null} />
           </section>
           <section className="place-section" aria-label="담당자">
-            <h3>담당자 <small>{fmtInt(p.detail.detail.manager_total)}명 · 소속 기관과 함께</small></h3>
+            <h3>담당자 <small>{fmtInt(p.detail.detail.manager_total)}명</small></h3>
             <EntityList kind="manager" rows={p.detail.detail.managers} total={p.detail.detail.manager_total} onPick={p.onPickEntity}
               activeAgency={p.activeAgency ?? null} activeManager={p.activeManager ?? null} />
           </section>
         </>
       )}
-      <p className="place-note">
-        이 주소의 모든 수치(위 ‘주요 통계’ 포함)는 적용한 날짜 기준 하나로 고른 같은 신고 묶음에서 셉니다. 같은 주소의 신고를 하나로 묶었고, 지도 위치는 표시용 대표 위치입니다.
-        이름·기관은 처리 결과 비교용이며 평가가 아닙니다.
-      </p>
     </aside>
   );
 }

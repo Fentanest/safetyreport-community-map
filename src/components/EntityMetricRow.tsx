@@ -21,8 +21,8 @@ export default function EntityMetricRow({ kind, e, label, same = null, active, o
       </div>
       <div className="pe-metrics">
         <div className="pe-box"><span className="pe-label">답변</span><b className="pe-num cm-number">{fmtInt(m.C)}건</b></div>
-        <div className="pe-box pe-triple" title={`결과 확인 ${m.K}건 기준 · 결과 미상 ${m.U}건 제외`}>
-          <span className="pe-label">처리 결과 <small>(결과 확인 {fmtInt(m.K)}건)</small></span>
+        <div className="pe-box pe-triple">
+          <span className="pe-label">처리 결과 <small>(미분류 제외 {fmtInt(m.K)}건)</small></span>
           <div className="pe-cells">
             <span><em>수용</em><b className="pe-num cm-number">{fmtPercent(m.accept)}</b></span>
             <span><em>일부수용</em><b className="pe-num cm-number">{fmtPercent(m.partial)}</b></span>

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import type { Category, DateBasis } from '../domain/public';
 import { LAW_NONE } from '../domain/public';
 import {
-  CATEGORY_LABEL, DATE_BASIS_LABEL, LAW_UNKNOWN_LABEL, PRESETS, presetRange, regionLabel, todayKst,
+  CATEGORY_LABEL, DATE_BASIS_LABEL, LAW_UNKNOWN_LABEL, PRESETS, presetRange, todayKst,
   type DraftFilters,
 } from '../state/filters';
 import { fmtDate } from './format';
@@ -52,7 +52,7 @@ export default function CommandBar(p: Props) {
   const today = todayKst();
   return (
     <section className="cm-panel command" aria-label="조건">
-      <label className="basis-select" title="이 날짜 하나로 신고를 고릅니다. 다른 날짜가 기간 밖이어도 그 신고는 포함됩니다.">
+      <label className="basis-select">
         <span className="sr-only">날짜 기준</span>
         <select value={p.basis} aria-label="날짜 기준" onChange={(e) => p.onBasis(e.target.value as DateBasis)}>
           {(['completed_date', 'report_date'] as const).map((b) => <option key={b} value={b}>{DATE_BASIS_LABEL[b]}</option>)}
@@ -78,7 +78,6 @@ export default function CommandBar(p: Props) {
             className={p.category === c ? 'selected' : ''}
             aria-pressed={p.category === c}
             aria-label={c === 'all' ? '전체 분류' : undefined}
-            title={c === 'all' ? '전체 분류 (기간은 그대로)' : undefined}
             onClick={() => p.onCategory(c)}
           >
             {CATEGORY_LABEL[c]}
@@ -128,7 +127,7 @@ export default function CommandBar(p: Props) {
                   className={active ? 'selected' : undefined}
                   aria-pressed={active}
                   disabled={!r}
-                  title={pr.days == null ? (r ? `${DATE_BASIS_LABEL[p.basis]} 기준 공유된 전체 자료 ${fmtDate(r.start)} — ${fmtDate(r.end)} (바로 적용)` : '자료 범위를 불러오는 중입니다') : `오늘(${fmtDate(today)})까지 · 바로 적용`}
+                  title={pr.days == null ? (r ? `${fmtDate(r.start)} — ${fmtDate(r.end)}` : '자료 범위를 불러오는 중입니다') : `오늘(${fmtDate(today)})까지`}
                   onClick={() => { if (r) { p.onPreset(r); setOpen(false); } }}
                 >
                   {pr.label}
@@ -158,9 +157,7 @@ export default function CommandBar(p: Props) {
           </button>
           {p.dateError && <span className="field-error" role="alert">{p.dateError}</span>}
           <span className="basis-note">
-            {DATE_BASIS_LABEL[p.basis]}이 이 기간 안인 신고를 모아 모든 수치를 셉니다(다른 날짜는 기간 밖이어도 포함). 직접 고른 날짜는 ‘적용’을 눌러야 바뀌고, 빠른 기간은 바로 적용됩니다.
-            {p.minDate && p.maxDate ? ` ${DATE_BASIS_LABEL[p.basis]} 기준 공유된 자료: ${fmtDate(p.minDate)} — ${fmtDate(p.maxDate)}.` : ''}
-            선택: {regionLabel(p.draft.region_code)}
+            {p.minDate && p.maxDate ? `자료 범위 ${fmtDate(p.minDate)} — ${fmtDate(p.maxDate)}` : ''}
           </span>
         </div>
       )}

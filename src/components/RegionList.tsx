@@ -75,7 +75,7 @@ export default function RegionList(p: Props) {
         {r.region_code !== null && (
           <button type="button" className="region-star" aria-pressed={isInterest}
             aria-label={isInterest ? `${name} 관심 지역 해제` : `${name} 관심 지역으로 표시`}
-            title={isInterest ? '관심 지역에서 빼기' : '관심 지역으로 표시 (이 기기에만 저장)'}
+            title={isInterest ? '관심 지역에서 빼기' : '관심 지역으로 표시'}
             onClick={() => p.onToggleInterest(r.region_code!)}>
             {isInterest ? '★' : '☆'}
           </button>
@@ -126,7 +126,6 @@ export default function RegionList(p: Props) {
               </button>
             </div>
           ) : null}
-          <p className="chart-caption">★ 관심 지역은 이 기기에만 저장됩니다. 지역은 2026년 7월 1일 행정구역 기준이며, 주소로 지역을 알 수 없는 신고는 ‘지역 미확인’으로 따로 셉니다.</p>
         </>
       )}
     </section>

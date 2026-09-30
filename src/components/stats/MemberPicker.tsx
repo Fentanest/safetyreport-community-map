@@ -143,7 +143,7 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
               <PanelStatus busy={state === 'loading'} label="검색 중" />
             </div>
             <label className="picker-only"><input type="checkbox" checked={onlySelected} onChange={(e) => setOnlySelected(e.target.checked)} />선택한 항목만 보기</label>
-            {state === 'error' && <p role="alert" className="place-empty">목록을 불러오지 못했습니다. 이미 고른 항목은 그대로 있습니다.</p>}
+            {state === 'error' && <p role="alert" className="place-empty">목록을 불러오지 못했습니다.</p>}
             <ul className="picker-list">
               {shown.map((c) => (
                 <li key={c.key}>
@@ -166,7 +166,7 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
           </section>
           <section className="picker-selected" aria-label="선택한 항목">
             <h3>선택한 {kindLabel} {draft.length}개 <small className="cm-muted">(같은 종류끼리는 하나라도 해당하면, 다른 종류끼리는 모두 해당해야 포함됩니다)</small></h3>
-            {draft.length === 0 && <p className="cm-muted">고르지 않으면 전체가 대상입니다. 2~10개 정도가 보기 좋고, 1개만 골라도 됩니다.</p>}
+            {draft.length === 0 && <p className="cm-muted">고르지 않으면 전체가 대상입니다.</p>}
             <ol className="picker-chosen">
               {draft.map((d, i) => (
                 <li key={d.key}>

@@ -22,7 +22,7 @@ export default function ManagerCompare({ personal, onPick }: Props) {
       <div className="panel-top">
         <div>
           <h2>내 신고를 처리한 담당자·기관</h2>
-          <span className="subtitle">같은 담당자의 전체 결과와 내 결과를 나란히 봅니다. 평가가 아닙니다.</span>
+          <span className="subtitle">같은 담당자의 전체 결과와 내 결과를 나란히 봅니다</span>
         </div>
         <div className="mini-segments" role="group" aria-label="담당자 또는 기관">
           <button type="button" className={tab === 'manager' ? 'selected' : ''} aria-pressed={tab === 'manager'} onClick={() => { setTab('manager'); setExpanded(false); }}>담당자</button>

@@ -83,9 +83,7 @@ export function DurationCard({ all, mine, theme }: { all: DurationDistribution |
         {!mine && <Seg label="값" value={mode} onChange={setMode} options={[['count', '건수'], ['share', '비중']]} />}
         <TableToggle table={table} onToggle={() => setTable((v) => !v)} />
       </>}
-      caption={all && <>유효 {fmtInt(all.valid_count)}건 · 중앙값 {fmtDays(all.median_days)} · 평균 {fmtDays(all.mean_days)} · 90%는 {fmtDays(all.p90_days)} 이내.
-        {' '}제외: 신고일 없음 {fmtInt(all.excluded.no_report_date)}건, 답변일이 신고일보다 빠름 {fmtInt(all.excluded.reversed)}건.
-        {mine && ` 내 신고는 내 유효 ${fmtInt(mine.valid_count)}건 중 비중입니다.`} 진행 중인 신고의 완료 예측이 아닙니다.</>}>
+      caption={all && <>중앙값 {fmtDays(all.median_days)} · 평균 {fmtDays(all.mean_days)} · 90%는 {fmtDays(all.p90_days)} 이내</>}>
       {!all ? <Unsupported what="기간 분포" /> : all.valid_count === 0 ? <div className="empty-state">기간을 계산할 수 있는 답변이 없습니다.</div> : null}
       <div ref={hostRef} className="chart-host" hidden={table || !all || all.valid_count === 0 || !!error} role="img"
         aria-label={all ? `기간 구간별 건수 ${all.buckets.map((b) => `${b.label} ${b.count}건`).join(', ')}` : '자료 없음'} />
@@ -157,15 +155,14 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
   });
   return (
     <Card label="기관별 위반법규 처리결과" title={data?.row_kind === 'manager' ? '담당자 × 위반법규 처리결과' : '기관 × 위반법규 처리결과'}
-      subtitle="같은 신고를 기관과 법규로 동시에 센 실제 교차 집계 · 칸을 누르면 그 조합만 봅니다"
+      subtitle="칸을 누르면 그 조합만 봅니다"
       tools={<>
         <Seg label="지표" value={metric} onChange={setMetric} options={[['accept', '수용률'], ['reject', '불수용률'], ['fine', '과태료']]} />
         <TableToggle table={table} onToggle={() => setTable((v) => !v)} />
       </>}
       caption={data && <>
         {data.row_kind === 'manager' ? '담당자' : '기관'} {fmtInt(data.total_rows)}개 중 {fmtInt(rows.length)}개 · 법규 {fmtInt(data.total_laws)}개 중 {fmtInt(laws.length)}개(답변 많은 순)
-        {data.total_rows > data.rows.length || data.total_laws > data.laws.length ? ` · 많은 순으로 ${fmtInt(data.rows.length)}×${fmtInt(data.laws.length)}까지만 보여 줍니다` : ''}.
-        {' '}빈 칸은 그 조합의 신고가 없다는 뜻이고, ‘–’는 결과가 나온 신고가 없어 비율을 계산할 수 없다는 뜻입니다.{' '}
+        {' '}· ‘–’는 분류된 답변이 없는 칸{' '}
         {(data.rows.length > 8 || data.laws.length > laws.length) && (
           <button type="button" className="link-btn" onClick={() => setExpanded((v) => !v)}>{expanded ? '줄여 보기' : '더 넓게 보기'}</button>
         )}
@@ -200,8 +197,6 @@ export function ScatterCard({ data, theme, mineKeys, onPick }: { data: EntitySca
   const total = data ? (kind === 'agency' ? data.agency_total : data.manager_total) : 0;
   const yOf = (e: ScatterEntity) => (y === 'fine' ? pct(e.fine_count, e.completed_count) : pct(e.outcomes.accepted, e.outcomes.result_known));
   const drawable = list.filter((e) => e.median_days !== null && yOf(e) !== null);
-  const noX = list.filter((e) => e.median_days === null).length;
-  const noY = list.filter((e) => e.median_days !== null && yOf(e) === null).length;
   const name = (e: ScatterEntity) => (kind === 'manager' ? `${e.manager_name ?? '이름 없음'} · ${e.agency_name}` : e.agency_name);
   const mine = mineKeys ? (kind === 'agency' ? mineKeys.agency : mineKeys.manager) : null;
   const maxN = Math.max(1, ...drawable.map((e) => e.completed_count));
@@ -230,9 +225,8 @@ export function ScatterCard({ data, theme, mineKeys, onPick }: { data: EntitySca
         <Seg label="세로축" value={y} onChange={setY} options={[['fine', '과태료'], ['accept', '수용률']]} />
         <TableToggle table={table} onToggle={() => setTable((v) => !v)} />
       </>}
-      caption={data && <>{kind === 'agency' ? '기관' : '담당자'} {fmtInt(total)}개{list.length < total ? ` 중 답변 많은 ${fmtInt(list.length)}개` : ''} · 그래프 {fmtInt(drawable.length)}개.
-        {noX > 0 && ` 기간을 계산할 수 없는 ${fmtInt(noX)}개는 0일에 두지 않고 뺐습니다.`}{noY > 0 && ` 결과가 없어 비율을 계산할 수 없는 ${fmtInt(noY)}개도 뺐습니다.`}
-        {mine && ' 테두리가 있는 점은 내 신고가 있는 곳입니다.'} 표본 1건도 그대로 표시하며, 순위·평가가 아닙니다.</>}>
+      caption={data && (list.length < total || mine) ? <>{list.length < total && `${kind === 'agency' ? '기관' : '담당자'} ${fmtInt(total)}개 중 답변 많은 ${fmtInt(list.length)}개. `}
+        {mine && '테두리가 있는 점은 내 신고가 있는 곳입니다.'}</> : null}>
       {!data ? <Unsupported what="처리기간 산점도" /> : drawable.length === 0 ? <div className="empty-state">그릴 수 있는 {kind === 'agency' ? '기관' : '담당자'}가 없습니다.</div> : null}
       <div ref={hostRef} className="chart-host" hidden={table || drawable.length === 0 || !!error} role="img" aria-label="기관별 처리기간 중앙값과 처리결과 비율 산점도. 표로 보기에서 값을 읽을 수 있습니다." />
       {error && !table && <div className="empty-state" role="alert">{error}</div>}
@@ -264,8 +258,7 @@ export function VehicleDaysCard({ data, theme }: { data: VehicleDayDistribution 
   return (
     <Card label="차량별 반복 신고일 분포" title="차량별 반복 신고일 분포" subtitle="같은 차량이 신고된 서로 다른 날짜 수 · 같은 날 여러 건은 하루로 셉니다"
       tools={<TableToggle table={table} onToggle={() => setTable((v) => !v)} />}
-      caption={data && <>2일 이상 신고된 차량 {fmtInt(data.repeat_vehicle_count)}대 ({fmtPercent(data.repeat_share)}) · 번호를 알 수 있는 차량 {fmtInt(data.vehicle_count)}대.
-        {' '}번호를 알 수 없는 답변 {fmtInt(data.excluded.no_plate)}건, 신고일이 없는 답변 {fmtInt(data.excluded.no_report_date)}건은 뺐습니다. 신고가 곧 위반 확정은 아니며 재범률이 아닙니다.</>}>
+      caption={data && <>2일 이상 신고된 차량 {fmtInt(data.repeat_vehicle_count)}대 ({fmtPercent(data.repeat_share)}). 신고가 곧 위반 확정은 아니며 재범률이 아닙니다.</>}>
       {!data ? <Unsupported what="차량 신고일 분포" /> : data.vehicle_count === 0 ? <div className="empty-state">번호를 알 수 있는 차량 답변이 없습니다.</div> : null}
       <div ref={hostRef} className="chart-host" hidden={table || !data || data.vehicle_count === 0 || !!error} role="img"
         aria-label={data ? `차량 수 ${data.buckets.map((b) => `${b.label} ${b.vehicle_count}대`).join(', ')}` : '자료 없음'} />
@@ -284,7 +277,7 @@ export function VehicleDaysCard({ data, theme }: { data: VehicleDayDistribution 
 /** Row order and labels. 'fine' (과태료 처분) is a separate, overlapping cut — never summed with outcome rows. */
 export const RATING_KEYS: ReadonlyArray<RatingRow['status']> = ['all', 'accepted', 'partial', 'rejected', 'fine', 'unknown'];
 export const RATING_LABEL: Record<RatingRow['status'], string> = {
-  all: '전체', accepted: '수용', partial: '일부 수용', rejected: '불수용', fine: '과태료 처분', unknown: '결과 미상',
+  all: '전체', accepted: '수용', partial: '일부 수용', rejected: '불수용', fine: '과태료 처분', unknown: '미분류',
 };
 export type MineRatingState = 'off' | 'loading' | 'error' | 'signed_out' | 'ready';
 export interface RatingLine {
@@ -347,11 +340,10 @@ export function RatingCard({ all, mine, mineState, theme }: { all: RatingDistrib
     };
   }, [all, mine, mineState], theme);
   return (
-    <Card label="처리결과별 별점 분포" title="처리결과별 별점 분포" subtitle="공개에 동의한 숫자 별점(1~5점)만 · 행마다 그 행의 평가 건수가 100%"
+    <Card label="처리결과별 별점 분포" title="처리결과별 별점 분포" subtitle="행마다 그 행의 평가 건수가 100%"
       tools={<TableToggle table={table} onToggle={() => setTable((v) => !v)} />}
       caption={all && <>
         <span className="rating-legend">{[1, 2, 3, 4, 5].map((s) => <span key={s}><i className="dot" style={{ background: METRIC_RAMP[s - 1] }} />{s}점</span>)}</span>
-        {' '}평가하지 않았거나 공개하지 않은 {fmtInt(all.unrated)}건은 0점으로 넣지 않고 뺐습니다. ‘과태료 처분’은 처분이 과태료인 신고로, 수용·일부 수용 등과 겹칠 수 있어 다른 행과 더하지 않습니다.
         {mineState === 'ready' && !mine && ' 내 신고 별점 분포는 아직 제공하지 않습니다.'}</>}>
       {!all ? <Unsupported what="별점 분포" /> : allTotal === 0 ? <div className="empty-state">공개된 별점이 아직 없습니다.</div> : null}
       <div ref={hostRef} className="chart-host" style={{ height: Math.max(200, lines.length * 38 + 40) }} hidden={table || !all || allTotal === 0 || !!error} role="img"

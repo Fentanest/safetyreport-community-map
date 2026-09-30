@@ -216,6 +216,6 @@ describe('law text rendering', () => {
     expect(table).toContain('aria-pressed="true"');
     expect(table).toContain('보는 중');
     expect(renderToStaticMarkup(<LawTable laws={null} activeLaw={null} onPickLaw={() => {}} />)).toContain('아직 준비되지 않았습니다');
-    expect(renderToStaticMarkup(<LawTable laws={[]} activeLaw={null} onPickLaw={() => {}} />)).toContain('답변 완료 신고가 없습니다');
+    expect(renderToStaticMarkup(<LawTable laws={[]} activeLaw={null} onPickLaw={() => {}} />)).toContain('맞는 답변이 없습니다');
   });
 });
