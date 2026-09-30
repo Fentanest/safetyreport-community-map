@@ -36,3 +36,8 @@
 - 지시서: docs/implementation/dashboard-redesign/IMPLEMENTATION_PROMPT.md, 결과: REPORT.md, 증거: evidence/.
 - 변경 전 재현(repro-before.json) → 서버 주소 장소·분석 6종 → 클라이언트 갱신 컨트롤러 → UI 재배치 → 로컬 live 스택 브라우저 검수.
 - 운영 적용(Pages → Edge 순) 미실행. Muse(OpenCode) 교차 검수 미실행(MODEL_UNVERIFIED).
+
+## 2026-09-30 담당자별 처리 현황: 동명이인·다수 담당자 탐색 (Claude, 브랜치 `claude/dazzling-babbage-wdtbxv`)
+- 결과: docs/implementation/manager-chart-2026-09-30/REPORT.md, 증거: 같은 폴더 evidence/(로컬 e2e 스택, MOCK SDK, 합성 118명, 22/22 PASS).
+- 서버 `same_name` 메타(전체 목록 기준), `src/domain/managerNames.ts` 공용 규칙, 차트 1–8 / N 탐색(dataZoom 단일 상태), 나머지 불러오기.
+- main 병합·운영 DB·배포 미실행. Muse 교차 검수 미실행.
