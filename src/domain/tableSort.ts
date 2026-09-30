@@ -25,32 +25,43 @@ export interface SortableRow {
 
 export interface SortColumnDef {
   label: string;
+  /** every value the server accepts for this column (shared links, other callers) */
   values: SortValue[];
+  /** the values the table offers in its menu = the values its cell actually shows (never a hidden number) */
+  shown: SortValue[];
   /** menu text per value (desc, asc) */
   words: Partial<Record<SortValue, { name: string; desc: string; asc: string }>>;
 }
 
+// Menu words say the direction themselves (많은/적은, 높은/낮은 …): no arrow is shown or read next to them.
 const countWords = { name: '건수', desc: '건수 많은 순', asc: '건수 적은 순' };
 const rateWords = { name: '비율', desc: '비율 높은 순', asc: '비율 낮은 순' };
 
 export const SORT_COLUMNS: Record<string, SortColumnDef> = {
-  completed: { label: '답변', values: ['count'], words: { count: countWords } },
-  accepted: { label: '수용', values: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
-  partial: { label: '일부 수용', values: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
-  rejected: { label: '불수용', values: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
-  fine: { label: '과태료', values: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
-  warning: { label: '계도', values: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
-  penalty: { label: '범칙금', values: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
-  duration: { label: '처리기간', values: ['median', 'count'], words: {
-    median: { name: '중앙값', desc: '오래 걸린 순', asc: '빨리 끝난 순' },
+  completed: { label: '답변', values: ['count'], shown: ['count'], words: { count: countWords } },
+  accepted: { label: '수용', values: ['count', 'rate'], shown: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
+  partial: { label: '일부 수용', values: ['count', 'rate'], shown: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
+  rejected: { label: '불수용', values: ['count', 'rate'], shown: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
+  fine: { label: '과태료', values: ['count', 'rate'], shown: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
+  warning: { label: '계도', values: ['count', 'rate'], shown: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
+  penalty: { label: '범칙금', values: ['count', 'rate'], shown: ['count', 'rate'], words: { count: countWords, rate: rateWords } },
+  // the cells show the median only / the confirmed sum only: the count keys stay valid for the server, not offered here
+  duration: { label: '처리기간', values: ['median', 'count'], shown: ['median'], words: {
+    median: { name: '기간', desc: '기간 긴 순', asc: '기간 짧은 순' },
     count: { name: '계산 건수', desc: '계산 건수 많은 순', asc: '계산 건수 적은 순' } } },
-  amount: { label: '확인 금액', values: ['sum', 'count'], words: {
-    sum: { name: '합계', desc: '합계 큰 순', asc: '합계 작은 순' },
+  amount: { label: '확인 금액', values: ['sum', 'count'], shown: ['sum'], words: {
+    sum: { name: '금액', desc: '금액 많은 순', asc: '금액 적은 순' },
     count: { name: '확인 건수', desc: '확인 건수 많은 순', asc: '확인 건수 적은 순' } } },
-  rating: { label: '평균 별점', values: ['mean', 'count'], words: {
-    mean: { name: '평균 점수', desc: '점수 높은 순', asc: '점수 낮은 순' },
-    count: { name: '평가 건수', desc: '평가 건수 많은 순', asc: '평가 건수 적은 순' } } },
+  rating: { label: '평균 별점', values: ['mean', 'count'], shown: ['mean', 'count'], words: {
+    mean: { name: '별점', desc: '별점 높은 순', asc: '별점 낮은 순' },
+    count: { name: '평가 수', desc: '평가 많은 순', asc: '평가 적은 순' } } },
 };
+
+/** '건수 많은 순' — the words of one sort (what the menu item and the header say) */
+export function sortWords(spec: SortSpec): string {
+  const w = SORT_COLUMNS[spec.column]?.words[spec.value];
+  return w ? (spec.dir === 'desc' ? w.desc : w.asc) : '';
+}
 
 export interface SortSpec { column: string; value: SortValue; dir: SortDir }
 export const DEFAULT_SORT: SortSpec = { column: 'completed', value: 'count', dir: 'desc' };
@@ -109,10 +120,9 @@ export function compareRows<T extends SortableRow>(spec: SortSpec, nameOf: (row:
   };
 }
 
-/** '과태료 · 비율 ▼' — the active sort as shown in the header and the table toolbar. */
+/** '과태료 · 건수 많은 순' — the active sort in words (table caption); direction is stated, never an arrow. */
 export function sortLabel(spec: SortSpec): string {
   const def = SORT_COLUMNS[spec.column];
   if (!def) return '';
-  const word = def.words[spec.value]?.name;
-  return `${def.label}${def.values.length > 1 && word ? ` · ${word}` : ''} ${spec.dir === 'desc' ? '▼' : '▲'}`;
+  return `${def.label} · ${sortWords(spec)}`;
 }

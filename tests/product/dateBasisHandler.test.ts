@@ -123,6 +123,16 @@ describe('U03 server-side count/rate sort over the full list', () => {
     for (let p = 1; p <= 2; p++) all.push(...(await page('fine', 'count', 'asc', p)).items.map((r) => r.key));
     expect(new Set(all).size).toBe(32);
   });
+  it('UX 2026-09-30: menu choices sort the WHOLE filtered list before paging (page 2 continues page 1)', async () => {
+    for (const [value, dir] of [['count', 'desc'], ['count', 'asc'], ['rate', 'desc'], ['rate', 'asc']] as const) {
+      const p1 = await page('fine', value, dir, 1), p2 = await page('fine', value, dir, 2);
+      const keys = [...p1.items, ...p2.items].map((r) => r.key);
+      expect(new Set(keys).size, `${value} ${dir}`).toBe(32);
+      const f = (r: typeof p1.items[number]) => (value === 'count' ? r.fine_count! : r.fine_count! / r.completed_count);
+      const seq = [...p1.items, ...p2.items].map(f);
+      for (let i = 1; i < seq.length; i++) expect(dir === 'desc' ? seq[i - 1] >= seq[i] : seq[i - 1] <= seq[i], `${value} ${dir} @${i}`).toBe(true);
+    }
+  });
   it('an unknown sort key or value is refused (registry allowlist, never a column name)', async () => {
     expect((await get(`entities?${range}&kind=agency&sort=fine_count;drop&dir=desc`)).status).toBe(400);
     expect((await get(`entities?${range}&kind=agency&sort=completed&sort_value=rate`)).status).toBe(400);

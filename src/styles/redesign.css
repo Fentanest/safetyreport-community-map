@@ -315,3 +315,40 @@ body.briefing .applied-bar, body.briefing .area-tables { display: none; }
 
 .region-summary { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .region-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
+
+/* ── floating menus (sort headers, chart type picker; FloatingMenu.tsx) ─────────────────────── */
+/* portal + position:fixed: never part of the table flow, so opening one cannot move a column or widen the page */
+.floating-menu { z-index: 1000; display: flex; flex-direction: column; gap: 2px; padding: 4px; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16); font-size: 14px; line-height: 20px; }
+.floating-menu-title { padding: 6px 10px 4px; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.floating-menu-item { display: block; width: 100%; min-height: 38px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--text); font: inherit; text-align: left; white-space: nowrap; cursor: pointer; }
+.floating-menu-item:hover { background: var(--raised); }
+.floating-menu-item.selected { background: var(--filter-active-bg); color: var(--filter-active-fg); font-weight: 650; }
+.floating-menu-item:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; }
+
+/* sortable header: the button fills the cell; the active order is text under the label (wraps, never widens) */
+th.sortable .sort-head { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; max-width: 100%; padding: 0;
+  border: 0; background: transparent; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
+th.sortable.num .sort-head { align-items: flex-end; text-align: right; }
+th.sortable .sort-head:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
+th.sortable .sort-label { white-space: nowrap; }
+th.sortable .sort-now-label { max-width: 7.5em; font-size: 11px; line-height: 14px; font-weight: 650; color: var(--link); white-space: normal; word-break: keep-all; }
+th.sort-active { color: var(--text); }
+
+/* chart type picker (ChartTypePicker.tsx) */
+.chart-type-picker { display: inline-flex; align-items: center; gap: 6px; }
+.picker-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--raised); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.picker-btn:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.picker-caret { font-size: 11px; color: var(--muted); }
+.chart-menu { max-width: min(340px, calc(100vw - 16px)); }
+.chart-menu-blocked-title { margin-top: 6px; border-top: 1px solid var(--border); padding-top: 10px; }
+.chart-menu-blocked { display: flex; flex-direction: column; gap: 2px; white-space: normal; color: var(--text-secondary); cursor: default; }
+.chart-menu-blocked:hover { background: transparent; }
+.chart-menu-name { font-weight: 650; color: var(--text-secondary); }
+.chart-menu-reason, .chart-menu-fix { word-break: keep-all; font-size: 12.5px; line-height: 18px; color: var(--muted); }
+.chart-menu-fix { color: var(--text-secondary); }
+.chart-menu-shared { margin: 2px 12px 0; }
+.chart-menu-hint { margin: 4px 6px 6px; padding: 8px 10px; border-radius: 8px; background: var(--raised); font-size: 13px; line-height: 19px; }

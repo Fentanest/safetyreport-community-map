@@ -5,11 +5,12 @@ import { loadCatalog, loadStatistics } from '../data/statistics';
 import { PublicApiError } from '../data/client';
 import { useReportActivity } from '../data/queryActivity';
 import {
-  CHART_LABEL, DEFAULT_CHART, PRESETS, baseSpec, filterOf, normalizeRecipe, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
+  CHART_LABEL, DEFAULT_CHART, PRESETS, baseSpec, chartAvailability, filterOf, normalizeRecipe, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
   type ChartSettings, type SavedRecipe, type StatsRecipe,
 } from '../state/statistics';
 import PivotTable, { type RowSort } from '../components/stats/PivotTable';
 import PivotChart from '../components/stats/PivotChart';
+import ChartTypePicker from '../components/stats/ChartTypePicker';
 import ExportButton from '../components/ExportButton';
 import SharePanel from '../components/stats/SharePanel';
 import { statisticsSnapshot } from '../export/adapters/statistics';
@@ -174,7 +175,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   // F03: a new result drops the hidden keys of series it no longer has (never hides another series in their place)
   useEffect(() => {
     if (!result || !catalog) return;
-    const universe = cartesianModel(result, catalog, { type: 'bar', metrics: result.spec.metrics, refusal: null, compatible: [], note: null });
+    const universe = cartesianModel(result, catalog, { type: 'bar', metrics: result.spec.metrics, refusal: null, compatible: [], availability: chartAvailability(result.spec, catalog), note: null });
     setHidden((h) => { const next = effectiveHidden(universe, h); return next.length === h.length ? h : next; });
   }, [result, catalog]);
 
@@ -447,14 +448,9 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
               </div>
               {view === 'chart' && plan && (
                 <>
-                  <label className="inline-select">유형
-                    <select value={chart.type} onChange={(e) => setChart((c) => ({ ...c, type: e.target.value as ChartSettings['type'] }))}>
-                      <option value="auto">자동({CHART_LABEL[planChart(result!.spec, catalog, { ...chart, type: 'auto' }).type]})</option>
-                      {(['bar', 'hbar', 'line', 'stack', 'stack100', 'heatmap', 'scatter'] as const).map((t) => (
-                        <option key={t} value={t} disabled={!plan.compatible.includes(t)}>{CHART_LABEL[t]}{plan.compatible.includes(t) ? '' : ' (지금 설정에선 못 씀)'}</option>
-                      ))}
-                    </select>
-                  </label>
+                  {/* display setting only: changing the type sends no request (the result is already here) */}
+                  <ChartTypePicker value={chart.type} plan={plan} autoType={planChart(result!.spec, catalog, { ...chart, type: 'auto' }).type}
+                    onChange={(type) => setChart((c) => ({ ...c, type }))} />
                   {result!.spec.metrics.length > 1 && (
                     <label className="inline-select">기준 지표
                       <select value={chart.primary ?? result!.spec.metrics[0]} onChange={(e) => setChart((c) => ({ ...c, primary: e.target.value }))}>

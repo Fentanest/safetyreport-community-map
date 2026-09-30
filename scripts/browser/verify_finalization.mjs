@@ -45,7 +45,13 @@ const seriesData = (page, id) => page.evaluate((i) => {
 const exp = (page) => page.evaluate(() => ({ ...window.__cmExport.snapshot(), counters: { ...window.__cmExport.counters } }));
 const toStats = async (page) => { await page.locator('.stats-result').getByRole('button', { name: '그래프', exact: true }).click(); };
 const toTable = async (page) => { await page.locator('.stats-result').getByRole('button', { name: '표', exact: true }).click(); };
-const chartType = (page, t) => page.locator('.stats-result').getByLabel('유형').selectOption(t);
+// chart type picker (ChartTypePicker, 2026-09-30): open, choose the item by its label (display setting only)
+const CHART_NAMES = { auto: '자동', bar: '막대', hbar: '가로 막대', line: '꺾은선', stack: '누적 막대', stack100: '100% 누적', heatmap: '히트맵', scatter: '산점도' };
+const chartType = async (page, t) => {
+  await page.locator('.stats-result .chart-type-picker .picker-btn').click();
+  const items = page.locator('.floating-menu.chart-menu [role="menuitemradio"]:not([aria-disabled])');
+  await (t === 'auto' ? items.filter({ hasText: /^자동/ }) : items.filter({ hasText: new RegExp(`^${CHART_NAMES[t]}$`) })).first().click();
+};
 const runStats = async (page) => {
   const btn = page.locator('.stats-run .primary-button');
   if (await btn.isDisabled()) return; // the draft already equals the applied recipe
@@ -264,7 +270,7 @@ try {
     const list = async (pg, i) => pg.locator('.stats-builder .stats-list').nth(i).locator('ol li span:first-child').allInnerTexts();
     check('FN-06', 'rows/columns/metrics order restored', { r: await list(o.page, 0), c: await list(o.page, 1), m: await list(o.page, 2) },
       { r: await list(page, 0).then((x) => x.slice(0, 1)), c: await list(page, 1), m: await list(page, 2) });
-    check('FN-06', 'chart view + type restored', { type: await o.page.locator('.stats-result').getByLabel('유형').inputValue(), bars: (await waitFor(() => series(o.page), (x) => x.length > 0)).length > 0 }, { type: 'bar', bars: true });
+    check('FN-06', 'chart view + type restored', { type: (await o.page.locator('.stats-result .chart-type-picker .picker-btn').innerText()).replace('▾', '').trim(), bars: (await waitFor(() => series(o.page), (x) => x.length > 0)).length > 0 }, { type: '막대', bars: true });
     check('FN-06', 'banner says it was re-computed with my permission', await o.page.locator('.share-banner').innerText(), (t) => t.includes('공유받은 설정으로 통계를 만들었습니다'));
     check('FN-10', 'sr parameter removed after the run; screen kept', new URL(o.page.url()).searchParams.has('sr') ? 'sr' : new URL(o.page.url()).searchParams.get('screen'), 'statistics');
     await o.page.reload();
