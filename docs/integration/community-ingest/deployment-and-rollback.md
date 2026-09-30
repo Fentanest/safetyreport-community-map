@@ -240,3 +240,8 @@
 - 기본(data): 신고 사실·수집 이벤트·톰스톤·삭제 펜스·이관 감사·구 v2 업로드 표·요청 제한 기록. `--accounts` 는 공유 동의·기기 연결·인증 요청·참여자 프로필까지(프로필은 다음 로그인 때 다시 생기고 앱이 동의를 다시 받는다).
 - 지우지 않는 것: 정책·동의문·공개 설정·registry/analytics 상태·auth.users·manifest 세대(세대 번호는 늘기만 해야 앱이 서버 변경을 알아챈다). 한 트랜잭션으로 지워 실패하면 아무것도 바뀌지 않는다.
 - 초기화 뒤 앱은 이미 보낸 기록을 기억하므로, 다시 올리려면 앱의 재공유 또는 초기화 크롤링을 쓴다. 정식 서비스 시작 뒤에는 쓰지 않는다.
+
+## 18. 기관 resolver 링크 색인 캐시 (2026-09-30 — 운영 반영 전)
+- 결함(성능): 공유 `resolve.ts`·`resolve.dart` 의 `walkChain` 이 호출마다 links 전체(9,185건)로 `byFrom`/`byTo` 색인을 새로 만들었다. `community-ingest` 는 이벤트마다(요청당 최대 20건), 재계산 스크립트는 저장 사실마다 부른다. Node 22 실측: `resolveAgency` 3,000회 12,622ms → 3ms. 모바일 앱에서는 같은 패턴(벤더 복사본)이 신고 3천 건에서 ANR 을 일으켰다.
+- 수정: 스냅샷 객체별 링크 색인 캐시(TS `WeakMap`, Dart `Expando`) — 정본 `resolve.py` 의 `Snapshot.load` 와 같은 방식. 결과는 같다(공용 벡터·앱 parity 테스트 통과). registry 데이터와 `registry_version`(`2026-09-29.3`)은 그대로이고 manifest 의 두 resolver 해시만 바뀌었다(PC·모바일·지도 바이트 동일, PC `check.py` 통과).
+- 배포: `community-ingest` 만 재배포하면 된다(§15 대로 `--use-api` 없이 Docker 번들). 중앙 SQL·재계산·Pages 재배포는 필요 없다(파생값이 바뀌지 않음). 롤백은 이전 Edge 배포 재배포.
