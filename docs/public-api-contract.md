@@ -179,3 +179,6 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 기존 지도 게이트를 적용하지만 전체 facts를 Edge로 로딩하는 10만 상한 경로를 사용하지 않는다.
 DB가 contributor UUID별 대표 선출/집계/전체순위/페이지/검증 JWT의 내 순위를 계산한다.
 UUID는 이 전용 API의 표시 예외이고 다른 사용자 원문 조회 자격이 아니다. 기존 지도 DTO·my-reports 범위는 유지한다.
+세 `theme` 모두 `period=all|range|month`를 지원한다. 월별 신고자·과태료·불운자는 같은 `month`와
+`date_basis/category/min_reports`를 보내 같은 모집단을 사용한다. `theme=unlucky&period=all`은 누적 불운자다.
+월 전용 불운자 제한 해제에는 map migration `202610030200`과 갱신된 Edge 계약이 필요하다.

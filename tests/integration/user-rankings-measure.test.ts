@@ -19,7 +19,7 @@ import {
 } from "../../contracts/user-rankings/types";
 const enabled = process.env.COMMUNITY_STACK === "1" &&
   process.env.RANKINGS_MEASURE === "1";
-const OUT = "docs/implementation/user-rankings/evidence";
+const OUT = process.env.RANKINGS_MEASURE_OUT || "docs/implementation/user-rankings/evidence";
 function admin(s: string): string {
   return execFileSync("docker", [
     "exec",
@@ -112,6 +112,10 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
             page_size: 50,
           }),
         ],
+        ["monthly-reporters", querySchema.parse({ period: "month", month: "2040-09", page_size: 50 })],
+        ["monthly-fines", querySchema.parse({ theme: "fines", metric: "fine_rate", period: "month", month: "2040-09", page_size: 50 })],
+        ["monthly-unlucky", querySchema.parse({ theme: "unlucky", metric: "partial_rate", period: "month", month: "2040-09", page_size: 50 })],
+        ["cumulative-unlucky", querySchema.parse({ theme: "unlucky", metric: "partial_rate", period: "all", page_size: 50 })],
       ] as const;
       const call = (query: unknown) =>
         `public.internal_user_rankings('${viewer.id}','${viewer.session}',${
@@ -213,6 +217,15 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
         ).toBe(true);
         expect(rates.rows[20].rank).toBe(21);
         expect(rates.rows[20].fine).toBe(481);
+        expect(responseSchema.parse(result["monthly-reporters"].response).rows).toEqual(first.rows);
+        expect(responseSchema.parse(result["monthly-fines"].response).rows).toEqual(rates.rows);
+        for (const label of ["monthly-unlucky", "cumulative-unlucky"]) {
+          const r = responseSchema.parse(result[label].response);
+          expect(r.rows.map(x => [x.uuid, x.rank, x.tie_count, x.numerator, x.denominator])).toEqual(
+            rates.rows.map(x => [x.uuid, x.rank, x.tie_count, x.numerator, x.denominator]),
+          );
+          expect(r.total_participants).toBe(label === "monthly-unlucky" ? 1000 : 1001);
+        }
         expect(all.me).toMatchObject({
           uuid: viewer.id,
           reports: 10,
@@ -265,7 +278,7 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
             }]),
           ),
           correctness:
-            "1000 tied count participants, 100 unique UUIDs across two pages; rate 491/500 joint first20, next rank21; own rank1001 beyond page; withdrawal980",
+            "1000 tied count participants, 100 unique UUIDs across two pages; monthly reporters/fines equal the same range; monthly and cumulative partial rates match fine fractions: 491/500 joint first20, next rank21; own rank1001 beyond page; withdrawal980",
           memory_note:
             "RSS sampled /proc DB backend; includes caches and shared pages, not exclusive query allocation. Sort memory/temp disk in EXPLAIN.",
         };

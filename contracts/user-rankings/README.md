@@ -23,7 +23,7 @@ UUID bans, limited to this API's aggregate row. Map/my-reports contracts and pri
 Each of the three themes can be viewed cumulatively, over a date range, or for any selected KST calendar month.
 The six UI entries are these themes paired with cumulative/range or monthly mode; monthly entries retain the same
 selected month, date basis and category when changing theme. Current-month titles say 이달; past months name the
-actual year/month. 2023-07 means2023-07-01 through2023-07-31 inclusive, never a monthly TOP-list union.
+actual year/month. 2023-07 means 2023-07-01 through 2023-07-31 inclusive, never a monthly TOP-list union.
 
 Theme/metric and period combinations are validated in Edge AND SQL. Unknown/duplicate query fields, impossible dates,
 reversed ranges, start/end outside range mode, month outside month mode and arbitrary user IDs return 400.

@@ -83,6 +83,24 @@ describe.skipIf(!enabled)(
       if (user) deleteUsers([user]);
       rmSync(wrapper, { force: true });
     }, 60000);
+    it("all three monthly themes and cumulative unlucky pass the actual Edge and SQL period validation", async () => {
+      for (const [theme, metric, numerator] of [["reporters", "reports_count", 10], ["fines", "fine_rate", 5], ["unlucky", "partial_rate", 5]] as const) {
+        const r = await fetch(`${base}/user-rankings?theme=${theme}&metric=${metric}&period=month&month=2041-09`, {
+          headers: { authorization: `Bearer ${user.token}` },
+        });
+        const raw = await r.json();
+        expect(r.status, JSON.stringify(raw)).toBe(200);
+        const data = responseSchema.parse(raw);
+        expect(data.scope).toMatchObject({ theme, period: "month", month: "2041-09", start: "2041-09-01", end: "2041-09-30" });
+        expect(data.me).toMatchObject({ uuid: user.id, reports: 10, numerator, denominator: 10 });
+        expect(r.headers.get("cache-control")).toContain("no-store");
+      }
+      const r = await fetch(`${base}/user-rankings?theme=unlucky&metric=partial_count&period=all`, {
+        headers: { authorization: `Bearer ${user.token}` },
+      });
+      expect(r.status).toBe(200);
+      expect(responseSchema.parse(await r.json()).me).toMatchObject({ reports: 10, partial: 5, numerator: 5, denominator: 10 });
+    });
     it("actual getUser, claims, SQL gate/RPC, whitelist and no-store succeed over HTTP", async () => {
       const r = await fetch(
         base +

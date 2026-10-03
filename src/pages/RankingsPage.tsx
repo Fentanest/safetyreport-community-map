@@ -393,7 +393,6 @@ export default function RankingsPage({ active }: { active: boolean }) {
   const data = response?.data ?? null;
   // Guard: never render another account's snapshot.
   const guarded = data && response && response.viewer === viewer && response.queryKey === appliedKey && auth.status === 'signed_in' ? data : null;
-  const appliedTheme: Theme = applied?.theme ?? 'reporters';
   const appliedMetric: Metric = applied?.metric ?? 'reports_count';
   const heading = rankingTitle({
     theme: applied?.theme ?? 'reporters',
@@ -421,7 +420,6 @@ export default function RankingsPage({ active }: { active: boolean }) {
   const rows = guarded?.rows ?? [];
   const isRate = appliedMetric.endsWith('_rate');
   const themeMetrics = RANKING_THEME_METRICS[draft.theme];
-  void appliedTheme;
 
   return (
     <section className="rk-page" aria-labelledby="rk-title" hidden={!active}>

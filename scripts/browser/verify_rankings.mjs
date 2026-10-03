@@ -115,7 +115,7 @@ try {
     percent.includes("/") && parseFloat(percent) <= 100,
   );
   await shot(page, "fine-rate");
-  await rk.getByRole("button", { name: "이달의 불운자", exact: true }).click();
+  await rk.getByRole("button", { name: "월별 불운자", exact: true }).click();
   await rk.getByLabel("조회 달", { exact: true }).fill("2026-08");
   await rk.getByLabel("지표", { exact: true }).selectOption("rejected_rate");
   await rk.getByRole("button", { name: "적용", exact: true }).click();
@@ -209,7 +209,7 @@ try {
   await page.getByRole("navigation", { name: "주요 화면", exact: true })
     .getByRole("button", { name: "유저 랭킹", exact: true }).click();
   await rk.locator("table").waitFor();
-  await rk.getByRole("button", { name: "이달의 불운자", exact: true }).click();
+  await rk.getByRole("button", { name: "월별 불운자", exact: true }).click();
   await rk.getByLabel("조회 달", { exact: true }).fill("2026-08");
   await rk.getByRole("button", { name: "적용", exact: true }).click();
   await rk.locator("table").waitFor();
