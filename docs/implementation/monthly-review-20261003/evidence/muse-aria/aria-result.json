@@ -1,0 +1,121 @@
+{
+  "commit": "27de7f3",
+  "checks": [
+    {
+      "name": "A-normal-1th-0btn",
+      "pass": true,
+      "aTh": 1,
+      "aBtn": 0,
+      "aVal": "descending",
+      "aTotalAria": 0
+    },
+    {
+      "name": "A-normal-descending",
+      "pass": true,
+      "aVal": "descending"
+    },
+    {
+      "name": "A-normal-no-total-col",
+      "pass": true,
+      "aTotalAria": 0
+    },
+    {
+      "name": "B-matrix-1total-desc",
+      "pass": false,
+      "bTh": 1,
+      "bTot": 1,
+      "bBtn": 0,
+      "bVal": "ascending",
+      "bThText": "답변 건수 합계"
+    },
+    {
+      "name": "B-matrix-toggle-asc",
+      "pass": false,
+      "bTh2": 1,
+      "bTot2": 1,
+      "bVal2": "descending"
+    },
+    {
+      "name": "B-kbd-Enter-opens-narrow",
+      "pass": true,
+      "dlgEnter": 1
+    },
+    {
+      "name": "B-kbd-Space-opens-narrow",
+      "pass": true,
+      "dlgSpace": 1
+    },
+    {
+      "name": "C-compare-single-first-side",
+      "pass": true,
+      "cTh": 1,
+      "cTot": 1,
+      "cBtn": 0,
+      "cText": "답변 건수 합계 · 전체",
+      "cVal": "ascending"
+    },
+    {
+      "name": "focus-visible-outline",
+      "pass": false,
+      "outlineWidth": "3px",
+      "outlineStyle": "none",
+      "tag": "BUTTON",
+      "cls": "pivot-sort"
+    },
+    {
+      "name": "no-page-overflow-1440dark",
+      "pass": true,
+      "overflow": true
+    },
+    {
+      "name": "shot-1440-light-overflow",
+      "pass": true,
+      "ov": true
+    }
+  ],
+  "info": {
+    "A": {
+      "orderBefore": "김민준 · 서울특별시경찰청 서울강남경찰서",
+      "orderAfter": "김민준 · 서울특별시경찰청 서울강남경찰서",
+      "orderSecond": "박서준 · 서울특별시경찰청 서울중부경찰서",
+      "tot0": "125건",
+      "tot1": "124건",
+      "aVal": "descending"
+    },
+    "B": {
+      "bThText": "답변 건수 합계",
+      "bRowsBefore": [
+        "수용",
+        "일부 수용",
+        "불수용",
+        "미분류"
+      ],
+      "bRowsAfter": [
+        "미분류",
+        "일부 수용",
+        "불수용",
+        "수용"
+      ],
+      "bRowsToggled": [
+        "수용",
+        "일부 수용",
+        "불수용",
+        "미분류"
+      ],
+      "bVal": "ascending",
+      "bVal2": "descending"
+    },
+    "C": {
+      "cText": "답변 건수 합계 · 전체",
+      "cVal": "ascending"
+    },
+    "compareAvail": true,
+    "focus": {
+      "outlineWidth": "3px",
+      "outlineStyle": "none",
+      "tag": "BUTTON",
+      "cls": "pivot-sort"
+    }
+  },
+  "consoleErrors": []
+}

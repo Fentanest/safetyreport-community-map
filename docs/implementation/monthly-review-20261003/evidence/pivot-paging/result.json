@@ -1,0 +1,31 @@
+{
+  "commit": "27de7f3",
+  "environment": "local synthetic managers, mocked Kakao",
+  "checks": [
+    {
+      "name": "manager118-page2",
+      "pass": true
+    },
+    {
+      "name": "sort-resets-page1",
+      "pass": true
+    },
+    {
+      "name": "aria-sort-on-column-header",
+      "pass": true
+    },
+    {
+      "name": "new-small-result-visible",
+      "pass": true
+    },
+    {
+      "name": "numeric-cell-space-opens-narrow",
+      "pass": true
+    },
+    {
+      "name": "matrix-sort-on-one-total-header",
+      "pass": true
+    }
+  ],
+  "consoleErrors": []
+}

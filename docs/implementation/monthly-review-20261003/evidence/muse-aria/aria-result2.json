@@ -1,0 +1,139 @@
+{
+  "commit": "27de7f3",
+  "checks": [
+    {
+      "name": "B-fresh-nonTotalClick-single-total",
+      "pass": true,
+      "gTh": 1,
+      "gTot": 1,
+      "gBtn": 0,
+      "gVal": "descending",
+      "fVal": null
+    },
+    {
+      "name": "B-arrow-matches-aria",
+      "pass": true,
+      "gVal": "descending",
+      "arrow": "\" ▾\""
+    },
+    {
+      "name": "B-total-toggle-flips",
+      "pass": true,
+      "gVal": "descending",
+      "hVal": "ascending",
+      "hRows": [
+        "미분류",
+        "일부 수용",
+        "불수용",
+        "수용"
+      ]
+    },
+    {
+      "name": "B-grandtotal-preserved",
+      "pass": true,
+      "gtBefore": "7,847건",
+      "gtAfter": "7,847건"
+    },
+    {
+      "name": "focus-2px-keyboard",
+      "pass": true,
+      "cls": "",
+      "ow": "2px",
+      "os": "solid",
+      "oc": "rgb(96, 165, 250)",
+      "off": "3px"
+    },
+    {
+      "name": "shot-1440-light-overflow",
+      "pass": true,
+      "ov": true
+    },
+    {
+      "name": "shot-390-light-overflow",
+      "pass": true,
+      "ov": true
+    },
+    {
+      "name": "shot-390-dark-overflow",
+      "pass": true,
+      "ov": true
+    }
+  ],
+  "info": {
+    "fresh": {
+      "fTh": 0,
+      "fTot": 0,
+      "fVal": null,
+      "fText": ""
+    },
+    "afterNonTotal": {
+      "gVal": "descending",
+      "gRows": [
+        "수용",
+        "일부 수용",
+        "불수용",
+        "미분류"
+      ]
+    },
+    "focus": {
+      "cls": "",
+      "ow": "2px",
+      "os": "solid",
+      "oc": "rgb(96, 165, 250)",
+      "off": "3px"
+    },
+    "netlog": [
+      {
+        "t": 1791008055341,
+        "route": "meta",
+        "params": {},
+        "status": 200
+      },
+      {
+        "t": 1791008055445,
+        "route": "dashboard",
+        "params": {
+          "date_basis": "completed_date",
+          "start": "2026-01-01",
+          "end": "2026-09-30",
+          "category": "all",
+          "expected_version": "e2e-synthetic-1"
+        },
+        "status": 200
+      },
+      {
+        "t": 1791008057731,
+        "route": "statistics/catalog",
+        "params": {},
+        "status": 200
+      },
+      {
+        "t": 1791008057744,
+        "route": "statistics/query",
+        "params": {
+          "date_basis": "completed_date",
+          "start": "2026-01-01",
+          "end": "2026-09-30",
+          "category": "all",
+          "expected_version": "e2e-synthetic-1",
+          "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}"
+        },
+        "status": 200
+      },
+      {
+        "t": 1791008058399,
+        "route": "statistics/query",
+        "params": {
+          "date_basis": "completed_date",
+          "start": "2026-01-01",
+          "end": "2026-09-30",
+          "category": "all",
+          "expected_version": "e2e-synthetic-1",
+          "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"outcome\"],\"columns\":[\"disposition\"],\"metrics\":[\"completed_count\"],\"filters\":[],\"place_key\":null}"
+        },
+        "status": 200
+      }
+    ]
+  },
+  "consoles": []
+}

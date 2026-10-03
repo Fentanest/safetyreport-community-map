@@ -1,0 +1,134 @@
+{
+  "started": "2026-10-03T05:53:07.381Z",
+  "commit": "49c4c6d",
+  "steps": [
+    {
+      "id": "R5b-stale",
+      "ok": true,
+      "detail": "loadingMsg=\"\" pager=\"1 / 7쪽 이전 다음\" rows=20"
+    },
+    {
+      "id": "R6-options",
+      "ok": true,
+      "detail": "[{\"v\":\"\",\"t\":\"전국\"},{\"v\":\"11\",\"t\":\"서울특별시 (117)\"},{\"v\":\"12\",\"t\":\"전남광주통합특별시 (1\"},{\"v\":\"26\",\"t\":\"부산광역시 (37)\"},{\"v\":\"27\",\"t\":\"대구광역시 (131)\"},{\"v\":\"28\",\"t\":\"인천광역시 (27)\"},{\"v\":\"30\",\"t\":\"대전광역시 (17)\"},{\"v\":\"31\",\"t\":\"울산광역시\"},{\"v\":\"36\",\"t\":\"세종특별자치시\"},{\"v\":\"41\",\"t\":\"경기도 (51)\"},{\"v\":\"43\",\"t\":\"충청북도\"},{\"v\":\"44\",\"t\":\"충청남도\"},{\"v\":\"47\",\"t\":\"경상북도\"},{\"v\":\"48\",\"t\":\"경상남도\"},{\"v\":\"50\",\"t\":\"제주특별자치도 (14)\"},{\"v\":\"51\",\"t\":\"강원특별자치도\"},{\"v\":\"52\",\"t\":\"전북특별자치도\"}]"
+    },
+    {
+      "id": "R6-oob",
+      "ok": true,
+      "detail": "before=\"1 / 1쪽 이전 다음\" region→세종특별자치시 (36) after=\"1 / 1쪽 이전 다음\" empty=\"조건에 맞는 기관·담당자가 없습니다.\""
+    },
+    {
+      "id": "R7-lawsearch",
+      "ok": true,
+      "detail": "위반법규 11개 · 정렬 답변 · 건수 많은 순 · 답변일 기준 · 8개 표시"
+    },
+    {
+      "id": "R7-lawdelay",
+      "ok": true,
+      "detail": "after scope change: 위반법규 11개 · 정렬 답변 · 건수 많은 순 · 답변일 기준 · 8개 표시"
+    },
+    {
+      "id": "R8-scope",
+      "ok": true,
+      "detail": "scope h2=\"전국\""
+    },
+    {
+      "id": "R8-place",
+      "ok": true,
+      "detail": "pin \"경기도 수원시 예시로 1길 · 신고 수 18건\" → place panel open"
+    },
+    {
+      "id": "R8-copyfocus",
+      "ok": true,
+      "detail": "clipboard=\"경기도 수원시 예시로 1길\" focusAfter=<button class=\"mini-btn\" type=\"button\">주소 복사</button>"
+    },
+    {
+      "id": "R8-copy",
+      "ok": true,
+      "detail": "copy buttons=1 clipboard=\"경기도 수원시 예시로 1길\""
+    },
+    {
+      "id": "R9-namesake",
+      "ok": true,
+      "detail": "namesake note present=true"
+    },
+    {
+      "id": "R10-dialog",
+      "ok": true,
+      "detail": "{\"role\":\"dialog\",\"modal\":\"true\",\"labelledby\":\"picker-title\"}"
+    },
+    {
+      "id": "R10-focus",
+      "ok": false,
+      "detail": "TAB LEAKED OUT OF DIALOG"
+    },
+    {
+      "id": "R10-esc",
+      "ok": true,
+      "detail": "closed=true focusAfter=\n본문 바로가기커뮤니티 신고 지도나만의 안전신문고2026.09.24 기준"
+    },
+    {
+      "id": "R10-ime",
+      "ok": false,
+      "detail": "reqs during composition=0 after commit=0"
+    },
+    {
+      "id": "R10-paging",
+      "ok": true,
+      "detail": "single page (next disabled)"
+    },
+    {
+      "id": "R10-apply",
+      "ok": true,
+      "detail": "chips: 기관 예시 대구수성경찰서 (아직 반영 안 됨) ×"
+    },
+    {
+      "id": "R10-export",
+      "ok": true,
+      "detail": "export buttons=1 runBtn=\"통계 만들기\""
+    },
+    {
+      "id": "R11",
+      "ok": true,
+      "detail": "routes={\"meta\":1,\"dashboard\":1,\"statistics/catalog\":1,\"statistics/query\":1,\"statistics/candidates\":2} consoleErrors=0"
+    }
+  ],
+  "issues": [
+    {
+      "id": "R-PICKER-FOCUS",
+      "severity": "medium",
+      "repro": "picker open, press Tab repeatedly",
+      "expected": "focus stays in aria-modal dialog",
+      "actual": "focus escaped to background",
+      "evidence": "R10-picker.png",
+      "fileHint": "src/components/stats/MemberPicker.tsx (no focus trap)"
+    },
+    {
+      "id": "R-PICKER-ESC-FOCUS",
+      "severity": "low",
+      "repro": "Esc closes picker",
+      "expected": "focus returns to 비교 대상 선택 trigger",
+      "actual": "focus on \n본문 바로가기커뮤니티 신고 지도나만의 안전신문고2026.09.24 기준",
+      "evidence": "R10-picker.png",
+      "fileHint": "src/components/stats/MemberPicker.tsx:98-107"
+    },
+    {
+      "id": "R-PICKER-IME",
+      "severity": "medium",
+      "repro": "type during IME composition in picker search",
+      "expected": "no request until compositionend commit",
+      "actual": "during=0 after=0",
+      "evidence": "R10-picker.png",
+      "fileHint": "src/components/stats/MemberPicker.tsx:68-72"
+    }
+  ],
+  "network": {
+    "meta": 1,
+    "dashboard": 1,
+    "statistics/catalog": 1,
+    "statistics/query": 1,
+    "statistics/candidates": 2
+  },
+  "consoleErrors": [],
+  "finished": "2026-10-03T05:54:25.908Z"
+}

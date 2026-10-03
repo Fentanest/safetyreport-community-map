@@ -1,6 +1,8 @@
 import { chromium, openPage, api, waitMap, sleep } from './harness.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+const sourceCommit=execFileSync('git',['rev-parse','--short','HEAD'],{encoding:'utf8'}).trim();
 const dir='docs/implementation/monthly-review-20261003/evidence/pivot-paging';mkdirSync(dir,{recursive:true});
 const checks=[],errors=[];const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--no-sandbox']});
 function check(name,condition){checks.push({name,pass:condition});assert.ok(condition,name);}
@@ -27,4 +29,4 @@ try{
  check('matrix-sort-on-one-total-header',await page.locator('.pivot-table th[aria-sort]').count()===1&&await page.locator('.pivot-table th.pivot-total[aria-sort]').count()===1&&await page.locator('button[aria-sort]').count()===0);
  await page.locator('.stats-result').screenshot({path:`${dir}/keyboard-cell.png`});
  errors.push(...consoleErrors);await context.close();
-}finally{await browser.close();await api('reset');writeFileSync(`${dir}/result.json`,JSON.stringify({commit:'working-tree-after-c99bee6',environment:'local synthetic managers, mocked Kakao',checks,consoleErrors:errors},null,2));console.log(JSON.stringify({checks,errors}));}
+}finally{await browser.close();await api('reset');writeFileSync(`${dir}/result.json`,JSON.stringify({commit:sourceCommit,environment:'local synthetic managers, mocked Kakao',checks,consoleErrors:errors},null,2));console.log(JSON.stringify({checks,errors}));}

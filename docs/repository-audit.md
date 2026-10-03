@@ -43,3 +43,10 @@ brand primary #0D6EFD, dark bg #0B1220, navy surfaces, cyan/blue highlights와 �
 `safetyreport`의 `dev` 작업트리 `2f20f2e`에서 웹·모바일 공통 B안 딥 다크 팔레트를 확인했다.
 위의 2026-09-24 네이비 채택 기록은 이전 결정이다. 현재 community-map은 배경·표면·테두리·글자와
 강조 글자/채움 색을 `contracts/dark-palette.json`에 맞춘다. 원본 참고 이미지는 이전 시안으로 보존한다.
+
+## 2026-10-03 · 최근 한 달 실행 검토
+
+main8cfacb2 및 로컬 랭킹49c4c6d를 보존한 fix/monthly-audit-20261003에서 UI/공통 정렬 결함을 수정했다.
+범위/버전/질의가 다른 목록의 혼합, 한국어IME확정, 좁은범위 페이지, 오류/빈결과, modal/pivot 키보드를 검증했다.
+실행 결과와 synthetic/MOCK/실제LOCAL DB 구분은 [보고서](implementation/monthly-review-20261003/REPORT.md)를 따른다.
+제품 후보c99bee6 +최종27de7f3. 운영 SQL·Edge·Pages·push는 실행하지 않았다. 기존 감사의 초기 gap들은 현재 구현 상태를 자동으로 나타내지 않는다.
