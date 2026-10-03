@@ -1,0 +1,725 @@
+{
+  "mode": "local SQL gate, actual session, synthetic 500 NULL-number keys; index rolls back",
+  "rows": [
+    {
+      "ms": 1246.94,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1334.352,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1288.229,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1283.828,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1312.784,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1376.437,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1318.027,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1271.999,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1237.182,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1304.492,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1273.175,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1287.976,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1260.349,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1219.563,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1272.156,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1375.775,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1292.153,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1211.085,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1271.825,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1214.096,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1191.428,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1247.151,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1274.818,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1281.817,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1237.965,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1277.333,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1269.01,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1277.727,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1224.863,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 1246.467,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "without-index"
+    },
+    {
+      "ms": 477.761,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 481.447,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 468.962,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 476.596,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 473.578,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 488.702,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 483.267,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 501.81,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 483.641,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 523.623,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 553.464,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 471.412,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 480.716,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 481.497,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 489.217,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 472.04,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 492.762,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 485.236,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 491.574,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 535.096,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 516.063,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 482.841,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 499.32,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 500.543,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 476.069,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 551.623,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 518.833,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 508.288,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 478.12,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    },
+    {
+      "ms": 482.035,
+      "body": {
+        "kakao": true,
+        "session": true,
+        "user_ok": true,
+        "contributor": "active",
+        "has_public_facts": true,
+        "public_fact_count": 500
+      },
+      "variant": "with-index"
+    }
+  ]
+}

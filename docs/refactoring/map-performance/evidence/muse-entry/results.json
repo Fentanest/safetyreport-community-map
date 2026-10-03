@@ -1,0 +1,143 @@
+{
+  "commit": "2cd5442",
+  "origin": "http://127.0.0.1:5191",
+  "mode": "headless Chromium, E2E_PORT=5191 mock stack, ranking fixture attached before rankings entry; no real DB",
+  "consoleErrors": [],
+  "results": [
+    {
+      "id": "R-direct-one-default",
+      "status": "PASS",
+      "detail": "requests=1 q=theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20"
+    },
+    {
+      "id": "R-h1-tabs",
+      "status": "PASS",
+      "detail": "h1+3tabs"
+    },
+    {
+      "id": "R-headers",
+      "status": "PASS",
+      "detail": "순위|참여자|완료 신고"
+    },
+    {
+      "id": "R-me-strip",
+      "status": "PASS",
+      "detail": "me strip visible"
+    },
+    {
+      "id": "R-pager",
+      "status": "PASS",
+      "detail": "이전\n참여자 1–20 / 26명\n다음"
+    },
+    {
+      "id": "S-direct-no-dashboard",
+      "status": "PASS",
+      "detail": "dashboard/overview=0 routes=[\"meta\",\"statistics/catalog\",\"statistics/query\"]"
+    },
+    {
+      "id": "S-direct-meta-catalog-query",
+      "status": "PASS",
+      "detail": "meta=1 catalog=1 query=1"
+    },
+    {
+      "id": "C-fines",
+      "status": "PASS",
+      "detail": "순위|참여자|과태료 처분|완료 신고"
+    },
+    {
+      "id": "C-same-no-dup",
+      "status": "PASS",
+      "detail": "log 0->0"
+    },
+    {
+      "id": "C-rankings-controls-server-silent",
+      "status": "PASS",
+      "detail": "server log entries while on rankings=0"
+    },
+    {
+      "id": "C-stats-no-dashboard",
+      "status": "PASS",
+      "detail": "added=[\"meta\",\"statistics/catalog\",\"statistics/query\"]"
+    },
+    {
+      "id": "C-rankings-return-server-silent",
+      "status": "PASS",
+      "detail": "added=[]"
+    },
+    {
+      "id": "C-no-hidden-dashboard",
+      "status": "PASS",
+      "detail": "dashboard only from map screen (total dashboard=1)"
+    },
+    {
+      "id": "D-360-dark",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=360/iw=360 table=false list=true"
+    },
+    {
+      "id": "D-360-light",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=360/iw=360 table=false list=true"
+    },
+    {
+      "id": "D-390-dark",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=390/iw=390 table=false list=true"
+    },
+    {
+      "id": "D-390-light",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=390/iw=390 table=false list=true"
+    },
+    {
+      "id": "D-768-dark",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=768/iw=768 table=true list=false"
+    },
+    {
+      "id": "D-768-light",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=768/iw=768 table=true list=false"
+    },
+    {
+      "id": "D-1440-dark",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=1440/iw=1440 table=true list=false"
+    },
+    {
+      "id": "D-1440-light",
+      "status": "PASS",
+      "detail": "tabs=신고 랭킹|과태료 랭킹|불운 랭킹 sw=1440/iw=1440 table=true list=false"
+    },
+    {
+      "id": "D-stats-390-light",
+      "status": "PASS",
+      "detail": "overflow check"
+    },
+    {
+      "id": "D-stats-1440-dark",
+      "status": "PASS",
+      "detail": "overflow check"
+    },
+    {
+      "id": "E-keyboard-focus",
+      "status": "PASS",
+      "detail": "inTabs=true visible=true"
+    },
+    {
+      "id": "F-latest-intent",
+      "status": "PASS",
+      "detail": "rk_theme=unlucky sub=불수용 건수가 많은 순위"
+    },
+    {
+      "id": "G-429-cooldown",
+      "status": "PASS",
+      "detail": "cooldown=3초 뒤 다시 시도 net=3->3"
+    },
+    {
+      "id": "G-429-latest-intent",
+      "status": "PASS",
+      "detail": "rk_theme=unlucky"
+    }
+  ]
+}

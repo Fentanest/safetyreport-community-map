@@ -1,0 +1,488 @@
+{
+  "run_id": "scope-statistics-2026-10-03T15-22-52-073Z",
+  "suite": "scope-statistics",
+  "commit": "bc41efcee2079964bb3c4374141a8db0506137ad",
+  "working_tree_dirty": true,
+  "started_at": "2026-10-03T15:22:52.116Z",
+  "only": [
+    "SC_PG"
+  ],
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 153.0.8010.12",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic (demoFacts + e2e extras)",
+    "server": "local Vite middleware running server/publicHandler.ts + server/personalHandler.ts",
+    "default_viewport": "1440x1000",
+    "theme": "dark unless noted",
+    "zoom": "browser zoom 100% (headless); ZOOM-EMU uses viewport/DSF emulation, not browser zoom"
+  },
+  "results": {
+    "MT-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-16": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-18": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-19": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-20": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MT-21": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-19": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-26": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-12": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-13": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-13": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "nation detail",
+          "actual": {
+            "h2": "전국",
+            "children": true
+          },
+          "expected": {
+            "h2": "전국",
+            "children": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "seoul via child list",
+          "actual": {
+            "url": "11",
+            "h2": "서울특별시"
+          },
+          "expected": {
+            "url": "11",
+            "h2": "서울특별시"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "시군구 detail with a 3-level trail",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "top selector = same region action",
+          "actual": {
+            "url": "26",
+            "h2": "부산광역시"
+          },
+          "expected": {
+            "url": "26",
+            "h2": "부산광역시"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "address breadcrumb → region detail, pin cleared",
+          "actual": {
+            "h2": "경기도",
+            "selected": 0
+          },
+          "expected": {
+            "h2": "경기도",
+            "selected": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-09": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "shown/total count",
+          "actual": "표시 5 / 전체 10",
+          "expected": "(t) => /^표시 \\d+ \\/ 전체 \\d+$/.test(t)"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "separate 맞춤 통계 screen with focus",
+          "actual": {
+            "url": "statistics",
+            "h1": "맞춤 통계",
+            "focus": "stats-title"
+          },
+          "expected": {
+            "url": "statistics",
+            "h1": "맞춤 통계",
+            "focus": "stats-title"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "direct entry / refresh restores the result",
+          "actual": 2,
+          "expected": "(n) => n > 0"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "displayed region handed over",
+          "actual": "지역\n서울특별시\n×",
+          "expected": "(t) => t.includes('서울특별시')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "address condition chip",
+          "actual": "지역\n서울특별시\n×\n주소\n서울특별시 강남구 예시로 1길\n×",
+          "expected": "(t) => t.includes('주소')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "map instance kept across the page switch",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-08": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-09": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-SPY": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "ZOOM-EMU": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-11": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-CMP": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "C01-AB": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "C01-NICK": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "C01-RESTORE": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "W-OVERFLOW": {
+      "status": "NOT_RUN",
+      "checks": []
+    }
+  },
+  "steps": {
+    "MT": {
+      "status": "NOT_RUN"
+    },
+    "LD": {
+      "status": "NOT_RUN"
+    },
+    "PI": {
+      "status": "NOT_RUN"
+    },
+    "SC_PG": {
+      "status": "DONE",
+      "ids": [
+        "SC-01",
+        "SC-02",
+        "SC-03",
+        "SC-04",
+        "SC-05",
+        "SC-09",
+        "PG-01",
+        "PG-02",
+        "PG-03",
+        "PG-04",
+        "PG-06"
+      ],
+      "notes": {
+        "breadcrumb_from": "경기도 수원시 예시로 1길 · 신고 수 18건"
+      },
+      "ms": 16920
+    },
+    "NV": {
+      "status": "NOT_RUN"
+    },
+    "MS_CH": {
+      "status": "NOT_RUN"
+    },
+    "MT21": {
+      "status": "NOT_RUN"
+    },
+    "C01": {
+      "status": "NOT_RUN"
+    },
+    "W": {
+      "status": "NOT_RUN"
+    }
+  },
+  "finished_at": "2026-10-03T15:23:09.115Z",
+  "summary": {
+    "NOT_RUN": 49,
+    "PASS": 11
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "exact_owned_processes_sent_SIGTERM": [
+    1293783,
+    1877251,
+    2800052,
+    3524623,
+    2782618
+  ],
+  "http_benchmark_aliases_remaining": 0,
+  "database_container": "preserved; no other project services stopped",
+  "product_files_changed_after_muse_fixed_candidate": false
+}

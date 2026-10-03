@@ -1,0 +1,71 @@
+{
+  "browser": "154.0.8037.92",
+  "fixture": "local synthetic JWT/RPC; computed text enlargement, not operating-system accessibility settings",
+  "checks": [
+    {
+      "theme": "light",
+      "check": "text token contrast against page/panel, white on selected control",
+      "ratios": {
+        "--text": 17.062933971317335,
+        "--text-secondary": 7.242510935504382,
+        "--muted": 4.548363604249587,
+        "--link": 6.505542626404585,
+        "white_on_brand": 4.500782787406787
+      },
+      "status": "PASS"
+    },
+    {
+      "theme": "light",
+      "check": "200% actual computed text sizes / page width / visible focus",
+      "fontSizes": {
+        "normal": 13,
+        "actual": 26
+      },
+      "focused": {
+        "button": true,
+        "outline": "2px"
+      },
+      "status": "PASS"
+    },
+    {
+      "theme": "dark",
+      "check": "text token contrast against page/panel, white on selected control",
+      "ratios": {
+        "--text": 16.74492846122832,
+        "--text-secondary": 11.090765209502072,
+        "--muted": 7.089864687352254,
+        "--link": 7.303517593766467,
+        "white_on_brand": 5.168555560022562
+      },
+      "status": "PASS"
+    },
+    {
+      "theme": "dark",
+      "check": "200% actual computed text sizes / page width / visible focus",
+      "fontSizes": {
+        "normal": 13,
+        "actual": 26
+      },
+      "focused": {
+        "button": true,
+        "outline": "2px"
+      },
+      "status": "PASS"
+    },
+    {
+      "theme": "light",
+      "check": "anonymous stored theme and no protected table",
+      "status": "PASS"
+    },
+    {
+      "theme": "dark",
+      "check": "anonymous stored theme and no protected table",
+      "status": "PASS"
+    },
+    {
+      "check": "real account logout + same-origin history back stays gate/light, no JWT/table",
+      "url": "http://127.0.0.1:5192/?date_basis=completed_date&start=2025-10-05&end=2026-10-04&category=all",
+      "status": "PASS"
+    }
+  ]
+}

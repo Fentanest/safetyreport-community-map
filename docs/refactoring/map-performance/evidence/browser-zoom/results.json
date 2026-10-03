@@ -1,0 +1,49 @@
+{
+  "method": "headed Chromium, isolated profile partition.default_zoom_level = log(2)/log(1.2), viewport:null; browser window768 yields layout viewport384; no CSS zoom or device override",
+  "checks": [
+    {
+      "screen": "rankings",
+      "theme": "dark",
+      "innerWidth": 384,
+      "outerWidth": 810,
+      "dpr": 2,
+      "scrollWidth": 376,
+      "cssZoom": "1",
+      "keyboard": true,
+      "pass": true
+    },
+    {
+      "screen": "statistics",
+      "theme": "dark",
+      "innerWidth": 373,
+      "outerWidth": 789,
+      "dpr": 2,
+      "scrollWidth": 366,
+      "cssZoom": "1",
+      "keyboard": true,
+      "pass": true
+    },
+    {
+      "screen": "rankings",
+      "theme": "light",
+      "innerWidth": 373,
+      "outerWidth": 789,
+      "dpr": 2,
+      "scrollWidth": 366,
+      "cssZoom": "1",
+      "keyboard": true,
+      "pass": true
+    },
+    {
+      "screen": "statistics",
+      "theme": "light",
+      "innerWidth": 373,
+      "outerWidth": 789,
+      "dpr": 2,
+      "scrollWidth": 366,
+      "cssZoom": "1",
+      "keyboard": true,
+      "pass": true
+    }
+  ]
+}

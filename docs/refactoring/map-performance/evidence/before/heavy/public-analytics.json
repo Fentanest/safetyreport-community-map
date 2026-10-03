@@ -1,0 +1,391 @@
+{
+  "mode": "synthetic in-process Node handler; rate/auth fixture, not normal HTTP load",
+  "seed": "index-distribution-v1",
+  "node": "v22.17.1",
+  "results": [
+    {
+      "size": 100001,
+      "route": "entities?kind=manager&",
+      "repeats": 10,
+      "requests": 10,
+      "transfer": "uncompressed handler DTO; no DB transport",
+      "p50_ms": 8570.179748000002,
+      "p95_ms": 9438.512057,
+      "max_ms": 9438.512057,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 9438.512057,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8549.019398,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8640.379607000003,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8579.211001,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8570.179748000002,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8413.059200999996,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8435.441462000003,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8481.365188999996,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8779.468660999992,
+          "bytes": 25205,
+          "status": 200
+        },
+        {
+          "ms": 8959.732367000004,
+          "bytes": 25205,
+          "status": 200
+        }
+      ],
+      "process_rss_bytes": 428621824
+    },
+    {
+      "size": 100001,
+      "route": "series?",
+      "repeats": 10,
+      "requests": 10,
+      "transfer": "uncompressed handler DTO; no DB transport",
+      "p50_ms": 8446.875717000003,
+      "p95_ms": 8574.010665000009,
+      "max_ms": 8574.010665000009,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 8454.274812000003,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8426.246031999995,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8476.778380999996,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8446.875717000003,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8371.925159000006,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8185.434845000011,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8471.437719999987,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8404.80593099998,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8574.010665000009,
+          "bytes": 6105,
+          "status": 200
+        },
+        {
+          "ms": 8487.554207999987,
+          "bytes": 6105,
+          "status": 200
+        }
+      ],
+      "process_rss_bytes": 318500864
+    },
+    {
+      "size": 100001,
+      "route": "dashboard?",
+      "repeats": 10,
+      "requests": 10,
+      "transfer": "uncompressed handler DTO; no DB transport",
+      "p50_ms": 8392.959808999993,
+      "p95_ms": 8615.158396000013,
+      "max_ms": 8615.158396000013,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 8313.280886000022,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8556.84412200001,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8392.959808999993,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8409.781503999984,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8417.183235000004,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8461.287645000004,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8368.191545999987,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8298.734524,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8251.952446999989,
+          "bytes": 640485,
+          "status": 200
+        },
+        {
+          "ms": 8615.158396000013,
+          "bytes": 640485,
+          "status": 200
+        }
+      ],
+      "process_rss_bytes": 320561152
+    },
+    {
+      "size": 500000,
+      "route": "entities?kind=manager&",
+      "repeats": 10,
+      "requests": 10,
+      "transfer": "uncompressed handler DTO; no DB transport",
+      "p50_ms": 43970.15456399997,
+      "p95_ms": 44407.352821999986,
+      "max_ms": 44407.352821999986,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 44407.352821999986,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 43138.80945899995,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 43968.74139899999,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 43586.81117900001,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 43763.61632499995,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 44045.32971300004,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 44226.15179700003,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 44341.10057000001,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 43970.15456399997,
+          "bytes": 25490,
+          "status": 200
+        },
+        {
+          "ms": 44393.678464,
+          "bytes": 25490,
+          "status": 200
+        }
+      ],
+      "process_rss_bytes": 1056145408
+    },
+    {
+      "size": 500000,
+      "route": "series?",
+      "repeats": 10,
+      "requests": 10,
+      "transfer": "uncompressed handler DTO; no DB transport",
+      "p50_ms": 43886.50109799998,
+      "p95_ms": 45032.83343899995,
+      "max_ms": 45032.83343899995,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 43271.01092300005,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 43087.783577000024,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 43269.38866699999,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 43926.96078099997,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 43884.23917800002,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 44209.251653000014,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 43886.50109799998,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 43990.93404999992,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 45032.83343899995,
+          "bytes": 6168,
+          "status": 200
+        },
+        {
+          "ms": 44697.31407100009,
+          "bytes": 6168,
+          "status": 200
+        }
+      ],
+      "process_rss_bytes": 1320706048
+    },
+    {
+      "size": 500000,
+      "route": "dashboard?",
+      "repeats": 10,
+      "requests": 10,
+      "transfer": "uncompressed handler DTO; no DB transport",
+      "p50_ms": 47090.429533000104,
+      "p95_ms": 53190.27001899993,
+      "max_ms": 53190.27001899993,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 47654.433406000026,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 53190.27001899993,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 49250.14827100001,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 47090.429533000104,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 46989.348977999995,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 47128.02924099984,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 49323.84107400011,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 46757.631701000035,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 46747.47351499996,
+          "bytes": 643219,
+          "status": 200
+        },
+        {
+          "ms": 45857.83548300015,
+          "bytes": 643219,
+          "status": 200
+        }
+      ],
+      "process_rss_bytes": 1569968128
+    }
+  ]
+}

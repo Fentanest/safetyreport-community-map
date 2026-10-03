@@ -1,0 +1,484 @@
+{
+  "message": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.rk-table:visible tbody tr,.rk-list:visible li').first() to be visible\u001b[22m\n",
+  "checks": [
+    {
+      "name": "360/dark direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "360/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "360/dark three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "360/dark own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "360/dark responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "360/dark exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "360/light direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "360/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "360/light three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "360/light own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "360/light responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "360/light exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "actual 200% computed text no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "200% text is doubled",
+      "status": "PASS"
+    },
+    {
+      "name": "768/dark direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "768/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "768/dark three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "768/dark own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "768/dark responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "768/dark exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "768/light direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "768/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "768/light three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "768/light own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "768/light responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "768/light exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light direct entry",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light three tabs",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light responsive rows",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light exact header",
+      "status": "PASS"
+    },
+    {
+      "name": "first pager is participant row range",
+      "status": "PASS"
+    },
+    {
+      "name": "page 2 global me unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "page range uses rows, not ranks",
+      "status": "PASS"
+    },
+    {
+      "name": "rate fraction has correct denominator/numerator order",
+      "status": "PASS"
+    },
+    {
+      "name": "same selection does not duplicate request",
+      "status": "PASS"
+    },
+    {
+      "name": "prior month exact metric title",
+      "status": "PASS"
+    },
+    {
+      "name": "single report and competition ties kept",
+      "status": "PASS"
+    },
+    {
+      "name": "partial metric restored after round trip",
+      "status": "PASS"
+    },
+    {
+      "name": "empty has no invented row",
+      "status": "PASS"
+    },
+    {
+      "name": "UUID full value",
+      "status": "PASS"
+    },
+    {
+      "name": "full UUID copy",
+      "status": "PASS"
+    },
+    {
+      "name": "UUID closes and restores keyboard focus",
+      "status": "PASS"
+    },
+    {
+      "name": "UUID traps focus",
+      "status": "PASS"
+    },
+    {
+      "name": "advanced draft sends no request",
+      "status": "PASS"
+    },
+    {
+      "name": "immediate tab did not apply advanced draft",
+      "status": "PASS"
+    },
+    {
+      "name": "range draft sends no request",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "network": [
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200
+    }
+  ]
+}

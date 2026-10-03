@@ -1,0 +1,3315 @@
+{
+  "mode": "local Deno CLI, real GoTrue/PostgREST/RPC/rate gates; synthetic identities/reports; not hosted Edge, OAuth or production",
+  "size": 500,
+  "concurrency": 3,
+  "normal_repeats_per_user": 30,
+  "original_viewer_state_aliases": true,
+  "results": [
+    {
+      "variant": "before",
+      "route": "entities?kind=manager&",
+      "requests": 90,
+      "p50_ms": 456.24813800000084,
+      "p95_ms": 570.4112630000018,
+      "bytes": 50924,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 484.7438039999997,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 567.4795039999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 625.4540050000005,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 423.4839659999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 491.263085999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 544.0241040000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 400.1582890000009,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 477.4263169999995,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 551.6635289999995,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 364.27298599999995,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 414.43011300000035,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 577.3387329999987,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 403.9103930000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 453.6281820000004,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 695.1409749999984,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 399.85364599999957,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 458.21687100000054,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 522.1439100000007,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 382.30744400000003,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 480.39689999999973,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 533.6909189999988,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 417.0197100000005,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 479.6634900000008,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 530.899899,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 414.4560700000002,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 468.2228070000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 541.6667469999993,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 413.9031099999993,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 483.6227230000004,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 551.5348880000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 410.8207689999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 471.5509549999988,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 562.2286220000005,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 400.8820309999992,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 480.23331099999996,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 536.650728999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 379.03632300000027,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 428.623708000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 499.36948200000006,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 401.5632370000003,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 456.24813800000084,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 546.7226879999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 381.6323740000007,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 435.2312629999997,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 513.6306230000009,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 418.1298379999989,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 496.23953800000163,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 634.1751080000013,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 366.78854599999977,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 419.21154899999965,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 494.91676599999846,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 413.86090200000035,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 475.3763179999987,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 570.4112630000018,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 394.36805500000264,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 442.8968280000008,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 523.9550100000015,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 400.69311899999957,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 448.12920900000245,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 536.9487039999985,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 406.306446999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 468.928985999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 528.7472949999974,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 425.2767930000009,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 469.125892,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 517.6963160000014,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 405.8077259999991,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 452.91795400000046,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 542.5343180000018,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 388.69436199999836,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 441.41175600000133,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 520.6795500000007,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 393.8352999999988,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 443.86595099999977,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 512.0659349999987,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 385.670814000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 432.81328199999916,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 496.0938559999995,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 393.0299279999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 442.76813799999945,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 506.3330810000007,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 394.9784839999993,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 443.236495000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 508.77673700000014,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 375.9259039999997,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 426.9675930000012,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 501.73328200000105,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 394.1657410000007,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 451.33775799999785,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 523.416882999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        }
+      ]
+    },
+    {
+      "variant": "after",
+      "route": "entities?kind=manager&",
+      "requests": 90,
+      "p50_ms": 177.76303900000494,
+      "p95_ms": 1482.2258909999946,
+      "bytes": 50924,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 188.85779199999888,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 190.9882839999991,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1419.026199,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 197.1684830000013,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 210.69713799999954,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1507.8714669999972,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 178.49081800000204,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 187.8519410000008,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1504.4331579999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 164.77320599999803,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 172.5545170000005,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1397.7660890000006,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 160.13315599999987,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 165.1597299999994,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1397.0914159999993,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 157.1399679999995,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 169.5386789999975,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1382.609930999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 167.43819799999983,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 181.75135099999898,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1405.5624940000016,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 152.77635899999586,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 167.5246299999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1387.905335000003,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 159.60121400000207,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 181.35700599999836,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1449.6440619999994,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 162.03321499999583,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 167.8044399999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1374.089899999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 163.62309699999605,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 176.87998099999822,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1583.745103000001,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 155.3693360000034,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 162.94566900000063,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1388.0629410000038,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 163.34804499999882,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 174.0947610000003,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1379.1679309999963,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 164.7426489999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 172.70527700000093,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1483.9915839999958,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 162.91237599999295,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 177.2990439999994,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1396.7590199999977,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 163.49998900000355,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 166.25493599999754,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1416.031391000004,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 156.1866450000016,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 173.97718400000304,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1452.736868,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 166.47224399999686,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 169.05277200000273,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1423.188688000002,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 151.02331499999855,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 177.76303900000494,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1416.801965999999,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 195.51943500000198,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 223.58202199999505,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1477.702516999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 161.56015099999786,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 165.07305700000143,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1400.5912489999973,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 172.53461499999685,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 189.44064899999648,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1482.2258909999946,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 165.34944600000017,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 170.36753999999928,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 1416.200711999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 156.02510600000096,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 162.15349199999764,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1423.3307320000022,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 182.53830000000016,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 186.15114899999753,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1403.5294529999956,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 150.43234799999482,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 158.4388470000049,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 1393.6365240000014,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 172.14320800000132,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 180.6517459999959,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 283.9071280000062,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 155.2111619999996,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 157.85512400000152,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 267.83142800000496,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 169.75765500000125,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 171.5082309999998,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 287.4185639999996,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        },
+        {
+          "ms": 175.1238319999975,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 2
+        },
+        {
+          "ms": 179.60334500000317,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 1
+        },
+        {
+          "ms": 287.9306130000041,
+          "status": 200,
+          "bytes": 50924,
+          "participant": 0
+        }
+      ]
+    },
+    {
+      "variant": "before",
+      "route": "laws?",
+      "requests": 90,
+      "p50_ms": 359.06517899999744,
+      "p95_ms": 400.1818349999958,
+      "bytes": 3980,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 367.0594330000022,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 373.3049850000025,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 388.85233600000356,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 334.09412699999666,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 346.9312149999969,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 358.3130349999992,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 350.22944100000313,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 362.19937400000344,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 396.98302899999544,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 363.6069490000009,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 370.4486839999954,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 390.4551860000065,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 323.04804900000454,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 339.45982399999775,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 371.9477199999965,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 356.00424299999577,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 367.31349000000046,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 375.0846310000052,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 332.96904200000426,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 344.36610500000097,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 352.34334300000046,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 338.5368579999995,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 361.3779500000019,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 370.01809499999945,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 367.0404800000033,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 394.20279900000605,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 404.0732519999947,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 338.48668500001077,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 350.1527849999984,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 359.0808609999949,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 366.24146800000744,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 395.91275499999756,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 406.55979699999443,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 367.9981560000015,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 374.8762619999907,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 394.6078540000017,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 341.9105569999956,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 357.30939099998795,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 363.91906699999527,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 345.8068060000078,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 356.54810200000065,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 405.76734400000714,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 338.46752400000696,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 366.94961499999044,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 379.53646899999876,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 328.4761359999975,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 359.06517899999744,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 367.0621570000076,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 351.69500400000834,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 362.3287539999874,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 371.6018530000001,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 340.184288000004,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 353.0906660000037,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 358.148503000004,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 341.4773390000046,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 356.3994549999916,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 364.00070900001447,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 360.62423699999636,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 372.66445300000487,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 380.7169439999998,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 323.1858809999976,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 329.92873100000725,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 337.2569139999978,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 364.2886489999946,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 376.9531469999929,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 400.1818349999958,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 351.57417700000224,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 359.52979400000186,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 381.3922590000002,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 345.63214800000424,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 362.92406499999925,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 400.50246800000605,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 338.03558399999747,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 371.45972499999334,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 378.8142589999916,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 334.07935,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 346.85725299999467,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 353.0141520000034,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 347.1204839999991,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 355.9419049999997,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 383.91096500000276,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 332.8518320000003,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 339.7450989999925,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 352.0944060000038,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 344.7972230000014,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 352.6168139999936,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 360.0316920000041,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 334.24165399999765,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 344.59477500000503,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 349.94221199999447,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        }
+      ]
+    },
+    {
+      "variant": "after",
+      "route": "laws?",
+      "requests": 90,
+      "p50_ms": 151.81514500000048,
+      "p95_ms": 173.78144299999985,
+      "bytes": 3980,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 151.25656400001026,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 148.7194579999923,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 162.37017399999604,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 129.44807199999923,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 130.68180000000575,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 134.43414400001348,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 154.95136700000148,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 156.0207289999962,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 162.40418499999214,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 139.93170700001065,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 140.49051800000598,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 143.54040600000008,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 134.0427900000068,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 135.88682099999278,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 139.12118400000327,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 158.27979600000253,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 163.42633500001102,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 165.31619800000044,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 177.5891219999903,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 179.09687900000426,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 190.72503000000142,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 131.8992270000017,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 133.2930400000041,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 136.4234010000073,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 142.94075200000952,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 143.37711899999704,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 146.99442800000543,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 147.02533999999287,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 147.51319900000817,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 159.98759099999734,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 132.60861300000397,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 139.39968499999668,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 146.90468500000134,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 142.89377000000968,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 154.03091100000893,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 173.4621230000048,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 160.41327800000727,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 164.34750899999926,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 168.3526850000053,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 151.96069100000022,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 160.97557900000538,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 170.4793159999972,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 131.90689600000042,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 145.08548500000325,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 153.9505269999936,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 135.51710399999865,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 147.04198100000212,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 149.81713700000546,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 154.38053399999626,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 168.77304000000004,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 171.10461999999825,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 154.8266719999956,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 158.43352000000596,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 230.4340430000011,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 165.40935999999056,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 168.2180389999994,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 173.78144299999985,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 159.74446100000932,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 165.62824799999362,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 171.83938799999305,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 137.05811399999948,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 151.81514500000048,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 155.52053800001158,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 150.0313349999924,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 150.5198539999983,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 153.77538999999524,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 148.67310299999372,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 154.82688100000087,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 155.2493370000011,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 141.37126099999296,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 143.61810700000206,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 150.9617520000029,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 158.3575770000025,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 158.571265999999,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 165.1395399999892,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 131.4238170000026,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 159.52444199999445,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 164.5930090000038,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 152.1515769999969,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 156.38065999999526,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 159.57965400000103,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 140.0262989999901,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 140.25936799999909,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 142.90438999999606,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 130.15407800000685,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 141.36003999999957,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        },
+        {
+          "ms": 141.78326799999923,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 139.67478599998867,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 0
+        },
+        {
+          "ms": 147.0305709999957,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 2
+        },
+        {
+          "ms": 160.07715300000564,
+          "status": 200,
+          "bytes": 3980,
+          "participant": 1
+        }
+      ]
+    },
+    {
+      "variant": "before",
+      "route": "series?",
+      "requests": 90,
+      "p50_ms": 453.94208799999615,
+      "p95_ms": 534.0898029999953,
+      "bytes": 5460,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 411.21671499998774,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 539.6899659999908,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 540.4448160000029,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 392.0313920000044,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 463.516993000012,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 520.3461269999971,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 387.56775099999504,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 439.22507600000245,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 488.800218999997,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 398.02525200000673,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 455.8929880000069,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 513.520543000006,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 440.5952169999946,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 506.254402999999,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 563.1793109999999,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 376.49236999999266,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 427.4827990000049,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 474.19985299999826,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 415.60352999999304,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 466.77578700000595,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 524.137361000001,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 374.16699000001245,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 424.87692799999786,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 471.97010600000795,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 418.7861719999928,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 480.4172930000059,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 535.7388479999936,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 376.49758799999836,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 423.15407000000414,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 469.2649519999977,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 408.6373389999935,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 469.2714010000054,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 523.3703690000111,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 431.0893860000069,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 480.9685220000101,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 534.0898029999953,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 395.1504270000005,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 453.94208799999615,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 509.2372120000073,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 392.9223510000011,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 440.9386249999952,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 493.27174599999853,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 406.6183400000009,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 465.03532399999676,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 512.4630550000002,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 423.5261010000104,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 470.7689149999933,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 519.159714999987,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 415.9446190000017,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 468.3293699999922,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 518.2030169999925,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 409.09244300000137,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 459.57387199999357,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 505.50250600000436,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 410.96460500000103,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 460.13618299999507,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 521.2174209999939,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 400.5570429999934,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 445.88425299999653,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 492.10312699999486,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 418.2067839999945,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 477.3572459999996,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 524.2290570000041,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 399.1439769999997,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 444.5361290000001,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 487.20811700000195,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 372.03093100000115,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 420.98625000000175,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 463.7086890000064,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 380.2204459999921,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 428.87879400000384,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 481.8145979999972,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 381.18719299999066,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 442.2626220000093,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 503.84006699999736,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 405.3635249999934,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 454.1591199999966,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 497.7593710000074,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 376.1059149999928,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 424.2764640000096,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 469.2183980000118,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 383.6530070000008,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 429.6366609999968,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 470.62486400001217,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 383.24152100000356,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 431.2377919999999,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 476.9059249999991,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 393.976714000004,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 444.30922699999064,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 494.90785900001356,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        }
+      ]
+    },
+    {
+      "variant": "after",
+      "route": "series?",
+      "requests": 90,
+      "p50_ms": 145.59234699999797,
+      "p95_ms": 169.70354800000496,
+      "bytes": 5460,
+      "failure_rate": 0,
+      "samples": [
+        {
+          "ms": 136.9832960000058,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 137.22383600000467,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 137.9308030000102,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 136.7261959999887,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 151.41842400000314,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 156.56941300000472,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 140.02669400000013,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 140.607674999992,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 147.74355100000685,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 145.16999300000316,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 146.69932100000733,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 149.21506799999042,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 145.6133700000064,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 169.70354800000496,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 174.1528709999984,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 151.52665799998795,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 152.55874700000277,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 153.5172639999946,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 132.83910500000638,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 133.61783599999035,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 149.77370099999825,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 140.29414499999257,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 143.72826499999792,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 145.33808800000406,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 140.4650799999945,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 152.95887200000288,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 157.40865399999893,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 144.19105399999535,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 155.72554900000978,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 157.45251500001177,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 142.96577600001183,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 144.04661799999303,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 151.70052299999224,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 134.82404200000747,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 138.231254000013,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 146.90121799999906,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 140.55745300000126,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 144.1871039999969,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 155.89528599999903,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 141.8345330000011,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 145.2005130000034,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 147.0712760000024,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 128.83960099999967,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 133.1659980000113,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 142.59894299998996,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 130.54454600000463,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 133.40361700000358,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 136.95297500000743,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 149.39035299999523,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 156.860182000004,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 160.0329139999958,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 144.95696200001112,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 145.80525600000692,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 154.6894280000124,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 143.62302199999976,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 161.8144830000092,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 173.02035600000818,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 142.53729900000326,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 149.8524519999919,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 151.56571799999801,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 136.10965099999157,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 144.20041400000628,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 147.01403199999186,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 143.63642199999595,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 144.76475600000413,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 145.59234699999797,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 139.10450699999637,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 141.05192199999874,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 154.9197060000006,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 164.13261300000886,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 169.92115500000364,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 177.16967499999737,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 149.2859710000048,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 152.0914289999928,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 153.95360999999684,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 145.99794299999485,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 145.76444400000037,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 156.82836999998835,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 144.70424300000013,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 148.87921500000812,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 150.51754699999583,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 134.2993609999976,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 134.82908300000418,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 136.13468299999658,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 137.07098699999915,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 137.50207500001125,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 138.35594799999672,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        },
+        {
+          "ms": 152.37529900000663,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 0
+        },
+        {
+          "ms": 153.3331060000055,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 2
+        },
+        {
+          "ms": 157.10140100000717,
+          "status": 200,
+          "bytes": 5460,
+          "participant": 1
+        }
+      ]
+    }
+  ]
+}

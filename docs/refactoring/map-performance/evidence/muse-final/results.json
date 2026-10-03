@@ -1,0 +1,798 @@
+{
+  "results": [
+    {
+      "id": "A01",
+      "name": "direct entry renders + 1 immediate default request",
+      "status": "PASS",
+      "detail": "default params={\"theme\":\"reporters\",\"metric\":\"reports_count\",\"period\":\"all\",\"date_basis\":\"completed_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"} total=1"
+    },
+    {
+      "id": "A02",
+      "name": "H1 + 3 tabs exact labels",
+      "status": "PASS",
+      "detail": "h1=참여자 랭킹 tabs=신고 랭킹/과태료 랭킹/불운 랭킹"
+    },
+    {
+      "id": "A03",
+      "name": "reporters desktop exact headers (no generic 값)",
+      "status": "PASS",
+      "detail": "순위|참여자|완료 신고"
+    },
+    {
+      "id": "A04",
+      "name": "thin me strip before list, server me (not page row)",
+      "status": "PASS",
+      "detail": "내 순위 1위 / 26명\n완료 신고 53건 || 이전\n참여자 1–20 / 26명\n다음"
+    },
+    {
+      "id": "A05",
+      "name": "top-line sentence + aggregation disclosure, no N/F/R/N internals",
+      "status": "FAIL",
+      "detail": "집계 기준 보기 missing"
+    },
+    {
+      "id": "A06",
+      "name": "fines tab sends immediate request",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A07",
+      "name": "rate switch immediate + numerator/denominator order",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A08",
+      "name": "same selection sends no duplicate request",
+      "status": "PASS",
+      "detail": "stable at 3"
+    },
+    {
+      "id": "A09",
+      "name": "unlucky tab + partial memory round-trip",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A10",
+      "name": "month tab immediate + stepper immediate + prior-month title",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A11",
+      "name": "month rows: ties + 표본 1건 + 집계 중",
+      "status": "PASS",
+      "detail": "ties+sample1 present"
+    },
+    {
+      "id": "A12",
+      "name": "range drafts send nothing until 조회",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A13",
+      "name": "advanced drafts send nothing until 적용",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A14",
+      "name": "page 2 uses row range + me unchanged outside page",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A15",
+      "name": "old rk_* deep link + refresh compat",
+      "status": "PASS",
+      "detail": "2023년 7월 · 과태료 처분율이 높은 순위"
+    },
+    {
+      "id": "A16",
+      "name": "UUID dialog: full value + copy + Escape + focus return",
+      "status": "PASS",
+      "detail": "uuid=11111111… copy=CLIPBOARD_DENIED"
+    },
+    {
+      "id": "A17",
+      "name": "UUID dialog traps Tab focus",
+      "status": "PASS",
+      "detail": "trapped"
+    },
+    {
+      "id": "A18",
+      "name": "empty month has no invented rows",
+      "status": "FAIL",
+      "detail": "page.waitForResponse: Timeout 15000ms exceeded while waiting for event \"response\""
+    },
+    {
+      "id": "A19",
+      "name": "error panel + retry recovers (one-shot 500)",
+      "status": "PASS",
+      "detail": "error cleared, rows back"
+    },
+    {
+      "id": "A20",
+      "name": "429 cooldown collapses intents, resumes latest only",
+      "status": "PASS",
+      "detail": "resumed theme=fines"
+    },
+    {
+      "id": "A21",
+      "name": "account menu shows shortened OWN UUID (no nickname demand)",
+      "status": "PASS",
+      "detail": "ID 11111111"
+    },
+    {
+      "id": "A22",
+      "name": "keyboard: Tab reaches tabs, Enter switches theme",
+      "status": "PASS",
+      "detail": "focus on \"신고 랭킹\""
+    },
+    {
+      "id": "B01",
+      "name": "mobile two-line list (no desktop table)",
+      "status": "PASS",
+      "detail": "1위 / 11111111…5555 / 나 / 53건 / 완료 신고 53건"
+    },
+    {
+      "id": "B02",
+      "name": "390 light: no page overflow",
+      "status": "PASS",
+      "detail": "no overflow"
+    },
+    {
+      "id": "B03",
+      "name": "mobile tap targets + bottom content reachable",
+      "status": "PASS",
+      "detail": "min tab height=44px pager visible=true"
+    },
+    {
+      "id": "B04",
+      "name": "CSS-zoom 200% emulation labeled: no page overflow",
+      "status": "FAIL",
+      "detail": "overflow under emulated 200% (scrollWidth=456, innerWidth=390)"
+    },
+    {
+      "id": "C-360-dark",
+      "name": "360px dark: tabs+rows+no overflow",
+      "status": "PASS",
+      "detail": "rows=20 list=true"
+    },
+    {
+      "id": "C-768-dark",
+      "name": "768px dark: tabs+rows+no overflow",
+      "status": "PASS",
+      "detail": "rows=20 list=false"
+    },
+    {
+      "id": "C-768-light",
+      "name": "768px light: tabs+rows+no overflow",
+      "status": "PASS",
+      "detail": "rows=20 list=false"
+    },
+    {
+      "id": "C-1440-light",
+      "name": "1440px light: tabs+rows+no overflow",
+      "status": "PASS",
+      "detail": "rows=20 list=false"
+    },
+    {
+      "id": "D01",
+      "name": "late fines response does not clobber newer unlucky intent",
+      "status": "PASS",
+      "detail": "stable on unlucky"
+    },
+    {
+      "id": "D02",
+      "name": "account B sees own me (A data absent)",
+      "status": "PASS",
+      "detail": "내 순위 1위 / 26명\n완료 신고 53건 dialog=22222222…"
+    },
+    {
+      "id": "E01",
+      "name": "statistics direct entry uses metadata only (no dashboard/query)",
+      "status": "FAIL",
+      "detail": "statistics/query fired before 통계 만들기"
+    },
+    {
+      "id": "E02",
+      "name": "draft edits send no API until 통계 만들기",
+      "status": "FAIL",
+      "detail": "unapplied note missing"
+    },
+    {
+      "id": "E03",
+      "name": "통계 만들기 runs once + 표/그래프 switch refetches nothing",
+      "status": "FAIL",
+      "detail": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.stats-page').getByRole('button', { name: '통계 만들기', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button disabled type=\"button\" class=\"primary-button\">통계 만들기</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for elemen"
+    },
+    {
+      "id": "E04",
+      "name": "statistics keeps compare/share/export/preset surfaces",
+      "status": "PASS",
+      "detail": "compare/share/preset present"
+    },
+    {
+      "id": "E05",
+      "name": "mobile statistics result-first + 조건 변경 toggle",
+      "status": "PASS",
+      "detail": "toggle visible, no overflow"
+    },
+    {
+      "id": "E06",
+      "name": "metadata failure shows banner (reload retry path)",
+      "status": "PASS",
+      "detail": "banner then reload recovers"
+    },
+    {
+      "id": "F01",
+      "name": "anonymous sees login gate, no UUID rows",
+      "status": "PASS",
+      "detail": "gate shown, no rows"
+    }
+  ],
+  "consoleErrors": [
+    "[A] Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "[A] Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "[EF] Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "net": [
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_rate",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "month",
+        "month": "2026-10",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "range",
+        "start": "2026-08-01",
+        "end": "2026-08-31",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "range",
+        "start": "2026-08-01",
+        "end": "2026-08-31",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "3",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "3",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "3",
+        "page": "2",
+        "page_size": "20",
+        "expected_version": "1b3fd2913edcf54edac5b94faa843040"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_rate",
+        "period": "month",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_rate",
+        "period": "month",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "month": "2026-10",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 500
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 429
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "A",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "B",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "C360dark",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "C768dark",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "C768light",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "C1440light",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "D",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "D",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 0
+    },
+    {
+      "ctx": "D",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "DB",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "E",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/meta",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "E",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "E",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "EM",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/meta",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "EM",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "EM",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "EF",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/meta",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "EF",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "params": {},
+      "status": 500
+    },
+    {
+      "ctx": "EF",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "EF",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/meta",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "EF",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "EF",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}"
+      },
+      "status": 200
+    }
+  ]
+}

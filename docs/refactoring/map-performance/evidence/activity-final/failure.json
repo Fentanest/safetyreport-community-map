@@ -1,0 +1,17 @@
+{
+  "message": "page.waitForFunction: Timeout 30000ms exceeded.",
+  "checks": [
+    {
+      "name": "metadata error has explicit retry",
+      "status": "PASS"
+    },
+    {
+      "name": "direct statistics has no dashboard request",
+      "status": "PASS"
+    },
+    {
+      "name": "metadata retry reaches actual result",
+      "status": "PASS"
+    }
+  ]
+}

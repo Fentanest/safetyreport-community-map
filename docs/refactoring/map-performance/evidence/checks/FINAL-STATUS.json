@@ -1,0 +1,30 @@
+{
+  "product_candidate": "7542cded652c91835f3421f394f4466b6e9b0c6d",
+  "unit": {
+    "PASS": 623,
+    "SKIP": 111,
+    "FAIL": 0
+  },
+  "typecheck_build": "PASS; warnings retained",
+  "manifest": {
+    "PASS": true,
+    "migrations": 41,
+    "functions": 7
+  },
+  "public_scan": "PASS",
+  "local_final_integration_unique_pass": 53,
+  "local_browser_rankings_pass": 102,
+  "local_browser_periods_pass": 96,
+  "local_browser_accessibility_pass": 7,
+  "actual_browser_zoom_pass": 4,
+  "muse_final_narrow": {
+    "control_checks": 36,
+    "fixture_limitation_marker": 1,
+    "ranking_response_rows": "NOT RUN in bareVite narrow review"
+  },
+  "ranking_primary_first_attempt": "FAIL original within25s outer diagnostic; full first stderr not retained; no inferred cause",
+  "ranking_primary_retry": "PASS; separate60s outer diagnostic; product timeout unchanged",
+  "frontend_shared_process": "p95 regressions retained",
+  "frontend_isolated_repeat": "PASS runs; regression not reproduced; cause unproven",
+  "operating_application": "NOT RUN; no remote push, merge, cloud SQL/settings/deploy"
+}

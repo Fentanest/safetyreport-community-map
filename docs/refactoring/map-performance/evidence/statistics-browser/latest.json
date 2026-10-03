@@ -1,0 +1,1726 @@
+{
+  "run_id": "scope-statistics-2026-10-03T14-54-52-689Z",
+  "suite": "scope-statistics",
+  "commit": "bc41efcee2079964bb3c4374141a8db0506137ad",
+  "working_tree_dirty": true,
+  "started_at": "2026-10-03T14:54:52.713Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 153.0.8010.12",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic (demoFacts + e2e extras)",
+    "server": "local Vite middleware running server/publicHandler.ts + server/personalHandler.ts",
+    "default_viewport": "1440x1000",
+    "theme": "dark unless noted",
+    "zoom": "browser zoom 100% (headless); ZOOM-EMU uses viewport/DSF emulation, not browser zoom"
+  },
+  "results": {
+    "MT-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "default rate series",
+          "actual": [
+            "rate:accept:all"
+          ],
+          "expected": [
+            "rate:accept:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "two rates on one axis",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "four overlaid series",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "compare → exactly 8 ids",
+          "actual": [
+            "rate:accept:all",
+            "rate:accept:mine",
+            "rate:reject:all",
+            "rate:reject:mine",
+            "rate:partial:all",
+            "rate:partial:mine",
+            "rate:fine:all",
+            "rate:fine:mine"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:accept:mine",
+            "rate:reject:all",
+            "rate:reject:mine",
+            "rate:partial:all",
+            "rate:partial:mine",
+            "rate:fine:all",
+            "rate:fine:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "unchecking fine removes only its lines",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-05": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "all unchecked → note, no series",
+          "actual": {
+            "note": "비교할 지표를 선택해 주세요.",
+            "series": [
+              "rate:fine:all"
+            ]
+          },
+          "expected": {
+            "note": "비교할 지표를 선택해 주세요.",
+            "series": []
+          }
+        },
+        {
+          "ok": true,
+          "label": "checkboxes stay usable",
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "selection kept across count↔rate and table↔chart",
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "ok": true,
+          "label": "compare OFF removes every mine series",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-16": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "tooltip lists 8 values with num/den or a reason",
+          "actual": 8,
+          "expected": 8
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-18": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no request during 20 toggles",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "same chart instance",
+          "actual": "ec_1791039294171",
+          "expected": "ec_1791039294171"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-19": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "mine pending is named",
+          "actual": "내 신고를 불러오는 중",
+          "expected": "내 신고를 불러오는 중"
+        },
+        {
+          "ok": true,
+          "label": "top status names the personal request",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "public lines stay while mine loads",
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-20": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "table has all/mine per checked rate",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-21": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "rows = 답변 월, four rate metrics",
+          "actual": "답변 월 · 수용률, 불수용률, 일부수용률, 과태료 부과율",
+          "expected": "답변 월 · 수용률, 불수용률, 일부수용률, 과태료 부과율"
+        },
+        {
+          "ok": true,
+          "label": "overlaid percent lines",
+          "actual": [
+            "accept_rate:all",
+            "reject_rate:all",
+            "partial_rate:all",
+            "fine_rate:all"
+          ],
+          "expected": [
+            "accept_rate:all",
+            "reject_rate:all",
+            "partial_rate:all",
+            "fine_rate:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "top status while refreshing",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "panel busy and previous numbers kept",
+          "actual": {
+            "busy": "true",
+            "kpi": 1
+          },
+          "expected": {
+            "busy": "true",
+            "kpi": 1
+          }
+        },
+        {
+          "ok": true,
+          "label": "one request, map instance kept, status cleared",
+          "actual": {
+            "req": {
+              "dashboard": 1
+            },
+            "maps": 2,
+            "top": ""
+          },
+          "expected": {
+            "req": {
+              "dashboard": 1
+            },
+            "maps": 2,
+            "top": ""
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "auto OFF pans: no statistics request, no status",
+          "actual": {
+            "req": {},
+            "top": ""
+          },
+          "expected": {
+            "req": {},
+            "top": ""
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "place status while P2 loads",
+          "actual": "주소 상세를 불러오는 중",
+          "expected": "(t) => t.includes('주소 상세를 불러오는 중')"
+        },
+        {
+          "ok": true,
+          "label": "P2 shown, late P1 dropped, status cleared",
+          "actual": {
+            "title": "경기도 수원시 예시로 2길",
+            "top": ""
+          },
+          "expected": {
+            "title": "경기도 수원시 예시로 2길",
+            "top": ""
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "cleared selection removes only its status",
+          "actual": "",
+          "expected": ""
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-19": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "retry wait with a countdown",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "exactly one request after Retry-After",
+          "actual": {
+            "dashboard": 1
+          },
+          "expected": {
+            "dashboard": 1
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-26": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "status visible at the bottom",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-12": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "run status + previous result kept + button locked",
+          "actual": {
+            "st": "선택한 조건으로 통계를 만드는 중 · 아래는 이전 조건의 결과",
+            "btn": "만드는 중…",
+            "rows": true
+          },
+          "expected": "(x) => x.st.includes('만드는 중') && x.btn === '만드는 중…' && x.rows"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "LD-13": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "complete result → no fetch on the switch",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "one selected marker on top",
+          "actual": [
+            10
+          ],
+          "expected": [
+            10
+          ]
+        },
+        {
+          "ok": true,
+          "label": "place panel opened",
+          "actual": "선택한 주소",
+          "expected": "선택한 주소"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "re-click clears",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "scope panel back",
+          "actual": "전국",
+          "expected": "전국"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "P1→P2 one selection",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "blank map click clears",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "Esc clears the selection",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "panel button clears",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "blank click right after a marker click is ignored",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "a drag end is not a blank click",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-07": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "Esc closes only the drawer",
+          "actual": {
+            "drawer": 0,
+            "selected": 1
+          },
+          "expected": {
+            "drawer": 0,
+            "selected": 1
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-10": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "rate map: no pin, no halo",
+          "actual": {
+            "pins": 0,
+            "selected": 0
+          },
+          "expected": {
+            "pins": 0,
+            "selected": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PI-13": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no marker accumulation after 30 operations",
+          "actual": {
+            "live": 32,
+            "maps": 2
+          },
+          "expected": {
+            "live": 32,
+            "maps": 2
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "nation detail",
+          "actual": {
+            "h2": "전국",
+            "children": true
+          },
+          "expected": {
+            "h2": "전국",
+            "children": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "seoul via child list",
+          "actual": {
+            "url": "11",
+            "h2": "서울특별시"
+          },
+          "expected": {
+            "url": "11",
+            "h2": "서울특별시"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "시군구 detail with a 3-level trail",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "top selector = same region action",
+          "actual": {
+            "url": "26",
+            "h2": "부산광역시"
+          },
+          "expected": {
+            "url": "26",
+            "h2": "부산광역시"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "address breadcrumb → region detail, pin cleared",
+          "actual": {
+            "h2": "경기도",
+            "selected": 0
+          },
+          "expected": {
+            "h2": "경기도",
+            "selected": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "SC-09": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "shown/total count",
+          "actual": "표시 5 / 전체 10",
+          "expected": "(t) => /^표시 \\d+ \\/ 전체 \\d+$/.test(t)"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "separate 맞춤 통계 screen with focus",
+          "actual": {
+            "url": "statistics",
+            "h1": "맞춤 통계",
+            "focus": "stats-title"
+          },
+          "expected": {
+            "url": "statistics",
+            "h1": "맞춤 통계",
+            "focus": "stats-title"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "direct entry / refresh restores the result",
+          "actual": 2,
+          "expected": "(n) => n > 0"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "displayed region handed over",
+          "actual": "지역\n서울특별시\n×",
+          "expected": "(t) => t.includes('서울특별시')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "address condition chip",
+          "actual": "지역\n서울특별시\n×\n주소\n서울특별시 강남구 예시로 1길\n×",
+          "expected": "(t) => t.includes('주소')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "PG-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "map instance kept across the page switch",
+          "actual": 2,
+          "expected": 2
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "기관 lands 12px under the sticky bar @1440",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "추이 lands 12px under the sticky bar @1440",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "지역 lands 12px under the sticky bar @1440",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "지도 lands 12px under the sticky bar @1440",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "지역 → region list @1440",
+          "actual": "regions",
+          "expected": "regions"
+        },
+        {
+          "ok": true,
+          "label": "지역 → region list @390",
+          "actual": "regions",
+          "expected": "regions"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-07": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "focus on the section after menu move",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-08": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "statistics → 기관 restores the dashboard at #entities",
+          "actual": {
+            "s": "dashboard",
+            "o": {
+              "bar": 64,
+              "top": 76
+            }
+          },
+          "expected": "(x) => x.s === 'dashboard'"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-09": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "기관 lands 12px under the sticky bar @390",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "추이 lands 12px under the sticky bar @390",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "지역 lands 12px under the sticky bar @390",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "지도 lands 12px under the sticky bar @390",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-SPY": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "manual scroll to 기관 → current item 기관",
+          "actual": "기관",
+          "expected": "기관"
+        },
+        {
+          "ok": true,
+          "label": "manual scroll to 추이 → current item 추이",
+          "actual": "추이",
+          "expected": "추이"
+        },
+        {
+          "ok": true,
+          "label": "statistics screen: no dashboard section is current",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "NV-10": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "back restores the dashboard scroll position",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "back keeps the filter",
+          "actual": "parking",
+          "expected": "parking"
+        },
+        {
+          "ok": true,
+          "label": "forward returns to statistics",
+          "actual": "statistics",
+          "expected": "statistics"
+        },
+        {
+          "ok": true,
+          "label": "draft kept through back/forward",
+          "actual": "기관\n↑\n↓\n✕\n시도\n↑\n↓\n✕",
+          "expected": "(t) => t.includes('시도')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "ZOOM-EMU": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "125% emulation: title under the bar, no overflow",
+          "actual": {
+            "under": true,
+            "overflow": false
+          },
+          "expected": {
+            "under": true,
+            "overflow": false
+          }
+        },
+        {
+          "ok": true,
+          "label": "150% emulation: title under the bar, no overflow",
+          "actual": {
+            "under": true,
+            "overflow": false
+          },
+          "expected": {
+            "under": true,
+            "overflow": false
+          }
+        },
+        {
+          "ok": true,
+          "label": "200% emulation: title under the bar, no overflow",
+          "actual": {
+            "under": true,
+            "overflow": false
+          },
+          "expected": {
+            "under": true,
+            "overflow": false
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MS-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "only the three picked agencies",
+          "actual": [
+            "예시 대구수성경찰서",
+            "예시 서울중부경찰서",
+            "예시 인천남동경찰서"
+          ],
+          "expected": [
+            "예시 대구수성경찰서",
+            "예시 서울중부경찰서",
+            "예시 인천남동경찰서"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "one query",
+          "actual": {
+            "statistics/query": 1
+          },
+          "expected": {
+            "statistics/query": 1
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MS-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "selection survives a search change",
+          "actual": 3,
+          "expected": 3
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MS-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "cancel keeps the query unchanged",
+          "actual": "고르지 않으면 전체",
+          "expected": "(t) => t.includes('고르지 않으면 전체')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MS-10": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "unknown key shown as 확인할 수 없음 with the saved label",
+          "actual": "예전에 저장한 기관 (확인할 수 없음)",
+          "expected": "예전에 저장한 기관 (확인할 수 없음)"
+        },
+        {
+          "ok": true,
+          "label": "exclusion stated, not switched to 전체",
+          "actual": {
+            "banner": 1,
+            "rows": 3
+          },
+          "expected": {
+            "banner": 1,
+            "rows": 3
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MS-11": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "debounced: one candidates request for the typed word; focus kept",
+          "actual": {
+            "req": 1,
+            "focus": "기관 검색"
+          },
+          "expected": {
+            "req": 1,
+            "focus": "기관 검색"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CH-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "heatmap of the same result",
+          "actual": [
+            "heatmap:fine_rate:all"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CH-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "table → chart → table keeps the numbers",
+          "actual": "예시 대구수성경찰서\n\t35.7% (41/115)\t115건\t50.0% (1/2)\t2건\t0.0% (0/2)\t2건\t33.3% (1/3)\t3건\t—\t—\t33.3% (1/3)\t3건\t100.0% (1/1)\t1건\t100.0% (1/1)\t1건\t—\t—\t0.0% (0/1)\t1건\t—\t—\t—\t—\t—\t—\t0.0% (0/3)\t3건\t35.1% (46/131)\t131건",
+          "expected": "예시 대구수성경찰서\n\t35.7% (41/115)\t115건\t50.0% (1/2)\t2건\t0.0% (0/2)\t2건\t33.3% (1/3)\t3건\t—\t—\t33.3% (1/3)\t3건\t100.0% (1/1)\t1건\t100.0% (1/1)\t1건\t—\t—\t0.0% (0/1)\t1건\t—\t—\t—\t—\t—\t—\t0.0% (0/3)\t3건\t35.1% (46/131)\t131건"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CH-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no request for representation switches",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "CH-CMP": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "compare heatmap draws 전체 and 내 신고",
+          "actual": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "both captions present",
+          "actual": [
+            "전체",
+            "내 신고"
+          ],
+          "expected": "(x) => x.length === 2 && x[0].startsWith('전체') && x[1].startsWith('내 신고')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "C01-AB": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "after the switch the numbers are B's own (A's late answer never shown)",
+          "actual": {
+            "nickSame": false,
+            "shown": "내 신고 5건",
+            "differentAccounts": true
+          },
+          "expected": {
+            "nickSame": true,
+            "shown": "내 신고 5건",
+            "differentAccounts": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no loading left over from A's request",
+          "actual": "",
+          "expected": ""
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "C01-NICK": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": true,
+          "label": "nickname change of the same account: no refetch",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": false,
+          "label": "nickname shown updated",
+          "actual": "ID 22222222",
+          "expected": "(t) => t.startsWith('새닉네임')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "C01-RESTORE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "B does not get A's 맞춤 통계 draft",
+          "actual": "기관\n↑\n↓\n✕",
+          "expected": "(t) => !t.includes('시도')"
+        },
+        {
+          "ok": true,
+          "label": "after reload as B: still not A's draft",
+          "actual": "기관\n↑\n↓\n✕",
+          "expected": "(t) => !t.includes('시도')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "W-OVERFLOW": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "dashboard 1920 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 1920 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 1440 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 1440 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 1280 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 1280 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 768 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 768 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 390 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 390 dark",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 1920 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 1920 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 1440 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 1440 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 1280 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 1280 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 768 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 768 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "dashboard 390 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "statistics 390 light",
+          "actual": false,
+          "expected": false
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    }
+  },
+  "steps": {
+    "MT": {
+      "status": "DONE",
+      "ids": [
+        "MT-01",
+        "MT-02",
+        "MT-03",
+        "MT-04",
+        "MT-05",
+        "MT-06",
+        "MT-16",
+        "MT-18",
+        "MT-19",
+        "MT-20"
+      ],
+      "ms": 9148
+    },
+    "LD": {
+      "status": "DONE",
+      "ids": [
+        "LD-02",
+        "LD-04",
+        "LD-05",
+        "LD-06",
+        "LD-19",
+        "LD-26"
+      ],
+      "ms": 16619
+    },
+    "PI": {
+      "status": "DONE",
+      "ids": [
+        "PI-01",
+        "PI-02",
+        "PI-03",
+        "PI-04",
+        "PI-05",
+        "PI-06",
+        "PI-07",
+        "PI-10",
+        "PI-13"
+      ],
+      "ms": 7906
+    },
+    "SC_PG": {
+      "status": "DONE",
+      "ids": [
+        "SC-01",
+        "SC-02",
+        "SC-03",
+        "SC-04",
+        "SC-05",
+        "SC-09",
+        "PG-01",
+        "PG-02",
+        "PG-03",
+        "PG-04",
+        "PG-06"
+      ],
+      "notes": {
+        "breadcrumb_from": "경기도 수원시 예시로 1길 · 신고 수 18건"
+      },
+      "ms": 12035
+    },
+    "NV": {
+      "status": "DONE",
+      "ids": [
+        "NV-01",
+        "NV-02",
+        "NV-07",
+        "NV-08",
+        "NV-09",
+        "NV-SPY",
+        "NV-10",
+        "ZOOM-EMU"
+      ],
+      "ms": 37952
+    },
+    "MS_CH": {
+      "status": "DONE",
+      "ids": [
+        "MS-01",
+        "MS-02",
+        "MS-06",
+        "MS-10",
+        "MS-11",
+        "CH-01",
+        "CH-03",
+        "CH-04",
+        "CH-CMP",
+        "LD-12",
+        "LD-13"
+      ],
+      "ms": 12828
+    },
+    "MT21": {
+      "status": "DONE",
+      "ids": [
+        "MT-21"
+      ],
+      "ms": 4570
+    },
+    "C01": {
+      "status": "DONE",
+      "ids": [
+        "C01-AB",
+        "C01-NICK",
+        "C01-RESTORE"
+      ],
+      "notes": {
+        "mine_before_switch": "내 신고 32건"
+      },
+      "ms": 19413
+    },
+    "W": {
+      "status": "DONE",
+      "ids": [
+        "W-OVERFLOW"
+      ],
+      "ms": 39607
+    }
+  },
+  "finished_at": "2026-10-03T14:57:32.875Z",
+  "summary": {
+    "PASS": 57,
+    "FAIL": 3
+  }
+}

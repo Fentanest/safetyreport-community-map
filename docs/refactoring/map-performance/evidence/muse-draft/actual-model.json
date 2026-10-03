@@ -1,0 +1,16 @@
+{
+  "session": "ses_efcf5baabffenqaLB86SMogfsa",
+  "directory": "/home/better0101/projects/safetyreport-community-map/.agent-runtime/mn",
+  "requested_model": "opencode-go/muse-spark-1.3-contributor",
+  "requested_variant": "high",
+  "actual_assistant_models": [
+    {
+      "provider": "opencode-go",
+      "model": "muse-spark-1.3-contributor",
+      "variant": "high"
+    }
+  ],
+  "fixed_commit": "7542cded652c91835f3421f394f4466b6e9b0c6d",
+  "product_diff": "",
+  "status": "VERIFIED"
+}

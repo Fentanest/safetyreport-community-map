@@ -1,0 +1,245 @@
+{
+  "seed": "refactor-rank-deterministic-v1",
+  "measurements": [
+    {
+      "label": "first",
+      "elapsed_ms": 6434.717,
+      "bytes": 12237
+    },
+    {
+      "label": "rates",
+      "elapsed_ms": 5981.391,
+      "bytes": 12959
+    },
+    {
+      "label": "monthly-reporters",
+      "elapsed_ms": 5995.646,
+      "bytes": 12242
+    },
+    {
+      "label": "monthly-fines",
+      "elapsed_ms": 6153.549,
+      "bytes": 12964
+    },
+    {
+      "label": "monthly-unlucky",
+      "elapsed_ms": 6123.71,
+      "bytes": 12969
+    },
+    {
+      "label": "cumulative-unlucky",
+      "elapsed_ms": 5999.982,
+      "bytes": 13182
+    },
+    {
+      "label": "before-first-1",
+      "elapsed_ms": 6866.738,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-1",
+      "elapsed_ms": 6967.628,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-2",
+      "elapsed_ms": 6822.909,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-2",
+      "elapsed_ms": 6699.266,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-3",
+      "elapsed_ms": 6868.436,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-3",
+      "elapsed_ms": 6645.737,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-4",
+      "elapsed_ms": 6721.429,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-4",
+      "elapsed_ms": 6700.613,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-5",
+      "elapsed_ms": 6907.171,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-5",
+      "elapsed_ms": 6676.784,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-6",
+      "elapsed_ms": 7189.065,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-6",
+      "elapsed_ms": 6869.2,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-7",
+      "elapsed_ms": 6636.635,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-7",
+      "elapsed_ms": 6715.811,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-8",
+      "elapsed_ms": 6809.587,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-8",
+      "elapsed_ms": 6895.723,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-9",
+      "elapsed_ms": 6695.161,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-9",
+      "elapsed_ms": 6620.806,
+      "bytes": 12959
+    },
+    {
+      "label": "before-first-10",
+      "elapsed_ms": 6732.713,
+      "bytes": 12237
+    },
+    {
+      "label": "before-rates-10",
+      "elapsed_ms": 6945.811,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-2",
+      "elapsed_ms": 5458.807,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-2",
+      "elapsed_ms": 5382.464,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-3",
+      "elapsed_ms": 5458.316,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-3",
+      "elapsed_ms": 5317.19,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-4",
+      "elapsed_ms": 5453.844,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-4",
+      "elapsed_ms": 5383.032,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-5",
+      "elapsed_ms": 5347.6,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-5",
+      "elapsed_ms": 5469.235,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-6",
+      "elapsed_ms": 5529.825,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-6",
+      "elapsed_ms": 5226.625,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-7",
+      "elapsed_ms": 5264.858,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-7",
+      "elapsed_ms": 5289.401,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-8",
+      "elapsed_ms": 5266.018,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-8",
+      "elapsed_ms": 5586.754,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-9",
+      "elapsed_ms": 5489.342,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-9",
+      "elapsed_ms": 5447.693,
+      "bytes": 12959
+    },
+    {
+      "label": "repeat-first-10",
+      "elapsed_ms": 5612.574,
+      "bytes": 12237
+    },
+    {
+      "label": "repeat-rates-10",
+      "elapsed_ms": 5289.647,
+      "bytes": 12959
+    },
+    {
+      "label": "next",
+      "elapsed_ms": 5927.489,
+      "bytes": 12264
+    },
+    {
+      "label": "all",
+      "elapsed_ms": 5579.775,
+      "bytes": 5476
+    },
+    {
+      "label": "withdrawn",
+      "elapsed_ms": 6171.018,
+      "bytes": 12237
+    },
+    {
+      "label": "after-withdrawal",
+      "elapsed_ms": 5976.751,
+      "bytes": 12186
+    }
+  ]
+}

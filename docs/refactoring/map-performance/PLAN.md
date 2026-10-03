@@ -43,3 +43,7 @@ production 랭킹 lazy 진입은 RAF readiness로 재측정해도 p95 회귀가 
 040700은 DB의64자리 lower-case hex CHECK가 있는 source/dataset key만 bytea로 정렬한다. payload hash는 검증되지 않은 문자열이므로 text를 유지한다. 대표 순서와 외부 identity/version은 그대로다. 같은 seed/connection 원본·후보10회 interleave에서 전체 응답 동등성과 계측된 p95 19.3s→7.4s를 확인했다. auto_explain analyze의 양쪽 overhead가 포함되며 일반 HTTP 개선율로 확대하지 않는다.
 
 HTTP 기관500건에서 일부 계정 p95 1.85s가 재현됐다. EXPLAIN에서 inline된 key_numbers가500 own row마다500키를 다시 조회해 LATERAL250000회 실행되는 근거를 확인했다. 040800은 key_numbers를 요청 안에서 한 번 materialize하고 completed/numbered partial lookup index를 추가한다. 영구 자격/집계 캐시는 아니다. 동등성25비교와 normal auth/rate HTTP1/3/5 재측정 후 결과를 보고한다. rollback은040400 함수 복구 및 새 index 제거. 첫 계획/반복 계획의 변동도 원자료에 유지한다.
+
+## 실제 브라우저에서 찾은 조건 복원 결함
+
+전체 실제SQL브라우저102검사 후 과거 월96검사를 추가하며 두 UI 결함을 재현했다. 상세 패널의 native toggle reset이 빠른 첫 draft 입력을 덮어썼고, URL rk_min 문자열이 numeric schema에 실패해 실제 remount/refresh/history에서 기본조건으로 돌아갔다. closed-panel 동기화는 유지하고 중복 open reset을 제거(29f836f), URL 숫자변환 후 기존 schema검증(7542cde)으로 수정했다. 실제 API scope/숫자와 화면을 검증했으며 같은 고정7542cde를 Muse가 별도 worktree에서 재검수한다. 처음 추가 Muse는 외부/tmp 자동거절로 browser 실행 전 종료됐으며 승인으로 세지 않았다. 자기 worktree TMPDIR로 새 고정검수를 안전하게 복구했다.

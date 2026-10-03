@@ -1,0 +1,22 @@
+{
+  "results": [
+    {
+      "id": "U01",
+      "name": "UUID copy success path",
+      "status": "PASS",
+      "detail": "clipboard=11111111… + success message"
+    },
+    {
+      "id": "U02",
+      "name": "clean page-2 evidence (defaults)",
+      "status": "PASS",
+      "detail": "이전 참여자 21–26 / 26명 다음 || 내 순위 1위 / 26명 완료 신고 53건"
+    },
+    {
+      "id": "U03",
+      "name": "no page errors in success-path run",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

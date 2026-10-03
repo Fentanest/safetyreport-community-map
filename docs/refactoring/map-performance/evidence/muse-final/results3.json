@@ -1,0 +1,23 @@
+{
+  "results": [
+    {
+      "id": "T01",
+      "name": "current month shows 집계 중 + ties + sample1",
+      "status": "PASS",
+      "detail": "month=2026-10 notice+ties+sample1"
+    },
+    {
+      "id": "T02",
+      "name": "saved recipe round-trip (details first) + share panel",
+      "status": "PASS",
+      "detail": "save listed + reloads draft, share panel open"
+    },
+    {
+      "id": "T03",
+      "name": "200%-zoom overflow forensics (rect-based)",
+      "status": "PASS",
+      "detail": "{\"innerWidth\":390,\"docSW\":456,\"bodySW\":228,\"over\":[\"DIV.header-end L=40 R=456 W=416 pos=static\",\"BUTTON.quiet-btn.briefing-btn L=368 R=456 W=88 pos=static\",\"svg. L=386 R=426 W=40 pos=static\",\"path. L=391 R=421 W=30 pos=static\",\"BUTTON. L=348 R=416 W=68 pos=static\",\"svg. L=360 R=404 W=44 pos=static\",\"rect. L=366 R=399 W=33 pos=static\",\"path. L=366 R=399 W=33 pos=static\",\"SPAN. L=360 R=404 W=44 pos=static\",\"BUTTON. L=416 R=484 W=68 pos=static\",\"svg. L=428 R=472 W=44 pos=static\",\"path. L=434 R=467 W=33 pos=static\",\"SPAN. L=428 R=472 W=44 pos=static\"]}"
+    }
+  ],
+  "consoleErrors": []
+}

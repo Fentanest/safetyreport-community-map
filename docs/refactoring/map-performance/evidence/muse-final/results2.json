@@ -1,0 +1,522 @@
+{
+  "results": [
+    {
+      "id": "R05",
+      "name": "집계 기준 disclosure present (any role) + top-line sentence",
+      "status": "PASS",
+      "detail": "disclosure + sentence present, no forbidden terms"
+    },
+    {
+      "id": "R06",
+      "name": "fines tab immediate + exact headers",
+      "status": "PASS",
+      "detail": "순위|참여자|과태료 처분|완료 신고"
+    },
+    {
+      "id": "R07",
+      "name": "rate switch immediate + 분자/분모 order",
+      "status": "PASS",
+      "detail": "순위|참여자|과태료 처분율|완료 신고 || 84.9%\n53건 중 45건"
+    },
+    {
+      "id": "R08",
+      "name": "unlucky theme: dimensions + per-theme memory round-trip",
+      "status": "PASS",
+      "detail": "memory=partial_count"
+    },
+    {
+      "id": "R10",
+      "name": "month immediate + stepper names + prior-month title",
+      "status": "PASS",
+      "detail": "stepper=[\"이전 달\",\"다음 달\"] sub=2026년 8월 · 일부수용 건수가 많은 순위"
+    },
+    {
+      "id": "R11b",
+      "name": "month rows show ties + sample1 + in-progress notice",
+      "status": "FAIL",
+      "detail": "no in-progress note"
+    },
+    {
+      "id": "R12",
+      "name": "range draft silent until 조회",
+      "status": "PASS",
+      "detail": "silent then fired; 2026-08-01 — 2026-08-31 · 일부수용 건수가 많은 순위"
+    },
+    {
+      "id": "R13",
+      "name": "advanced draft silent until 적용",
+      "status": "PASS",
+      "detail": "min 5 applied, restored 1"
+    },
+    {
+      "id": "R14",
+      "name": "page 2 row-range + me stable outside page",
+      "status": "PASS",
+      "detail": "이전 참여자 21–26 / 26명 다음"
+    },
+    {
+      "id": "R18",
+      "name": "empty month: heading + zero rows",
+      "status": "PASS",
+      "detail": "empty clean"
+    },
+    {
+      "id": "R23",
+      "name": "back/forward keeps rk_* history",
+      "status": "PASS",
+      "detail": "back=null forward=fines"
+    },
+    {
+      "id": "R24",
+      "name": "identify 200%-zoom overflow culprit (390, CSS-zoom emulation)",
+      "status": "PASS",
+      "detail": "{\"clientWidth\":390,\"docSW\":456,\"bad\":[]}"
+    },
+    {
+      "id": "S01",
+      "name": "entry: meta+catalog+exactly ONE default query, NO dashboard",
+      "status": "PASS",
+      "detail": "meta+catalog+1 default query; no dashboard"
+    },
+    {
+      "id": "S02",
+      "name": "real draft edit (metric add) is silent + unapplied note + button enables",
+      "status": "PASS",
+      "detail": "silent + note + enabled"
+    },
+    {
+      "id": "S03",
+      "name": "통계 만들기 fires exactly one query; 표/그래프 switch silent",
+      "status": "PASS",
+      "detail": "1 execute query; view switches silent"
+    },
+    {
+      "id": "S04",
+      "name": "personal population: 내 신고 execute hits my-analytics, no cross leak",
+      "status": "PASS",
+      "detail": "executed via /functions/v1/my-analytics/statistics"
+    },
+    {
+      "id": "S05",
+      "name": "save recipe + share link surfaces",
+      "status": "FAIL",
+      "detail": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.stats-page').getByLabel('설정 이름')\u001b[22m\n\u001b[2m    - locator resolved to <input value=\"\" maxlength=\"40\" placeholder=\"이름\" aria-label=\"설정 이름\"/>\u001b[22m\n\u001b[2m    - fill(\"검수저장\")\u001b[22m\n\u001b[2m  - attempting fill action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b"
+    },
+    {
+      "id": "S06",
+      "name": "export button enabled after result",
+      "status": "PASS",
+      "detail": "export enabled"
+    }
+  ],
+  "consoleErrors": [],
+  "net": [
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_rate",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_rate",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "month",
+        "month": "2026-10",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "month",
+        "month": "2026-08",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "range",
+        "start": "2026-08-01",
+        "end": "2026-08-31",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "range",
+        "start": "2026-08-01",
+        "end": "2026-08-31",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "5",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "range",
+        "start": "2026-08-01",
+        "end": "2026-08-31",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "2",
+        "page_size": "20",
+        "expected_version": "e164c84e245e7306c41cd15d7ac95527"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "month",
+        "month": "2026-10",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "month",
+        "month": "2020-01",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "fines",
+        "metric": "fine_rate",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/meta",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/dashboard",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "R",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "Z",
+      "method": "GET",
+      "path": "/functions/v1/user-rankings",
+      "params": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "S",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/meta",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "S",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "params": {},
+      "status": 200
+    },
+    {
+      "ctx": "S",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "S",
+      "method": "GET",
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\",\"accepted_count\"],\"filters\":[],\"place_key\":null}"
+      },
+      "status": 200
+    },
+    {
+      "ctx": "S",
+      "method": "GET",
+      "path": "/functions/v1/my-analytics/statistics",
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-05",
+        "end": "2026-10-04",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"mine\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\",\"accepted_count\"],\"filters\":[],\"place_key\":null}"
+      },
+      "status": 200
+    }
+  ]
+}

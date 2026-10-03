@@ -62,3 +62,13 @@
 - 최종 Muse055b304 재검수7/7 PASS, ISSUE1/2 closed. session ses_f006bebb5ffecaBvVQakeReTg7 export에서 provider/model/high/newworktree 확인.
   OpenCode fork의 old-directory 유지 및 첫 exit0의 미완료 상태는 중단/같은 verified session 재개로 복구했다.
   결과: docs/implementation/user-rankings/REPORT.md, docs/reviews/user-rankings-muse-recheck.md.
+
+## 2026-10-04 지도 성능 리팩터링 (로컬 전용)
+
+- 현재 main cf900966에서 refactor/map-performance-20261003 분리; 사용자 지시문 및 기존 변경 보존. 원격/main/운영 미변경.
+- 감사→기준선→PLAN/FEATURE-MATRIX→요청·집계·SQL·3탭UI·차트 수명→통계/권한동등성/규모별 실측/실브라우저를 수행했다. 세부 [보고](../refactoring/map-performance/REPORT.md).
+- Sol writer 계약/DB/통합, Muse UI 구현 별도worktree 커밋 순차통합; 이후 UI 소유Sol. 고정7d25a9f 및2cd5442 독립검수 실제 OpenCode export/model/high 확인. 마지막7542cde의 draft/URL숫자 복원도 별도 고정 Muse narrow APPROVE로 회수했다(36컨트롤+fixture조건1; bareVite API미제공으로행/숫자NOT RUN, Sol의realSQL UI102+96검사와 구분).
+- 사용자 요청에 따라 패키지/토큰 singlewriter 유지, 다른repo/호스트credentials/globalpermission/운영SQL/push/deploy 없음. 새service-only RPC와040100~040800 migrations는local ownDB에만 적용.
+- 623PASS/111SKIP unit, ingestranking/native/gate local검사 및 HTTP동시1/3/5; SKIP/합성/운영미검증/500k목표미달을 별도표시. [정량표](../refactoring/map-performance/measurements-summary.md), [계약·롤백](../refactoring/map-performance/CONTRACT-CHANGES.md).
+
+- 최종 비계측랭킹 p9515181→6111/16182→6056ms, localSQL30%목표달성/2s미달. 최종frontend공유browser p95회귀와 독립프로세스재측정을 함께보존하며 운영/성능전체완료를 주장하지 않는다.

@@ -1,0 +1,618 @@
+{
+  "run_id": "scope-statistics-2026-10-03T15-00-44-812Z",
+  "suite": "scope-statistics",
+  "commit": "bc41efcee2079964bb3c4374141a8db0506137ad",
+  "working_tree_dirty": true,
+  "started_at": "2026-10-03T15:00:44.841Z",
+  "only": [
+    "MT",
+    "C01"
+  ],
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 153.0.8010.12",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic (demoFacts + e2e extras)",
+    "server": "local Vite middleware running server/publicHandler.ts + server/personalHandler.ts",
+    "default_viewport": "1440x1000",
+    "theme": "dark unless noted",
+    "zoom": "browser zoom 100% (headless); ZOOM-EMU uses viewport/DSF emulation, not browser zoom"
+  },
+  "results": {
+    "MT-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "default rate series",
+          "actual": [
+            "rate:accept:all"
+          ],
+          "expected": [
+            "rate:accept:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "two rates on one axis",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "four overlaid series",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "compare → exactly 8 ids",
+          "actual": [
+            "rate:accept:all",
+            "rate:accept:mine",
+            "rate:reject:all",
+            "rate:reject:mine",
+            "rate:partial:all",
+            "rate:partial:mine",
+            "rate:fine:all",
+            "rate:fine:mine"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:accept:mine",
+            "rate:reject:all",
+            "rate:reject:mine",
+            "rate:partial:all",
+            "rate:partial:mine",
+            "rate:fine:all",
+            "rate:fine:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "unchecking fine removes only its lines",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "all unchecked → note, no series",
+          "actual": {
+            "note": "비교할 지표를 선택해 주세요.",
+            "series": []
+          },
+          "expected": {
+            "note": "비교할 지표를 선택해 주세요.",
+            "series": []
+          }
+        },
+        {
+          "ok": true,
+          "label": "checkboxes stay usable",
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "selection kept across count↔rate and table↔chart",
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "ok": true,
+          "label": "compare OFF removes every mine series",
+          "actual": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ],
+          "expected": [
+            "rate:accept:all",
+            "rate:reject:all",
+            "rate:partial:all",
+            "rate:fine:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-16": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "tooltip lists 8 values with num/den or a reason",
+          "actual": 8,
+          "expected": 8
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-18": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no request during 20 toggles",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "same chart instance",
+          "actual": "ec_1791039646704",
+          "expected": "ec_1791039646704"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-19": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "mine pending is named",
+          "actual": "내 신고를 불러오는 중",
+          "expected": "내 신고를 불러오는 중"
+        },
+        {
+          "ok": true,
+          "label": "top status names the personal request",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "public lines stay while mine loads",
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-20": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "table has all/mine per checked rate",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "MT-21": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-19": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-26": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-12": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "LD-13": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PI-13": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-05": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "SC-09": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "PG-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-07": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-08": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-09": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-SPY": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "NV-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "ZOOM-EMU": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-02": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-06": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-10": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "MS-11": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-01": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-03": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-04": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "CH-CMP": {
+      "status": "NOT_RUN",
+      "checks": []
+    },
+    "C01-AB": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "after the switch the numbers are B's own (A's late answer never shown)",
+          "actual": {
+            "account": "ID 22222222",
+            "shown": "내 신고 5건",
+            "differentAccounts": true
+          },
+          "expected": {
+            "account": "ID 22222222",
+            "shown": "내 신고 5건",
+            "differentAccounts": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no loading left over from A's request",
+          "actual": "",
+          "expected": ""
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "C01-NICK": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "nickname change of the same account: no refetch",
+          "actual": {},
+          "expected": {}
+        },
+        {
+          "ok": true,
+          "label": "same account keeps its ID after nickname refresh",
+          "actual": "ID 22222222",
+          "expected": "ID 22222222"
+        },
+        {
+          "ok": true,
+          "label": "auth metadata nickname updates without an account reset",
+          "actual": "새닉네임",
+          "expected": "새닉네임"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "C01-RESTORE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "B does not get A's 맞춤 통계 draft",
+          "actual": "기관\n↑\n↓\n✕",
+          "expected": "(t) => !t.includes('시도')"
+        },
+        {
+          "ok": true,
+          "label": "after reload as B: still not A's draft",
+          "actual": "기관\n↑\n↓\n✕",
+          "expected": "(t) => !t.includes('시도')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "W-OVERFLOW": {
+      "status": "NOT_RUN",
+      "checks": []
+    }
+  },
+  "steps": {
+    "MT": {
+      "status": "DONE",
+      "ids": [
+        "MT-01",
+        "MT-02",
+        "MT-03",
+        "MT-04",
+        "MT-05",
+        "MT-06",
+        "MT-16",
+        "MT-18",
+        "MT-19",
+        "MT-20"
+      ],
+      "ms": 10629
+    },
+    "LD": {
+      "status": "NOT_RUN"
+    },
+    "PI": {
+      "status": "NOT_RUN"
+    },
+    "SC_PG": {
+      "status": "NOT_RUN"
+    },
+    "NV": {
+      "status": "NOT_RUN"
+    },
+    "MS_CH": {
+      "status": "NOT_RUN"
+    },
+    "MT21": {
+      "status": "NOT_RUN"
+    },
+    "C01": {
+      "status": "DONE",
+      "ids": [
+        "C01-AB",
+        "C01-NICK",
+        "C01-RESTORE"
+      ],
+      "notes": {
+        "mine_before_switch": "내 신고 32건"
+      },
+      "ms": 18142
+    },
+    "W": {
+      "status": "NOT_RUN"
+    }
+  },
+  "finished_at": "2026-10-03T15:01:13.712Z",
+  "summary": {
+    "PASS": 13,
+    "NOT_RUN": 47
+  }
+}

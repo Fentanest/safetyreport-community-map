@@ -1,0 +1,22 @@
+{
+  "recorded_utc": "2026-10-03T16:46:36Z",
+  "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "cpu": "AMD EPYC 7352 24-Core Processor",
+  "logical_cpus": 16,
+  "memory_kib": 65770636,
+  "node": "v22.17.1",
+  "deno": "deno 2.9.7 (stable, release, x86_64-unknown-linux-gnu)",
+  "postgres": "PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+  "browser_fixture": "Chromium153.0.8010.12; ranking browser separate installed Google Chrome",
+  "db_container": "supabase_db_ci0926-int",
+  "network": "same-host loopback GoTrue/Kong/PostgREST + Deno CLI gateways; no hosted measurement",
+  "other_docker_projects": "present, not modified; background contention possible; repeated/pairing method recorded per evidence",
+  "latest_ui_commit": "7542cded652c91835f3421f394f4466b6e9b0c6d",
+  "latest_row_browser": "154.0.8037.92",
+  "muse_narrow_browser": "Chrome/154.0.8037.92",
+  "verification_commit": "a8b3773c56a2fb15d959db8085bd09645c9a1a2c",
+  "product_candidate": "7542cded652c91835f3421f394f4466b6e9b0c6d",
+  "final_checks_at": "2026-10-03T19:45:52.460172+00:00",
+  "final_build_main_kb": 640.13,
+  "final_build_main_gzip_kb": 192.4
+}

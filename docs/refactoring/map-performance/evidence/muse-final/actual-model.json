@@ -1,0 +1,26 @@
+{
+  "session": "ses_efd7cb546ffeWpbPWumAPOOUOd",
+  "directory": "/home/better0101/projects/safetyreport-community-map/.agent-runtime/worktrees/muse-review",
+  "requested_model": "opencode-go/muse-spark-1.3-contributor",
+  "requested_variant": "high",
+  "session_model": {
+    "id": "muse-spark-1.3-contributor",
+    "providerID": "opencode-go",
+    "variant": "high"
+  },
+  "assistant_models": [
+    {
+      "providerID": "opencode-go",
+      "modelID": "muse-spark-1.3-contributor",
+      "variant": "high"
+    }
+  ],
+  "review_commit": "7d25a9fe7ad2700e3f252ea2f4fab24e22623849",
+  "request_mode": "review",
+  "product_diff": {
+    "additions": 0,
+    "deletions": 0,
+    "files": 0
+  },
+  "verdict": "APPROVE; OBS-01 emulated zoom follow-up"
+}

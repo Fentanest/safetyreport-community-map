@@ -1,0 +1,26 @@
+{
+  "mode": "local Deno CLI, real GoTrue/PostgREST/RPC/rate gates; synthetic identities/reports; not hosted Edge, OAuth or production",
+  "size": 500,
+  "concurrency": 1,
+  "normal_repeats_per_user": 30,
+  "original_viewer_state_aliases": true,
+  "results": [
+    {
+      "variant": "before",
+      "route": "entities?kind=manager&",
+      "samples": [
+        {
+          "ms": 8155.725197,
+          "status": 503,
+          "bytes": 138,
+          "participant": 0
+        }
+      ],
+      "failure": true,
+      "code": {
+        "code": "AGGREGATE_NOT_READY",
+        "message": "통계가 아직 준비되지 않았습니다. 잠시 뒤 다시 확인해 주세요."
+      }
+    }
+  ]
+}

@@ -1,0 +1,229 @@
+{
+  "chrome": "Chrome/154.0.8037.92",
+  "commit": "7542cded652c91835f3421f394f4466b6e9b0c6d",
+  "origin": "http://127.0.0.1:5198",
+  "checks": [
+    {
+      "id": "A0",
+      "name": "direct entry renders rankings shell",
+      "status": "PASS",
+      "detail": "summary=true"
+    },
+    {
+      "id": "A1",
+      "name": "initial fetch issued (StrictMode dup shares signature)",
+      "status": "PASS",
+      "detail": "responses=1"
+    },
+    {
+      "id": "A2",
+      "name": "fixture limitation labeled: rankings API unserved on e2e stack",
+      "status": "PASS",
+      "detail": "panel=랭킹을 불러오지 못했습니다"
+    },
+    {
+      "id": "A0b",
+      "name": "one Tab from summary reaches 날짜 기준 select",
+      "status": "PASS",
+      "detail": "focus=날짜 기준"
+    },
+    {
+      "id": "A3",
+      "name": "FAST: visible selected 신고일 survives (not reset by toggle)",
+      "status": "PASS",
+      "detail": "basis=report_date visible=신고일 focusWas=날짜 기준"
+    },
+    {
+      "id": "A4",
+      "name": "editing alone sends no new query (only StrictMode same-signature noise)",
+      "status": "PASS",
+      "detail": "newSigs=1 allBase=true"
+    },
+    {
+      "id": "A5",
+      "name": "unapplied draft hint shown",
+      "status": "PASS",
+      "detail": "hint=true"
+    },
+    {
+      "id": "A6",
+      "name": "apply sends exactly one new query signature",
+      "status": "PASS",
+      "detail": "fresh=1 totalNew=3"
+    },
+    {
+      "id": "A7",
+      "name": "applied request carries report_date basis",
+      "status": "PASS",
+      "detail": "{\"theme\":\"reporters\",\"metric\":\"reports_count\",\"period\":\"all\",\"date_basis\":\"report_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"}"
+    },
+    {
+      "id": "A8",
+      "name": "keyboard focus reached 적용 button",
+      "status": "PASS",
+      "detail": "focus=적용"
+    },
+    {
+      "id": "B1",
+      "name": "unapplied draft staged (completed_date/3)",
+      "status": "PASS",
+      "detail": "basis=completed_date min=3"
+    },
+    {
+      "id": "B2",
+      "name": "close/reopen resets drafts to applied values",
+      "status": "PASS",
+      "detail": "basis=report_date min=1 (applied=report_date/1)"
+    },
+    {
+      "id": "B3",
+      "name": "draft staging sends no new query",
+      "status": "PASS",
+      "detail": "newSigs=0"
+    },
+    {
+      "id": "C1",
+      "name": "tab change is immediate (one new query)",
+      "status": "PASS",
+      "detail": "fresh=1"
+    },
+    {
+      "id": "C2",
+      "name": "tab request uses APPLIED basis, not adv draft",
+      "status": "PASS",
+      "detail": "{\"theme\":\"fines\",\"metric\":\"fine_count\",\"period\":\"all\",\"date_basis\":\"report_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"}"
+    },
+    {
+      "id": "C3",
+      "name": "month switch is immediate",
+      "status": "PASS",
+      "detail": "{\"theme\":\"fines\",\"metric\":\"fine_count\",\"period\":\"month\",\"month\":\"2026-10\",\"date_basis\":\"report_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"}"
+    },
+    {
+      "id": "C4",
+      "name": "month label follows applied month",
+      "status": "PASS",
+      "detail": "label=2026년 10월"
+    },
+    {
+      "id": "D1",
+      "name": "request restores month/basis/metric/min from URL",
+      "status": "PASS",
+      "detail": "{\"theme\":\"unlucky\",\"metric\":\"partial_rate\",\"period\":\"month\",\"month\":\"2023-07\",\"date_basis\":\"report_date\",\"category\":\"traffic\",\"min_reports\":\"3\",\"page\":\"1\",\"page_size\":\"20\"}"
+    },
+    {
+      "id": "D2",
+      "name": "heading shows 2023년 7월 + 일부수용 비율",
+      "status": "PASS",
+      "detail": "heading=2023년 7월 · 일부수용 비율이 높은 순위"
+    },
+    {
+      "id": "D3",
+      "name": "불운 tab pressed, category traffic, month label",
+      "status": "PASS",
+      "detail": "{\"tabs\":[{\"t\":\"신고 랭킹\",\"p\":\"false\"},{\"t\":\"과태료 랭킹\",\"p\":\"false\"},{\"t\":\"불운 랭킹\",\"p\":\"true\"}],\"cat\":\"traffic\",\"ml\":\"2023년 7월\"}"
+    },
+    {
+      "id": "D4",
+      "name": "details controls show report_date + min 3 (actual React state)",
+      "status": "PASS",
+      "detail": "basis=report_date min=3"
+    },
+    {
+      "id": "D5",
+      "name": "reload preserves full state (not URL string only)",
+      "status": "PASS",
+      "detail": "basis=report_date min=3 heading=2023년 7월 · 일부수용 비율이 높은 순위"
+    },
+    {
+      "id": "D6",
+      "name": "saved rk_min=1 restores numeric 1 (no fallback to default)",
+      "status": "PASS",
+      "detail": "req={\"theme\":\"reporters\",\"metric\":\"reports_count\",\"period\":\"all\",\"date_basis\":\"completed_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"} minInput=1"
+    },
+    {
+      "id": "E1",
+      "name": "invalid rk_min fails closed to default (min 1, default theme/metric)",
+      "status": "PASS",
+      "detail": "req={\"theme\":\"reporters\",\"metric\":\"reports_count\",\"period\":\"all\",\"date_basis\":\"completed_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"} min=1"
+    },
+    {
+      "id": "F0",
+      "name": "rail rankings entry exists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "id": "F1",
+      "name": "map screen keeps rk_* in URL",
+      "status": "PASS",
+      "detail": "screen=dashboard rk_month=2023-07"
+    },
+    {
+      "id": "F2",
+      "name": "map→rank restores full applied state",
+      "status": "PASS",
+      "detail": "basis=report_date min=3 heading=2023년 7월 · 일부수용 비율이 높은 순위"
+    },
+    {
+      "id": "F3",
+      "name": "history back leaves rankings",
+      "status": "PASS",
+      "detail": "{\"screen\":\"dashboard\",\"url\":\"?date_basis=completed_date&start=2025-10-05&end=2026-10-04&category=all&rk_theme=unlucky&rk_metric=partial_rate&rk_period=month&rk_month=2023-07&rk_basis=report_date&rk_category=traffic&rk_min=3\"}"
+    },
+    {
+      "id": "F4",
+      "name": "history forward returns to rankings with state",
+      "status": "PASS",
+      "detail": "{\"screen\":\"rankings\",\"basis\":\"report_date\"}"
+    },
+    {
+      "id": "G1",
+      "name": "20 rapid open/edit cycles keep every first edit",
+      "status": "PASS",
+      "detail": "bad=0/20"
+    },
+    {
+      "id": "G2",
+      "name": "rapid edits fire no new query",
+      "status": "PASS",
+      "detail": "newSigs=0"
+    },
+    {
+      "id": "G3",
+      "name": "one apply after stress sends exactly one new query with latest basis",
+      "status": "PASS",
+      "detail": "want=report_date got={\"theme\":\"reporters\",\"metric\":\"reports_count\",\"period\":\"all\",\"date_basis\":\"report_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"}"
+    },
+    {
+      "id": "H1",
+      "name": "390 light keyboard: 신고일 survives",
+      "status": "PASS",
+      "detail": "basis=report_date"
+    },
+    {
+      "id": "H2",
+      "name": "390 light keyboard edit sends no new query",
+      "status": "PASS",
+      "detail": "newSigs=0"
+    },
+    {
+      "id": "H3",
+      "name": "390 light keyboard apply: one new query, report_date",
+      "status": "PASS",
+      "detail": "{\"theme\":\"reporters\",\"metric\":\"reports_count\",\"period\":\"all\",\"date_basis\":\"report_date\",\"category\":\"all\",\"min_reports\":\"1\",\"page\":\"1\",\"page_size\":\"20\"}"
+    },
+    {
+      "id": "I1",
+      "name": "account session unchanged across all scenarios",
+      "status": "PASS",
+      "detail": "uid=11111111-2222-4333-8444-555555555555"
+    },
+    {
+      "id": "I2",
+      "name": "390 no page-level horizontal overflow",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

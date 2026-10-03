@@ -1,0 +1,278 @@
+[
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": "failed:net::ERR_ABORTED"
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=report_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "report_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=fines&metric=fine_count&period=all&date_basis=report_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "fines",
+      "metric": "fine_count",
+      "period": "all",
+      "date_basis": "report_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=fines&metric=fine_count&period=month&month=2026-10&date_basis=report_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "fines",
+      "metric": "fine_count",
+      "period": "month",
+      "month": "2026-10",
+      "date_basis": "report_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=unlucky&metric=partial_rate&period=month&month=2023-07&date_basis=report_date&category=traffic&min_reports=3&page=1&page_size=20",
+    "params": {
+      "theme": "unlucky",
+      "metric": "partial_rate",
+      "period": "month",
+      "month": "2023-07",
+      "date_basis": "report_date",
+      "category": "traffic",
+      "min_reports": "3",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=unlucky&metric=partial_rate&period=month&month=2023-07&date_basis=report_date&category=traffic&min_reports=3&page=1&page_size=20",
+    "params": {
+      "theme": "unlucky",
+      "metric": "partial_rate",
+      "period": "month",
+      "month": "2023-07",
+      "date_basis": "report_date",
+      "category": "traffic",
+      "min_reports": "3",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=unlucky&metric=partial_rate&period=month&month=2023-07&date_basis=report_date&category=traffic&min_reports=3&page=1&page_size=20",
+    "params": {
+      "theme": "unlucky",
+      "metric": "partial_rate",
+      "period": "month",
+      "month": "2023-07",
+      "date_basis": "report_date",
+      "category": "traffic",
+      "min_reports": "3",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=unlucky&metric=partial_rate&period=month&month=2023-07&date_basis=report_date&category=traffic&min_reports=3&page=1&page_size=20",
+    "params": {
+      "theme": "unlucky",
+      "metric": "partial_rate",
+      "period": "month",
+      "month": "2023-07",
+      "date_basis": "report_date",
+      "category": "traffic",
+      "min_reports": "3",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=unlucky&metric=partial_rate&period=month&month=2023-07&date_basis=report_date&category=traffic&min_reports=3&page=1&page_size=20",
+    "params": {
+      "theme": "unlucky",
+      "metric": "partial_rate",
+      "period": "month",
+      "month": "2023-07",
+      "date_basis": "report_date",
+      "category": "traffic",
+      "min_reports": "3",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=report_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "report_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=report_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "report_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  },
+  {
+    "url": "http://127.0.0.1:5198/functions/v1/user-rankings?theme=reporters&metric=reports_count&period=all&date_basis=completed_date&category=all&min_reports=1&page=1&page_size=20",
+    "params": {
+      "theme": "reporters",
+      "metric": "reports_count",
+      "period": "all",
+      "date_basis": "completed_date",
+      "category": "all",
+      "min_reports": "1",
+      "page": "1",
+      "page_size": "20"
+    },
+    "method": "GET",
+    "status": 200
+  }
+]

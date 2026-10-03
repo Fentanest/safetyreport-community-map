@@ -19,4 +19,17 @@
 | Excel/WASM/취소/화면/계정 | UI applied snapshot→export boundary singleton→lazy exporter Worker/WASM→동일원DTO 전체행/수식방어→download | 연결있음·firstpage만내보내기아님; excelExport/exportBoundary/finalization(Worker실행); MSExcel환경없음 |
 | 정적자산/경계/광고/CI | version assets/boundaries lazy→Pages distallowlist/scan→CI product/publish workflows | 운영변경금지·정적보호data없음; build/scan/compose/subpath/ad browser |
 
-최종 실제PASS/FAIL/SKIP·미검증은 RESULTS 및 REVIEW 증거로 연결해 갱신한다. 타입/버튼·과거보고만으로 완료표시하지 않는다.
+최종 실제PASS/FAIL/SKIP·미검증은 [REPORT](REPORT.md)와 [REVIEW](REVIEW.md)에 연결한다. 타입/버튼·과거보고만으로 완료표시하지 않는다.
+
+## 최종 실행 연결
+
+| 보존 기능 | 이번 실행과 최종 구현 상태 | 운영 상태 |
+|---|---|---|
+| 지도·필터·선택·경계·내 신고 비교·주요 통계 | oracle/기존 단위/local integration/20회 왕복 PASS. 숨겨진 요청/차트 중지. raw cohort10만 cap 및 기능 유지 | Kakao 실SDK/운영자료 미검증 |
+| 기관·담당자·법규·월별 | narrow builder+SQL rollup, native5 PASS/모든 정렬 및 기간/대표/권한 비교. 글로벌50만 대표10회8–10s(지연목표 미달) | hosted500k/운영 성능 미검증 |
+| 맞춤 통계·개인 비교·조합·차트·저장/공유 | 기존 explicit 실행·전체 기능 유지.60 browser checks PASS 및 draft/metadata/retry/20회 왕복 | 실제 운영자료 미검증 |
+|3탭 랭킹·공통기간·지표·내순위·1건·동률·UUID·이력 | 원본126 조합/전체 version/me/page동등성, DB13 PASS, Edge 및 실제 SQL browser; bytea election 및 viewer lookup 기능 유지 | 운영 미적용 |
+| 본인 내신고 API·ingest·인증 | 기존 DB/Edge suite52 PASS와 ingest33 PASS. test fixture/proxy 문제 수정 후 전체 재검증. wire/consumer 권한 불변 | 외부 앱 실설치/실 OAuth 미검증 |
+| Excel·취소·계정·전체행·정적자산/CI |51 browser checks와 build/scan/manifest/Python PASS. 실제 WASMWorker 실행, 보호자료 정적 저장 없음 | MS Excel 실제 프로그램/Pages 배포 미실행 |
+
+정량 표와 각 PASS의 자료 종류·최초FAIL·SKIP·미달은 REPORT에서 구분한다. 초기 경로 감사의 버튼/타입 존재는 실행 증거로 합산하지 않는다.

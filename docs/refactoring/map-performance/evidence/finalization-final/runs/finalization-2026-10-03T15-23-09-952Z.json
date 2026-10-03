@@ -1,0 +1,1981 @@
+{
+  "run_id": "finalization-2026-10-03T15-23-09-952Z",
+  "suite": "finalization",
+  "commit": "bc41efcee2079964bb3c4374141a8db0506137ad",
+  "working_tree_dirty": true,
+  "started_at": "2026-10-03T15:23:10.008Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 153.0.8010.12",
+    "sdk": "MOCK (scripts/browser/mock-kakao-sdk.js)",
+    "data": "synthetic (demoFacts + e2e extras)",
+    "server": "local Vite dev + real server/publicHandler.ts, server/personalHandler.ts; static preview of `vite build` (demo data) for EX-39/40/41/60",
+    "excel": "xlsx produced by excelize-wasm 0.1.3 in Chromium (Web Worker); inspected by scripts/xlsx/ooxml.mjs; NOT opened in Microsoft Excel",
+    "isolation": "no COOP/COEP headers, crossOriginIsolated=false, no SharedArrayBuffer (checked, not assumed)"
+  },
+  "results": {
+    "FN-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "first chart view is the auto heatmap (live instance)",
+          "actual": [
+            "heatmap:fine_rate:all"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "heatmap → 막대 directly: live ECharts series on the new host",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "bars have data (not an empty card)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "막대↔히트맵 ×20: live instances = mounted hosts; observers = instances (no leak)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "compare heatmap pair present (round 1)",
+          "actual": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "compare heatmap pair present (round 2)",
+          "actual": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "compare heatmap pair present (round 3)",
+          "actual": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "compare heatmap pair present (round 4)",
+          "actual": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "compare heatmap pair present (round 5)",
+          "actual": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ],
+          "expected": [
+            "heatmap:fine_rate:all",
+            "heatmap:fine_rate:mine"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "after compare rounds: no stale instance/observer",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no dimensions → 요약값 (no chart host)",
+          "actual": {
+            "summary": 1,
+            "hosts": 0
+          },
+          "expected": {
+            "summary": 1,
+            "hosts": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "요약값 → 일반 차트: live series again",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no stale host reference after summary",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "reload restores the heatmap first",
+          "actual": [
+            "heatmap:fine_rate:all"
+          ],
+          "expected": "(x) => x[0].startsWith('heatmap')"
+        },
+        {
+          "ok": true,
+          "label": "restored heatmap → 막대 works from the first mount",
+          "actual": [
+            "[\"도로교통법 제32조\"]:fine_rate:all",
+            "[\"도로교통법 제5조\"]:fine_rate:all",
+            "[\"도로교통법 제33조\"]:fine_rate:all",
+            "[\"도로교통법 제27조\"]:fine_rate:all",
+            "[\"도로교통법 제34조\"]:fine_rate:all",
+            "[\"도로교통법 제35조\"]:fine_rate:all",
+            "[\"자동차관리법 제10조\"]:fine_rate:all",
+            "[\"도로교통법 제49조\"]:fine_rate:all",
+            "[\"도로교통법 제38조\"]:fine_rate:all",
+            "[\"도로교통법 제13조\"]:fine_rate:all",
+            "[\"주차장법 제29조\"]:fine_rate:all",
+            "[\"도로교통법 제5조의2\"]:fine_rate:all",
+            "[\"도로교통법 제25조\"]:fine_rate:all",
+            "[\"__none__\"]:fine_rate:all"
+          ],
+          "expected": "(x) => x.length > 0"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "default = the APPLIED analysis (draft row not included)",
+          "actual": [
+            "agency"
+          ],
+          "expected": [
+            "agency"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "clipboard holds the same link",
+          "actual": "http://127.0.0.1:5190/?screen=statistics&sr=eyJ2IjoxLCJzY29wZSI6eyJzdGFydCI6IjIwMjUtMTAtMDUiLCJlbmQiOiIyMDI2LTEwLTA0IiwiY2F0ZWdvcnkiOiJhbGwiLCJyZWdpb25fY29kZSI6bnVsbCwiYWdlbmN5X2tleSI6bnVsbCwibWFuYWdlcl9rZXkiOm51bGwsImxhdyI6bnVsbH0sInNwZWMiOnsiZGF0ZV9iYXNpcyI6ImNvbXBsZXRlZF9kYXRlIiwicG9wdWxhdGlvbiI6ImFsbCIsInJvd3MiOlsiYWdlbmN5Il0sImNvbHVtbnMiOlsibGF3Il0sIm1ldHJpY3MiOlsiZmluZV9yYXRlIiwiY29tcGxldGVkX2NvdW50Il0sImZpbHRlcnMiOltdfSwiY2hhcnQiOnsidHlwZSI6ImJhciIsInByaW1hcnkiOm51bGwsIm92ZXJsYXkiOnRydWV9LCJ2aWV3IjoiY2hhcnQifQ",
+          "expected": "http://127.0.0.1:5190/?screen=statistics&sr=eyJ2IjoxLCJzY29wZSI6eyJzdGFydCI6IjIwMjUtMTAtMDUiLCJlbmQiOiIyMDI2LTEwLTA0IiwiY2F0ZWdvcnkiOiJhbGwiLCJyZWdpb25fY29kZSI6bnVsbCwiYWdlbmN5X2tleSI6bnVsbCwibWFuYWdlcl9rZXkiOm51bGwsImxhdyI6bnVsbH0sInNwZWMiOnsiZGF0ZV9iYXNpcyI6ImNvbXBsZXRlZF9kYXRlIiwicG9wdWxhdGlvbiI6ImFsbCIsInJvd3MiOlsiYWdlbmN5Il0sImNvbHVtbnMiOlsibGF3Il0sIm1ldHJpY3MiOlsiZmluZV9yYXRlIiwiY29tcGxldGVkX2NvdW50Il0sImZpbHRlcnMiOltdfSwiY2hhcnQiOnsidHlwZSI6ImJhciIsInByaW1hcnkiOm51bGwsIm92ZXJsYXkiOnRydWV9LCJ2aWV3IjoiY2hhcnQifQ"
+        },
+        {
+          "ok": true,
+          "label": "the draft only when explicitly chosen",
+          "actual": [
+            "agency",
+            "sido"
+          ],
+          "expected": [
+            "agency",
+            "sido"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "link carries no labels, tokens, user ids, place or bbox",
+          "actual": "{\"v\":1,\"scope\":{\"start\":\"2025-10-05\",\"end\":\"2026-10-04\",\"category\":\"all\",\"region_code\":null,\"agency_key\":null,\"manager_key\":null,\"law\":null},\"spec\":{\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[]},\"chart\":{\"type\":\"bar\",\"primary\":null,\"overlay\":true},\"view\":\"chart\"}",
+          "expected": "(t) => !/[0-9a-f]{8}-[0-9a-f]{4}-|eyJ|place_key|bbox|로컬검수|label/.test(t)"
+        },
+        {
+          "ok": true,
+          "label": "rows/columns/metrics order restored",
+          "actual": {
+            "r": [
+              "기관"
+            ],
+            "c": [
+              "위반법규"
+            ],
+            "m": [
+              "과태료 부과율",
+              "답변 건수"
+            ]
+          },
+          "expected": {
+            "r": [
+              "기관"
+            ],
+            "c": [
+              "위반법규"
+            ],
+            "m": [
+              "과태료 부과율",
+              "답변 건수"
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "label": "chart view + type restored",
+          "actual": {
+            "type": "막대",
+            "bars": true
+          },
+          "expected": {
+            "type": "막대",
+            "bars": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "banner says it was re-computed with my permission",
+          "actual": "공유받은 설정으로 통계를 만들었습니다.\n닫기",
+          "expected": "(t) => t.includes('공유받은 설정으로 통계를 만들었습니다')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-07": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "address exclusion is stated and must be confirmed",
+          "actual": {
+            "note": "주소(서울특별시 강남구 예시로 3길)는 링크에 담기지 않습니다. 받는 사람은 주소 조건 없이 보게 되어 지금 결과와 달라집니다.\n확인했습니다. 이대로 공유할게요",
+            "disabled": true
+          },
+          "expected": "(x) => x.note.includes('주소(') && x.disabled === true"
+        },
+        {
+          "ok": true,
+          "label": "confirmed link has no place key",
+          "actual": "{\"v\":1,\"scope\":{\"start\":\"2025-10-05\",\"end\":\"2026-10-04\",\"category\":\"all\",\"region_code\":null,\"agency_key\":null,\"manager_key\":null,\"law\":null},\"spec\":{\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[]},\"chart\":{\"type\":\"auto\",\"primary\":null,\"overlay\":true},\"view\":\"table\"}",
+          "expected": "(t) => !t.includes('pl1:') && !t.includes('place')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-08": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "mine/compare needs an explicit confirmation",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "link has population compare and no account data",
+          "actual": {
+            "pop": "compare",
+            "clean": true
+          },
+          "expected": {
+            "pop": "compare",
+            "clean": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "B sees B's own 내 신고 count (oracle with B's token), not A's",
+          "actual": {
+            "shown": 18,
+            "differs": true
+          },
+          "expected": {
+            "shown": 18,
+            "differs": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-09": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "unsupported version refused with the reason",
+          "actual": "공유 링크를 열 수 없습니다. 이 사이트에서 열 수 없는 형식의 링크입니다.\n기본 화면 보기",
+          "expected": "(t) => t.includes('열 수 없는 형식의 링크')"
+        },
+        {
+          "ok": true,
+          "label": "no statistics request (no silent default)",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "SQL-like id refused",
+          "actual": "공유 링크를 열 수 없습니다. 링크에 이 사이트에서 쓰지 않는 값이 들어 있습니다.\n기본 화면 보기",
+          "expected": "(t) => t.includes('쓰지 않는 값')"
+        },
+        {
+          "ok": true,
+          "label": "oversized link refused",
+          "actual": "공유 링크를 열 수 없습니다. 링크가 너무 길거나 비어 있습니다. 받은 링크 전체를 복사했는지 확인해 주세요.\n기본 화면 보기",
+          "expected": "(t) => t.includes('너무 길')"
+        },
+        {
+          "ok": true,
+          "label": "closing the error runs the default once (explicit)",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-10": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "sr parameter removed after the run; screen kept",
+          "actual": "statistics",
+          "expected": "statistics"
+        },
+        {
+          "ok": true,
+          "label": "reload after the shared run restores the same analysis (no 404, no default)",
+          "actual": [
+            "위반법규"
+          ],
+          "expected": [
+            "위반법규"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "signed out + link → the usual access gate, nothing computed",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "the share parameter survives for the sign-in round trip",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no statistics request while waiting for sign-in",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "after sign-in the shared compare recipe runs with my permission",
+          "actual": "공유받은 설정으로 통계를 만들었습니다. 내 신고는 내 계정의 신고로 계산했습니다.\n닫기",
+          "expected": "(t) => t.includes('내 신고는 내 계정의 신고로 계산했습니다')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-11": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "4 rate series + 4 legend buttons",
+          "actual": {
+            "ids": [
+              "accept_rate:all",
+              "reject_rate:all",
+              "partial_rate:all",
+              "fine_rate:all"
+            ],
+            "buttons": 4
+          },
+          "expected": {
+            "ids": [
+              "accept_rate:all",
+              "reject_rate:all",
+              "partial_rate:all",
+              "fine_rate:all"
+            ],
+            "buttons": 4
+          }
+        },
+        {
+          "ok": true,
+          "label": "불수용률 hidden in the chart only",
+          "actual": [
+            "accept_rate:all",
+            "partial_rate:all",
+            "fine_rate:all"
+          ],
+          "expected": [
+            "accept_rate:all",
+            "partial_rate:all",
+            "fine_rate:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "aria-pressed=false on the hidden series",
+          "actual": "false",
+          "expected": "false"
+        },
+        {
+          "ok": true,
+          "label": "Enter shows it again (keyboard)",
+          "actual": [
+            "accept_rate:all",
+            "reject_rate:all",
+            "partial_rate:all",
+            "fine_rate:all"
+          ],
+          "expected": "(x) => x.includes('reject_rate:all')"
+        },
+        {
+          "ok": true,
+          "label": "table, totals, denominators unchanged while hidden",
+          "actual": "답변 월\t수용률\t불수용률\t일부수용률\t과태료 부과율\n\n2025.10\n\t66.7% (10/15)\t33.3% (5/15)\t0.0% (0/15)\t35.0% (7/20)\n\n2025.11\n\t58.3% (14/24)\t16.7% (4/24)\t25.0% (6/24)\t29.6% (8/27)\n\n2025.12\n\t63.2% (12/19)\t21.1% (4/19)\t15.8% (3/19)\t35.0% (7/20)\n\n2026.01\n\t68.4% (13/19)\t26.3% (5/19)\t5.3% (1/19)\t27.3% (6/22)\n\n2026.02\n\t66.7% (12/18)\t16.7% (3/18)\t16.7% (3/18)\t55.0% (11/20)\n\n2026.03\n\t63.2% (12/19)\t21.1% (4/19)\t15.8% (3/19)\t20.0% (5/25)\n\n2026.04\n\t72.4% (21/29)\t24.1% (7/29)\t3.4% (1/29)\t31.3% (10/32)\n\n2026.05\n\t40.0% (8/20)\t55.0% (11/20)\t5.0% (1/20)\t9.1% (2/22)\n\n2026.06\n\t46.7% (7/15)\t40.0% (6/15)\t13.3% (2/15)\t5.6% (1/18)\n\n2026.07\n\t59.4% (19/32)\t18.8% (6/32)\t21.9% (7/32)\t26.5% (9/34)\n\n2026.08\n\t47.4% (9/19)\t26.3% (5/19)\t26.3% (5/19)\t26.1% (6/23)\n\n2026.09\n\t41.1% (46/112)\t29.5% (33/112)\t29.5% (33/112)\t33.1% (48/145)\n\n2026.10\n\t자료 없음\t자료 없음\t자료 없음\t자료 없음\n합계\t53.7% (183/341)\t27.3% (93/341)\t19.1% (65/341)\t29.4% (120/408)",
+          "expected": "답변 월\t수용률\t불수용률\t일부수용률\t과태료 부과율\n\n2025.10\n\t66.7% (10/15)\t33.3% (5/15)\t0.0% (0/15)\t35.0% (7/20)\n\n2025.11\n\t58.3% (14/24)\t16.7% (4/24)\t25.0% (6/24)\t29.6% (8/27)\n\n2025.12\n\t63.2% (12/19)\t21.1% (4/19)\t15.8% (3/19)\t35.0% (7/20)\n\n2026.01\n\t68.4% (13/19)\t26.3% (5/19)\t5.3% (1/19)\t27.3% (6/22)\n\n2026.02\n\t66.7% (12/18)\t16.7% (3/18)\t16.7% (3/18)\t55.0% (11/20)\n\n2026.03\n\t63.2% (12/19)\t21.1% (4/19)\t15.8% (3/19)\t20.0% (5/25)\n\n2026.04\n\t72.4% (21/29)\t24.1% (7/29)\t3.4% (1/29)\t31.3% (10/32)\n\n2026.05\n\t40.0% (8/20)\t55.0% (11/20)\t5.0% (1/20)\t9.1% (2/22)\n\n2026.06\n\t46.7% (7/15)\t40.0% (6/15)\t13.3% (2/15)\t5.6% (1/18)\n\n2026.07\n\t59.4% (19/32)\t18.8% (6/32)\t21.9% (7/32)\t26.5% (9/34)\n\n2026.08\n\t47.4% (9/19)\t26.3% (5/19)\t26.3% (5/19)\t26.1% (6/23)\n\n2026.09\n\t41.1% (46/112)\t29.5% (33/112)\t29.5% (33/112)\t33.1% (48/145)\n\n2026.10\n\t자료 없음\t자료 없음\t자료 없음\t자료 없음\n합계\t53.7% (183/341)\t27.3% (93/341)\t19.1% (65/341)\t29.4% (120/408)"
+        },
+        {
+          "ok": true,
+          "label": "no API request for hide/show",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-12": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "hidden state survives 표↔그래프",
+          "actual": [
+            "accept_rate:all",
+            "partial_rate:all",
+            "fine_rate:all"
+          ],
+          "expected": "(x) => !x.includes('reject_rate:all')"
+        },
+        {
+          "ok": true,
+          "label": "all hidden → \"표시할 항목을 선택해 주세요\" + 전체 보기 (not 0건/error)",
+          "actual": "모든 항목을 숨겼습니다. 표시할 항목을 선택해 주세요.\n전체 보기",
+          "expected": "(t) => t.includes('표시할 항목을 선택해 주세요') && !t.includes('0건')"
+        },
+        {
+          "ok": true,
+          "label": "still all hidden after sort + view round trip",
+          "actual": 4,
+          "expected": 4
+        },
+        {
+          "ok": true,
+          "label": "전체 보기 restores every series",
+          "actual": [
+            "accept_rate:all",
+            "reject_rate:all",
+            "partial_rate:all",
+            "fine_rate:all"
+          ],
+          "expected": "(x) => x.length === 4"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-13": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "수용 share unchanged when 불수용 is hidden (no re-normalisation)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "remaining bars ≤ 100% (some < 100 where 불수용 > 0)",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "note about the fixed denominator",
+          "actual": [
+            "숨긴 항목만큼 막대가 비어 있습니다. 숨긴 항목까지 합친 전체를 100%로 그렸습니다."
+          ],
+          "expected": "(t) => t.some((x) => x.includes('숨긴 항목까지 합친 전체를 100%로'))"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "FN-14": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "내 신고 hidden, 전체 of the same metric stays",
+          "actual": [
+            "accept_rate:all"
+          ],
+          "expected": [
+            "accept_rate:all"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-01": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "the file was produced by excelize-wasm in a Web Worker of this page",
+          "actual": {
+            "worker": true,
+            "wasm": true,
+            "worker_js": true
+          },
+          "expected": {
+            "worker": true,
+            "wasm": true,
+            "worker_js": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-02": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "table view → recommended chart of the same result (heatmap cells + colour scale)",
+          "actual": {
+            "cf": 1,
+            "charts": 0
+          },
+          "expected": {
+            "cf": 1,
+            "charts": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-03": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "chart view exports the same table values",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-04": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "only the 2 checked rates are chart series",
+          "actual": [
+            "수용률 · 전체",
+            "과태료 부과율 · 전체"
+          ],
+          "expected": [
+            "수용률 · 전체",
+            "과태료 부과율 · 전체"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "수용률 values = accepted ÷ result_known of each month (gaps where K=0)",
+          "actual": [
+            0.666666667,
+            0.583333333,
+            0.631578947,
+            0.684210526,
+            0.666666667,
+            0.631578947,
+            0.724137931,
+            0.4,
+            0.466666667,
+            0.59375,
+            0.473684211,
+            0.410714286,
+            null
+          ],
+          "expected": [
+            0.666666667,
+            0.583333333,
+            0.631578947,
+            0.684210526,
+            0.666666667,
+            0.631578947,
+            0.724137931,
+            0.4,
+            0.466666667,
+            0.59375,
+            0.473684211,
+            0.410714286,
+            null
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-05": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "8 native line series (4 rates × 전체/내), 내 신고 dashed",
+          "actual": {
+            "n": 8,
+            "dashed": 4,
+            "type": "lineChart"
+          },
+          "expected": {
+            "n": 8,
+            "dashed": 4,
+            "type": "lineChart"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-06": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "count view: 신고/답변(+내 신고) counts on their own date basis",
+          "actual": {
+            "first": [
+              20,
+              27,
+              20,
+              22,
+              20,
+              25,
+              32,
+              22,
+              18,
+              34,
+              23,
+              145,
+              null
+            ],
+            "second": [
+              20,
+              27,
+              20,
+              22,
+              20,
+              25,
+              32,
+              22,
+              18,
+              34,
+              23,
+              145,
+              null
+            ]
+          },
+          "expected": {
+            "first": [
+              20,
+              27,
+              20,
+              22,
+              20,
+              25,
+              32,
+              22,
+              18,
+              34,
+              23,
+              145,
+              null
+            ],
+            "second": [
+              20,
+              27,
+              20,
+              22,
+              20,
+              25,
+              32,
+              22,
+              18,
+              34,
+              23,
+              145,
+              null
+            ]
+          }
+        },
+        {
+          "ok": true,
+          "label": "no 0–100% axis in the count chart",
+          "actual": null,
+          "expected": null
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-07": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "managers in the file = the card list; full/partial stated",
+          "actual": {
+            "rows": 101,
+            "state": false
+          },
+          "expected": {
+            "rows": 100,
+            "state": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "100% bars + answered line on a secondary axis",
+          "actual": [
+            "barChart:stacked",
+            "lineChart:standard"
+          ],
+          "expected": [
+            "barChart:stacked",
+            "lineChart:standard"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-15": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "two matrices, same 0..1 colour scale",
+          "actual": [
+            "0-1",
+            "0-1"
+          ],
+          "expected": [
+            "0-1",
+            "0-1"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-16": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "my matrix has values only where I have reports (blank elsewhere, never the 전체 value or 0)",
+          "actual": {
+            "all": 111,
+            "mine": 26
+          },
+          "expected": {
+            "all": 111,
+            "mine": 26
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-21": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "stacked (not percent-stacked), 2 visible series, shares of the ORIGINAL total = web",
+          "actual": {
+            "grouping": "stacked",
+            "n": 2,
+            "same": true,
+            "under": true
+          },
+          "expected": {
+            "grouping": "stacked",
+            "n": 2,
+            "same": true,
+            "under": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-22": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "all hidden: table kept, no chart, notice (not 0건)",
+          "actual": {
+            "charts": 0,
+            "notice": true,
+            "rows": true
+          },
+          "expected": {
+            "charts": 0,
+            "notice": true,
+            "rows": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-23": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "explicit \"숨긴 계열도 차트에 포함\" draws all series; the table is identical",
+          "actual": {
+            "n": 3,
+            "same": true
+          },
+          "expected": {
+            "n": 3,
+            "same": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-31": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "a running query locks the export with the reason",
+          "actual": {
+            "disabled": true,
+            "why": "새 결과를 만드는 중이라 잠시 뒤에 받을 수 있습니다"
+          },
+          "expected": {
+            "disabled": true,
+            "why": "새 결과를 만드는 중이라 잠시 뒤에 받을 수 있습니다"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-32": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "while my comparison loads the export waits (no half file)",
+          "actual": "내 신고를 불러오는 중입니다. 끝나면 받을 수 있습니다",
+          "expected": "(t) => t.includes('불러오는 중')"
+        },
+        {
+          "ok": true,
+          "label": "button disabled meanwhile",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-33": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "file = the result at the click (title/metrics), not the newer run",
+          "actual": "맞춤 통계 · 기관 · 수용 건수, 일부 수용 건수, 불수용 건수",
+          "expected": "맞춤 통계 · 기관 · 수용 건수, 일부 수용 건수, 불수용 건수"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-34": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "A's running export is cancelled on the switch to B: no file, no save button, Worker gone",
+          "actual": {
+            "status": "idle",
+            "downloads": 0,
+            "save": 0,
+            "live": 0
+          },
+          "expected": {
+            "status": "idle",
+            "downloads": 0,
+            "save": 0,
+            "live": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-35": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "sign-out cancels the running export (no file, Worker gone)",
+          "actual": {
+            "status": "idle",
+            "downloads": 0,
+            "live": 0
+          },
+          "expected": {
+            "status": "idle",
+            "downloads": 0,
+            "live": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-36": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no WASM / export chunk before the first click (load + 표↔그래프)",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-37": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "Worker reports crossOriginIsolated=false and no SharedArrayBuffer",
+          "actual": {
+            "coi": false,
+            "sab": false
+          },
+          "expected": {
+            "coi": false,
+            "sab": false
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-38": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no COOP/COEP headers; page not isolated; no SharedArrayBuffer",
+          "actual": {
+            "coop": null,
+            "coep": null,
+            "coi": false,
+            "sab": "undefined"
+          },
+          "expected": {
+            "coop": null,
+            "coep": null,
+            "coi": false,
+            "sab": "undefined"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-39": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "step threw before completing",
+          "actual": "SyntaxError: Unexpected token '<', \"<!doctype \"... is not valid JSON"
+        }
+      ]
+    },
+    "EX-40": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": true,
+          "label": "production build under /safetyreport-community-map/: export works, no 4xx/5xx",
+          "actual": {
+            "struct": {
+              "sheets": [
+                "통계표",
+                "차트",
+                "차트 데이터",
+                "조회 조건"
+              ],
+              "control": [],
+              "undeclared": [],
+              "missing": [],
+              "broken": [],
+              "external": 0,
+              "macros": []
+            },
+            "bad": []
+          },
+          "expected": {
+            "struct": {
+              "sheets": [
+                "통계표",
+                "차트",
+                "차트 데이터",
+                "조회 조건"
+              ],
+              "control": [],
+              "undeclared": [],
+              "missing": [],
+              "broken": [],
+              "external": 0,
+              "macros": []
+            },
+            "bad": []
+          }
+        },
+        {
+          "ok": false,
+          "label": "step threw before completing",
+          "actual": "SyntaxError: Unexpected token '<', \"<!doctype \"... is not valid JSON"
+        }
+      ]
+    },
+    "EX-41": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "step threw before completing",
+          "actual": "SyntaxError: Unexpected token '<', \"<!doctype \"... is not valid JSON"
+        }
+      ]
+    },
+    "EX-42": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "HTML 404 for the WASM → local error message, table kept",
+          "actual": {
+            "code": "asset_http",
+            "msg": "엑셀 기능을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요. (HTTP 404)\n다시 시도\n닫기",
+            "rows": true
+          },
+          "expected": "(x) => x.code === 'asset_http' && x.msg.includes('다시 시도') && x.rows"
+        },
+        {
+          "ok": true,
+          "label": "retry after the failure succeeds",
+          "actual": "ready",
+          "expected": "ready"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-43": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "cancel: idle with a note, Worker terminated, no download, no statistics request, table intact",
+          "actual": {
+            "status": "idle",
+            "live": 0,
+            "downloads": 0,
+            "api": 0,
+            "rows": true
+          },
+          "expected": {
+            "status": "idle",
+            "live": 0,
+            "downloads": 0,
+            "api": 0,
+            "rows": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-44": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "double click starts one job",
+          "actual": 1,
+          "expected": 1
+        },
+        {
+          "ok": true,
+          "label": "10 exports: one Worker reused, ≤1 live Worker, all jobs finished",
+          "actual": {
+            "created": 2,
+            "live": 1,
+            "status": "ready"
+          },
+          "expected": {
+            "created": 2,
+            "live": 1,
+            "status": "ready"
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-45": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "progress follows the real stages",
+          "actual": [
+            "queued",
+            "prepare",
+            "table",
+            "chart",
+            "finalize",
+            "ready"
+          ],
+          "expected": "(x) => ['prepare', 'table', 'chart', 'finalize', 'ready'].every((st) => x.includes(st)) && x.indexOf('prepare') < x.indexOf('ready')"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-46": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "account change drops the finished file and its save button",
+          "actual": {
+            "status": "idle",
+            "save": 0
+          },
+          "expected": {
+            "status": "idle",
+            "save": 0
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-47": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "a complete result exports without a statistics/API request",
+          "actual": 0,
+          "expected": 0
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-48": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "file name + explicit 파일 저장 button after the file is ready",
+          "actual": {
+            "name": true,
+            "button": 1
+          },
+          "expected": {
+            "name": true,
+            "button": 1
+          }
+        },
+        {
+          "ok": true,
+          "label": "파일 저장 saves the same file again without a new job",
+          "actual": {
+            "same": true,
+            "jobs": 1
+          },
+          "expected": {
+            "same": true,
+            "jobs": 1
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-49": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "ZIP / content types / relationships valid; 4 sheets; no macro/external parts",
+          "actual": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          },
+          "expected": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "structure ok (커뮤니티신고지도_월별추이_20261004_002444.xlsx)",
+          "actual": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          },
+          "expected": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          }
+        },
+        {
+          "ok": true,
+          "label": "structure ok (커뮤니티신고지도_월별추이_20261004_002449.xlsx)",
+          "actual": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          },
+          "expected": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          }
+        },
+        {
+          "ok": true,
+          "label": "structure ok (커뮤니티신고지도_월별추이_20261004_002450.xlsx)",
+          "actual": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          },
+          "expected": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          }
+        },
+        {
+          "ok": true,
+          "label": "structure ok (커뮤니티신고지도_담당자별처리현황_20261004_002450.xlsx)",
+          "actual": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          },
+          "expected": {
+            "sheets": [
+              "통계표",
+              "차트",
+              "차트 데이터",
+              "조회 조건"
+            ],
+            "control": [],
+            "undeclared": [],
+            "missing": [],
+            "broken": [],
+            "external": 0,
+            "macros": []
+          }
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-50": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "native bar chart: one series per web series, cell-referenced names/categories/values",
+          "actual": {
+            "n": 14,
+            "refs": true
+          },
+          "expected": {
+            "n": 14,
+            "refs": true
+          }
+        },
+        {
+          "ok": true,
+          "label": "first series values = web bars (0–1 in the file = web %)",
+          "actual": [
+            35.7,
+            14.3,
+            11.1,
+            44.4,
+            28.6,
+            33.3,
+            50,
+            0,
+            100,
+            100
+          ],
+          "expected": [
+            35.7,
+            14.3,
+            11.1,
+            44.4,
+            28.6,
+            33.3,
+            50,
+            0,
+            100,
+            100
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-51": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "heatmap: numeric formula cells + colorScale 0..1",
+          "actual": {
+            "type": "colorScale",
+            "cfvo": [
+              {
+                "type": "num",
+                "val": "0"
+              },
+              {
+                "type": "num",
+                "val": "1"
+              }
+            ],
+            "colors": [
+              "FFDBEAFE",
+              "FF1D4ED8"
+            ]
+          },
+          "expected": "(r) => r.type === 'colorScale' && r.cfvo[0].val === '0' && r.cfvo[1].val === '1'"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-53": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "no token / account id / nickname / report identifiers in any sheet, cache or property",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "compare file: still no private data",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no private data (커뮤니티신고지도_월별추이_20261004_002444.xlsx)",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no private data (커뮤니티신고지도_월별추이_20261004_002449.xlsx)",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no private data (커뮤니티신고지도_월별추이_20261004_002450.xlsx)",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no private data (커뮤니티신고지도_담당자별처리현황_20261004_002450.xlsx)",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-55": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "table = server numbers (222 values; rates as 0–1 of numerator/denominator)",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "grand total rate is the server total (not a mean)",
+          "actual": 0.29411764705882354,
+          "expected": 0.29411764705882354
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-58": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "large synthetic target (122,000 cells + chart) completes in the Worker; main thread stays responsive (<200 ms lag)",
+          "actual": {
+            "status": "ready",
+            "ms": 16850,
+            "workerMs": 16802,
+            "bytes": 664056,
+            "cells": 122000,
+            "mainThreadMaxLagMs": 8
+          },
+          "expected": "(x) => x.status === 'ready' && x.mainThreadMaxLagMs < 200"
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "EX-60": {
+      "status": "FAIL",
+      "checks": [
+        {
+          "ok": false,
+          "label": "step threw before completing",
+          "actual": "SyntaxError: Unexpected token '<', \"<!doctype \"... is not valid JSON"
+        }
+      ]
+    }
+  },
+  "steps": {
+    "F01": {
+      "status": "DONE",
+      "ids": [
+        "FN-01",
+        "FN-02",
+        "FN-03",
+        "FN-04"
+      ],
+      "notes": {
+        "FN-02 counters": {
+          "live": 1,
+          "observers": 1,
+          "hosts": 1
+        }
+      },
+      "ms": 57902
+    },
+    "F03": {
+      "status": "DONE",
+      "ids": [
+        "FN-11",
+        "FN-12",
+        "FN-13",
+        "FN-14"
+      ],
+      "ms": 5628
+    },
+    "F02": {
+      "status": "DONE",
+      "ids": [
+        "FN-05",
+        "FN-06",
+        "FN-07",
+        "FN-08",
+        "FN-09",
+        "FN-10"
+      ],
+      "ms": 18794
+    },
+    "EX-STATS": {
+      "status": "DONE",
+      "ids": [
+        "EX-01",
+        "EX-02",
+        "EX-03",
+        "EX-15",
+        "EX-16",
+        "EX-21",
+        "EX-22",
+        "EX-23",
+        "EX-33",
+        "EX-36",
+        "EX-37",
+        "EX-38",
+        "EX-45",
+        "EX-47",
+        "EX-48",
+        "EX-49",
+        "EX-50",
+        "EX-51",
+        "EX-53",
+        "EX-55"
+      ],
+      "notes": {
+        "EX-16 cells": {
+          "allCells": 111,
+          "mineCells": 26
+        }
+      },
+      "ms": 9105
+    },
+    "EX-CARDS": {
+      "status": "DONE",
+      "ids": [
+        "EX-04",
+        "EX-05",
+        "EX-06",
+        "EX-07",
+        "EX-32",
+        "EX-49",
+        "EX-53"
+      ],
+      "ms": 10030
+    },
+    "EX-LIFE": {
+      "status": "DONE",
+      "ids": [
+        "EX-31",
+        "EX-34",
+        "EX-35",
+        "EX-42",
+        "EX-43",
+        "EX-44",
+        "EX-46",
+        "EX-58"
+      ],
+      "notes": {
+        "EX-44/58 repeat": {
+          "ms": [
+            156,
+            153,
+            156,
+            154,
+            166,
+            151,
+            154,
+            166,
+            151,
+            156
+          ],
+          "pageHeapBefore": 53500000,
+          "pageHeapAfter": 53500000,
+          "urlsLive": 12
+        },
+        "EX-58 large": {
+          "status": "ready",
+          "ms": 16850,
+          "workerMs": 16802,
+          "bytes": 664056,
+          "cells": 122000,
+          "mainThreadMaxLagMs": 8
+        }
+      },
+      "ms": 64786
+    },
+    "EX-PAGES": {
+      "status": "ERROR",
+      "ids": [
+        "EX-39",
+        "EX-40",
+        "EX-41",
+        "EX-60"
+      ],
+      "error": "SyntaxError: Unexpected token '<', \"<!doctype \"... is not valid JSON\n    at JSON.parse (<anonymous>)\n    at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)\n    at successSteps (node:internal/deps/undici/undici:5719:27)\n    at fullyReadBody (node:internal/deps/undici/undici:4609:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async consumeBody (node:internal/deps/undici/undici:5728:7)\n    at async step.expectedConsole (file:///home/better0101/projects/safetyreport-community-map/scripts/browser/verify_finalization.mjs:688:20)\n    at async step (file:///home/better0101/projects/safetyreport-community-map/scripts/browser/assert.mjs:52:7)\n    at async file:///home/better0101/projects/safetyreport-community-map/scripts/browser/verify_finalization.mjs:648:3",
+      "ms": 4309
+    }
+  },
+  "finished_at": "2026-10-03T15:26:00.663Z",
+  "summary": {
+    "PASS": 46,
+    "FAIL": 5
+  }
+}

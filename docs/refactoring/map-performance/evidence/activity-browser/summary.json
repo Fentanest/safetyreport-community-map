@@ -1,0 +1,3748 @@
+{
+  "mode": "dev/StrictMode; Profiler boundary overhead; synthetic Node API/SDK/ranking DTOs; not production timings",
+  "checks": [
+    {
+      "name": "metadata error has explicit retry",
+      "status": "PASS"
+    },
+    {
+      "name": "direct statistics has no dashboard request",
+      "status": "PASS"
+    },
+    {
+      "name": "metadata retry reaches actual result",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 1: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 1: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 1: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 1: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 1: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 2: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 2: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 2: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 2: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 2: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 3: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 3: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 3: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 3: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 3: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 4: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 4: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 4: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 4: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 4: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 5: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 5: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 5: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 5: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 5: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 6: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 6: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 6: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 6: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 6: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 7: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 7: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 7: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 7: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 7: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 8: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 8: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 8: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 8: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 8: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 9: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 9: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 9: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 9: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 9: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 10: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 10: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 10: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 10: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 10: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 11: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 11: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 11: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 11: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 11: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 12: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 12: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 12: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 12: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 12: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 13: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 13: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 13: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 13: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 13: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 14: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 14: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 14: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 14: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 14: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 15: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 15: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 15: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 15: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 15: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 16: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 16: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 16: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 16: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 16: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 17: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 17: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 17: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 17: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 17: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 18: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 18: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 18: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 18: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 18: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 19: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 19: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 19: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 19: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 19: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 20: late count answer cannot overwrite latest rate",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 20: hidden chart builds unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 20: hidden dashboard has no Profiler commit",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 20: no inactive map/statistics HTTP work",
+      "status": "PASS"
+    },
+    {
+      "name": "cycle 20: map/chart instances do not grow",
+      "status": "PASS"
+    },
+    {
+      "name": "statistics preset remains a draft",
+      "status": "PASS"
+    }
+  ],
+  "cycles": [
+    {
+      "iteration": 1,
+      "atHide": {
+        "builds": 7,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 77.60000002384186,
+            "baseDuration": 76.79999995231628,
+            "at": 2289.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 72.299999833107,
+            "baseDuration": 72.09999966621399,
+            "at": 2380.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.700000047683716,
+            "baseDuration": 71.299999833107,
+            "at": 2392.7999999523163
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 12.900000214576721,
+            "baseDuration": 70.60000002384186,
+            "at": 2501.7999999523163
+          }
+        ]
+      },
+      "after": {
+        "builds": 7,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 14,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 71.70000004768372,
+            "baseDuration": 71.700000166893,
+            "at": 3996.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 72.79999995231628,
+            "baseDuration": 72.20000004768372,
+            "at": 4088.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.799999952316284,
+            "baseDuration": 72.99999988079071,
+            "at": 4188.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.799999952316284,
+            "baseDuration": 72.59999990463257,
+            "at": 4212
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 82.5,
+            "baseDuration": 82.09999990463257,
+            "at": 4320.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 31.40000009536743,
+            "baseDuration": 30.90000033378601,
+            "at": 4431.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.399999976158142,
+            "baseDuration": 29.00000023841858,
+            "at": 4478.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.200000047683716,
+            "baseDuration": 21.50000023841858,
+            "at": 4536.299999952316
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 2,
+      "atHide": {
+        "builds": 14,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 71.70000004768372,
+            "baseDuration": 71.700000166893,
+            "at": 3996.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 72.79999995231628,
+            "baseDuration": 72.20000004768372,
+            "at": 4088.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.799999952316284,
+            "baseDuration": 72.99999988079071,
+            "at": 4188.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.799999952316284,
+            "baseDuration": 72.59999990463257,
+            "at": 4212
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 82.5,
+            "baseDuration": 82.09999990463257,
+            "at": 4320.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 31.40000009536743,
+            "baseDuration": 30.90000033378601,
+            "at": 4431.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.399999976158142,
+            "baseDuration": 29.00000023841858,
+            "at": 4478.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.200000047683716,
+            "baseDuration": 21.50000023841858,
+            "at": 4536.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 17.99999988079071,
+            "baseDuration": 18.100000143051147,
+            "at": 4828.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 22.50000023841858,
+            "baseDuration": 22.200000047683716,
+            "at": 4861.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.3000000715255737,
+            "baseDuration": 22.40000009536743,
+            "at": 4874.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 12.200000047683716,
+            "baseDuration": 31.40000009536743,
+            "at": 5007.299999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 14,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 21,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 73.799999833107,
+            "baseDuration": 73.39999973773956,
+            "at": 6254.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 71.90000009536743,
+            "baseDuration": 71.40000021457672,
+            "at": 6341.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 8.300000071525574,
+            "baseDuration": 76.2000002861023,
+            "at": 6414.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5999999046325684,
+            "baseDuration": 71.90000009536743,
+            "at": 6435.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 88.60000002384186,
+            "baseDuration": 88.50000023841858,
+            "at": 6547.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 34.89999997615814,
+            "baseDuration": 34.799999952316284,
+            "at": 6659.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 32.39999997615814,
+            "at": 6703.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 22.600000023841858,
+            "at": 6753.100000023842
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 3,
+      "atHide": {
+        "builds": 21,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 73.799999833107,
+            "baseDuration": 73.39999973773956,
+            "at": 6254.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 71.90000009536743,
+            "baseDuration": 71.40000021457672,
+            "at": 6341.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 8.300000071525574,
+            "baseDuration": 76.2000002861023,
+            "at": 6414.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5999999046325684,
+            "baseDuration": 71.90000009536743,
+            "at": 6435.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 88.60000002384186,
+            "baseDuration": 88.50000023841858,
+            "at": 6547.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 34.89999997615814,
+            "baseDuration": 34.799999952316284,
+            "at": 6659.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 32.39999997615814,
+            "at": 6703.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 22.600000023841858,
+            "at": 6753.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 21.100000143051147,
+            "baseDuration": 21.200000047683716,
+            "at": 7040.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 17.99999988079071,
+            "baseDuration": 17.99999988079071,
+            "at": 7065.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.399999976158142,
+            "baseDuration": 18.09999990463257,
+            "at": 7079.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 12.099999904632568,
+            "baseDuration": 27.09999966621399,
+            "at": 7187.299999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 21,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 28,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.09999990463257,
+            "baseDuration": 66.60000014305115,
+            "at": 8442.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.19999992847443,
+            "baseDuration": 66.79999995231628,
+            "at": 8523.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.599999904632568,
+            "baseDuration": 68,
+            "at": 8603.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.4000000953674316,
+            "baseDuration": 67.30000007152557,
+            "at": 8623.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.40000021457672,
+            "baseDuration": 68.60000026226044,
+            "at": 8725.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 40.59999990463257,
+            "baseDuration": 40.5,
+            "at": 8857.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.2000000476837158,
+            "baseDuration": 37.5,
+            "at": 8908.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 27,
+            "at": 8959.799999952316
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 4,
+      "atHide": {
+        "builds": 28,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.09999990463257,
+            "baseDuration": 66.60000014305115,
+            "at": 8442.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.19999992847443,
+            "baseDuration": 66.79999995231628,
+            "at": 8523.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.599999904632568,
+            "baseDuration": 68,
+            "at": 8603.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.4000000953674316,
+            "baseDuration": 67.30000007152557,
+            "at": 8623.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.40000021457672,
+            "baseDuration": 68.60000026226044,
+            "at": 8725.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 40.59999990463257,
+            "baseDuration": 40.5,
+            "at": 8857.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.2000000476837158,
+            "baseDuration": 37.5,
+            "at": 8908.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 27,
+            "at": 8959.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 23.09999990463257,
+            "baseDuration": 23.100000143051147,
+            "at": 9264.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 18.299999952316284,
+            "baseDuration": 18.299999952316284,
+            "at": 9292.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.2999999523162842,
+            "baseDuration": 18.49999988079071,
+            "at": 9304.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 11.700000047683716,
+            "baseDuration": 27.5,
+            "at": 9412.899999976158
+          }
+        ]
+      },
+      "after": {
+        "builds": 28,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 35,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.39999985694885,
+            "baseDuration": 68.09999978542328,
+            "at": 10697.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 73.299999833107,
+            "baseDuration": 72.59999990463257,
+            "at": 10785.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.799999952316284,
+            "baseDuration": 73.19999980926514,
+            "at": 10850.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.299999952316284,
+            "baseDuration": 72.99999988079071,
+            "at": 10869.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.50000011920929,
+            "baseDuration": 67.80000030994415,
+            "at": 10960.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 30.600000143051147,
+            "baseDuration": 30.5,
+            "at": 11053.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 0.8999999761581421,
+            "baseDuration": 28.40000009536743,
+            "at": 11088.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.0999999046325684,
+            "baseDuration": 19.699999928474426,
+            "at": 11144.799999952316
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 5,
+      "atHide": {
+        "builds": 35,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.39999985694885,
+            "baseDuration": 68.09999978542328,
+            "at": 10697.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 73.299999833107,
+            "baseDuration": 72.59999990463257,
+            "at": 10785.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.799999952316284,
+            "baseDuration": 73.19999980926514,
+            "at": 10850.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.299999952316284,
+            "baseDuration": 72.99999988079071,
+            "at": 10869.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.50000011920929,
+            "baseDuration": 67.80000030994415,
+            "at": 10960.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 30.600000143051147,
+            "baseDuration": 30.5,
+            "at": 11053.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 0.8999999761581421,
+            "baseDuration": 28.40000009536743,
+            "at": 11088.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.0999999046325684,
+            "baseDuration": 19.699999928474426,
+            "at": 11144.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 20.100000143051147,
+            "baseDuration": 19.90000009536743,
+            "at": 11425.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 17.899999976158142,
+            "baseDuration": 17.299999952316284,
+            "at": 11449.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.2000000476837158,
+            "baseDuration": 17.5,
+            "at": 11460.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.100000023841858,
+            "baseDuration": 17.899999976158142,
+            "at": 11559
+          }
+        ]
+      },
+      "after": {
+        "builds": 35,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 42,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 81.39999985694885,
+            "baseDuration": 81.09999990463257,
+            "at": 12839.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 84.39999997615814,
+            "baseDuration": 83.80000007152557,
+            "at": 12938.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5.299999952316284,
+            "baseDuration": 85.60000026226044,
+            "at": 13012.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.899999976158142,
+            "baseDuration": 84.60000014305115,
+            "at": 13034.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75,
+            "baseDuration": 74.40000057220459,
+            "at": 13131.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 82.20000004768372,
+            "baseDuration": 82.39999997615814,
+            "at": 13279.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5,
+            "baseDuration": 82.79999995231628,
+            "at": 13331.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 13.200000047683716,
+            "baseDuration": 81.30000007152557,
+            "at": 13397.700000047684
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 6,
+      "atHide": {
+        "builds": 42,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 81.39999985694885,
+            "baseDuration": 81.09999990463257,
+            "at": 12839.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 84.39999997615814,
+            "baseDuration": 83.80000007152557,
+            "at": 12938.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5.299999952316284,
+            "baseDuration": 85.60000026226044,
+            "at": 13012.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.899999976158142,
+            "baseDuration": 84.60000014305115,
+            "at": 13034.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75,
+            "baseDuration": 74.40000057220459,
+            "at": 13131.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 82.20000004768372,
+            "baseDuration": 82.39999997615814,
+            "at": 13279.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5,
+            "baseDuration": 82.79999995231628,
+            "at": 13331.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 13.200000047683716,
+            "baseDuration": 81.30000007152557,
+            "at": 13397.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 25.5,
+            "baseDuration": 25.59999990463257,
+            "at": 13693.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 18.299999952316284,
+            "baseDuration": 17.700000047683716,
+            "at": 13723.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.600000023841858,
+            "baseDuration": 17.799999952316284,
+            "at": 13734.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 2.9999998807907104,
+            "baseDuration": 17.899999856948853,
+            "at": 13833.799999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 42,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 49,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 63.299999952316284,
+            "baseDuration": 62.89999985694885,
+            "at": 15119.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 64.69999980926514,
+            "baseDuration": 64.69999980926514,
+            "at": 15199.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.6999999284744263,
+            "baseDuration": 65.19999992847443,
+            "at": 15260.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 65.19999992847443,
+            "at": 15279.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.20000004768372,
+            "baseDuration": 68,
+            "at": 15367.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 32.59999990463257,
+            "baseDuration": 32.59999990463257,
+            "at": 15460.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.2999999523162842,
+            "baseDuration": 30.49999976158142,
+            "at": 15503.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1999999284744263,
+            "baseDuration": 21.799999713897705,
+            "at": 15579.5
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 7,
+      "atHide": {
+        "builds": 49,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 63.299999952316284,
+            "baseDuration": 62.89999985694885,
+            "at": 15119.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 64.69999980926514,
+            "baseDuration": 64.69999980926514,
+            "at": 15199.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.6999999284744263,
+            "baseDuration": 65.19999992847443,
+            "at": 15260.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 65.19999992847443,
+            "at": 15279.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.20000004768372,
+            "baseDuration": 68,
+            "at": 15367.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 32.59999990463257,
+            "baseDuration": 32.59999990463257,
+            "at": 15460.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.2999999523162842,
+            "baseDuration": 30.49999976158142,
+            "at": 15503.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1999999284744263,
+            "baseDuration": 21.799999713897705,
+            "at": 15579.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 20.49999988079071,
+            "baseDuration": 20.59999990463257,
+            "at": 15856.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 20.90000033378601,
+            "baseDuration": 20.300000429153442,
+            "at": 15885
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.4000000953674316,
+            "baseDuration": 20.500000476837158,
+            "at": 15895.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 2.899999976158142,
+            "baseDuration": 20.000000476837158,
+            "at": 15996.299999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 49,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 56,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75.80000007152557,
+            "baseDuration": 74.70000004768372,
+            "at": 17265.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 66.5,
+            "baseDuration": 65.50000011920929,
+            "at": 17347.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4,
+            "baseDuration": 65.80000019073486,
+            "at": 17415.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.600000023841858,
+            "baseDuration": 65.90000021457672,
+            "at": 17435.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 77.299999833107,
+            "baseDuration": 77.19999992847443,
+            "at": 17533.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.5,
+            "baseDuration": 67.39999985694885,
+            "at": 17666.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.299999952316284,
+            "baseDuration": 67.59999978542328,
+            "at": 17713.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 13.199999928474426,
+            "baseDuration": 68.7999997138977,
+            "at": 17786.5
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 8,
+      "atHide": {
+        "builds": 56,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75.80000007152557,
+            "baseDuration": 74.70000004768372,
+            "at": 17265.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 66.5,
+            "baseDuration": 65.50000011920929,
+            "at": 17347.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4,
+            "baseDuration": 65.80000019073486,
+            "at": 17415.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.600000023841858,
+            "baseDuration": 65.90000021457672,
+            "at": 17435.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 77.299999833107,
+            "baseDuration": 77.19999992847443,
+            "at": 17533.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.5,
+            "baseDuration": 67.39999985694885,
+            "at": 17666.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.299999952316284,
+            "baseDuration": 67.59999978542328,
+            "at": 17713.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 13.199999928474426,
+            "baseDuration": 68.7999997138977,
+            "at": 17786.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 19.800000190734863,
+            "baseDuration": 19.600000262260437,
+            "at": 18059.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 16.40000009536743,
+            "baseDuration": 15.899999976158142,
+            "at": 18081.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.100000023841858,
+            "baseDuration": 15.99999988079071,
+            "at": 18094.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3,
+            "baseDuration": 15.799999952316284,
+            "at": 18192.700000047684
+          }
+        ]
+      },
+      "after": {
+        "builds": 56,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 63,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 73.59999990463257,
+            "baseDuration": 73.39999985694885,
+            "at": 19482.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 74.60000002384186,
+            "baseDuration": 74.29999995231628,
+            "at": 19572.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.099999904632568,
+            "baseDuration": 75,
+            "at": 19644
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.5,
+            "baseDuration": 75.60000002384186,
+            "at": 19667.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 66,
+            "baseDuration": 65.69999992847443,
+            "at": 19757.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 61.49999988079071,
+            "baseDuration": 61,
+            "at": 19880.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.100000023841858,
+            "baseDuration": 61.10000002384186,
+            "at": 19925.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 11.5,
+            "baseDuration": 61.300000071525574,
+            "at": 19981.5
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 9,
+      "atHide": {
+        "builds": 63,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 73.59999990463257,
+            "baseDuration": 73.39999985694885,
+            "at": 19482.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 74.60000002384186,
+            "baseDuration": 74.29999995231628,
+            "at": 19572.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.099999904632568,
+            "baseDuration": 75,
+            "at": 19644
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.5,
+            "baseDuration": 75.60000002384186,
+            "at": 19667.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 66,
+            "baseDuration": 65.69999992847443,
+            "at": 19757.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 61.49999988079071,
+            "baseDuration": 61,
+            "at": 19880.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.100000023841858,
+            "baseDuration": 61.10000002384186,
+            "at": 19925.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 11.5,
+            "baseDuration": 61.300000071525574,
+            "at": 19981.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 19.800000071525574,
+            "baseDuration": 19.700000166893005,
+            "at": 20242.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 17,
+            "baseDuration": 16.399999976158142,
+            "at": 20265.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.100000023841858,
+            "baseDuration": 16.700000047683716,
+            "at": 20275.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 2.799999952316284,
+            "baseDuration": 16.600000023841858,
+            "at": 20378.299999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 63,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 70,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75.39999997615814,
+            "baseDuration": 75.29999995231628,
+            "at": 21653
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 70.60000002384186,
+            "baseDuration": 69.50000023841858,
+            "at": 21739.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.899999976158142,
+            "baseDuration": 69.00000011920929,
+            "at": 21809.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 68.90000009536743,
+            "at": 21829.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.20000004768372,
+            "baseDuration": 68.2000002861023,
+            "at": 21919.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 35.49999976158142,
+            "baseDuration": 35.09999990463257,
+            "at": 22014.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 0.8999999761581421,
+            "baseDuration": 32.799999833106995,
+            "at": 22051.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 23.59999978542328,
+            "at": 22100.5
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 10,
+      "atHide": {
+        "builds": 70,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75.39999997615814,
+            "baseDuration": 75.29999995231628,
+            "at": 21653
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 70.60000002384186,
+            "baseDuration": 69.50000023841858,
+            "at": 21739.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.899999976158142,
+            "baseDuration": 69.00000011920929,
+            "at": 21809.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 68.90000009536743,
+            "at": 21829.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.20000004768372,
+            "baseDuration": 68.2000002861023,
+            "at": 21919.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 35.49999976158142,
+            "baseDuration": 35.09999990463257,
+            "at": 22014.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 0.8999999761581421,
+            "baseDuration": 32.799999833106995,
+            "at": 22051.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 23.59999978542328,
+            "at": 22100.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 19.800000190734863,
+            "baseDuration": 20.00000011920929,
+            "at": 22389.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 15.99999988079071,
+            "baseDuration": 15.699999809265137,
+            "at": 22412.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.100000023841858,
+            "baseDuration": 15.799999833106995,
+            "at": 22423.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1000001430511475,
+            "baseDuration": 16.09999990463257,
+            "at": 22523.100000023842
+          }
+        ]
+      },
+      "after": {
+        "builds": 70,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 77,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.09999966621399,
+            "baseDuration": 65.0999995470047,
+            "at": 23801.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 65,
+            "baseDuration": 65.29999995231628,
+            "at": 23880.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.300000071525574,
+            "baseDuration": 66.10000002384186,
+            "at": 23942.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.9000000953674316,
+            "baseDuration": 65.90000009536743,
+            "at": 23965.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.90000009536743,
+            "baseDuration": 68.00000011920929,
+            "at": 24061
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 68.5,
+            "baseDuration": 68.50000011920929,
+            "at": 24191.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5,
+            "baseDuration": 68.50000011920929,
+            "at": 24233.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 12.600000023841858,
+            "baseDuration": 68.70000004768372,
+            "at": 24314.200000047684
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 11,
+      "atHide": {
+        "builds": 77,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.09999966621399,
+            "baseDuration": 65.0999995470047,
+            "at": 23801.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 65,
+            "baseDuration": 65.29999995231628,
+            "at": 23880.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.300000071525574,
+            "baseDuration": 66.10000002384186,
+            "at": 23942.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.9000000953674316,
+            "baseDuration": 65.90000009536743,
+            "at": 23965.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.90000009536743,
+            "baseDuration": 68.00000011920929,
+            "at": 24061
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 68.5,
+            "baseDuration": 68.50000011920929,
+            "at": 24191.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5,
+            "baseDuration": 68.50000011920929,
+            "at": 24233.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 12.600000023841858,
+            "baseDuration": 68.70000004768372,
+            "at": 24314.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 24.699999690055847,
+            "baseDuration": 24.899999976158142,
+            "at": 24604.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 20.799999833106995,
+            "baseDuration": 20.300000190734863,
+            "at": 24633.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 20.200000166893005,
+            "at": 24645.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.100000023841858,
+            "baseDuration": 20.00000023841858,
+            "at": 24746.299999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 77,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 84,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.700000166893,
+            "baseDuration": 65.80000030994415,
+            "at": 26007.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.00000011920929,
+            "baseDuration": 66.60000014305115,
+            "at": 26089.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.700000047683716,
+            "baseDuration": 66.7000002861023,
+            "at": 26148.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 66.700000166893,
+            "at": 26167
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.00000011920929,
+            "baseDuration": 68.10000026226044,
+            "at": 26258
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 36.299999952316284,
+            "baseDuration": 36.10000014305115,
+            "at": 26368.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.4000000953674316,
+            "baseDuration": 31.300000190734863,
+            "at": 26408.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.699999928474426,
+            "baseDuration": 21.100000023841858,
+            "at": 26486.100000023842
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 12,
+      "atHide": {
+        "builds": 84,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.700000166893,
+            "baseDuration": 65.80000030994415,
+            "at": 26007.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.00000011920929,
+            "baseDuration": 66.60000014305115,
+            "at": 26089.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.700000047683716,
+            "baseDuration": 66.7000002861023,
+            "at": 26148.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 66.700000166893,
+            "at": 26167
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.00000011920929,
+            "baseDuration": 68.10000026226044,
+            "at": 26258
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 36.299999952316284,
+            "baseDuration": 36.10000014305115,
+            "at": 26368.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.4000000953674316,
+            "baseDuration": 31.300000190734863,
+            "at": 26408.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.699999928474426,
+            "baseDuration": 21.100000023841858,
+            "at": 26486.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 16.09999990463257,
+            "baseDuration": 15.699999928474426,
+            "at": 26754.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 16.200000047683716,
+            "baseDuration": 16.5,
+            "at": 26776
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.100000023841858,
+            "baseDuration": 16.600000023841858,
+            "at": 26785.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.9000000953674316,
+            "baseDuration": 17.600000023841858,
+            "at": 26888.200000047684
+          }
+        ]
+      },
+      "after": {
+        "builds": 84,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 91,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.49999976158142,
+            "baseDuration": 65.39999973773956,
+            "at": 28152.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.50000011920929,
+            "baseDuration": 67.60000002384186,
+            "at": 28234.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5.300000071525574,
+            "baseDuration": 69.20000004768372,
+            "at": 28301
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.399999976158142,
+            "baseDuration": 68.70000004768372,
+            "at": 28324.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.69999980926514,
+            "baseDuration": 70.69999980926514,
+            "at": 28419.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 31.800000071525574,
+            "baseDuration": 31.300000071525574,
+            "at": 28508.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.1999999284744263,
+            "baseDuration": 29.199999928474426,
+            "at": 28547.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 2.899999976158142,
+            "baseDuration": 19.899999856948853,
+            "at": 28594.299999952316
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 13,
+      "atHide": {
+        "builds": 91,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.49999976158142,
+            "baseDuration": 65.39999973773956,
+            "at": 28152.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 67.50000011920929,
+            "baseDuration": 67.60000002384186,
+            "at": 28234.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5.300000071525574,
+            "baseDuration": 69.20000004768372,
+            "at": 28301
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.399999976158142,
+            "baseDuration": 68.70000004768372,
+            "at": 28324.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.69999980926514,
+            "baseDuration": 70.69999980926514,
+            "at": 28419.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 31.800000071525574,
+            "baseDuration": 31.300000071525574,
+            "at": 28508.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.1999999284744263,
+            "baseDuration": 29.199999928474426,
+            "at": 28547.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 2.899999976158142,
+            "baseDuration": 19.899999856948853,
+            "at": 28594.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 19.299999952316284,
+            "baseDuration": 19.200000047683716,
+            "at": 28886.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 20.299999833106995,
+            "baseDuration": 19.40000009536743,
+            "at": 28914
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 19.40000009536743,
+            "at": 28924.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1999999284744263,
+            "baseDuration": 19.5,
+            "at": 29022.899999976158
+          }
+        ]
+      },
+      "after": {
+        "builds": 91,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 98,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.89999985694885,
+            "baseDuration": 65.69999980926514,
+            "at": 30306.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 64.89999997615814,
+            "baseDuration": 64.30000042915344,
+            "at": 30385.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.899999976158142,
+            "baseDuration": 64.80000042915344,
+            "at": 30441.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.200000047683716,
+            "baseDuration": 65.60000050067902,
+            "at": 30464.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.99999988079071,
+            "baseDuration": 70.60000014305115,
+            "at": 30556.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 31.399999976158142,
+            "baseDuration": 31.5,
+            "at": 30652.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 29.399999976158142,
+            "at": 30686.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.100000023841858,
+            "baseDuration": 20.600000023841858,
+            "at": 30751.399999976158
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 14,
+      "atHide": {
+        "builds": 98,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65.89999985694885,
+            "baseDuration": 65.69999980926514,
+            "at": 30306.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 64.89999997615814,
+            "baseDuration": 64.30000042915344,
+            "at": 30385.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.899999976158142,
+            "baseDuration": 64.80000042915344,
+            "at": 30441.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.200000047683716,
+            "baseDuration": 65.60000050067902,
+            "at": 30464.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.99999988079071,
+            "baseDuration": 70.60000014305115,
+            "at": 30556.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 31.399999976158142,
+            "baseDuration": 31.5,
+            "at": 30652.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 29.399999976158142,
+            "at": 30686.600000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.100000023841858,
+            "baseDuration": 20.600000023841858,
+            "at": 30751.399999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 22.59999978542328,
+            "baseDuration": 22.699999809265137,
+            "at": 31038.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 20.300000190734863,
+            "baseDuration": 20.00000011920929,
+            "at": 31065.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 0.9999998807907104,
+            "baseDuration": 19.700000047683716,
+            "at": 31076.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1999999284744263,
+            "baseDuration": 19.199999928474426,
+            "at": 31175.299999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 98,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 105,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 66.39999997615814,
+            "baseDuration": 66.10000002384186,
+            "at": 32422.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 68.79999995231628,
+            "baseDuration": 67.90000021457672,
+            "at": 32506.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.9000000953674316,
+            "baseDuration": 68.30000030994415,
+            "at": 32563.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 68.2000002861023,
+            "at": 32582.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.90000009536743,
+            "baseDuration": 68.10000014305115,
+            "at": 32670.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 66,
+            "baseDuration": 66.30000007152557,
+            "at": 32793.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 65.90000009536743,
+            "at": 32835.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 12.399999976158142,
+            "baseDuration": 65.90000009536743,
+            "at": 32920.200000047684
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 15,
+      "atHide": {
+        "builds": 105,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 66.39999997615814,
+            "baseDuration": 66.10000002384186,
+            "at": 32422.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 68.79999995231628,
+            "baseDuration": 67.90000021457672,
+            "at": 32506.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.9000000953674316,
+            "baseDuration": 68.30000030994415,
+            "at": 32563.100000023842
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 68.2000002861023,
+            "at": 32582.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 67.90000009536743,
+            "baseDuration": 68.10000014305115,
+            "at": 32670.899999976158
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 66,
+            "baseDuration": 66.30000007152557,
+            "at": 32793.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 65.90000009536743,
+            "at": 32835.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 12.399999976158142,
+            "baseDuration": 65.90000009536743,
+            "at": 32920.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 26.699999928474426,
+            "baseDuration": 26.49999988079071,
+            "at": 33171.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 22.299999952316284,
+            "baseDuration": 22.100000023841858,
+            "at": 33202.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.399999976158142,
+            "baseDuration": 22.100000023841858,
+            "at": 33217
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 20.700000166893005,
+            "at": 33316.299999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 105,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 112,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.29999995231628,
+            "baseDuration": 68.39999997615814,
+            "at": 34605
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 72.09999990463257,
+            "baseDuration": 71.2999997138977,
+            "at": 34692
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.8000000715255737,
+            "baseDuration": 71.59999978542328,
+            "at": 34752.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.600000023841858,
+            "baseDuration": 71.69999980926514,
+            "at": 34774.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.09999990463257,
+            "baseDuration": 69.89999997615814,
+            "at": 34868.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 37.39999997615814,
+            "baseDuration": 37.40000009536743,
+            "at": 34968.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.5,
+            "baseDuration": 34.60000002384186,
+            "at": 35016.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.3000000715255737,
+            "baseDuration": 21.90000009536743,
+            "at": 35079
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 16,
+      "atHide": {
+        "builds": 112,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.29999995231628,
+            "baseDuration": 68.39999997615814,
+            "at": 34605
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 72.09999990463257,
+            "baseDuration": 71.2999997138977,
+            "at": 34692
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.8000000715255737,
+            "baseDuration": 71.59999978542328,
+            "at": 34752.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.600000023841858,
+            "baseDuration": 71.69999980926514,
+            "at": 34774.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.09999990463257,
+            "baseDuration": 69.89999997615814,
+            "at": 34868.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 37.39999997615814,
+            "baseDuration": 37.40000009536743,
+            "at": 34968.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.5,
+            "baseDuration": 34.60000002384186,
+            "at": 35016.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.3000000715255737,
+            "baseDuration": 21.90000009536743,
+            "at": 35079
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 18.09999978542328,
+            "baseDuration": 17.899999856948853,
+            "at": 35367.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 18.200000047683716,
+            "baseDuration": 17.90000009536743,
+            "at": 35392.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.100000023841858,
+            "baseDuration": 17.600000023841858,
+            "at": 35402.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.0999999046325684,
+            "baseDuration": 17.49999988079071,
+            "at": 35502.799999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 112,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 119,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 63.40000009536743,
+            "baseDuration": 63.40000009536743,
+            "at": 36732.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 70.60000002384186,
+            "baseDuration": 69.30000030994415,
+            "at": 36817.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.8000000715255737,
+            "baseDuration": 69.50000035762787,
+            "at": 36876.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.4000000953674316,
+            "baseDuration": 69.60000038146973,
+            "at": 36896.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65,
+            "baseDuration": 64.5,
+            "at": 36981.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 64.79999995231628,
+            "baseDuration": 65.00000011920929,
+            "at": 37105.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5999999046325684,
+            "baseDuration": 65.60000002384186,
+            "at": 37143
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 13.5,
+            "baseDuration": 67.60000002384186,
+            "at": 37223.200000047684
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 17,
+      "atHide": {
+        "builds": 119,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 63.40000009536743,
+            "baseDuration": 63.40000009536743,
+            "at": 36732.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 70.60000002384186,
+            "baseDuration": 69.30000030994415,
+            "at": 36817.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.8000000715255737,
+            "baseDuration": 69.50000035762787,
+            "at": 36876.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.4000000953674316,
+            "baseDuration": 69.60000038146973,
+            "at": 36896.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 65,
+            "baseDuration": 64.5,
+            "at": 36981.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 64.79999995231628,
+            "baseDuration": 65.00000011920929,
+            "at": 37105.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5999999046325684,
+            "baseDuration": 65.60000002384186,
+            "at": 37143
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 13.5,
+            "baseDuration": 67.60000002384186,
+            "at": 37223.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 20.399999737739563,
+            "baseDuration": 20.40000009536743,
+            "at": 37511.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 18.200000047683716,
+            "baseDuration": 17.799999952316284,
+            "at": 37536.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.1999999284744263,
+            "baseDuration": 17.99999988079071,
+            "at": 37549.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1999999284744263,
+            "baseDuration": 17.899999856948853,
+            "at": 37647.10000002384
+          }
+        ]
+      },
+      "after": {
+        "builds": 119,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 126,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 80.20000004768372,
+            "baseDuration": 79.40000021457672,
+            "at": 38952.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 82.40000009536743,
+            "baseDuration": 81.60000002384186,
+            "at": 39049.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.099999904632568,
+            "baseDuration": 81.00000011920929,
+            "at": 39122.89999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.700000047683716,
+            "baseDuration": 80.90000021457672,
+            "at": 39141.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 64.89999997615814,
+            "baseDuration": 64.69999992847443,
+            "at": 39230.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 33.99999988079071,
+            "baseDuration": 33.60000014305115,
+            "at": 39326.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.5,
+            "baseDuration": 31.600000143051147,
+            "at": 39366.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 21.600000262260437,
+            "at": 39421
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 18,
+      "atHide": {
+        "builds": 126,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 80.20000004768372,
+            "baseDuration": 79.40000021457672,
+            "at": 38952.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 82.40000009536743,
+            "baseDuration": 81.60000002384186,
+            "at": 39049.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.099999904632568,
+            "baseDuration": 81.00000011920929,
+            "at": 39122.89999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.700000047683716,
+            "baseDuration": 80.90000021457672,
+            "at": 39141.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 64.89999997615814,
+            "baseDuration": 64.69999992847443,
+            "at": 39230.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 33.99999988079071,
+            "baseDuration": 33.60000014305115,
+            "at": 39326.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.5,
+            "baseDuration": 31.600000143051147,
+            "at": 39366.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.200000047683716,
+            "baseDuration": 21.600000262260437,
+            "at": 39421
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 17.700000047683716,
+            "baseDuration": 17.399999856948853,
+            "at": 39704.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 16.90000009536743,
+            "baseDuration": 17,
+            "at": 39726.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 16.899999976158142,
+            "at": 39736.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 17.200000047683716,
+            "at": 39836.799999952316
+          }
+        ]
+      },
+      "after": {
+        "builds": 126,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 133,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.299999833107,
+            "baseDuration": 69.99999976158142,
+            "at": 41130.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 73.29999995231628,
+            "baseDuration": 72.69999980926514,
+            "at": 41217.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.8000000715255737,
+            "baseDuration": 72.70000004768372,
+            "at": 41274
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1999999284744263,
+            "baseDuration": 72.59999990463257,
+            "at": 41293.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 78.39999997615814,
+            "baseDuration": 78.40000021457672,
+            "at": 41393.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 32.30000019073486,
+            "baseDuration": 31.600000023841858,
+            "at": 41485.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 29.399999976158142,
+            "at": 41522.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5,
+            "baseDuration": 20.799999952316284,
+            "at": 41593.89999997616
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 19,
+      "atHide": {
+        "builds": 133,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 70.299999833107,
+            "baseDuration": 69.99999976158142,
+            "at": 41130.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 73.29999995231628,
+            "baseDuration": 72.69999980926514,
+            "at": 41217.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.8000000715255737,
+            "baseDuration": 72.70000004768372,
+            "at": 41274
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.1999999284744263,
+            "baseDuration": 72.59999990463257,
+            "at": 41293.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 78.39999997615814,
+            "baseDuration": 78.40000021457672,
+            "at": 41393.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 32.30000019073486,
+            "baseDuration": 31.600000023841858,
+            "at": 41485.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 29.399999976158142,
+            "at": 41522.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.5,
+            "baseDuration": 20.799999952316284,
+            "at": 41593.89999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 17.99999988079071,
+            "baseDuration": 18.09999990463257,
+            "at": 41836.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 18.399999976158142,
+            "baseDuration": 18,
+            "at": 41861.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.399999976158142,
+            "baseDuration": 18.5,
+            "at": 41872.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.600000023841858,
+            "baseDuration": 19.899999976158142,
+            "at": 41977.5
+          }
+        ]
+      },
+      "after": {
+        "builds": 133,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 140,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75.80000030994415,
+            "baseDuration": 75.40000033378601,
+            "at": 43263.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 74.99999988079071,
+            "baseDuration": 74.09999978542328,
+            "at": 43353.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5.199999928474426,
+            "baseDuration": 76.09999990463257,
+            "at": 43417.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4,
+            "baseDuration": 75.19999992847443,
+            "at": 43436.89999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 79.19999980926514,
+            "baseDuration": 79.49999976158142,
+            "at": 43536.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 65.99999988079071,
+            "baseDuration": 66.09999990463257,
+            "at": 43661
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 66.29999995231628,
+            "at": 43703.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 11.600000143051147,
+            "baseDuration": 66.40000009536743,
+            "at": 43790.10000002384
+          }
+        ]
+      }
+    },
+    {
+      "iteration": 20,
+      "atHide": {
+        "builds": 140,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 75.80000030994415,
+            "baseDuration": 75.40000033378601,
+            "at": 43263.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 74.99999988079071,
+            "baseDuration": 74.09999978542328,
+            "at": 43353.700000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 5.199999928474426,
+            "baseDuration": 76.09999990463257,
+            "at": 43417.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4,
+            "baseDuration": 75.19999992847443,
+            "at": 43436.89999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 79.19999980926514,
+            "baseDuration": 79.49999976158142,
+            "at": 43536.39999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 65.99999988079071,
+            "baseDuration": 66.09999990463257,
+            "at": 43661
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 66.29999995231628,
+            "at": 43703.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 11.600000143051147,
+            "baseDuration": 66.40000009536743,
+            "at": 43790.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 21.699999928474426,
+            "baseDuration": 21.59999990463257,
+            "at": 44062.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 17.899999976158142,
+            "baseDuration": 17.90000021457672,
+            "at": 44087.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1.100000023841858,
+            "baseDuration": 17.800000190734863,
+            "at": 44097.200000047684
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 2.9999998807907104,
+            "baseDuration": 17.90000021457672,
+            "at": 44196.700000047684
+          }
+        ]
+      },
+      "after": {
+        "builds": 140,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": []
+      },
+      "restored": {
+        "builds": 147,
+        "live": 7,
+        "observers": 7,
+        "maps": 2,
+        "markers": 9,
+        "commits": [
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 68.39999997615814,
+            "baseDuration": 68.30000007152557,
+            "at": 45456.89999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 63.49999988079071,
+            "baseDuration": 63.40000009536743,
+            "at": 45534.89999997616
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.6999999284744263,
+            "baseDuration": 63.89999997615814,
+            "at": 45595.5
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 3.399999976158142,
+            "baseDuration": 64,
+            "at": 45614.10000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 79.19999980926514,
+            "baseDuration": 78.89999961853027,
+            "at": 45712.799999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "nested-update",
+            "actualDuration": 31.09999990463257,
+            "baseDuration": 31.09999978542328,
+            "at": 45830.299999952316
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 1,
+            "baseDuration": 28.799999833106995,
+            "at": 45880.60000002384
+          },
+          {
+            "id": "dashboard",
+            "phase": "update",
+            "actualDuration": 4.200000047683716,
+            "baseDuration": 21.299999952316284,
+            "at": 45962.10000002384
+          }
+        ]
+      }
+    }
+  ],
+  "notes": []
+}
