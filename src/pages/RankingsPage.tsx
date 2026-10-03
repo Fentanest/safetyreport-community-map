@@ -9,6 +9,13 @@ import {
   type RankingResponse,
   type RankingRow,
 } from '../../contracts/user-rankings/types';
+import {
+  RANKING_PRESETS,
+  RANKING_THEME_METRICS,
+  rankingTitle,
+  selectRankingPreset,
+  type RankingPreset,
+} from '../domain/rankingPeriods';
 import { loadRankings } from '../data/rankings';
 import { useMapAuth } from '../hooks/usePersonal';
 import { ACCESS_CODES, PublicApiError, type AccessCode } from '../data/client';
@@ -18,17 +25,13 @@ import '../styles/rankings.css';
 type Theme = RankingQuery['theme'];
 type Metric = RankingQuery['metric'];
 
-const THEMES: Array<{ id: Theme; label: string }> = [
-  { id: 'reporters', label: '최다 신고자' },
-  { id: 'fines', label: '최다 과태료 수용자' },
-  { id: 'unlucky', label: '이달의 불운자' },
-];
+const CUMULATIVE_PRESETS = RANKING_PRESETS.filter((p) => p.period !== 'month');
+const MONTHLY_PRESETS = RANKING_PRESETS.filter((p) => p.period === 'month');
 
-const THEME_METRICS: Record<Theme, Metric[]> = {
-  reporters: ['reports_count'],
-  fines: ['fine_count', 'fine_rate'],
-  unlucky: ['rejected_count', 'rejected_rate', 'partial_count', 'partial_rate'],
-};
+function isPresetActive(draft: Draft, preset: RankingPreset): boolean {
+  if (draft.theme !== preset.theme) return false;
+  return preset.period === 'month' ? draft.period === 'month' : draft.period !== 'month';
+}
 
 const CATEGORY_LABEL: Record<RankingQuery['category'], string> = {
   all: '전체',
@@ -94,14 +97,12 @@ function draftFromSearch(search: string): Draft | null {
     min_reports: p.get(RK('min')) ?? base.min_reports,
   };
   next.metric = (metric as Metric) ?? next.metric;
-  next.period = (period as Draft['period']) ?? next.period;
+  if (period === 'all' || period === 'range' || period === 'month') next.period = period;
   next.date_basis = basis === 'report_date' || basis === 'completed_date' ? basis : next.date_basis;
   next.category = category === 'all' || category === 'traffic' || category === 'parking' || category === 'other'
     ? category
     : next.category;
-  if (!THEME_METRICS[next.theme].includes(next.metric)) next.metric = THEME_METRICS[next.theme][0];
-  if (next.theme === 'unlucky') next.period = 'month';
-  else if (next.period === 'month') next.period = 'all';
+  if (!RANKING_THEME_METRICS[next.theme].includes(next.metric)) next.metric = RANKING_THEME_METRICS[next.theme][0];
   return next;
 }
 
@@ -110,10 +111,10 @@ function draftToQuery(d: Draft, page: number, expectedVersion: string | null): R
   const raw = {
     theme: d.theme,
     metric: d.metric,
-    period: d.theme === 'unlucky' ? 'month' : d.period === 'month' ? 'all' : d.period,
-    start: d.period === 'range' && d.theme !== 'unlucky' ? d.start || null : null,
-    end: d.period === 'range' && d.theme !== 'unlucky' ? d.end || null : null,
-    month: d.theme === 'unlucky' ? d.month || null : null,
+    period: d.period,
+    start: d.period === 'range' ? d.start || null : null,
+    end: d.period === 'range' ? d.end || null : null,
+    month: d.period === 'month' ? d.month || null : null,
     date_basis: d.date_basis,
     category: d.category,
     min_reports: Number.isInteger(min) ? min : d.min_reports,
@@ -132,13 +133,6 @@ function shortUuid(u: string): string {
 function formatValue(row: RankingRow, metric: Metric): string {
   if (metric.endsWith('_rate')) return `${row.value.toFixed(1)}%`;
   return `${row.value.toLocaleString('ko-KR')}건`;
-}
-
-function unluckyTitle(month: string | null): string {
-  if (!month || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return '이달의 불운자';
-  if (month === kstMonth()) return '이달의 불운자';
-  const [y, m] = month.split('-');
-  return `${y}년 ${Number(m)}월의 불운자`;
 }
 
 export default function RankingsPage({ active }: { active: boolean }) {
@@ -305,8 +299,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
       const q = url.searchParams;
       q.set(RK('theme'), d.theme);
       q.set(RK('metric'), d.metric);
-      q.set(RK('period'), d.theme === 'unlucky' ? 'month' : d.period);
-      if (d.period === 'range' && d.theme !== 'unlucky') {
+      q.set(RK('period'), d.period);
+      if (d.period === 'range') {
         if (d.start) q.set(RK('start'), d.start);
         else q.delete(RK('start'));
         if (d.end) q.set(RK('end'), d.end);
@@ -315,7 +309,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
         q.delete(RK('start'));
         q.delete(RK('end'));
       }
-      if (d.theme === 'unlucky') q.set(RK('month'), d.month);
+      if (d.period === 'month') q.set(RK('month'), d.month);
       else q.delete(RK('month'));
       q.set(RK('basis'), d.date_basis);
       q.set(RK('category'), d.category);
@@ -330,15 +324,15 @@ export default function RankingsPage({ active }: { active: boolean }) {
       setFormError('카카오 로그인이 필요합니다. 먼저 로그인해 주세요.');
       return;
     }
-    if (draft.theme === 'unlucky' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(draft.month)) {
+    if (draft.period === 'month' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(draft.month)) {
       setFormError('조회할 달을 YYYY-MM 형식으로 입력해 주세요.');
       return;
     }
-    if (draft.period === 'range' && draft.theme !== 'unlucky' && (!draft.start || !draft.end)) {
+    if (draft.period === 'range' && (!draft.start || !draft.end)) {
       setFormError('직접 범위를 선택하면 시작일과 종료일을 모두 입력해 주세요.');
       return;
     }
-    if (draft.period === 'range' && draft.theme !== 'unlucky' && draft.start > draft.end) {
+    if (draft.period === 'range' && draft.start > draft.end) {
       setFormError('시작일이 종료일보다 늦습니다.');
       return;
     }
@@ -401,11 +395,11 @@ export default function RankingsPage({ active }: { active: boolean }) {
   const guarded = data && response && response.viewer === viewer && response.queryKey === appliedKey && auth.status === 'signed_in' ? data : null;
   const appliedTheme: Theme = applied?.theme ?? 'reporters';
   const appliedMetric: Metric = applied?.metric ?? 'reports_count';
-  const heading = appliedTheme === 'reporters'
-    ? '최다 신고자'
-    : appliedTheme === 'fines'
-      ? '최다 과태료 수용자'
-      : unluckyTitle(applied?.month ?? null);
+  const heading = rankingTitle({
+    theme: applied?.theme ?? 'reporters',
+    period: applied?.period ?? 'all',
+    month: applied?.month ?? null,
+  });
   const retryWait = retryAt !== null ? Math.max(0, Math.ceil((retryAt - now) / 1000)) : 0;
 
   const scopeText = useMemo(() => {
@@ -426,7 +420,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
   const me = guarded?.me ?? null;
   const rows = guarded?.rows ?? [];
   const isRate = appliedMetric.endsWith('_rate');
-  const themeMetrics = THEME_METRICS[draft.theme];
+  const themeMetrics = RANKING_THEME_METRICS[draft.theme];
+  void appliedTheme;
 
   return (
     <section className="rk-page" aria-labelledby="rk-title" hidden={!active}>
@@ -444,30 +439,41 @@ export default function RankingsPage({ active }: { active: boolean }) {
         aria-label="랭킹 조회 조건"
         onSubmit={(e) => { e.preventDefault(); apply(); }}
       >
-        <div className="rk-field">
-          <span id="rk-theme-label">주제</span>
-          <div className="rk-seg" role="group" aria-labelledby="rk-theme-label">
-            {THEMES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className={draft.theme === t.id ? 'selected' : ''}
-                aria-pressed={draft.theme === t.id}
-                onClick={() => {
-                  const metric = THEME_METRICS[t.id].includes(draft.metric) ? draft.metric : THEME_METRICS[t.id][0];
-                  setDraft({
-                    ...draft,
-                    theme: t.id,
-                    metric,
-                    period: t.id === 'unlucky' ? 'month' : draft.period === 'month' ? 'all' : draft.period,
-                  });
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
+        <fieldset className="rk-field rk-presets">
+          <legend>랭킹 바로가기</legend>
+          <div className="rk-preset-group" role="group" aria-label="누적 · 기간별">
+            <span className="rk-preset-caption" aria-hidden="true">누적 · 기간별</span>
+            <div className="rk-seg">
+              {CUMULATIVE_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={isPresetActive(draft, p) ? 'selected' : ''}
+                  aria-pressed={isPresetActive(draft, p)}
+                  onClick={() => setDraft(selectRankingPreset(draft, p))}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+          <div className="rk-preset-group" role="group" aria-label="월별">
+            <span className="rk-preset-caption" aria-hidden="true">월별</span>
+            <div className="rk-seg">
+              {MONTHLY_PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={isPresetActive(draft, p) ? 'selected' : ''}
+                  aria-pressed={isPresetActive(draft, p)}
+                  onClick={() => setDraft(selectRankingPreset(draft, p))}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </fieldset>
 
         <div className="rk-grid">
           <label className="rk-field">지표
@@ -515,47 +521,54 @@ export default function RankingsPage({ active }: { active: boolean }) {
           </label>
         </div>
 
-        {draft.theme === 'unlucky' ? (
-          <label className="rk-field">조회 달
-            <input
-              type="month"
-              value={draft.month}
-              onChange={(e) => setDraft({ ...draft, month: e.target.value })}
-            />
-          </label>
-        ) : (
-          <div className="rk-field">
-            <span id="rk-period-label">기간</span>
-            <div className="rk-seg" role="group" aria-labelledby="rk-period-label">
-              <button
-                type="button"
-                className={draft.period === 'all' ? 'selected' : ''}
-                aria-pressed={draft.period === 'all'}
-                onClick={() => setDraft({ ...draft, period: 'all' })}
-              >
-                전체 기간
-              </button>
-              <button
-                type="button"
-                className={draft.period === 'range' ? 'selected' : ''}
-                aria-pressed={draft.period === 'range'}
-                onClick={() => setDraft({ ...draft, period: 'range' })}
-              >
-                직접 범위
-              </button>
-            </div>
-            {draft.period === 'range' && (
-              <div className="rk-grid">
-                <label className="rk-field">시작일
-                  <input type="date" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} />
-                </label>
-                <label className="rk-field">종료일
-                  <input type="date" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} />
-                </label>
-              </div>
-            )}
+        <div className="rk-field">
+          <span id="rk-period-label">기간</span>
+          <div className="rk-seg" role="group" aria-labelledby="rk-period-label">
+            <button
+              type="button"
+              className={draft.period === 'all' ? 'selected' : ''}
+              aria-pressed={draft.period === 'all'}
+              onClick={() => setDraft({ ...draft, period: 'all' })}
+            >
+              전체 기간
+            </button>
+            <button
+              type="button"
+              className={draft.period === 'range' ? 'selected' : ''}
+              aria-pressed={draft.period === 'range'}
+              onClick={() => setDraft({ ...draft, period: 'range' })}
+            >
+              직접 범위
+            </button>
+            <button
+              type="button"
+              className={draft.period === 'month' ? 'selected' : ''}
+              aria-pressed={draft.period === 'month'}
+              onClick={() => setDraft({ ...draft, period: 'month', month: draft.month || kstMonth() })}
+            >
+              월별
+            </button>
           </div>
-        )}
+          {draft.period === 'range' && (
+            <div className="rk-grid">
+              <label className="rk-field">시작일
+                <input type="date" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} />
+              </label>
+              <label className="rk-field">종료일
+                <input type="date" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} />
+              </label>
+            </div>
+          )}
+          {draft.period === 'month' && (
+            <label className="rk-field">조회 달
+              <input
+                type="month"
+                value={draft.month}
+                onChange={(e) => setDraft({ ...draft, month: e.target.value })}
+              />
+            </label>
+          )}
+        </div>
 
         {formError && <p className="field-error" role="alert">{formError}</p>}
         <div className="rk-actions">
