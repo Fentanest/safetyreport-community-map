@@ -31,3 +31,5 @@ cache/no-store/환경은 각 파일과 [environment](evidence/environment.json)�
 최종 비계측SQL first p50/p9514565/15181→5522/6111ms, rates14620/16182→5504/6056ms.25s 첫원본 실패는 로그에 남겼고60s outer진단으로 재실행했다. 제품/HTTP timeout 확대가 아니다. 이 실행의 함수본문md5와7542cde HEAD를 JSON에 기록했다. candidate4개 다른모드 호출로 공용heap을 먼저 읽은 후 원본/후보를 교대로10회 측정하며 함수plan 초기화순서 차이는 남는다. 숫자는 이 측정 조건의 값이고 운영 capacity/SLO 검증이 아니다.
 
 최종 frontend는 production-latest의180cold contexts/공유browser 실행에서 세화면 p95회귀가 있었다. production-isolated는 화면/variant별 독립browser30contexts로 dashboard/통계 재측정했고 회귀가 재현되지 않았다. 두 실행 모두 보존한다. 외부 widgets 요청량도 달라 원인을 확정하지 못하며 일반회귀없음으로 결론내리지 않는다.
+
+커밋한 텍스트 증거는 SQL/로그 말미 공백과 EOF 빈 줄만 정리했다. 수치·SQL·응답·표본을 바꾸지 않았고 원본 실행 로그는 ignored .agent-runtime에 유지한다.

@@ -293,7 +293,7 @@ async function main() {
     check('D3', '불운 tab pressed, category traffic, month label', sD.tabs.find((t) => t.t === '불운 랭킹')?.p === 'true' && sD.category === 'traffic' && (sD.monthLabel ?? '').includes('2023년 7월'), JSON.stringify({ tabs: sD.tabs, cat: sD.category, ml: sD.monthLabel }));
     check('D4', 'details controls show report_date + min 3 (actual React state)', sD.basis === 'report_date' && sD.min === '3', `basis=${sD.basis} min=${sD.min}`);
     const d1 = rkCount();
-    await cdp.send('Page.reload'); 
+    await cdp.send('Page.reload');
     await waitFor(cdp, `() => !!document.querySelector('.rk-page')`);
     await waitRkDelta(cdp, d1);
     const sR = await evaluate(cdp, ...state());

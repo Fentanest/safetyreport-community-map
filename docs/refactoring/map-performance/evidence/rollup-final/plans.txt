@@ -1,5 +1,5 @@
 LOG:  duration: 7441.897 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id,g.user_id,
      bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
@@ -56,7 +56,7 @@ Query Text:
    and ($1->>'law' is null or case when $1->>'law'='__none__' then l.normalized is null else l.normalized=private.analytics_law($1->>'law') end)
    and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
      and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
- 
+
 Hash Left Join  (cost=105259.99..105260.10 rows=1 width=308) (actual time=4913.896..7157.748 rows=500000 loops=1)
   Hash Cond: (e.law = l.raw)
   Buffers: shared hit=13260 read=61822, temp read=66994 written=44605
@@ -305,7 +305,7 @@ CTE Scan on result  (cost=1.30..1.35 rows=1 width=32) (actual time=10233.439..10
                   Filter: singleton
                   Buffers: shared read=1 dirtied=1
 LOG:  duration: 7508.273 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id,g.user_id,
      bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
@@ -362,7 +362,7 @@ Query Text:
    and ($1->>'law' is null or case when $1->>'law'='__none__' then l.normalized is null else l.normalized=private.analytics_law($1->>'law') end)
    and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
      and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
- 
+
 Hash Left Join  (cost=105259.99..105260.10 rows=1 width=308) (actual time=4957.079..7219.388 rows=500000 loops=1)
   Hash Cond: (e.law = l.raw)
   Buffers: shared hit=14529 read=60541, temp read=66994 written=44605
@@ -610,7 +610,7 @@ CTE Scan on result  (cost=1.30..1.35 rows=1 width=32) (actual time=10283.429..10
                   Filter: singleton
                   Buffers: shared hit=1
 LOG:  duration: 7766.337 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id,g.user_id,
      bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
@@ -667,7 +667,7 @@ Query Text:
    and ($1->>'law' is null or case when $1->>'law'='__none__' then l.normalized is null else l.normalized=private.analytics_law($1->>'law') end)
    and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
      and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
- 
+
 Hash Left Join  (cost=105259.99..105260.10 rows=1 width=308) (actual time=5137.625..7467.289 rows=500000 loops=1)
   Hash Cond: (e.law = l.raw)
   Buffers: shared hit=15809 read=59261, temp read=66994 written=44605

@@ -1,5 +1,5 @@
 LOG:  duration: 26188.071 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id,g.user_id,
      bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
@@ -52,7 +52,7 @@ Query Text:
    and ($1->>'law' is null or case when $1->>'law'='__none__' then private.analytics_law(e.law) is null else private.analytics_law(e.law)=private.analytics_law($1->>'law') end)
    and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
      and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
- 
+
 Subquery Scan on e  (cost=105251.72..105252.07 rows=1 width=308) (actual time=4543.600..25730.462 rows=500000 loops=1)
   Filter: ((e.rn = 1) AND (e.completed_date >= ('2040-09-01'::cstring)::date) AND (e.completed_date <= ('2040-09-30'::cstring)::date))
   Buffers: shared hit=13258 read=61818 dirtied=1, temp read=44599 written=44605
@@ -283,7 +283,7 @@ CTE Scan on result  (cost=1.30..1.35 rows=1 width=32) (actual time=28976.256..28
                   Filter: singleton
                   Buffers: shared read=1
 LOG:  duration: 26272.092 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id,g.user_id,
      bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
@@ -336,7 +336,7 @@ Query Text:
    and ($1->>'law' is null or case when $1->>'law'='__none__' then private.analytics_law(e.law) is null else private.analytics_law(e.law)=private.analytics_law($1->>'law') end)
    and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
      and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
- 
+
 Subquery Scan on e  (cost=105251.72..105252.07 rows=1 width=308) (actual time=4501.329..25800.078 rows=500000 loops=1)
   Filter: ((e.rn = 1) AND (e.completed_date >= ('2040-09-01'::cstring)::date) AND (e.completed_date <= ('2040-09-30'::cstring)::date))
   Buffers: shared hit=14527 read=60537, temp read=44599 written=44605
@@ -566,7 +566,7 @@ CTE Scan on result  (cost=1.30..1.35 rows=1 width=32) (actual time=28912.601..28
                   Filter: singleton
                   Buffers: shared hit=1
 LOG:  duration: 28269.341 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id,g.user_id,
      bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
@@ -619,7 +619,7 @@ Query Text:
    and ($1->>'law' is null or case when $1->>'law'='__none__' then private.analytics_law(e.law) is null else private.analytics_law(e.law)=private.analytics_law($1->>'law') end)
    and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
      and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
- 
+
 Subquery Scan on e  (cost=105251.72..105252.07 rows=1 width=308) (actual time=4646.972..27838.088 rows=500000 loops=1)
   Filter: ((e.rn = 1) AND (e.completed_date >= ('2040-09-01'::cstring)::date) AND (e.completed_date <= ('2040-09-30'::cstring)::date))
   Buffers: shared hit=15807 read=59257, temp read=44599 written=44605

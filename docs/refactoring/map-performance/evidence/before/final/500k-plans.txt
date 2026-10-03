@@ -66,7 +66,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9172.483..917
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.463..2.454 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 6536.563 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -416,7 +416,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9753.206..975
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.381..2.107 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 6800.697 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -756,7 +756,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9553.568..955
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.377..2.063 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 6661.961 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -1096,7 +1096,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9921.243..992
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.341..1.995 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 7282.956 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -1436,7 +1436,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9771.883..977
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.345..2.061 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 7112.280 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -1776,7 +1776,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9234.502..923
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.387..2.102 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 6749.865 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -2120,7 +2120,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9384.895..938
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.419..2.184 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 8057.727 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -2471,7 +2471,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9863.766..986
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.378..2.111 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 7274.631 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -2815,7 +2815,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9546.273..954
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.375..2.002 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 6836.779 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
@@ -3160,7 +3160,7 @@ Aggregate  (cost=193471.13..193471.14 rows=1 width=8) (actual time=9532.327..953
                     ->  CTE Scan on mine m  (cost=0.00..3.60 rows=180 width=64) (actual time=0.357..4.363 rows=10 loops=1)
                           Buffers: shared hit=95 read=1
 LOG:  duration: 6265.716 ms  plan:
-Query Text: 
+Query Text:
  with grants as materialized (
    select g.grant_id, g.user_id
    from private.community_consent_grants g
