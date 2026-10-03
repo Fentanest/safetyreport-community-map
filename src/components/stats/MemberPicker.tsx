@@ -48,10 +48,13 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
   const [statuses, setStatuses] = useState<Map<string, MemberStatus>>(new Map());
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [onlySelected, setOnlySelected] = useState(false);
-  const composing = useRef(false);
+  const [composing, setComposing] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const gen = useRef(0);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const [reload, setReload] = useState(0);
 
   // (re)open: the draft starts from the applied selection of this kind
   useEffect(() => {
@@ -62,21 +65,23 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
   useEffect(() => {
     if (!open) return;
     setInput(''); setQ(''); setCursor(0); setItems([]); setOnlySelected(false);
-    requestAnimationFrame(() => searchRef.current?.focus());
+    const frame = requestAnimationFrame(() => searchRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
   }, [open, kind]);
 
   useEffect(() => {
-    if (!open || composing.current) return;
+    if (!open || composing) return;
     const t = window.setTimeout(() => { if (input.trim() !== q) { setQ(input.trim()); setCursor(0); } }, 300);
     return () => window.clearTimeout(t);
-  }, [input, q, open]);
+  }, [input, q, open, composing]);
 
-  const reqKey = `${kind}|${q}|${cursor}|${JSON.stringify(scope)}|${JSON.stringify(filters)}|${basis}|${placeKey}|${version}`;
+  const reqKey = `${kind}|${q}|${cursor}|${JSON.stringify(scope)}|${JSON.stringify(filters)}|${basis}|${placeKey}|${version}|${reload}`;
   useEffect(() => {
     if (!open) return;
     const ac = new AbortController();
     const my = ++gen.current;
     setState('loading');
+    setItems([]); setTotal(null); setNext(null); setCounts(new Map()); setStatuses(new Map());
     loadCandidates(scope, { kind, q, cursor, limit: LIMIT, filters, basis, placeKey, keys: draft.map((d) => d.key).slice(0, 50) }, version, ac.signal)
       .then((page) => {
         if (ac.signal.aborted || my !== gen.current) return; // an older answer never replaces a newer list
@@ -94,17 +99,28 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
   useReportActivity('stats-candidates', open && state === 'loading'
     ? { resource: 'candidates', phase: 'fetching', label: '비교 대상을 검색하는 중', scope: 'local' } : null);
 
-  // Esc closes only this dialog (the page, the drawer and the address selection stay as they are)
+  // Keep keyboard focus inside the modal, then restore the invoking control.
   useEffect(() => {
     if (!open) return;
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.isComposing) return;
-      e.stopPropagation();
-      onClose();
+      if (e.isComposing) return;
+      if (e.key === 'Escape') {
+        e.preventDefault(); e.stopPropagation(); onCloseRef.current();
+      } else if (e.key === 'Tab') {
+        const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]',
+        ) ?? []).filter((el) => el.getClientRects().length > 0);
+        const first = controls[0], last = controls[controls.length - 1];
+        if (!first || !last) return;
+        if (!dialogRef.current?.contains(document.activeElement) || (e.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+          e.preventDefault(); (e.shiftKey ? last : first).focus();
+        }
+      }
     };
     document.addEventListener('keydown', onKey, true);
-    return () => document.removeEventListener('keydown', onKey, true);
-  }, [open, onClose]);
+    return () => { document.removeEventListener('keydown', onKey, true); if (trigger?.isConnected) trigger.focus(); };
+  }, [open]);
 
   if (!open) return null;
   const has = (key: string) => draft.some((d) => d.key === key);
@@ -138,12 +154,12 @@ export default function MemberPicker({ open, initialKind, scope, basis, placeKey
             <div className="picker-search">
               <input ref={searchRef} type="search" value={input} placeholder={`${kindLabel} 이름으로 전체에서 검색`} aria-label={`${kindLabel} 검색`}
                 onChange={(e) => setInput(e.target.value)}
-                onCompositionStart={() => { composing.current = true; }}
-                onCompositionEnd={(e) => { composing.current = false; setInput((e.target as HTMLInputElement).value); }} />
+                onCompositionStart={() => { setComposing(true); }}
+                onCompositionEnd={(e) => { setComposing(false); setInput((e.target as HTMLInputElement).value); }} />
               <PanelStatus busy={state === 'loading'} label="검색 중" />
             </div>
             <label className="picker-only"><input type="checkbox" checked={onlySelected} onChange={(e) => setOnlySelected(e.target.checked)} />선택한 항목만 보기</label>
-            {state === 'error' && <p role="alert" className="place-empty">목록을 불러오지 못했습니다.</p>}
+            {state === 'error' && <p role="alert" className="place-empty">목록을 불러오지 못했습니다. <button type="button" className="ghost-btn" onClick={() => setReload((n) => n + 1)}>다시 시도</button></p>}
             <ul className="picker-list">
               {shown.map((c) => (
                 <li key={c.key}>
