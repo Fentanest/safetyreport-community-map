@@ -1,0 +1,120 @@
+{
+  "candidate": "97605a5",
+  "data_mode": "LOCAL Supabase/GoTrue/PostgREST/Deno; synthetic fixtures, no production apply",
+  "checks": [
+    {
+      "command": "npx vitest run --maxWorkers=2",
+      "result": "PASS",
+      "passed": 609,
+      "skipped": 100,
+      "note": "Default concurrency run had two existing 5s timeouts; bounded concurrency rerun passed the entire same suite."
+    },
+    {
+      "command": "COMMUNITY_STACK=1 npx vitest run tests/integration/user-rankings.test.ts",
+      "result": "PASS",
+      "passed": 13,
+      "note": "Actual DB tables/lineages, dedupe/representatives/auth/revocation, monthly all-themes/range/cumulative/KST/versions."
+    },
+    {
+      "command": "COMMUNITY_STACK=1 npx vitest run tests/integration/user-rankings-edge.test.ts",
+      "result": "PASS",
+      "passed": 2,
+      "note": "Actual Edge index in local Deno with real GoTrue and PostgREST, no stub RPC."
+    },
+    {
+      "command": "npx vitest run tests/product/rankings.test.ts tests/product/rankingPeriods.test.ts --maxWorkers=2",
+      "result": "PASS",
+      "passed": 17
+    },
+    {
+      "command": "node scripts/integration/compose_supabase.mjs check --auth ../safetyreport-community-auth",
+      "result": "PASS",
+      "migrations": 33,
+      "functions": 7,
+      "note": "Sibling repository read-only."
+    },
+    {
+      "command": "npm run build; npm run scan; deno check --config supabase/functions/user-rankings/deno.json supabase/functions/user-rankings/index.ts",
+      "result": "PASS",
+      "note": "Existing bundle size/dynamic-import warnings, no type/build error."
+    },
+    {
+      "command": "node scripts/browser/verify_ranking_periods.mjs",
+      "result": "PASS",
+      "passed": 89,
+      "evidence": "browser/result.json"
+    },
+    {
+      "command": "node scripts/browser/verify_rankings.mjs docs/implementation/ranking-periods/evidence/regression",
+      "result": "PASS",
+      "passed": 43,
+      "evidence": "regression/result.json",
+      "note": "Intentional 429/503/409/403 HTTP fixture console errors separated from JS errors."
+    },
+    {
+      "command": "node scripts/browser/verify_rankings_accessibility.mjs docs/implementation/ranking-periods/evidence/accessibility",
+      "result": "PASS",
+      "passed": 7,
+      "evidence": "accessibility/result.json"
+    },
+    {
+      "command": "node scripts/browser/build_rankings_subpath.mjs; node scripts/browser/verify_rankings_subpath.mjs <output> <historical-month-query>",
+      "result": "PASS",
+      "evidence": "subpath/result.json",
+      "note": "July2023 fine_rate direct entry/refresh under Pages subpath; owned local static server only."
+    },
+    {
+      "command": "COMMUNITY_STACK=1 RANKINGS_MEASURE=1 RANKINGS_MEASURE_OUT=docs/implementation/ranking-periods/evidence npx vitest run tests/integration/user-rankings-measure.test.ts",
+      "result": "PASS",
+      "passed": 1,
+      "evidence": [
+        "500k-measurements.json",
+        "500k-plans.txt"
+      ],
+      "note": "500k distinct reports/600k observations/1000 fixture users, all-theme month comparisons and cumulative partial rates, exact ties/pages/me/withdrawal; seed rollback and own login cleanup, pre-existing users preserved."
+    },
+    {
+      "command": "RANKINGS_ORIGIN=http://127.0.0.1:5221 node scripts/browser/verify_ranking_periods.mjs docs/implementation/ranking-periods/evidence/muse-final",
+      "result": "PASS",
+      "passed": 89,
+      "evidence": "muse-final/result.json",
+      "note": "Muse actual fixed-candidate Chrome review in its separate detached worktree, 12 screenshots opened; export verified provider/model/variant/directory. Color contrast numerical check was root-owned, not claimed by Muse."
+    }
+  ],
+  "initial_bulk_measure_failure": "Synthetic-month rankings and cumulative top fractions passed; a new total-participants assertion incorrectly assumed no pre-existing all-time local users (1005 vs1001). It was corrected to compare the same all-time cohort across themes without deleting existing users; rerun passed.",
+  "not_run": [
+    "Operating SQL/Edge/Pages deployment",
+    "Hosted Supabase/gateway/Pages",
+    "Real Kakao OAuth/SDK",
+    "Production data, concurrency and EXPLAIN",
+    "Screen reader/physical device OS settings"
+  ],
+  "muse": {
+    "implementation": {
+      "session": "ses_eff7738d8ffe2LslA7uTOJKZFh",
+      "actual_provider": "opencode-go",
+      "actual_model": "muse-spark-1.3-contributor",
+      "actual_variant": "high",
+      "base": "d3ed54a",
+      "commit": "31fc690",
+      "integrated_commit": "e9e5d65",
+      "browser_checks": 40,
+      "directory_verified": true
+    },
+    "final": {
+      "session": "ses_eff5d5bbaffedxhWL95CjfsFJt",
+      "actual_provider": "opencode-go",
+      "actual_model": "muse-spark-1.3-contributor",
+      "actual_variant": "high",
+      "candidate": "97605a5",
+      "directory_verified": true,
+      "browser_checks": 89,
+      "errors": 0,
+      "report": "docs/reviews/ranking-periods-muse-final.md",
+      "screenshots_actually_opened": 12,
+      "view_audit": "Initial10/12 actual image reads; same verified session followup openedmissing2, corrected report; final export verified12/12; no source changes or duplicate browser rerun."
+    }
+  },
+  "local_migration_applied": "202610030200 (LOCAL Docker only)",
+  "production_deployment": "NOT_RUN: SQL, Edge, Pages, push, account settings"
+}

@@ -50,6 +50,10 @@ private 직접 권한은 추가하지 않는다. 금액·차량·담당자·좌�
 실제 GoTrue/PostgREST HTTP까지 확인했다. 실제 운영 자료/운영 키/실제 Kakao OAuth/호스팅된 Edge gateway는 **미검증**이며,
 로컬 Deno/Node 검증을 호스팅 Edge 검증으로 주장하지 않는다.
 
+누적 불운자·월별 세 테마·과거월 조회 확장의 최신 결과는 [기간 확장 보고](implementation/ranking-periods/REPORT.md)에 있다.
+해당 50만 재측정은 `RANKINGS_MEASURE_OUT=docs/implementation/ranking-periods/evidence`를 위 명령에 더해
+이전 증거를 덮어쓰지 않고 실행한다. 전체 suite 검증은 `npx vitest run --maxWorkers=2`를 사용했다.
+
 ## 운영 적용 준비 (이번 작업에서는 실행하지 않음)
 
 1. 운영 선행 스키마/정책 확인: 정본 composed manifest의 auth/map migrations 및 최신 my-reports 202610020100.
