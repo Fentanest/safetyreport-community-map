@@ -1,7 +1,7 @@
 /* Rankings page (Muse UI contributor). Token-driven, compact, 390px safe. */
 .rk-page { display: flex; flex-direction: column; gap: 16px; min-width: 0; max-width: 100%; }
 .rk-page[hidden] { display: none; }
-.rk-head h1 { font-size: 24px; line-height: 32px; margin: 4px 0 0; font-weight: 700; }
+.rk-head h1 { font-size: 24px; line-height: 1.35; margin: 4px 0 0; font-weight: 700; }
 .rk-sub { margin: 6px 0 0; font-size: 13px; color: var(--text-secondary); }
 .rk-disclaimer { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
 .rk-form { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -22,7 +22,7 @@
 .rk-hint { margin: 0; font-size: 12px; color: var(--muted); }
 .rk-notice { margin: 0; }
 .rk-panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-.rk-panel h2 { margin: 0; font-size: 17px; line-height: 24px; font-weight: 650; }
+.rk-panel h2 { margin: 0; font-size: 17px; line-height: 1.45; font-weight: 650; }
 .rk-panel p { margin: 0; }
 .rk-login { max-width: 320px; }
 .rk-me-line { display: flex; gap: 8px 14px; flex-wrap: wrap; align-items: baseline; font-size: 14px; }
@@ -48,7 +48,7 @@
 }
 @media (max-width: 700px) {
   .rk-form, .rk-panel { padding: 14px 12px; }
-  .rk-head h1 { font-size: 20px; line-height: 28px; }
+  .rk-head h1 { font-size: 20px; line-height: 1.4; }
   .rk-grid { grid-template-columns: minmax(0, 1fr); }
   .rk-preset-group { align-items: stretch; flex-direction: column; }
   .rk-preset-caption { min-width: 0; }

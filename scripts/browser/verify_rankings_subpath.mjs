@@ -2,7 +2,8 @@ import { chromium } from "./harness.mjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-const out = "docs/implementation/user-rankings/evidence/subpath";
+const out = process.argv[2] || "docs/implementation/user-rankings/evidence/subpath";
+const search = process.argv[3] || "?screen=rankings";
 mkdirSync(out, { recursive: true });
 const { session } =
   await (await fetch("http://127.0.0.1:5192/__rankings/session")).json();
@@ -41,7 +42,7 @@ try {
     await new Promise(r=>setTimeout(r,100));
   }
   const url =
-    "http://127.0.0.1:5193/safetyreport-community-map/?screen=rankings";
+    "http://127.0.0.1:5193/safetyreport-community-map/" + search;
   await page.goto(url);
   await page.locator(".rk-page table").waitFor({timeout:10000});
   assert.equal(new URL(page.url()).pathname, "/safetyreport-community-map/");
@@ -50,6 +51,9 @@ try {
   await page.locator(".rk-page table").waitFor({timeout:10000});
   reloading = false;
   assert.equal(await page.locator(".rk-me-badge").count(), 1);
+  for (const [key, value] of new URLSearchParams(search)) {
+    assert.equal(new URL(page.url()).searchParams.get(key), value, `subpath refresh preserves ${key}`);
+  }
   assert.ok(
     await page.evaluate(() =>
       document.documentElement.scrollWidth <= innerWidth
@@ -67,6 +71,7 @@ try {
         result: "PASS",
         direct_entry: true,
         refresh: true,
+        preserved_query: Object.fromEntries(new URLSearchParams(search)),
         subpath: "/safetyreport-community-map/",
         browser: b.version(),
         asset_or_network_errors: failures,

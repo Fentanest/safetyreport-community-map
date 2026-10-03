@@ -3,7 +3,7 @@ import { chromium } from './harness.mjs';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const base = 'http://127.0.0.1:5192';
-const out = 'docs/implementation/user-rankings/evidence/accessibility';
+const out = process.argv[2] || 'docs/implementation/user-rankings/evidence/accessibility';
 mkdirSync(out, { recursive: true });
 const { session } = await (await fetch(`${base}/__rankings/session`)).json();
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true, args: ['--no-sandbox'] });

@@ -51,6 +51,7 @@ try {
       // Enlarge every actual rendered text, rather than only changing an unused rem base.
       await page.evaluate(() => { const nodes = [...document.querySelectorAll('.rk-page, .rk-page *')]; const sizes = nodes.map(n => parseFloat(getComputedStyle(n).fontSize)); nodes.forEach((n, i) => { n.style.fontSize = `${sizes[i] * 2}px`; }); });
       check('mobile 200% rendered font no horizontal page overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      check('mobile 200% titles retain readable line spacing', await page.locator('.rk-page h1, .rk-page h2').evaluateAll(nodes => nodes.every(n => parseFloat(getComputedStyle(n).lineHeight) >= parseFloat(getComputedStyle(n).fontSize))));
       await page.screenshot({ path: `${out}/390-light-font200.png`, fullPage: true });
     }
     await context.close();

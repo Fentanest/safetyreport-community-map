@@ -224,7 +224,9 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
           expect(r.rows.map(x => [x.uuid, x.rank, x.tie_count, x.numerator, x.denominator])).toEqual(
             rates.rows.map(x => [x.uuid, x.rank, x.tie_count, x.numerator, x.denominator]),
           );
-          expect(r.total_participants).toBe(label === "monthly-unlucky" ? 1000 : 1001);
+          // Existing LOCAL accounts outside the synthetic month remain eligible in all-time queries.
+          // Preserve them and compare the cumulative themes' common cohort rather than assuming an empty DB.
+          expect(r.total_participants).toBe(label === "monthly-unlucky" ? 1000 : all.total_participants);
         }
         expect(all.me).toMatchObject({
           uuid: viewer.id,
@@ -238,7 +240,7 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
           result.withdrawn.response.dataset_version,
         );
         // Store aggregate measurements, never the bulk UUID lists or raw facts.
-        writeFileSync(`${OUT}/500k-plans.txt`, significant(stderr));
+        writeFileSync(`${OUT}/500k-plans.txt`, significant(stderr).replaceAll(viewer.id, '[synthetic-viewer-uuid]').replaceAll(viewer.session, '[redacted-local-session]'));
         const durations = Array.from(
           stderr.matchAll(/duration: ([0-9.]+) ms/g),
           (m) =>

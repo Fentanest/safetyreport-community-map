@@ -1,0 +1,27 @@
+{
+  "result": "PASS",
+  "direct_entry": true,
+  "refresh": true,
+  "preserved_query": {
+    "screen": "rankings",
+    "rk_theme": "fines",
+    "rk_metric": "fine_rate",
+    "rk_period": "month",
+    "rk_month": "2023-07",
+    "rk_basis": "completed_date"
+  },
+  "subpath": "/safetyreport-community-map/",
+  "browser": "154.0.8037.92",
+  "asset_or_network_errors": [],
+  "cancelled_external_widget_documents": [
+    {
+      "detail": "ads-partners.coupang.com/widgets.html: net::ERR_ABORTED",
+      "phase": "auth gate transition"
+    },
+    {
+      "detail": "ads-partners.coupang.com/widgets.html: net::ERR_ABORTED",
+      "phase": "reload"
+    }
+  ],
+  "fixture": "local static dist, real local ranking RPC + GoTrue JWT, synthetic reports; not deployed Pages"
+}

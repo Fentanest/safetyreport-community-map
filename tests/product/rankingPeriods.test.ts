@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { querySchema, monthBounds } from '../../contracts/user-rankings/types';
-import { RANKING_PRESETS, rankingTitle, selectRankingPreset } from '../../src/domain/rankingPeriods';
+import { RANKING_PRESETS, rankingTitle, selectRankingPreset, type RankingViewDraft } from '../../src/domain/rankingPeriods';
 const now = new Date('2026-09-30T15:00:00Z');
 describe('ranking cumulative and shared monthly cohorts', () => {
   it.each(['all','range','month'] as const)('all three themes accept %s without metric or denominator substitution', period => {
@@ -16,11 +16,12 @@ describe('ranking cumulative and shared monthly cohorts', () => {
   });
   it('provides six distinct entries and preserves July2023 and date/filter conditions across monthly themes', () => {
     expect(new Set(RANKING_PRESETS.map(p=>p.id)).size).toBe(6);
-    let draft = {theme:'reporters',metric:'reports_count',period:'all',month:'2023-07',date_basis:'report_date',category:'parking',min_reports:'1'}as const;
+    let draft: RankingViewDraft & {date_basis:'report_date';category:'parking';min_reports:string} = {theme:'reporters',metric:'reports_count',period:'all',month:'2023-07',date_basis:'report_date',category:'parking',min_reports:'1'};
     for(const preset of RANKING_PRESETS.filter(p=>p.period==='month')){
       const next=selectRankingPreset(draft,preset);
       expect(next).toMatchObject({month:'2023-07',period:'month',date_basis:'report_date',category:'parking',min_reports:'1'});
       expect(querySchema.safeParse({...next,min_reports:1}).success).toBe(true);
+      draft = next;
     }
   });
   it('cumulative unlucky keeps all four outcome metrics and a custom range remains available', () => {
