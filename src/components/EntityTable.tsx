@@ -109,11 +109,10 @@ export default function EntityTable(p: Props) {
   const [cols, setCols] = useState<Set<string>>(readCols);
   const [picker, setPicker] = useState(false);
   const [input, setInput] = useState('');
-  const composing = useRef(false);
+  const [composing, setComposing] = useState(false);
   const [query, setQuery] = useState<Query>(DEFAULT_QUERY);
-  const [list, setList] = useState<{ items: PublicEntity[]; total: number } | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [list, setList] = useState<{ key: string; items: PublicEntity[]; total: number } | null>(null);
+  const [status, setStatus] = useState<{ key: string; phase: 'loading' | 'ready' | 'error'; error?: string } | null>(null);
   const [reload, setReload] = useState(0);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -121,34 +120,43 @@ export default function EntityTable(p: Props) {
   const update = (patch: Partial<Query>) => setQuery((q) => ({ ...q, ...patch, page: patch.page ?? 1 }));
   // search input shows at once; the request waits for typing to pause and never runs during IME composition
   useEffect(() => {
-    if (composing.current) return;
+    if (composing) return;
     const t = window.setTimeout(() => { if (input.trim() !== query.q) update({ q: input.trim() }); }, 300);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [input]);
+  }, [input, composing]);
 
   // any non-default sort reads the FULL server list (filter → sort → page), never the dashboard's first rows
   const custom = query.q !== '' || !isDefaultSort(query.sort) || query.type !== 'all' || query.page !== 1;
   const needServer = p.serverList && (custom || expanded);
   const pageSize = expanded ? PAGE_SIZE : SUMMARY_ROWS;
-  const scopeKey = JSON.stringify(p.scope);
+  const scopeKey = `${JSON.stringify(p.scope)}|${p.version}`;
+  const [queryScope, setQueryScope] = useState(scopeKey);
+  // Adjust before committing children/effects: no request for an old page in the new scope.
+  if (queryScope !== scopeKey) {
+    setQueryScope(scopeKey);
+    setQuery((q) => ({ ...q, page: 1 }));
+  }
+  const reqKey = `${scopeKey}|${p.tab}|${JSON.stringify(query)}|${pageSize}|${reload}`;
+  const currentList = list?.key === reqKey ? list : null;
+  const error = status?.key === reqKey && status.phase === 'error' ? status.error : null;
+  const loading = needServer && !error && (!currentList || (status?.key === reqKey && status.phase === 'loading'));
   useEffect(() => {
-    if (!needServer) { setList(null); setError(null); setLoading(false); return; }
+    if (!needServer) { setList(null); setStatus(null); return; }
     const ac = new AbortController();
-    setLoading(true);
-    setError(null);
+    setList(null);
+    setStatus({ key: reqKey, phase: 'loading' });
     loadEntities(p.scope, { kind: p.tab, q: query.q, sort: query.sort, agencyType: query.type, page: query.page, pageSize },
       p.version, ac.signal)
-      .then((r) => { if (!ac.signal.aborted) { setList({ items: r.items, total: r.totalRows }); setLoading(false); } })
+      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows }); setStatus({ key: reqKey, phase: 'ready' }); } })
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
         // a local table error — the map and charts stay as they are, and it is never shown as "no results"
-        setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.');
-        setLoading(false);
+        setStatus({ key: reqKey, phase: 'error', error: e instanceof Error ? e.message : '목록을 불러오지 못했습니다.' });
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [needServer, scopeKey, p.version, p.tab, query, pageSize, reload]);
+  }, [needServer, reqKey]);
 
   useEffect(() => {
     if (!picker) return;
@@ -162,8 +170,8 @@ export default function EntityTable(p: Props) {
   // S10: the list request is local to this table (the map and the other cards keep their state)
   useReportActivity('entities', loading ? { resource: 'entities', phase: 'fetching', label: '기관·담당자 목록을 불러오는 중' } : null);
   const summaryRows = p.tab === 'agency' ? p.agencies : p.managers;
-  const rows = needServer ? (list?.items ?? []) : summaryRows.slice(0, pageSize);
-  const total = needServer ? (list?.total ?? 0) : summaryRows.length;
+  const rows = needServer ? (currentList?.items ?? []) : summaryRows.slice(0, pageSize);
+  const total = needServer ? (currentList?.total ?? 0) : summaryRows.length;
   const visibleCols = useMemo(() => ENTITY_COLUMNS.filter((c) => cols.has(c.id) && (!c.mineOnly || !!p.mine)), [cols, p.mine]);
   const colSpan = visibleCols.length + 1;
   const pages = Math.max(1, Math.ceil(total / pageSize));
@@ -191,8 +199,8 @@ export default function EntityTable(p: Props) {
       <div className="entity-toolbar" role="toolbar" aria-label="기관·담당자 표 도구">
         <input type="search" value={input} placeholder="기관·담당자 이름 검색" aria-label="기관·담당자 이름 검색"
           onChange={(e) => setInput(e.target.value)}
-          onCompositionStart={() => { composing.current = true; }}
-          onCompositionEnd={(e) => { composing.current = false; setInput((e.target as HTMLInputElement).value); }} />
+          onCompositionStart={() => { setComposing(true); }}
+          onCompositionEnd={(e) => { setComposing(false); setInput((e.target as HTMLInputElement).value); }} />
         <div className="col-picker-wrap" ref={pickerRef}>
           <button className="ghost-btn" type="button" aria-haspopup="true" aria-expanded={picker} aria-controls="entity-col-menu" onClick={() => setPicker((v) => !v)}>
             열 선택
@@ -232,7 +240,7 @@ export default function EntityTable(p: Props) {
       <div className="table-scroll">
         <table className="entity-table">
           <caption className="cm-muted table-caption">
-            {p.tab === 'agency' ? '기관' : '담당자'} {fmtInt(total)}{unit} · 정렬 {sortText(query.sort)}
+            {p.tab === 'agency' ? '기관' : '담당자'} {needServer && !currentList ? (error ? '집계 확인 실패' : '집계 확인 중') : `${fmtInt(total)}${unit}`} · 정렬 {sortText(query.sort)}
             {!needServer && summaryRows.length > rows.length ? ` · ${fmtInt(rows.length)}${unit}만 표시` : ''}
             {query.type !== 'all' ? ` · ${query.type === 'police' ? '경찰' : '비경찰(확인된 기관만)'}` : ''}
           </caption>
@@ -272,7 +280,7 @@ export default function EntityTable(p: Props) {
       <div className="table-footer">
         {needServer && (
           <span className="table-pager">
-            <span className="cm-muted" aria-live="polite">{query.page} / {pages}쪽{loading ? ' · 불러오는 중…' : ''}</span>
+            <span className="cm-muted" aria-live="polite">{currentList ? `${query.page} / ${pages}쪽` : `${query.page}쪽`}{loading ? ' · 불러오는 중…' : ''}</span>
             <button className="ghost-btn" type="button" disabled={query.page <= 1 || loading} onClick={() => update({ page: query.page - 1 })} aria-label="이전 페이지">이전</button>
             <button className="ghost-btn" type="button" disabled={query.page >= pages || loading} onClick={() => update({ page: query.page + 1 })} aria-label="다음 페이지">다음</button>
           </span>

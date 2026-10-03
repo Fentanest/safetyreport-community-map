@@ -110,8 +110,15 @@ export function compareRows<T extends SortableRow>(spec: SortSpec, nameOf: (row:
       if (fa !== fb) return fa === null ? 1 : -1;
     } else {
       // exact: num_a/den_a ? num_b/den_b  ⇔  num_a·den_b ? num_b·den_a (dens > 0)
-      const diff = fa.num * fb.den - fb.num * fa.den;
-      if (diff !== 0) return spec.dir === 'desc' ? -Math.sign(diff) : Math.sign(diff);
+      // Count fractions can have safe-integer operands but unsafe cross-products.
+      // Keep integer comparisons exact; medians/means may legitimately be fractional.
+      const left = fa.num * fb.den, right = fb.num * fa.den;
+      const diff = (!Number.isSafeInteger(left) || !Number.isSafeInteger(right)) &&
+          [fa.num, fa.den, fb.num, fb.den].every(Number.isSafeInteger)
+        ? BigInt(fa.num) * BigInt(fb.den) - BigInt(fb.num) * BigInt(fa.den)
+        : left - right;
+      const sign = diff < 0 ? -1 : diff > 0 ? 1 : 0;
+      if (sign !== 0) return spec.dir === 'desc' ? -sign : sign;
     }
     const na = nameOf(a), nb = nameOf(b);
     if (na !== nb) return na.localeCompare(nb, 'ko');

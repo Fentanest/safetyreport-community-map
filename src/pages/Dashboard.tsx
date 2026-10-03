@@ -1,3 +1,4 @@
+import { initialTheme, resolveTheme } from '../lib/theme';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DATE_BASIS_LABEL, LAW_NONE, type DashboardData, type DateBasis, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
 import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
@@ -13,6 +14,7 @@ import CommandBar from '../components/CommandBar';
 import FilterDrawer from '../components/FilterDrawer';
 import MapPanel, { renderModeOf } from '../components/MapPanel';
 import ScopeDetailsPanel, { type ManagerPaging } from '../components/ScopeDetailsPanel';
+import RankingsPage from './RankingsPage';
 import StatisticsPage, { type ScopeChip } from './StatisticsPage';
 import { clearSession as clearStatsSession, dropLegacyStatsStorage, handoffRecipe, type StatsRecipe } from '../state/statistics';
 import { SPY_SECTIONS, currentSection, scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
@@ -49,18 +51,7 @@ import type { CompareEntityRow } from '../domain/personal';
 import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
 import GlobalQueryStatus from '../components/GlobalQueryStatus';
 
-function initialTheme(): ThemeMode {
-  try {
-    const s = localStorage.getItem('cm-theme');
-    if (s === 'dark' || s === 'light' || s === 'system') return s;
-  } catch { /* ignore */ }
-  return 'dark';
-}
 
-function resolveTheme(t: ThemeMode): 'dark' | 'light' {
-  if (t !== 'system') return t;
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
 
 // AF-MAP2: empty only when neither indicator has rows and no map point exists, so a
 // completion-only range still shows its result screen instead of the empty banner.
@@ -175,7 +166,7 @@ export default function Dashboard() {
   // ── data (R04): the last successful snapshot stays on screen while a new one loads ─────────────────────
   // C01: account boundary by the auth user id (a shared nickname is never the same account)
   const sessionKey = sessionKeyOf(auth, fixture);
-  const dash = useDashboardData(scope, sourceRef.current, sessionKey);
+  const dash = useDashboardData(scope, sourceRef.current, sessionKey, screen !== 'rankings');
   const shown = dash.displayed;
   const data = shown?.data ?? null;
   const shownScope = shown?.scope ?? null;
@@ -273,7 +264,10 @@ export default function Dashboard() {
   const urlFor = (s: Scope, sc: Screen = screen) => {
     const search = scopeToSearch(s, { fixture: dataMode === 'demo' && fixture !== 'overview' ? fixture : null, me: demoMe });
     // the screen is a page parameter only: it is never part of the statistics scope sent to the API
-    const withScreen = sc === 'statistics' ? `${search ? `${search}&` : ''}screen=statistics` : search;
+    const params = new URLSearchParams(search);
+    if (sc !== 'dashboard') params.set('screen', sc);
+    for (const [key, value] of new URLSearchParams(window.location.search)) if (key.startsWith('rk_')) params.set(key, value);
+    const withScreen = params.toString();
     return `${window.location.pathname}${withScreen ? `?${withScreen}` : ''}`;
   };
   /** explicit condition change: new history entry; automatic map range: replace (no history flood, R04 §11) */
@@ -685,7 +679,7 @@ export default function Dashboard() {
   }
 
   const accessCode = dash.access?.code && (ACCESS_CODES as readonly string[]).includes(dash.access.code) ? dash.access.code as AccessCode : null;
-  if (accessCode) {
+  if (accessCode && screen !== 'rankings') {
     // Contributor-only: nothing of the dashboard renders without a readable response (the server refuses the data).
     return (
       <>
@@ -740,6 +734,7 @@ export default function Dashboard() {
       />
       <div className="app">
         <Rail active={nav} screen={screen} onSection={goDashboard} onStatistics={() => goStatistics()}
+          onRankings={() => { setScreen('rankings'); pushUrl(scope, 'rankings'); window.scrollTo({ top: 0 }); }}
           onAbout={() => goDashboard('guide')} />
         <main id="main" data-screen={screen}>
           <div className="dashboard-screen" hidden={screen !== 'dashboard'}>
@@ -974,6 +969,7 @@ export default function Dashboard() {
             </>
           )}
           </div>
+          <RankingsPage key={`rankings-${sessionKey}`} active={screen === 'rankings'} />
           {statsOpened && sessionKey !== null && (
             <StatisticsPage key={sessionKey} active={screen === 'statistics'} handoff={handoff} fallbackScope={shownScope} version={version}
               viewer={sessionKey} canMine={dataMode === 'demo' || auth.status === 'signed_in'} theme={resolvedTheme}

@@ -1,0 +1,51 @@
+{
+  "started": "2026-10-03T05:55:19.381Z",
+  "steps": [
+    {
+      "id": "E1",
+      "ok": true,
+      "detail": "head=\"담당자 · 소속 기관\" rowsBefore=10 midRows=10 stale=false entitiesReqElapsed=31168ms empty=\"\""
+    },
+    {
+      "id": "E1-rows",
+      "ok": true,
+      "detail": "before=예시 대구수성경찰서/예시 서울중부경찰서/예시 강남구청 mid=이름 없음\n예시 대구수성경찰서/이름 없음\n예시 서울중부경찰서/이름 없음\n예시 강남구청"
+    },
+    {
+      "id": "E2-ime",
+      "ok": true,
+      "detail": "during=0 afterCommit=0 val=\"경찰\" afterTyping=\"1\""
+    },
+    {
+      "id": "E2b-focus",
+      "ok": false,
+      "detail": "LEAKED to: \n본문 바로가기커뮤니티 신고 지도나만의 안전신문고2026.09.24 기준ID 11111111다크브리핑 모드지도법규기관추이지역통계유저 랭킹안내지도"
+    },
+    {
+      "id": "E3-oob",
+      "ok": true,
+      "detail": "adv=0 last=\"1 / 1쪽 이전 다음\" region→세종특별자치시 after=\"1 / 1쪽 이전 다음\" empty=\"조건에 맞는 기관·담당자가 없습니다.\" cap=\"기관 0곳 · 정렬 답변 · 건수 많은 순\""
+    }
+  ],
+  "issues": [
+    {
+      "id": "R-PICKER-IME",
+      "severity": "medium",
+      "repro": "picker search: IME composition of 경찰 then compositionend (final value == last intermediate input value)",
+      "expected": "committed query runs a candidates request",
+      "actual": "no request: compositionend setInput is a no-op so the debounce effect never re-runs (same-state bailout)",
+      "evidence": "R10-picker-search.png",
+      "fileHint": "src/components/stats/MemberPicker.tsx:68-72 (same pattern EntityTable.tsx:123-128, LawTable.tsx:41-45)"
+    },
+    {
+      "id": "R-PICKER-FOCUS",
+      "severity": "medium",
+      "repro": "비교 대상 선택 dialog open, Tab from search",
+      "expected": "focus cycles inside role=dialog aria-modal=true",
+      "actual": "focus escaped to background (\"\n본문 바로가기커뮤니티 신고 지도나만의 안전신문고2026.09.24 기준ID 11111111다크브리핑 모드지도법규기관추이지역통계유저 랭킹안내지도\") — no focus trap; Esc works but keyboard users can tab behind the modal",
+      "evidence": "E2b-focus-leak.png",
+      "fileHint": "src/components/stats/MemberPicker.tsx (autofocus only, no trap; Esc at :98-107)"
+    }
+  ],
+  "finished": "2026-10-03T05:56:14.909Z"
+}

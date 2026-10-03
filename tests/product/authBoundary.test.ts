@@ -193,12 +193,12 @@ describe('source boundaries', () => {
 
   // Contributor-only map (user decision 2026-09-27): the statistics client also sends the map session token,
   // still only to the configured analytics base URL, never with cookies.
-  it('sends Authorization only from the two analytics clients, only to the analytics base URL', () => {
+  it('sends Authorization only from the three analytics clients, only to the analytics base URL', () => {
     const senders = files.filter((f) => /Authorization/.test(code(f)));
-    expect(senders.map((f) => f.split('/src/')[1]).sort()).toEqual(['data/client.ts', 'data/personal.ts']);
-    for (const f of ['client.ts', 'personal.ts']) {
+    expect(senders.map((f) => f.split('/src/')[1]).sort()).toEqual(['data/client.ts', 'data/personal.ts', 'data/rankings.ts']);
+    for (const f of ['client.ts', 'personal.ts', 'rankings.ts']) {
       const src = code(join(__dirname, '../../src/data', f));
-      expect(src).toMatch(/credentials: 'omit'/);
+      expect(src).toMatch(/credentials:\s*['"]omit['"]/);
       expect(src).toMatch(/VITE_PUBLIC_ANALYTICS_URL/);
       expect(src).not.toMatch(/fetch\(\s*['"`]https?:/);
     }

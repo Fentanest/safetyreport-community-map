@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DATE_BASIS_LABEL, type PublicLaw, type Scope } from '../domain/public';
 import { lawLabel, lawValue } from '../state/filters';
 import { loadLaws } from '../data/client';
@@ -32,32 +32,37 @@ export default function LawTable(p: Props) {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState<{ q: string; sort: SortSpec; page: number }>({ q: '', sort: DEFAULT_SORT, page: 1 });
   const [input, setInput] = useState('');
-  const composing = useRef(false);
+  const [composing, setComposing] = useState(false);
   const [list, setList] = useState<{ key: string; items: PublicLaw[]; total: number } | null>(null);
-  const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [request, setRequest] = useState<{ key: string; state: 'idle' | 'loading' | 'error' } | null>(null);
+  const [reload, setReload] = useState(0);
   const scopeKey = p.scope ? `${JSON.stringify(p.scope)}|${p.version}` : '';
   // a new displayed scope starts again from page 1 (the sort choice stays)
-  useEffect(() => { setQuery((q) => ({ ...q, page: 1 })); }, [scopeKey]);
+  const [queryScope, setQueryScope] = useState(scopeKey);
+  if (queryScope !== scopeKey) { setQueryScope(scopeKey); setQuery((q) => ({ ...q, page: 1 })); }
   useEffect(() => {
-    if (composing.current) return;
+    if (composing) return;
     const t = window.setTimeout(() => { if (input.trim() !== query.q) setQuery((q) => ({ ...q, q: input.trim(), page: 1 })); }, 300);
     return () => window.clearTimeout(t);
-  }, [input]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [input, composing]); // eslint-disable-line react-hooks/exhaustive-deps
   const server = !!p.serverList && !!p.scope && !!p.version && (expanded || query.q !== '' || !isDefault(query.sort) || query.page > 1);
-  const reqKey = `${scopeKey}|${JSON.stringify(query)}|${expanded}`;
+  const reqKey = `${scopeKey}|${JSON.stringify(query)}|${expanded}|${reload}`;
+  const currentList = list?.key === reqKey ? list : null;
+  const state = server ? (request?.key === reqKey ? request.state : 'loading') : 'idle';
   useEffect(() => {
-    if (!server || !p.scope || !p.version) { setState('idle'); return; }
+    if (!server || !p.scope || !p.version) { setRequest(null); return; }
     const ac = new AbortController();
-    setState('loading');
+    setList(null);
+    setRequest({ key: reqKey, state: 'loading' });
     loadLaws(p.scope, { q: query.q, sort: query.sort, page: query.page, pageSize: expanded ? PAGE_SIZE : SUMMARY_ROWS }, p.version, ac.signal)
-      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows }); setState('idle'); } })
-      .catch(() => { if (!ac.signal.aborted) setState('error'); });
+      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows }); setRequest({ key: reqKey, state: 'idle' }); } })
+      .catch(() => { if (!ac.signal.aborted) setRequest({ key: reqKey, state: 'error' }); });
     return () => ac.abort();
   }, [reqKey, server]); // eslint-disable-line react-hooks/exhaustive-deps
   useReportActivity('laws', state === 'loading' ? { resource: 'entities', phase: 'fetching', label: '위반법규 목록을 불러오는 중' } : null);
   const all = p.laws ?? [];
-  const rows = server ? (list?.items ?? []) : expanded ? all : all.slice(0, SUMMARY_ROWS);
-  const total = server ? list?.total ?? 0 : all.length;
+  const rows = server ? (currentList?.items ?? []) : expanded ? all : all.slice(0, SUMMARY_ROWS);
+  const total = server ? currentList?.total ?? 0 : all.length;
   const pageSize = expanded ? PAGE_SIZE : SUMMARY_ROWS;
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const full = expanded;
@@ -81,15 +86,15 @@ export default function LawTable(p: Props) {
         <div className="entity-toolbar" role="toolbar" aria-label="위반법규 표 도구">
           <input type="search" value={input} placeholder="위반법규 검색" aria-label="위반법규 검색"
             onChange={(e) => setInput(e.target.value)}
-            onCompositionStart={() => { composing.current = true; }}
-            onCompositionEnd={(e) => { composing.current = false; setInput((e.target as HTMLInputElement).value); }} />
+            onCompositionStart={() => { setComposing(true); }}
+            onCompositionEnd={(e) => { setComposing(false); setInput((e.target as HTMLInputElement).value); }} />
           <span className="cm-muted sort-now" aria-live="polite">정렬 {sortLabel(query.sort)}</span>
         </div>
       )}
-      {state === 'error' && <div className="banner error" role="alert"><span className="grow">위반법규 목록을 불러오지 못했습니다.</span></div>}
+      {state === 'error' && <div className="banner error" role="alert"><span className="grow">위반법규 목록을 불러오지 못했습니다.</span><button className="ghost-btn" type="button" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>}
       {p.laws === null ? (
         <p className="empty-state">위반법규별 통계는 아직 준비되지 않았습니다.</p>
-      ) : rows.length === 0 ? (
+      ) : state === 'error' ? null : rows.length === 0 ? (
         <p className="empty-state">{state === 'loading' ? '불러오는 중입니다…' : query.q ? `‘${query.q}’에 맞는 위반법규가 없습니다.` : '지금 조건에 맞는 답변이 없습니다.'}</p>
       ) : (
         <div className="table-scroll">

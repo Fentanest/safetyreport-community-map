@@ -1,0 +1,66 @@
+/* Rankings page (Muse UI contributor). Token-driven, compact, 390px safe. */
+.rk-page { display: flex; flex-direction: column; gap: 16px; min-width: 0; max-width: 100%; }
+.rk-page[hidden] { display: none; }
+.rk-head h1 { font-size: 24px; line-height: 32px; margin: 4px 0 0; font-weight: 700; }
+.rk-sub { margin: 6px 0 0; font-size: 13px; color: var(--text-secondary); }
+.rk-disclaimer { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.rk-form { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.rk-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-secondary); min-width: 0; }
+.rk-field select, .rk-field input { min-height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); padding: 8px 12px; max-width: 100%; }
+.rk-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.rk-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; max-width: 100%; flex-wrap: wrap; }
+.rk-seg button { border: 0; background: transparent; padding: 10px 14px; min-height: 44px; cursor: pointer; color: var(--muted); font-size: 13px; border-right: 1px solid var(--border); }
+.rk-seg button:last-child { border-right: 0; }
+.rk-seg button.selected { background: var(--brand); color: #fff; font-weight: 650; }
+.rk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.rk-actions .rk-apply { width: auto; min-width: 140px; }
+.rk-hint { margin: 0; font-size: 12px; color: var(--muted); }
+.rk-notice { margin: 0; }
+.rk-panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.rk-panel h2 { margin: 0; font-size: 17px; line-height: 24px; font-weight: 650; }
+.rk-panel p { margin: 0; }
+.rk-login { max-width: 320px; }
+.rk-me-line { display: flex; gap: 8px 14px; flex-wrap: wrap; align-items: baseline; font-size: 14px; }
+.rk-table-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rk-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.rk-scroll { max-height: 480px; }
+.rk-table { font-size: 14px; }
+.rk-table td, .rk-table th { min-height: 44px; }
+.rk-table small { color: var(--muted); font-size: 12px; display: block; }
+.rk-table td.num small { text-align: right; }
+.rk-uuid { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 13px; overflow-wrap: anywhere; }
+.rk-uuid-full { margin-top: 4px; font-size: 12px; }
+.rk-uuid-full summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; color: var(--link); }
+.rk-uuid-full code { display: block; overflow-wrap: anywhere; margin: 4px 0; font-size: 12px; }
+.rk-me { background: linear-gradient(rgba(13, 110, 253, 0.1), rgba(13, 110, 253, 0.1)), var(--surface); }
+.rk-me-badge { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--brand); color: #fff; vertical-align: middle; }
+.rk-pager { display: flex; gap: 12px; align-items: center; justify-content: center; padding-top: 4px; flex-wrap: wrap; }
+.rk-panel details { border-top: 1px solid var(--border); padding-top: 8px; font-size: 13px; color: var(--text-secondary); }
+.rk-panel details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 650; color: var(--text); }
+.skeleton { margin: 0; }
+@media (max-width: 900px) {
+  .rk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .rk-form, .rk-panel { padding: 14px 12px; }
+  .rk-head h1 { font-size: 20px; line-height: 28px; }
+  .rk-grid { grid-template-columns: minmax(0, 1fr); }
+  .rk-table { font-size: 13px; }
+  .rk-table th, .rk-table td { padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rk-page *, .rk-page *::before, .rk-page *::after { transition-duration: 0ms !important; }
+}
+
+.rk-page .rk-mobile-sample { display: none; }
+@media (max-width: 700px) {
+  .rk-page .rk-table { table-layout: fixed; }
+  .rk-page .rk-table th, .rk-page .rk-table td { white-space: normal; overflow-wrap: anywhere; padding: 8px 6px; }
+  .rk-page .rk-table th:first-child, .rk-page .rk-table td:first-child { min-width: 0; max-width: none; width: 18%; position: static; }
+  .rk-page .rk-table th:nth-child(2) { width: 42%; }
+  .rk-page .rk-table th:nth-child(3) { width: 40%; }
+  .rk-page .rk-table th:last-child, .rk-page .rk-table td:last-child { display: none; }
+  .rk-page .rk-mobile-sample { display: block; }
+  .rk-page .rk-uuid-full summary { white-space: normal; }
+  .bottom-nav button:last-child span { white-space: nowrap; font-size: 11px; }
+}

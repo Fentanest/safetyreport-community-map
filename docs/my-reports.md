@@ -33,3 +33,10 @@ Edge handler가 `auth.getUser(token)`과 JWT의 UID·role·audience·session을 
 ## 로컬 확인 기록
 
 2026-09-30에 Docker의 기존 로컬 통합 DB에서 **롤백하는 트랜잭션** 안에 합성 A/B 계정·신고를 넣어 SQL을 실행했다. 이 로컬 DB는 최신 운영 스키마보다 오래되어 새 컬럼과 인증·동의 fixture 함수를 트랜잭션 안에서만 보완했다. A의 동일 신고 2관측은 1건으로 선출되고 B의 같은 차량·신고는 A의 결과에 섞이지 않았다. RPC 실행 권한은 `anon=false`, `authenticated=false`, `service_role=true`였다. 트랜잭션을 롤백했으며 운영 DB에 적용한 검증이 아니다.
+
+## 2026-10-03 랭킹과의 관계
+
+유저 랭킹은 최신 정본 `contracts/my-reports/README.md` §1.3의 **사용자 범위→identity→대표 선정→조건**을 재사용한다.
+신규 set-wise `ranking_representatives`와 `my_reports_own`의 identity 동일성을 실제 DB 통합 테스트로 비교한다.
+랭킹 공개 UUID를 my-reports 입력으로 받지 않는다. 원문/차량/주소 조회는 계속 검증 JWT 본인만 가능하다.
+[랭킹 계약](../contracts/user-rankings/README.md)의 F 건수는 실제 처분 확인 기준이며 기존 확정금액 합산과 별개의 지표다.

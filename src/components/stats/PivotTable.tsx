@@ -20,6 +20,11 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
   onPick?: (row: string[], col: string[] | null) => void;
 }) {
   const [page, setPage] = useState(0);
+  const [pageContext, setPageContext] = useState({ result, metric: sort.metric, dir: sort.dir });
+  if (pageContext.result !== result || pageContext.metric !== sort.metric || pageContext.dir !== sort.dir) {
+    setPageContext({ result, metric: sort.metric, dir: sort.dir });
+    setPage(0);
+  }
   const cell = useMemo(() => cellIndex(result), [result]);
   const metric = (id: string): MetricDef | undefined => catalog.metrics.find((m) => m.id === id);
   const dimLabel = (id: string) => catalog.dimensions.find((d) => d.id === id)?.label ?? id;
@@ -49,16 +54,26 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
             <tr>
               <th scope="col" className="pivot-corner">{hasRows ? result.spec.rows.map(dimLabel).join(' · ') : '전체'}</th>
               {colHead.map((c) => metrics.map((m) => sides.map((s) => (
-                <th key={`${tupleKey(c.key)}-${m}-${s}`} scope="col" className={s === 'mine' ? 'mine-col' : undefined}>
+                <th key={`${tupleKey(c.key)}-${m}-${s}`} scope="col" className={s === 'mine' ? 'mine-col' : undefined}
+                  aria-sort={!hasCols && sort.metric === m && s === (result.spec.population === 'mine' ? 'mine' : 'all') ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}>
                   {hasCols && <span className="pivot-col-member">{c.label.join(' · ')}</span>}
-                  <button type="button" className="pivot-sort" aria-sort={!hasCols && sort.metric === m ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}
+                  <button type="button" className="pivot-sort"
                     onClick={() => onSort({ metric: m, dir: sort.metric === m && sort.dir === 'desc' ? 'asc' : 'desc' })}
                     title="이 지표로 행 정렬(행 합계 기준)">
                     {metric(m)?.label ?? m}{sideWord(s)}
                   </button>
                 </th>
               ))))}
-              {hasCols && hasRows && metrics.map((m) => sides.map((s) => <th key={`tot-${m}-${s}`} scope="col" className="pivot-total">{metric(m)?.label} 합계{sideWord(s)}</th>))}
+              {hasCols && hasRows && metrics.map((m) => sides.map((s) => (
+                <th key={`tot-${m}-${s}`} scope="col" className="pivot-total"
+                  aria-sort={sort.metric === m && s === (result.spec.population === 'mine' ? 'mine' : 'all') ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}>
+                  <button type="button" className="pivot-sort"
+                    onClick={() => onSort({ metric: m, dir: sort.metric === m && sort.dir === 'desc' ? 'asc' : 'desc' })}
+                    title="이 지표로 행 정렬(행 합계 기준)">
+                    {metric(m)?.label} 합계{sideWord(s)}
+                  </button>
+                </th>
+              )))}
             </tr>
           </thead>
           <tbody>
@@ -70,8 +85,14 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
                 {colHead.map((c) => metrics.map((m) => sides.map((s) => {
                   const v = valueOf(s, r.key, c.key, m);
                   return <td key={`${tupleKey(c.key)}-${m}-${s}`} className={`num${s === 'mine' ? ' mine-col' : ''}`}
-                    title={v ? undefined : '이 조합의 답변 신고가 없습니다'}
-                    onClick={onPick && hasRows && hasCols && v ? () => onPick(r.key, c.key) : undefined}>{v ? fmtStat(v, metric(m)) : '—'}</td>;
+                    title={v ? undefined : '이 조합의 답변 신고가 없습니다'}>
+                    {onPick && hasRows && hasCols && v
+                      ? <button type="button" className="link-btn pivot-cell" onClick={() => onPick(r.key, c.key)}
+                          aria-label={`${r.label.join(' · ')} · ${c.label.join(' · ')} · ${metric(m)?.label ?? m}${sideWord(s)} ${fmtStat(v, metric(m))}, 이 항목으로 좁히기`}>
+                          {fmtStat(v, metric(m))}
+                        </button>
+                      : v ? fmtStat(v, metric(m)) : '—'}
+                  </td>;
                 })))}
                 {hasCols && hasRows && metrics.map((m) => sides.map((s) => (
                   <td key={`tot-${m}-${s}`} className="num pivot-total">{fmtStat(rowTotal.get(`${s}|${tupleKey(r.key)}`)?.values[m], metric(m))}</td>

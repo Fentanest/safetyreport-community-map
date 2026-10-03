@@ -1,0 +1,83 @@
+{
+  "product_commit": "27de7f3",
+  "baseline": {
+    "tests": 599,
+    "skipped": 96,
+    "build": "PASS"
+  },
+  "default_after": {
+    "passed": 601,
+    "skipped": 96
+  },
+  "default_repeat": {
+    "passed": 600,
+    "failed": 1,
+    "skipped": 96,
+    "failure": "managerNamesNav: full-list metadata API test timed out at5000ms (6837ms)",
+    "concurrency": "simultaneous build/browser/rankings and default full Vitest workers; contention inferred, not separately profiled"
+  },
+  "final_tests": {
+    "command": "npx vitest run --maxWorkers=2",
+    "passed": 601,
+    "skipped": 96,
+    "files_passed": 51,
+    "files_skipped": 11,
+    "duration_seconds": 37.62
+  },
+  "build": "PASS",
+  "scan": {
+    "passed": true,
+    "issues": []
+  },
+  "deploy": "NOT_RUN",
+  "push": "NOT_RUN",
+  "initial_product_commit": "c99bee6",
+  "deno_check": {
+    "command": "deno check --config supabase/functions/user-rankings/deno.json supabase/functions/public-analytics/index.ts",
+    "status": "PASS"
+  },
+  "matrix_sort_regression": {
+    "passed": 6,
+    "consoleErrors": []
+  },
+  "final_dashboard_browser": {
+    "source_commit": "27de7f3",
+    "product_working_tree_clean": true,
+    "passed": 39,
+    "intentional_503_console_errors": 2,
+    "unexpectedErrors": 0
+  },
+  "rankings_browser": {
+    "source_commit": "c99bee6",
+    "passed": 43,
+    "data": "actual LOCAL DB and auth with synthetic users/reports",
+    "later_delta": "27de7f3 changes only pivot matrix headers; ranking source unchanged",
+    "synthetic_accounts_cleanup": "PASS"
+  },
+  "muse": {
+    "model": "opencode-go/muse-spark-1.3-contributor",
+    "variant": "high",
+    "exports_verified": true,
+    "initial": {
+      "commit": "49c4c6d",
+      "session": "ses_effb4025fffefAJzy4ll1Mr5da",
+      "defects": 5
+    },
+    "broad": {
+      "commit": "c99bee6",
+      "session": "ses_effa3f575ffeflFJt16gSvgBw7",
+      "raw_checks": 54,
+      "raw_pass": 52,
+      "raw_fail": 2,
+      "followup": "retry assertion corrected, matrix ARIA defect fixed in27de7f3"
+    },
+    "closure": {
+      "commit": "27de7f3",
+      "session": "ses_eff9c4a33ffeLwz7sJKtUd6Y1a",
+      "status": "CLOSED",
+      "fresh_keyboard_probe_checks": 8,
+      "fresh_keyboard_probe_pass": 8,
+      "raw_probe_failures_preserved": true
+    }
+  }
+}

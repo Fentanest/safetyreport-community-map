@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DATE_BASIS_LABEL, type DashboardData, type PublicEntity, type PublicRegion, type Scope } from '../domain/public';
 import { SIDO_LIST, regionLabel, sggName, sidoOf } from '../data/regions';
 import { loadEntities } from '../data/client';
@@ -52,17 +52,18 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   const [server, setServer] = useState<{ key: string; items: PublicEntity[]; total: number } | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [retry, setRetry] = useState(0); // the chart's "다시 시도": the same pages again, never one page further
-  const composing = useRef(false);
+  const [composing, setComposing] = useState(false);
   const scopeKey = `${JSON.stringify(scope)}|${version}`;
   useEffect(() => { setShown(PREVIEW); setPages(0); setServer(null); setInput(''); setQ(''); setRetry(0); }, [scopeKey]);
   useEffect(() => {
-    if (composing.current) return;
+    if (composing) return;
     const t = window.setTimeout(() => { if (input.trim() !== q) { setQ(input.trim()); setPages(0); setServer(null); } }, 300);
     return () => window.clearTimeout(t);
-  }, [input, q]);
+  }, [input, q, composing]);
   const needServer = q !== '' || pages > 0;
   const wantPages = q !== '' ? Math.max(1, pages) : pages + 1;
-  const reqKey = `${scopeKey}|${kind}|${q}|${wantPages}|${retry}`;
+  const cohortKey = `${scopeKey}|${kind}|${q}`;
+  const reqKey = `${cohortKey}|${wantPages}|${retry}`;
   useEffect(() => {
     if (!needServer) { setState('idle'); return; }
     const ac = new AbortController();
@@ -79,7 +80,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
       return { items, total };
     })().then((r) => {
       if (ac.signal.aborted) return;
-      setServer({ key: reqKey, ...r });
+      setServer({ key: cohortKey, ...r });
       setState('idle');
     }).catch(() => { if (!ac.signal.aborted) setState('error'); });
     return () => ac.abort();
@@ -89,8 +90,9 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
     ? { resource: 'entities', phase: 'fetching', label: q ? '기관·담당자를 검색하는 중' : '목록을 더 불러오는 중' } : null);
 
   // while a new page/search loads, the rows already on screen stay (never replaced by "검색 결과 없음")
-  const rows = needServer ? (server?.items ?? (q ? [] : first)) : first;
-  const all = needServer ? server?.total ?? total : total;
+  const currentServer = server?.key === cohortKey ? server : null;
+  const rows = needServer ? (currentServer?.items ?? (q ? [] : first)) : first;
+  const all = needServer ? currentServer?.total ?? total : total;
   // the chart (PlaceEntityChart) pages through the same server list: one more page per click, a failed page retried as is
   const loadMore = () => { if (state === 'error') setRetry((r) => r + 1); else setPages((p) => p + 1); };
   useEffect(() => {
@@ -103,12 +105,12 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
       <div className="scope-entity-tools">
         <input type="search" value={input} placeholder={`${noun} 이름 검색`} aria-label={`${noun} 이름 검색`}
           onChange={(e) => setInput(e.target.value)}
-          onCompositionStart={() => { composing.current = true; }}
-          onCompositionEnd={(e) => { composing.current = false; setInput((e.target as HTMLInputElement).value); }} />
+          onCompositionStart={() => { setComposing(true); }}
+          onCompositionEnd={(e) => { setComposing(false); setInput((e.target as HTMLInputElement).value); }} />
         <PanelStatus busy={state === 'loading'} label={q ? '검색 중' : '불러오는 중'} />
       </div>
       {state === 'error' && <p className="place-empty" role="alert">{noun} 목록을 불러오지 못했습니다.</p>}
-      {rows.length === 0 && state !== 'loading' && (
+      {rows.length === 0 && state === 'idle' && (
         <p className="cm-muted place-empty">{q ? `‘${q}’에 맞는 ${noun}가 없습니다.` : `이 범위의 답변에 ${noun} 정보가 없습니다.`}</p>
       )}
       <ul className="place-entities">

@@ -13,3 +13,7 @@ verify_jwt = true
 # getUser + claims in server/myReports/handler.ts AND the DB identity/session gate in internal_my_reports_*.
 [functions.my-reports]
 verify_jwt = true
+
+# Contributor-gated aggregate ranks; platform JWT + getUser + DB map eligibility on every page.
+[functions.user-rankings]
+verify_jwt = true

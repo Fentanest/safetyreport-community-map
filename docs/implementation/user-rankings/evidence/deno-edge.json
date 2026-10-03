@@ -1,0 +1,20 @@
+{
+  "runtime": "local Deno actual supabase/functions/user-rankings/index.ts; real HTTP GoTrue/PostgREST; synthetic reports; no hosted gateway/deploy",
+  "statuses": {
+    "success": 200,
+    "anonymous": 401,
+    "forged": 400,
+    "revoked": 403
+  },
+  "me": {
+    "reports": 10,
+    "fine": 5,
+    "value": 50,
+    "rank": 1
+  },
+  "headers": {
+    "cache_control": "private, no-store, max-age=0",
+    "vary": "Origin, Authorization"
+  },
+  "result": "PASS"
+}
