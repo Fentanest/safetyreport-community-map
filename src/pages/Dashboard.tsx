@@ -1,3 +1,4 @@
+import { initialTheme, resolveTheme } from '../lib/theme';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DATE_BASIS_LABEL, LAW_NONE, type DashboardData, type DateBasis, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
 import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
@@ -50,18 +51,7 @@ import type { CompareEntityRow } from '../domain/personal';
 import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
 import GlobalQueryStatus from '../components/GlobalQueryStatus';
 
-function initialTheme(): ThemeMode {
-  try {
-    const s = localStorage.getItem('cm-theme');
-    if (s === 'dark' || s === 'light' || s === 'system') return s;
-  } catch { /* ignore */ }
-  return 'dark';
-}
 
-function resolveTheme(t: ThemeMode): 'dark' | 'light' {
-  if (t !== 'system') return t;
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
 
 // AF-MAP2: empty only when neither indicator has rows and no map point exists, so a
 // completion-only range still shows its result screen instead of the empty banner.

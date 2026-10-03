@@ -34,7 +34,12 @@ const logs: Array<
   }
 > = [];
 let nextFailure = 0;
+let seeding: Promise<void> | null = null;
 async function seed() {
+  if (!seeding) seeding = seedData().finally(() => { seeding = null; });
+  await seeding;
+}
+async function seedData() {
   if (viewer) return;
   viewer = await createUser(db, keys.ANON_KEY, "ranking-browser");
   const claims = JSON.parse(
@@ -110,6 +115,8 @@ async function cleanup() {
   if (viewer) {
     deleteUsers([viewer, ...others]);
     viewer = null;
+    others.length = 0;
+    fakeSession = undefined;
   }
 }
 function api(): Plugin {

@@ -130,6 +130,36 @@ describe("ranking strict contract and authenticated boundary", () => {
     leak.vehicle_raw = "PRIVATE_CANARY";
     expect((await setup({ rpc: async () => leak }).h(req())).status).toBe(503);
     expect(responseSchema.safeParse(leak).success).toBe(false);
+    const row = {
+      uuid: session,
+      rank: 1,
+      tie_count: 1,
+      reports: 1,
+      fine: 0,
+      partial: 0,
+      rejected: 0,
+      completed_unknown: 0,
+      numerator: 1,
+      denominator: 1,
+      value: 1,
+      is_me: false,
+    };
+    const nested = {
+      ...rankingFixture(),
+      total_participants: 1,
+      rows: [{ ...row, report_number: "PRIVATE_CANARY" }],
+    };
+    const denied = await setup({ rpc: async () => nested }).h(req());
+    expect(denied.status).toBe(503);
+    expect(await denied.text()).not.toContain("PRIVATE_CANARY");
+    const wrongMe = {
+      ...rankingFixture(),
+      total_participants: 1,
+      me: { ...row, is_me: true },
+    };
+    expect((await setup({ rpc: async () => wrongMe }).h(req())).status).toBe(
+      503,
+    );
   });
   it("maps eligibility/changed-version refusals and does not expose DB extras", async () => {
     for (
