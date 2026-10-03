@@ -64,7 +64,16 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
                   </button>
                 </th>
               ))))}
-              {hasCols && hasRows && metrics.map((m) => sides.map((s) => <th key={`tot-${m}-${s}`} scope="col" className="pivot-total">{metric(m)?.label} 합계{sideWord(s)}</th>))}
+              {hasCols && hasRows && metrics.map((m) => sides.map((s) => (
+                <th key={`tot-${m}-${s}`} scope="col" className="pivot-total"
+                  aria-sort={sort.metric === m && s === (result.spec.population === 'mine' ? 'mine' : 'all') ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}>
+                  <button type="button" className="pivot-sort"
+                    onClick={() => onSort({ metric: m, dir: sort.metric === m && sort.dir === 'desc' ? 'asc' : 'desc' })}
+                    title="이 지표로 행 정렬(행 합계 기준)">
+                    {metric(m)?.label} 합계{sideWord(s)}
+                  </button>
+                </th>
+              )))}
             </tr>
           </thead>
           <tbody>
