@@ -98,6 +98,7 @@ export class RefreshController {
   private lastStart = -Infinity;
   private retries = 0;
   private disposed = false;
+  private suspended = false;
   private readonly opts: RefreshOptions;
 
   constructor(private readonly deps: RefreshDeps, opts: Partial<RefreshOptions> = {}) {
@@ -116,7 +117,7 @@ export class RefreshController {
 
   /** Ask for `scope`. Auto requests are coalesced; explicit ones start now (unless paused by a 429). */
   request(scope: Scope, source: RequestSource = 'explicit'): void {
-    if (this.disposed) return;
+    if (this.disposed || this.suspended) return;
     this.set({ requested: scope });
     const shown = this.state.displayed;
     if (shown && sameScope(shown.scope, scope) && !this.state.error) {
@@ -138,7 +139,7 @@ export class RefreshController {
   /** Retry the latest requested scope now (user button). Respects a running 429 pause. */
   retry(): void {
     const scope = this.state.requested;
-    if (!scope || this.disposed) return;
+    if (!scope || this.disposed || this.suspended) return;
     this.set({ error: null });
     this.retries = 0;
     if (this.paused()) { this.set({ refreshing: true, scheduled: true, wait: 'rate_limit' }); return; }
@@ -157,6 +158,32 @@ export class RefreshController {
     if (this.pauseTimer !== null) this.deps.clearTimer(this.pauseTimer);
     this.pauseTimer = null;
     this.set({ meta: null, displayed: null, requested: null, refreshing: false, scheduled: false, fetching: false, wait: null, error: null, pausedUntil: null, access: null });
+  }
+
+  /** Screen disabled: cancel client work/timers; keep this session's display and Retry-After boundary. */
+  suspend(): void {
+    this.suspended = true;
+    this.cancelPending();
+    this.inflight?.ac.abort();
+    this.inflight = null;
+    if (this.pauseTimer !== null) this.deps.clearTimer(this.pauseTimer);
+    this.pauseTimer = null;
+    this.set({ generation: this.state.generation + 1, refreshing: false, scheduled: false, fetching: false, wait: null });
+  }
+
+  /** Revalidate once on return, including the viewer gate. Never restart a hidden retry. */
+  resume(scope: Scope): void {
+    this.suspended = false;
+    this.set({ requested: scope });
+    if (this.paused()) {
+      const wait = this.state.pausedUntil! - this.deps.now();
+      this.pauseTimer = this.deps.setTimer(() => {
+        this.pauseTimer = null;
+        this.set({ pausedUntil: null });
+        if (!this.suspended && this.state.requested) this.start(this.state.requested);
+      }, wait);
+      this.set({ refreshing: true, scheduled: true, wait: 'rate_limit' });
+    } else this.retry();
   }
 
   dispose(): void {
@@ -196,6 +223,7 @@ export class RefreshController {
   }
 
   private start(scope: Scope) {
+    if (this.disposed || this.suspended) return;
     this.cancelPending();
     this.inflight?.ac.abort(); // client cancel only; the server may still finish its work
     const ac = new AbortController();

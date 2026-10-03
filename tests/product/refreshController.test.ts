@@ -247,3 +247,52 @@ describe('S10 request phases (display reads them; nothing new is fetched)', () =
     expect(h.pending).toHaveLength(0);
   });
 });
+
+describe('inactive screen and session boundaries', () => {
+  it('cancels an active request and debounce, ignores late data, then revalidates once', async () => {
+    const h = harness();
+    h.c.request(base); await h.flush();
+    h.pending.shift()!.resolve(dataFor(base)); await h.flush();
+    h.c.request(bbox(1)); await h.flush();
+    const late = h.pending.shift()!;
+    h.c.request(bbox(2), 'auto');
+    h.c.suspend();
+    expect(late.signal.aborted).toBe(true);
+    late.resolve(dataFor(bbox(1))); await h.flush();
+    h.c.request(bbox(3)); h.c.retry(); await h.advance(120000);
+    expect(h.pending).toHaveLength(0);
+    expect(h.c.snapshot().displayed!.scope).toEqual(base);
+    h.c.resume(bbox(3)); await h.flush();
+    h.c.request(bbox(3)); await h.flush();
+    expect(h.pending).toHaveLength(1);
+    expect(h.pending[0].scope).toEqual(bbox(3));
+  });
+  it('hidden Retry-After neither fetches nor expires early; return runs the latest intent', async () => {
+    const h = harness();
+    h.c.request(base); await h.flush();
+    h.pending.shift()!.reject(new PublicApiError('rate', 429, 10)); await h.flush();
+    h.c.suspend(); await h.advance(3000);
+    h.c.resume(bbox(2)); await h.flush();
+    h.c.request(bbox(3)); await h.advance(6999);
+    expect(h.pending).toHaveLength(0);
+    await h.advance(1);
+    expect(h.pending).toHaveLength(1);
+    expect(h.pending[0].scope).toEqual(bbox(3));
+  });
+  it('account reset while hidden clears all protected state and an earlier metadata response', async () => {
+    let resolveMeta!: (value: PublicMeta) => void;
+    let calls = 0;
+    const h = harness();
+    const c = new RefreshController({ fetchMeta: () => new Promise(resolve => { resolveMeta = resolve; }),
+      fetchDashboard: async (_meta, scope) => { calls++; return dataFor(scope); },
+      now: () => 0, setTimer: () => 1, clearTimer: () => {} });
+    c.request(base); c.suspend(); c.reset();
+    resolveMeta(meta('account-A')); await h.flush();
+    expect(c.snapshot()).toMatchObject({ meta: null, displayed: null, requested: null });
+    expect(calls).toBe(0);
+    c.resume(bbox(2)); resolveMeta(meta('account-B')); await h.flush();
+    expect(c.snapshot().meta?.dataset_version).toBe('account-B');
+    expect(c.snapshot().displayed?.scope).toEqual(bbox(2));
+    expect(calls).toBe(1);
+  });
+});

@@ -3,7 +3,7 @@
  * how it was requested. Returns the last successful snapshot (kept on screen while refreshing) plus request state.
  * The metadata/snapshot live in memory only and are dropped whenever the signed-in account changes.
  */
-import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { Scope } from '../domain/public';
 import { loadDashboardWith, loadMeta } from '../data/client';
 import { RefreshController, type RefreshState, type RequestSource } from '../data/refreshController';
@@ -32,19 +32,32 @@ export function useDashboardData(scope: Scope, source: RequestSource, sessionKey
 
   // account/session boundary: forget every cached response (P04); null = auth still settling → no request
   const scopeKey = JSON.stringify(scope);
-  useEffect(() => {
-    if (sessionKey === null || !enabled) return;
+  const wasEnabled = useRef(false);
+  useLayoutEffect(() => {
     if (sessionRef.current !== undefined && sessionRef.current !== sessionKey) controller.reset();
     const first = sessionRef.current !== sessionKey;
     sessionRef.current = sessionKey;
-    controller.request(scope, first ? 'initial' : source);
+    if (sessionKey === null || !enabled) {
+      controller.suspend();
+      wasEnabled.current = false;
+      return;
+    }
+    if (!wasEnabled.current) controller.resume(scope);
+    else controller.request(scope, first ? 'initial' : source);
+    wasEnabled.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [controller, scopeKey, sessionKey, enabled]);
 
+  // A render can precede the layout effect on account change: never expose the prior account's DTO then.
+  const current = sessionKey !== null && sessionRef.current === sessionKey;
   return {
     ...state,
-    isInitialLoading: !state.displayed && !state.access && !state.error,
-    isRefreshing: !!state.displayed && state.refreshing,
+    displayed: current ? state.displayed : null,
+    meta: current ? state.meta : null,
+    access: current ? state.access : null,
+    error: current ? state.error : null,
+    isInitialLoading: !current || (!state.displayed && !state.access && !state.error),
+    isRefreshing: current && !!state.displayed && state.refreshing,
     retry: controller.retry.bind(controller),
   };
 }

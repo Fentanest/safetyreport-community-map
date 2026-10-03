@@ -1,5 +1,5 @@
 import { initialTheme, resolveTheme } from '../lib/theme';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DATE_BASIS_LABEL, LAW_NONE, type DashboardData, type DateBasis, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
 import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
 import type { RequestSource } from '../data/refreshController';
@@ -14,8 +14,7 @@ import CommandBar from '../components/CommandBar';
 import FilterDrawer from '../components/FilterDrawer';
 import MapPanel, { renderModeOf } from '../components/MapPanel';
 import ScopeDetailsPanel, { type ManagerPaging } from '../components/ScopeDetailsPanel';
-import RankingsPage from './RankingsPage';
-import StatisticsPage, { type ScopeChip } from './StatisticsPage';
+import type { ScopeChip } from './StatisticsPage';
 import { clearSession as clearStatsSession, dropLegacyStatsStorage, handoffRecipe, type StatsRecipe } from '../state/statistics';
 import { SPY_SECTIONS, currentSection, scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
 import type { Screen } from '../components/Rail';
@@ -41,6 +40,7 @@ import AppliedFilterChips, { type AppliedChip } from '../components/AppliedFilte
 import { DurationCard, HeatmapCard, RatingCard, ScatterCard, VehicleDaysCard, mineEntityKeys } from '../components/AnalyticsCharts';
 import { useMapAuth, usePersonalCompare, type PersonalState } from '../hooks/usePersonal';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useAnalyticsMeta } from '../hooks/useAnalyticsMeta';
 import { consistentWithPublic } from '../data/personal';
 import { hasLayoutParam, readComparePref, readInterest, screenFromSearch, toggleInterest, writeComparePref, writeInterest } from '../state/view';
 import { markPoints } from '../state/pointMarks';
@@ -50,6 +50,9 @@ import { CLUSTER_LEVEL } from '../lib/kakao';
 import type { CompareEntityRow } from '../domain/personal';
 import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
 import GlobalQueryStatus from '../components/GlobalQueryStatus';
+
+const RankingsPage = lazy(() => import('./RankingsPage'));
+const StatisticsPage = lazy(() => import('./StatisticsPage'));
 
 
 
@@ -166,7 +169,8 @@ export default function Dashboard() {
   // ── data (R04): the last successful snapshot stays on screen while a new one loads ─────────────────────
   // C01: account boundary by the auth user id (a shared nickname is never the same account)
   const sessionKey = sessionKeyOf(auth, fixture);
-  const dash = useDashboardData(scope, sourceRef.current, sessionKey, screen !== 'rankings');
+  const dash = useDashboardData(scope, sourceRef.current, sessionKey, screen === 'dashboard');
+  const statisticsMeta = useAnalyticsMeta(sessionKey, screen === 'statistics', dash.meta);
   const shown = dash.displayed;
   const data = shown?.data ?? null;
   const shownScope = shown?.scope ?? null;
@@ -447,11 +451,12 @@ export default function Dashboard() {
     refineAbort.current?.abort();
     refineAbort.current = null;
     setRefined(null);
-  }, [shownKey, shown]);
+    placeMoreAbort.current?.abort();
+  }, [shownKey, shown, screen]);
   const onView = (b: [number, number, number, number], zoom: number) => {
     window.clearTimeout(refineTimer.current);
     // pin refinement exists in the points (신고 수) mode only; a rate map never asks for or draws pins (R7)
-    if (renderMode !== 'points' || !hasAggregates || !shownScope || !version || zoom >= CLUSTER_LEVEL) { if (refined) setRefined(null); return; }
+    if (screen !== 'dashboard' || renderMode !== 'points' || !hasAggregates || !shownScope || !version || zoom >= CLUSTER_LEVEL) { if (refined) setRefined(null); return; }
     const key = shownKey, gen = refineGen.current, askScope = shownScope, askVersion = version;
     refineTimer.current = window.setTimeout(() => {
       if (gen !== refineGen.current || key !== shownKeyRef.current) return; // conditions changed while waiting
@@ -491,7 +496,7 @@ export default function Dashboard() {
     }
   }, [data, point, selection, showToast]);
   useEffect(() => {
-    if (!selection || !point || point.aggregate || !shownScope || !version) return;
+    if (screen !== 'dashboard' || !selection || !point || point.aggregate || !shownScope || !version) return;
     if (!point.place_key) { setPlaceDetail({ status: 'unsupported' }); return; }
     const ac = new AbortController();
     placeMoreAbort.current?.abort();
@@ -507,7 +512,7 @@ export default function Dashboard() {
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection, point?.place_key, shownScope, version, placeReload]);
+  }, [selection, point?.place_key, shownScope, version, placeReload, screen]);
   const placeMoreKey = `${selection}|${JSON.stringify(shownScope)}|${version}`;
   const loadMorePlaceManagers = (total: number) => {
     if (!selection || !shownScope || !version) return;
@@ -532,7 +537,7 @@ export default function Dashboard() {
   // ── personal comparison: same DISPLAYED scope/version as the public numbers ───────────────────────────
   const compareDisabledReason = auth.status === 'unconfigured' ? (auth.message ?? '지금은 로그인 기능을 쓸 수 없습니다.') : null;
   const briefingHidden = briefing && compareOn && !briefingShowMine;
-  const compareActive = compareOn && !compareDisabledReason && !briefingHidden && !!data && !unsupported;
+  const compareActive = screen === 'dashboard' && compareOn && !compareDisabledReason && !briefingHidden && !!data && !unsupported;
   const rawPersonal = usePersonalCompare(shownScope ?? scope, version, compareActive);
   const personal: PersonalState = rawPersonal.status === 'ready' && rawPersonal.data && data && !consistentWithPublic(rawPersonal.data, data.overview)
     ? { status: 'error', data: null, retry: rawPersonal.retry,
@@ -678,15 +683,16 @@ export default function Dashboard() {
     return parts.length ? ` · 일부 기간: ${parts.join(', ')}` : '';
   }
 
-  const accessCode = dash.access?.code && (ACCESS_CODES as readonly string[]).includes(dash.access.code) ? dash.access.code as AccessCode : null;
+  const currentAccess = screen === 'statistics' ? statisticsMeta.access : dash.access;
+  const accessCode = currentAccess?.code && (ACCESS_CODES as readonly string[]).includes(currentAccess.code) ? currentAccess.code as AccessCode : null;
   if (accessCode && screen !== 'rankings') {
     // Contributor-only: nothing of the dashboard renders without a readable response (the server refuses the data).
     return (
       <>
         <TopBar theme={theme} onTheme={setTheme} briefing={false} onBriefing={() => undefined} dataStamp="" sample={false}
           account={<AccountMenu auth={auth} onSignIn={signIn} onSignOut={signOut} briefing={false} />} />
-        <AccessGate code={accessCode} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={dash.retry}
-          progress={accessCode === 'upload_required' ? dash.access?.details ?? null : null} />
+        <AccessGate code={accessCode} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={screen === 'statistics' ? statisticsMeta.retry : dash.retry}
+          progress={accessCode === 'upload_required' ? currentAccess?.details ?? null : null} />
       </>
     );
   }
@@ -969,12 +975,14 @@ export default function Dashboard() {
             </>
           )}
           </div>
-          <RankingsPage key={`rankings-${sessionKey}`} active={screen === 'rankings'} />
+          <Suspense fallback={<p role="status">화면을 불러오는 중입니다.</p>}>
+          {screen === 'rankings' && <RankingsPage key={`rankings-${sessionKey}`} active />}
           {statsOpened && sessionKey !== null && (
-            <StatisticsPage key={sessionKey} active={screen === 'statistics'} handoff={handoff} fallbackScope={shownScope} version={version}
+            <StatisticsPage key={sessionKey} active={screen === 'statistics'} handoff={handoff} fallbackScope={statisticsMeta.meta ? shownScope ?? scope : null} version={version ?? statisticsMeta.meta?.dataset_version ?? null}
               viewer={sessionKey} canMine={dataMode === 'demo' || auth.status === 'signed_in'} theme={resolvedTheme}
               scopeChips={scopeChips} onBack={goDashboard} shared={sharedRecipe} onSharedDone={() => setSharedRecipe(null)} onSignIn={signIn} />
           )}
+          </Suspense>
 
           <footer className="page-footer">
             <span>나만의 안전신문고 <b>커뮤니티 신고 지도</b>{dataMode === 'demo' ? ' · 예시 데이터' : ''}</span>
