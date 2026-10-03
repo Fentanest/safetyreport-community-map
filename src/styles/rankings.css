@@ -13,7 +13,7 @@
 .rk-seg button:last-child { border-right: 0; }
 .rk-seg button.selected { background: var(--brand); color: #fff; font-weight: 650; }
 .rk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.rk-apply { width: auto; min-width: 140px; }
+.rk-actions .rk-apply { width: auto; min-width: 140px; }
 .rk-hint { margin: 0; font-size: 12px; color: var(--muted); }
 .rk-notice { margin: 0; }
 .rk-panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
@@ -50,4 +50,17 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .rk-page *, .rk-page *::before, .rk-page *::after { transition-duration: 0ms !important; }
+}
+
+.rk-page .rk-mobile-sample { display: none; }
+@media (max-width: 700px) {
+  .rk-page .rk-table { table-layout: fixed; }
+  .rk-page .rk-table th, .rk-page .rk-table td { white-space: normal; overflow-wrap: anywhere; padding: 8px 6px; }
+  .rk-page .rk-table th:first-child, .rk-page .rk-table td:first-child { min-width: 0; max-width: none; width: 18%; position: static; }
+  .rk-page .rk-table th:nth-child(2) { width: 42%; }
+  .rk-page .rk-table th:nth-child(3) { width: 40%; }
+  .rk-page .rk-table th:last-child, .rk-page .rk-table td:last-child { display: none; }
+  .rk-page .rk-mobile-sample { display: block; }
+  .rk-page .rk-uuid-full summary { white-space: normal; }
+  .bottom-nav button:last-child span { white-space: nowrap; font-size: 11px; }
 }

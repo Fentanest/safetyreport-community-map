@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   METRIC_LABELS,
@@ -42,7 +43,7 @@ const BASIS_LABEL: Record<RankingQuery['date_basis'], string> = {
 };
 
 const PAGE_SIZE = 20;
-const REVALIDATE_MS = 30_000;
+const REVALIDATE_MS = 500;
 
 interface Draft {
   theme: Theme;
@@ -129,7 +130,7 @@ function shortUuid(u: string): string {
 }
 
 function formatValue(row: RankingRow, metric: Metric): string {
-  if (metric.endsWith('_rate')) return `${(row.value * 100).toFixed(1)}%`;
+  if (metric.endsWith('_rate')) return `${row.value.toFixed(1)}%`;
   return `${row.value.toLocaleString('ko-KR')}건`;
 }
 
@@ -147,15 +148,18 @@ export default function RankingsPage({ active }: { active: boolean }) {
     const d = draftFromSearch(window.location.search);
     return d ? draftToQuery(d, 1, null) : draftToQuery(defaultDraft(), 1, null);
   });
-  const [response, setResponse] = useState<{ data: RankingResponse; viewer: string | null } | null>(null);
+  const [response, setResponse] = useState<{ data: RankingResponse; viewer: string | null; queryKey: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message: string; status: number | null; retryAfter: number | null } | null>(null);
   const [access, setAccess] = useState<AccessCode | null>(null);
+  const [accessDetails, setAccessDetails] = useState<PublicApiError['details']>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [retryAt, setRetryAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const retryAtRef = useRef(retryAt);
+  retryAtRef.current = retryAt;
   const [copied, setCopied] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -206,20 +210,24 @@ export default function RankingsPage({ active }: { active: boolean }) {
         return;
       }
       if (authRef.current !== 'signed_in' || !appliedRef.current) return;
+      if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return;
       if (Date.now() - lastFetch.current < REVALIDATE_MS) return;
       setReload((n) => n + 1);
     };
-    const onShow = () => maybeRevalidate();
+    const onHide = () => { abortRef.current?.abort(); flushSync(() => { setResponse(null); setLoading(false); }); lastFetch.current = 0; };
+    const onShow = () => { setResponse(null); lastFetch.current = 0; maybeRevalidate(); };
     const onFocus = () => maybeRevalidate();
     const onVis = () => {
       if (!document.hidden) maybeRevalidate();
-      else abortRef.current?.abort();
+      else onHide();
     };
     window.addEventListener('pageshow', onShow);
+    window.addEventListener('pagehide', onHide);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVis);
     return () => {
       window.removeEventListener('pageshow', onShow);
+      window.removeEventListener('pagehide', onHide);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVis);
     };
@@ -235,11 +243,13 @@ export default function RankingsPage({ active }: { active: boolean }) {
   // Main fetch. Server computes all sorting/ranks; the client never re-sorts.
   useEffect(() => {
     if (!active || auth.status !== 'signed_in' || !applied) return undefined;
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return undefined;
     const requestViewer = viewer;
     const ac = new AbortController();
     abortRef.current?.abort();
     abortRef.current = ac;
     setLoading(true);
+    setResponse(null);
     setError(null);
     setAccess(null);
     loadRankings(applied, ac.signal)
@@ -247,8 +257,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
         if (ac.signal.aborted) return;
         // Render guard: a late answer for another account is dropped.
         if ((authRef.current === 'signed_in' ? requestViewer : null) !== requestViewer) return;
-        setResponse({ data, viewer: requestViewer });
-        setNotice(null);
+        setResponse({ data, viewer: requestViewer, queryKey: appliedKey });
         setRetryAt(null);
         lastFetch.current = Date.now();
         setLoading(false);
@@ -278,6 +287,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
           }
           if (e.code && (ACCESS_CODES as readonly string[]).includes(e.code)) {
             setAccess(e.code as AccessCode);
+            setAccessDetails(e.details);
             return;
           }
           setError({ message: e.message || '랭킹을 불러오지 못했습니다.', status: e.status, retryAfter: e.retryAfter });
@@ -315,6 +325,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
   }, []);
 
   const apply = useCallback(() => {
+    if (retryAt !== null && Date.now() < retryAt) return;
     if (auth.status !== 'signed_in') {
       setFormError('카카오 로그인이 필요합니다. 먼저 로그인해 주세요.');
       return;
@@ -347,8 +358,9 @@ export default function RankingsPage({ active }: { active: boolean }) {
     setAccess(null);
     setResponse(null);
     setApplied(q);
+    setReload((n) => n + 1);
     writeUrl(draft);
-  }, [auth.status, draft, writeUrl]);
+  }, [auth.status, draft, writeUrl, retryAt]);
 
   const reset = useCallback(() => {
     const d = defaultDraft();
@@ -356,6 +368,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
     setFormError(null);
     setNotice(null);
     setApplied(draftToQuery(d, 1, null));
+    setReload((n) => n + 1);
     writeUrl(d);
   }, [writeUrl]);
 
@@ -385,7 +398,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
 
   const data = response?.data ?? null;
   // Guard: never render another account's snapshot.
-  const guarded = data && response && response.viewer === viewer && auth.status === 'signed_in' ? data : null;
+  const guarded = data && response && response.viewer === viewer && response.queryKey === appliedKey && auth.status === 'signed_in' ? data : null;
   const appliedTheme: Theme = applied?.theme ?? 'reporters';
   const appliedMetric: Metric = applied?.metric ?? 'reports_count';
   const heading = appliedTheme === 'reporters'
@@ -459,6 +472,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
         <div className="rk-grid">
           <label className="rk-field">지표
             <select
+              aria-label="지표"
               value={draft.metric}
               onChange={(e) => setDraft({ ...draft, metric: e.target.value as Metric })}
             >
@@ -469,6 +483,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
           </label>
           <label className="rk-field">날짜 기준
             <select
+              aria-label="날짜 기준"
               value={draft.date_basis}
               onChange={(e) => setDraft({ ...draft, date_basis: e.target.value as Draft['date_basis'] })}
             >
@@ -478,6 +493,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
           </label>
           <label className="rk-field">분류
             <select
+              aria-label="분류"
               value={draft.category}
               onChange={(e) => setDraft({ ...draft, category: e.target.value as Draft['category'] })}
             >
@@ -543,8 +559,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
 
         {formError && <p className="field-error" role="alert">{formError}</p>}
         <div className="rk-actions">
-          <button className="primary-button rk-apply" type="submit">적용</button>
-          <button className="ghost-btn" type="button" onClick={reset}>초기화</button>
+          <button className="primary-button rk-apply" type="submit" disabled={retryWait > 0}>적용</button>
+          <button className="ghost-btn" type="button" onClick={reset} disabled={retryWait > 0}>초기화</button>
         </div>
         <p className="rk-hint">초안은 적용을 누르기 전에는 반영되지 않습니다. 같은 범위는 모든 지표에 함께 적용됩니다.</p>
       </form>
@@ -569,7 +585,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
             )}
         </div>
       ) : access ? (
-        <AccessGate code={access} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={() => setReload((n) => n + 1)} />
+        <AccessGate code={access} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={() => setReload((n) => n + 1)} progress={access === 'upload_required' ? accessDetails : null} />
       ) : loading && !guarded ? (
         <div className="cm-panel rk-panel" aria-busy="true" aria-label="랭킹을 불러오는 중">
           <div className="skeleton" />
@@ -594,7 +610,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
               <p className="rk-me-line">
                 <strong>{me.rank}위</strong>
                 <span>값 {formatValue(me, appliedMetric)}</span>
-                {isRate && <span>{me.numerator.toLocaleString('ko-KR')}/{me.denominator.toLocaleString('ko-KR')}</span>}
+                {isRate && <span>{me.numerator.toLocaleString('ko-KR')}/{me.denominator.toLocaleString('ko-KR')}건</span>}
                 <span>완료 신고 {me.reports.toLocaleString('ko-KR')}건</span>
                 {me.tie_count > 1 && <span>공동 {me.tie_count}명</span>}
               </p>
@@ -614,7 +630,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
                 <h2>{heading} 표</h2>
                 <div className="rk-badges">
                   <span className="cm-chip">참여자 {guarded.total_participants.toLocaleString('ko-KR')}명</span>
-                  {guarded.total_participants === 1 && <span className="cm-chip">표본 1건</span>}
+                  {guarded.total_participants === 1 && <span className="cm-chip">참여자 1명</span>}
                 </div>
               </div>
               <div className="table-scroll rk-scroll">
@@ -652,10 +668,12 @@ export default function RankingsPage({ active }: { active: boolean }) {
                         </td>
                         <td className="num">
                           <b>{formatValue(row, appliedMetric)}</b>
-                          {isRate && <small> {row.numerator.toLocaleString('ko-KR')}/{row.denominator.toLocaleString('ko-KR')}</small>}
+                          {isRate && <small> {row.numerator.toLocaleString('ko-KR')}/{row.denominator.toLocaleString('ko-KR')}건</small>}
+                          <small className="rk-mobile-sample">N {row.reports}건{row.reports === 1 ? ' · 표본 1건' : ''}{row.completed_unknown > 0 ? ` · 미확인 ${row.completed_unknown}건 포함` : ''}</small>
                         </td>
                         <td className="num" aria-label={`완료 신고 ${row.reports}건, 결과 미확인 ${row.completed_unknown}건`}>
                           {row.reports.toLocaleString('ko-KR')}건
+                          {row.reports === 1 && <small>표본 1건</small>}
                           {row.completed_unknown > 0 && <small> 미확인 {row.completed_unknown}건 포함</small>}
                         </td>
                       </tr>
@@ -702,7 +720,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
                 선택 날짜 없음 {guarded.diagnostics.selected_date_missing.toLocaleString('ko-KR')}건 ·
                 결과 미확인 {guarded.diagnostics.completed_unknown.toLocaleString('ko-KR')}건 ·
                 처분 불일치 {guarded.diagnostics.inconsistent_disposition.toLocaleString('ko-KR')}건.
-                순위는 서버가 전체 집합에서 매긴 값이며, 개인의 능력·도덕적 우열을 평가하지 않습니다.
+                순위는 서버가 전체 신고 집합에서 매깁니다. 비율은 각각 R/N, P/N, F/N × 100이며 주요 값이 같으면 공동 순위입니다.
               </p>
             </details>
           </section>

@@ -172,3 +172,10 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
   현재 조건의 전체 후보에서 서버 검색·페이지. 자기 차원의 선택은 후보를 좁히지 않는다(facet). `selected`는 이미 고른 key의 현재 건수(0 포함).
 - `GET /my-analytics/statistics?<scope>&spec=` — population `mine`/`compare` 전용. 내 신고는 JWT로 확인한 사용자만(요청의 사용자 id는 받지 않음). 공개 API에 mine/compare를 보내면 400.
 - 기존 엔드포인트 추가 필드(선택, 구 클라이언트 호환): dashboard `agency_total`, `manager_total`, `overview.warning_count`.
+
+## 2026-10-03 user-rankings-v1
+
+별도 인증 전용 `GET /functions/v1/user-rankings`: [정본 계약](../contracts/user-rankings/README.md).
+기존 지도 게이트를 적용하지만 전체 facts를 Edge로 로딩하는 10만 상한 경로를 사용하지 않는다.
+DB가 contributor UUID별 대표 선출/집계/전체순위/페이지/검증 JWT의 내 순위를 계산한다.
+UUID는 이 전용 API의 표시 예외이고 다른 사용자 원문 조회 자격이 아니다. 기존 지도 DTO·my-reports 범위는 유지한다.

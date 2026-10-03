@@ -8,6 +8,6 @@ export default defineConfig(({ command, mode, isPreview }) => {
     plugins: [react()],
     base: command === 'serve' && isPreview !== true ? '/' : (env.VITE_BASE_PATH || '/'),
     build: { outDir: 'dist', sourcemap: false, emptyOutDir: true },
-    test: { environment: 'node' },
+    test: { environment: 'node', include: ['tests/**/*.test.{ts,tsx}'] },
   };
 });

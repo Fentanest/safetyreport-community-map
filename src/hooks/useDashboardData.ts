@@ -15,7 +15,7 @@ export interface DashboardDataApi extends RefreshState {
 }
 
 /** @param sessionKey identity of the viewer session (+ demo fixture); null while auth is still settling */
-export function useDashboardData(scope: Scope, source: RequestSource, sessionKey: string | null): DashboardDataApi {
+export function useDashboardData(scope: Scope, source: RequestSource, sessionKey: string | null, enabled = true): DashboardDataApi {
   const controller = useMemo(() => new RefreshController({
     fetchMeta: (signal) => loadMeta(signal),
     fetchDashboard: (meta, s, signal) => loadDashboardWith(meta, s, signal),
@@ -33,13 +33,13 @@ export function useDashboardData(scope: Scope, source: RequestSource, sessionKey
   // account/session boundary: forget every cached response (P04); null = auth still settling → no request
   const scopeKey = JSON.stringify(scope);
   useEffect(() => {
-    if (sessionKey === null) return;
+    if (sessionKey === null || !enabled) return;
     if (sessionRef.current !== undefined && sessionRef.current !== sessionKey) controller.reset();
     const first = sessionRef.current !== sessionKey;
     sessionRef.current = sessionKey;
     controller.request(scope, first ? 'initial' : source);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [controller, scopeKey, sessionKey]);
+  }, [controller, scopeKey, sessionKey, enabled]);
 
   return {
     ...state,

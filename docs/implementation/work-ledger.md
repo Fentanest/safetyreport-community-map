@@ -41,3 +41,16 @@
 - 결과: docs/implementation/manager-chart-2026-09-30/REPORT.md, 증거: 같은 폴더 evidence/(로컬 e2e 스택, MOCK SDK, 합성 118명, 22/22 PASS).
 - 서버 `same_name` 메타(전체 목록 기준), `src/domain/managerNames.ts` 공용 규칙, 차트 1–8 / N 탐색(dataZoom 단일 상태), 나머지 불러오기.
 - main 병합·운영 DB·배포 미실행. Muse 교차 검수 미실행.
+
+## 2026-10-03 UUID 유저 랭킹
+
+- main fetch로 `feat/user-rankings` 생성, 사용자 추가 지시에 `git pull --ff-only origin main` 재확인(Already up to date).
+  최초 dirty 없음. Sol 역할은 현재 Codex 세션 그대로 유지(다른 Sol 세션 호출 없음).
+- Sol single writer: 계약/DB/Edge/client/shared routing/hooks/nav/tests/package config/doc integration.
+- Muse 모델 host 확인: `opencode-go/muse-spark-1.3-contributor`, variant high 지원. 구독 경로 OpenCode Go 그대로,
+  API key 생성/별도 과금 전환 없음. MCP 없음; 설치된 Playwright-core + system Chromium 사용 가능.
+- Muse 구현 전용 worktree `.agent-runtime/rankings-muse`, base 8ed88bf, 소유 파일 RankingsPage.tsx/rankings.css/구현 보고서만.
+  commit 46ca939 → root cherry-pick 744663e. session ses_f00a80068ffeFkJvmIvVDgwSYi export에서 실제 model/directory 확인.
+- Muse 완료 후 해당 UI 파일 소유를 Sol로 순차 이전. Sol이 percent 단위·sample badge·pagehide/return 보호·전체 shell 통합을 수정.
+  같은 파일/worktree 동시 쓰기 없음. 별도 fixed commit에서 최종 Muse 브라우저 검수 예정, 증거는 별도 기록.
+- 운영 SQL/Edge/Pages/계정 설정/push는 금지 범위. 로컬 composed 테스트 DB에만 선행·신규 migrations 적용(미검증 운영과 분리).
