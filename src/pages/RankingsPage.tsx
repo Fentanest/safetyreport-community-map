@@ -92,7 +92,7 @@ function queryFromSearch(search: string): RankingQuery | null {
     month: p.get(RK('month')) ?? null,
     date_basis: p.get(RK('basis')) ?? undefined,
     category: p.get(RK('category')) ?? undefined,
-    min_reports: p.get(RK('min')) ?? undefined,
+    min_reports: p.has(RK('min')) ? Number(p.get(RK('min'))) : undefined,
     page: 1,
     page_size: PAGE_SIZE,
     expected_version: null,
