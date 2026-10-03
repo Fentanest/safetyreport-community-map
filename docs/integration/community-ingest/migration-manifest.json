@@ -367,7 +367,7 @@
    "version": "202610040400",
    "repo": "map",
    "path": "supabase/migrations/202610040400_viewer_key_lookup.sql",
-   "sha256": "ebbd31832d54606d480ec77eb3740bd770822f61afaba208890d45ded086073c",
+   "sha256": "8b3dae433518f42e6c4b6b63e0b7d491143c293bd5e18163ee01e91bf84e38cd",
    "depends_on": [
     "202610040300"
    ]
@@ -379,6 +379,15 @@
    "sha256": "0499e658aec63b2f62e4b85e42dc7de985f8182b516fbc82f5985c9592cac8b5",
    "depends_on": [
     "202610040400"
+   ]
+  },
+  {
+   "version": "202610040600",
+   "repo": "map",
+   "path": "supabase/migrations/202610040600_rollup_scope_plan.sql",
+   "sha256": "951b5f12a5281aebfd8ce2d1c5890ac7b339241c732e8d37a0eb513e3eb80155",
+   "depends_on": [
+    "202610040500"
    ]
   }
  ],

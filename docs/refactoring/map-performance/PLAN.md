@@ -31,3 +31,9 @@ Sol: 계약/데이터/DB/CI/test/scripts/Dashboard/common tokens/package(single 
 ## 추가 실측에 따른 좁은 변경 (2026-10-04)
 
 반복 SQL 계획에서 viewer threshold의 key_numbers Hash Semi Join이 key 제한 전에 전체 60만 관측에 lineage 함수를 실행해 약9초를 썼다. 다른 실행의 planner 선택에서는 같은 gate가 약52ms였다. 결과 캐시 없이 이 계획 변동을 없애기 위해 번호 없는 own key마다 LATERAL/LIMIT1 lookup을 적용한다(040400). metadata 전체 bounds도 행별 lineage 호출을 active-grants 집합 JOIN으로 바꾼다(040500). auth와 global historical number 정의는 원본 그대로다. 작은 frozen-function differential 이후에만 로컬 적용했다. 통합 성능은 같은 rollback seed/connection에서 원본 alias와 후보를 비교하고 plan_cache_mode를 명시해 gate 계획 차이를 숨기지 않는다. 서로 다른 gate 계획의 별도 실행 수치를 그대로 개선율로 단정하지 않는다.
+
+## 계획 실험과 적용 후보
+
+500k 글로벌 집계의 custom bound plan만으로는30s 및 진단180s timeout이 재현됐다. 작은 oracle PASS는 대규모 성능 PASS가 아니었다. EXPLAIN은 consent_grant_id와 user_id의 상관된 join을1행으로 추정해 후보/관측에 nested loop를 골랐다. profiles/grants ANALYZE 후에도 재현됐다. 040600은 이 함수 안에서만 nested loop를 배제해 hash/merge 계획을 검증한다. 사용자 SQL 보간, 결과 캐시, work_mem·제품 timeout 증가가 없다. 같은10회 대규모 실측과 작은 전수 정렬/권한 differential을 실행하고 미달은 보고한다.
+
+production 랭킹 lazy 진입은 RAF readiness로 재측정해도 p95 회귀가 있었다. 작은 RankingsPage는 eager로 복구하되 mount/API는 활성 화면에 한정한다. 통계는lazy를 유지한다. 변경후30회 측정과2cd5442 독립 Muse 재검수로 확인한다. 단순 code split 자체를 성공으로 취급하지 않는다.

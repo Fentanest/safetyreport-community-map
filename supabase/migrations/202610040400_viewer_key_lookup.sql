@@ -14,7 +14,7 @@ begin
     if p_user is null or p_session is null then raise exception 'INVALID_QUERY'; end if;
     v_id := private.community_identity_state(p_user, p_session);
     select * into v_profile from private.contributor_profiles where user_id = p_user;
-    -- same states as internal_my_analytics_source: 'active' = active profile with an unrevoked share consent
+    -- same states as internal_my_analytics_source: ’active’ = active profile with an unrevoked share consent
     v_contributor := case
         when v_profile.user_id is null then 'none'
         when v_profile.status <> 'active' then 'suspended'
@@ -23,13 +23,13 @@ begin
         else 'none' end;
     -- "shared at least one report": a fact of this user that the public map actually lists (completed, active
     -- contributor, active consent lineage) — the same rule as internal_my_analytics_source.has_public_facts.
-    -- Kept verbatim (exists check) so the key's meaning cannot drift from the personal-comparison source.
+    -- Kept verbatim (exists check) so the key’s meaning cannot drift from the personal-comparison source.
     if v_contributor = 'active' then
         select exists (select 1 from private.community_report_facts f
                         where f.contributor_id = p_user and private.community_fact_publicly_listed(f)) into v_has;
         -- Viewer threshold count (2026-09-28): distinct report_identity over the same publicly-listed rows.
-        -- Same identity expression as 202609281500 H1; the key's first number follows 202609281600 R2
-        -- (consent-active full history, no date window) restricted to this viewer's keys, so identities
+        -- Same identity expression as 202609281500 H1; the key’s first number follows 202609281600 R2
+        -- (consent-active full history, no date window) restricted to this viewer’s keys, so identities
         -- join exactly as the public projection elects them. Rows of other accounts never count
         -- (per-account contribution rule, 2026-09-28); two datasets of this viewer collapse to one.
         with mine as (
