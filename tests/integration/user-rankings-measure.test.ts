@@ -1,7 +1,7 @@
 // Local 500k distinct reports / 1000 users + 100k duplicate observations. Entire bulk seed rolls back.
 // COMMUNITY_STACK=1 RANKINGS_MEASURE=1 npx vitest run tests/integration/user-rankings-measure.test.ts
 import { execFileSync, spawn } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { frozenOriginalRankingSql, rankingMeasureSeed } from "./helpers/rankingMeasureSeed";
 import {
@@ -70,9 +70,12 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
       // Isolated transaction; USER triggers skipped only while bulk-loading a synthetic fixture (ranking reads themselves
       // use the unchanged production tables/functions). Trigger settings, users, facts and ANALYZE roll back together.
       const paired = process.env.RANKINGS_COMPARE === '1';
-      const base = rankingMeasureSeed() + (paired ? frozenOriginalRankingSql() + "set plan_cache_mode=force_generic_plan;\n" : '') + `
+      const diagnosticTimeout = Number(process.env.RANKINGS_DIAGNOSTIC_TIMEOUT ?? 25);
+      if (!Number.isInteger(diagnosticTimeout) || diagnosticTimeout < 25 || diagnosticTimeout > 120) throw new Error('invalid diagnostic timeout');
+      const variant = process.env.RANKINGS_CANDIDATE_SQL ? readFileSync(process.env.RANKINGS_CANDIDATE_SQL,'utf8').replace(/^begin;\s*$/gm,'').replace(/^commit;\s*$/gm,'') : '';
+      const base = rankingMeasureSeed() + variant + (paired ? frozenOriginalRankingSql() + "set plan_cache_mode=force_generic_plan;\n" : '') + `
     set client_min_messages=log;
-    load 'auto_explain';set statement_timeout='25s';set auto_explain.log_min_duration=50;set auto_explain.log_analyze=on;set auto_explain.log_buffers=on;
+    load 'auto_explain';set statement_timeout='${diagnosticTimeout}s';set auto_explain.log_min_duration=50;set auto_explain.log_analyze=on;set auto_explain.log_buffers=on;
     set auto_explain.log_nested_statements=on;set auto_explain.log_parameter_max_length=0;
     create temporary table rk_results(label text,result jsonb,elapsed_ms double precision);
   `;
@@ -115,13 +118,22 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
       const repeated = Array.from({ length: repetitions - 1 }, (_, i) => requests.slice(0, 2).map(([label, query]) =>
         measured(`repeat-${label}-${i + 2}`, call(query))
       ).join('\n')).join('\n');
-      const script = base + requests.map(([label, query]) => measured(label, call(query))).join("\n") +
-        "\nset auto_explain.log_min_duration=-1;\n" + beforeSamples + "\n" + repeated + "\nset auto_explain.log_min_duration=50;\n" +
+      const alternate = paired && process.env.RANKINGS_INTERLEAVE === '1';
+      const mainSamples = alternate ? requests.slice(2).map(([label,query])=>measured(label,call(query))).join('\n') +
+        Array.from({length:repetitions},(_,i)=>requests.slice(0,2).map(([label,query])=>
+          measured(`before-${label}-${i+1}`,beforeCall(query)) +
+          measured(i===0?label:`repeat-${label}-${i+1}`,call(query))).join('\n')).join('\n') :
+        requests.map(([label,query])=>measured(label,call(query))).join('\n') +
+        "\nset auto_explain.log_min_duration=-1;\n" + beforeSamples + "\n" + repeated;
+      let script = base + mainSamples + "\nset auto_explain.log_min_duration=50;\n" +
         measured('next', `public.internal_user_rankings('${viewer.id}','${viewer.session}',${lit(JSON.stringify({ ...requests[0][1], page: 2 }))}::jsonb||jsonb_build_object('expected_version',(select result->>'dataset_version' from rk_results where label='first')))`)+
         measured('all',call(querySchema.parse({})))+measured('withdrawn',call(requests[0][1]))+
         `update private.community_consent_grants set revoked_at=now() where user_id in(select id from rk_users where idx%50=49);`+
         measured('after-withdrawal',call(requests[0][1]))+
         `select jsonb_build_object('label',label,'elapsed_ms',elapsed_ms,'bytes',octet_length(result::text),'response',result) from rk_results; rollback;`;
+      // Paired primary timing can omit nested EXPLAIN instrumentation on BOTH variants.
+      // Separate retained runs carry plans; this changes evidence collection, not product budgets.
+      if (process.env.RANKINGS_PLANS === '0') script = script.replaceAll('set auto_explain.log_min_duration=50;', 'set auto_explain.log_min_duration=-1;');
       // Sample RSS of the owned database connection only, from its application_name. Each sample is retained.
       const rss: number[] = [];
       let sampling = true;
@@ -246,6 +258,8 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
         const report = {
           measured_at: new Date().toISOString(),
           paired_original: paired,
+          interleaved: alternate,
+          experimental_candidate: process.env.RANKINGS_CANDIDATE_SQL??null,
           plan_cache_mode: paired ? 'force_generic_plan for both original and candidate' : 'auto',
           environment:
             "LOCAL Docker Supabase PostgreSQL; synthetic; seed rollback; not production",
@@ -263,6 +277,10 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
           query_plan_durations_ms: durations.filter((x) =>
             x > 10
           ),
+          plans_instrumented: process.env.RANKINGS_PLANS !== '0',
+          diagnostic_outer_timeout_seconds: diagnosticTimeout,
+          candidate_head: execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim(),
+          installed_function_md5: JSON.parse(admin("select jsonb_object_agg(n.nspname||'.'||p.proname,md5(p.prosrc)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname='private' and p.proname='ranking_representatives') or (n.nspname='public' and p.proname in('internal_user_rankings','internal_analytics_viewer'));")),
           db_process_peak_rss_kib: Math.max(...rss),
           rss_samples: rss,
           responses: Object.fromEntries(
@@ -284,6 +302,10 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
           JSON.stringify(report, null, 2) + "\n",
         );
         console.log(JSON.stringify(report, null, 2));
+      } catch (e) {
+        writeFileSync(`${OUT}/500k-failure.txt`, stderr.replaceAll(viewer.id, '[synthetic-viewer-uuid]').replaceAll(viewer.session, '[redacted-local-session]'));
+        writeFileSync(`${OUT}/500k-failure.json`, JSON.stringify({status:'FAIL',mode:'direct local SQL synthetic seed',plans_instrumented:process.env.RANKINGS_PLANS!=='0',diagnostic_outer_timeout_seconds:diagnosticTimeout,partial_stdout:stdout,message:String(e)},null,2));
+        throw e;
       } finally {
         sampling = false;
         await sampler;

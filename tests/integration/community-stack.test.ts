@@ -606,7 +606,10 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
     it('counts coordinate-missing facts in the public population but not on the map', async () => {
       const w = await writerFor('A');
       const before = await publicApi('overview');
-      const r = await ingest(w, [await event(w, `NOLOC-${rid()}`, payloadOf('geocode_pending_no_location'))]);
+      // R07 maps by normalized address: a missing-coordinate report at an existing
+      // located address is still on that pin. Use a unique unplaced address for this assertion.
+      const unplaced=payloadOf('geocode_pending_no_location');unplaced.address=`서울특별시 예시미좌표길 ${rid()}`;
+      const r = await ingest(w, [await event(w, `NOLOC-${rid()}`, unplaced)]);
       expect(r.status, JSON.stringify(r.json)).toBe(200);
       expect(r.json.results[0].status).toBe('accepted');
       const after = await publicApi('overview');
@@ -757,7 +760,7 @@ describe.skipIf(!enabled)('community ingest on the composed local stack', () => 
       expect(count('private.community_report_facts', `source_report_key='${key}'`)).toBe(3);
       expect(rep()).toBe(1);
       expect(await overviewReports()).toBe(base + 1);
-    });
+    }, 30000); // multi-account, multi-request integration scenario; not an API latency budget
 
     it('elects the latest distinct answer as the public representative, then applies scope filters', async () => {
       const report = `DIV-${rid()}`;

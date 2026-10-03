@@ -1,5 +1,5 @@
 import { chromium } from "./harness.mjs";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 const out = process.argv[2] || "docs/implementation/user-rankings/evidence/subpath";
@@ -32,6 +32,7 @@ await page.addInitScript((s) => {
   localStorage.setItem("cm-map-auth-v1", JSON.stringify(s));
   localStorage.setItem("cm-theme", "light");
 }, session);
+await page.route('https://dapi.kakao.com/**',r=>r.fulfill({contentType:'text/javascript',body:readFileSync(new URL('./mock-kakao-sdk.js',import.meta.url),'utf8')}));
 const staticServer = spawn(process.execPath, ['scripts/browser/static_pages.mjs'], {
   env: { ...process.env, BASE:'/safetyreport-community-map/', PORT:'5193' }, stdio:'ignore',
 });
@@ -44,15 +45,22 @@ try {
   const url =
     "http://127.0.0.1:5193/safetyreport-community-map/" + search;
   await page.goto(url);
-  await page.locator(".rk-page table").waitFor({timeout:10000});
+  await page.locator(".rk-page .rk-list li").first().waitFor({timeout:10000});
   assert.equal(new URL(page.url()).pathname, "/safetyreport-community-map/");
   reloading = true;
   await page.reload();
-  await page.locator(".rk-page table").waitFor({timeout:10000});
+  await page.locator(".rk-page .rk-list li").first().waitFor({timeout:10000});
   reloading = false;
-  assert.equal(await page.locator(".rk-me-badge").count(), 1);
+  assert.equal(await page.locator(".rk-me-badge:visible").count(), 1);
   for (const [key, value] of new URLSearchParams(search)) {
     assert.equal(new URL(page.url()).searchParams.get(key), value, `subpath refresh preserves ${key}`);
+  }
+  const expected = new URLSearchParams(search);
+  if (expected.get('rk_period') === 'month') {
+    assert.equal(await page.locator('.rk-page').getByLabel('조회할 달 직접 선택').inputValue(), expected.get('rk_month'));
+  }
+  if (expected.has('rk_basis')) {
+    assert.equal(await page.locator('.rk-page').getByLabel('날짜 기준', {exact:true}).inputValue(), expected.get('rk_basis'));
   }
   assert.ok(
     await page.evaluate(() =>

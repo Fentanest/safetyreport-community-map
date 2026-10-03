@@ -95,7 +95,7 @@ try{
  await fetch(base+'/__rankings/fail?status=503');await rk.getByRole('button',{name:'신고 랭킹',exact:true}).click();await rk.getByRole('heading',{name:'랭킹을 불러오지 못했습니다'}).waitFor();
  check('5xx clears protected rank rows',await visibleRows(page).count()===0);await shot(page,'error');await rk.getByRole('button',{name:'다시 시도',exact:true}).click();await ready(page);
  await query(page,()=>rk.getByRole('button',{name:'전체 기간',exact:true}).click(),q=>q.get('period')==='all');
- await fetch(base+'/__rankings/fail?status=409');await rk.getByRole('button',{name:'다음',exact:true}).click();await page.waitForFunction(()=>new URLSearchParams(location.search).get('rk_page')==='1');await ready(page);
+ await fetch(base+'/__rankings/fail?status=409');await rk.getByRole('button',{name:'다음',exact:true}).click();await page.waitForFunction(()=>(new URLSearchParams(location.search).get('rk_page')??'1')==='1');await ready(page);
  check('409 restarts complete version',await rk.locator('.rk-pager').innerText().then(x=>x.includes('참여자 1–20')));
  await page.reload();await ready(page);check('refresh deep link',new URL(page.url()).searchParams.get('screen')==='rankings');
  const nav=page.getByRole('navigation',{name:'주요 화면',exact:true});await nav.getByRole('button',{name:'지도',exact:true}).click();await page.waitForSelector('.kpi-strip [data-kpi="report"]');

@@ -9,6 +9,7 @@
 //   node scripts/integration/deno_functions.mjs --stack .integration-stack --deno /tmp/denotool/node_modules/.bin/deno
 import { spawn, execFileSync } from 'node:child_process';
 import { createServer, request } from 'node:http';
+import { connect } from 'node:net';
 import { mkdtempSync, readFileSync, writeFileSync, chmodSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -59,7 +60,10 @@ await import(${JSON.stringify(`file://${join(functionsRoot, 'supabase/functions'
   procs.push(p);
 });
 
-createServer((req, res) => {
+// Integration cases perform synchronous psql calls. Keep this owned test gateway's idle sockets
+// alive longer than those calls so a blocked test event loop cannot reuse a just-closed5s socket.
+// This is connection lifetime only; product SQL/request/rate budgets are unchanged.
+const gateway=createServer({keepAliveTimeout:60000,headersTimeout:65000},(req, res) => {
   const m = /^\/functions\/v1\/([a-z-]+)(\/.*)?$/.exec(req.url.split('?')[0]);
   const target = m && ports.has(m[1]) ? { host: '127.0.0.1', port: ports.get(m[1]), path: req.url.replace(/^\/functions\/v1/, '') } : (() => {
     const k = new URL(KONG); return { host: k.hostname, port: Number(k.port), path: req.url };
@@ -71,7 +75,20 @@ createServer((req, res) => {
   });
   up.on('error', (e) => { res.writeHead(502, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'gateway', detail: String(e) })); });
   req.pipe(up);
-}).listen(GATEWAY_PORT, '127.0.0.1', () => console.log(`gateway http://127.0.0.1:${GATEWAY_PORT} → deno functions ${[...ports].map(([f, p]) => `${f}:${p}`).join(' ')}; else → ${KONG}`));
+ });
+// Local evidence includes genuine Realtime exposure checks. Forward the opaque WebSocket handshake
+// to Kong without logging headers/query or weakening its authentication/RLS.
+gateway.on('upgrade',(req,socket,head)=>{
+  if(!req.url.startsWith('/realtime/v1/')){socket.destroy();return;}
+  const kong=new URL(KONG),up=connect(Number(kong.port),kong.hostname,()=>{
+    const lines=[`${req.method} ${req.url} HTTP/${req.httpVersion}`];
+    for(let i=0;i<req.rawHeaders.length;i+=2)lines.push(`${req.rawHeaders[i]}: ${req.rawHeaders[i+1]}`);
+    up.write(lines.join('\r\n')+'\r\n\r\n');if(head.length)up.write(head);
+    socket.pipe(up);up.pipe(socket);
+  });
+  up.on('error',()=>socket.destroy());socket.on('error',()=>up.destroy());socket.on('close',()=>up.destroy());
+});
+gateway.listen(GATEWAY_PORT,'127.0.0.1',()=>console.log(`gateway http://127.0.0.1:${GATEWAY_PORT} → deno functions ${[...ports].map(([f,p])=>`${f}:${p}`).join(' ')}; else → ${KONG}`));
 
 const stop = () => { for (const p of procs) p.kill(); process.exit(0); };
 process.on('SIGINT', stop);

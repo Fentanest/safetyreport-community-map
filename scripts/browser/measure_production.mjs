@@ -6,8 +6,8 @@ import { chromium } from './harness.mjs';
 import { attachRankingFixture } from './ranking_fixture.mjs';
 const out=process.argv[2]||'docs/refactoring/map-performance/evidence/production-browser';mkdirSync(out,{recursive:true});
 const root=process.cwd(),before=resolve('.agent-runtime/worktrees/before');const results=[],failures=[];
-const browser=await chromium.launch({args:['--no-sandbox','--lang=ko-KR']});let server;
-const save=()=>writeFileSync(`${out}/measurements.json`,JSON.stringify({mode:'production builds; cold browser contexts; existing demoEngine seed + mock SDK/ranking DTO; frontend-only, no real auth/SQL or hosted verification',browser:browser.version(),viewport:'1440x900',repeats:30,first_included:true,compression:'plain local static server, uncompressed JS response body',readiness:'requestAnimationFrame visible content; Playwright locator exponential polling removed; wall-clock includes page navigation and readiness confirmation',results,failures},null,2));
+const isolated=process.env.PERF_ISOLATED==='1';let browser=isolated?null:await chromium.launch({args:['--no-sandbox','--lang=ko-KR']});let browserVersion=browser?.version()??null;let server;
+const save=()=>writeFileSync(`${out}/measurements.json`,JSON.stringify({mode:'production builds; cold browser contexts; existing demoEngine seed + mock SDK/ranking DTO; frontend-only, no real auth/SQL or hosted verification',browser:browserVersion,isolation:isolated?'fresh browser process per screen/variant; same30 cold contexts':'one browser process across screens/variants',viewport:'1440x900',repeats:30,first_included:true,compression:'plain local static server, uncompressed JS response body',readiness:'requestAnimationFrame visible content; Playwright locator exponential polling removed; wall-clock includes page navigation and readiness confirmation; dashboard additionally waits for map and7 chart instances; transfer observed after networkidle',results,failures},null,2));
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 try{
  for(const [variant,cwd]of [['before',before],['after',root]]){
@@ -15,7 +15,8 @@ try{
   execFileSync('npx',['--no-install','vite','build','--outDir',dist,'--emptyOutDir'],{cwd,env:{...process.env,VITE_DATA_MODE:'demo',VITE_BASE_PATH:'/safetyreport-community-map/',VITE_KAKAO_MAP_JS_KEY:'mock-e2e-key',VITE_PUBLIC_ANALYTICS_URL:'http://127.0.0.1:5198/functions/v1'},stdio:['ignore','pipe','pipe']});
   server=spawn('node',['scripts/browser/static_pages.mjs'],{cwd:root,env:{...process.env,PORT:'5198',DIST:dist},stdio:['ignore','pipe','pipe']});
   await new Promise((ok,fail)=>{server.stdout.once('data',ok);server.on('exit',code=>{if(code)fail(new Error('static preview exit '+code));});});
-  for(const screen of ['dashboard','statistics','rankings']){
+  for(const screen of (process.env.PERF_SCREENS||'dashboard,statistics,rankings').split(',')){
+   if(isolated){browser=await chromium.launch({args:['--no-sandbox','--lang=ko-KR']});browserVersion=browser.version();}
    const samples=[];
    for(let i=0;i<30;i++){
     const context=await browser.newContext({viewport:{width:1440,height:900},locale:'ko-KR'});
@@ -29,16 +30,21 @@ try{
      await page.goto(`http://127.0.0.1:5198/safetyreport-community-map/?screen=${screen}&me=signed`);
      await page.waitForFunction(selector=>{const e=document.querySelector(selector);return !!e&&e.getBoundingClientRect().height>0&&getComputedStyle(e).visibility!=='hidden';},screen==='dashboard'?'.kpi-strip .kpi-row':screen==='statistics'?'.pivot-table tbody tr':'.rk-table tbody tr',{timeout:30000,polling:'raf'});
     }catch(e){success=false;failures.push({variant,screen,i,message:e.message});}
+    const firstContentMs=performance.now()-started;
+    if(screen==='dashboard'&&success){try{await page.waitForFunction(()=>window.__kakaoStats?.maps>0&&document.querySelectorAll('[_echarts_instance_]').length>=7,null,{timeout:10000,polling:'raf'});}catch(e){success=false;failures.push({variant,screen,i,message:'map/charts incomplete: '+e.message});}}
     const ms=performance.now()-started;
+    let settled=true;try{await page.waitForLoadState('networkidle',{timeout:5000});}catch{settled=false;}
     const data=await page.evaluate(()=>({resources:performance.getEntriesByType('resource').map(e=>({path:new URL(e.name).pathname,bytes:e.encodedBodySize,duration:e.duration})),long_tasks:window.__perfLongTasks,maps:window.__kakaoStats?.maps??0,chart_hosts:[...document.querySelectorAll('[_echarts_instance_]')].length}));
-    samples.push({ms,success,requests:requests.length,api_requests:requests.filter(x=>x.includes('/functions/')).length,js_bytes:data.resources.filter(x=>x.path.endsWith('.js')).reduce((n,r)=>n+r.bytes,0),...data,errors});
+    samples.push({ms,first_content_ms:firstContentMs,settled,success,requests:requests.length,api_requests:requests.filter(x=>x.includes('/functions/')).length,js_bytes:data.resources.filter(x=>x.path.endsWith('.js')).reduce((n,r)=>n+r.bytes,0),...data,errors});
     if(i===0)await page.screenshot({path:`${out}/${variant}-${screen}.png`,fullPage:true});
     await context.close();
+    if(!success)break;
    }
    const times=samples.filter(x=>x.success).map(x=>x.ms).sort((a,b)=>a-b);
-   results.push({variant,screen,requests:samples.reduce((n,s)=>n+s.requests,0),p50_ms:times[Math.ceil(times.length*.5)-1],p95_ms:times[Math.ceil(times.length*.95)-1],max_ms:times.at(-1),failure_rate:samples.filter(s=>!s.success).length/30,samples});save();
+   results.push({variant,screen,requests:samples.reduce((n,s)=>n+s.requests,0),p50_ms:times[Math.ceil(times.length*.5)-1],p95_ms:times[Math.ceil(times.length*.95)-1],max_ms:times.at(-1),failure_rate:samples.filter(s=>!s.success).length/samples.length,executed:samples.length,first_content_p50_ms:samples.map(s=>s.first_content_ms).sort((a,b)=>a-b)[Math.ceil(samples.length*.5)-1],first_content_p95_ms:samples.map(s=>s.first_content_ms).sort((a,b)=>a-b)[Math.ceil(samples.length*.95)-1],samples});save();
+   if(isolated){await browser.close();browser=null;}
   }
   server.kill('SIGTERM');await new Promise(ok=>server.once('exit',ok));server=null;await wait(150);
  }
  save();if(failures.length)throw new Error(`${failures.length} production fixture entry failures`);
-}finally{server?.kill('SIGTERM');await browser.close();}
+}finally{server?.kill('SIGTERM');await browser?.close();}

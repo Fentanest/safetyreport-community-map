@@ -14,9 +14,10 @@ try {
   for (const theme of ['light','dark']) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await context.addInitScript(({ session, theme }) => { localStorage.setItem('cm-map-auth-v1', JSON.stringify(session)); localStorage.setItem('cm-theme', theme); }, { session, theme });
+    await context.route('https://dapi.kakao.com/**',r=>r.fulfill({contentType:'text/javascript',body:readFileSync(new URL('./mock-kakao-sdk.js',import.meta.url),'utf8')}));
     const page = await context.newPage();
     await page.goto(`${base}/?screen=rankings`);
-    await page.locator('.rk-page table').waitFor();
+    await page.locator('.rk-page .rk-list li').first().waitFor();
     const colors = await page.evaluate(() => {
       const cs = getComputedStyle(document.documentElement);
       const keys = ['--text','--text-secondary','--muted','--link','--surface','--bg','--brand'];
@@ -38,8 +39,8 @@ try {
     });
     assert.equal(fontSizes.actual, fontSizes.normal * 2);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme} doubled text overflows page`);
-    await page.locator('.rk-apply').focus();
-    const focused = await page.evaluate(() => ({ button:document.activeElement.classList.contains('rk-apply'), outline:getComputedStyle(document.activeElement).outlineWidth }));
+    await page.locator('.rk-tabs button').first().focus();
+    const focused = await page.evaluate(() => ({ button:document.activeElement.closest('.rk-tabs') !== null, outline:getComputedStyle(document.activeElement).outlineWidth }));
     assert.ok(focused.button && parseFloat(focused.outline) >= 2);
     await page.screenshot({ path:`${out}/390-${theme}-200pct-text.png`, fullPage:true });
     checks.push({ theme, check:'200% actual computed text sizes / page width / visible focus', fontSizes, focused, status:'PASS' });
@@ -48,6 +49,7 @@ try {
   for (const theme of ['light','dark']) {
     const context = await browser.newContext({ viewport:{ width:390,height:844 } });
     await context.addInitScript(t => localStorage.setItem('cm-theme',t), theme);
+    await context.route('https://dapi.kakao.com/**',r=>r.fulfill({contentType:'text/javascript',body:readFileSync(new URL('./mock-kakao-sdk.js',import.meta.url),'utf8')}));
     const page = await context.newPage();
     await page.goto(`${base}/?screen=rankings`);
     await page.getByRole('button',{name:'카카오로 로그인'}).waitFor();

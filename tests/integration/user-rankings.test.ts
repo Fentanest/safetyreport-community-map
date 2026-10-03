@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   createUser,
+  signIn,
   deleteUsers,
   type Fact,
   insertFacts,
@@ -438,7 +439,12 @@ describe.skipIf(!enabled)(
           `select has_table_privilege('authenticated','private.community_report_facts','select')`,
         ),
       ).toBe("f");
-      const svc = serviceClient(stackKeys());
+      // This case tests consent denial for a CURRENT GoTrue session; earlier lifecycle cases
+      // may invalidate the original session. Verify a fresh session instead of weakening403.
+      const currentKeys=stackKeys();await signIn(a,currentKeys.ANON_KEY);
+      const svc = serviceClient(currentKeys);
+      const verified=await svc.auth.getUser(a.token);
+      expect(verified.error).toBeNull();expect(verified.data.user?.id).toBe(a.id);
       const h = createRankingHandler({
         allowedOrigins: [],
         jwtIssuer: null,
@@ -460,7 +466,8 @@ describe.skipIf(!enabled)(
         new Request("http://local/user-rankings" + query, {
           headers: { authorization: `Bearer ${a.token}` },
         });
-      expect((await h(request())).status).toBe(403);
+      const denied=await h(request());
+      expect(denied.status,JSON.stringify(await denied.json())).toBe(403);
       expect((await h(request("?user_id=" + b.id))).status).toBe(400);
     });
   },
