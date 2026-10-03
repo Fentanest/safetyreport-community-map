@@ -66,6 +66,7 @@ export function regionName(code: string | null): string {
 }
 
 /** S04: which screen the URL asks for (a page parameter, never part of the statistics scope) */
-export function screenFromSearch(search: string): 'dashboard' | 'statistics' {
-  return new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('screen') === 'statistics' ? 'statistics' : 'dashboard';
+export function screenFromSearch(search: string): 'dashboard' | 'statistics' | 'rankings' {
+  const screen = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('screen');
+  return screen === 'statistics' || screen === 'rankings' ? screen : 'dashboard';
 }

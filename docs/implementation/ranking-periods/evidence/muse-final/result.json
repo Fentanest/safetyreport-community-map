@@ -1,0 +1,982 @@
+{
+  "environment": "LOCAL Chrome/GoTrue/SQL RPC, synthetic users/reports; adjacent Kakao SDK mocked; no deployment",
+  "browser": "154.0.8037.92",
+  "checks": [
+    {
+      "name": "1440/light entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/light no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1440/dark no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/light no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "2560/dark no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile 200% rendered font no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile 200% titles retain readable line spacing",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark entry 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark entry 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark entry 최다 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark entry 월별 최다 신고자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark entry 월별 최다 과태료 수용자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark entry 월별 불운자",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark July title and own summary",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark no horizontal page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "draft controls retain old applied heading before apply",
+      "status": "PASS"
+    },
+    {
+      "name": "July reporters complete cohort N=2, winner N=5 with joint rank",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 최다 과태료 수용자 preserves selected July",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 최다 과태료 수용자 same scope and N with fraction 1/2",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 최다 과태료 수용자 fraction rendered",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 불운자 preserves selected July",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 불운자 same scope and N with fraction 1/2",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 불운자 fraction rendered",
+      "status": "PASS"
+    },
+    {
+      "name": "monthly unlucky rejected_count supported separately",
+      "status": "PASS"
+    },
+    {
+      "name": "monthly unlucky rejected_rate supported separately",
+      "status": "PASS"
+    },
+    {
+      "name": "monthly unlucky partial_count supported separately",
+      "status": "PASS"
+    },
+    {
+      "name": "monthly unlucky partial_rate supported separately",
+      "status": "PASS"
+    },
+    {
+      "name": "historical month page2 preserves global own rank",
+      "status": "PASS"
+    },
+    {
+      "name": "cumulative unlucky includes all months and keeps metric",
+      "status": "PASS"
+    },
+    {
+      "name": "cumulative unlucky custom range equals July cohort",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 최다 신고자 current month same N=50 and progress label",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 최다 과태료 수용자 current month same N=50 and progress label",
+      "status": "PASS"
+    },
+    {
+      "name": "월별 불운자 current month same N=50 and progress label",
+      "status": "PASS"
+    },
+    {
+      "name": "report-date changes whole July cohort N=1 and R=0",
+      "status": "PASS"
+    },
+    {
+      "name": "refresh preserves historical month/metric/date basis",
+      "status": "PASS"
+    },
+    {
+      "name": "route/back/forward preserves selected historical month",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard activates monthly entry and preserves filters",
+      "status": "PASS"
+    },
+    {
+      "name": "actual ranking JS/console errors absent",
+      "status": "PASS"
+    }
+  ],
+  "responses": [
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "fines",
+        "metric": "fine_rate",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 1,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4762
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "rejected_rate",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 1,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4686
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 13,
+        "numerator": 1,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4660
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "rejected_rate",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 1,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4686
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "partial_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 7,
+        "numerator": 1,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4644
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "partial_rate",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 1,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4767
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 20,
+        "numerator": 2,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4640
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "partial_rate",
+        "period": "all",
+        "start": null,
+        "end": null,
+        "month": null,
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 30,
+      "own": {
+        "rank": 15,
+        "numerator": 14,
+        "denominator": 53,
+        "reports": 53,
+        "fine": 14,
+        "rejected": 15,
+        "partial": 14
+      },
+      "bytes": 5000
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "partial_rate",
+        "period": "range",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": null,
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 1,
+        "denominator": 2,
+        "reports": 2,
+        "fine": 1,
+        "rejected": 1,
+        "partial": 1
+      },
+      "bytes": 4762
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "month",
+        "start": "2026-10-01",
+        "end": "2026-10-31",
+        "month": "2026-10",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": true
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 50,
+        "denominator": 50,
+        "reports": 50,
+        "fine": 13,
+        "rejected": 13,
+        "partial": 13
+      },
+      "bytes": 4734
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "fines",
+        "metric": "fine_count",
+        "period": "month",
+        "start": "2026-10-01",
+        "end": "2026-10-31",
+        "month": "2026-10",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": true
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 13,
+        "denominator": 50,
+        "reports": 50,
+        "fine": 13,
+        "rejected": 13,
+        "partial": 13
+      },
+      "bytes": 4686
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "month",
+        "start": "2026-10-01",
+        "end": "2026-10-31",
+        "month": "2026-10",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": true
+      },
+      "participants": 26,
+      "own": {
+        "rank": 1,
+        "numerator": 13,
+        "denominator": 50,
+        "reports": 50,
+        "fine": 13,
+        "rejected": 13,
+        "partial": 13
+      },
+      "bytes": 4693
+    },
+    {
+      "status": 200,
+      "cache_control": "private, no-store, max-age=0",
+      "scope": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "month",
+        "start": "2023-07-01",
+        "end": "2023-07-31",
+        "month": "2023-07",
+        "date_basis": "report_date",
+        "category": "all",
+        "min_reports": 1,
+        "timezone": "Asia/Seoul",
+        "in_progress": false
+      },
+      "participants": 26,
+      "own": {
+        "rank": 13,
+        "numerator": 0,
+        "denominator": 1,
+        "reports": 1,
+        "fine": 1,
+        "rejected": 0,
+        "partial": 1
+      },
+      "bytes": 4657
+    }
+  ],
+  "errors": [],
+  "failure": null
+}

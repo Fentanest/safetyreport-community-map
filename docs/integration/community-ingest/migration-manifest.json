@@ -316,6 +316,24 @@
     "202609300200",
     "202610010100"
    ]
+  },
+  {
+   "version": "202610030100",
+   "repo": "map",
+   "path": "supabase/migrations/202610030100_user_rankings.sql",
+   "sha256": "1678cf63321eb640b5a7d8f4ad2604e88aedaf9d5c0878df793f82db387f3372",
+   "depends_on": [
+    "202610020100"
+   ]
+  },
+  {
+   "version": "202610030200",
+   "repo": "map",
+   "path": "supabase/migrations/202610030200_user_ranking_periods.sql",
+   "sha256": "5cefd0ed18d9dfbf3d6ee6d9ece642a0a99534fce76c14925abe390fedf312ce",
+   "depends_on": [
+    "202610030100"
+   ]
   }
  ],
  "functions": [
@@ -338,7 +356,8 @@
     "contracts/regions/regions-20260701.json",
     "src/domain/public.ts",
     "src/domain/statistics.ts",
-    "src/domain/tableSort.ts"
+    "src/domain/tableSort.ts",
+    "src/domain/managerNames.ts"
    ]
   },
   {
@@ -403,7 +422,8 @@
     "src/domain/personal.ts",
     "src/domain/public.ts",
     "src/domain/statistics.ts",
-    "src/domain/tableSort.ts"
+    "src/domain/tableSort.ts",
+    "src/domain/managerNames.ts"
    ]
   },
   {
@@ -414,6 +434,16 @@
     "contracts/my-reports/types.ts",
     "server/myReports/cursor.ts",
     "server/myReports/handler.ts",
+    "server/viewerAuth.ts"
+   ]
+  },
+  {
+   "name": "user-rankings",
+   "repo": "map",
+   "verify_jwt": true,
+   "shared": [
+    "contracts/user-rankings/types.ts",
+    "server/rankings/handler.ts",
     "server/viewerAuth.ts"
    ]
   }

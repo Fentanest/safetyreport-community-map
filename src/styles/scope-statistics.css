@@ -124,12 +124,13 @@ html { scroll-padding-top: var(--scroll-top-inset, calc(var(--topbar-h) + 12px))
 .pivot-corner { z-index: 3 !important; background: var(--raised) !important; }
 .pivot-col-member { display: block; color: var(--text); font-weight: 650; }
 .pivot-sort { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; text-align: right; }
-.pivot-sort[aria-sort]::after { content: " ▾"; }
-.pivot-sort[aria-sort="ascending"]::after { content: " ▴"; }
+.pivot-table th[aria-sort] .pivot-sort::after { content: " ▾"; }
+.pivot-table th[aria-sort="ascending"] .pivot-sort::after { content: " ▴"; }
 .pivot-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pivot-table .pivot-total { background: var(--raised); font-weight: 650; }
 .pivot-table tfoot td, .pivot-table tfoot th { border-top: 2px solid var(--border); font-weight: 700; }
 .pivot-table .mine-col { color: var(--text-secondary); }
+.pivot-cell { font: inherit; font-variant-numeric: inherit; }
 .pivot-row { text-align: left; white-space: normal; }
 .pivot-pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 0 16px; }
 .pivot-chart { padding: 0 8px; }

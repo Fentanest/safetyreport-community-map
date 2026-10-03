@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 function loadPlaywright() {
-  for (const candidate of ['playwright', '/opt/node22/lib/node_modules/playwright']) {
+  for (const candidate of ['playwright', '/opt/node22/lib/node_modules/playwright', '/tmp/cm-live-browser/node_modules/playwright-core', '/tmp/opencode/m0/node_modules/playwright-core']) {
     try { return require(candidate); } catch { /* next */ }
   }
   throw new Error('playwright not found (local or /opt/node22 global)');

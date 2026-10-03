@@ -1,0 +1,20 @@
+{
+  "steps": [
+    {
+      "id": "E3b-oob",
+      "ok": false,
+      "detail": "adv=5 last=\"6 / 6쪽 이전 다음\" capLast=\"담당자 116명 · 정렬 답변 · 건수 많은 순\" region→세종특별자치시 after=\"6 / 1쪽 이전 다음\" empty=\"조건에 맞는 기관·담당자가 없습니다.\" capAfter=\"담당자 0명 · 정렬 답변 · 건수 많은 순\""
+    }
+  ],
+  "issues": [
+    {
+      "id": "R-PAGE-OOB",
+      "severity": "medium",
+      "repro": "entities last page + scope narrows total",
+      "expected": "page clamps to 1/last with rows",
+      "actual": "pager shows 6 / 1쪽\n이전\n다음 (current beyond bounds)",
+      "evidence": "E3b-oob.png",
+      "fileHint": "src/components/EntityTable.tsx (no scopeKey page reset, cf LawTable.tsx:40)"
+    }
+  ]
+}

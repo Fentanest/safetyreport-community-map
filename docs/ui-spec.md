@@ -116,3 +116,10 @@ Kakao failure, API429, offline cached, stale dataset, source update, invalid ran
 결측은 '—' + 사유, 실제0은0. loading 시 전 화면 opacity0.3 깜빡임 금지.
 ARIA·tab order·focus trap·Esc dismissal, 44px touch targets, contrast 검수. 지도와 동등한 지역/지점 목록 탐색을 제공.
 reduced-motion과 시스템 테마 변경 대응. 그래프에 이미지처럼 의미 없는 alt만 달지 말고 값 표 제공.
+
+## 14. 유저 랭킹 기간 선택
+
+기존 페이지·panel·primary·focus·텍스트 토큰을 사용한다. 여섯 진입점은 fieldset 안에서 누적·기간별/월별 두 그룹으로 배치하며
+선택 상태는 `aria-pressed`로도 알린다. 기간 컨트롤과 조회 달은 세 테마 공통이다. 적용 전 초안과 표시된 결과 범위를 구분한다.
+모바일은 컨트롤·컴팩트 표를 재배치하고 UUID는 줄임/전체 확인·복사를 제공한다. 전체 페이지의 가로 넘침을 허용하지 않는다.
+조회월을 바꿀 때 제목과 실제 API scope가 함께 바뀌고 과거월을 ‘이달’로 표시하지 않는다. 큰 글꼴과 라이트/다크도 검수한다.

@@ -12,9 +12,9 @@ describe('deployed Edge function authentication configuration', () => {
     const flags = Object.fromEntries(manifest.functions.map(fn => [fn.name, fn.verify_jwt]));
     expect(flags).toEqual({
       'public-analytics': true, 'my-analytics': true, 'community-ingest': true,
-      'community-account': true, 'community-auth-relay': false, 'my-reports': true,
+      'community-account': true, 'community-auth-relay': false, 'my-reports': true, 'user-rankings': true,
     });
-    for (const name of ['public-analytics', 'my-analytics', 'community-ingest', 'my-reports']) {
+    for (const name of ['public-analytics', 'my-analytics', 'community-ingest', 'my-reports', 'user-rankings']) {
       expect(config).toMatch(new RegExp(`\\[functions\\.${name}\\]\\s+verify_jwt = true`));
     }
   });

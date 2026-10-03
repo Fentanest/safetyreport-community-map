@@ -1,0 +1,24 @@
+{
+  "results": [
+    {
+      "name": "gate light contrast h1 = 16.74",
+      "status": "PASS",
+      "detail": "rgb(243, 243, 244) on rgb(19,19,20)"
+    },
+    {
+      "name": "gate light contrast main p, .cm-panel p, div[class] p = 16.74",
+      "status": "PASS",
+      "detail": "rgb(243, 243, 244) on rgb(19,19,20)"
+    },
+    {
+      "name": "gate light contrast button = 14.2",
+      "status": "PASS",
+      "detail": "rgb(25, 22, 0) on rgb(254,229,0)"
+    },
+    {
+      "name": "gate console/network notes",
+      "status": "PASS",
+      "detail": "{\"errs\":[],\"net\":[]}"
+    }
+  ]
+}

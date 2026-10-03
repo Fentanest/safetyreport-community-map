@@ -1,0 +1,125 @@
+{
+  "started": "2026-10-03T05:51:14.830Z",
+  "commit": "49c4c6d",
+  "steps": [
+    {
+      "id": "R1",
+      "ok": true,
+      "detail": "1920 dark sections captured"
+    },
+    {
+      "id": "R2-1440-dark",
+      "ok": true,
+      "detail": "no page-x-overflow"
+    },
+    {
+      "id": "R2-2560-dark",
+      "ok": true,
+      "detail": "no page-x-overflow"
+    },
+    {
+      "id": "R2-1920-light",
+      "ok": true,
+      "detail": "no page-x-overflow"
+    },
+    {
+      "id": "R2-1440-light",
+      "ok": true,
+      "detail": "no page-x-overflow"
+    },
+    {
+      "id": "R2-nav-390-dark",
+      "ok": true,
+      "detail": "7 tabs widths=54/54/54/54/54/54/56 pageOverflow=false"
+    },
+    {
+      "id": "R2-navdetail-390-dark",
+      "ok": true,
+      "detail": "{\"n\":7,\"labels\":[\"지도\",\"법규\",\"기관\",\"추이\",\"지역\",\"통계\",\"유저 랭킹\"],\"widths\":[54,54,54,54,54,54,56],\"navOverflow\":false,\"pageOverflow\":false}"
+    },
+    {
+      "id": "R2-nav-390-light",
+      "ok": true,
+      "detail": "7 tabs widths=54/54/54/54/54/54/56 pageOverflow=false"
+    },
+    {
+      "id": "R2-navdetail-390-light",
+      "ok": true,
+      "detail": "{\"n\":7,\"labels\":[\"지도\",\"법규\",\"기관\",\"추이\",\"지역\",\"통계\",\"유저 랭킹\"],\"widths\":[54,54,54,54,54,54,56],\"navOverflow\":false,\"pageOverflow\":false}"
+    },
+    {
+      "id": "R2-nav-360-dark",
+      "ok": true,
+      "detail": "7 tabs widths=49/49/49/49/49/49/56 pageOverflow=false"
+    },
+    {
+      "id": "R2-navdetail-360-dark",
+      "ok": true,
+      "detail": "{\"n\":7,\"labels\":[\"지도\",\"법규\",\"기관\",\"추이\",\"지역\",\"통계\",\"유저 랭킹\"],\"widths\":[49,49,49,49,49,49,56],\"navOverflow\":false,\"pageOverflow\":false}"
+    },
+    {
+      "id": "R3-draft",
+      "ok": true,
+      "detail": "draft does not move panels"
+    },
+    {
+      "id": "R3-apply",
+      "ok": true,
+      "detail": "url changed: true"
+    },
+    {
+      "id": "R3-back",
+      "ok": true,
+      "detail": "after back: restored"
+    },
+    {
+      "id": "R3-basis",
+      "ok": true,
+      "detail": "switched to 신고일; trend head: 신고월별 처리결과 건수 처리결과 비율 신고(모두 답변 확인) 이번 달은 진행 중 일부 기간인 달 있음 이 조"
+    },
+    {
+      "id": "R4-kind0",
+      "ok": true,
+      "detail": "default 기관"
+    },
+    {
+      "id": "R4-kind1",
+      "ok": true,
+      "detail": "manager header: 담당자 · 소속 기관\t|답변(건)|건수 많은 순|\t|수용률|\t|불수용률|\t|과태료|\t|답변까지||"
+    },
+    {
+      "id": "R4-search",
+      "ok": true,
+      "detail": "caption after search: 담당자 116명 · 정렬 답변 · 건수 많은 순"
+    },
+    {
+      "id": "R4-sort",
+      "ok": true,
+      "detail": "sortable cols>0 first=\"답변(건)\n건수 많은 순\" aria-sort cells=5"
+    },
+    {
+      "id": "R4-paging",
+      "ok": true,
+      "detail": "1 / 6쪽 이전 다음 → 2 / 6쪽 이전 다음"
+    },
+    {
+      "id": "R4-colpicker",
+      "ok": true,
+      "detail": "esc closes col menu"
+    },
+    {
+      "id": "R5-stale",
+      "ok": true,
+      "detail": "rows cleared/loading during switch"
+    },
+    {
+      "id": "R5-midhead",
+      "ok": true,
+      "detail": "담당자 · 소속 기관\t|답변(건)|건수 많은 순|\t|수용률|\t|불수용률|\t|과태료|\t|답변까지||"
+    }
+  ],
+  "issues": [],
+  "console": {},
+  "network": {},
+  "finished": "2026-10-03T05:52:38.256Z"
+}

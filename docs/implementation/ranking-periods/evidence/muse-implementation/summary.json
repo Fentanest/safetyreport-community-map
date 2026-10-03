@@ -1,0 +1,279 @@
+{
+  "browser": "154.0.8037.92",
+  "data": "real local Postgres + GoTrue JWT + Node handler; synthetic users/reports only; Kakao SDK mocked (map ancillary)",
+  "checks": [
+    {
+      "name": "1920/dark entry visible",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark six preset buttons",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/dark me badge",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light entry visible",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light six preset buttons",
+      "status": "PASS"
+    },
+    {
+      "name": "1920/light me badge",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark entry visible",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark six preset buttons",
+      "status": "PASS"
+    },
+    {
+      "name": "390/dark me badge",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light entry visible",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light six preset buttons",
+      "status": "PASS"
+    },
+    {
+      "name": "390/light me badge",
+      "status": "PASS"
+    },
+    {
+      "name": "cumulative reporters heading",
+      "status": "PASS"
+    },
+    {
+      "name": "cumulative fines heading",
+      "status": "PASS"
+    },
+    {
+      "name": "cumulative unlucky heading (not forced month)",
+      "status": "PASS"
+    },
+    {
+      "name": "cumulative unlucky uses period=all scope",
+      "status": "PASS"
+    },
+    {
+      "name": "july reporters title",
+      "status": "PASS"
+    },
+    {
+      "name": "july scope 2023-07-01—31",
+      "status": "PASS"
+    },
+    {
+      "name": "month preserved across monthly themes",
+      "status": "PASS"
+    },
+    {
+      "name": "july fines title",
+      "status": "PASS"
+    },
+    {
+      "name": "july fines same cohort",
+      "status": "PASS"
+    },
+    {
+      "name": "july unlucky title",
+      "status": "PASS"
+    },
+    {
+      "name": "monthly button text stable",
+      "status": "PASS"
+    },
+    {
+      "name": "unlucky metric rejected_count renders",
+      "status": "PASS"
+    },
+    {
+      "name": "unlucky metric rejected_rate renders",
+      "status": "PASS"
+    },
+    {
+      "name": "unlucky metric partial_count renders",
+      "status": "PASS"
+    },
+    {
+      "name": "unlucky metric partial_rate renders",
+      "status": "PASS"
+    },
+    {
+      "name": "rate shows fraction",
+      "status": "PASS"
+    },
+    {
+      "name": "unlucky range heading stays cumulative",
+      "status": "PASS"
+    },
+    {
+      "name": "reporters can be month period",
+      "status": "PASS"
+    },
+    {
+      "name": "current month title 이달의",
+      "status": "PASS"
+    },
+    {
+      "name": "refresh preserves rk params",
+      "status": "PASS"
+    },
+    {
+      "name": "refresh keeps july title",
+      "status": "PASS"
+    },
+    {
+      "name": "keyboard focus moves",
+      "status": "PASS"
+    },
+    {
+      "name": "large font no page overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "ranking responses bounded",
+      "status": "PASS"
+    }
+  ],
+  "console_errors": [],
+  "network_themes": [
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "fines/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/all"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "fines/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/range"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "unlucky/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/month"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "query": "reporters/month"
+    }
+  ],
+  "titles": {
+    "cumulative-reporters": "최다 신고자",
+    "cumulative-fines": "최다 과태료 수용자",
+    "cumulative-unlucky": "최다 불운자",
+    "monthly-reporters": "2023년 7월의 최다 신고자",
+    "monthly-fines": "2023년 7월의 최다 과태료 수용자",
+    "monthly-unlucky": "2023년 7월의 불운자"
+  },
+  "julyRows": 20,
+  "live": "NOT_RUN; no deploy"
+}

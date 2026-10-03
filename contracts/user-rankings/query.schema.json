@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "theme": {
+      "default": "reporters",
+      "type": "string",
+      "enum": [
+        "reporters",
+        "fines",
+        "unlucky"
+      ]
+    },
+    "metric": {
+      "default": "reports_count",
+      "type": "string",
+      "enum": [
+        "reports_count",
+        "fine_count",
+        "fine_rate",
+        "rejected_count",
+        "rejected_rate",
+        "partial_count",
+        "partial_rate"
+      ]
+    },
+    "period": {
+      "default": "all",
+      "type": "string",
+      "enum": [
+        "all",
+        "range",
+        "month"
+      ]
+    },
+    "start": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "end": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "month": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "date_basis": {
+      "default": "completed_date",
+      "type": "string",
+      "enum": [
+        "completed_date",
+        "report_date"
+      ]
+    },
+    "category": {
+      "default": "all",
+      "type": "string",
+      "enum": [
+        "all",
+        "traffic",
+        "parking",
+        "other"
+      ]
+    },
+    "min_reports": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "page": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "page_size": {
+      "default": 20,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50
+    },
+    "expected_version": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "theme",
+    "metric",
+    "period",
+    "start",
+    "end",
+    "month",
+    "date_basis",
+    "category",
+    "min_reports",
+    "page",
+    "page_size",
+    "expected_version"
+  ],
+  "additionalProperties": false
+}

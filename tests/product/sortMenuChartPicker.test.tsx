@@ -94,6 +94,19 @@ describe('sort menu: exact values, words, visible values only', () => {
     const r = [row('x', 333, 1000), row('y', 1, 3), row('z', 3333, 10000)]; // 33.30% · 33.33…% · 33.33%
     expect(order(r, { column: 'fine', value: 'rate', dir: 'desc' })).toEqual(['y', 'z', 'x']);
   });
+  it('keeps safe-integer fractions exact when cross-products exceed Number precision', () => {
+    const r = [row('A-lower', 999999999, 1000000000), row('Z-higher', 1000000000, 1000000001)];
+    expect(order(r, { column: 'fine', value: 'rate', dir: 'desc' })).toEqual(['Z-higher', 'A-lower']);
+    expect(order(r, { column: 'fine', value: 'rate', dir: 'asc' })).toEqual(['A-lower', 'Z-higher']);
+    const ties = [row('Z', 2000000000, 4000000000), row('A', 1000000000, 2000000000), row('null', 0, 0)];
+    for (const dir of ['asc', 'desc'] as const)
+      expect(order(ties, { column: 'fine', value: 'rate', dir })).toEqual(['A', 'Z', 'null']);
+  });
+  it('fractional durations still sort numerically without integer coercion', () => {
+    const r = [row('A', 0, 1, { duration: { count: 2, median_days: 1.5 } as SortableRow['duration'] }),
+      row('Z', 0, 1, { duration: { count: 2, median_days: 1.75 } as SortableRow['duration'] })];
+    expect(order(r, { column: 'duration', value: 'median', dir: 'desc' })).toEqual(['Z', 'A']);
+  });
   it('a real 0% is a value; no denominator / unreported sorts after it in both directions', () => {
     const r = [row('zero', 0, 5), row('none', 0, 0), row('unknown', null, 5), row('half', 1, 2)];
     expect(order(r, { column: 'fine', value: 'rate', dir: 'desc' })).toEqual(['half', 'zero', 'none', 'unknown']);

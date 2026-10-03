@@ -99,3 +99,9 @@ DB 마이그레이션 **없음**(맞춤 통계는 기존 `internal_analytics_v2_
 3. smoke: 로그인 → 지도 핀 선택/다시 눌러 해제/Esc → 서울 선택 시 오른쪽 ‘선택 범위’ → ‘이 조건으로 통계 만들기’ → 표↔그래프 → 비교 대상 선택 →
    월별 추이 ‘처리결과 비율’ 네 지표 체크 → 느린 조회에서 상단 상태 표시.
 운영 적용·실카카오 SDK는 이 세션에서 하지 않았다(**운영 미검증**). Edge를 먼저 올리지 않으면 새 프런트의 맞춤 통계는 404로 ‘통계를 불러오지 못했습니다’를 보이고 지도는 그대로 동작한다.
+
+## UUID 유저 랭킹 (2026-10-03, 적용하지 않음)
+
+선행 composed migrations → `202610030100_user_rankings.sql` → 인증 전용 `user-rankings` Edge(deno.json 포함) →
+실제 자료·철회·페이지 smoke → Pages live build/scan/deploy. 새 secret·계정 변경 없음.
+세부 적용/롤백/미검증 항목은 [docs/user-rankings.md](user-rankings.md). 이번 작업은 로컬 커밋만 한다.

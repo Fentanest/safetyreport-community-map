@@ -1,0 +1,353 @@
+{
+  "stage": "muse-final",
+  "commit": "c99bee6",
+  "environment": "local synthetic fixtures; mocked Kakao; E2E_PORT=5141",
+  "results": [
+    {
+      "id": "entities-IME-during",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "entities-IME-commit",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "id": "entities-IME-final-value",
+      "actual": "경찰",
+      "expected": "경찰",
+      "pass": true
+    },
+    {
+      "id": "entities-no-old-rows-new-kind",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "entities-no-stale-total",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "entities-no-old-rows-failure",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "entities-retry-restores-rows",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "entities-IME-during",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "entities-IME-commit",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "id": "entities-IME-final-value",
+      "actual": "경찰",
+      "expected": "경찰",
+      "pass": true
+    },
+    {
+      "id": "laws-IME-during",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "laws-IME-commit",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "id": "laws-IME-final-value",
+      "actual": "도로",
+      "expected": "도로",
+      "pass": true
+    },
+    {
+      "id": "laws-no-old-rows-new-search",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "laws-error-not-no-results",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "laws-error-retry-present",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "id": "laws-retry-restores-rows",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "statistics/candidates-IME-during",
+      "actual": 0,
+      "expected": 0,
+      "pass": true
+    },
+    {
+      "id": "statistics/candidates-IME-commit",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "id": "statistics/candidates-IME-final-value",
+      "actual": "경찰",
+      "expected": "경찰",
+      "pass": true
+    },
+    {
+      "id": "picker-tab-trapped",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "picker-shifttab-trapped",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "picker-focus-ring",
+      "actual": {
+        "outline": "2px",
+        "shadow": "none"
+      },
+      "expected": {
+        "outline": "2px",
+        "shadow": "none"
+      },
+      "pass": true,
+      "note": true
+    },
+    {
+      "id": "picker-focus-restored-esc",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "picker-focus-restored-cancel",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "picker-focus-restored-apply",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "picker-kind-switch",
+      "actual": "NOT_RUN: no kind radio",
+      "expected": "NOT_RUN: no kind radio",
+      "pass": true,
+      "note": true
+    },
+    {
+      "id": "picker-error-retry",
+      "actual": false,
+      "expected": true,
+      "pass": false
+    },
+    {
+      "id": "pivot-cell-keyboard-narrow-enter",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "id": "pivot-cell-keyboard-narrow-space",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "id": "pivot-aria-sort-on-th",
+      "actual": false,
+      "expected": true,
+      "pass": false
+    },
+    {
+      "id": "pivot-aria-sort-detail",
+      "actual": {
+        "thSort": 0,
+        "buttonSort": 0
+      },
+      "expected": {
+        "thSort": 0,
+        "buttonSort": 0
+      },
+      "pass": true,
+      "note": true
+    },
+    {
+      "id": "entities-page-two-reached",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "entities-new-scope-page-one",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "entities-new-scope-not-empty",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "scope-chart-pagination",
+      "actual": "NOT_RUN: no chart pager selector matched",
+      "expected": "NOT_RUN: no chart pager selector matched",
+      "pass": true,
+      "note": true
+    },
+    {
+      "id": "viewport-1920-light",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-1920-light",
+      "actual": "light",
+      "expected": "light",
+      "pass": true
+    },
+    {
+      "id": "viewport-1440-light",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-1440-light",
+      "actual": "light",
+      "expected": "light",
+      "pass": true
+    },
+    {
+      "id": "viewport-2560-light",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-2560-light",
+      "actual": "light",
+      "expected": "light",
+      "pass": true
+    },
+    {
+      "id": "viewport-390-light",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-390-light",
+      "actual": "light",
+      "expected": "light",
+      "pass": true
+    },
+    {
+      "id": "large-text-picker-light",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "viewport-1920-dark",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-1920-dark",
+      "actual": "dark",
+      "expected": "dark",
+      "pass": true
+    },
+    {
+      "id": "viewport-1440-dark",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-1440-dark",
+      "actual": "dark",
+      "expected": "dark",
+      "pass": true
+    },
+    {
+      "id": "viewport-2560-dark",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-2560-dark",
+      "actual": "dark",
+      "expected": "dark",
+      "pass": true
+    },
+    {
+      "id": "viewport-390-dark",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "id": "theme-390-dark",
+      "actual": "dark",
+      "expected": "dark",
+      "pass": true
+    },
+    {
+      "id": "large-text-picker-dark",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "unexpectedErrors": []
+}
