@@ -1,0 +1,74 @@
+{
+  "origin": "http://127.0.0.1:5196",
+  "checks": [
+    {
+      "name": "h1-participant-ranking",
+      "status": "PASS",
+      "detail": "참여자 랭킹"
+    },
+    {
+      "name": "three-tabs",
+      "status": "PASS",
+      "detail": "신고 랭킹|과태료 랭킹|불운 랭킹"
+    },
+    {
+      "name": "tab-unlucky-immediate",
+      "status": "PASS",
+      "detail": "rk_theme=unlucky in URL"
+    },
+    {
+      "name": "unlucky-partial-rate",
+      "status": "PASS",
+      "detail": "rk_metric=partial_rate in URL"
+    },
+    {
+      "name": "category-immediate",
+      "status": "PASS",
+      "detail": "rk_category=traffic in URL"
+    },
+    {
+      "name": "month-step-immediate",
+      "status": "PASS",
+      "detail": "month 2026-10 -> 2026-09"
+    },
+    {
+      "name": "range-query-needs-dates",
+      "status": "PASS",
+      "detail": "직접 범위를 선택하면 시작일과 종료일을 모두 입력해 주세요."
+    },
+    {
+      "name": "rankings-fetch-attempt-state",
+      "status": "PASS",
+      "detail": "error panel (expected: no rankings route on e2e stack)"
+    },
+    {
+      "name": "mobile-no-overflow",
+      "status": "PASS",
+      "detail": "no page-level horizontal overflow at 390px"
+    },
+    {
+      "name": "mobile-tabs-visible",
+      "status": "PASS",
+      "detail": "3 tabs rendered at 390px"
+    },
+    {
+      "name": "statistics-renders",
+      "status": "PASS",
+      "detail": "맞춤 통계 renders without crash"
+    }
+  ],
+  "consoleErrors": {
+    "desktop": [],
+    "mobile": [],
+    "statistics": [
+      "flushSync was called from inside a lifecycle method. React cannot flush when React is already rendering. Consider moving this call to a scheduler task or micro task.",
+      "flushSync was called from inside a lifecycle method. React cannot flush when React is already rendering. Consider moving this call to a scheduler task or micro task."
+    ]
+  },
+  "requests": {
+    "statistics/catalog": 1,
+    "meta": 1,
+    "dashboard": 1,
+    "statistics/query": 1
+  }
+}

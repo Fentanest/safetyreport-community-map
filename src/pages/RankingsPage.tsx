@@ -1,7 +1,6 @@
 import { flushSync } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  METRIC_LABELS,
   kstMonth,
   monthBounds,
   querySchema,
@@ -9,13 +8,7 @@ import {
   type RankingResponse,
   type RankingRow,
 } from '../../contracts/user-rankings/types';
-import {
-  RANKING_PRESETS,
-  RANKING_THEME_METRICS,
-  rankingTitle,
-  selectRankingPreset,
-  type RankingPreset,
-} from '../domain/rankingPeriods';
+import { RANKING_THEME_METRICS } from '../domain/rankingPeriods';
 import { loadRankings } from '../data/rankings';
 import { useMapAuth } from '../hooks/usePersonal';
 import { ACCESS_CODES, PublicApiError, type AccessCode } from '../data/client';
@@ -25,13 +18,32 @@ import '../styles/rankings.css';
 type Theme = RankingQuery['theme'];
 type Metric = RankingQuery['metric'];
 
-const CUMULATIVE_PRESETS = RANKING_PRESETS.filter((p) => p.period !== 'month');
-const MONTHLY_PRESETS = RANKING_PRESETS.filter((p) => p.period === 'month');
+const TABS: Array<{ id: Theme; label: string }> = [
+  { id: 'reporters', label: '신고 랭킹' },
+  { id: 'fines', label: '과태료 랭킹' },
+  { id: 'unlucky', label: '불운 랭킹' },
+];
 
-function isPresetActive(draft: Draft, preset: RankingPreset): boolean {
-  if (draft.theme !== preset.theme) return false;
-  return preset.period === 'month' ? draft.period === 'month' : draft.period !== 'month';
-}
+const METRIC_TITLES: Record<Metric, string> = {
+  reports_count: '완료 신고가 많은 순위',
+  fine_count: '과태료 처분 건수가 많은 순위',
+  fine_rate: '과태료 처분율이 높은 순위',
+  rejected_count: '불수용 건수가 많은 순위',
+  rejected_rate: '불수용 비율이 높은 순위',
+  partial_count: '일부수용 건수가 많은 순위',
+  partial_rate: '일부수용 비율이 높은 순위',
+};
+
+/** Desktop value-column headers. Reporters use a single count column (no repeated count). */
+const VALUE_HEADERS: Record<Metric, string> = {
+  reports_count: '완료 신고',
+  fine_count: '과태료 처분',
+  fine_rate: '과태료 처분율',
+  rejected_count: '불수용 건수',
+  rejected_rate: '불수용 비율',
+  partial_count: '일부수용 건수',
+  partial_rate: '일부수용 비율',
+};
 
 const CATEGORY_LABEL: Record<RankingQuery['category'], string> = {
   all: '전체',
@@ -48,82 +60,56 @@ const BASIS_LABEL: Record<RankingQuery['date_basis'], string> = {
 const PAGE_SIZE = 20;
 const REVALIDATE_MS = 500;
 
-interface Draft {
-  theme: Theme;
-  metric: Metric;
-  period: RankingQuery['period'];
-  start: string;
-  end: string;
-  month: string;
-  date_basis: RankingQuery['date_basis'];
-  category: RankingQuery['category'];
-  min_reports: string;
-}
-
-function defaultDraft(): Draft {
+function defaultQuery(): RankingQuery {
   return {
     theme: 'reporters',
     metric: 'reports_count',
     period: 'all',
-    start: '',
-    end: '',
-    month: kstMonth(),
+    start: null,
+    end: null,
+    month: null,
     date_basis: 'completed_date',
     category: 'all',
-    min_reports: '1',
+    min_reports: 1,
+    page: 1,
+    page_size: PAGE_SIZE,
+    expected_version: null,
   };
 }
 
 const RK = (k: string) => `rk_${k}`;
 
-function draftFromSearch(search: string): Draft | null {
+function queryFromSearch(search: string): RankingQuery | null {
   const p = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
-  const has = ['theme', 'metric', 'period', 'start', 'end', 'month', 'basis', 'category', 'min'].some(
-    (k) => p.get(RK(k)) !== null,
-  );
-  if (!has) return null;
-  const base = defaultDraft();
-  const theme = p.get(RK('theme'));
-  const metric = p.get(RK('metric'));
-  const period = p.get(RK('period'));
-  const basis = p.get(RK('basis'));
-  const category = p.get(RK('category'));
-  const next: Draft = {
-    ...base,
-    theme: theme === 'reporters' || theme === 'fines' || theme === 'unlucky' ? theme : base.theme,
-    start: p.get(RK('start')) ?? '',
-    end: p.get(RK('end')) ?? '',
-    month: p.get(RK('month')) ?? base.month,
-    min_reports: p.get(RK('min')) ?? base.min_reports,
-  };
-  next.metric = (metric as Metric) ?? next.metric;
-  if (period === 'all' || period === 'range' || period === 'month') next.period = period;
-  next.date_basis = basis === 'report_date' || basis === 'completed_date' ? basis : next.date_basis;
-  next.category = category === 'all' || category === 'traffic' || category === 'parking' || category === 'other'
-    ? category
-    : next.category;
-  if (!RANKING_THEME_METRICS[next.theme].includes(next.metric)) next.metric = RANKING_THEME_METRICS[next.theme][0];
-  return next;
-}
-
-function draftToQuery(d: Draft, page: number, expectedVersion: string | null): RankingQuery | null {
-  const min = d.min_reports.trim() === '' ? 1 : Number(d.min_reports);
+  const keys = ['theme', 'metric', 'period', 'start', 'end', 'month', 'basis', 'category', 'min'];
+  if (!keys.some((k) => p.get(RK(k)) !== null)) return null;
   const raw = {
-    theme: d.theme,
-    metric: d.metric,
-    period: d.period,
-    start: d.period === 'range' ? d.start || null : null,
-    end: d.period === 'range' ? d.end || null : null,
-    month: d.period === 'month' ? d.month || null : null,
-    date_basis: d.date_basis,
-    category: d.category,
-    min_reports: Number.isInteger(min) ? min : d.min_reports,
-    page,
+    theme: p.get(RK('theme')) ?? undefined,
+    metric: p.get(RK('metric')) ?? undefined,
+    period: p.get(RK('period')) ?? undefined,
+    start: p.get(RK('start')) ?? null,
+    end: p.get(RK('end')) ?? null,
+    month: p.get(RK('month')) ?? null,
+    date_basis: p.get(RK('basis')) ?? undefined,
+    category: p.get(RK('category')) ?? undefined,
+    min_reports: p.get(RK('min')) ?? undefined,
+    page: 1,
     page_size: PAGE_SIZE,
-    expected_version: page > 1 ? expectedVersion : null,
+    expected_version: null,
   };
   const parsed = querySchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+  return parsed.success ? { ...parsed.data, page: 1, expected_version: null } : defaultQuery();
+}
+
+function shiftMonth(month: string, delta: number): string | null {
+  const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(month);
+  if (!m) return null;
+  let y = Number(m[1]);
+  let mo = Number(m[2]) + delta;
+  while (mo < 1) { mo += 12; y -= 1; }
+  while (mo > 12) { mo -= 12; y += 1; }
+  if (y < 1970 || y > 2100) return null;
+  return `${y}-${String(mo).padStart(2, '0')}`;
 }
 
 function shortUuid(u: string): string {
@@ -135,13 +121,36 @@ function formatValue(row: RankingRow, metric: Metric): string {
   return `${row.value.toLocaleString('ko-KR')}건`;
 }
 
+function periodPrefix(q: RankingQuery, nowMonth: string): string {
+  if (q.period === 'range' && q.start && q.end) return `${q.start} — ${q.end} · `;
+  if (q.period === 'month' && q.month) {
+    if (q.month === nowMonth) return '이달 · ';
+    const [y, m] = q.month.split('-');
+    return `${y}년 ${Number(m)}월 · `;
+  }
+  return '';
+}
+
 export default function RankingsPage({ active }: { active: boolean }) {
   const { auth, signIn, signOut } = useMapAuth();
-  const [draft, setDraft] = useState<Draft>(() => draftFromSearch(window.location.search) ?? defaultDraft());
-  const [applied, setApplied] = useState<RankingQuery | null>(() => {
-    const d = draftFromSearch(window.location.search);
-    return d ? draftToQuery(d, 1, null) : draftToQuery(defaultDraft(), 1, null);
+  const nowMonth = useMemo(() => kstMonth(), []);
+  const [applied, setApplied] = useState<RankingQuery>(() => queryFromSearch(window.location.search) ?? defaultQuery());
+  // Last metric per theme (in-memory only, never persisted). Returning to a theme
+  // restores its own metric — e.g. unlucky/partial_* survives a fines round-trip.
+  const [lastMetric, setLastMetric] = useState<Record<Theme, Metric>>(() => {
+    const q = queryFromSearch(window.location.search);
+    const base: Record<Theme, Metric> = { reporters: 'reports_count', fines: 'fine_count', unlucky: 'rejected_count' };
+    if (q && RANKING_THEME_METRICS[q.theme].includes(q.metric)) base[q.theme] = q.metric;
+    return base;
   });
+  // Range + advanced drafts. Consumed ONLY by their own 조회/적용 buttons.
+  // Immediate controls (tab/metric/category/month) always use APPLIED values.
+  const [rangeStart, setRangeStart] = useState(() => queryFromSearch(window.location.search)?.start ?? '');
+  const [rangeEnd, setRangeEnd] = useState(() => queryFromSearch(window.location.search)?.end ?? '');
+  const [periodView, setPeriodView] = useState<RankingQuery['period']>(() => (queryFromSearch(window.location.search) ?? defaultQuery()).period);
+  const [advBasis, setAdvBasis] = useState<RankingQuery['date_basis']>(() => (queryFromSearch(window.location.search) ?? defaultQuery()).date_basis);
+  const [advMin, setAdvMin] = useState(() => String((queryFromSearch(window.location.search) ?? defaultQuery()).min_reports));
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [response, setResponse] = useState<{ data: RankingResponse; viewer: string | null; queryKey: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message: string; status: number | null; retryAfter: number | null } | null>(null);
@@ -149,53 +158,299 @@ export default function RankingsPage({ active }: { active: boolean }) {
   const [accessDetails, setAccessDetails] = useState<PublicApiError['details']>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [reload, setReload] = useState(0);
+  const [nonce, setNonce] = useState(0);
   const [retryAt, setRetryAt] = useState<number | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<RankingQuery | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const retryAtRef = useRef(retryAt);
-  retryAtRef.current = retryAt;
-  const [copied, setCopied] = useState<string | null>(null);
+  const [dialogUuid, setDialogUuid] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<'idle' | 'done' | 'fail'>('idle');
 
   const abortRef = useRef<AbortController | null>(null);
+  const genRef = useRef(0);
   const appliedKey = useMemo(() => JSON.stringify(applied), [applied]);
   const viewer = auth.status === 'signed_in' ? auth.viewerId : null;
   const appliedRef = useRef(applied);
   appliedRef.current = applied;
+  const appliedKeyRef = useRef(appliedKey);
+  appliedKeyRef.current = appliedKey;
+  const activeRef = useRef(active);
+  activeRef.current = active;
   const authRef = useRef(auth.status);
   authRef.current = auth.status;
+  const pendingRef = useRef(pendingIntent);
+  pendingRef.current = pendingIntent;
+  const retryAtRef = useRef(retryAt);
+  retryAtRef.current = retryAt;
   const lastFetch = useRef(0);
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
-  // Hidden / logout: stop requests and clear the protected response. Guards below
-  // also refuse to render a previous account's numbers for even a moment.
+  // Committed period follows the applied query; the range editor never stages into it.
+  useEffect(() => { setPeriodView(applied.period); }, [applied.period]);
+  // Advanced drafts follow committed values while the panel is closed.
+  useEffect(() => {
+    if (!detailsOpen) {
+      setAdvBasis(applied.date_basis);
+      setAdvMin(String(applied.min_reports));
+    }
+  }, [applied.date_basis, applied.min_reports, detailsOpen]);
+
+  const writeUrl = useCallback((q: RankingQuery) => {
+    try {
+      const url = new URL(window.location.href);
+      const params = url.searchParams;
+      params.set(RK('theme'), q.theme);
+      params.set(RK('metric'), q.metric);
+      params.set(RK('period'), q.period);
+      if (q.period === 'range' && q.start && q.end) {
+        params.set(RK('start'), q.start);
+        params.set(RK('end'), q.end);
+      } else {
+        params.delete(RK('start'));
+        params.delete(RK('end'));
+      }
+      if (q.period === 'month' && q.month) params.set(RK('month'), q.month);
+      else params.delete(RK('month'));
+      params.set(RK('basis'), q.date_basis);
+      params.set(RK('category'), q.category);
+      params.set(RK('min'), String(q.min_reports));
+      window.history.replaceState(window.history.state, '', `${url.pathname}?${params.toString()}${url.hash}`);
+    } catch { /* URL sync is optional */ }
+  }, []);
+
+  /** Single commit path. Identical queries are dropped (no refetch of the selected tab/button). */
+  const commit = useCallback((next: RankingQuery) => {
+    const key = JSON.stringify({ ...next, page: 1, expected_version: null });
+    const curKey = JSON.stringify({ ...appliedRef.current, page: 1, expected_version: null });
+    if (key === curKey) return;
+    if (next.theme !== appliedRef.current.theme || next.metric !== appliedRef.current.metric) {
+      setLastMetric((m) => ({ ...m, [next.theme]: next.metric }));
+    }
+    setFormError(null);
+    setNotice(null);
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) {
+      // 429 cooldown: retain only the latest intent, no request storm.
+      setPendingIntent(next);
+      return;
+    }
+    setPendingIntent(null);
+    setApplied(next);
+    writeUrl(next);
+  }, [writeUrl]);
+
+  const commitImmediate = useCallback((patch: Partial<RankingQuery>) => {
+    const cur = appliedRef.current;
+    commit({ ...cur, ...patch, page: 1, expected_version: null });
+  }, [commit]);
+
+  const selectTab = useCallback((t: Theme) => {
+    const cur = appliedRef.current;
+    if (t === cur.theme) return;
+    commit({ ...cur, theme: t, metric: lastMetric[t], page: 1, expected_version: null });
+  }, [commit, lastMetric]);
+
+  const selectMetric = useCallback((m: Metric) => {
+    const cur = appliedRef.current;
+    if (m === cur.metric) return;
+    commit({ ...cur, metric: m, page: 1, expected_version: null });
+  }, [commit]);
+
+  const selectCategory = useCallback((c: RankingQuery['category']) => {
+    const cur = appliedRef.current;
+    if (c === cur.category) return;
+    commitImmediate({ category: c });
+  }, [commitImmediate]);
+
+  const selectPeriodAll = useCallback(() => {
+    const cur = appliedRef.current;
+    if (cur.period === 'all') return;
+    commit({ ...cur, period: 'all', start: null, end: null, month: null, page: 1, expected_version: null });
+  }, [commit]);
+
+  const selectPeriodMonth = useCallback(() => {
+    const cur = appliedRef.current;
+    const month = cur.period === 'month' && cur.month ? cur.month : kstMonth();
+    if (cur.period === 'month' && cur.month === month) return;
+    commit({ ...cur, period: 'month', month, start: null, end: null, page: 1, expected_version: null });
+  }, [commit]);
+
+  const stepMonth = useCallback((delta: number) => {
+    const cur = appliedRef.current;
+    const base = cur.period === 'month' && cur.month ? cur.month : kstMonth();
+    const next = shiftMonth(base, delta);
+    if (!next) return;
+    if (cur.period === 'month' && cur.month === next) return;
+    commit({ ...cur, period: 'month', month: next, start: null, end: null, page: 1, expected_version: null });
+  }, [commit]);
+
+  const applyMonthDirect = useCallback((value: string) => {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) return;
+    const cur = appliedRef.current;
+    if (cur.period === 'month' && cur.month === value) return;
+    commit({ ...cur, period: 'month', month: value, start: null, end: null, page: 1, expected_version: null });
+  }, [commit]);
+
+  const applyRange = useCallback(() => {
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) {
+      setFormError('요청이 많아 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    if (!rangeStart || !rangeEnd) {
+      setFormError('직접 범위를 선택하면 시작일과 종료일을 모두 입력해 주세요.');
+      return;
+    }
+    if (rangeStart > rangeEnd) {
+      setFormError('시작일이 종료일보다 늦습니다.');
+      return;
+    }
+    const cur = appliedRef.current;
+    commit({ ...cur, period: 'range', start: rangeStart, end: rangeEnd, month: null, page: 1, expected_version: null });
+  }, [commit, rangeStart, rangeEnd]);
+
+  const applyAdvanced = useCallback(() => {
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) {
+      setFormError('요청이 많아 잠시 후 다시 시도해 주세요.');
+      return;
+    }
+    const min = advMin.trim() === '' ? 1 : Number(advMin);
+    if (!Number.isInteger(min) || min < 1) {
+      setFormError('최소 신고 건수는 1 이상의 정수입니다.');
+      return;
+    }
+    const cur = appliedRef.current;
+    commit({ ...cur, date_basis: advBasis, min_reports: min, page: 1, expected_version: null });
+  }, [advBasis, advMin, commit]);
+
+  const reset = useCallback(() => {
+    const d = defaultQuery();
+    setRangeStart('');
+    setRangeEnd('');
+    setAdvBasis(d.date_basis);
+    setAdvMin('1');
+    setFormError(null);
+    setNotice(null);
+    setPendingIntent(null);
+    setRetryAt(null);
+    setLastMetric({ reporters: 'reports_count', fines: 'fine_count', unlucky: 'rejected_count' });
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) {
+      setPendingIntent(d);
+      return;
+    }
+    setApplied(d);
+    writeUrl(d);
+  }, [writeUrl]);
+
+  const gotoPage = useCallback((page: number) => {
+    const cur = appliedRef.current;
+    if (!cur || page === cur.page) return;
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) {
+      setPendingIntent({ ...cur, page, expected_version: page > 1 ? cur.expected_version : null });
+      return;
+    }
+    const version = response?.data.dataset_version ?? cur.expected_version;
+    const next = { ...cur, page, expected_version: page > 1 ? version : null };
+    setPendingIntent(null);
+    setApplied(next);
+    writeUrl({ ...next, page: 1, expected_version: null });
+  }, [response, writeUrl]);
+
+  const retry = useCallback(() => {
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return;
+    setRetryAt(null);
+    setError(null);
+    setNonce((n) => n + 1);
+  }, []);
+
+  // 429 countdown ticker.
+  useEffect(() => {
+    if (retryAt === null) return undefined;
+    const t = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(t);
+  }, [retryAt]);
+
+  // 429 expiry: auto-resume exactly one latest intent (pending) or one refetch of applied. No storm.
+  useEffect(() => {
+    if (retryAt === null) return undefined;
+    const wait = Math.max(0, retryAt - Date.now());
+    const t = window.setTimeout(() => {
+      setRetryAt(null);
+      const pending = pendingRef.current;
+      if (pending) {
+        setPendingIntent(null);
+        setApplied(pending);
+        writeUrl(pending);
+      } else {
+        setNonce((n) => n + 1);
+      }
+    }, wait + 50);
+    return () => window.clearTimeout(t);
+  }, [retryAt, writeUrl]);
+
+  const closeDialog = useCallback((restoreFocus = true) => {
+    setDialogUuid(null);
+    setCopyState('idle');
+    if (restoreFocus) openerRef.current?.focus();
+    openerRef.current = null;
+  }, []);
+
+  // Dialog holds a protected identifier: close it on hidden/account/query changes.
+  useEffect(() => {
+    if (dialogUuid !== null) closeDialog(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, viewer, appliedKey]);
+
+  // Hidden / logout / account switch: abort, advance generation, clear protected state.
+  // Plain setState (no flushSync): this runs inside a passive effect.
   useEffect(() => {
     if (!active || auth.status !== 'signed_in') {
       abortRef.current?.abort();
       abortRef.current = null;
+      genRef.current += 1;
       setResponse(null);
       setLoading(false);
+      setDialogUuid(null);
+      setCopyState('idle');
       if (auth.status !== 'signed_in') {
         setError(null);
         setAccess(null);
+        setPendingIntent(null);
+        setRetryAt(null);
       }
     }
   }, [active, auth.status, viewer]);
 
-  // Refresh / back: restore the ranking form from the prefixed URL params.
+  // Refresh / back / forward: restore from prefixed params; a URL without rk_*
+  // clears prefixed state to the default instead of showing a stale snapshot.
   useEffect(() => {
     const onPop = () => {
-      const d = draftFromSearch(window.location.search);
-      if (!d) return;
-      setDraft(d);
-      setApplied(draftToQuery(d, 1, null));
+      const q = queryFromSearch(window.location.search);
+      if (!q) {
+        const d = defaultQuery();
+        setRangeStart('');
+        setRangeEnd('');
+        setAdvBasis(d.date_basis);
+        setAdvMin('1');
+        setNotice(null);
+        setError(null);
+        setPendingIntent(null);
+        setApplied(d);
+        return;
+      }
+      setRangeStart(q.start ?? '');
+      setRangeEnd(q.end ?? '');
+      setAdvBasis(q.date_basis);
+      setAdvMin(String(q.min_reports));
+      setLastMetric((m) => ({ ...m, [q.theme]: q.metric }));
       setNotice(null);
       setError(null);
+      setPendingIntent(null);
+      setApplied(q);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // pageshow / focus / visibility: revalidate a stale snapshot, abort while hidden.
-  // No persistent response cache: everything lives in this component's state.
+  // pageshow / focus / visibility: abort while hidden; revalidate once when returning.
   useEffect(() => {
     if (!active) return undefined;
     const maybeRevalidate = () => {
@@ -206,9 +461,16 @@ export default function RankingsPage({ active }: { active: boolean }) {
       if (authRef.current !== 'signed_in' || !appliedRef.current) return;
       if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return;
       if (Date.now() - lastFetch.current < REVALIDATE_MS) return;
-      setReload((n) => n + 1);
+      setNonce((n) => n + 1);
     };
-    const onHide = () => { abortRef.current?.abort(); flushSync(() => { setResponse(null); setLoading(false); }); lastFetch.current = 0; };
+    const onHide = () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+      genRef.current += 1;
+      flushSync(() => { setResponse(null); setLoading(false); });
+      setDialogUuid(null);
+      lastFetch.current = 0;
+    };
     const onShow = () => { setResponse(null); lastFetch.current = 0; maybeRevalidate(); };
     const onFocus = () => maybeRevalidate();
     const onVis = () => {
@@ -227,18 +489,15 @@ export default function RankingsPage({ active }: { active: boolean }) {
     };
   }, [active]);
 
-  // 429 countdown.
-  useEffect(() => {
-    if (retryAt === null) return undefined;
-    const t = window.setInterval(() => setNow(Date.now()), 500);
-    return () => window.clearInterval(t);
-  }, [retryAt]);
-
   // Main fetch. Server computes all sorting/ranks; the client never re-sorts.
+  // Guards (generation, viewer, query key, active, visible) apply even if abort is ignored.
   useEffect(() => {
     if (!active || auth.status !== 'signed_in' || !applied) return undefined;
+    if (document.visibilityState === 'hidden') return undefined;
     if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return undefined;
+    const myGen = ++genRef.current;
     const requestViewer = viewer;
+    const requestKey = appliedKey;
     const ac = new AbortController();
     abortRef.current?.abort();
     abortRef.current = ac;
@@ -248,16 +507,19 @@ export default function RankingsPage({ active }: { active: boolean }) {
     setAccess(null);
     loadRankings(applied, ac.signal)
       .then((data) => {
-        if (ac.signal.aborted) return;
-        // Render guard: a late answer for another account is dropped.
+        if (ac.signal.aborted || myGen !== genRef.current) return;
+        if (!activeRef.current || document.visibilityState === 'hidden') return;
         if ((authRef.current === 'signed_in' ? requestViewer : null) !== requestViewer) return;
-        setResponse({ data, viewer: requestViewer, queryKey: appliedKey });
+        if (appliedKeyRef.current !== requestKey) return;
+        setResponse({ data, viewer: requestViewer, queryKey: requestKey });
         setRetryAt(null);
+        setPendingIntent(null);
         lastFetch.current = Date.now();
         setLoading(false);
       })
       .catch((e: unknown) => {
-        if (ac.signal.aborted) return;
+        if (ac.signal.aborted || myGen !== genRef.current) return;
+        if (!activeRef.current) return;
         setResponse(null);
         setLoading(false);
         if (e instanceof PublicApiError) {
@@ -265,18 +527,20 @@ export default function RankingsPage({ active }: { active: boolean }) {
             const cur = appliedRef.current;
             if (cur && (cur.page !== 1 || cur.expected_version !== null)) {
               setNotice('그사이 새 자료가 들어왔습니다. 첫 페이지부터 다시 불러옵니다.');
-              setApplied({ ...cur, page: 1, expected_version: null });
-              setReload((n) => n + 1);
+              const first = { ...cur, page: 1, expected_version: null };
+              setApplied(first);
+              writeUrl(first);
+              setNonce((n) => n + 1);
             } else {
-              setNotice('그사이 새 자료가 들어왔습니다. 다시 적용해 주세요.');
-              setError({ message: '그사이 새 자료가 들어왔습니다. 다시 적용해 주세요.', status: 409, retryAfter: null });
+              setNotice('그사이 새 자료가 들어왔습니다. 다시 조회해 주세요.');
+              setError({ message: '그사이 새 자료가 들어왔습니다. 다시 조회해 주세요.', status: 409, retryAfter: null });
             }
             return;
           }
           if (e.status === 429) {
             const wait = e.retryAfter && e.retryAfter > 0 ? e.retryAfter : 30;
             setRetryAt(Date.now() + wait * 1000);
-            setError({ message: `요청이 많아 잠시 후 다시 시도해 주세요. ${wait}초 뒤에 다시 시도할 수 있습니다.`, status: 429, retryAfter: wait });
+            setError({ message: `요청이 많아 잠시 후 다시 시도해 주세요. ${wait}초 뒤에 자동으로 다시 시도합니다.`, status: 429, retryAfter: wait });
             return;
           }
           if (e.code && (ACCESS_CODES as readonly string[]).includes(e.code)) {
@@ -291,118 +555,61 @@ export default function RankingsPage({ active }: { active: boolean }) {
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliedKey, active, auth.status, viewer, reload]);
+  }, [appliedKey, nonce, active, auth.status, viewer]);
 
-  const writeUrl = useCallback((d: Draft) => {
-    try {
-      const url = new URL(window.location.href);
-      const q = url.searchParams;
-      q.set(RK('theme'), d.theme);
-      q.set(RK('metric'), d.metric);
-      q.set(RK('period'), d.period);
-      if (d.period === 'range') {
-        if (d.start) q.set(RK('start'), d.start);
-        else q.delete(RK('start'));
-        if (d.end) q.set(RK('end'), d.end);
-        else q.delete(RK('end'));
-      } else {
-        q.delete(RK('start'));
-        q.delete(RK('end'));
-      }
-      if (d.period === 'month') q.set(RK('month'), d.month);
-      else q.delete(RK('month'));
-      q.set(RK('basis'), d.date_basis);
-      q.set(RK('category'), d.category);
-      q.set(RK('min'), d.min_reports.trim() === '' ? '1' : d.min_reports.trim());
-      window.history.replaceState(window.history.state, '', `${url.pathname}?${q.toString()}${url.hash}`);
-    } catch { /* URL sync is optional */ }
+  const openDialog = useCallback((uuid: string, opener: HTMLButtonElement) => {
+    openerRef.current = opener;
+    setCopyState('idle');
+    setDialogUuid(uuid);
   }, []);
 
-  const apply = useCallback(() => {
-    if (retryAt !== null && Date.now() < retryAt) return;
-    if (auth.status !== 'signed_in') {
-      setFormError('카카오 로그인이 필요합니다. 먼저 로그인해 주세요.');
-      return;
-    }
-    if (draft.period === 'month' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(draft.month)) {
-      setFormError('조회할 달을 YYYY-MM 형식으로 입력해 주세요.');
-      return;
-    }
-    if (draft.period === 'range' && (!draft.start || !draft.end)) {
-      setFormError('직접 범위를 선택하면 시작일과 종료일을 모두 입력해 주세요.');
-      return;
-    }
-    if (draft.period === 'range' && draft.start > draft.end) {
-      setFormError('시작일이 종료일보다 늦습니다.');
-      return;
-    }
-    const min = draft.min_reports.trim() === '' ? 1 : Number(draft.min_reports);
-    if (!Number.isInteger(min) || min < 1) {
-      setFormError('최소 신고 건수는 1 이상의 정수입니다.');
-      return;
-    }
-    const q = draftToQuery(draft, 1, null);
-    if (!q) {
-      setFormError('조건이 올바르지 않습니다. 기간과 달을 확인해 주세요.');
-      return;
-    }
-    setFormError(null);
-    setNotice(null);
-    setError(null);
-    setAccess(null);
-    setResponse(null);
-    setApplied(q);
-    setReload((n) => n + 1);
-    writeUrl(draft);
-  }, [auth.status, draft, writeUrl, retryAt]);
+  // Move focus into the dialog when it opens.
+  useEffect(() => {
+    if (dialogUuid !== null) dialogRef.current?.focus();
+  }, [dialogUuid]);
 
-  const reset = useCallback(() => {
-    const d = defaultDraft();
-    setDraft(d);
-    setFormError(null);
-    setNotice(null);
-    setApplied(draftToQuery(d, 1, null));
-    setReload((n) => n + 1);
-    writeUrl(d);
-  }, [writeUrl]);
-
-  const gotoPage = useCallback((page: number) => {
-    const cur = appliedRef.current;
-    if (!cur) return;
-    const version = response?.data.dataset_version ?? cur.expected_version;
-    setApplied({ ...cur, page, expected_version: page > 1 ? version : null });
-  }, [response]);
-
-  const retry = useCallback(() => {
-    if (retryAt !== null && Date.now() < retryAt) return;
-    setRetryAt(null);
-    setError(null);
-    setReload((n) => n + 1);
-  }, [retryAt]);
+  const onDialogKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      closeDialog(true);
+      return;
+    }
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+    const items = Array.from(
+      dialogRef.current.querySelectorAll<HTMLElement>('button, input, [tabindex]:not([tabindex="-1"])'),
+    ).filter((el) => !el.hasAttribute('disabled'));
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, [closeDialog]);
 
   const copyUuid = useCallback(async (uuid: string) => {
     try {
       await navigator.clipboard.writeText(uuid);
-      setCopied(uuid);
-      window.setTimeout(() => setCopied((c) => (c === uuid ? null : c)), 1600);
+      setCopyState('done');
+      window.setTimeout(() => setCopyState((c) => (c === 'done' ? 'idle' : c)), 1600);
     } catch {
-      setCopied(null);
+      // Never report a failed copy as success; offer manual copy instead.
+      setCopyState('fail');
     }
   }, []);
 
   const data = response?.data ?? null;
-  // Guard: never render another account's snapshot.
+  // Guard: never render another account's snapshot or a stale query's rows.
   const guarded = data && response && response.viewer === viewer && response.queryKey === appliedKey && auth.status === 'signed_in' ? data : null;
-  const appliedMetric: Metric = applied?.metric ?? 'reports_count';
-  const heading = rankingTitle({
-    theme: applied?.theme ?? 'reporters',
-    period: applied?.period ?? 'all',
-    month: applied?.month ?? null,
-  });
+  const appliedMetric: Metric = applied.metric;
+  const metricTitle = METRIC_TITLES[appliedMetric];
+  const heading = `${periodPrefix(applied, nowMonth)}${metricTitle}`;
   const retryWait = retryAt !== null ? Math.max(0, Math.ceil((retryAt - now) / 1000)) : 0;
 
   const scopeText = useMemo(() => {
-    if (!applied) return '';
     const basis = BASIS_LABEL[applied.date_basis];
     const cat = CATEGORY_LABEL[applied.category];
     let period = '전체 기간';
@@ -413,173 +620,240 @@ export default function RankingsPage({ active }: { active: boolean }) {
         period = `${b.start} — ${b.end}`;
       } catch { period = applied.month; }
     }
-    return `${basis} 기준 · ${period} · ${cat} · 최소 ${applied.min_reports}건`;
+    return `${basis} 기준 · ${period} · ${cat} 분류 · 최소 ${applied.min_reports}건`;
   }, [applied]);
 
   const me = guarded?.me ?? null;
   const rows = guarded?.rows ?? [];
   const isRate = appliedMetric.endsWith('_rate');
-  const themeMetrics = RANKING_THEME_METRICS[draft.theme];
+  const isReporters = applied.theme === 'reporters';
+  const valueHeader = VALUE_HEADERS[appliedMetric];
+  const pageSize = guarded?.page_size ?? PAGE_SIZE;
+  const rangeStartRow = guarded ? (guarded.page - 1) * pageSize + 1 : 0;
+  const rangeEndRow = guarded ? rangeStartRow + rows.length - 1 : 0;
+  const unluckyDim: 'rejected' | 'partial' = appliedMetric.startsWith('partial') ? 'partial' : 'rejected';
+  const rateCount: 'count' | 'rate' = isRate ? 'rate' : 'count';
+  const rangeDirty = periodView === 'range' && (
+    rangeStart !== (applied.start ?? '') || rangeEnd !== (applied.end ?? '') || applied.period !== 'range'
+  );
+  const advDirty = advBasis !== applied.date_basis || advMin.trim() !== String(applied.min_reports);
+
+  const monthLabel = (m: string | null) => {
+    if (!m) return nowMonth;
+    const [y, mo] = m.split('-');
+    return `${y}년 ${Number(mo)}월`;
+  };
+  const appliedMonth = applied.period === 'month' && applied.month ? applied.month : nowMonth;
 
   return (
     <section className="rk-page" aria-labelledby="rk-title" hidden={!active}>
       <div className="rk-head">
         <div className="overline">USER RANKINGS</div>
-        <h1 id="rk-title">{heading}</h1>
-        <p className="rk-sub">
-          {applied ? `${METRIC_LABELS[appliedMetric]} 순위 · ${scopeText}` : '조건을 적용하면 순위를 불러옵니다.'}
-        </p>
-        <p className="rk-disclaimer">이 서비스에 공유된 완료 신고 기준, 전체 안전신문고 활동 아님.</p>
+        <h1 id="rk-title">참여자 랭킹</h1>
+        <p className="rk-sub">{heading}</p>
+        <p className="rk-disclaimer">이 서비스에 공유된 완료 신고를 기준으로 집계합니다.</p>
       </div>
 
-      <form
-        className="rk-form cm-panel"
-        aria-label="랭킹 조회 조건"
-        onSubmit={(e) => { e.preventDefault(); apply(); }}
-      >
-        <fieldset className="rk-field rk-presets">
-          <legend>랭킹 바로가기</legend>
-          <div className="rk-preset-group" role="group" aria-label="누적 · 기간별">
-            <span className="rk-preset-caption" aria-hidden="true">누적 · 기간별</span>
-            <div className="rk-seg">
-              {CUMULATIVE_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={isPresetActive(draft, p) ? 'selected' : ''}
-                  aria-pressed={isPresetActive(draft, p)}
-                  onClick={() => setDraft(selectRankingPreset(draft, p))}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="rk-preset-group" role="group" aria-label="월별">
-            <span className="rk-preset-caption" aria-hidden="true">월별</span>
-            <div className="rk-seg">
-              {MONTHLY_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={isPresetActive(draft, p) ? 'selected' : ''}
-                  aria-pressed={isPresetActive(draft, p)}
-                  onClick={() => setDraft(selectRankingPreset(draft, p))}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </fieldset>
-
-        <div className="rk-grid">
-          <label className="rk-field">지표
-            <select
-              aria-label="지표"
-              value={draft.metric}
-              onChange={(e) => setDraft({ ...draft, metric: e.target.value as Metric })}
+      <div className="rk-controls cm-panel" role="group" aria-label="랭킹 종류와 기간">
+        <div className="rk-tabs" role="group" aria-label="랭킹 종류">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={applied.theme === t.id ? 'selected' : ''}
+              aria-pressed={applied.theme === t.id}
+              onClick={() => selectTab(t.id)}
             >
-              {themeMetrics.map((m) => (
-                <option key={m} value={m}>{METRIC_LABELS[m]}</option>
-              ))}
-            </select>
-          </label>
-          <label className="rk-field">날짜 기준
-            <select
-              aria-label="날짜 기준"
-              value={draft.date_basis}
-              onChange={(e) => setDraft({ ...draft, date_basis: e.target.value as Draft['date_basis'] })}
-            >
-              <option value="completed_date">답변일</option>
-              <option value="report_date">신고일</option>
-            </select>
-          </label>
-          <label className="rk-field">분류
-            <select
-              aria-label="분류"
-              value={draft.category}
-              onChange={(e) => setDraft({ ...draft, category: e.target.value as Draft['category'] })}
-            >
-              <option value="all">전체</option>
-              <option value="traffic">교통위반</option>
-              <option value="parking">주정차</option>
-              <option value="other">기타</option>
-            </select>
-          </label>
-          <label className="rk-field">최소 신고 건수
-            <input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={draft.min_reports}
-              onChange={(e) => setDraft({ ...draft, min_reports: e.target.value })}
-            />
-          </label>
+              {t.label}
+            </button>
+          ))}
         </div>
+
+        {!isReporters && (
+          <div className="rk-metric-row">
+            {applied.theme === 'unlucky' && (
+              <div className="rk-seg" role="group" aria-label="불운 종류">
+                <button
+                  type="button"
+                  className={unluckyDim === 'rejected' ? 'selected' : ''}
+                  aria-pressed={unluckyDim === 'rejected'}
+                  onClick={() => selectMetric(rateCount === 'rate' ? 'rejected_rate' : 'rejected_count')}
+                >
+                  불수용
+                </button>
+                <button
+                  type="button"
+                  className={unluckyDim === 'partial' ? 'selected' : ''}
+                  aria-pressed={unluckyDim === 'partial'}
+                  onClick={() => selectMetric(rateCount === 'rate' ? 'partial_rate' : 'partial_count')}
+                >
+                  일부수용
+                </button>
+              </div>
+            )}
+            <div className="rk-seg" role="group" aria-label="정렬 기준">
+              <button
+                type="button"
+                className={!isRate ? 'selected' : ''}
+                aria-pressed={!isRate}
+                onClick={() => selectMetric(applied.theme === 'fines'
+                  ? 'fine_count'
+                  : unluckyDim === 'partial' ? 'partial_count' : 'rejected_count')}
+              >
+                건수순
+              </button>
+              <button
+                type="button"
+                className={isRate ? 'selected' : ''}
+                aria-pressed={isRate}
+                onClick={() => selectMetric(applied.theme === 'fines'
+                  ? 'fine_rate'
+                  : unluckyDim === 'partial' ? 'partial_rate' : 'rejected_rate')}
+              >
+                비율순
+              </button>
+            </div>
+            {isRate && (
+              <p className="rk-hint">비율순에서는 최소 건수 조건이 순위에 크게 영향을 줍니다. 현재 조건: 최소 {applied.min_reports}건 (상세 조건에서 변경).</p>
+            )}
+          </div>
+        )}
 
         <div className="rk-field">
           <span id="rk-period-label">기간</span>
           <div className="rk-seg" role="group" aria-labelledby="rk-period-label">
             <button
               type="button"
-              className={draft.period === 'all' ? 'selected' : ''}
-              aria-pressed={draft.period === 'all'}
-              onClick={() => setDraft({ ...draft, period: 'all' })}
+              className={periodView === 'all' ? 'selected' : ''}
+              aria-pressed={periodView === 'all'}
+              onClick={selectPeriodAll}
             >
               전체 기간
             </button>
             <button
               type="button"
-              className={draft.period === 'range' ? 'selected' : ''}
-              aria-pressed={draft.period === 'range'}
-              onClick={() => setDraft({ ...draft, period: 'range' })}
-            >
-              직접 범위
-            </button>
-            <button
-              type="button"
-              className={draft.period === 'month' ? 'selected' : ''}
-              aria-pressed={draft.period === 'month'}
-              onClick={() => setDraft({ ...draft, period: 'month', month: draft.month || kstMonth() })}
+              className={periodView === 'month' ? 'selected' : ''}
+              aria-pressed={periodView === 'month'}
+              onClick={selectPeriodMonth}
             >
               월별
             </button>
+            <button
+              type="button"
+              className={periodView === 'range' ? 'selected' : ''}
+              aria-pressed={periodView === 'range'}
+              onClick={() => {
+                setPeriodView('range');
+                if (applied.period === 'range') {
+                  setRangeStart(applied.start ?? '');
+                  setRangeEnd(applied.end ?? '');
+                }
+              }}
+            >
+              기간 지정
+            </button>
           </div>
-          {draft.period === 'range' && (
-            <div className="rk-grid">
-              <label className="rk-field">시작일
-                <input type="date" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} />
-              </label>
-              <label className="rk-field">종료일
-                <input type="date" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} />
+          {periodView === 'month' && (
+            <div className="rk-month-row">
+              <button type="button" className="ghost-btn" aria-label="이전 달" onClick={() => stepMonth(-1)}>〈</button>
+              <span className="rk-month-label" aria-live="polite">{monthLabel(appliedMonth)}</span>
+              <button type="button" className="ghost-btn" aria-label="다음 달" onClick={() => stepMonth(1)}>〉</button>
+              <label className="rk-month-direct">직접 선택
+                <input
+                  type="month"
+                  value={appliedMonth}
+                  onChange={(e) => applyMonthDirect(e.target.value)}
+                  aria-label="조회할 달 직접 선택"
+                />
               </label>
             </div>
           )}
-          {draft.period === 'month' && (
-            <label className="rk-field">조회 달
-              <input
-                type="month"
-                value={draft.month}
-                onChange={(e) => setDraft({ ...draft, month: e.target.value })}
-              />
-            </label>
+          {periodView === 'range' && (
+            <div className="rk-range-row">
+              <label className="rk-field">시작일
+                <input type="date" value={rangeStart} onChange={(e) => setRangeStart(e.target.value)} aria-label="시작일" />
+              </label>
+              <label className="rk-field">종료일
+                <input type="date" value={rangeEnd} onChange={(e) => setRangeEnd(e.target.value)} aria-label="종료일" />
+              </label>
+              <button type="button" className="primary-button rk-range-apply" onClick={applyRange} disabled={retryWait > 0}>
+                조회
+              </button>
+            </div>
+          )}
+          {periodView === 'range' && rangeDirty && (
+            <p className="rk-hint" role="status">입력한 범위는 조회를 누르기 전에는 반영되지 않습니다.</p>
           )}
         </div>
 
+        <label className="rk-field rk-category">분류
+          <select
+            aria-label="분류"
+            value={applied.category}
+            onChange={(e) => selectCategory(e.target.value as RankingQuery['category'])}
+          >
+            <option value="all">전체</option>
+            <option value="traffic">교통위반</option>
+            <option value="parking">주정차</option>
+            <option value="other">기타</option>
+          </select>
+        </label>
+
+        <details
+          className="rk-advanced"
+          open={detailsOpen}
+          onToggle={(e) => {
+            const open = (e.target as HTMLDetailsElement).open;
+            setDetailsOpen(open);
+            if (open) {
+              setAdvBasis(appliedRef.current.date_basis);
+              setAdvMin(String(appliedRef.current.min_reports));
+            }
+          }}
+        >
+          <summary>상세 조건</summary>
+          <div className="rk-advanced-body">
+            <label className="rk-field">날짜 기준
+              <select
+                aria-label="날짜 기준"
+                value={advBasis}
+                onChange={(e) => setAdvBasis(e.target.value as RankingQuery['date_basis'])}
+              >
+                <option value="completed_date">답변일</option>
+                <option value="report_date">신고일</option>
+              </select>
+            </label>
+            <label className="rk-field">최소 신고 건수
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={advMin}
+                onChange={(e) => setAdvMin(e.target.value)}
+                aria-label="최소 신고 건수"
+              />
+            </label>
+            <button type="button" className="primary-button" onClick={applyAdvanced} disabled={retryWait > 0}>
+              적용
+            </button>
+          </div>
+          {advDirty && <p className="rk-hint" role="status">바꾼 상세 조건은 적용을 누르기 전에는 반영되지 않습니다.</p>}
+        </details>
+
         {formError && <p className="field-error" role="alert">{formError}</p>}
         <div className="rk-actions">
-          <button className="primary-button rk-apply" type="submit" disabled={retryWait > 0}>적용</button>
           <button className="ghost-btn" type="button" onClick={reset} disabled={retryWait > 0}>초기화</button>
         </div>
-        <p className="rk-hint">초안은 적용을 누르기 전에는 반영되지 않습니다. 같은 범위는 모든 지표에 함께 적용됩니다.</p>
-      </form>
+        {pendingIntent && retryWait > 0 && (
+          <p className="rk-hint" role="status">요청 제한 중입니다. {retryWait}초 뒤에 마지막 요청부터 자동으로 다시 시도합니다.</p>
+        )}
+      </div>
 
       <div aria-live="polite">
         {notice && <p className="banner warn rk-notice" role="status">{notice}</p>}
         {guarded?.scope.in_progress && (
-          <p className="banner rk-notice" role="note">진행 중인 달이라 집계가 계속 바뀝니다. 같은 경과 기간끼리 비교해 주세요.</p>
+          <p className="banner rk-notice" role="note">집계 중 — 진행 중인 달이라 순위가 계속 바뀝니다. 같은 경과 기간끼리 비교해 주세요.</p>
         )}
       </div>
 
@@ -596,7 +870,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
             )}
         </div>
       ) : access ? (
-        <AccessGate code={access} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={() => setReload((n) => n + 1)} progress={access === 'upload_required' ? accessDetails : null} />
+        <AccessGate code={access} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={() => setNonce((n) => n + 1)} progress={access === 'upload_required' ? accessDetails : null} />
       ) : loading && !guarded ? (
         <div className="cm-panel rk-panel" aria-busy="true" aria-label="랭킹을 불러오는 중">
           <div className="skeleton" />
@@ -615,18 +889,18 @@ export default function RankingsPage({ active }: { active: boolean }) {
         </div>
       ) : guarded ? (
         <>
-          <section className="cm-panel rk-panel" aria-label="내 순위 요약">
+          <section className="cm-panel rk-panel rk-me" aria-label="내 순위 요약">
             <h2>내 순위</h2>
             {me ? (
               <p className="rk-me-line">
-                <strong>{me.rank}위</strong>
-                <span>값 {formatValue(me, appliedMetric)}</span>
-                {isRate && <span>{me.numerator.toLocaleString('ko-KR')}/{me.denominator.toLocaleString('ko-KR')}건</span>}
+                <strong>내 순위 {me.rank}위 / {guarded.total_participants.toLocaleString('ko-KR')}명</strong>
+                <span>{valueHeader} {formatValue(me, appliedMetric)}</span>
+                {isRate && <span>{me.numerator.toLocaleString('ko-KR')}건 중 {me.denominator.toLocaleString('ko-KR')}건</span>}
                 <span>완료 신고 {me.reports.toLocaleString('ko-KR')}건</span>
                 {me.tie_count > 1 && <span>공동 {me.tie_count}명</span>}
               </p>
             ) : (
-              <p className="cm-muted" role="note">이 조건에서는 내 기록이 없습니다. 공유된 완료 신고가 있으면 조건을 넓혀 보세요.</p>
+              <p className="cm-muted" role="note">이 조건에서는 내 기록이 없습니다. 공유된 완료 신고가 있으면 기간·분류·최소 신고 건수를 넓혀 보세요.</p>
             )}
           </section>
 
@@ -638,60 +912,87 @@ export default function RankingsPage({ active }: { active: boolean }) {
           ) : (
             <section className="cm-panel rk-panel" aria-label={`${heading} 표`}>
               <div className="rk-table-head">
-                <h2>{heading} 표</h2>
+                <h2>{heading}</h2>
                 <div className="rk-badges">
                   <span className="cm-chip">참여자 {guarded.total_participants.toLocaleString('ko-KR')}명</span>
-                  {guarded.total_participants === 1 && <span className="cm-chip">참여자 1명</span>}
+                  {guarded.total_participants === 1 && <span className="cm-chip">표본 1건</span>}
                 </div>
               </div>
+              <p className="rk-scope-line">{scopeText}</p>
               <div className="table-scroll rk-scroll">
-                <table className="entity-table rk-table">
+                <table className="entity-table rk-table rk-table-desktop">
                   <thead>
                     <tr>
                       <th scope="col" className="num">순위</th>
-                      <th scope="col">사용자</th>
-                      <th scope="col" className="num">값</th>
-                      <th scope="col" className="num">신고</th>
+                      <th scope="col">참여자</th>
+                      <th scope="col" className="num">{valueHeader}</th>
+                      {!isReporters && <th scope="col" className="num">완료 신고</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((row) => (
-                      <tr key={row.uuid} className={row.is_me ? 'rk-me' : undefined}>
+                      <tr key={row.uuid} className={row.is_me ? 'rk-me-row' : undefined}>
                         <td className="num">
                           {row.rank}위
                           {row.tie_count > 1 && <small> 공동 {row.tie_count}명</small>}
                         </td>
                         <td>
-                          <code className="rk-uuid" title={row.uuid}>{shortUuid(row.uuid)}</code>
+                          <button
+                            type="button"
+                            className="rk-uuid-btn"
+                            title={row.uuid}
+                            aria-label={`참여자 ${shortUuid(row.uuid)} 전체 UUID 보기`}
+                            aria-haspopup="dialog"
+                            onClick={(e) => openDialog(row.uuid, e.currentTarget)}
+                          >
+                            <code className="rk-uuid">{shortUuid(row.uuid)}</code>
+                          </button>
                           {row.is_me && <span className="rk-me-badge">나</span>}
-                          <details className="rk-uuid-full">
-                            <summary>전체 UUID 보기</summary>
-                            <code>{row.uuid}</code>
-                            <button
-                              className="mini-btn"
-                              type="button"
-                              onClick={() => void copyUuid(row.uuid)}
-                              aria-label={`UUID ${row.uuid} 복사`}
-                            >
-                              {copied === row.uuid ? '복사됨' : '복사'}
-                            </button>
-                          </details>
                         </td>
                         <td className="num">
                           <b>{formatValue(row, appliedMetric)}</b>
-                          {isRate && <small> {row.numerator.toLocaleString('ko-KR')}/{row.denominator.toLocaleString('ko-KR')}건</small>}
-                          <small className="rk-mobile-sample">N {row.reports}건{row.reports === 1 ? ' · 표본 1건' : ''}{row.completed_unknown > 0 ? ` · 미확인 ${row.completed_unknown}건 포함` : ''}</small>
-                        </td>
-                        <td className="num" aria-label={`완료 신고 ${row.reports}건, 결과 미확인 ${row.completed_unknown}건`}>
-                          {row.reports.toLocaleString('ko-KR')}건
+                          {isRate && <small> {row.numerator.toLocaleString('ko-KR')}건 중 {row.denominator.toLocaleString('ko-KR')}건</small>}
                           {row.reports === 1 && <small>표본 1건</small>}
-                          {row.completed_unknown > 0 && <small> 미확인 {row.completed_unknown}건 포함</small>}
                         </td>
+                        {!isReporters && (
+                          <td className="num" aria-label={`완료 신고 ${row.reports}건, 결과 미확인 ${row.completed_unknown}건`}>
+                            {row.reports.toLocaleString('ko-KR')}건
+                            {row.completed_unknown > 0 && <small> 미확인 {row.completed_unknown}건 포함</small>}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              <ul className="rk-list" aria-label={`${heading} 목록`}>
+                {rows.map((row) => (
+                  <li key={row.uuid} className={row.is_me ? 'rk-me-row' : undefined}>
+                    <span className="rk-list-rank">
+                      {row.rank}위{row.tie_count > 1 && <small> 공동 {row.tie_count}명</small>}
+                    </span>
+                    <button
+                      type="button"
+                      className="rk-uuid-btn"
+                      aria-label={`참여자 ${shortUuid(row.uuid)} 전체 UUID 보기`}
+                      aria-haspopup="dialog"
+                      onClick={(e) => openDialog(row.uuid, e.currentTarget)}
+                    >
+                      <code className="rk-uuid">{shortUuid(row.uuid)}</code>
+                    </button>
+                    {row.is_me && <span className="rk-me-badge">나</span>}
+                    <b className="rk-list-value">{formatValue(row, appliedMetric)}</b>
+                    <span className="rk-list-sub">
+                      {isRate
+                        ? `${valueHeader} ${row.numerator.toLocaleString('ko-KR')}건 중 ${row.denominator.toLocaleString('ko-KR')}건`
+                        : `${valueHeader} ${row.reports.toLocaleString('ko-KR')}건`}
+                      {!isReporters && row.completed_unknown > 0 ? ` · 미확인 ${row.completed_unknown}건 포함` : ''}
+                      {row.reports === 1 ? ' · 표본 1건' : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="rk-fraction-note">비율이 같아 보여도 실제 분수가 다를 수 있습니다. 순위는 서버가 정확한 분수로 매깁니다.</p>
               <div className="rk-pager">
                 <button
                   className="ghost-btn"
@@ -701,7 +1002,9 @@ export default function RankingsPage({ active }: { active: boolean }) {
                 >
                   이전
                 </button>
-                <span className="cm-muted" aria-live="polite">{guarded.page}페이지 · 20명씩</span>
+                <span className="cm-muted" aria-live="polite">
+                  참여자 {rangeStartRow.toLocaleString('ko-KR')}–{rangeEndRow.toLocaleString('ko-KR')} / {guarded.total_participants.toLocaleString('ko-KR')}명
+                </span>
                 <button
                   className="ghost-btn"
                   type="button"
@@ -715,18 +1018,18 @@ export default function RankingsPage({ active }: { active: boolean }) {
             </section>
           )}
 
-          <section className="cm-panel rk-panel" aria-label="지표 설명">
-            <h2>지표를 읽는 기준</h2>
-            <details open>
-              <summary>N(완료 신고)의 뜻</summary>
-              <p>N은 수용·일부수용·불수용·결과 미확인(completed_unknown)을 모두 포함한 완료 신고 건수입니다. 표본이 1건이어도 숨기지 않습니다.</p>
+          <section className="cm-panel rk-panel" aria-label="집계 기준">
+            <h2>집계 기준 보기</h2>
+            <details>
+              <summary>완료 신고를 세는 방법</summary>
+              <p>완료 신고는 수용·일부수용·불수용·결과 미확인을 모두 포함한, 공유된 완료 신고 건수입니다. 표본이 1건이어도 숨기지 않습니다.</p>
             </details>
             <details>
-              <summary>F(과태료)의 뜻</summary>
-              <p>F는 실제 처분이 과태료(fine)인 신고입니다. 수용·일부수용이라도 금액이 없어도 실제 처분이 과태료면 포함합니다.</p>
+              <summary>과태료·불운을 세는 방법</summary>
+              <p>과태료는 수용·일부수용 중 실제 처분이 과태료인 신고입니다(금액이 없어도 포함). 불수용·일부수용은 각 결과에 해당한 신고입니다. 비율은 같은 모임의 완료 신고를 분모로 나눈 값입니다.</p>
             </details>
             <details>
-              <summary>진단 수치</summary>
+              <summary>개발용 진단 수치</summary>
               <p>
                 선택 날짜 없음 {guarded.diagnostics.selected_date_missing.toLocaleString('ko-KR')}건 ·
                 결과 미확인 {guarded.diagnostics.completed_unknown.toLocaleString('ko-KR')}건 ·
@@ -737,6 +1040,42 @@ export default function RankingsPage({ active }: { active: boolean }) {
           </section>
         </>
       ) : null}
+
+      {dialogUuid !== null && (
+        <div className="rk-dialog-backdrop" onClick={() => closeDialog(true)}>
+          <div
+            ref={dialogRef}
+            className="rk-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="참여자 UUID"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={onDialogKeyDown}
+          >
+            <h2>참여자 UUID</h2>
+            <input
+              className="rk-dialog-uuid"
+              readOnly
+              value={dialogUuid}
+              aria-label="전체 UUID"
+              onFocus={(e) => e.target.select()}
+            />
+            <div className="rk-dialog-actions">
+              <button type="button" className="primary-button" onClick={() => void copyUuid(dialogUuid)}>
+                {copyState === 'done' ? '복사됨' : '복사'}
+              </button>
+              <button type="button" className="ghost-btn" onClick={() => closeDialog(true)}>
+                닫기
+              </button>
+            </div>
+            {copyState === 'done' && <p className="rk-copy-ok" role="status">복사했습니다.</p>}
+            {copyState === 'fail' && (
+              <p className="rk-copy-fail" role="alert">복사에 실패했습니다. 위 주소를 직접 선택해 복사해 주세요.</p>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

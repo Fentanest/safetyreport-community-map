@@ -82,8 +82,13 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const [pick, setPick] = useState<{ row: string[]; col: string[] | null } | null>(null);
   const [saved, setSaved] = useState<SavedRecipe[]>(() => readSaved(viewer));
   const [saveName, setSaveName] = useState('');
+  // Mobile result-first: the builder becomes a "조건 변경" editing panel on narrow
+  // screens (CSS orders the result first and hides the builder unless open).
+  const [editorOpen, setEditorOpen] = useState(true);
   const gen = useRef(0);
   const abort = useRef<AbortController | null>(null);
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
   // catalog: once per page (the registry is the server's)
   useEffect(() => {
@@ -94,9 +99,10 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     return () => ac.abort();
   }, [active, catalog]);
 
-  // F02: the shared recipe is checked against this server's registry, then run with the opener's own permission
+  // F02: the shared recipe is checked against this server's registry, then run with the opener's own permission.
+  // Active-guarded: a share arriving while hidden/inactive suspends into runRef via execute.
   useEffect(() => {
-    if (share.status !== 'pending' || !catalog || !share.payload) return;
+    if (share.status !== 'pending' || !catalog || !share.payload || !active) return;
     const why = checkAgainstCatalog(share.payload, catalog);
     if (why) { setShare({ status: 'error', reason: why }); return; }
     const { recipe, chart: c, view: v } = recipeFromPayload(share.payload);
@@ -107,7 +113,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     if (recipe.spec.population !== 'all' && !canMine) { setShare({ status: 'waiting_login', payload: share.payload }); return; }
     setShare({ status: 'applied', mine: recipe.spec.population !== 'all' });
     execute(recipe);
-  }, [share, catalog, canMine]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [share, catalog, canMine, active]); // eslint-disable-line react-hooks/exhaustive-deps
   const closeShareError = () => { dropShareParam(); onSharedDone?.(); setShare({ status: 'none' }); };
 
   const runRef = useRef<StatsRecipe | null>(null);
@@ -115,6 +121,15 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   onSharedDoneRef.current = onSharedDone;
   const execute = useCallback((input: StatsRecipe) => {
     const recipe = normalizeRecipe(input);
+    if (!activeRef.current || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) {
+      // Suspended (hidden/inactive): retain the latest intended recipe and resume once
+      // visible. The generation advance drops any late in-flight answer.
+      abort.current?.abort();
+      abort.current = null;
+      gen.current += 1;
+      runRef.current = recipe;
+      return;
+    }
     abort.current?.abort(); // client-side cancel of the older run; its late answer is ignored by the generation
     const ac = new AbortController();
     abort.current = ac;
@@ -138,10 +153,28 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         setRun({ status: 'error', recipe, code, message: e instanceof Error ? e.message : '통계를 만들지 못했습니다.' });
       });
   }, [version]);
-  // unmount cancels the client wait; a remount (React StrictMode, or a page that comes back) resumes the same run
+  // unmount cancels the client wait; a remount (React StrictMode, or a page that comes back) resumes the same run.
+  // Returning from hidden/inactive also resumes the latest suspended intent once.
   useEffect(() => {
     if (runRef.current && !abort.current) execute(runRef.current);
     return () => { abort.current?.abort(); abort.current = null; };
+  }, [execute]);
+  useEffect(() => {
+    if (!active) return;
+    if (typeof document !== 'undefined' && !document.hidden && runRef.current && !abort.current) execute(runRef.current);
+  }, [active, execute]);
+  useEffect(() => {
+    const onVis = () => {
+      if (document.hidden) {
+        abort.current?.abort();
+        abort.current = null;
+        gen.current += 1;
+      } else if (activeRef.current && runRef.current && !abort.current) {
+        execute(runRef.current);
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, [execute]);
 
   // C01: this component instance belongs to ONE viewer — Dashboard remounts it (key = session key) on any account
@@ -153,8 +186,9 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     lastHandoff.current = handoff.id;
     setDraft(handoff.recipe);
     setSort({ metric: null, dir: 'desc' });
+    // Active-guarded via execute: a handoff while hidden/inactive suspends into runRef.
     execute(handoff.recipe);
-  }, [handoff, execute]);
+  }, [handoff, active, execute]);
   // first open without a hand-off: restore the session's applied recipe, else the default preset on the dashboard scope
   useEffect(() => {
     // a hand-off (handled just above, same pass) or a restored draft always wins over the default preset
@@ -348,8 +382,19 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       </header>
       {catalogError && <div className="banner error" role="alert"><span className="grow">{catalogError}</span></div>}
       {shareBanners}
-      <div className="stats-layout">
-        <aside className="cm-panel stats-builder" aria-label="통계 설정">
+      <button
+        type="button"
+        className="ghost-btn stats-editor-toggle"
+        aria-expanded={editorOpen}
+        aria-controls="stats-builder-panel"
+        onClick={() => setEditorOpen((o) => !o)}
+      >
+        {editorOpen ? '조건 닫기' : '조건 변경'}
+      </button>
+      <div className="stats-layout" data-editor={editorOpen ? 'open' : 'closed'}>
+        <aside id="stats-builder-panel" className="cm-panel stats-builder" aria-label="통계 설정">
+          <div className="stats-group" role="group" aria-label="범위와 대상">
+            <h3 className="stats-group-title">범위 / 누구의 신고</h3>
           <label className="stats-field">예시 설정
             <select value="" onChange={(e) => {
               const p = PRESETS.find((x) => x.id === e.target.value);
@@ -385,8 +430,14 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
             <label title={canMine ? undefined : '로그인하면 쓸 수 있습니다'}><input type="radio" name="pop" disabled={!canMine} checked={spec.population === 'mine'} onChange={() => edit({ population: 'mine' })} />내 신고</label>
             <label title={canMine ? undefined : '로그인하면 쓸 수 있습니다'}><input type="radio" name="pop" disabled={!canMine} checked={spec.population === 'compare'} onChange={() => edit({ population: 'compare' })} />전체와 비교</label>
           </fieldset>
+          </div>
+          <div className="stats-group" role="group" aria-label="행과 열">
+            <h3 className="stats-group-title">행 · 열</h3>
           <div className="stats-field"><span className="stats-label">행</span>{listEditor('rows', 'row', catalog?.limits.rows ?? 3)}</div>
           <div className="stats-field"><span className="stats-label">열</span>{listEditor('columns', 'column', catalog?.limits.columns ?? 2)}</div>
+          </div>
+          <div className="stats-group" role="group" aria-label="지표와 비교 대상">
+            <h3 className="stats-group-title">지표 / 비교 대상</h3>
           <div className="stats-field"><span className="stats-label">지표</span>{listEditor('metrics', null, catalog?.limits.metrics ?? 6)}</div>
           <div className="stats-field">
             <span className="stats-label">비교 대상</span>
@@ -408,6 +459,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
               {spec.filters.length === 0 && <span className="cm-muted">고르지 않으면 전체</span>}
             </div>
             <button type="button" className="ghost-btn" onClick={() => setPicker(spec.rows.find((r) => PICK_KINDS.some((k) => k.id === r)) ?? 'agency')}>비교 대상 선택</button>
+          </div>
           </div>
           <div className="stats-run">
             <button type="button" className="primary-button" disabled={!catalog || !!sameAsRunning || (!unapplied && run.status !== 'error')}

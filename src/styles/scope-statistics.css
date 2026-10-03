@@ -213,3 +213,18 @@ html { scroll-padding-top: var(--scroll-top-inset, calc(var(--topbar-h) + 12px))
 .share-result input { width: 100%; min-width: 0; font-size: 12px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
 .share-error { color: var(--rejected); margin: 0; }
 .banner.info { border-left-color: var(--brand); }
+
+/* F04 result-first mobile + grouped editor (Muse implementation lane). */
+.stats-group { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+.stats-group:first-of-type { border-top: 0; padding-top: 0; }
+.stats-group-title { margin: 0; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.02em; }
+.stats-editor-toggle { display: none; align-self: flex-start; }
+
+@media (max-width: 1100px) {
+  .stats-layout { display: flex; flex-direction: column; min-width: 0; width: 100%; }
+  /* Result first on narrow screens; the builder is the "조건 변경" editing panel. */
+  .stats-layout .stats-result { order: -1; min-width: 0; max-width: 100%; }
+  .stats-layout .stats-builder { min-width: 0; max-width: 100%; }
+  .stats-editor-toggle { display: inline-flex; }
+  .stats-layout[data-editor="closed"] .stats-builder { display: none; }
+}

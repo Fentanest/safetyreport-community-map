@@ -1,0 +1,26 @@
+{
+  "origin": "http://127.0.0.1:5196",
+  "checks": [
+    {
+      "name": "stats-no-flushsync-warning",
+      "status": "PASS",
+      "detail": "console errors: 0"
+    },
+    {
+      "name": "stats-mobile-editor-toggle",
+      "status": "PASS",
+      "detail": "조건 변경 toggle visible at 390px"
+    },
+    {
+      "name": "stats-mobile-result-first",
+      "status": "PASS",
+      "detail": "dom:builder-first, toggle ok"
+    },
+    {
+      "name": "stats-mobile-toggle-hides-builder",
+      "status": "PASS",
+      "detail": "builder hidden after 조건 닫기, result first"
+    }
+  ],
+  "mobileConsole": []
+}
