@@ -1,0 +1,27 @@
+[
+  {
+    "anon_execute": false,
+    "authenticated_execute": false,
+    "configuration": [
+      "search_path=\"\"",
+      "work_mem=32MB",
+      "statement_timeout=20s"
+    ],
+    "function": "internal_user_rankings",
+    "schema": "public",
+    "security_definer": true,
+    "service_execute": true
+  },
+  {
+    "anon_execute": false,
+    "authenticated_execute": false,
+    "configuration": [
+      "search_path=\"\"",
+      "work_mem=32MB"
+    ],
+    "function": "ranking_representatives",
+    "schema": "private",
+    "security_definer": true,
+    "service_execute": false
+  }
+]

@@ -105,3 +105,12 @@ DB 마이그레이션 **없음**(맞춤 통계는 기존 `internal_analytics_v2_
 선행 composed migrations → `202610030100_user_rankings.sql` → 인증 전용 `user-rankings` Edge(deno.json 포함) →
 실제 자료·철회·페이지 smoke → Pages live build/scan/deploy. 새 secret·계정 변경 없음.
 세부 적용/롤백/미검증 항목은 [docs/user-rankings.md](user-rankings.md). 이번 작업은 로컬 커밋만 한다.
+
+## 2026-10-03 main 통합 및 실제 운영 적용
+
+후속 사용자 배포 승인으로 main `f9f6537`을 push하고 랭킹 migration202610030100·202610030200을 운영 DB에 적용했다.
+지도 소유 Edge5개 배포 명령 성공(analytics2개 갱신, user-rankings 신규, ingest/my-reports 동일 버전 유지),
+Pages [run37107584086](https://github.com/Fentanest/safetyreport-community-map/actions/runs/37107584086) build/deploy 성공.
+서비스: https://safemap.worklazy.net/. 로컬은 main 하나만 남겼다.
+운영 RPC 권한·익명401·실제 사이트 검수와 운영 로그인 후 미검증 범위는
+[배포 보고서](implementation/main-release-20261003/REPORT.md)에 구분했다. 위 과거 ‘미적용’ 문구는 당시 기록이다.

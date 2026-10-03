@@ -1,0 +1,41 @@
+{
+  "source_commit": "f9f653741cf5c48c35ee1d2633f58713b62679cf",
+  "migration_status": "applied; subsequent dry-run upToDate=true",
+  "migrations": [
+    "202610030100_user_rankings.sql",
+    "202610030200_user_ranking_periods.sql"
+  ],
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s tests/blueprint -v",
+      "passed": 27
+    },
+    {
+      "command": "python3 -m unittest discover -s tests/product -p 'test_*.py' -v",
+      "passed": 12
+    },
+    {
+      "command": "npx vitest run --maxWorkers=2",
+      "passed": 609,
+      "skipped": 100
+    },
+    {
+      "command": "npm run build",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run scan",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/browser/production_release_smoke.mjs",
+      "passed": 8,
+      "data_mode": "live, anonymous"
+    }
+  ],
+  "not_run": [
+    "production signed-in ranking200 and global me/pagination",
+    "production consent/deletion/suspension mutation",
+    "production Kakao map interaction"
+  ]
+}

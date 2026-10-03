@@ -1,0 +1,42 @@
+{
+  "url": "https://safemap.worklazy.net/",
+  "documentStatus": 200,
+  "assets": [
+    {
+      "path": "/assets/family-mark-CvINNr4v.png",
+      "status": 200,
+      "bytes": 89434,
+      "sha256": "f82a0001a9ec84f0c933e456068601a153f219dca657700dd4fbabe992e2799d",
+      "monthly_reporters_present": false,
+      "monthly_fines_present": false,
+      "cumulative_unlucky_present": false
+    },
+    {
+      "path": "/assets/index-9H4gUROW.js",
+      "status": 200,
+      "bytes": 685643,
+      "sha256": "d5134a240fb70326df94ea204824e74da015e0500d20ae43332d56eaa27c12e6",
+      "monthly_reporters_present": true,
+      "monthly_fines_present": true,
+      "cumulative_unlucky_present": true
+    },
+    {
+      "path": "/assets/rolldown-runtime-hePW80VL.js",
+      "status": 200,
+      "bytes": 716,
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+      "monthly_reporters_present": false,
+      "monthly_fines_present": false,
+      "cumulative_unlucky_present": false
+    },
+    {
+      "path": "/assets/index-CxukcjST.css",
+      "status": 200,
+      "bytes": 78484,
+      "sha256": "4f30d82590fd472e9bebba9ad1ff4a18b5be868f95b61b02565996ea6d796640",
+      "monthly_reporters_present": false,
+      "monthly_fines_present": false,
+      "cumulative_unlucky_present": false
+    }
+  ]
+}

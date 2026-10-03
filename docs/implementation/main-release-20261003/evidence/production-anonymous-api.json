@@ -1,0 +1,37 @@
+[
+  {
+    "function": "public-analytics/meta",
+    "status": 401,
+    "error": null,
+    "code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "aggregate_fields_present": false
+  },
+  {
+    "function": "my-analytics",
+    "status": 401,
+    "error": null,
+    "code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "aggregate_fields_present": false
+  },
+  {
+    "function": "community-ingest",
+    "status": 401,
+    "error": null,
+    "code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "aggregate_fields_present": false
+  },
+  {
+    "function": "my-reports",
+    "status": 401,
+    "error": null,
+    "code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "aggregate_fields_present": false
+  },
+  {
+    "function": "user-rankings",
+    "status": 401,
+    "error": null,
+    "code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "aggregate_fields_present": false
+  }
+]
