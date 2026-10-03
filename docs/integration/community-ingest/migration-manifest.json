@@ -334,6 +334,52 @@
    "depends_on": [
     "202610030100"
    ]
+  },
+  {
+   "version": "202610040100",
+   "repo": "map",
+   "path": "supabase/migrations/202610040100_ranking_election_sort.sql",
+   "sha256": "66afabb586579397ae7d1911ae0e01012d7ac14fff8ad3a3e78e011acd94ca12",
+   "depends_on": [
+    "202610030200"
+   ]
+  },
+  {
+   "version": "202610040200",
+   "repo": "map",
+   "path": "supabase/migrations/202610040200_ranking_grouped_diagnostics.sql",
+   "sha256": "84c6dd1adc9dae048bf1a136b5b540ff823d8c59dc084a19fc7ca8d0c0383c81",
+   "depends_on": [
+    "202610040100"
+   ]
+  },
+  {
+   "version": "202610040300",
+   "repo": "map",
+   "path": "supabase/migrations/202610040300_analytics_rollups.sql",
+   "sha256": "adc8cc0d9ffef0c02770071a5f9b2cfb716b7aca90e218ac2947677fabb569d6",
+   "depends_on": [
+    "202610010100",
+    "202610040200"
+   ]
+  },
+  {
+   "version": "202610040400",
+   "repo": "map",
+   "path": "supabase/migrations/202610040400_viewer_key_lookup.sql",
+   "sha256": "ebbd31832d54606d480ec77eb3740bd770822f61afaba208890d45ded086073c",
+   "depends_on": [
+    "202610040300"
+   ]
+  },
+  {
+   "version": "202610040500",
+   "repo": "map",
+   "path": "supabase/migrations/202610040500_cohort_state_setwise.sql",
+   "sha256": "0499e658aec63b2f62e4b85e42dc7de985f8182b516fbc82f5985c9592cac8b5",
+   "depends_on": [
+    "202610040400"
+   ]
   }
  ],
  "functions": [
@@ -357,7 +403,9 @@
     "src/domain/public.ts",
     "src/domain/statistics.ts",
     "src/domain/tableSort.ts",
-    "src/domain/managerNames.ts"
+    "src/domain/managerNames.ts",
+    "server/rollups.ts",
+    "server/rollupSchema.ts"
    ]
   },
   {
@@ -423,7 +471,8 @@
     "src/domain/public.ts",
     "src/domain/statistics.ts",
     "src/domain/tableSort.ts",
-    "src/domain/managerNames.ts"
+    "src/domain/managerNames.ts",
+    "server/rollups.ts"
    ]
   },
   {

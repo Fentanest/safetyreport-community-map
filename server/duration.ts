@@ -12,7 +12,7 @@
  *   p90 = nearest-rank: the value at rank ceil(0.9 × n) of the ascending list. Always from raw values of the
  *   scope — never an average of group medians or means.
  */
-import { kstDate, type PrivateFact, type Status } from './aggregate.ts';
+import { kstDate, kstDayIndex, type PrivateFact, type Status } from './aggregate.ts';
 import type { DateBasis } from '../src/domain/public.ts';
 
 export const ANSWERED: ReadonlySet<Status> = new Set<Status>(['accepted', 'partial', 'rejected', 'completed_unknown']);
@@ -30,21 +30,13 @@ export interface DurationSummary {
   excluded: { no_report_date: number; reversed: number; no_answer_date: number };
 }
 
-const DAY = 86400000;
-
-function dayIndex(value: string | null): number | null {
-  const day = kstDate(value);
-  if (day === null) return null;
-  return Math.round(Date.parse(`${day}T00:00:00Z`) / DAY);
-}
-
 export type DurationResult = { days: number } | { reason: 'no_report_date' | 'reversed' | 'not_answered' | 'no_answer_date' };
 
 export function durationOf(fact: PrivateFact): DurationResult {
   if (!ANSWERED.has(fact.status)) return { reason: 'not_answered' };
-  const done = dayIndex(fact.completed_date);
+  const done = kstDayIndex(fact.completed_date);
   if (done === null) return { reason: 'no_answer_date' };
-  const reported = dayIndex(fact.report_date);
+  const reported = kstDayIndex(fact.report_date);
   if (reported === null) return { reason: 'no_report_date' };
   const days = done - reported;
   return days < 0 ? { reason: 'reversed' } : { days };

@@ -27,3 +27,7 @@ A 감사/보존표/검사/실측 → B 요청·계정·hidden 보호 → C 전�
 Sol: 계약/데이터/DB/CI/test/scripts/Dashboard/common tokens/package(single writer). Muse: RankingsPage.tsx,rankings.css,StatisticsPage.tsx,scope-statistics.css 및 자기보고/증거. 같은파일·worktree 동시쓰지 않음. UI 커밋회수 후 소유를Sol로이전. 검수는최종제품고정 commit별도worktree(readonly product). 모델opencode-go/muse-spark-1.3-contributor/high host목록에서 확인; 실제session export 별도 확인.
 
 롤백: 각 단계커밋을 forward revert(사용자파일 보존). DB는새migration만, 이전함수본문 복구 forward migration. 권한·철회·현재자료를 보존하고 데이터snapshot 복원 금지. 배포는 DB→Edge→Pages 호환순서 준비만. SQL/Edge변경과 기존PC/mobile/확장API영향은 CONTRACT-CHANGES/RELEASE에최종기록.
+
+## 추가 실측에 따른 좁은 변경 (2026-10-04)
+
+반복 SQL 계획에서 viewer threshold의 key_numbers Hash Semi Join이 key 제한 전에 전체 60만 관측에 lineage 함수를 실행해 약9초를 썼다. 다른 실행의 planner 선택에서는 같은 gate가 약52ms였다. 결과 캐시 없이 이 계획 변동을 없애기 위해 번호 없는 own key마다 LATERAL/LIMIT1 lookup을 적용한다(040400). metadata 전체 bounds도 행별 lineage 호출을 active-grants 집합 JOIN으로 바꾼다(040500). auth와 global historical number 정의는 원본 그대로다. 작은 frozen-function differential 이후에만 로컬 적용했다. 통합 성능은 같은 rollback seed/connection에서 원본 alias와 후보를 비교하고 plan_cache_mode를 명시해 gate 계획 차이를 숨기지 않는다. 서로 다른 gate 계획의 별도 실행 수치를 그대로 개선율로 단정하지 않는다.

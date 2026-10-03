@@ -3,6 +3,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { frozenOriginalRankingSql, rankingMeasureSeed } from "./helpers/rankingMeasureSeed";
 import {
   createUser,
   DB_CONTAINER,
@@ -65,31 +66,15 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
           }),
         ),
       );
+      const priorAboveViewer = Number(admin('select count(*) from (select contributor_id,count(*) n from private.ranking_representatives() group by contributor_id) s where n>10;'));
       // Isolated transaction; USER triggers skipped only while bulk-loading a synthetic fixture (ranking reads themselves
       // use the unchanged production tables/functions). Trigger settings, users, facts and ANALYZE roll back together.
-      const base = `begin;
-    alter table private.community_report_facts disable trigger user;
-    create temporary table rk_users as select g as idx,gen_random_uuid() as id,gen_random_uuid() as grant_id,gen_random_uuid() as lineage from generate_series(1,1000) g;
-    insert into auth.users(id,instance_id,aud,role,email,created_at,updated_at)
-      select id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated','ranking-perf-'||id||'@example.invalid',now(),now() from rk_users;
-    insert into auth.identities(provider_id,user_id,identity_data,provider,created_at,updated_at)
-      select id::text,id,jsonb_build_object('sub',id::text),'kakao',now(),now() from rk_users;
-    insert into private.contributor_profiles(user_id,consent_version,privacy_policy_version) select id,'2026-09-28.3','2026-09-28.3' from rk_users;
-    insert into private.community_consent_grants(grant_id,lineage_id,user_id,policy_version,consent_text_sha256,granted_via,granted_session_id)
-      select grant_id,lineage,id,'2026-09-28.3',repeat('a',64),'safetyreport_server',gen_random_uuid() from rk_users;
-    insert into private.community_report_facts(contributor_id,dataset_key,source_report_key,source_report_id,latest_receipt_id,consent_grant_id,writer_epoch,source_revision,payload_sha256,public_state,category,status,disposition,amount_kind,report_date,completed_date,coord_source,report_number,answer_accepted_at,first_accepted_at)
-      select u.id,repeat('a',64),encode(sha256(convert_to('perf-'||g,'UTF8')),'hex'),'9100000001',gen_random_uuid(),u.grant_id,1,1,repeat('b',64),'completed','parking',
-        case when g<=1+u.idx%50*10 then 'partial' when g%17=0 then 'completed_unknown' else 'accepted' end,
-        case when g<=1+u.idx%50*10 then 'fine' else 'warning' end,'unknown','2040-09-01','2040-09-30','none',null,now(),now()
-      from rk_users u cross join generate_series(1,500) g;
-    insert into private.community_report_facts select (jsonb_populate_record(null::private.community_report_facts,to_jsonb(f)||jsonb_build_object('dataset_key',repeat('c',64)))).*
-      from private.community_report_facts f join rk_users u on u.id=f.contributor_id where u.idx<=200;
-    analyze private.community_report_facts;
-    alter table private.community_report_facts enable trigger user;
+      const paired = process.env.RANKINGS_COMPARE === '1';
+      const base = rankingMeasureSeed() + (paired ? frozenOriginalRankingSql() + "set plan_cache_mode=force_generic_plan;\n" : '') + `
     set client_min_messages=log;
-    load 'auto_explain';set auto_explain.log_min_duration=1;set auto_explain.log_analyze=on;set auto_explain.log_buffers=on;
+    load 'auto_explain';set statement_timeout='25s';set auto_explain.log_min_duration=50;set auto_explain.log_analyze=on;set auto_explain.log_buffers=on;
     set auto_explain.log_nested_statements=on;set auto_explain.log_parameter_max_length=0;
-    create temporary table rk_results(label text,result jsonb);
+    create temporary table rk_results(label text,result jsonb,elapsed_ms double precision);
   `;
       const requests = [
         [
@@ -121,18 +106,22 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
         `public.internal_user_rankings('${viewer.id}','${viewer.session}',${
           lit(JSON.stringify(query))
         }::jsonb)`;
-      const script = base + requests.map(([label, query]) =>
-        `insert into rk_results values('${label}',${call(query)});`
-      ).join("\n") +
-        `insert into rk_results values('next',public.internal_user_rankings('${viewer.id}','${viewer.session}',${
-          lit(JSON.stringify({ ...requests[0][1], page: 2 }))
-        }::jsonb||jsonb_build_object('expected_version',(select result->>'dataset_version' from rk_results where label='first'))));
-    insert into rk_results values('all',${call(querySchema.parse({}))});
-    insert into rk_results values('withdrawn',${call(requests[0][1])});
-    update private.community_consent_grants set revoked_at=now() where user_id in(select id from rk_users where idx%50=49);
-    insert into rk_results values('after-withdrawal',${call(requests[0][1])});
-    select jsonb_build_object('label',label,'bytes',octet_length(result::text),'response',result) from rk_results;
-    rollback;`;
+      const repetitions = Number(process.env.RANKINGS_REPEATS || '1');
+      if (!Number.isInteger(repetitions) || repetitions < 1 || repetitions > 30) throw new Error('invalid repeats');
+      const measured = (label: string, expression: string) => `with started as materialized(select clock_timestamp() as at), computed as materialized(select ${expression} as result, at from started)
+        insert into rk_results select '${label}',result,extract(epoch from clock_timestamp()-at)*1000 from computed;`;
+      const beforeCall = (query: unknown) => call(query).replace('public.internal_user_rankings(', 'private.user_rankings_before_measure(');
+      const beforeSamples = paired ? Array.from({length: repetitions}, (_, i) => requests.slice(0,2).map(([label,query]) => measured(`before-${label}-${i+1}`,beforeCall(query))).join('\n')).join('\n') : '';
+      const repeated = Array.from({ length: repetitions - 1 }, (_, i) => requests.slice(0, 2).map(([label, query]) =>
+        measured(`repeat-${label}-${i + 2}`, call(query))
+      ).join('\n')).join('\n');
+      const script = base + requests.map(([label, query]) => measured(label, call(query))).join("\n") +
+        "\nset auto_explain.log_min_duration=-1;\n" + beforeSamples + "\n" + repeated + "\nset auto_explain.log_min_duration=50;\n" +
+        measured('next', `public.internal_user_rankings('${viewer.id}','${viewer.session}',${lit(JSON.stringify({ ...requests[0][1], page: 2 }))}::jsonb||jsonb_build_object('expected_version',(select result->>'dataset_version' from rk_results where label='first')))`)+
+        measured('all',call(querySchema.parse({})))+measured('withdrawn',call(requests[0][1]))+
+        `update private.community_consent_grants set revoked_at=now() where user_id in(select id from rk_users where idx%50=49);`+
+        measured('after-withdrawal',call(requests[0][1]))+
+        `select jsonb_build_object('label',label,'elapsed_ms',elapsed_ms,'bytes',octet_length(result::text),'response',result) from rk_results; rollback;`;
       // Sample RSS of the owned database connection only, from its application_name. Each sample is retained.
       const rss: number[] = [];
       let sampling = true;
@@ -195,6 +184,14 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
             return [x.label, x];
           }),
         );
+        writeFileSync(`${OUT}/500k-prevalidation.json`, JSON.stringify({ seed: 'refactor-rank-deterministic-v1', measurements: Object.entries(result).map(([label,value]) => ({ label, elapsed_ms: (value as {elapsed_ms:number}).elapsed_ms, bytes: (value as {bytes:number}).bytes })) }, null, 2));
+        writeFileSync(`${OUT}/500k-plans.txt`, significant(stderr).replaceAll(viewer.id, '[synthetic-viewer-uuid]').replaceAll(viewer.session, '[redacted-local-session]'));
+        if(paired) {
+          for(let i=1;i<=repetitions;i++)for(const label of ['first','rates']) {
+            const a = {...result[`before-${label}-${i}`].response}; const b = {...result[label].response};
+            delete a.generated_at;delete b.generated_at;expect(a).toEqual(b);
+          }
+        }
         const first = responseSchema.parse(result.first.response),
           next = responseSchema.parse(result.next.response),
           rates = responseSchema.parse(result.rates.response),
@@ -231,7 +228,7 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
         expect(all.me).toMatchObject({
           uuid: viewer.id,
           reports: 10,
-          rank: 1001,
+          rank: 1001 + priorAboveViewer,
         });
         expect(result["after-withdrawal"].response.total_participants).toBe(
           980,
@@ -248,23 +245,21 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
         );
         const report = {
           measured_at: new Date().toISOString(),
+          paired_original: paired,
+          plan_cache_mode: paired ? 'force_generic_plan for both original and candidate' : 'auto',
           environment:
             "LOCAL Docker Supabase PostgreSQL; synthetic; seed rollback; not production",
+          seed: 'refactor-rank-deterministic-v1',
+          existing_participants_above_viewer: priorAboveViewer,
           unique_reports: 500000,
           observations: 600000,
           users: 1000,
+          repetitions_first_and_rates: repetitions,
           page_size: 50,
           elapsed_seed_queries_rollback_ms: Math.round(
             performance.now() - started,
           ),
-          query_total_ms: Object.fromEntries(
-            Array.from(
-              stderr.matchAll(
-                /LOG:  duration: ([0-9.]+) ms  plan:\nQuery Text: insert into rk_results values\('([^']+)'/g,
-              ),
-              (m) => [m[2], Number(m[1])],
-            ),
-          ),
+          query_total_ms: Object.fromEntries(Object.entries(result).map(([label,value]) => [label,(value as { elapsed_ms: number }).elapsed_ms])),
           query_plan_durations_ms: durations.filter((x) =>
             x > 10
           ),
@@ -295,6 +290,6 @@ describe.skipIf(!enabled)("rankings 500k query measurements", () => {
         deleteUsers([viewer]);
       }
     },
-    600000,
+    1800000,
   );
 });

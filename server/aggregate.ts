@@ -75,6 +75,9 @@ export interface PrivateFact {
 const terminal = new Set<Status>(['accepted', 'partial', 'rejected', 'withdrawn', 'transferred', 'completed_unknown']);
 const KST = 'Asia/Seoul';
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+// Calendar parsing only: bounded primitive values, no facts, viewer data or aggregate/ranking responses.
+// Keying by the day text (rather than fact object) also remains correct when a fact's dates change.
+const dayIndexes = new Map<string, number>();
 
 export function kstDate(value: string | null): string | null {
   if (value == null) return null;
@@ -89,9 +92,19 @@ export function kstDate(value: string | null): string | null {
 }
 
 function dayNumber(day: string): number {
+  const known = dayIndexes.get(day);
+  if (known !== undefined) return known;
   const value = Date.parse(`${day}T00:00:00Z`);
   if (!datePattern.test(day) || Number.isNaN(value) || new Date(value).toISOString().slice(0, 10) !== day) throw new Error('invalid ISO day');
-  return value / 86400000;
+  const index = value / 86400000;
+  if (dayIndexes.size >= 1024) dayIndexes.delete(dayIndexes.keys().next().value!);
+  dayIndexes.set(day, index);
+  return index;
+}
+
+export function kstDayIndex(value: string | null): number | null {
+  const day = kstDate(value);
+  return day === null ? null : dayNumber(day);
 }
 
 export function previousWindow(start: string, end: string): { start: string; end: string } {
@@ -431,7 +444,7 @@ export function mapNodes(exact: readonly PublicPoint[], limit = MAP_NODE_LIMIT):
   }).sort((a, b) => b.report_count - a.report_count || a.key.localeCompare(b.key));
 }
 
-function vehicleRows(reported: readonly PrivateFact[]) {
+export function vehicleRows(reported: readonly PrivateFact[]) {
   const counts = new Map<string, { raw: string; count: number }>();
   for (const fact of reported) {
     const plate = parsePlate(fact.vehicle_raw);
@@ -603,36 +616,53 @@ export function overviewOf({ sel, full, comparisonCovered }: OverviewInput): Ove
   };
 }
 
+/** Only the monthly DTO. Classify each report once, rather than scan the cohort for every month. */
+export function seriesOf(sel: ScopeSelection, scope: Scope, window: { min: string | null; max: string | null }, today: string): MonthlyBucket[] {
+  const groups = new Map<string, PrivateFact[]>();
+  for (const fact of sel.cohort) {
+    const month = sel.dateOf(fact)!.slice(0, 7);
+    const group = groups.get(month);
+    if (group) group.push(fact);
+    else groups.set(month, [fact]);
+  }
+  return monthSpine(scope, window, today).map(slot => {
+    const frame = { month: slot.month, interval_start: slot.interval_start, interval_end: slot.interval_end,
+      range_partial: slot.range_partial, in_progress: slot.in_progress,
+      partial: slot.range_partial || slot.in_progress, coverage_note: slot.coverage_note };
+    if (slot.no_data) return { ...frame, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null, fine_amount: null };
+    const monthly = groups.get(slot.month) ?? [];
+    const done = monthly.filter(isCompleted);
+    return { ...frame, report_count: monthly.length, completed_count: done.length,
+      fine_count: done.filter(fact => fact.disposition === 'fine').length,
+      outcomes: outcomes(done), duration: durationBrief(done), fine_amount: fineAmountBrief(done), rating: ratingSummary(done) };
+  });
+}
+
+/** Match the dashboard's fallback coverage when the state RPC has no declared bounds. */
+export function coverageWindow(input: readonly PrivateFact[], scope: Scope, options: Pick<AggregateOptions, 'basisBounds' | 'dataMin' | 'asOf'>) {
+  const declared = basisWindow(scope.date_basis, options);
+  let min = declared.min;
+  if (min === null) for (const fact of activeFacts(input)) {
+    const day = kstDate(fact[scope.date_basis]);
+    if (day !== null && (min === null || day < min)) min = day;
+  }
+  return { min, max: declared.max };
+}
+
 export function aggregateDashboard(input: readonly PrivateFact[], scope: Scope, options: AggregateOptions): DashboardData {
   const sel = selectScope(representatives(input), scope);
   const { facts, cohort, done } = sel;
-  const basis = scope.date_basis;
   // participants are counted over every listed row of the cohort identities (representatives alone hide co-contributors)
   const full = selectScope(input, scope);
   const today = options.today ?? todayKst();
-  const declared = basisWindow(basis, options);
-  // unknown bounds (no state value): the earliest selected date of the input, never the other date
-  const fallbackMin = declared.min ?? (activeFacts(input).map(fact => kstDate(fact[basis])).filter((d): d is string => d !== null).sort()[0] ?? null);
-  const window = { min: fallbackMin, max: declared.max };
+  const window = coverageWindow(input, scope, options);
   const comparisonCovered = window.min === null || sel.prev.start >= window.min;
   const overview = overviewOf({ sel, full, comparisonCovered });
   // R07: one pin per normalized address of the cohort (no place is hidden for its other date)
   const { places: exactPlaces, unplaced } = placeRows(cohort, done);
   const points = mapNodes(exactPlaces);
   const vehicles = vehicleRows(cohort);
-  const monthOf = (fact: PrivateFact) => sel.dateOf(fact)?.slice(0, 7);
-  const months: MonthlyBucket[] = monthSpine(scope, window, today).map(slot => {
-    const frame = { month: slot.month, interval_start: slot.interval_start, interval_end: slot.interval_end,
-      range_partial: slot.range_partial, in_progress: slot.in_progress,
-      partial: slot.range_partial || slot.in_progress, coverage_note: slot.coverage_note };
-    if (slot.no_data) return { ...frame, report_count: null, completed_count: null, fine_count: null, outcomes: null, duration: null, fine_amount: null };
-    // one month of the cohort date: the count and every result share the same reports (U01 1.8)
-    const monthly = cohort.filter(fact => monthOf(fact) === slot.month);
-    const monthlyDone = monthly.filter(isCompleted);
-    return { ...frame, report_count: monthly.length, completed_count: monthlyDone.length,
-      fine_count: monthlyDone.filter(fact => fact.disposition === 'fine').length,
-      outcomes: outcomes(monthlyDone), duration: durationBrief(monthlyDone), fine_amount: fineAmountBrief(monthlyDone), rating: ratingSummary(monthlyDone) };
-  });
+  const months = seriesOf(sel, scope, window, today);
   const capability = (status: 'supported' | 'missing', reason: string | null = null) => ({
     status, reason, coverage: status === 'supported' ? { eligible: facts.length, total: facts.length } : null,
   });

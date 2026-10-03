@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.117.1';
 import { createPublicHandler, type AnalyticsState, type FactsOptions, type ViewerCheck } from '../../../server/publicHandler.ts';
 import type { PrivateFact } from '../../../server/aggregate.ts';
 import type { Scope } from '../../../src/domain/public.ts';
+import { parseRollup } from '../../../server/rollupSchema.ts';
 
 // The database client remains inside the Edge runtime; the service key never enters a VITE variable, response,
 // log, or Pages artifact. Every read requires a verified Kakao contributor; no runtime public-mode switch.
@@ -16,7 +17,8 @@ const db = createClient(supabaseUrl, serverKey, { auth: { persistSession: false,
 async function rpc(name: string, args?: Record<string, unknown>): Promise<unknown> {
   const { data, error } = await db.rpc(name, args);
   // the facts RPC refuses an over-budget scope as a whole; pass that on instead of a generic 503
-  if (error) throw new Error(/RESULT_TOO_LARGE/.test(error.message ?? '') ? 'RESULT_TOO_LARGE' : 'analytics repository unavailable');
+  if (error) throw new Error(/RESULT_TOO_LARGE/.test(error.message ?? '') ? 'RESULT_TOO_LARGE' :
+    /DATASET_CHANGED/.test(error.message ?? '') ? 'DATASET_CHANGED' : 'analytics repository unavailable');
   return data;
 }
 
@@ -46,6 +48,10 @@ const handle = createPublicHandler({
     if (!Array.isArray(value)) throw new Error('analytics source unavailable');
     if (value.length > 100000) throw new Error('RESULT_TOO_LARGE');
     return value as PrivateFact[];
+  },
+  async getRollup(scope, kind, options) {
+    const value = await rpc('internal_analytics_rollup', { p_scope: scope, p_kind: kind, p_options: options });
+    return parseRollup(kind, value);
   },
   async allowRequest(_request: Request, viewerId: string): Promise<boolean> {
     const value = await rpc('internal_analytics_v2_rate_limit', { p_bucket: await rateBucket(viewerId) });
