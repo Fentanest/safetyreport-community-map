@@ -115,6 +115,64 @@ describe.skipIf(!enabled)(
         ),
       ).toBe("0");
     });
+    it("July2023 is the same cohort for monthly reporters, fines and outcomes; cumulative unlucky includes other months", () => {
+      insertFacts([
+        f(a, "july-start", { status: "rejected", completedDate: "2023-07-01", reportDate: "2023-06-30" }),
+        f(a, "july-end", { status: "partial", disposition: "fine", completedDate: "2023-07-31", reportDate: "2023-07-31" }),
+        f(a, "july-unknown", { status: "completed_unknown", completedDate: "2023-07-15", reportDate: "2023-07-15" }),
+        f(a, "june", { status: "rejected", completedDate: "2023-06-30", reportDate: "2023-07-01" }),
+        f(a, "august", { status: "rejected", completedDate: "2023-08-01", reportDate: "2023-08-01" }),
+        f(b, "july-many1", { completedDate: "2023-07-15" }),
+        f(b, "july-many2", { completedDate: "2023-07-15" }),
+        f(b, "july-many3", { completedDate: "2023-07-15" }),
+        f(b, "july-many4", { completedDate: "2023-07-15" }),
+      ]);
+      for(const [theme,metric,num] of [["reporters","reports_count",3],["fines","fine_rate",1],["unlucky","rejected_rate",1],["unlucky","partial_rate",1]] as const){
+        const r=run({theme,metric,period:"month",month:"2023-07"});
+        expect(r.scope).toMatchObject({start:"2023-07-01",end:"2023-07-31",month:"2023-07",in_progress:false});
+        expect(r.me).toMatchObject({reports:3,denominator:3,numerator:num,fine:1,rejected:1,partial:1,completed_unknown:1});
+        if(metric==="reports_count")expect(r.rows[0]?.uuid).toBe(b.id);
+        if(metric.endsWith("_rate"))expect(r.me?.value).toBeCloseTo(100/3);
+        const range=run({theme,metric,period:"range",start:"2023-07-01",end:"2023-07-31"});
+        expect(range.rows).toEqual(r.rows);expect(range.me).toEqual(r.me);
+      }
+      const all=run({theme:"unlucky",metric:"rejected_count",period:"all"});
+      expect(all.me).toMatchObject({reports:15,rejected:3,numerator:3,denominator:15});
+      const reportDay=run({theme:"unlucky",metric:"rejected_rate",period:"month",month:"2023-07",date_basis:"report_date"});
+      expect(reportDay.me).toMatchObject({reports:3,rejected:1,fine:1,partial:1,completed_unknown:1});
+      // July and June give the same count here but represent different rows; the date axis stays explicit.
+      expect(reportDay.scope.date_basis).toBe("report_date");
+    });
+    it("newest observation elected before July filtering also for monthly reporter/fine and cumulative unlucky", () => {
+      insertFacts([
+        f(a,"moved-month",{status:"rejected",completedDate:"2023-07-31",answerAt:"2023-07-31T00:00:00Z",payload:"old"}),
+        f(a,"moved-month",{dataset:"mobile",status:"partial",disposition:"fine",completedDate:"2023-08-01",answerAt:"2023-08-01T00:00:00Z",payload:"new"}),
+      ]);
+      for(const [theme,metric]of [["reporters","reports_count"],["fines","fine_count"],["unlucky","rejected_count"]]as const){
+        expect(run({theme,metric,period:"month",month:"2023-07"}).me).toBeNull();
+        expect(run({theme,metric,period:"range",start:"2023-07-01",end:"2023-07-31"}).me).toBeNull();
+      }
+      expect(run({theme:"unlucky",metric:"partial_count",period:"all"}).me).toMatchObject({reports:11,partial:1,rejected:0});
+      expect(run({theme:"fines",metric:"fine_count",period:"month",month:"2023-08"}).me).toMatchObject({reports:1,fine:1});
+    });
+    it("monthly version restarts across themes/months and year/month bounds apply to all three", () => {
+      insertFacts([
+        f(a,"dec-last",{status:"rejected",completedDate:"2023-12-31"}),
+        f(a,"jan-first",{status:"partial",disposition:"fine",completedDate:"2024-01-01"}),
+        f(a,"leap-last",{completedDate:"2024-02-29"}),
+        f(a,"march-first",{completedDate:"2024-03-01"}),
+        f(b,"dec-other",{completedDate:"2023-12-31"}),
+      ]);
+      for(const [theme,metric]of [["reporters","reports_count"],["fines","fine_count"],["unlucky","rejected_count"]]as const){
+        const dec=run({theme,metric,period:"month",month:"2023-12",page_size:1});
+        expect(dec.me?.reports).toBe(1);expect(dec.scope.end).toBe("2023-12-31");
+        expect(run({theme,metric,period:"month",month:"2024-01"}).me?.reports).toBe(1);
+        expect(run({theme,metric,period:"month",month:"2024-02"}).scope.end).toBe("2024-02-29");
+        expect(error({theme,metric,period:"month",month:"2024-01",page_size:1,page:2,expected_version:dec.dataset_version}).error).toBe("DATASET_CHANGED");
+      }
+      const first=run({theme:"reporters",metric:"reports_count",period:"month",month:"2023-12",page_size:1});
+      expect(error({theme:"unlucky",metric:"rejected_count",period:"month",month:"2023-12",page_size:1,page:2,expected_version:first.dataset_version}).error).toBe("DATASET_CHANGED");
+    });
     it("new representative status/disposition/category/date before filtering; old result never revived", () => {
       insertFacts([
         f(a, "changed", {

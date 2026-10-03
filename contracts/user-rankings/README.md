@@ -11,7 +11,7 @@ UUID bans, limited to this API's aggregate row. Map/my-reports contracts and pri
 |---|---|
 | theme | reporters (default), fines, unlucky |
 | metric | reporters: reports_count; fines: fine_count, fine_rate; unlucky: rejected_count, rejected_rate, partial_count, partial_rate |
-| period | all (default), range, month; unlucky requires month |
+| period | all (default), range, month; all themes support all three |
 | start/end | ISO calendar dates, inclusive, required together for range; no duration cap |
 | month | YYYY-MM for month; omitted = server's current Asia/Seoul month |
 | date_basis | completed_date (default) / report_date |
@@ -19,6 +19,11 @@ UUID bans, limited to this API's aggregate row. Map/my-reports contracts and pri
 | min_reports | integer ≥1, default 1; independent of viewer's 10-report all-history gate |
 | page/page_size | 1-based; default 1/20; page_size ≤50; no arbitrary page-count cap |
 | expected_version | 32 hex digits; REQUIRED when page >1, optional on first page |
+
+Each of the three themes can be viewed cumulatively, over a date range, or for any selected KST calendar month.
+The six UI entries are these themes paired with cumulative/range or monthly mode; monthly entries retain the same
+selected month, date basis and category when changing theme. Current-month titles say 이달; past months name the
+actual year/month. 2023-07 means2023-07-01 through2023-07-31 inclusive, never a monthly TOP-list union.
 
 Theme/metric and period combinations are validated in Edge AND SQL. Unknown/duplicate query fields, impossible dates,
 reversed ranges, start/end outside range mode, month outside month mode and arbitrary user IDs return 400.

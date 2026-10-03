@@ -231,7 +231,7 @@ describe("ranking strict contract and authenticated boundary", () => {
       const q of [{ period: "range", start: "2026-02-30", end: "2026-03-01" }, {
         period: "all",
         start: "2026-01-01",
-      }, { theme: "unlucky", metric: "partial_rate", period: "all" }]
+      }, { theme: "unlucky", metric: "partial_rate", period: "all", month: "2023-07" }]
     ) expect(querySchema.safeParse(q).success).toBe(false);
   });
   it("KST midnight/month/year/leap boundaries", () => {

@@ -99,6 +99,14 @@ async function seedData() {
       }))
     ),
   );
+  // Historical month is a real local table cohort, not a static list of winners.
+  insertFacts(all.flatMap((user, i) => Array.from({ length: 2 + i % 4 }, (_, j) => ({
+    user, key: `july2023-${j}`, dataset: 'pc', sourceId: '9100000001',
+    status: j % 3 === 0 ? 'rejected' : j % 3 === 1 ? 'partial' : 'accepted',
+    disposition: j % 3 === 1 ? 'fine' : 'none',
+    completedDate: j % 2 === 0 ? '2023-07-01' : '2023-07-31',
+    reportDate: j === 0 ? '2023-06-30' : '2023-07-15',
+  }))));
   insertFacts(
     all.map((user, i) => ({
       user,

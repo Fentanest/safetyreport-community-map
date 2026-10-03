@@ -54,9 +54,6 @@ export const querySchema = z.strictObject({
   if (q.period !== "month" && q.month) {
     c.addIssue({ code: "custom", message: "month conflict" });
   }
-  if (q.theme === "unlucky" && q.period !== "month") {
-    c.addIssue({ code: "custom", message: "month required" });
-  }
   if (q.page > 1 && !q.expected_version) {
     c.addIssue({ code: "custom", message: "version required" });
   }

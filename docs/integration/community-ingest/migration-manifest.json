@@ -325,6 +325,15 @@
    "depends_on": [
     "202610020100"
    ]
+  },
+  {
+   "version": "202610030200",
+   "repo": "map",
+   "path": "supabase/migrations/202610030200_user_ranking_periods.sql",
+   "sha256": "5cefd0ed18d9dfbf3d6ee6d9ece642a0a99534fce76c14925abe390fedf312ce",
+   "depends_on": [
+    "202610030100"
+   ]
   }
  ],
  "functions": [
