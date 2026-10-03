@@ -803,12 +803,9 @@ export default function RankingsPage({ active }: { active: boolean }) {
           className="rk-advanced"
           open={detailsOpen}
           onToggle={(e) => {
-            const open = (e.target as HTMLDetailsElement).open;
-            setDetailsOpen(open);
-            if (open) {
-              setAdvBasis(appliedRef.current.date_basis);
-              setAdvMin(String(appliedRef.current.min_reports));
-            }
+            // Closed-panel effect already synchronizes drafts. The native toggle event can run
+            // after the first input event; resetting here would erase that user's new selection.
+            setDetailsOpen((e.target as HTMLDetailsElement).open);
           }}
         >
           <summary>상세 조건</summary>
