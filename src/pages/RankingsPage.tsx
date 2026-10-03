@@ -719,7 +719,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
           </div>
         )}
 
-        <div className="rk-field">
+        <div className="rk-field rk-period">
           <span id="rk-period-label">기간</span>
           <div className="rk-seg" role="group" aria-labelledby="rk-period-label">
             <button
@@ -895,8 +895,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
               <p className="rk-me-line">
                 <strong>내 순위 {me.rank}위 / {guarded.total_participants.toLocaleString('ko-KR')}명</strong>
                 <span>{valueHeader} {formatValue(me, appliedMetric)}</span>
-                {isRate && <span>{me.numerator.toLocaleString('ko-KR')}건 중 {me.denominator.toLocaleString('ko-KR')}건</span>}
-                <span>완료 신고 {me.reports.toLocaleString('ko-KR')}건</span>
+                {isRate && <span>{me.denominator.toLocaleString('ko-KR')}건 중 {me.numerator.toLocaleString('ko-KR')}건</span>}
+                {!isReporters && <span>완료 신고 {me.reports.toLocaleString('ko-KR')}건</span>}
                 {me.tie_count > 1 && <span>공동 {me.tie_count}명</span>}
               </p>
             ) : (
@@ -951,7 +951,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
                         </td>
                         <td className="num">
                           <b>{formatValue(row, appliedMetric)}</b>
-                          {isRate && <small> {row.numerator.toLocaleString('ko-KR')}건 중 {row.denominator.toLocaleString('ko-KR')}건</small>}
+                          {isRate && <small> {row.denominator.toLocaleString('ko-KR')}건 중 {row.numerator.toLocaleString('ko-KR')}건</small>}
                           {row.reports === 1 && <small>표본 1건</small>}
                         </td>
                         {!isReporters && (
@@ -971,7 +971,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
                     <span className="rk-list-rank">
                       {row.rank}위{row.tie_count > 1 && <small> 공동 {row.tie_count}명</small>}
                     </span>
-                    <button
+                    <span className="rk-list-person"><button
                       type="button"
                       className="rk-uuid-btn"
                       aria-label={`참여자 ${shortUuid(row.uuid)} 전체 UUID 보기`}
@@ -980,19 +980,19 @@ export default function RankingsPage({ active }: { active: boolean }) {
                     >
                       <code className="rk-uuid">{shortUuid(row.uuid)}</code>
                     </button>
-                    {row.is_me && <span className="rk-me-badge">나</span>}
+                    {row.is_me && <span className="rk-me-badge">나</span>}</span>
                     <b className="rk-list-value">{formatValue(row, appliedMetric)}</b>
                     <span className="rk-list-sub">
                       {isRate
-                        ? `${valueHeader} ${row.numerator.toLocaleString('ko-KR')}건 중 ${row.denominator.toLocaleString('ko-KR')}건`
-                        : `${valueHeader} ${row.reports.toLocaleString('ko-KR')}건`}
+                        ? `${valueHeader} ${row.denominator.toLocaleString('ko-KR')}건 중 ${row.numerator.toLocaleString('ko-KR')}건`
+                        : `완료 신고 ${row.reports.toLocaleString('ko-KR')}건`}
                       {!isReporters && row.completed_unknown > 0 ? ` · 미확인 ${row.completed_unknown}건 포함` : ''}
                       {row.reports === 1 ? ' · 표본 1건' : ''}
                     </span>
                   </li>
                 ))}
               </ul>
-              <p className="rk-fraction-note">비율이 같아 보여도 실제 분수가 다를 수 있습니다. 순위는 서버가 정확한 분수로 매깁니다.</p>
+              {isRate && <p className="rk-fraction-note">비율이 같아 보여도 실제 분수가 다를 수 있습니다. 순위는 서버가 정확한 분수로 매깁니다.</p>}
               <div className="rk-pager">
                 <button
                   className="ghost-btn"

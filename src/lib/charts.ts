@@ -52,7 +52,7 @@ export function baseOption(t: ChartTheme) {
 
 /** dev/e2e only (the calls sit behind import.meta.env.DEV and are stripped from production): live chart instances and
  *  ResizeObservers, so the browser check can prove that switching renderers 20× leaves nothing behind (F01) */
-function devCount(name: '__cmChartLive' | '__cmChartObservers' | '__cmChartZoomListeners', d: number) {
+function devCount(name: '__cmChartLive' | '__cmChartObservers' | '__cmChartZoomListeners' | '__cmChartBuilds', d: number) {
   const g = globalThis as unknown as Record<string, number>;
   g[name] = (g[name] ?? 0) + d;
 }
@@ -76,64 +76,89 @@ export function useEChart(build: (t: ChartTheme) => Record<string, unknown> | nu
   const eventsRef = useRef(events);
   eventsRef.current = events;
   const [error, setError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
+  const buildRef = useRef(build);
+  buildRef.current = build;
+  const dirty = useRef(true);
+  const apply = useRef<() => void>(() => {});
 
-  // lifetime: one instance per mounted host
+  // A CSS-hidden host has no usable size. Retain its instance/state, defer initialization and option work.
   useEffect(() => {
     const el = hostRef.current;
     if (!el) return;
-    let dead = false;
+    let dead = false, starting = false;
     let ro: ResizeObserver | null = null;
-    loadCharts().then((init) => {
-      if (dead) return;
-      const chart = init(el);
-      chartRef.current = chart;
-      // dev/e2e only (stripped from production builds): lets the browser check read the drawn series ids
-      if (import.meta.env.DEV) {
-        (el as unknown as { __chart?: EChartsType }).__chart = chart;
-        devCount('__cmChartLive', 1);
+    const usable = () => !document.hidden && el.clientWidth > 0 && el.clientHeight > 0;
+    const update = () => {
+      if (dead || !usable()) return;
+      const chart = chartRef.current;
+      if (!chart) {
+        if (starting) return;
+        starting = true;
+        loadCharts().then(init => {
+          starting = false;
+          if (dead || !usable()) return;
+          const instance = init(el);
+          chartRef.current = instance;
+          if (import.meta.env.DEV) {
+            (el as unknown as { __chart?: EChartsType }).__chart = instance;
+            devCount('__cmChartLive', 1);
+            devCount('__cmChartZoomListeners', 1);
+          }
+          instance.on('click', params => {
+            const p = params as unknown as { componentType?: string; dataIndex: number; seriesIndex: number; data: unknown; value: unknown };
+            if (p.componentType === 'xAxis') eventsRef.current?.axis?.(instance, { type: 'click', value: p.value });
+            else clickRef.current?.(p);
+          });
+          instance.on('mouseover', params => {
+            const p = params as unknown as { componentType?: string; value: unknown };
+            if (p.componentType === 'xAxis') eventsRef.current?.axis?.(instance, { type: 'mouseover', value: p.value });
+          });
+          instance.on('datazoom', () => eventsRef.current?.datazoom?.(instance));
+          dirty.current = true;
+          update();
+        }).catch(() => {
+          starting = false;
+          if (!dead) setError('그래프를 불러오지 못했습니다. 표로 보기를 눌러 주세요.');
+        });
+        return;
       }
-      chart.on('click', (params) => {
-        const p = params as unknown as { componentType?: string; dataIndex: number; seriesIndex: number; data: unknown; value: unknown };
-        if (p.componentType === 'xAxis') eventsRef.current?.axis?.(chart, { type: 'click', value: p.value });
-        else clickRef.current?.(p);
-      });
-      chart.on('mouseover', (params) => {
-        const p = params as unknown as { componentType?: string; value: unknown };
-        if (p.componentType === 'xAxis') eventsRef.current?.axis?.(chart, { type: 'mouseover', value: p.value });
-      });
-      chart.on('datazoom', () => eventsRef.current?.datazoom?.(chart));
-      if (import.meta.env.DEV) devCount('__cmChartZoomListeners', 1);
-      if (typeof ResizeObserver !== 'undefined') {
-        ro = new ResizeObserver(() => chart.resize());
-        ro.observe(el);
-        if (import.meta.env.DEV) devCount('__cmChartObservers', 1);
-      }
-      setReady(true);
-    }).catch(() => { if (!dead) setError('그래프를 불러오지 못했습니다. 표로 보기를 눌러 주세요.'); });
+      chart.resize();
+      if (!dirty.current) return;
+      const option = buildRef.current(chartTheme());
+      if (import.meta.env.DEV) devCount('__cmChartBuilds', 1);
+      if (option) chart.setOption(option, { notMerge: true });
+      else chart.clear();
+      dirty.current = false;
+      eventsRef.current?.datazoom?.(chart);
+    };
+    apply.current = update;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(update);
+      ro.observe(el);
+      if (import.meta.env.DEV) devCount('__cmChartObservers', 1);
+    }
+    document.addEventListener('visibilitychange', update);
+    update();
     return () => {
       dead = true;
+      apply.current = () => {};
+      document.removeEventListener('visibilitychange', update);
       if (import.meta.env.DEV) {
         if (ro) devCount('__cmChartObservers', -1);
         if (chartRef.current) { devCount('__cmChartLive', -1); devCount('__cmChartZoomListeners', -1); }
+        delete (el as unknown as { __chart?: EChartsType }).__chart;
       }
       ro?.disconnect();
       chartRef.current?.dispose();
       chartRef.current = null;
-      setReady(false);
     };
   }, []);
 
-  // data/theme updates: setOption only
   useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart || !ready) return;
-    const option = build(chartTheme());
-    if (option) chart.setOption(option, { notMerge: true });
-    else chart.clear();
-    eventsRef.current?.datazoom?.(chart);
+    dirty.current = true;
+    apply.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, theme, ...deps]);
+  }, [theme, ...deps]);
 
   return { hostRef, error, chartRef };
 }

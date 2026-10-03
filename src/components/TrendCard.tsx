@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DateBasis, MonthlyBucket, OutcomeCounts } from '../domain/public';
 import type { CompareMonth } from '../domain/personal';
 import { baseOption, useEChart } from '../lib/charts';
@@ -66,7 +66,7 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
   // stays in the tooltip and the table) — never two lines of different date axes
   const sameLine = monthly.every((m) => m.report_count === m.completed_count);
 
-  const { hostRef, error } = useEChart((t) => {
+  const { hostRef, error, chartRef } = useEChart((t) => {
     if (monthly.length === 0) return null;
     const months = monthly.map((m) => fmtMonth(m.month));
     const common = { ...baseOption(t), grid: { left: 44, right: 16, top: 16, bottom: 28 },
@@ -121,6 +121,8 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
 
   const last = monthly[monthly.length - 1];
   const noRates = view === 'rate' && rates.length === 0;
+  // Removing every selected metric clears the now-hidden plot immediately. Hidden nonempty plots defer builds.
+  useEffect(() => { if (noRates) chartRef.current?.clear(); }, [noRates, chartRef]);
   const allNull = view === 'rate' && rates.length > 0 && rows.every((r) => rates.every((k) => r.all[k].value === null));
   // F06: the file follows the card (view, checked rates, 전체/내 신고); it waits instead of saving a half comparison
   const exportBlocked = monthly.length === 0 ? '월별 자료가 없습니다' : busy ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다'

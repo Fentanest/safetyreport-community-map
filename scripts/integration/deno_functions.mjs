@@ -9,23 +9,26 @@
 //   node scripts/integration/deno_functions.mjs --stack .integration-stack --deno /tmp/denotool/node_modules/.bin/deno
 import { spawn, execFileSync } from 'node:child_process';
 import { createServer, request } from 'node:http';
-import { mkdtempSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, chmodSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
 const stack = resolve(opt('--stack', '.integration-stack'));
+const functionsRoot = resolve(opt('--functions-root', stack));
 const deno = opt('--deno', 'deno');
 const KONG = opt('--kong', 'http://127.0.0.1:56321');
 const GATEWAY_PORT = Number(opt('--port', '56999'));
-const FUNCTIONS = ['public-analytics', 'my-analytics', 'community-ingest', 'community-account', 'community-auth-relay', 'my-reports'];
+const FUNCTIONS = opt('--functions', 'public-analytics,my-analytics,community-ingest,community-account,community-auth-relay,my-reports,user-rankings').split(',');
+const functionPortBase = Number(opt('--function-port-base', '8101'));
 
 // stack keys (never printed): `supabase status -o env`
 const statusEnv = Object.fromEntries(execFileSync('npx', ['supabase', 'status', '-o', 'env'], { cwd: stack, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
   .split('\n').map((l) => /^([A-Z_]+)="?(.*?)"?$/.exec(l)).filter(Boolean).map((m) => [m[1], m[2]]));
-const fnEnv = Object.fromEntries(readFileSync(join(stack, 'supabase/functions/.env'), 'utf8').split('\n')
+const readEnv = root => Object.fromEntries(readFileSync(join(root, 'supabase/functions/.env'), 'utf8').split('\n')
   .map((l) => /^([A-Z_]+)=(.*)$/.exec(l)).filter(Boolean).map((m) => [m[1], m[2].replace(/^"|"$/g, '')]));
+const fnEnv = { ...readEnv(functionsRoot), ...readEnv(stack) };
 const env = {
   ...process.env, ...fnEnv,
   SUPABASE_URL: KONG, SUPABASE_ANON_KEY: statusEnv.ANON_KEY, SUPABASE_SERVICE_ROLE_KEY: statusEnv.SERVICE_ROLE_KEY,
@@ -34,21 +37,22 @@ const env = {
 };
 if (!env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('stack not running (no service key from `supabase status`)');
 
-const work = mkdtempSync(join(tmpdir(), 'deno-fn-'));
+const work = mkdtempSync(join(process.env.TMPDIR || tmpdir(), 'deno-fn-'));
 chmodSync(work, 0o700);
 const ports = new Map();
 const procs = [];
 let ready = 0;
 FUNCTIONS.forEach((fn, i) => {
-  const port = 8101 + i;
+  const port = functionPortBase + i;
   ports.set(fn, port);
   const wrapper = join(work, `${fn}.ts`);
   writeFileSync(wrapper, `const orig = Deno.serve.bind(Deno);
 // deno-lint-ignore no-explicit-any
 (Deno as any).serve = (h: unknown) => orig({ port: ${port}, hostname: '127.0.0.1', onListen() { console.log('LISTEN ${fn} ${port}'); } }, h as Deno.ServeHandler);
-await import(${JSON.stringify(`file://${join(stack, 'supabase/functions', fn, 'index.ts')}`)});
+await import(${JSON.stringify(`file://${join(functionsRoot, 'supabase/functions', fn, 'index.ts')}`)});
 `);
-  const p = spawn(deno, ['run', '--allow-net', '--allow-env', '--allow-read', '--no-prompt', wrapper], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+  const config = join(functionsRoot, 'supabase/functions', fn, 'deno.json');
+  const p = spawn(deno, ['run', ...(existsSync(config) ? ['--config', config] : []), '--unstable-sloppy-imports', '--allow-net', '--allow-env', '--allow-read', '--no-prompt', wrapper], { env, stdio: ['ignore', 'pipe', 'pipe'] });
   p.stdout.on('data', (d) => { const t = d.toString(); if (t.includes('LISTEN')) { ready += 1; console.log(t.trim()); } });
   p.stderr.on('data', (d) => process.stderr.write(`[${fn}] ${d}`));
   p.on('exit', (c) => console.log(`[${fn}] exited ${c}`));

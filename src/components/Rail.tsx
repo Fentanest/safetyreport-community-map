@@ -54,9 +54,9 @@ export default function Rail({ active, screen, onSection, onStatistics, onRankin
       </nav>
       <nav className="bottom-nav" aria-label="모바일 주요 화면">
         {ITEMS.map((it) => (
-          <button key={it.id} type="button" aria-current={current(it)} onClick={() => go(it)}>
+          <button key={it.id} type="button" aria-label={it.label} aria-current={current(it)} onClick={() => go(it)}>
             <Icon name={it.icon} size={22} />
-            <span>{it.label}</span>
+            <span>{it.id === 'rankings' ? '랭킹' : it.label}</span>
           </button>
         ))}
       </nav>

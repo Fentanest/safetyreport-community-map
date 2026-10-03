@@ -156,7 +156,7 @@ function CartesianChart({ result, catalog, model, theme, hidden, onHidden, onPic
       {model.series.length > 1 && <SeriesLegend series={legendItems} hidden={hidden} onHidden={onHidden} theme={theme} />}
       {allHidden && (
         <div className="empty-state" role="note">
-          <span>모든 항목을 숨겼습니다.</span>
+          <span>모든 항목을 숨겼습니다. 표시할 항목을 선택해 주세요.</span>
           <button type="button" className="ghost-btn" onClick={() => onHidden([])}>전체 보기</button>
         </div>
       )}

@@ -243,6 +243,8 @@ try {
     await page.goBack();
     await waitFor(() => page.locator('main').getAttribute('data-screen'), (s) => s === 'dashboard');
     await page.locator('.rail button[aria-label="지도"]').click();
+    await waitMap(page); // Direct statistics entry defers the SDK until the dashboard is opened.
+    await waitFor(() => maps(page), (n) => n > 0);
     check('PG-06', 'map instance kept across the page switch', await maps(page), maps0);
     await zoomToPins(page);
     await clickPin(page, 0);
@@ -397,7 +399,7 @@ try {
     const { page, context } = await fresh(ctx, { uid: E2E_UID });
     await page.locator('.compare-toggle input').check();
     const mineA = await waitFor(() => page.locator('.kpi-mine').first().innerText().catch(() => ''), (t) => t.startsWith('내 신고'));
-    const nick = await page.locator('.account-name-text').innerText().catch(() => '');
+    // Current policy shows the viewer's own ID; a same nickname must still change the account boundary.
     // A drafts a 맞춤 통계 recipe
     await page.locator('.rail button[aria-label^="통계"]').click();
     await page.waitForSelector('.pivot-table tbody tr');
@@ -420,8 +422,8 @@ try {
     const expectB = await mineOracle(page, E2E_UID_B);
     const expectA = await mineOracle(page, E2E_UID);
     const shown = await waitFor(() => page.locator('.kpi-mine').first().innerText().catch(() => ''), (t) => t === `내 신고 ${expectB.toLocaleString('ko-KR')}건`, { timeout: 10000 });
-    check('C01-AB', "after the switch the numbers are B's own (A's late answer never shown)", { nickSame: (await page.locator('.account-name-text').innerText().catch(() => '')) === nick, shown, differentAccounts: expectA !== expectB },
-      { nickSame: true, shown: `내 신고 ${expectB.toLocaleString('ko-KR')}건`, differentAccounts: true });
+    check('C01-AB', "after the switch the numbers are B's own (A's late answer never shown)", { account: await page.locator('.account-name-text').innerText().catch(() => ''), shown, differentAccounts: expectA !== expectB },
+      { account: `ID ${E2E_UID_B.replace(/-/g, '').slice(0, 8)}`, shown: `내 신고 ${expectB.toLocaleString('ko-KR')}건`, differentAccounts: true });
     ctx.note('mine_before_switch', mineA);
     check('C01-AB', "no loading left over from A's request", await waitFor(() => status(page), (t) => t === ''), '');
     await page.locator('.rail button[aria-label^="통계"]').click();
@@ -443,7 +445,8 @@ try {
     await other2.close();
     await sleep(2000);
     check('C01-NICK', 'nickname change of the same account: no refetch', summarizeLog((await log()).slice(n0).filter((e) => e.route === 'dashboard' || e.route === 'my-analytics')), {});
-    check('C01-NICK', 'nickname shown updated', await page.locator('.account-name-text').innerText().catch(() => ''), (t) => t.startsWith('새닉네임'));
+    check('C01-NICK', 'same account keeps its ID after nickname refresh', await page.locator('.account-name-text').innerText().catch(() => ''), `ID ${E2E_UID_B.replace(/-/g, '').slice(0, 8)}`);
+    check('C01-NICK', 'auth metadata nickname updates without an account reset', await page.evaluate(async () => (await import('/src/hooks/usePersonal.ts')).mapAuth().snapshot().displayName), '새닉네임');
     await context.close();
   }, { expectedConsole: [] });
 

@@ -10,6 +10,7 @@ import {
 } from '../state/filters';
 import TopBar from '../components/TopBar';
 import Rail from '../components/Rail';
+import DevelopmentProfiler from '../components/DevelopmentProfiler';
 import CommandBar from '../components/CommandBar';
 import FilterDrawer from '../components/FilterDrawer';
 import MapPanel, { renderModeOf } from '../components/MapPanel';
@@ -743,7 +744,7 @@ export default function Dashboard() {
           onRankings={() => { setScreen('rankings'); pushUrl(scope, 'rankings'); window.scrollTo({ top: 0 }); }}
           onAbout={() => goDashboard('guide')} />
         <main id="main" data-screen={screen}>
-          <div className="dashboard-screen" hidden={screen !== 'dashboard'}>
+          <DevelopmentProfiler id="dashboard"><div className="dashboard-screen" hidden={screen !== 'dashboard'}>
           <section className="page-heading" aria-label="소개">
             <div>
               <div className="overline">나만의 안전신문고 커뮤니티</div>
@@ -974,13 +975,19 @@ export default function Dashboard() {
               <DataGuide data={data} />
             </>
           )}
-          </div>
+          </div></DevelopmentProfiler>
           <Suspense fallback={<p role="status">화면을 불러오는 중입니다.</p>}>
           {screen === 'rankings' && <RankingsPage key={`rankings-${sessionKey}`} active />}
+          {screen === 'statistics' && !statisticsMeta.meta && (
+            statisticsMeta.error ? <div className="banner error" role="alert">
+              <span>통계 조회 조건을 불러오지 못했습니다. {statisticsMeta.error.message}</span>
+              <button type="button" className="ghost-btn" onClick={statisticsMeta.retry}>다시 시도</button>
+            </div> : <p role="status">통계 조회 조건을 불러오는 중입니다.</p>
+          )}
           {statsOpened && sessionKey !== null && (
-            <StatisticsPage key={sessionKey} active={screen === 'statistics'} handoff={handoff} fallbackScope={statisticsMeta.meta ? shownScope ?? scope : null} version={version ?? statisticsMeta.meta?.dataset_version ?? null}
+            <StatisticsPage key={sessionKey} active={screen === 'statistics' && !!statisticsMeta.meta} handoff={handoff} fallbackScope={statisticsMeta.meta ? shownScope ?? scope : null} version={statisticsMeta.meta?.dataset_version ?? null}
               viewer={sessionKey} canMine={dataMode === 'demo' || auth.status === 'signed_in'} theme={resolvedTheme}
-              scopeChips={scopeChips} onBack={goDashboard} shared={sharedRecipe} onSharedDone={() => setSharedRecipe(null)} onSignIn={signIn} />
+              scopeChips={scopeChips} onBack={goDashboard} shared={sharedRecipe} onSharedDone={() => setSharedRecipe(null)} onSignIn={signIn} onDatasetChanged={statisticsMeta.retry} />
           )}
           </Suspense>
 

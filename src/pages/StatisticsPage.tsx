@@ -35,7 +35,7 @@ function missingRows(result: StatisticsResult, basis: StatisticsSpec['date_basis
   return parts.length ? [{ label: '제외', value: `${word}이 없어 이 기간에 넣을 수 없는 신고: ${parts.join(', ')}` }] : [];
 }
 
-export default function StatisticsPage({ active, handoff, fallbackScope, version, viewer, canMine, theme, scopeChips, onBack, shared = null, onSharedDone, onSignIn }: {
+export default function StatisticsPage({ active, handoff, fallbackScope, version, viewer, canMine, theme, scopeChips, onBack, shared = null, onSharedDone, onSignIn, onDatasetChanged }: {
   /** the screen is shown (the page stays mounted while hidden so its draft and result survive a round trip) */
   active: boolean;
   /** a hand-off from the dashboard (new id = new hand-off) */
@@ -53,6 +53,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   shared?: string | null;
   onSharedDone?: () => void;
   onSignIn?: () => void;
+  onDatasetChanged?: () => void;
 }) {
   const [catalog, setCatalog] = useState<StatCatalog | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
@@ -89,6 +90,8 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const abort = useRef<AbortController | null>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
+  const changedRef = useRef(onDatasetChanged);
+  changedRef.current = onDatasetChanged;
 
   // catalog: once per page (the registry is the server's)
   useEffect(() => {
@@ -138,7 +141,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     setRun({ status: 'loading', recipe });
     loadStatistics(recipe.scope, recipe.spec, version, ac.signal)
       .then((r) => {
-        if (ac.signal.aborted || my !== gen.current) return;
+        if (ac.signal.aborted || my !== gen.current || !activeRef.current || document.hidden) return;
         // one commit: the result, its recipe and the idle state together (no half-updated table/chart)
         runRef.current = null;
         setResult(r);
@@ -147,9 +150,10 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         if (recipe.origin === '공유 링크') { dropShareParam(); onSharedDoneRef.current?.(); }
       })
       .catch((e: unknown) => {
-        if (ac.signal.aborted || my !== gen.current) return;
+        if (ac.signal.aborted || my !== gen.current || !activeRef.current || document.hidden) return;
         runRef.current = null;
         const code = e instanceof PublicApiError ? e.code : null;
+        if (e instanceof PublicApiError && e.status === 409) changedRef.current?.();
         setRun({ status: 'error', recipe, code, message: e instanceof Error ? e.message : '통계를 만들지 못했습니다.' });
       });
   }, [version]);
@@ -160,7 +164,10 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     return () => { abort.current?.abort(); abort.current = null; };
   }, [execute]);
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      abort.current?.abort(); abort.current = null; gen.current += 1;
+      return;
+    }
     if (typeof document !== 'undefined' && !document.hidden && runRef.current && !abort.current) execute(runRef.current);
   }, [active, execute]);
   useEffect(() => {
@@ -279,7 +286,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       )}
       {share.status === 'applied' && (
         <div className="banner info share-banner" role="note">
-          <span className="grow">공유받은 설정으로 통계를 만들었습니다.</span>
+          <span className="grow">공유받은 설정으로 통계를 만들었습니다.{share.mine && ' 내 신고는 내 계정의 신고로 계산했습니다.'}</span>
           <button type="button" className="link-btn" onClick={() => setShare({ status: 'none' })}>닫기</button>
         </div>
       )}

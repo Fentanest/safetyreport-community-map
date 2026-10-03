@@ -508,11 +508,14 @@ try {
     await page.locator('[data-export-source="trend"] .export-ready .link-btn').click();
     // managers of the displayed range (scope detail panel)
     await waitFor(() => page.locator('[data-export-source="place-managers"]').count(), (n) => n >= 1, { timeout: 15000 });
-    const shownN = await page.locator('.place-entity-chart .chart-caption').innerText();
+    // The current card uses the accessible loaded-window control; it still exports all loaded managers.
+    const shownN = await page.locator('.place-entity-chart .pe-nav-range').innerText();
     const f4 = await download(s, 'place-managers', 'range-managers');
-    const nRows = Object.keys(f4.x.sheets['통계표'].cells).filter((k) => /^A\d+$/.test(k)).length;
-    const [, shown, total] = /담당자 표시 ([\d,]+)명 \/ 전체 ([\d,]+)명/.exec(shownN) ?? [];
-    check('EX-07', 'managers in the file = the card list; full/partial stated', { rows: nRows - 6, state: f4.x.allText.includes(Number(shown.replace(/,/g, '')) < Number(total.replace(/,/g, '')) ? '일부만 담음' : `전체 ${shown}명`) },
+    const nRows = Object.entries(f4.x.sheets['통계표'].cells).filter(([k,v]) => /^C\d+$/.test(k) && typeof v.num === 'number').length;
+    const partial = /불러온 ([\d,]+)명 · 전체 ([\d,]+)명/.exec(shownN);
+    const shown = partial?.[1] ?? /\/ ([\d,]+)명/.exec(shownN)?.[1];
+    const total = partial?.[2] ?? shown;
+    check('EX-07', 'managers in the file = the card list; full/partial stated', { rows: nRows, state: f4.x.allText.includes(Number(shown.replace(/,/g, '')) < Number(total.replace(/,/g, '')) ? `전체 담당자 ${total}명 중 화면에 불러온 ${shown}명만 담았습니다.` : `전체 ${shown}명`) },
       { rows: Number(shown.replace(/,/g, '')), state: true });
     check('EX-07', '100% bars + answered line on a secondary axis', f4.x.charts[0].groups.map((g) => `${g.type}:${g.grouping}`), ['barChart:stacked', 'lineChart:standard']);
     for (const f of [f1, f2, f3, f4]) check('EX-49', `structure ok (${f.name})`, structural(f.x), STRUCT_OK);
@@ -646,13 +649,14 @@ try {
     const distDir = join(dir, '..', '..', '..', '..', '.verify-dist');
     execSync(`npx vite build --outDir ${distDir} --emptyOutDir`, { env: { ...process.env, VITE_DATA_MODE: 'demo', VITE_BASE_PATH: '/safetyreport-community-map/', VITE_KAKAO_MAP_JS_KEY: 'mock-e2e-key' }, stdio: 'ignore' });
     const servers = [];
+    const previewPort = Number(process.env.FINALIZATION_PREVIEW_PORT || 5194);
     const serve = (port, extra) => new Promise((res) => {
       const p = spawn('node', ['scripts/browser/static_pages.mjs'], { env: { ...process.env, PORT: String(port), DIST: distDir, ...extra }, stdio: ['ignore', 'pipe', 'inherit'] });
       servers.push(p);
       p.stdout.once('data', () => res(p));
     });
     try {
-      await serve(5192, {}); await serve(5193, { CSP: '1' }); await serve(5194, { GZ_ENCODING: '1' });
+      await serve(previewPort, {}); await serve(previewPort + 1, { CSP: '1' }); await serve(previewPort + 2, { GZ_ENCODING: '1' });
       // mock=false: no Playwright routing at all (routing disables the HTTP cache) — the map SDK then fails to load,
       // which the statistics screen does not need
       const open = async (port, mock = true) => {
@@ -676,24 +680,24 @@ try {
         const [d2] = await Promise.all([page.waitForEvent('download'), page.locator('[data-export-source="statistics"] .export-ready .mini-btn').click()]);
         return d2;
       };
-      const a = await open(5192, false);
+      const a = await open(previewPort, false);
       const d1 = await exportOnce(a.page);
       const p1 = join(dir, 'files', `${String(++fileNo).padStart(2, '0')}-pages-subpath.xlsx`);
       await d1.saveAs(p1);
       check('EX-40', 'production build under /safetyreport-community-map/: export works, no 4xx/5xx', { struct: structural(inspect(readFileSync(p1))), bad: a.bad }, { struct: STRUCT_OK, bad: [] });
-      const hits = await (await fetch('http://127.0.0.1:5192/__hits')).json();
+      const hits = await (await fetch(`http://127.0.0.1:${previewPort}/__hits`)).json();
       const wasmPath = Object.keys(hits).find((k) => /excelize\.wasm-.*\.gz$/.test(k));
       check('EX-40', 'WASM and Worker came from the site sub path (same origin)', { wasm: wasmPath?.startsWith('/safetyreport-community-map/assets/'), worker: Object.keys(hits).some((k) => /^\/safetyreport-community-map\/assets\/export\.worker-.*\.js$/.test(k)) }, { wasm: true, worker: true });
       // EX-60: a second export after a reload reuses the cached asset (no second download of the 4 MB archive)
       await a.page.reload();
       await a.page.waitForSelector('.pivot-table tbody tr', { timeout: 30000 });
       await exportOnce(a.page);
-      const hits2 = await (await fetch('http://127.0.0.1:5192/__hits')).json();
+      const hits2 = await (await fetch(`http://127.0.0.1:${previewPort}/__hits`)).json();
       check('EX-60', 'second export after reload: WASM served from the browser cache (server hit once)', hits2[wasmPath], 1);
       const pinned = JSON.parse(readFileSync('package.json', 'utf8')).dependencies['excelize-wasm'];
       check('EX-60', 'pinned excelize-wasm 0.1.3 + license notice shipped', { pinned, license: existsIn(distDir, 'licenses/excel-export-third-party.txt') }, { pinned: '0.1.3', license: true });
       await a.ctx2.close();
-      const c = await open(5193);
+      const c = await open(previewPort + 1);
       const d3 = await exportOnce(c.page);
       // every violation is recorded; the export's own files (Worker, runner, loader, WASM) must cause none. Known and
       // pre-existing: Zod's JIT feature probe `try { Function('') }` in the personal chunk (caught; Zod then runs jitless)
@@ -702,7 +706,7 @@ try {
       check('EX-39', 'no CSP report from the export (worker/runner/WASM) and no wasm-eval / worker-src block', c.csp.filter((v) => /export\.worker|runner|excelize/.test(`${v.source} ${v.blocked}`) || /worker-src|wasm/.test(v.directive)), []);
       check('EX-39', 'the only other report is the known Zod JIT probe (pre-existing, not Excel)', c.csp.filter((v) => !(v.blocked === 'eval' && /\/assets\/personal-[\w-]+\.js$/.test(v.source ?? ''))), []);
       await c.ctx2.close();
-      const g = await open(5194);
+      const g = await open(previewPort + 2);
       const d4 = await exportOnce(g.page);
       const p4 = join(dir, 'files', `${String(++fileNo).padStart(2, '0')}-pages-content-encoding.xlsx`);
       await d4.saveAs(p4);
