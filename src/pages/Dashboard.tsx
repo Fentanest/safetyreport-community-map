@@ -16,6 +16,7 @@ import FilterDrawer from '../components/FilterDrawer';
 import MapPanel, { renderModeOf } from '../components/MapPanel';
 import ScopeDetailsPanel, { type ManagerPaging } from '../components/ScopeDetailsPanel';
 import type { ScopeChip } from './StatisticsPage';
+import RankingsPage from './RankingsPage';
 import { clearSession as clearStatsSession, dropLegacyStatsStorage, handoffRecipe, type StatsRecipe } from '../state/statistics';
 import { SPY_SECTIONS, currentSection, scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
 import type { Screen } from '../components/Rail';
@@ -52,7 +53,9 @@ import type { CompareEntityRow } from '../domain/personal';
 import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
 import GlobalQueryStatus from '../components/GlobalQueryStatus';
 
-const RankingsPage = lazy(() => import('./RankingsPage'));
+// The 30-run production entry measurement regressed with a lazy ranking boundary.
+// Keep this small route module eager; it still mounts/fetches only on the ranking screen.
+// Statistics remains split because its larger module measured faster on direct entry.
 const StatisticsPage = lazy(() => import('./StatisticsPage'));
 
 

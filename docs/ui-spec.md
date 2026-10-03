@@ -117,9 +117,13 @@ Kakao failure, API429, offline cached, stale dataset, source update, invalid ran
 ARIA·tab order·focus trap·Esc dismissal, 44px touch targets, contrast 검수. 지도와 동등한 지역/지점 목록 탐색을 제공.
 reduced-motion과 시스템 테마 변경 대응. 그래프에 이미지처럼 의미 없는 alt만 달지 말고 값 표 제공.
 
-## 14. 유저 랭킹 기간 선택
+## 14. 참여자 랭킹 (2026-10-04 로컬 리팩터링)
 
-기존 페이지·panel·primary·focus·텍스트 토큰을 사용한다. 여섯 진입점은 fieldset 안에서 누적·기간별/월별 두 그룹으로 배치하며
-선택 상태는 `aria-pressed`로도 알린다. 기간 컨트롤과 조회 달은 세 테마 공통이다. 적용 전 초안과 표시된 결과 범위를 구분한다.
-모바일은 컨트롤·컴팩트 표를 재배치하고 UUID는 줄임/전체 확인·복사를 제공한다. 전체 페이지의 가로 넘침을 허용하지 않는다.
-조회월을 바꿀 때 제목과 실제 API scope가 함께 바뀌고 과거월을 ‘이달’로 표시하지 않는다. 큰 글꼴과 라이트/다크도 검수한다.
+기존 라이트/다크 page·panel·primary·focus·텍스트 토큰을 사용한다. `신고 랭킹 / 과태료 랭킹 / 불운 랭킹` 세 탭과
+공통 `전체 기간 / 월별 / 기간 지정`을 제공한다. 기본 진입·테마·지표·분류·월 이동은 즉시 조회하고 동일 선택은 중복 요청하지 않는다.
+기간 지정과 상세 조건(날짜 기준/최소 신고)은 각자의 조회/적용 버튼으로 확정한다. 탭별 마지막 지표는 세션 내 메모리에서 유지한다.
+얇은 내 순위 → 목록 순서, 정확한 지표명, 축약 UUID 버튼의 전체 UUID dialog/복사/키보드·focus 복귀를 제공한다.
+모바일은 표 대신 두 줄 목록이다. 공동순위·표본 1건·페이지 밖 전체 기준 내 순위·기존 rk_* URL/이력을 유지한다.
+큰 TOP3/왕관/시상대/인사이트/중복 KPI는 없다. 현재 월만 집계 중이며 제목은 실제 조회월이다.
+맞춤 통계는 별도 draft → 통계 만들기 실행이며 select 편집을 즉시 API 호출로 바꾸지 않는다.
+실제 검증과 fixture/운영 한계는 [리팩터링 보고서](refactoring/map-performance/REPORT.md)와 [Muse 검수](refactoring/map-performance/MUSE-FINAL-REVIEW.md)를 따른다.

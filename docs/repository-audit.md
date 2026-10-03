@@ -50,3 +50,7 @@ main8cfacb2 및 로컬 랭킹49c4c6d를 보존한 fix/monthly-audit-20261003에�
 범위/버전/질의가 다른 목록의 혼합, 한국어IME확정, 좁은범위 페이지, 오류/빈결과, modal/pivot 키보드를 검증했다.
 실행 결과와 synthetic/MOCK/실제LOCAL DB 구분은 [보고서](implementation/monthly-review-20261003/REPORT.md)를 따른다.
 제품 후보c99bee6 +최종27de7f3. 운영 SQL·Edge·Pages·push는 실행하지 않았다. 기존 감사의 초기 gap들은 현재 구현 상태를 자동으로 나타내지 않는다.
+
+## 2026-10-04 · 현재 코드 기준 로컬 리팩터링
+
+cf900966의 현재 main에서 refactor/map-performance-20261003으로 분기했으며 사용자 untracked 실행 지시문을 보존했다. 경로 검증에서 contracts/selfhost-compat은 없고 community-ingest/my-reports가 실제 호환 계약이다. 이전 main-release-20261003의 운영 적용 기록은 기존 배포에 한정된다. 이번 신규 SQL/Edge/UI는 로컬 후보이며 운영 미적용이다. 신규 기능 경로·재현 검사·성능·브라우저와 환경 한계는 [기능 보존표](refactoring/map-performance/FEATURE-MATRIX.md)와 [보고서](refactoring/map-performance/REPORT.md)에 기록한다.
