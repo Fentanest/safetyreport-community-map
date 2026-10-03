@@ -44,7 +44,7 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('ranking refactor exact SQL e
   const paged=`with v as (select private.user_rankings_before_refactor('${a.id}','${a.session}',${lit(JSON.stringify(sample))}::jsonb) r)
    select jsonb_build_object('before',private.user_rankings_before_refactor('${a.id}','${a.session}',${lit(JSON.stringify({...sample,page:2}))}::jsonb||jsonb_build_object('expected_version',r->>'dataset_version')),
     'after',public.internal_user_rankings('${a.id}','${a.session}',${lit(JSON.stringify({...sample,page:2}))}::jsonb||jsonb_build_object('expected_version',r->>'dataset_version'))) from v;`;
-  const result=sql('begin;\n'+clone+';\n'+old+';\n'+read('supabase/migrations/202610040100_ranking_election_sort.sql')+'\n'+read('supabase/migrations/202610040200_ranking_grouped_diagnostics.sql')+'\n'+
+  const result=sql('begin;\n'+clone+';\n'+old+';\n'+read(process.env.RANKINGS_CANDIDATE_SQL??'supabase/migrations/202610040700_ranking_binary_sort.sql')+'\n'+read('supabase/migrations/202610040200_ranking_grouped_diagnostics.sql')+'\n'+
    "select to_jsonb(t) from (select count(*) as mismatches from ((select * from private.ranking_representatives_before_refactor() except select * from private.ranking_representatives()) union all (select * from private.ranking_representatives() except select * from private.ranking_representatives_before_refactor())) s) t;\n"+
    cases.map(compare).join('\n')+'\n'+paged+'\n'+mutations.map(m=>m+compare(sample)).join('\n')+'\nrollback;');
   const rows=result.split('\n').filter(line=>line.startsWith('{')).map(line=>JSON.parse(line));

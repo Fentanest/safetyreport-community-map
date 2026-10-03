@@ -25,7 +25,7 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('viewer gate/state exact refa
    `update private.contributor_profiles set status='suspended' where user_id='${a.id}';`,
    `update private.contributor_profiles set status='active' where user_id='${a.id}';`,
    `delete from private.community_report_facts where contributor_id='${a.id}';`];
-  const rows=sql('begin;\n'+oldGate+'\n'+oldState+'\n'+strip(read('202610040400_viewer_key_lookup.sql'))+'\n'+strip(read('202610040500_cohort_state_setwise.sql'))+'\n'+compare()+'\n'+mutations.map(m=>m+compare()).join('\n')+`select jsonb_build_object('before',private.analytics_viewer_before_refactor('${c.id}','00000000-0000-4000-8000-000000000001'),'after',public.internal_analytics_viewer('${c.id}','00000000-0000-4000-8000-000000000001'));rollback;`)
+  const rows=sql('begin;\n'+oldGate+'\n'+oldState+'\n'+compare()+'\n'+mutations.map(m=>m+compare()).join('\n')+`select jsonb_build_object('before',private.analytics_viewer_before_refactor('${c.id}','00000000-0000-4000-8000-000000000001'),'after',public.internal_analytics_viewer('${c.id}','00000000-0000-4000-8000-000000000001'));rollback;`)
    .split('\n').filter(l=>l.startsWith('{')).map(l=>JSON.parse(l));
   expect(rows).toHaveLength(4*(1+mutations.length)+1);
   for(const [i,r]of rows.entries())expect(r.after,`gate/state comparison ${i}`).toEqual(r.before);

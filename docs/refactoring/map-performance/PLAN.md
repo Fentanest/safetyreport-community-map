@@ -37,3 +37,9 @@ Sol: 계약/데이터/DB/CI/test/scripts/Dashboard/common tokens/package(single 
 500k 글로벌 집계의 custom bound plan만으로는30s 및 진단180s timeout이 재현됐다. 작은 oracle PASS는 대규모 성능 PASS가 아니었다. EXPLAIN은 consent_grant_id와 user_id의 상관된 join을1행으로 추정해 후보/관측에 nested loop를 골랐다. profiles/grants ANALYZE 후에도 재현됐다. 040600은 이 함수 안에서만 nested loop를 배제해 hash/merge 계획을 검증한다. 사용자 SQL 보간, 결과 캐시, work_mem·제품 timeout 증가가 없다. 같은10회 대규모 실측과 작은 전수 정렬/권한 differential을 실행하고 미달은 보고한다.
 
 production 랭킹 lazy 진입은 RAF readiness로 재측정해도 p95 회귀가 있었다. 작은 RankingsPage는 eager로 복구하되 mount/API는 활성 화면에 한정한다. 통계는lazy를 유지한다. 변경후30회 측정과2cd5442 독립 Muse 재검수로 확인한다. 단순 code split 자체를 성공으로 취급하지 않는다.
+
+## 최종 계획 근거 보완
+
+040700은 DB의64자리 lower-case hex CHECK가 있는 source/dataset key만 bytea로 정렬한다. payload hash는 검증되지 않은 문자열이므로 text를 유지한다. 대표 순서와 외부 identity/version은 그대로다. 같은 seed/connection 원본·후보10회 interleave에서 전체 응답 동등성과 계측된 p95 19.3s→7.4s를 확인했다. auto_explain analyze의 양쪽 overhead가 포함되며 일반 HTTP 개선율로 확대하지 않는다.
+
+HTTP 기관500건에서 일부 계정 p95 1.85s가 재현됐다. EXPLAIN에서 inline된 key_numbers가500 own row마다500키를 다시 조회해 LATERAL250000회 실행되는 근거를 확인했다. 040800은 key_numbers를 요청 안에서 한 번 materialize하고 completed/numbered partial lookup index를 추가한다. 영구 자격/집계 캐시는 아니다. 동등성25비교와 normal auth/rate HTTP1/3/5 재측정 후 결과를 보고한다. rollback은040400 함수 복구 및 새 index 제거. 첫 계획/반복 계획의 변동도 원자료에 유지한다.

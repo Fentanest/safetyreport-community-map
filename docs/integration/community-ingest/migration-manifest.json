@@ -389,6 +389,25 @@
    "depends_on": [
     "202610040500"
    ]
+  },
+  {
+   "version": "202610040700",
+   "repo": "map",
+   "path": "supabase/migrations/202610040700_ranking_binary_sort.sql",
+   "sha256": "90d0d306a865ef34e07eeaaff52a4d018e7660b5ea03c671ff5bdd8346c94599",
+   "depends_on": [
+    "202610040100",
+    "202610040200"
+   ]
+  },
+  {
+   "version": "202610040800",
+   "repo": "map",
+   "path": "supabase/migrations/202610040800_viewer_lookup_plan.sql",
+   "sha256": "87fca0eae77b41c0f8a38107c5e7ee1631ffc6faedc3141499341251439aadcf",
+   "depends_on": [
+    "202610040400"
+   ]
   }
  ],
  "functions": [
