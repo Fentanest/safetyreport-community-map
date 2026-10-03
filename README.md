@@ -12,7 +12,7 @@ exporter의 로컬 구현이 있다. 기존 v1 SQL은 보존했다. 현재 운�
 
 ## 전체 × 내 신고 비교 (2026-09-27)
 같은 기간·지역·기관·담당자 조건에서 전체 통계와 내 신고 통계를 나란히 보는 커뮤니티 지도다. 정본은
-`docs/personal-comparison.md`. 2026-09-27부터 지도는 **공유자 전용**(카카오 로그인 + 공유 동의 + 지도에 올라간 본인 신고 1건 이상, docs/public-api-contract.md §열람 조건)이고, `내 데이터 함께 보기`를 켜면 비교 KPI·지역 목록·
+`docs/personal-comparison.md`. 2026-09-27부터 지도는 **공유자 전용**(카카오 로그인 + 공유 동의 + 공유한 본인 신고 10건 이상, docs/public-api-contract.md §열람 조건)이고, `내 데이터 함께 보기`를 켜면 비교 KPI·지역 목록·
 담당자 비교·지도(내 지점/함께 기록한 지점/관심 지역)·월별 추이에 내 값이 붙는다. 개인 자료는 `my-analytics`(verify_jwt, private/no-store)로만
 오고 공개 API·정적 snapshot·공유 URL에 섞이지 않는다. 지도 로그아웃은 이 브라우저 세션만 끝내며(`scope: 'local'`) 앱·서버 자동 업로드는 계속된다.
 데모의 합성 로그인: 헤더 `카카오 로그인 (합성)` 또는 `?me=signed|out|unconfigured|empty|expired|kakao|suspended|error|rate|stale`,

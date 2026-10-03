@@ -151,6 +151,10 @@
       "status": "PASS"
     },
     {
+      "name": "ranking filters preserve map filters",
+      "status": "PASS"
+    },
+    {
       "name": "history back returns ranking",
       "status": "PASS"
     },
@@ -175,7 +179,6 @@
     "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
     "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
     "Failed to load resource: the server responded with a status of 409 (Conflict)",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
     "Failed to load resource: the server responded with a status of 403 (Forbidden)"
   ],
   "network": [
@@ -269,7 +272,19 @@
     },
     {
       "url": "/functions/v1/public-analytics/meta",
-      "status": 404
+      "status": 200
+    },
+    {
+      "url": "/functions/v1/public-analytics/dashboard",
+      "status": 200
+    },
+    {
+      "url": "/functions/v1/user-rankings",
+      "status": 200
+    },
+    {
+      "url": "/functions/v1/user-rankings",
+      "status": 200
     },
     {
       "url": "/functions/v1/user-rankings",
@@ -294,7 +309,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -309,7 +324,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -324,7 +339,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -339,7 +354,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -354,7 +369,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -369,7 +384,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -384,7 +399,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -399,7 +414,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -414,7 +429,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -427,161 +442,10 @@
         "min_reports": "1",
         "page": "2",
         "page_size": "20",
-        "expected_version": "bd71dfb9423b86d5f958a446e66dc079"
+        "expected_version": "3f388a97d79f61100130d82e563e7bf8"
       },
       "status": 200,
-      "bytes": 4718
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "2",
-        "page_size": "20",
-        "expected_version": "bd71dfb9423b86d5f958a446e66dc079"
-      },
-      "status": 200,
-      "bytes": 4718
+      "bytes": 2725
     },
     {
       "route": "rankings",
@@ -596,7 +460,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4943
+      "bytes": 4901
     },
     {
       "route": "rankings",
@@ -612,7 +476,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4692
+      "bytes": 4691
     },
     {
       "route": "rankings",
@@ -628,7 +492,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4650
+      "bytes": 4649
     },
     {
       "route": "rankings",
@@ -659,694 +523,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "2",
-        "page_size": "20",
-        "expected_version": "bd71dfb9423b86d5f958a446e66dc079"
-      },
-      "status": 200,
-      "bytes": 4718
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "fines",
-        "metric": "fine_rate",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4943
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "rejected_rate",
-        "period": "month",
-        "month": "2026-08",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4692
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "partial_count",
-        "period": "month",
-        "month": "2026-08",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4650
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "partial_count",
-        "period": "month",
-        "month": "2020-01",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 585
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "2",
-        "page_size": "20",
-        "expected_version": "bd71dfb9423b86d5f958a446e66dc079"
-      },
-      "status": 200,
-      "bytes": 4718
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "fines",
-        "metric": "fine_rate",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4943
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "rejected_rate",
-        "period": "month",
-        "month": "2026-08",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4692
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "partial_count",
-        "period": "month",
-        "month": "2026-08",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4650
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "partial_count",
-        "period": "month",
-        "month": "2020-01",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 585
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "2",
-        "page_size": "20",
-        "expected_version": "bd71dfb9423b86d5f958a446e66dc079"
-      },
-      "status": 200,
-      "bytes": 4718
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "fines",
-        "metric": "fine_rate",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4943
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "rejected_rate",
-        "period": "month",
-        "month": "2026-08",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4692
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "partial_count",
-        "period": "month",
-        "month": "2026-08",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4650
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "unlucky",
-        "metric": "partial_count",
-        "period": "month",
-        "month": "2020-01",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 585
-    },
-    {
-      "route": "rankings",
-      "query": {
-        "theme": "reporters",
-        "metric": "reports_count",
-        "period": "all",
-        "date_basis": "completed_date",
-        "category": "all",
-        "min_reports": "1",
-        "page": "1",
-        "page_size": "20"
-      },
-      "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -1376,7 +553,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -1406,7 +583,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -1419,7 +596,7 @@
         "min_reports": "1",
         "page": "2",
         "page_size": "20",
-        "expected_version": "bd71dfb9423b86d5f958a446e66dc079"
+        "expected_version": "3f388a97d79f61100130d82e563e7bf8"
       },
       "status": 409,
       "bytes": 0
@@ -1437,7 +614,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -1452,7 +629,7 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
     },
     {
       "route": "rankings",
@@ -1467,7 +644,53 @@
         "page_size": "20"
       },
       "status": 200,
-      "bytes": 4719
+      "bytes": 4714
+    },
+    {
+      "route": "rankings",
+      "query": {
+        "theme": "unlucky",
+        "metric": "rejected_count",
+        "period": "month",
+        "month": "2026-08",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200,
+      "bytes": 4650
+    },
+    {
+      "route": "rankings",
+      "query": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200,
+      "bytes": 4714
+    },
+    {
+      "route": "rankings",
+      "query": {
+        "theme": "reporters",
+        "metric": "reports_count",
+        "period": "all",
+        "date_basis": "completed_date",
+        "category": "all",
+        "min_reports": "1",
+        "page": "1",
+        "page_size": "20"
+      },
+      "status": 200,
+      "bytes": 4714
     },
     {
       "route": "rankings",

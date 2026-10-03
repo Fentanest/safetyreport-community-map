@@ -1,0 +1,59 @@
+{
+  "results": [
+    {
+      "name": "current-month in_progress shown",
+      "status": "PASS",
+      "detail": "USER RANKINGS\n이달의 불운자\n\n불수용 건수 순위 · 답변일 기준 · 2026-10-01 — 2026-10-31 · 전체 · 최소 1건\n\n이 서비스에 공유된 완료 신고 기준, 전체 안전신문고 활동 아님.\n\n주제\n최다 신고자\n최다 과태료 수용자\n이달의 불운자\n지표\n불수용 건수\n불"
+    },
+    {
+      "name": "date_basis switch changes scope label",
+      "status": "PASS",
+      "detail": "신고 건수 순위 · 답변일 기준 · 전체 기간 · 전체 · 최소 1건 => 신고 건수 순위 · 신고일 기준 · 전체 기간 · 전체 · 최소 1건"
+    },
+    {
+      "name": "custom range applied",
+      "status": "PASS",
+      "detail": "신고 건수 순위 · 답변일 기준 · 2026-07-01 — 2026-08-31 · 전체 · 최소 1건"
+    },
+    {
+      "name": "same-query Apply reload keeps cohort",
+      "status": "PASS",
+      "detail": "신고 건수 순위 · 답변일 기준 · 2026-07-01 — 2026-08-31 · 전체 · 최소 1건"
+    },
+    {
+      "name": "high min_reports yields no own row",
+      "status": "PASS",
+      "detail": "badges=0 USER RANKINGS\n최다 신고자\n\n신고 건수 순위 · 답변일 기준 · 전체 기간 · 전체 · 최소 9999건\n\n이 서비스에 공유된 완료 신고 기준, 전체 안전신문고 활동 아님.\n\n주제\n최다 신고자\n최다 과태료 수용자\n이달의 불운자\n지표\n신고 건수\n날짜 기준\n답변일\n신고일\n분류\n전체"
+    },
+    {
+      "name": "zoomed Apply reachable with visible focus",
+      "status": "PASS",
+      "detail": "{\"scrollW\":390,\"innerW\":390} BUTTON outline=2px/solid shadow=none"
+    },
+    {
+      "name": "light text contrast >= 4.5",
+      "status": "FAIL",
+      "detail": "main=1.18 muted=2.77"
+    },
+    {
+      "name": "zoom 1.5 overflow metrics (informational)",
+      "status": "PASS",
+      "detail": "{\"scrollW\":390,\"innerW\":390}"
+    },
+    {
+      "name": "logout shows login gate, no table",
+      "status": "PASS",
+      "detail": "tables=0"
+    },
+    {
+      "name": "no JWT persisted after logout",
+      "status": "PASS",
+      "detail": "stored_len=0"
+    },
+    {
+      "name": "back after logout shows no cached ranks",
+      "status": "PASS",
+      "detail": "tables=0"
+    }
+  ]
+}

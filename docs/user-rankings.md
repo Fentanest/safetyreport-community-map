@@ -27,17 +27,24 @@ private 직접 권한은 추가하지 않는다. 금액·차량·담당자·좌�
 - `python3 scripts/integration/apply_rankings_local.py --auth ../safetyreport-community-auth`: 기존 로컬 Docker 테스트 스택에만
   미적용 정본 migration을 순서대로 적용. auth 레포 읽기 전용. reset·운영 DSN·클라우드 변경 없음.
 - `npm run build && npx vitest run tests/product && npm run scan`
-- `COMMUNITY_STACK=1 npx vitest run tests/integration/user-rankings.test.ts`
+- `COMMUNITY_STACK=1 npx vitest run tests/integration/user-rankings.test.ts tests/integration/user-rankings-edge.test.ts`
 - `COMMUNITY_STACK=1 RANKINGS_MEASURE=1 npx vitest run tests/integration/user-rankings-measure.test.ts`: 고유 신고50만,
   관측60만, 사용자1000 fixture. 대량 fixture는 트랜잭션 rollback, 생성 로그인 계정은 정리.
 - `deno check --config supabase/functions/user-rankings/deno.json supabase/functions/user-rankings/index.ts`
 - `RANKINGS_PORT=5192 npx vite --config scripts/browser/vite.rankings.config.ts`, 별도 터미널
   `node scripts/browser/verify_rankings.mjs`; 완료 후 `/__rankings/cleanup`과 서버 종료.
   운영 도메인과 무관한 루프백 전용 서버다. 실제 로컬 DB/RPC·GoTrue JWT + 합성 사용자/신고로 검수한다.
+- 하위 경로 검증: 위 서버 실행 중 `node scripts/browser/build_rankings_subpath.mjs`,
+  `node scripts/browser/verify_rankings_subpath.mjs` (검사 동안만5193 정적 서버를 자체 실행·정리). LOCAL GoTrue56321의 공개 키만 런타임에서 읽으며
+  별도 origin인 정적 서버가 개발용 인증 프록시를 공유하지 않도록 한다. 확인 후 `VITE_DATA_MODE=live npm run build && npm run scan`으로
+  일반 빌드를 복원한다. service_role은 프런트에 넣지 않는다.
+- 접근성/로그아웃: `node scripts/browser/verify_rankings_accessibility.mjs` (마지막에 실제 로그아웃하므로
+  다음 검수는 `/__rankings/cleanup` 후 시작).
 
 증거: docs/implementation/user-rankings/evidence/ (측정·EXPLAIN·브라우저), docs/reviews/user-rankings-*.
-실제 운영 자료/운영 키/실제 Kakao OAuth/호스팅된 Edge gateway는 **미검증**. 로컬 Node handler 확인과 Deno 타입 확인을
-실제 호스팅 Edge 검증으로 주장하지 않는다.
+완료 결과: [REPORT.md](implementation/user-rankings/REPORT.md). 실제 Edge index를 로컬 Deno로 실행하고
+실제 GoTrue/PostgREST HTTP까지 확인했다. 실제 운영 자료/운영 키/실제 Kakao OAuth/호스팅된 Edge gateway는 **미검증**이며,
+로컬 Deno/Node 검증을 호스팅 Edge 검증으로 주장하지 않는다.
 
 ## 운영 적용 준비 (이번 작업에서는 실행하지 않음)
 

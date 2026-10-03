@@ -52,5 +52,13 @@
 - Muse 구현 전용 worktree `.agent-runtime/rankings-muse`, base 8ed88bf, 소유 파일 RankingsPage.tsx/rankings.css/구현 보고서만.
   commit 46ca939 → root cherry-pick 744663e. session ses_f00a80068ffeFkJvmIvVDgwSYi export에서 실제 model/directory 확인.
 - Muse 완료 후 해당 UI 파일 소유를 Sol로 순차 이전. Sol이 percent 단위·sample badge·pagehide/return 보호·전체 shell 통합을 수정.
-  같은 파일/worktree 동시 쓰기 없음. 별도 fixed commit에서 최종 Muse 브라우저 검수 예정, 증거는 별도 기록.
+  같은 파일/worktree 동시 쓰기 없음. fixed26b120c detached 검수에서43검사 및 추가 실제 로그인/기간/로그아웃 브라우저 증거 확보.
+  session ses_f0087fee8ffeCGOH8qi01EObWB의 실제 provider/model/high/directory를 export 확인.
+  초기 fixture 복구 과정 서버 kill 시도가 있어 Sol이 중단·같은 세션을 복구했다. 운영/다른 프로젝트/호스트 설정 변경 없음.
+  비로그인 테마 누락을055b304에서 공통 함수로 수정, about:blank back/투명 대비 측정 오류는 실제 이력/불투명 배경 검사로 분리.
+  최종 후보055b304에서43브라우저+7접근성/로그아웃+599단위+build/scan 재통과, 새 고정worktree 대상 Muse 재검수.
 - 운영 SQL/Edge/Pages/계정 설정/push는 금지 범위. 로컬 composed 테스트 DB에만 선행·신규 migrations 적용(미검증 운영과 분리).
+
+- 최종 Muse055b304 재검수7/7 PASS, ISSUE1/2 closed. session ses_f006bebb5ffecaBvVQakeReTg7 export에서 provider/model/high/newworktree 확인.
+  OpenCode fork의 old-directory 유지 및 첫 exit0의 미완료 상태는 중단/같은 verified session 재개로 복구했다.
+  결과: docs/implementation/user-rankings/REPORT.md, docs/reviews/user-rankings-muse-recheck.md.
