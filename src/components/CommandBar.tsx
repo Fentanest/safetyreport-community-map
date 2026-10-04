@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import type { Category, DateBasis } from '../domain/public';
-import { LAW_NONE } from '../domain/public';
 import {
-  CATEGORY_LABEL, DATE_BASIS_LABEL, LAW_UNKNOWN_LABEL, PRESETS, presetRange, todayKst,
+  CATEGORY_LABEL, DATE_BASIS_LABEL, PRESETS, presetRange, todayKst,
   type DraftFilters,
 } from '../state/filters';
 import { fmtDate } from './format';
@@ -20,16 +19,13 @@ interface Props {
   onBasis: (basis: DateBasis) => void;
   /** a quick period applies at once (one request, chips/URL updated); null range = bounds still unknown */
   onPreset: (range: { start: string; end: string }) => void;
-  /** applied (requested) category / law: these controls apply at once (explicit selection, pushState) */
+  /** applied (requested) category: applies at once (explicit selection, pushState). 위반법규 lives in the 세부 필터. */
   category: Category;
   onCategory: (c: Category) => void;
-  law: string | null;
-  lawOptions: Array<{ law: string; count: number | null }>;
-  onLaw: (law: string | null) => void;
   /** S01: the applied region, chosen here at once (시도 · 시군구); same action as the region list and the map */
   region?: string | null;
   onRegion?: (code: string | null) => void;
-  /** number of applied conditions besides the dates (상세 필터 button is inverted when > 0) */
+  /** number of applied conditions besides the dates (the 필터 button is inverted when > 0) */
   filterCount: number;
   /** 전체 기간 of the applied basis (never the other date's range) */
   minDate: string | null;
@@ -50,72 +46,71 @@ const CATS: Category[] = ['all', 'traffic', 'parking', 'other'];
 export default function CommandBar(p: Props) {
   const [open, setOpen] = useState(false);
   const today = todayKst();
+  // the period button names a quick period when the applied dates are exactly one (최근 12개월 …)
+  const preset = PRESETS.find((pr) => {
+    const r = presetRange(pr.days, p.minDate, p.maxDate, today);
+    return !!r && r.start === p.appliedStart && r.end === p.appliedEnd;
+  });
   return (
-    <section className="cm-panel command" aria-label="조건">
-      <label className="basis-select">
-        <span className="sr-only">날짜 기준</span>
-        <select value={p.basis} aria-label="날짜 기준" onChange={(e) => p.onBasis(e.target.value as DateBasis)}>
-          {(['completed_date', 'report_date'] as const).map((b) => <option key={b} value={b}>{DATE_BASIS_LABEL[b]}</option>)}
-        </select>
-      </label>
-      <button
-        className="control"
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        title="기간을 고른 뒤 ‘적용’을 누르세요"
-      >
-        <span aria-hidden="true"><Icon name="calendar" /></span>
-        <span>{fmtDate(p.appliedStart)} — {fmtDate(p.appliedEnd)}</span>
-        <span className="sr-only"> ({DATE_BASIS_LABEL[p.basis]} 기준)</span>
-        <span aria-hidden="true"><Icon name="chevron" /></span>
-      </button>
-      <div className="segments" role="group" aria-label="신고 분류">
-        {CATS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={p.category === c ? 'selected' : ''}
-            aria-pressed={p.category === c}
-            aria-label={c === 'all' ? '전체 분류' : undefined}
-            onClick={() => p.onCategory(c)}
-          >
-            {CATEGORY_LABEL[c]}
-          </button>
-        ))}
-      </div>
-      <label className={`law-select${p.law ? ' filter-on' : ''}`}>
-        <span className="sr-only">위반법규</span>
-        <select value={p.law ?? ''} aria-label="위반법규" onChange={(e) => p.onLaw(e.target.value || null)}>
-          <option value="">법규 전체</option>
-          <option value={LAW_NONE}>{LAW_UNKNOWN_LABEL}</option>
-          {p.lawOptions.map((o) => (
-            <option key={o.law} value={o.law}>{o.count === null ? o.law : `${o.law} (${o.count.toLocaleString('ko-KR')})`}</option>
+    <section className="cm-panel command" aria-label="조건" data-sticky-top="">
+      <div className="command-row">
+        <button
+          className="control date-control"
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          title="날짜 기준과 기간을 고릅니다"
+        >
+          <span aria-hidden="true"><Icon name="calendar" /></span>
+          <b className="date-control-label">{preset ? preset.label : `${DATE_BASIS_LABEL[p.basis]} 기준`}</b>
+          <span className="date-control-range">{fmtDate(p.appliedStart)} — {fmtDate(p.appliedEnd)}</span>
+          {preset && <span className="sr-only"> ({DATE_BASIS_LABEL[p.basis]} 기준)</span>}
+          <span aria-hidden="true"><Icon name="chevron" /></span>
+        </button>
+        <div className="segments" role="group" aria-label="신고 분류">
+          {CATS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={p.category === c ? 'selected' : ''}
+              aria-pressed={p.category === c}
+              aria-label={c === 'all' ? '전체 분류' : undefined}
+              onClick={() => p.onCategory(c)}
+            >
+              {CATEGORY_LABEL[c]}
+            </button>
           ))}
-        </select>
-      </label>
-      {p.onRegion && (
-        <span className={`top-region${p.region ? ' filter-on' : ''}`} aria-label="지역 (바로 적용)">
-          <RegionSelect value={p.region ?? null} onChange={p.onRegion} counts={p.regionCounts} />
-        </span>
-      )}
-      {p.extra}
-      <div className="command-end">
+        </div>
+        {p.onRegion && (
+          <span className={`top-region${p.region ? ' filter-on' : ''}`} aria-label="지역 (바로 적용)">
+            <RegionSelect value={p.region ?? null} onChange={p.onRegion} counts={p.regionCounts} />
+          </span>
+        )}
         <button className={`control control-extra${p.filterCount > 0 ? ' filter-active' : ''}`} type="button" onClick={p.onOpenDrawer}
-          aria-label={p.filterCount > 0 ? `상세 필터, 적용 중 ${p.filterCount}개` : '상세 필터'}>
-          {p.filterCount > 0 ? <span className="filter-check" aria-hidden="true">✓</span> : <Icon name="filter" />}
-          <span>상세 필터</span>
+          aria-label={p.filterCount > 0 ? `세부 필터, 적용 중 ${p.filterCount}개` : '세부 필터'}>
+          <Icon name="filter" />
+          <span>필터</span>
           {p.filterCount > 0 && <span className="filter-count" aria-hidden="true">{p.filterCount}</span>}
         </button>
-        <button className="icon-btn" type="button" onClick={p.onReset} aria-label="처음 상태로" title="처음 상태로">
-          <Icon name="reset" />
-        </button>
-        <button className="icon-btn" type="button" onClick={p.onShare} aria-label="링크 복사" title="지금 보는 화면의 링크 복사">
-          <Icon name="share" />
-        </button>
+        {p.extra}
+        <div className="command-end">
+          <button className="icon-btn" type="button" onClick={p.onShare} aria-label="링크 복사" title="지금 보는 화면의 링크 복사">
+            <Icon name="share" />
+          </button>
+          <button className="icon-btn" type="button" onClick={p.onReset} aria-label="처음 상태로" title="처음 상태로">
+            <Icon name="reset" />
+          </button>
+        </div>
       </div>
       {open && (
         <div className="date-pop" role="group" aria-label="기간 선택">
+          <div className="basis-row" role="group" aria-label="날짜 기준 (바로 적용)">
+            {(['completed_date', 'report_date'] as const).map((b) => (
+              <button key={b} type="button" className={p.basis === b ? 'selected' : undefined} aria-pressed={p.basis === b} onClick={() => p.onBasis(b)}>
+                {DATE_BASIS_LABEL[b]} 기준
+              </button>
+            ))}
+          </div>
           <div className="preset-row" role="group" aria-label="빠른 기간 선택">
             {PRESETS.map((pr) => {
               const r = presetRange(pr.days, p.minDate, p.maxDate, today);
@@ -147,11 +142,6 @@ export default function CommandBar(p: Props) {
               onChange={(e) => p.onDraft({ ...p.draft, end: e.target.value })}
             />
           </label>
-          <RegionSelect
-            value={p.draft.region_code} counts={p.regionCounts}
-            onChange={(code) => p.onDraft({ ...p.draft, region_code: code })}
-            selectStyle={{ minHeight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', padding: '6px 10px' }}
-          />
           <button className="primary-button" type="button" style={{ width: 'auto', padding: '10px 22px' }} onClick={() => { if (p.onApply()) setOpen(false); }}>
             적용
           </button>

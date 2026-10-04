@@ -3,7 +3,7 @@
  * 세션(localStorage)·화면에 접근하지 못한다. 페이지 스크립트형(g.js) 배너는 쓰지 않는다.
  * - referrer: 출처(도메인)만 보낸다. 주소창의 조회 조건(기간·지역·기관)은 넘기지 않는다.
  * - 위젯은 고정 크기라서, 자리가 좁으면 비율을 유지한 채 줄이고(minScale 미만이면 감춘다) 가로 넘침을 만들지 않는다.
- * - 대가성 문구를 항상 함께 보인다. VITE_ADS=off 이면 아무것도 그리지 않는다.
+ * - 대가성 문구를 항상 배너 위에 함께 보인다(2026-10-04 사용자 결정: 문구는 광고 상단). VITE_ADS=off 이면 아무것도 그리지 않는다.
  */
 import { useEffect, useRef, useState } from 'react';
 
@@ -38,6 +38,7 @@ export default function CoupangAd({ id, width, height, minScale = 0.5, className
   const hidden = scale < minScale;
   return (
     <aside className={`ad-slot ${className}`.trim()} aria-label="광고" style={{ maxWidth: width }}>
+      {!hidden && <p className="ad-disclosure">{COUPANG_DISCLOSURE}</p>}
       <div ref={boxRef} className="ad-frame-box" style={{ height: hidden ? 0 : Math.round(height * scale) }}>
         {!hidden && (
           <iframe title="쿠팡 파트너스 광고" src={coupangWidgetUrl(id, width, height)} width={width} height={height}
@@ -45,7 +46,6 @@ export default function CoupangAd({ id, width, height, minScale = 0.5, className
             style={{ transform: scale < 1 ? `scale(${scale})` : undefined }} />
         )}
       </div>
-      {!hidden && <p className="ad-disclosure">{COUPANG_DISCLOSURE}</p>}
     </aside>
   );
 }

@@ -2,64 +2,46 @@ import Icon, { type IconName } from './icons';
 
 export type Screen = 'dashboard' | 'statistics' | 'rankings';
 
-/** S03: exact targets — 지역 is the region list (not the map), 통계 is a separate screen (not the charts section). */
-/** U05: menu order = page order (지도 → 법규 → 기관 → 추이 → 지역), then the separate 통계 screen. */
-const ITEMS: Array<{ id: string; label: string; icon: IconName; target: string | null }> = [
-  { id: 'mapsection', label: '지도', icon: 'map', target: 'mapsection' },
-  { id: 'laws', label: '법규', icon: 'table', target: 'laws' },
-  { id: 'entities', label: '기관', icon: 'building', target: 'entities' },
-  { id: 'analytics', label: '추이', icon: 'chart', target: 'analytics' },
-  { id: 'regions', label: '지역', icon: 'pin', target: 'regions' },
-  { id: 'statistics', label: '통계', icon: 'table', target: null },
-  { id: 'rankings', label: '유저 랭킹', icon: 'chart', target: null },
+/**
+ * 2026-10-04 layout: the side rail of in-page anchors was replaced by three real destinations. Desktop shows them as
+ * tabs in the top bar; a phone shows the same three plus 안내 as a bottom bar. Dashboard sections are tabs inside the
+ * page now (지도 패널: 개요·지역·기관·담당자, 아래 카드: 추이·기관·담당자·위반법규), so no anchor menu is needed.
+ */
+const ITEMS: Array<{ id: Screen; label: string; short: string; icon: IconName }> = [
+  { id: 'dashboard', label: '대시보드', short: '대시보드', icon: 'map' },
+  { id: 'statistics', label: '맞춤 통계', short: '통계', icon: 'table' },
+  { id: 'rankings', label: '유저 랭킹', short: '랭킹', icon: 'users' },
 ];
 
-export default function Rail({ active, screen, onSection, onStatistics, onRankings, onAbout }: {
-  /** section of the dashboard the reader is at (scroll spy) */
-  active: string;
+export default function AppNav({ screen, onScreen, onAbout, variant }: {
   screen: Screen;
-  /** go to a dashboard section (restores the dashboard first when the statistics screen is open) */
-  onSection: (id: string) => void;
-  onStatistics: () => void;
-  onRankings?: () => void;
+  onScreen: (screen: Screen) => void;
   onAbout: () => void;
+  variant: 'top' | 'bottom';
 }) {
-  const go = (it: typeof ITEMS[number]) => (it.target ? onSection(it.target) : it.id === 'rankings' ? onRankings?.() : onStatistics());
-  // page vs in-page state: 통계 is a page (aria-current=page); dashboard sections are locations (aria-current=location)
-  const current = (it: typeof ITEMS[number]) => (it.target === null
-    ? (screen === it.id ? 'page' as const : undefined)
-    : (screen === 'dashboard' && active === it.id ? 'location' as const : undefined));
+  if (variant === 'top') {
+    return (
+      <nav className="app-tabs" aria-label="주요 화면">
+        {ITEMS.map((it) => (
+          <button key={it.id} type="button" className="app-tab" aria-current={screen === it.id ? 'page' : undefined} onClick={() => onScreen(it.id)}>
+            {it.label}
+          </button>
+        ))}
+      </nav>
+    );
+  }
   return (
-    <>
-      <nav className="rail" aria-label="주요 화면">
-        {ITEMS.map((it) => (
-          <button
-            key={it.id}
-            type="button"
-            className={`nav-item${current(it) ? ' active' : ''}`}
-            title={it.target ? `${it.label}(으)로 이동` : it.id === 'rankings' ? '유저 랭킹 화면' : '맞춤 통계 화면'}
-            aria-label={it.target ? it.label : it.id === 'rankings' ? '유저 랭킹' : '통계 — 맞춤 통계 화면'}
-            aria-current={current(it)}
-            onClick={() => go(it)}
-          >
-            <Icon name={it.icon} size={22} />
-            <small>{it.label}</small>
-          </button>
-        ))}
-        <span className="nav-space" />
-        <button type="button" className="nav-item" title="데이터 안내" aria-label="데이터 안내" onClick={onAbout}>
-          <Icon name="info" size={22} />
-          <small>안내</small>
+    <nav className="bottom-nav" aria-label="모바일 주요 화면">
+      {ITEMS.map((it) => (
+        <button key={it.id} type="button" aria-label={it.label} aria-current={screen === it.id ? 'page' : undefined} onClick={() => onScreen(it.id)}>
+          <Icon name={it.icon} size={22} />
+          <span>{it.short}</span>
         </button>
-      </nav>
-      <nav className="bottom-nav" aria-label="모바일 주요 화면">
-        {ITEMS.map((it) => (
-          <button key={it.id} type="button" aria-label={it.label} aria-current={current(it)} onClick={() => go(it)}>
-            <Icon name={it.icon} size={22} />
-            <span>{it.id === 'rankings' ? '랭킹' : it.label}</span>
-          </button>
-        ))}
-      </nav>
-    </>
+      ))}
+      <button type="button" aria-label="데이터 안내" onClick={onAbout}>
+        <Icon name="info" size={22} />
+        <span>안내</span>
+      </button>
+    </nav>
   );
 }

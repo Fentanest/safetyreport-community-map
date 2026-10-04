@@ -2,6 +2,7 @@ import type { AuthSnapshot } from '../auth/mapAuth';
 import type { AccessCode } from '../data/client';
 import { ISSUES_URL } from './DataGuide';
 import CoupangAd from './CoupangAd';
+import newsQuote from '../assets/gate-news-quote.jpg';
 
 interface Props {
   code: AccessCode;
@@ -23,6 +24,16 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
   const needLogin = !signedIn || code === 'auth_required' || code === 'session_expired';
   return (
     <main id="main" className="access-gate">
+      {/* 2026-10-04 user decision: the news capture opens the page, the login card comes last (the interviewee's face and name are pixelated) */}
+      <figure className="gate-figure">
+        <img src={newsQuote} width={850} height={484} loading="lazy"
+          alt="KBS 뉴스9 화면. 경찰 인터뷰 자막: (공익 신고는) 교통 단속과 계도가 주목적입니다. 그런데 (한 사람이) 하루에 20~30건씩 제보하는 그런 경우를 보면 화풀이성이 다분히 있지 않나 생각합니다." />
+        <figcaption>
+          <b>그들에게 현실감각을 불어넣어주는 화풀이 프로젝트</b>
+          <small>출처: KBS 뉴스9 화면 갈무리</small>
+        </figcaption>
+      </figure>
+      <CoupangAd id="1034414" width={640} height={200} className="ad-gate" />
       <section className="cm-panel access-card" aria-labelledby="gate-title">
         <div className="overline">나만의 안전신문고 커뮤니티</div>
         <h1 id="gate-title">지금은 신고를 10건 이상 공유한 분만 볼 수 있어요</h1>
@@ -92,7 +103,6 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
           문의는 <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer">문의 게시판(GitHub Issues)</a>에 남겨 주세요(공개 게시판이니 개인정보는 적지 마세요).
         </p>
       </section>
-      <CoupangAd id="1034414" width={640} height={200} className="ad-gate" />
     </main>
   );
 }

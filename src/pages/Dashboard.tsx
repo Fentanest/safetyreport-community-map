@@ -9,7 +9,7 @@ import {
   scopeFromSearch, scopeToSearch, validateRange, type DraftFilters, type EntityTab, type ThemeMode,
 } from '../state/filters';
 import TopBar from '../components/TopBar';
-import Rail from '../components/Rail';
+import AppNav from '../components/Rail';
 import DevelopmentProfiler from '../components/DevelopmentProfiler';
 import CommandBar from '../components/CommandBar';
 import FilterDrawer from '../components/FilterDrawer';
@@ -18,7 +18,7 @@ import ScopeDetailsPanel, { type ManagerPaging } from '../components/ScopeDetail
 import type { ScopeChip } from './StatisticsPage';
 import RankingsPage from './RankingsPage';
 import { clearSession as clearStatsSession, dropLegacyStatsStorage, handoffRecipe, type StatsRecipe } from '../state/statistics';
-import { SPY_SECTIONS, currentSection, scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
+import { scrollToSection, scrollToSectionWhenReady, watchStickyInsets } from '../lib/navigation';
 import type { Screen } from '../components/Rail';
 import type { TrendRate } from '../components/trendMetrics';
 import { TREND_RATE_METRIC_ID } from '../components/trendMetrics';
@@ -109,9 +109,9 @@ function writeBasisPref(account: string, basis: DateBasis): void {
 const refineKey = (s: Scope | null, version: string | null, session: string | null, mode: string) =>
   s ? `${JSON.stringify(s)}|${version}|${session}|${mode}` : '';
 
-/** C06 scroll spy: programmatic moves (menu, restore) pause it briefly so passing sections do not flash in the menu */
-let spyLockUntil = 0;
-function lockSpy(ms = 1200): void { spyLockUntil = Date.now() + ms; }
+/** 2026-10-04 layout: the lower card shows one analysis at a time */
+type AnalysisTab = 'trend' | 'entities' | 'laws' | 'managers';
+const ANALYSIS_TABS: Array<[AnalysisTab, string]> = [['trend', '월별 추이'], ['entities', '기관·담당자'], ['laws', '위반법규'], ['managers', '담당자별 처리']];
 
 
 export default function Dashboard() {
@@ -135,7 +135,9 @@ export default function Dashboard() {
   const [entityTab, setEntityTab] = useState<EntityTab>('agency');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [nav, setNav] = useState('mapsection');
+  const [analysisTab, setAnalysisTab] = useState<AnalysisTab>('trend');
+  // the five extra charts are drawn only after the reader opens them (they were always on the page before)
+  const [moreCharts, setMoreCharts] = useState(false);
   // S04: separate 맞춤 통계 screen in the same shell (?screen=statistics works for direct entry and refresh on Pages)
   const [screen, setScreen] = useState<Screen>(() => screenFromSearch(window.location.search));
   const [statsOpened, setStatsOpened] = useState(() => screenFromSearch(window.location.search) === 'statistics');
@@ -224,24 +226,6 @@ export default function Dashboard() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
-  // C06: scroll spy on the dashboard screen only (a hidden dashboard never drives the menu on the statistics screen)
-  useEffect(() => {
-    if (screen !== 'dashboard') return;
-    let raf = 0;
-    let t: number | undefined;
-    const evaluate = () => {
-      if (Date.now() < spyLockUntil) { window.clearTimeout(t); t = window.setTimeout(evaluate, spyLockUntil - Date.now() + 20); return; }
-      const inset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scroll-top-inset')) || 76;
-      const tops = SPY_SECTIONS.map((id) => [id, document.getElementById(id)?.getBoundingClientRect().top ?? Infinity] as [string, number])
-        .filter(([, top]) => Number.isFinite(top));
-      const id = currentSection(tops, inset);
-      if (id) setNav((cur) => (cur === id ? cur : id));
-    };
-    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(evaluate); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); window.clearTimeout(t); };
-  }, [screen]);
   // S03: publish the measured sticky cover as --scroll-top-inset (scroll-padding-top), once per page
   useEffect(() => watchStickyInsets(), []);
   // C06: the page restores scroll itself (the screens swap after popstate, so the browser's own restore is too early)
@@ -563,7 +547,6 @@ export default function Dashboard() {
   // laws offered by the selectors: the catalogue of the last displayed data without a law filter
   const lawCatalog = useRef<DashboardData['laws']>(null);
   if (data && shownScope && !shownScope.law) lawCatalog.current = data.laws;
-  const lawChoices = useMemo(() => lawOptions(lawCatalog.current, scope.law), [data, scope.law]); // eslint-disable-line react-hooks/exhaustive-deps
   const drawerLawChoices = useMemo(() => lawOptions(lawCatalog.current, draft.law), [data, draft.law]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── applied chips (R08): requested scope vs defaults; human names only ────────────────────────────────
@@ -639,14 +622,14 @@ export default function Dashboard() {
     window.scrollTo({ top: 0 });
   };
   const goDashboard = (section?: string) => {
-    if (section) lockSpy();
     if (screen !== 'dashboard') {
       setScreen('dashboard');
       pushUrl(scope, 'dashboard');
       scrollToSectionWhenReady(section ?? 'mapsection');
     } else if (section) scrollToSection(section);
-    if (section) setNav(section);
   };
+  const goRankings = () => { setScreen('rankings'); pushUrl(scope, 'rankings'); window.scrollTo({ top: 0 }); };
+  const goScreen = (next: Screen) => (next === 'dashboard' ? goDashboard() : next === 'statistics' ? goStatistics() : goRankings());
   const statsFromScope = (origin: string, extra: Parameters<typeof handoffRecipe>[1] extends infer O ? Omit<O & object, 'origin'> : never = {}) => {
     if (!shownScope) return;
     goStatistics(handoffRecipe(shownScope, { origin, ...extra }));
@@ -729,6 +712,12 @@ export default function Dashboard() {
   const errText = err ? `${err.status === 429 ? '요청이 많아 잠시 기다리는 중입니다' : err.message}${err.status === 429 && err.retryAfter ? ` · ${err.retryAfter}초 뒤 최신 범위로 자동으로 다시 불러옵니다` : ''}` : null;
   const entitiesLive = entitiesAvailable() && !(dataMode === 'demo' && (fixture === 'one' || fixture === 'empty'));
   const analytics = data?.analytics ?? null;
+  // the 담당자별 처리 chart follows the manager list of the scope panel (only while no address is selected)
+  const managerChartReady = !point && !!shownScope && !!version && scopeManagers?.key === `${JSON.stringify(shownScope)}|${version}` && scopeManagers.rows.length > 0;
+  const shownAnalysis: AnalysisTab = analysisTab === 'managers' && !managerChartReady ? 'trend' : analysisTab;
+  const mineChartState = !showMine ? 'off' as const : personal.status === 'ready' ? 'ready' as const
+    : personal.status === 'loading' || personal.status === 'waiting' ? 'loading' as const
+      : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' as const : 'error' as const;
 
   return (
     <ActivityContext.Provider value={activity}>
@@ -741,20 +730,13 @@ export default function Dashboard() {
         sample={data?.meta.sample ?? false}
         account={<AccountMenu auth={auth} onSignIn={signIn} onSignOut={signOut} briefing={briefing} />}
         status={<GlobalQueryStatus />}
+        nav={<AppNav variant="top" screen={screen} onScreen={goScreen} onAbout={() => goDashboard('guide')} />}
       />
       <div className="app">
-        <Rail active={nav} screen={screen} onSection={goDashboard} onStatistics={() => goStatistics()}
-          onRankings={() => { setScreen('rankings'); pushUrl(scope, 'rankings'); window.scrollTo({ top: 0 }); }}
-          onAbout={() => goDashboard('guide')} />
+        <AppNav variant="bottom" screen={screen} onScreen={goScreen} onAbout={() => goDashboard('guide')} />
         <main id="main" data-screen={screen}>
           <DevelopmentProfiler id="dashboard"><div className="dashboard-screen" hidden={screen !== 'dashboard'}>
-          <section className="page-heading" aria-label="소개">
-            <div>
-              <div className="overline">나만의 안전신문고 커뮤니티</div>
-              <h1>함께 모은 신고를 <em>지도로 봅니다</em></h1>
-            </div>
-            <span className="heading-note">이용자들이 공유한 안전신문고 신고를 지역·기관·기간별로 봅니다. 로그인하면 내 신고와 나란히 비교할 수 있습니다.</span>
-          </section>
+          <h1 className="sr-only">커뮤니티 신고 지도 — 이용자들이 공유한 안전신문고 신고를 지역·기관·기간별로 봅니다</h1>
 
           {briefing && (
             <div className="banner briefing-bar" role="note">
@@ -776,9 +758,6 @@ export default function Dashboard() {
             onDraft={changeDraft}
             category={scope.category}
             onCategory={pickCategory}
-            law={scope.law}
-            lawOptions={lawChoices}
-            onLaw={pickLaw}
             region={scope.region_code}
             onRegion={pickRegion}
             filterCount={filterCount}
@@ -805,7 +784,7 @@ export default function Dashboard() {
 
           {dash.isInitialLoading && (
             <section className="kpis" aria-label="불러오는 중">
-              {Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton" role="status" aria-label="불러오는 중" />)}
+              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton" role="status" aria-label="불러오는 중" />)}
             </section>
           )}
           {err && (
@@ -849,6 +828,8 @@ export default function Dashboard() {
                   </>
                 )}
               />
+              {/* 2026-10-04: the advertiser asked for the line above the map; the disclosure sits above the banner. minScale 0.3 keeps it on phones (≥ 309px) */}
+              <CoupangAd id="1034404" width={1030} height={250} minScale={0.3} className="ad-map" />
               <div className={`dash-grid${err && shownScope && JSON.stringify(shownScope) !== JSON.stringify(scope) ? ' stale' : ''}`} data-selected={point ? 'place' : 'none'}>
                 <div className="area-map">
                   <MapPanel
@@ -872,8 +853,8 @@ export default function Dashboard() {
                     refreshing={dash.isRefreshing}
                     statsBbox={!!shownScope?.bbox}
                   />
-                  <CoupangAd id="1034404" width={1030} height={250} minScale={0.6} className="ad-map" />
                 </div>
+                {/* the side panel takes the map's height and scrolls inside (no gap opens beside the map) */}
                 <div className="area-side">
                   {point ? (
                     <PlaceDetailsPanel
@@ -905,75 +886,101 @@ export default function Dashboard() {
                       activeManager={scope.manager_key}
                       conditions={conditionsText(shownScope)}
                       onManagers={(rows, total, more) => setScopeManagers({ key: `${JSON.stringify(shownScope)}|${version}`, rows, total, more })}
+                      regionTab={(
+                        <RegionList regions={data.regions} compare={showMine ? compareData?.regions ?? null : null} compareOn={showMine}
+                          interest={interest} onToggleInterest={flipInterest} activeRegion={scope.region_code} onPickRegion={pickRegion} initialRows={20} />
+                      )}
                     />
                   ) : null}
-                  {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
-                    <PlaceEntityChart
-                      key={point.key}
-                      exportCtx={shownScope ? { conditions: exportConditions(shownScope, point.address ?? '선택한 주소'), datasetVersion: version,
-                        blocked: dash.isRefreshing ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다' : null } : undefined}
-                      managers={placeDetail.detail.managers}
-                      total={placeDetail.detail.manager_total}
-                      theme={resolvedTheme}
-                      loadingMore={placeMore?.key === placeMoreKey && placeMore.state === 'loading'}
-                      loadError={placeMore?.key === placeMoreKey && placeMore.state === 'error'}
-                      loadStep={Math.max(0, Math.min(1000, placeDetail.detail.manager_total) - placeDetail.detail.managers.length)}
-                      onLoadMore={Math.min(1000, placeDetail.detail.manager_total) > placeDetail.detail.managers.length
-                        ? () => loadMorePlaceManagers(placeDetail.detail.manager_total) : null}
-                    />
-                  )}
-                  {!point && shownScope && version && scopeManagers?.key === `${JSON.stringify(shownScope)}|${version}` && scopeManagers.rows.length > 0 && (
-                    <PlaceEntityChart
-                      key={scopeManagers.key}
-                      title="이 범위의 담당자별 처리 현황"
-                      exportCtx={{ conditions: exportConditions(shownScope), datasetVersion: version, blocked: dash.isRefreshing ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다' : null }}
-                      managers={scopeManagers.rows}
-                      total={scopeManagers.total}
-                      theme={resolvedTheme}
-                      loadingMore={scopeManagers.more.state === 'loading'}
-                      loadError={scopeManagers.more.state === 'error'}
-                      loadStep={scopeManagers.more.pageSize}
-                      onLoadMore={scopeManagers.total > scopeManagers.rows.length ? scopeManagers.more.load : null}
-                    />
-                  )}
                 </div>
               </div>
+              {/* the selected address's managers: full width right under the map (it describes the address, not the scope) */}
+              {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
+                <PlaceEntityChart
+                  key={point.key}
+                  exportCtx={shownScope ? { conditions: exportConditions(shownScope, point.address ?? '선택한 주소'), datasetVersion: version,
+                    blocked: dash.isRefreshing ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다' : null } : undefined}
+                  managers={placeDetail.detail.managers}
+                  total={placeDetail.detail.manager_total}
+                  theme={resolvedTheme}
+                  loadingMore={placeMore?.key === placeMoreKey && placeMore.state === 'loading'}
+                  loadError={placeMore?.key === placeMoreKey && placeMore.state === 'error'}
+                  loadStep={Math.max(0, Math.min(1000, placeDetail.detail.manager_total) - placeDetail.detail.managers.length)}
+                  onLoadMore={Math.min(1000, placeDetail.detail.manager_total) > placeDetail.detail.managers.length
+                    ? () => loadMorePlaceManagers(placeDetail.detail.manager_total) : null}
+                />
+              )}
               </div>
               {/* KP-04: the tables and charts below always describe the APPLIED scope (never the selected address) */}
               <p className="scope-strip" role="note">아래 표와 그래프: {scopeLabel(shownScope)}{freshness}</p>
-              {/* U05: 위반법규별 현황 (left) | 기관·담당자 처리 결과 (right), then 월별 추이 | 답변까지 걸린 기간 */}
-              <section className="area-pair area-tables-top" aria-label="표로 보는 현황">
-                <LawTable laws={data.laws} activeLaw={scope.law} onPickLaw={pickLaw} scope={shownScope} version={version} serverList={entitiesLive} />
-                {shownScope && version && (
-                  <EntityTable scope={shownScope} version={version} agencies={data.agencies} managers={data.managers}
-                    tab={entityTab} onTab={setEntityTab} onPick={pickEntity} mine={showMine ? entityMine : null}
-                    serverList={entitiesLive} activeAgency={scope.agency_key} activeManager={scope.manager_key} />
-                )}
-              </section>
-              <section className="area-pair" id="analytics" aria-label="데이터로 보는 신고 현황">
-                <TrendCard monthly={data.monthly} basis={shownScope?.date_basis ?? scope.date_basis} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null}
-                  exportCtx={shownScope ? { conditions: exportConditions(shownScope), datasetVersion: version } : undefined}
-                  mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
-                    : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
-                      : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'}
-                  busy={dash.isRefreshing} onMakeStatistics={statsFromTrend} />
-                <DurationCard all={analytics?.duration ?? null} mine={showMine ? compareData?.analytics?.duration ?? null : null} theme={resolvedTheme} />
-              </section>
-              <section className="area-charts" aria-label="더 보는 그래프">
-                <HeatmapCard data={analytics?.heatmap ?? null} theme={resolvedTheme} onPick={pickCell} />
-                <VehicleDaysCard data={analytics?.vehicle_days ?? null} theme={resolvedTheme} />
-                <ScatterCard data={analytics?.scatter ?? null} theme={resolvedTheme}
-                  mineKeys={showMine ? mineEntityKeys(compareData?.agencies, compareData?.managers) : null}
-                  onPick={(kind, e) => pickEntity(kind, e)} />
-                <RatingCard all={analytics?.rating ?? null} mine={showMine ? compareData?.analytics?.rating ?? null : null} theme={resolvedTheme}
-                  mineState={!showMine ? 'off' : personal.status === 'ready' ? 'ready'
-                    : personal.status === 'loading' || personal.status === 'waiting' ? 'loading'
-                      : personal.status === 'signed_out' || personal.status === 'unconfigured' ? 'signed_out' : 'error'} />
-              </section>
-              <section className="area-tables" aria-label="지역과 차량">
-                <RegionList regions={data.regions} compare={showMine ? compareData?.regions ?? null : null} compareOn={showMine}
-                  interest={interest} onToggleInterest={flipInterest} activeRegion={scope.region_code} onPickRegion={pickRegion} />
+              <section className="analysis-row" id="analytics" aria-label="데이터로 보는 신고 현황">
+                <div className="cm-panel analysis-tabs">
+                  <div className="analysis-tablist" role="tablist" aria-label="보는 분석">
+                    {ANALYSIS_TABS.filter(([id]) => id !== 'managers' || managerChartReady).map(([id, label]) => (
+                      <button key={id} type="button" role="tab" id={`analysis-tab-${id}`} aria-controls="analysis-panel"
+                        aria-selected={shownAnalysis === id} tabIndex={shownAnalysis === id ? 0 : -1} onClick={() => setAnalysisTab(id)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="analysis-body" role="tabpanel" id="analysis-panel" aria-labelledby={`analysis-tab-${shownAnalysis}`}>
+                    {shownAnalysis === 'trend' && (
+                      <TrendCard monthly={data.monthly} basis={shownScope?.date_basis ?? scope.date_basis} theme={resolvedTheme} mine={showMine ? compareData?.monthly ?? null : null}
+                        exportCtx={shownScope ? { conditions: exportConditions(shownScope), datasetVersion: version } : undefined}
+                        mineState={mineChartState}
+                        busy={dash.isRefreshing} onMakeStatistics={statsFromTrend} />
+                    )}
+                    {shownAnalysis === 'entities' && shownScope && version && (
+                      <EntityTable scope={shownScope} version={version} agencies={data.agencies} managers={data.managers}
+                        tab={entityTab} onTab={setEntityTab} onPick={pickEntity} mine={showMine ? entityMine : null}
+                        serverList={entitiesLive} activeAgency={scope.agency_key} activeManager={scope.manager_key} />
+                    )}
+                    {shownAnalysis === 'laws' && (
+                      <LawTable laws={data.laws} activeLaw={scope.law} onPickLaw={pickLaw} scope={shownScope} version={version} serverList={entitiesLive} />
+                    )}
+                    {shownAnalysis === 'managers' && managerChartReady && shownScope && version && scopeManagers && (
+                      <PlaceEntityChart
+                        key={scopeManagers.key}
+                        title="이 범위의 담당자별 처리 현황"
+                        exportCtx={{ conditions: exportConditions(shownScope), datasetVersion: version, blocked: dash.isRefreshing ? '새 결과를 불러오는 중이라 잠시 뒤에 받을 수 있습니다' : null }}
+                        managers={scopeManagers.rows}
+                        total={scopeManagers.total}
+                        theme={resolvedTheme}
+                        loadingMore={scopeManagers.more.state === 'loading'}
+                        loadError={scopeManagers.more.state === 'error'}
+                        loadStep={scopeManagers.more.pageSize}
+                        onLoadMore={scopeManagers.total > scopeManagers.rows.length ? scopeManagers.more.load : null}
+                      />
+                    )}
+                  </div>
+                </div>
                 <VehicleTop5 vehicles={data.vehicles} totalScope={data.vehicle_total_scope_reports} identifiable={data.vehicle_identifiable_reports} toast={showToast} />
+              </section>
+              <section className="cm-panel more-charts" aria-label="더 보는 그래프">
+                <div className="more-charts-head">
+                  <div>
+                    <h2>그래프 더 보기</h2>
+                    <span className="subtitle">답변까지 걸린 기간 · 기관 × 위반법규 · 차량별 반복 신고 · 처리기간 × 처리결과 · 별점 분포</span>
+                  </div>
+                  <div className="more-charts-actions">
+                    <button type="button" className="ghost-btn" onClick={() => statsFromScope('그래프 더 보기')}>맞춤 통계에서 직접 만들기</button>
+                    <button type="button" className="ghost-btn more-charts-toggle" aria-expanded={moreCharts} aria-controls="more-charts-body" onClick={() => setMoreCharts((v) => !v)}>
+                      {moreCharts ? '접기' : '펼치기'}
+                    </button>
+                  </div>
+                </div>
+                {moreCharts && (
+                  <div className="area-charts" id="more-charts-body">
+                    <DurationCard all={analytics?.duration ?? null} mine={showMine ? compareData?.analytics?.duration ?? null : null} theme={resolvedTheme} />
+                    <HeatmapCard data={analytics?.heatmap ?? null} theme={resolvedTheme} onPick={pickCell} />
+                    <VehicleDaysCard data={analytics?.vehicle_days ?? null} theme={resolvedTheme} />
+                    <ScatterCard data={analytics?.scatter ?? null} theme={resolvedTheme}
+                      mineKeys={showMine ? mineEntityKeys(compareData?.agencies, compareData?.managers) : null}
+                      onPick={(kind, e) => pickEntity(kind, e)} />
+                    <RatingCard all={analytics?.rating ?? null} mine={showMine ? compareData?.analytics?.rating ?? null : null} theme={resolvedTheme}
+                      mineState={mineChartState} />
+                  </div>
+                )}
               </section>
               <DataGuide data={data} />
             </>

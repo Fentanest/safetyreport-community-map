@@ -15,13 +15,15 @@ interface Props {
   account?: ReactNode;
   /** S10: the page's query status, rendered in a reserved slot (no header height change when it appears) */
   status?: ReactNode;
+  /** the three destinations (대시보드 · 맞춤 통계 · 유저 랭킹), shown as tabs on wide screens */
+  nav?: ReactNode;
 }
 
 const THEME_ORDER: ThemeMode[] = ['dark', 'light', 'system'];
 const THEME_LABEL: Record<ThemeMode, string> = { dark: '다크', light: '라이트', system: '시스템' };
 const THEME_ICON = { dark: 'moon', light: 'sun', system: 'auto' } as const;
 
-export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp, sample, account, status }: Props) {
+export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp, sample, account, status, nav }: Props) {
   const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
   // Only the demo build needs a badge; the live site is simply the site.
   const badge = dataMode === 'demo' || sample
@@ -38,6 +40,7 @@ export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp
         </span>
       </a>
       {badge && <span className="demo-badge" title={badge.title}>{badge.text}</span>}
+      {nav}
       <div className="topbar-status">{status}</div>
       <div className="header-end">
         {dataStamp && (

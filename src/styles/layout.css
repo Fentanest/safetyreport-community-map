@@ -1,0 +1,168 @@
+/*
+ * 2026-10-04 layout (canvas "커뮤니티 신고 지도 개편안"). Loaded last: it re-arranges the page without touching the
+ * component styles above it.
+ *  - top bar tabs (대시보드 · 맞춤 통계 · 유저 랭킹) replace the side rail; a phone keeps a bottom bar
+ *  - one sticky condition bar; 위반법규 moved into the 세부 필터, the date basis into the period popover
+ *  - key figures: a few large cells + one quiet line for the rest
+ *  - map and side panel share one height (the panel scrolls inside), so no gap opens beside the map
+ *  - below the map: one tabbed analysis card + 차량 TOP5; the extra charts open on request
+ */
+
+/* ── shell ─────────────────────────────────────────────────────────────────────────────────── */
+:root { --topbar-h: 60px; }
+.topbar { gap: 16px; }
+.brand img { width: 34px; height: 34px; }
+.brand b { font-size: 18px; }
+.app { display: block; }
+main { width: 100%; max-width: 1760px; margin-inline: auto; }
+.dashboard-screen { display: flex; flex-direction: column; gap: var(--card-gap); min-width: 0; }
+
+.app-tabs { display: flex; align-self: stretch; gap: 2px; margin-left: 8px; flex: none; }
+.app-tab { border: 0; border-top: 2px solid transparent; border-bottom: 2px solid transparent; background: transparent; color: var(--muted);
+  padding: 0 14px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.app-tab:hover { color: var(--text); background: var(--hover); }
+.app-tab[aria-current="page"] { color: var(--text); font-weight: 650; border-bottom-color: var(--brand-ink); }
+
+/* ── condition bar ─────────────────────────────────────────────────────────────────────────── */
+.command { position: sticky; top: var(--topbar-h); z-index: 50; display: block; padding: 8px 12px; min-height: 0; }
+.command-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.command .date-control { gap: 8px; }
+.date-control-label { font-weight: 650; white-space: nowrap; }
+.date-control-range { color: var(--muted); font-size: 13px; white-space: nowrap; }
+/* the 시도 / 시군구 selects keep their labels for assistive tech; the floating words are not drawn */
+.command .top-region .region-select label { font-size: 0; display: inline-flex; }
+.command .top-region select { font-size: 14px; min-height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--raised); color: var(--text); padding: 6px 10px; margin-right: 6px; max-width: 200px; }
+.command .top-region.filter-on select:first-of-type { border-color: var(--filter-active-border); }
+.command .control-extra { gap: 6px; }
+.command .view-controls { padding: 0 4px; }
+.command .date-pop { margin-top: 8px; padding: 12px 4px 4px; }
+.basis-row { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.basis-row button { border: 0; background: transparent; padding: 8px 14px; min-height: 40px; cursor: pointer; color: var(--text-secondary); }
+.basis-row button + button { border-left: 1px solid var(--border); }
+.basis-row button.selected { background: var(--brand); color: #fff; font-weight: 650; }
+.preset-row button.selected { background: var(--raised-high); border-color: var(--brand-ink); color: var(--text); font-weight: 650; }
+
+/* ── key figures ───────────────────────────────────────────────────────────────────────────── */
+.kpi-strip { padding: 12px 0 10px; gap: 10px; }
+.kpi-strip-head { padding: 0 16px; }
+.kpi-hero { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 14px; }
+.kpi-hero-cell { flex: 1 1 170px; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--raised); }
+.kpi-hero-cell .kpi-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.kpi-hero-cell .kpi-value { font-size: 30px; line-height: 38px; font-weight: 700; letter-spacing: -0.03em; white-space: nowrap; }
+.kpi-hero-cell .kpi-basis { font-size: 12px; color: var(--muted); }
+.kpi-hero-cell .kpi-mine { font-size: 12px; }
+.kpi-hero-cell.skeleton { min-height: 104px; }
+.kpi-outcome-cell { flex: 2.4 1 360px; gap: 8px; }
+.kpi-outcome-cell .kpi-label small { font-size: 12px; margin-left: 6px; color: var(--muted); font-weight: 400; }
+.kpi-outcome-values { display: flex; flex-wrap: wrap; gap: 4px 28px; }
+.kpi-outcome-values > div { display: flex; flex-direction: column; min-width: 0; }
+.kpi-outcome-name { font-size: 12px; color: var(--text-secondary); display: inline-flex; align-items: center; }
+.kpi-outcome-values .kpi-value { font-size: 26px; line-height: 32px; }
+.kpi-outcome-bar { height: 8px; gap: 2px; background: transparent; }
+.kpi-minor { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 22px; margin: 0; padding: 2px 16px 0; font-size: 13px; }
+.kpi-minor > div { display: inline-flex; gap: 6px; align-items: baseline; }
+.kpi-minor dt { color: var(--muted); }
+.kpi-minor dd { margin: 0; }
+.kpi-minor dd b { font-weight: 650; }
+.kpi-minor dd small { color: var(--muted); font-size: 12px; }
+.kpi-minor dd small.mine-col { color: var(--link); }
+.kpi-minor-end { margin-left: auto; }
+.kpi-minor .kpi-more { font-size: 13px; }
+.kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* ── ad line above the map (disclosure on top) ─────────────────────────────────────────────── */
+.ad-map { margin-top: 0; }
+
+/* ── map + side panel: one height ──────────────────────────────────────────────────────────── */
+.dash-grid { grid-template-columns: minmax(0, 1fr) clamp(340px, 28vw, 460px); align-items: stretch; }
+.area-map, .area-side { grid-column: auto; }
+.map-card .map-canvas { height: clamp(460px, 60vh, 640px); }
+/* the panel adds nothing to the row height (contain: size): the row is as tall as the map card, the panel scrolls */
+.area-side { contain: size; min-height: 0; }
+.area-side > .place-panel { height: 100%; max-height: none; overflow: auto; }
+.scope-panel { overflow: hidden !important; padding-bottom: 0; }
+.scope-tabs { display: flex; flex: none; margin: 0 -14px; padding: 0 8px; border-bottom: 1px solid var(--border); }
+.scope-tabs button { flex: 1 1 0; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; min-height: 44px;
+  color: var(--muted); font-size: 14px; cursor: pointer; }
+.scope-tabs button:hover { color: var(--text); }
+.scope-tabs button[aria-selected="true"] { color: var(--text); font-weight: 650; border-bottom-color: var(--brand-ink); }
+.scope-tab-body { flex: 1 1 auto; min-height: 0; overflow: auto; margin: -12px -14px 0; padding: 0 14px 14px; }
+.scope-tab-body > [role="tabpanel"] { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
+.scope-tab-body > [role="tabpanel"][hidden] { display: none; }
+.scope-tab-body .place-section:first-child { border-top: 0; padding-top: 0; }
+/* the region list sits flat inside the 지역 tab */
+.scope-tab-body .region-list { border: 0; box-shadow: none; background: transparent; padding-bottom: 0; border-radius: 0; }
+.scope-tab-body .region-list .panel-top { padding: 0; }
+.scope-tab-body .region-list .panel-top h2 { font-size: 14px; }
+.scope-tab-body .region-rows { padding: 0; }
+.scope-tab-body .region-crumb, .scope-tab-body .region-group-label { margin-left: 0; margin-right: 0; }
+.scope-tab-body .region-more { padding: 8px 0 0; }
+
+/* ── below the map: tabbed analysis + vehicles ─────────────────────────────────────────────── */
+.analysis-row { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 26vw, 400px); gap: var(--card-gap); align-items: stretch; min-width: 0; }
+.analysis-tabs { display: flex; flex-direction: column; min-width: 0; }
+.analysis-tablist { display: flex; gap: 2px; padding: 4px 12px 0; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.analysis-tablist button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; min-height: 48px; padding: 0 14px;
+  color: var(--muted); font-size: 15px; cursor: pointer; white-space: nowrap; }
+.analysis-tablist button:hover { color: var(--text); }
+.analysis-tablist button[aria-selected="true"] { color: var(--text); font-weight: 650; border-bottom-color: var(--brand-ink); }
+.analysis-body { min-width: 0; }
+.analysis-body > .cm-panel { border: 0; box-shadow: none; background: transparent; border-radius: 0; }
+.analysis-body .panel-top h2 { font-size: 15px; }
+.analysis-body .chart-host { height: 300px; }
+.analysis-body .place-entity-chart .chart-host { height: 360px; }
+.analysis-row > .vehicles-card { min-width: 0; }
+
+.more-charts { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.more-charts-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.more-charts-head h2 { margin: 0; font-size: 16px; }
+.more-charts-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.more-charts .area-charts { grid-column: auto; }
+
+/* ── access gate: news capture → banner → login card ──────────────────────────────────────── */
+.gate-figure { width: min(640px, 100%); margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.gate-figure img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--border); }
+.gate-figure figcaption { display: flex; flex-direction: column; gap: 2px; }
+.gate-figure figcaption b { font-size: 16px; line-height: 24px; letter-spacing: -0.02em; }
+.gate-figure figcaption small { font-size: 12px; color: var(--muted); }
+.access-gate .access-card { margin-top: 20px; }
+
+body.briefing .more-charts, body.briefing .app-tabs { display: none; }
+
+/* ── responsive ────────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .brand small, .topbar .btn-label, .data-stamp { display: none; }
+  .dash-grid, .analysis-row { grid-template-columns: minmax(0, 1fr); }
+  .area-side { contain: none; }
+  .area-side > .place-panel { height: min(640px, 82vh); }
+}
+@media (max-width: 700px) {
+  :root { --topbar-h: 56px; }
+  .app-tabs { display: none; }
+  /* one scrolling row of conditions under the top bar */
+  .command { padding: 8px; border-radius: 0 0 12px 12px; margin-inline: calc(var(--page-pad) * -1); }
+  .command-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .command-row > * { flex: none; }
+  .command .segments { width: auto; display: inline-flex; }
+  .command .segments button { flex: none; padding: 8px 12px; }
+  .command-end { width: auto; margin-left: 0; }
+  .command .view-controls { order: 0; flex-basis: auto; flex-direction: row; border-top: 0; padding-top: 0; }
+  .command .top-region select { max-width: 150px; }
+  /* the period button shows its name only (the range is in the popover and the key-figure heading) */
+  .date-control-range { display: none; }
+  .command .date-pop { padding: 10px 4px 4px; }
+  /* the small figures share one row of three; the outcome cell takes the next row */
+  .kpi-hero { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 10px; }
+  .kpi-outcome-cell { grid-column: 1 / -1; order: 1; }
+  .kpi-hero-cell:not(.kpi-outcome-cell) { padding: 10px; }
+  .kpi-hero-cell:not(.kpi-outcome-cell) .kpi-value { font-size: 20px; line-height: 26px; }
+  .kpi-outcome-cell { padding: 10px 12px; }
+  .kpi-outcome-values { justify-content: space-between; gap: 4px 12px; }
+  .kpi-outcome-values .kpi-value { font-size: 20px; line-height: 26px; }
+  .kpi-strip-head { padding: 0 12px; }
+  .kpi-minor { padding: 0 12px; gap: 2px 14px; }
+  .kpi-minor-end { margin-left: 0; flex-basis: 100%; }
+  .map-card .map-canvas { height: 380px; }
+  .analysis-body .chart-host { height: 260px; }
+}

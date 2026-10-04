@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { DATE_BASIS_LABEL, type DashboardData, type PublicEntity, type PublicRegion, type Scope } from '../domain/public';
 import { SIDO_LIST, regionLabel, sggName, sidoOf } from '../data/regions';
 import { loadEntities } from '../data/client';
@@ -134,8 +134,12 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
 }
 
 /** S01: the right-hand detail of the applied scope when no address is selected (전국 · 시도 · 시군구 · 지도 범위). */
+type ScopeTab = 'overview' | 'regions' | 'agencies' | 'managers';
+const PREVIEW_CHILDREN = 5;
+const TABS: Array<[ScopeTab, string]> = [['overview', '개요'], ['regions', '지역'], ['agencies', '기관'], ['managers', '담당자']];
+
 export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, busy, onPickRegion, onPickEntity, onMakeStatistics,
-  activeAgency, activeManager, conditions, onManagers }: {
+  activeAgency, activeManager, conditions, onManagers, regionTab }: {
   /** the DISPLAYED scope (the numbers below belong to it) */
   scope: Scope;
   data: DashboardData;
@@ -151,7 +155,11 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
   /** human text of the applied conditions (period · category · law · agency) */
   conditions: string;
   onManagers?: (rows: PublicEntity[], total: number, more: ManagerPaging) => void;
+  /** 지역 탭 content (the region list with stars and 내 신고); without it the tab lists the child regions */
+  regionTab?: ReactNode;
 }) {
+  const [tab, setTab] = useState<ScopeTab>('overview');
+  const ids = useId();
   const trail = regionTrail(scope.region_code);
   const name = trail[trail.length - 1].label;
   const o = data.overview.outcomes;
@@ -170,7 +178,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
       <header className="place-head">
         <div>
           <span className="overline">선택 범위</span>
-          <nav className="scope-trail" aria-label="지역 경로">
+          {trail.length > 1 && <nav className="scope-trail" aria-label="지역 경로">
             <ol>
               {trail.map((t, i) => (
                 <li key={t.code ?? 'all'}>
@@ -180,7 +188,7 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
                 </li>
               ))}
             </ol>
-          </nav>
+          </nav>}
           <h2>{name}{scope.bbox ? <small className="scope-bbox"> × {autoRefresh ? '현재 지도 범위' : '마지막으로 적용한 지도 범위'}</small> : null}</h2>
           <p className="subtitle">{DATE_BASIS_LABEL[scope.date_basis]} 기준 · {fmtDate(scope.start)} — {fmtDate(scope.end)}{conditions ? ` · ${conditions}` : ''}</p>
           <PanelStatus busy={busy} label="새 조건으로 바꾸는 중 · 아래 숫자는 이전 조건의 결과" />
@@ -190,50 +198,84 @@ export default function ScopeDetailsPanel({ scope, data, version, autoRefresh, b
         </div>
       </header>
 
-      <section className="place-section" aria-label="처리 결과">
-        <h3>처리 결과 <small>답변 {fmtInt(C)}건</small></h3>
-        {known > 0 ? (
-          <>
-            <div className="stack" role="img" aria-label={bars.map((r) => `${r.label} ${r.v}건`).join(', ')}>
-              {bars.map((r) => <i key={r.label} style={{ width: `${(r.v / known) * 100}%`, background: r.color }} />)}
-            </div>
-            <div className="place-dist">
-              {bars.map((r) => <span key={r.label}><i className="dot" style={{ background: r.color }} />{r.label} <b className="cm-number">{fmtInt(r.v)}</b> <small>{fmtPercent(pct(r.v, known))}</small></span>)}
-              <span title="안전신문고 처리 상태가 ‘답변완료’·‘기타’라 수용 여부가 없는 답변"><i className="dot" style={{ background: 'var(--unknown)' }} />미분류 <b className="cm-number">{fmtInt(o?.result_unknown ?? 0)}</b></span>
-            </div>
-          </>
-        ) : <p className="cm-muted place-empty">이 범위에는 수용 여부가 분류된 답변이 아직 없습니다.</p>}
-      </section>
+      <div className="scope-tabs" role="tablist" aria-label="선택 범위 보기">
+        {TABS.map(([id, label]) => (
+          <button key={id} type="button" role="tab" id={`${ids}-tab-${id}`} aria-controls={`${ids}-panel-${id}`}
+            aria-selected={tab === id} tabIndex={tab === id ? 0 : -1} onClick={() => setTab(id)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {/* every tab stays mounted (hidden) so the manager list keeps feeding the 담당자별 처리 chart below */}
+      <div className="scope-tab-body">
+        <div role="tabpanel" id={`${ids}-panel-overview`} aria-labelledby={`${ids}-tab-overview`} hidden={tab !== 'overview'}>
+          <section className="place-section" aria-label="처리 결과">
+            <h3>처리 결과 <small>답변 {fmtInt(C)}건</small></h3>
+            {known > 0 ? (
+              <>
+                <div className="stack" role="img" aria-label={bars.map((r) => `${r.label} ${r.v}건`).join(', ')}>
+                  {bars.map((r) => <i key={r.label} style={{ width: `${(r.v / known) * 100}%`, background: r.color }} />)}
+                </div>
+                <div className="place-dist">
+                  {bars.map((r) => <span key={r.label}><i className="dot" style={{ background: r.color }} />{r.label} <b className="cm-number">{fmtInt(r.v)}</b> <small>{fmtPercent(pct(r.v, known))}</small></span>)}
+                  <span title="안전신문고 처리 상태가 ‘답변완료’·‘기타’라 수용 여부가 없는 답변"><i className="dot" style={{ background: 'var(--unknown)' }} />미분류 <b className="cm-number">{fmtInt(o?.result_unknown ?? 0)}</b></span>
+                </div>
+              </>
+            ) : <p className="cm-muted place-empty">이 범위에는 수용 여부가 분류된 답변이 아직 없습니다.</p>}
+          </section>
 
-      {children.length > 0 && (
-        <section className="place-section" aria-label={scope.region_code ? '시군구별' : '시도별'}>
-          <h3>{scope.region_code ? '시군구별' : '시도별'}</h3>
-          <ul className="scope-children">
-            {children.slice(0, childShown).map((r) => (
-              <li key={r.region_code ?? r.name}>
-                <button type="button" className="scope-child" onClick={() => onPickRegion(r.region_code)} disabled={!r.region_code}>
-                  <b>{r.name}</b>
-                  <span className="cm-number">신고 {fmtInt(r.report_count)}</span>
-                  <span className="cm-number">답변 {fmtInt(r.completed_count)}</span>
-                  <span className="cm-number">수용률 {fmtPercent(acceptRate(r.outcomes))}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {children.length > childShown && <button type="button" className="mini-btn" onClick={() => setChildShown((n) => n + 20)}>더 보기 · {fmtInt(children.length - childShown)}</button>}
-        </section>
-      )}
+          {children.length > 0 && (
+            <section className="place-section" aria-label={scope.region_code ? '시군구별' : '시도별'}>
+              <h3>{scope.region_code ? '시군구별' : '시도별'}</h3>
+              <ul className="scope-children">
+                {children.slice(0, PREVIEW_CHILDREN).map((r) => (
+                  <li key={r.region_code ?? r.name}>
+                    <button type="button" className="scope-child" onClick={() => onPickRegion(r.region_code)} disabled={!r.region_code}>
+                      <b>{r.name}</b>
+                      <span className="cm-number">신고 {fmtInt(r.report_count)}</span>
+                      <span className="cm-number">답변 {fmtInt(r.completed_count)}</span>
+                      <span className="cm-number">수용률 {fmtPercent(acceptRate(r.outcomes))}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {children.length > PREVIEW_CHILDREN && <button type="button" className="mini-btn" onClick={() => setTab('regions')}>지역 {fmtInt(children.length)}곳 모두 보기</button>}
+            </section>
+          )}
 
-      <section className="place-section" aria-label="처리 기관">
-        <h3>처리 기관 {data.agency_total !== undefined && <small>{fmtInt(data.agency_total)}곳</small>}</h3>
-        <ScopeEntities kind="agency" first={data.agencies} total={data.agency_total} scope={scope} version={version} onPick={onPickEntity}
-          activeAgency={activeAgency} activeManager={activeManager} />
-      </section>
-      <section className="place-section" aria-label="담당자">
-        <h3>담당자 {data.manager_total !== undefined && <small>{fmtInt(data.manager_total)}명</small>}</h3>
-        <ScopeEntities kind="manager" first={data.managers} total={data.manager_total} scope={scope} version={version} onPick={onPickEntity}
-          activeAgency={activeAgency} activeManager={activeManager} onRows={onManagers} />
-      </section>
+        </div>
+        <div role="tabpanel" id={`${ids}-panel-regions`} aria-labelledby={`${ids}-tab-regions`} hidden={tab !== 'regions'}>
+          {regionTab ?? (children.length > 0 ? (
+            <ul className="scope-children">
+              {children.slice(0, childShown).map((r) => (
+                <li key={r.region_code ?? r.name}>
+                  <button type="button" className="scope-child" onClick={() => onPickRegion(r.region_code)} disabled={!r.region_code}>
+                    <b>{r.name}</b>
+                    <span className="cm-number">신고 {fmtInt(r.report_count)}</span>
+                    <span className="cm-number">답변 {fmtInt(r.completed_count)}</span>
+                    <span className="cm-number">수용률 {fmtPercent(acceptRate(r.outcomes))}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="cm-muted place-empty">이 범위 아래 지역이 없습니다.</p>)}
+          {!regionTab && children.length > childShown && <button type="button" className="mini-btn" onClick={() => setChildShown((n) => n + 20)}>더 보기 · {fmtInt(children.length - childShown)}</button>}
+        </div>
+        <div role="tabpanel" id={`${ids}-panel-agencies`} aria-labelledby={`${ids}-tab-agencies`} hidden={tab !== 'agencies'}>
+          <section className="place-section" aria-label="처리 기관">
+            <h3>처리 기관 {data.agency_total !== undefined && <small>{fmtInt(data.agency_total)}곳</small>}</h3>
+            <ScopeEntities kind="agency" first={data.agencies} total={data.agency_total} scope={scope} version={version} onPick={onPickEntity}
+              activeAgency={activeAgency} activeManager={activeManager} />
+          </section>
+        </div>
+        <div role="tabpanel" id={`${ids}-panel-managers`} aria-labelledby={`${ids}-tab-managers`} hidden={tab !== 'managers'}>
+          <section className="place-section" aria-label="담당자">
+            <h3>담당자 {data.manager_total !== undefined && <small>{fmtInt(data.manager_total)}명</small>}</h3>
+            <ScopeEntities kind="manager" first={data.managers} total={data.manager_total} scope={scope} version={version} onPick={onPickEntity}
+              activeAgency={activeAgency} activeManager={activeManager} onRows={onManagers} />
+          </section>
+        </div>
+      </div>
     </aside>
   );
 }
