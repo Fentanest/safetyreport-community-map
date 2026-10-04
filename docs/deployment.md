@@ -129,3 +129,12 @@ Pages [run37107584086](https://github.com/Fentanest/safetyreport-community-map/a
 Pages [run37174903492](https://github.com/Fentanest/safetyreport-community-map/actions/runs/37174903492) build/deploy 성공(워크플로 안의 blueprint·product·vitest·scan 포함).
 운영 사이트 로그인 전 화면(1440·390)에서 뉴스 갈무리 → 대가성 문구 → 광고 → 로그인 카드 순서, 이미지 로드, 콘솔 오류 0건을 확인했다.
 로그인 후 대시보드(실제 카카오 지도 위 패널 높이 일치 등)는 운영 계정이 없어 미검증이다. 데모 검수 화면: `docs/reviews/screenshots/claude-ui-redesign-2026-10-04/`.
+
+## 2026-10-04 맞춤 통계·유저 랭킹 화면 정리 운영 적용
+
+main 70eb165(프론트엔드만: '이 항목으로 좁히기' 바가 표의 고정 첫 열에 가려 잘리던 문제 수정, 맞춤 통계 헤더·표·설정 패널 정리,
+유저 랭킹 탭·조건 한 줄·얇은 내 순위·값 막대 배치, 데모 전용 합성 랭킹)을 push했다. `supabase migration list --linked`로 로컬 마이그레이션이
+모두 원격에 적용돼 있음을 확인했고 마지막 DB/Edge 반영(bc7fecc) 이후 supabase/·server/·contracts/ 변경이 없어 Supabase 배포는 하지 않았다.
+Pages [run37176609584](https://github.com/Fentanest/safetyreport-community-map/actions/runs/37176609584) build/deploy 성공. 운영 번들에 새 스타일이 들어갔고
+데모 랭킹 코드는 포함되지 않음을 확인했다. 로그인 후 두 화면은 운영 계정이 없어 미검증이며, 데모 검수 화면은
+`docs/reviews/screenshots/claude-stats-rankings-2026-10-04/`. 로컬 worktree는 모두 정리했고 그 안의 미커밋 파일은 `.agent-runtime/archive/worktrees-2026-10-04/`에 보관했다.
