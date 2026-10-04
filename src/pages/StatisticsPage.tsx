@@ -385,19 +385,21 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           <h1 id="stats-title" tabIndex={-1}>맞춤 통계</h1>
           <p className="subtitle">행·열·지표와 비교할 대상을 골라 표와 그래프로 확인합니다</p>
         </div>
-        <button type="button" className="ghost-btn" onClick={() => onBack()}>지도로 돌아가기</button>
+        <div className="stats-head-actions">
+          <button
+            type="button"
+            className="ghost-btn stats-editor-toggle"
+            aria-expanded={editorOpen}
+            aria-controls="stats-builder-panel"
+            onClick={() => setEditorOpen((o) => !o)}
+          >
+            {editorOpen ? '조건 닫기' : '조건 변경'}
+          </button>
+          <button type="button" className="ghost-btn" onClick={() => onBack()}>지도로 돌아가기</button>
+        </div>
       </header>
       {catalogError && <div className="banner error" role="alert"><span className="grow">{catalogError}</span></div>}
       {shareBanners}
-      <button
-        type="button"
-        className="ghost-btn stats-editor-toggle"
-        aria-expanded={editorOpen}
-        aria-controls="stats-builder-panel"
-        onClick={() => setEditorOpen((o) => !o)}
-      >
-        {editorOpen ? '조건 닫기' : '조건 변경'}
-      </button>
       <div className="stats-layout" data-editor={editorOpen ? 'open' : 'closed'}>
         <aside id="stats-builder-panel" className="cm-panel stats-builder" aria-label="통계 설정">
           <div className="stats-group" role="group" aria-label="범위와 대상">
@@ -550,7 +552,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           {result && result.population_count.all === 0 && result.population_count.mine !== null && result.population_count.mine === 0 && <p className="cm-muted">이 조건에 맞는 답변 신고가 없습니다.</p>}
           {pick && result && (
             <div className="stats-pick" role="dialog" aria-label="이 항목으로 좁히기">
-              <p><b>{[...(result.row_members.find((m) => JSON.stringify(m.key) === JSON.stringify(pick.row))?.label ?? []),
+              <p><small>고른 항목</small> <b>{[...(result.row_members.find((m) => JSON.stringify(m.key) === JSON.stringify(pick.row))?.label ?? []),
                 ...(pick.col ? result.col_members.find((m) => JSON.stringify(m.key) === JSON.stringify(pick.col))?.label ?? [] : [])].join(' · ')}</b></p>
               <button type="button" className="mini-btn" onClick={() => narrow(pick.row, pick.col)}>이 항목으로 좁히기(설정에 추가)</button>
               <button type="button" className="mini-btn" onClick={() => setPick(null)}>닫기</button>

@@ -228,3 +228,40 @@ html { scroll-padding-top: var(--scroll-top-inset, calc(var(--topbar-h) + 12px))
   .stats-editor-toggle { display: inline-flex; }
   .stats-layout[data-editor="closed"] .stats-builder { display: none; }
 }
+
+/* ── 2026-10-04 맞춤 통계 정리 ─────────────────────────────────────────────────────────────────
+   compact header, sticky 통계 만들기, quiet table values, and the 좁히기 bar above the table (it was drawn under the
+   sticky row headers, which cut its text off). */
+.stats-head { align-items: center; }
+.stats-head h1 { font-size: 22px; line-height: 30px; }
+.stats-head .subtitle { margin: 2px 0 0; }
+.stats-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.stats-builder { padding-bottom: 0; }
+.stats-run { position: sticky; bottom: 0; z-index: 3; margin: 0 -14px; padding: 10px 14px 14px; background: var(--surface); border-top: 1px solid var(--border); }
+.stats-result-head h2 { font-size: 18px; line-height: 26px; }
+.pivot-scroll { max-height: min(70vh, 720px); }
+.pivot-table tbody tr:hover td, .pivot-table tbody tr:hover th { background: var(--hover); }
+.pivot-table tbody tr:hover th { background: linear-gradient(var(--hover), var(--hover)), var(--surface); }
+.pivot-table .link-btn.pivot-row { color: var(--text); text-decoration: none; font-weight: 600; text-align: left; }
+.pivot-table .link-btn.pivot-cell { color: var(--text); text-decoration: none; }
+.pivot-table .link-btn.pivot-row:hover, .pivot-table .link-btn.pivot-cell:hover,
+.pivot-table .link-btn.pivot-row:focus-visible, .pivot-table .link-btn.pivot-cell:focus-visible { color: var(--brand-ink); text-decoration: underline; }
+.pivot-table td.num { padding-top: 8px; padding-bottom: 8px; }
+.stats-pick { position: fixed; z-index: 80; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(720px, calc(100vw - 32px)); margin: 0;
+  padding: 12px 14px; border-radius: 12px; background: var(--surface); border-color: var(--brand-ink); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); }
+.stats-pick p { min-width: 0; overflow-wrap: anywhere; }
+.stats-pick p small { display: block; font-size: 12px; color: var(--muted); }
+.stats-pick .mini-btn { min-height: 40px; }
+@media (max-width: 1100px) {
+  .stats-layout { align-items: stretch; }
+  .stats-builder .stats-run { position: static; margin: 0; padding: 10px 0 14px; }
+}
+@media (max-width: 700px) {
+  .stats-head { align-items: flex-start; }
+  .stats-head-actions { width: 100%; }
+  .stats-head-actions .ghost-btn { flex: 1 1 0; }
+  .stats-pick { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .stats-result-head h2 { font-size: 16px; line-height: 24px; }
+}
+/* the builder fits the first screen too (its 통계 만들기 stays in view before the page scrolls) */
+@media (min-width: 1101px) { .stats-builder { max-height: calc(100vh - 170px); } }

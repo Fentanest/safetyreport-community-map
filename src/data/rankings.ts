@@ -9,6 +9,13 @@ export async function loadRankings(
   query: RankingQuery,
   signal?: AbortSignal,
 ): Promise<RankingResponse> {
+  // Literal env check (not `dataMode`) so live builds drop the synthetic rankings chunk entirely.
+  if (import.meta.env.VITE_DATA_MODE === "demo") {
+    const { demoRankings } = await import("./demoRankings");
+    await new Promise((r) => setTimeout(r, 150));
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    return demoRankings(query);
+  }
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, "");
   if (!base) {
     throw new PublicApiError(
