@@ -121,3 +121,11 @@ Pages [run37107584086](https://github.com/Fentanest/safetyreport-community-map/a
 기존 ingest/my-reports/user-rankings 동일코드 유지 확인. Pages [run37170626259](https://github.com/Fentanest/safetyreport-community-map/actions/runs/37170626259) build/deploy 성공.
 운영SQL 동등성44개, 함수권한/본문10개, 익명401·런타임CORS·실사이트8화면 검사를 통과했다. 운영JWT로그인후UI/RUM은 미검증이다.
 상세 적용·기존기록 구분·백업/롤백: [배포 보고](implementation/map-performance-release-20261004/REPORT.md).
+
+## 2026-10-04 대시보드 화면 개편 운영 적용
+
+사용자 승인으로 main d9020a9(프론트엔드만: 상단 화면 탭·고정 조건 바·주요 통계 재배치·지도 위 광고·지도/패널 같은 높이·분석 탭 카드·
+로그인 화면 뉴스 갈무리)를 push했다. Supabase migration·Edge 변경은 없어 DB/함수 배포는 하지 않았다.
+Pages [run37174903492](https://github.com/Fentanest/safetyreport-community-map/actions/runs/37174903492) build/deploy 성공(워크플로 안의 blueprint·product·vitest·scan 포함).
+운영 사이트 로그인 전 화면(1440·390)에서 뉴스 갈무리 → 대가성 문구 → 광고 → 로그인 카드 순서, 이미지 로드, 콘솔 오류 0건을 확인했다.
+로그인 후 대시보드(실제 카카오 지도 위 패널 높이 일치 등)는 운영 계정이 없어 미검증이다. 데모 검수 화면: `docs/reviews/screenshots/claude-ui-redesign-2026-10-04/`.
