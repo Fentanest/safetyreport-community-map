@@ -408,6 +408,15 @@
    "depends_on": [
     "202610040400"
    ]
+  },
+  {
+   "version": "202610050100",
+   "repo": "auth",
+   "path": "supabase/migrations/202610050100_relay_hardening.sql",
+   "sha256": "6df84b975cee943b83b945ce9252fb67a78e2b9240847bb114fdd17baaf1a142",
+   "depends_on": [
+    "202609251200"
+   ]
   }
  ],
  "functions": [
