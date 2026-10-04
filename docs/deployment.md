@@ -114,3 +114,10 @@ Pages [run37107584086](https://github.com/Fentanest/safetyreport-community-map/a
 서비스: https://safemap.worklazy.net/. 로컬은 main 하나만 남겼다.
 운영 RPC 권한·익명401·실제 사이트 검수와 운영 로그인 후 미검증 범위는
 [배포 보고서](implementation/main-release-20261003/REPORT.md)에 구분했다. 위 과거 ‘미적용’ 문구는 당시 기록이다.
+
+## 2026-10-04 지도 성능 리팩터링 운영 적용
+
+후속 사용자 승인으로 main bc7fecc을 push하고 신규040100~040800 migration8개를 적용했다. public-analytics v16/my-analytics v14 갱신,
+기존 ingest/my-reports/user-rankings 동일코드 유지 확인. Pages [run37170626259](https://github.com/Fentanest/safetyreport-community-map/actions/runs/37170626259) build/deploy 성공.
+운영SQL 동등성44개, 함수권한/본문10개, 익명401·런타임CORS·실사이트8화면 검사를 통과했다. 운영JWT로그인후UI/RUM은 미검증이다.
+상세 적용·기존기록 구분·백업/롤백: [배포 보고](implementation/map-performance-release-20261004/REPORT.md).

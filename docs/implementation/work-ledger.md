@@ -72,3 +72,9 @@
 - 623PASS/111SKIP unit, ingestranking/native/gate local검사 및 HTTP동시1/3/5; SKIP/합성/운영미검증/500k목표미달을 별도표시. [정량표](../refactoring/map-performance/measurements-summary.md), [계약·롤백](../refactoring/map-performance/CONTRACT-CHANGES.md).
 
 - 최종 비계측랭킹 p9515181→6111/16182→6056ms, localSQL30%목표달성/2s미달. 최종frontend공유browser p95회귀와 독립프로세스재측정을 함께보존하며 운영/성능전체완료를 주장하지 않는다.
+
+## 2026-10-04 후속 배포 승인 실행
+
+- 사용자 명시 요청으로 refactor branch→main fast-forward/push, 운영DB8 migrations·지도Edge5개 확인/갱신·Pages run37170626259 성공.
+- 실제 운영SQL44동등성/metadata10/익명5/CORS3/자산5/실사이트8화면 PASS; 초기단일DO timeout과 재실행을 보존. 운영로그인후UI와RUM은 NOT_RUN.
+- 새 secret/Auth 설정·다른repo 변경 없음. 사용자 지시문 untracked 보존, 원격force/reset/clean없음. [현재 운영 보고](map-performance-release-20261004/REPORT.md).

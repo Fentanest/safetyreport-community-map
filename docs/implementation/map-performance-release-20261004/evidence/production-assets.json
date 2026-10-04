@@ -1,0 +1,44 @@
+{
+  "url": "https://safemap.worklazy.net/",
+  "deployment_commit": "bc7feccf2222bb5fa9f1f83a15bbca3e79750cf1",
+  "run": 37170626259,
+  "artifact_files": 27,
+  "contains_protected_data": false,
+  "responses": [
+    {
+      "path": "/index.html",
+      "status": 200,
+      "bytes": 734,
+      "sha256": "4363912c83bb634b28da30d1c60106edddb5f824abd4dfb2fd5be7fb0ca5d013",
+      "matches_deployed_artifact": true
+    },
+    {
+      "path": "/assets/family-mark-CvINNr4v.png",
+      "status": 200,
+      "bytes": 89434,
+      "sha256": "f82a0001a9ec84f0c933e456068601a153f219dca657700dd4fbabe992e2799d",
+      "matches_deployed_artifact": true
+    },
+    {
+      "path": "/assets/index-BuEM2Tv6.js",
+      "status": 200,
+      "bytes": 644324,
+      "sha256": "f645177324212d5acb37730ab23202476c37061af8f2c41d3b2ec8260e0bf200",
+      "matches_deployed_artifact": true
+    },
+    {
+      "path": "/assets/rolldown-runtime-hePW80VL.js",
+      "status": 200,
+      "bytes": 716,
+      "sha256": "580ad8c58061a4dde99bde0a56905e382f0568516ee2f5b84dbfb52085709021",
+      "matches_deployed_artifact": true
+    },
+    {
+      "path": "/assets/index-DQXRgJRZ.css",
+      "status": 200,
+      "bytes": 81504,
+      "sha256": "c51d47b55ec587f7be2729d486b2c4854c765bb30cb65cf1fa7bd8d6b583ea61",
+      "matches_deployed_artifact": true
+    }
+  ]
+}

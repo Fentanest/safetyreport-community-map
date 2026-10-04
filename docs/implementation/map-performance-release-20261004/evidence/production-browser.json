@@ -1,0 +1,255 @@
+{
+  "url": "https://safemap.worklazy.net/",
+  "browser": "154.0.8037.92",
+  "dataMode": "live, anonymous; no fixture or mock",
+  "results": [
+    {
+      "width": 360,
+      "theme": "dark",
+      "documentStatus": 200,
+      "scrollWidth": 360,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "360-dark.png",
+      "passed": true
+    },
+    {
+      "width": 360,
+      "theme": "light",
+      "documentStatus": 200,
+      "scrollWidth": 360,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "360-light.png",
+      "passed": true
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "documentStatus": 200,
+      "scrollWidth": 390,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "390-dark.png",
+      "passed": true
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "documentStatus": 200,
+      "scrollWidth": 390,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "390-light.png",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "documentStatus": 200,
+      "scrollWidth": 768,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "768-dark.png",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "documentStatus": 200,
+      "scrollWidth": 768,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "768-light.png",
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "documentStatus": 200,
+      "scrollWidth": 1440,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "1440-dark.png",
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "documentStatus": 200,
+      "scrollWidth": 1440,
+      "rankingRows": 0,
+      "keyboardFocus": true,
+      "protectedRequests": [],
+      "assets": [
+        {
+          "path": "/assets/index-DQXRgJRZ.css",
+          "status": 200
+        },
+        {
+          "path": "/assets/rolldown-runtime-hePW80VL.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/index-BuEM2Tv6.js",
+          "status": 200
+        },
+        {
+          "path": "/assets/family-mark-CvINNr4v.png",
+          "status": 200
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "screenshot": "1440-light.png",
+      "passed": true
+    }
+  ]
+}

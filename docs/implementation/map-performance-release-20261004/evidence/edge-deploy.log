@@ -1,0 +1,13 @@
+Bundling Function: public-analytics
+Deploying Function: public-analytics (script size: 1.5 MB)
+Bundling Function: my-analytics
+Deploying Function: my-analytics (script size: 896 kB)
+Bundling Function: community-ingest
+No change found in Function: community-ingest
+Bundling Function: my-reports
+No change found in Function: my-reports
+Bundling Function: user-rankings
+No change found in Function: user-rankings
+{"project_ref":"nxdcxccixoswvqgjeprh","functions":["public-analytics","my-analytics","community-ingest","my-reports","user-rankings"],"dashboard_url":"https://supabase.com/dashboard/project/nxdcxccixoswvqgjeprh/functions","message":"Deployed Functions."}
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

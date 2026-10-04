@@ -1,0 +1,6 @@
+build	Run python3 -m unittest discover -s tests/blueprint -v	2026-10-04T02:18:23.4759802Z Ran 27 tests in 0.006s
+build	Run python3 -m unittest discover -s tests/product -p 'test_*.py' -v	2026-10-04T02:18:24.9064322Z Ran 12 tests in 1.275s
+build	Run npm test	2026-10-04T02:18:43.6994669Z  Test Files  53 passed | 18 skipped (71)
+build	Run npm test	2026-10-04T02:18:43.7004079Z       Tests  623 passed | 111 skipped (734)
+build	Build live Pages artifact	2026-10-04T02:18:56.9787311Z ✓ built in 562ms
+build	Run npm run scan	2026-10-04T02:18:59.3292004Z   "passed": true,

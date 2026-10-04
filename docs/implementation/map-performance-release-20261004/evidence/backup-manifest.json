@@ -8,5 +8,15 @@
     "sha256": "dbd60475d52f299e7a6454e7dde1a34af43f54d0adb940990ebf70fb45390413",
     "bytes": 27721,
     "scope": "schema/function definitions only, no facts/data export; local ignored backup"
+  },
+  "previous_pages_artifact": {
+    "run": 37107584086,
+    "bytes": 8069120,
+    "sha256": "d79ec7177d2230422b477b62421cdcaedddd6120fd756fe9881b16257da25d81",
+    "scope": "downloaded previous successful authenticated Pages artifact; ignored local backup"
+  },
+  "refactor-release-rollback-functions.sql": {
+    "sha256": "ab90180e3fae280da37b6426468c62c31ae6573410076051b16a475f1dd87a9b",
+    "scope": "selective4 original map functions + grants; prepared only, not executed"
   }
 }

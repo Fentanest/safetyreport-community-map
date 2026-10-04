@@ -1,5 +1,7 @@
 # 지도·통계·랭킹 성능 리팩터링 — 로컬 실행 보고
 
+후속 사용자 승인으로 실제 배포를 수행했다. 이 문서는 최초 로컬 종료 기록이며 [현재 운영 적용 상태](../../implementation/map-performance-release-20261004/REPORT.md)를 참조한다.
+
 2026-10-04 KST. 기준 `cf9009666a164ca91f694fd5a4164bffbe29ef0b`, 작업 branch `refactor/map-performance-20261003`.
 사용자 untracked 실행 지시문과 기존 변경을 보존했다. **로컬 구현과 검증을 수행했으며 운영 적용은 하지 않았다. 성능 목표 전체 달성으로 판정하지 않는다.**
 계획·감사 경로는 [PLAN](PLAN.md), [기능 보존표](FEATURE-MATRIX.md), [계약·소비자 영향/롤백](CONTRACT-CHANGES.md),
