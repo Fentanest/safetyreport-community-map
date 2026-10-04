@@ -1,0 +1,23 @@
+[
+  {
+    "path": "/public-analytics/meta",
+    "status": 204,
+    "bytes": 0,
+    "allow_origin": "https://safemap.worklazy.net",
+    "passed": true
+  },
+  {
+    "path": "/my-analytics/meta",
+    "status": 204,
+    "bytes": 0,
+    "allow_origin": "https://safemap.worklazy.net",
+    "passed": true
+  },
+  {
+    "path": "/user-rankings",
+    "status": 204,
+    "bytes": 0,
+    "allow_origin": "https://safemap.worklazy.net",
+    "passed": true
+  }
+]

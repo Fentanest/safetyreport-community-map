@@ -1,0 +1,37 @@
+[
+  {
+    "path": "/public-analytics/meta",
+    "status": 401,
+    "error_code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "has_dataset_version": false,
+    "passed": true
+  },
+  {
+    "path": "/my-analytics/meta",
+    "status": 401,
+    "error_code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "has_dataset_version": false,
+    "passed": true
+  },
+  {
+    "path": "/community-ingest",
+    "status": 401,
+    "error_code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "has_dataset_version": false,
+    "passed": true
+  },
+  {
+    "path": "/my-reports",
+    "status": 401,
+    "error_code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "has_dataset_version": false,
+    "passed": true
+  },
+  {
+    "path": "/user-rankings?theme=reporters&period=all",
+    "status": 401,
+    "error_code": "UNAUTHORIZED_NO_AUTH_HEADER",
+    "has_dataset_version": false,
+    "passed": true
+  }
+]

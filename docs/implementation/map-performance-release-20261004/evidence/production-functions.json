@@ -1,0 +1,58 @@
+[
+  {
+    "slug": "public-analytics",
+    "version": 16,
+    "status": "ACTIVE",
+    "verify_jwt": true,
+    "previous_version": 15,
+    "changed": true
+  },
+  {
+    "slug": "my-analytics",
+    "version": 14,
+    "status": "ACTIVE",
+    "verify_jwt": true,
+    "previous_version": 13,
+    "changed": true
+  },
+  {
+    "slug": "community-ingest",
+    "version": 8,
+    "status": "ACTIVE",
+    "verify_jwt": true,
+    "previous_version": 8,
+    "changed": false
+  },
+  {
+    "slug": "community-account",
+    "version": 6,
+    "status": "ACTIVE",
+    "verify_jwt": true,
+    "previous_version": 6,
+    "changed": false
+  },
+  {
+    "slug": "community-auth-relay",
+    "version": 5,
+    "status": "ACTIVE",
+    "verify_jwt": false,
+    "previous_version": 5,
+    "changed": false
+  },
+  {
+    "slug": "my-reports",
+    "version": 1,
+    "status": "ACTIVE",
+    "verify_jwt": true,
+    "previous_version": 1,
+    "changed": false
+  },
+  {
+    "slug": "user-rankings",
+    "version": 1,
+    "status": "ACTIVE",
+    "verify_jwt": true,
+    "previous_version": 1,
+    "changed": false
+  }
+]

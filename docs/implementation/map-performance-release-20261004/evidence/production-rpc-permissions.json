@@ -1,0 +1,143 @@
+{
+  "source": "actual operating metadata; identical to tested local function body/settings/privileges",
+  "functions": [
+    {
+      "anon_execute": false,
+      "arguments": "",
+      "authenticated_execute": false,
+      "proname": "internal_analytics_cohort_state",
+      "schema": "public",
+      "security_definer": true,
+      "service_execute": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "source_md5": "9dd461e66bd737f7f68af7e4af3ad8d7"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_user uuid, p_session uuid",
+      "authenticated_execute": false,
+      "proname": "internal_analytics_viewer",
+      "schema": "public",
+      "security_definer": true,
+      "service_execute": true,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "source_md5": "40cedb2ed0de323b393b656a53f40617"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_user uuid, p_session uuid, p_query jsonb",
+      "authenticated_execute": false,
+      "proname": "internal_user_rankings",
+      "schema": "public",
+      "security_definer": true,
+      "service_execute": true,
+      "settings": [
+        "search_path=\"\"",
+        "work_mem=32MB",
+        "statement_timeout=20s"
+      ],
+      "source_md5": "eddff3947404db4cdc309f297e8ef414"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_lng double precision, p_lat double precision, p_ring jsonb",
+      "authenticated_execute": false,
+      "proname": "analytics_in_ring",
+      "schema": "private",
+      "security_definer": false,
+      "service_execute": false,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "source_md5": "e924b02014f8c8aa7808ef098d7f3960"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_lng double precision, p_lat double precision, p_rings jsonb",
+      "authenticated_execute": false,
+      "proname": "analytics_in_polygon",
+      "schema": "private",
+      "security_definer": false,
+      "service_execute": false,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "source_md5": "d200e748fcf7a6c2f0a02e7b13664e8c"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_key text, p_lat double precision, p_lng double precision",
+      "authenticated_execute": false,
+      "proname": "analytics_region",
+      "schema": "private",
+      "security_definer": true,
+      "service_execute": false,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "source_md5": "ab3a2ed284f6f558757224b290943e4d"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_raw text",
+      "authenticated_execute": false,
+      "proname": "analytics_law",
+      "schema": "private",
+      "security_definer": false,
+      "service_execute": false,
+      "settings": [
+        "search_path=\"\""
+      ],
+      "source_md5": "4e31ce518aae1dd8f0a0765aad6d97c9"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_scope jsonb, p_kind text, p_options jsonb",
+      "authenticated_execute": false,
+      "proname": "internal_analytics_rollup",
+      "schema": "public",
+      "security_definer": true,
+      "service_execute": true,
+      "settings": [
+        "search_path=\"\"",
+        "work_mem=32MB",
+        "statement_timeout=20s",
+        "extra_float_digits=3"
+      ],
+      "source_md5": "1430fc508a13879a7a69e33ec1035c74"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "p_scope jsonb",
+      "authenticated_execute": false,
+      "proname": "analytics_rollup_source",
+      "schema": "private",
+      "security_definer": true,
+      "service_execute": false,
+      "settings": [
+        "search_path=\"\"",
+        "work_mem=32MB",
+        "enable_nestloop=off"
+      ],
+      "source_md5": "8d21502dc8c2af87fc816ed9aeab0d55"
+    },
+    {
+      "anon_execute": false,
+      "arguments": "",
+      "authenticated_execute": false,
+      "proname": "ranking_representatives",
+      "schema": "private",
+      "security_definer": true,
+      "service_execute": false,
+      "settings": [
+        "search_path=\"\"",
+        "work_mem=32MB"
+      ],
+      "source_md5": "cd968b62dd22a086ae8b2092ba28b0b0"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true });
 const results = [];
 try {
-  for (const width of [1920, 1440, 2560, 390]) {
+  for (const width of (process.env.RELEASE_WIDTHS || '1920,1440,2560,390').split(',').map(Number)) {
     for (const theme of ['dark', 'light']) {
       const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : width === 2560 ? 1440 : width === 1440 ? 900 : 1080 }, locale: 'ko-KR', colorScheme: theme });
       await context.addInitScript((t) => localStorage.setItem('cm-theme', t), theme);

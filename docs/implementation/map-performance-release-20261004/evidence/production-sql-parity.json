@@ -1,0 +1,161 @@
+{
+  "scope": "actual production snapshot; temporary pg_temp original functions; whole row/body comparison; rollback; no persistent data mutations; no JWT/OAuth/browser login claim",
+  "comparisons": 44,
+  "results": [
+    {
+      "comparisons": 1,
+      "label": "full representative rows",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "cohort state",
+      "passed": true
+    },
+    {
+      "comparisons": 14,
+      "label": "existing session viewer states",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "reports_count/report_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "reports_count/report_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "reports_count/completed_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "reports_count/completed_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_count/report_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_count/report_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_count/completed_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_count/completed_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_rate/report_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_rate/report_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_rate/completed_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "fine_rate/completed_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_count/report_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_count/report_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_count/completed_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_count/completed_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_rate/report_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_rate/report_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_rate/completed_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "rejected_rate/completed_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_count/report_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_count/report_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_count/completed_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_count/completed_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_rate/report_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_rate/report_date/month",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_rate/completed_date/all",
+      "passed": true
+    },
+    {
+      "comparisons": 1,
+      "label": "partial_rate/completed_date/month",
+      "passed": true
+    }
+  ]
+}

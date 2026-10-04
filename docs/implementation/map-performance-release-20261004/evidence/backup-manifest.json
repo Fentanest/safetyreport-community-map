@@ -1,0 +1,12 @@
+{
+  "refactor-release-schema-before.sql": {
+    "sha256": "e9138d17dcaf8c503d67faebbe2419ec895b1231598670b4445fcc923f476be8",
+    "bytes": 215461,
+    "scope": "schema/function definitions only, no facts/data export; local ignored backup"
+  },
+  "refactor-release-functions-backup.json": {
+    "sha256": "dbd60475d52f299e7a6454e7dde1a34af43f54d0adb940990ebf70fb45390413",
+    "bytes": 27721,
+    "scope": "schema/function definitions only, no facts/data export; local ignored backup"
+  }
+}
