@@ -1,0 +1,1 @@
+manifest check ok: 43 migrations, 7 functions (map=., auth=/home/better0101/projects/safetyreport-community-auth)

@@ -1,0 +1,18 @@
+test_live_dashboard_fields_regions_and_location_missing_are_allowed (test_export_snapshot.ExportProjectionTests.test_live_dashboard_fields_regions_and_location_missing_are_allowed) ... ok
+test_not_ready_projection_never_writes_a_snapshot (test_export_snapshot.ExportProjectionTests.test_not_ready_projection_never_writes_a_snapshot) ... ok
+test_personal_comparison_fields_never_enter_a_snapshot (test_export_snapshot.ExportProjectionTests.test_personal_comparison_fields_never_enter_a_snapshot) ... ok
+test_private_or_unknown_fields_are_rejected (test_export_snapshot.ExportProjectionTests.test_private_or_unknown_fields_are_rejected) ... ok
+test_region_rows_must_use_official_codes (test_export_snapshot.ExportProjectionTests.test_region_rows_must_use_official_codes) ... ok
+test_safe_one_record_is_allowed (test_export_snapshot.ExportProjectionTests.test_safe_one_record_is_allowed) ... ok
+test_sample_and_unmasked_plate_are_rejected (test_export_snapshot.ExportProjectionTests.test_sample_and_unmasked_plate_are_rejected) ... ok
+test_auth_sdk_identifier_is_allowed_in_scripts_only (test_scan_public_dist.ScanTests.test_auth_sdk_identifier_is_allowed_in_scripts_only) ... ok
+test_map_never_references_relay_or_account_api (test_scan_public_dist.ScanTests.test_map_never_references_relay_or_account_api) ... ok
+test_non_anon_jwt_in_a_bundle_fails (test_scan_public_dist.ScanTests.test_non_anon_jwt_in_a_bundle_fails) ... ok
+test_only_the_pinned_excelize_wasm_binary_is_accepted (test_scan_public_dist.ScanTests.test_only_the_pinned_excelize_wasm_binary_is_accepted) ... ok
+test_secret_markers_still_fail_in_scripts (test_scan_public_dist.ScanTests.test_secret_markers_still_fail_in_scripts) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.476s
+
+OK
+{"snapshot": "skipped", "reason": "public projection not ready"}

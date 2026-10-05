@@ -1,0 +1,280 @@
+{
+  "synthetic": true,
+  "rows": 30000,
+  "mode": "force_custom_plan",
+  "exit_code": 0,
+  "samples": [
+    {
+      "label": "report_date/False/all",
+      "before_ms": 3740.247,
+      "after_ms": 1684.864,
+      "equal": true,
+      "n": 27322,
+      "bytes": 34267532
+    },
+    {
+      "label": "report_date/False/year",
+      "before_ms": 1525.754,
+      "after_ms": 474.356,
+      "equal": true,
+      "n": 7651,
+      "bytes": 9596520
+    },
+    {
+      "label": "report_date/False/month",
+      "before_ms": 146.391,
+      "after_ms": 60.824,
+      "equal": true,
+      "n": 632,
+      "bytes": 792203
+    },
+    {
+      "label": "report_date/False/agency",
+      "before_ms": 416.768,
+      "after_ms": 203.489,
+      "equal": true,
+      "n": 2927,
+      "bytes": 3689095
+    },
+    {
+      "label": "report_date/False/manager",
+      "before_ms": 166.659,
+      "after_ms": 76.105,
+      "equal": true,
+      "n": 586,
+      "bytes": 737147
+    },
+    {
+      "label": "report_date/False/bbox",
+      "before_ms": 1507.26,
+      "after_ms": 635.614,
+      "equal": true,
+      "n": 10280,
+      "bytes": 12901219
+    },
+    {
+      "label": "report_date/False/category-region",
+      "before_ms": 1534.468,
+      "after_ms": 303.467,
+      "equal": true,
+      "n": 2928,
+      "bytes": 3663023
+    },
+    {
+      "label": "report_date/False/empty",
+      "before_ms": 3.299,
+      "after_ms": 2.125,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "report_date/True/all",
+      "before_ms": 3608.351,
+      "after_ms": 1779.819,
+      "equal": true,
+      "n": 27322,
+      "bytes": 34267532
+    },
+    {
+      "label": "report_date/True/year",
+      "before_ms": 2673.595,
+      "after_ms": 997.748,
+      "equal": true,
+      "n": 15290,
+      "bytes": 19177775
+    },
+    {
+      "label": "report_date/True/month",
+      "before_ms": 200.848,
+      "after_ms": 97.342,
+      "equal": true,
+      "n": 1259,
+      "bytes": 1578920
+    },
+    {
+      "label": "report_date/True/agency",
+      "before_ms": 464.607,
+      "after_ms": 209.768,
+      "equal": true,
+      "n": 2927,
+      "bytes": 3689095
+    },
+    {
+      "label": "report_date/True/manager",
+      "before_ms": 164.05,
+      "after_ms": 77.467,
+      "equal": true,
+      "n": 586,
+      "bytes": 737147
+    },
+    {
+      "label": "report_date/True/bbox",
+      "before_ms": 1526.57,
+      "after_ms": 664.597,
+      "equal": true,
+      "n": 10280,
+      "bytes": 12901219
+    },
+    {
+      "label": "report_date/True/category-region",
+      "before_ms": 1523.691,
+      "after_ms": 302.024,
+      "equal": true,
+      "n": 2928,
+      "bytes": 3663023
+    },
+    {
+      "label": "report_date/True/empty",
+      "before_ms": 3.359,
+      "after_ms": 2.16,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "completed_date/False/all",
+      "before_ms": 3603.588,
+      "after_ms": 1681.941,
+      "equal": true,
+      "n": 27295,
+      "bytes": 34233444
+    },
+    {
+      "label": "completed_date/False/year",
+      "before_ms": 1592.53,
+      "after_ms": 467.323,
+      "equal": true,
+      "n": 7637,
+      "bytes": 9578488
+    },
+    {
+      "label": "completed_date/False/month",
+      "before_ms": 135.889,
+      "after_ms": 59.953,
+      "equal": true,
+      "n": 628,
+      "bytes": 787770
+    },
+    {
+      "label": "completed_date/False/agency",
+      "before_ms": 417.004,
+      "after_ms": 192.708,
+      "equal": true,
+      "n": 2927,
+      "bytes": 3689035
+    },
+    {
+      "label": "completed_date/False/manager",
+      "before_ms": 202.898,
+      "after_ms": 90.655,
+      "equal": true,
+      "n": 586,
+      "bytes": 737133
+    },
+    {
+      "label": "completed_date/False/bbox",
+      "before_ms": 1568.305,
+      "after_ms": 636.368,
+      "equal": true,
+      "n": 10282,
+      "bytes": 12903610
+    },
+    {
+      "label": "completed_date/False/category-region",
+      "before_ms": 1423.155,
+      "after_ms": 299.652,
+      "equal": true,
+      "n": 2927,
+      "bytes": 3661684
+    },
+    {
+      "label": "completed_date/False/empty",
+      "before_ms": 3.426,
+      "after_ms": 2.27,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "completed_date/True/all",
+      "before_ms": 3567.385,
+      "after_ms": 1669.101,
+      "equal": true,
+      "n": 27295,
+      "bytes": 34233444
+    },
+    {
+      "label": "completed_date/True/year",
+      "before_ms": 2544.23,
+      "after_ms": 930.828,
+      "equal": true,
+      "n": 15304,
+      "bytes": 19194207
+    },
+    {
+      "label": "completed_date/True/month",
+      "before_ms": 188.803,
+      "after_ms": 92.26,
+      "equal": true,
+      "n": 1257,
+      "bytes": 1576697
+    },
+    {
+      "label": "completed_date/True/agency",
+      "before_ms": 436.084,
+      "after_ms": 197.433,
+      "equal": true,
+      "n": 2927,
+      "bytes": 3689035
+    },
+    {
+      "label": "completed_date/True/manager",
+      "before_ms": 177.969,
+      "after_ms": 78.994,
+      "equal": true,
+      "n": 586,
+      "bytes": 737133
+    },
+    {
+      "label": "completed_date/True/bbox",
+      "before_ms": 1623.728,
+      "after_ms": 692.904,
+      "equal": true,
+      "n": 10282,
+      "bytes": 12903610
+    },
+    {
+      "label": "completed_date/True/category-region",
+      "before_ms": 1582.992,
+      "after_ms": 337.868,
+      "equal": true,
+      "n": 2927,
+      "bytes": 3661684
+    },
+    {
+      "label": "completed_date/True/empty",
+      "before_ms": 4.433,
+      "after_ms": 2.805,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "personal/True",
+      "before_ms": 4535.072,
+      "after_ms": 2341.073,
+      "equal": true,
+      "n": 27295,
+      "bytes": 34234240
+    },
+    {
+      "label": "personal/False",
+      "before_ms": 444.322,
+      "after_ms": 424.58,
+      "equal": true,
+      "n": 0,
+      "bytes": 800
+    }
+  ]
+}

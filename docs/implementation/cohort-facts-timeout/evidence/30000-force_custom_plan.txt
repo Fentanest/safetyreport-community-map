@@ -1,0 +1,42 @@
+{"label":"report_date/False/all","before_ms":3740.247000,"after_ms":1684.864000,"equal":true,"n":27322,"bytes":34267532}
+{"label":"report_date/False/year","before_ms":1525.754000,"after_ms":474.356000,"equal":true,"n":7651,"bytes":9596520}
+{"label":"report_date/False/month","before_ms":146.391000,"after_ms":60.824000,"equal":true,"n":632,"bytes":792203}
+{"label":"report_date/False/agency","before_ms":416.768000,"after_ms":203.489000,"equal":true,"n":2927,"bytes":3689095}
+{"label":"report_date/False/manager","before_ms":166.659000,"after_ms":76.105000,"equal":true,"n":586,"bytes":737147}
+{"label":"report_date/False/bbox","before_ms":1507.260000,"after_ms":635.614000,"equal":true,"n":10280,"bytes":12901219}
+{"label":"report_date/False/category-region","before_ms":1534.468000,"after_ms":303.467000,"equal":true,"n":2928,"bytes":3663023}
+{"label":"report_date/False/empty","before_ms":3.299000,"after_ms":2.125000,"equal":true,"n":0,"bytes":2}
+{"label":"report_date/True/all","before_ms":3608.351000,"after_ms":1779.819000,"equal":true,"n":27322,"bytes":34267532}
+{"label":"report_date/True/year","before_ms":2673.595000,"after_ms":997.748000,"equal":true,"n":15290,"bytes":19177775}
+{"label":"report_date/True/month","before_ms":200.848000,"after_ms":97.342000,"equal":true,"n":1259,"bytes":1578920}
+{"label":"report_date/True/agency","before_ms":464.607000,"after_ms":209.768000,"equal":true,"n":2927,"bytes":3689095}
+{"label":"report_date/True/manager","before_ms":164.050000,"after_ms":77.467000,"equal":true,"n":586,"bytes":737147}
+{"label":"report_date/True/bbox","before_ms":1526.570000,"after_ms":664.597000,"equal":true,"n":10280,"bytes":12901219}
+{"label":"report_date/True/category-region","before_ms":1523.691000,"after_ms":302.024000,"equal":true,"n":2928,"bytes":3663023}
+{"label":"report_date/True/empty","before_ms":3.359000,"after_ms":2.160000,"equal":true,"n":0,"bytes":2}
+{"label":"completed_date/False/all","before_ms":3603.588000,"after_ms":1681.941000,"equal":true,"n":27295,"bytes":34233444}
+{"label":"completed_date/False/year","before_ms":1592.530000,"after_ms":467.323000,"equal":true,"n":7637,"bytes":9578488}
+{"label":"completed_date/False/month","before_ms":135.889000,"after_ms":59.953000,"equal":true,"n":628,"bytes":787770}
+{"label":"completed_date/False/agency","before_ms":417.004000,"after_ms":192.708000,"equal":true,"n":2927,"bytes":3689035}
+{"label":"completed_date/False/manager","before_ms":202.898000,"after_ms":90.655000,"equal":true,"n":586,"bytes":737133}
+{"label":"completed_date/False/bbox","before_ms":1568.305000,"after_ms":636.368000,"equal":true,"n":10282,"bytes":12903610}
+{"label":"completed_date/False/category-region","before_ms":1423.155000,"after_ms":299.652000,"equal":true,"n":2927,"bytes":3661684}
+{"label":"completed_date/False/empty","before_ms":3.426000,"after_ms":2.270000,"equal":true,"n":0,"bytes":2}
+{"label":"completed_date/True/all","before_ms":3567.385000,"after_ms":1669.101000,"equal":true,"n":27295,"bytes":34233444}
+{"label":"completed_date/True/year","before_ms":2544.230000,"after_ms":930.828000,"equal":true,"n":15304,"bytes":19194207}
+{"label":"completed_date/True/month","before_ms":188.803000,"after_ms":92.260000,"equal":true,"n":1257,"bytes":1576697}
+{"label":"completed_date/True/agency","before_ms":436.084000,"after_ms":197.433000,"equal":true,"n":2927,"bytes":3689035}
+{"label":"completed_date/True/manager","before_ms":177.969000,"after_ms":78.994000,"equal":true,"n":586,"bytes":737133}
+{"label":"completed_date/True/bbox","before_ms":1623.728000,"after_ms":692.904000,"equal":true,"n":10282,"bytes":12903610}
+{"label":"completed_date/True/category-region","before_ms":1582.992000,"after_ms":337.868000,"equal":true,"n":2927,"bytes":3661684}
+{"label":"completed_date/True/empty","before_ms":4.433000,"after_ms":2.805000,"equal":true,"n":0,"bytes":2}
+{"label":"personal/True","before_ms":4535.072000,"after_ms":2341.073000,"equal":true,"n":27295,"bytes":34234240}
+{"label":"personal/False","before_ms":444.322000,"after_ms":424.580000,"equal":true,"n":0,"bytes":800}
+Result  (cost=0.00..0.26 rows=1 width=4) (actual time=4061.068..4063.410 rows=1 loops=1)
+  Buffers: shared hit=907277, temp read=5186 written=5192
+Planning Time: 0.010 ms
+Execution Time: 4063.489 ms
+Result  (cost=0.00..0.26 rows=1 width=4) (actual time=1742.376..1744.546 rows=1 loops=1)
+  Buffers: shared hit=10721, temp read=7061 written=7067
+Planning Time: 0.027 ms
+Execution Time: 1744.607 ms

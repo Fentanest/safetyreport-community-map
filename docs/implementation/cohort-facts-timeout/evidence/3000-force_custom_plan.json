@@ -1,0 +1,280 @@
+{
+  "synthetic": true,
+  "rows": 3000,
+  "mode": "force_custom_plan",
+  "exit_code": 0,
+  "samples": [
+    {
+      "label": "report_date/False/all",
+      "before_ms": 380.211,
+      "after_ms": 187.232,
+      "equal": true,
+      "n": 2733,
+      "bytes": 3427705
+    },
+    {
+      "label": "report_date/False/year",
+      "before_ms": 175.58,
+      "after_ms": 42.278,
+      "equal": true,
+      "n": 665,
+      "bytes": 834114
+    },
+    {
+      "label": "report_date/False/month",
+      "before_ms": 13.623,
+      "after_ms": 12.198,
+      "equal": true,
+      "n": 54,
+      "bytes": 67700
+    },
+    {
+      "label": "report_date/False/agency",
+      "before_ms": 64.157,
+      "after_ms": 24.575,
+      "equal": true,
+      "n": 292,
+      "bytes": 368032
+    },
+    {
+      "label": "report_date/False/manager",
+      "before_ms": 20.819,
+      "after_ms": 11.871,
+      "equal": true,
+      "n": 59,
+      "bytes": 74220
+    },
+    {
+      "label": "report_date/False/bbox",
+      "before_ms": 157.941,
+      "after_ms": 69.904,
+      "equal": true,
+      "n": 1028,
+      "bytes": 1290008
+    },
+    {
+      "label": "report_date/False/category-region",
+      "before_ms": 174.652,
+      "after_ms": 36.405,
+      "equal": true,
+      "n": 293,
+      "bytes": 366573
+    },
+    {
+      "label": "report_date/False/empty",
+      "before_ms": 3.41,
+      "after_ms": 2.304,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "report_date/True/all",
+      "before_ms": 389.817,
+      "after_ms": 172.405,
+      "equal": true,
+      "n": 2733,
+      "bytes": 3427705
+    },
+    {
+      "label": "report_date/True/year",
+      "before_ms": 244.887,
+      "after_ms": 92.017,
+      "equal": true,
+      "n": 1362,
+      "bytes": 1708365
+    },
+    {
+      "label": "report_date/True/month",
+      "before_ms": 23.174,
+      "after_ms": 13.868,
+      "equal": true,
+      "n": 109,
+      "bytes": 136723
+    },
+    {
+      "label": "report_date/True/agency",
+      "before_ms": 67.674,
+      "after_ms": 26.138,
+      "equal": true,
+      "n": 292,
+      "bytes": 368032
+    },
+    {
+      "label": "report_date/True/manager",
+      "before_ms": 23.329,
+      "after_ms": 13.961,
+      "equal": true,
+      "n": 59,
+      "bytes": 74220
+    },
+    {
+      "label": "report_date/True/bbox",
+      "before_ms": 161.193,
+      "after_ms": 74.555,
+      "equal": true,
+      "n": 1028,
+      "bytes": 1290008
+    },
+    {
+      "label": "report_date/True/category-region",
+      "before_ms": 157.713,
+      "after_ms": 32.577,
+      "equal": true,
+      "n": 293,
+      "bytes": 366573
+    },
+    {
+      "label": "report_date/True/empty",
+      "before_ms": 3.244,
+      "after_ms": 2.308,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "completed_date/False/all",
+      "before_ms": 372.142,
+      "after_ms": 163.908,
+      "equal": true,
+      "n": 2727,
+      "bytes": 3420160
+    },
+    {
+      "label": "completed_date/False/year",
+      "before_ms": 159.796,
+      "after_ms": 41.407,
+      "equal": true,
+      "n": 664,
+      "bytes": 832713
+    },
+    {
+      "label": "completed_date/False/month",
+      "before_ms": 12.292,
+      "after_ms": 9.412,
+      "equal": true,
+      "n": 54,
+      "bytes": 67779
+    },
+    {
+      "label": "completed_date/False/agency",
+      "before_ms": 71.914,
+      "after_ms": 30.896,
+      "equal": true,
+      "n": 293,
+      "bytes": 369276
+    },
+    {
+      "label": "completed_date/False/manager",
+      "before_ms": 25.149,
+      "after_ms": 20.297,
+      "equal": true,
+      "n": 59,
+      "bytes": 74203
+    },
+    {
+      "label": "completed_date/False/bbox",
+      "before_ms": 170.05,
+      "after_ms": 70.327,
+      "equal": true,
+      "n": 1027,
+      "bytes": 1288666
+    },
+    {
+      "label": "completed_date/False/category-region",
+      "before_ms": 159.759,
+      "after_ms": 35.112,
+      "equal": true,
+      "n": 292,
+      "bytes": 365303
+    },
+    {
+      "label": "completed_date/False/empty",
+      "before_ms": 3.477,
+      "after_ms": 2.301,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "completed_date/True/all",
+      "before_ms": 387.504,
+      "after_ms": 178.921,
+      "equal": true,
+      "n": 2727,
+      "bytes": 3420160
+    },
+    {
+      "label": "completed_date/True/year",
+      "before_ms": 241.457,
+      "after_ms": 91.716,
+      "equal": true,
+      "n": 1404,
+      "bytes": 1760852
+    },
+    {
+      "label": "completed_date/True/month",
+      "before_ms": 21.062,
+      "after_ms": 12.678,
+      "equal": true,
+      "n": 108,
+      "bytes": 135482
+    },
+    {
+      "label": "completed_date/True/agency",
+      "before_ms": 62.753,
+      "after_ms": 24.523,
+      "equal": true,
+      "n": 293,
+      "bytes": 369276
+    },
+    {
+      "label": "completed_date/True/manager",
+      "before_ms": 20.884,
+      "after_ms": 11.571,
+      "equal": true,
+      "n": 59,
+      "bytes": 74203
+    },
+    {
+      "label": "completed_date/True/bbox",
+      "before_ms": 156.33,
+      "after_ms": 69.18,
+      "equal": true,
+      "n": 1027,
+      "bytes": 1288666
+    },
+    {
+      "label": "completed_date/True/category-region",
+      "before_ms": 160.585,
+      "after_ms": 32.161,
+      "equal": true,
+      "n": 292,
+      "bytes": 365303
+    },
+    {
+      "label": "completed_date/True/empty",
+      "before_ms": 3.208,
+      "after_ms": 2.133,
+      "equal": true,
+      "n": 0,
+      "bytes": 2
+    },
+    {
+      "label": "personal/True",
+      "before_ms": 449.714,
+      "after_ms": 251.621,
+      "equal": true,
+      "n": 2727,
+      "bytes": 3420956
+    },
+    {
+      "label": "personal/False",
+      "before_ms": 47.975,
+      "after_ms": 43.308,
+      "equal": true,
+      "n": 0,
+      "bytes": 800
+    }
+  ]
+}

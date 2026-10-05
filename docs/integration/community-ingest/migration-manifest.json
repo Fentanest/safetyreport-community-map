@@ -417,6 +417,16 @@
    "depends_on": [
     "202609251200"
    ]
+  },
+  {
+   "version": "202610060100",
+   "repo": "map",
+   "path": "supabase/migrations/202610060100_cohort_facts_setwise.sql",
+   "sha256": "cada41388f935740adfd0e026d7d45f04f08c9e77f7a9aa96bacdfba0519b5d1",
+   "depends_on": [
+    "202610010100",
+    "202610040500"
+   ]
   }
  ],
  "functions": [

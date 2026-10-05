@@ -1,0 +1,2 @@
+{"phase":"before","sqlstate":"57014","ms":8004.341000,"n":null}
+{"phase":"after","sqlstate":"00000","ms":1795.796000,"n":27295}

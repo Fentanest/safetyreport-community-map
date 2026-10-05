@@ -138,3 +138,11 @@ main 70eb165(프론트엔드만: '이 항목으로 좁히기' 바가 표의 고�
 Pages [run37176609584](https://github.com/Fentanest/safetyreport-community-map/actions/runs/37176609584) build/deploy 성공. 운영 번들에 새 스타일이 들어갔고
 데모 랭킹 코드는 포함되지 않음을 확인했다. 로그인 후 두 화면은 운영 계정이 없어 미검증이며, 데모 검수 화면은
 `docs/reviews/screenshots/claude-stats-rankings-2026-10-04/`. 로컬 worktree는 모두 정리했고 그 안의 미커밋 파일은 `.agent-runtime/archive/worktrees-2026-10-04/`에 보관했다.
+
+## 2026-10-06 · cohort facts 8초 취소 수정 준비
+
+지도 `202610060100_cohort_facts_setwise.sql` 한 파일과 migration 이력 등록만 필요하다.
+RPC/Edge/Pages 계약은 불변이며 Edge·Pages 재배포는 필요 없다. 운영 적용은 이번 작업에서 하지 않았다.
+기존 함수 백업·적용·검증·forward rollback 순서는
+[cohort timeout 적용 메모](implementation/cohort-facts-timeout/MIGRATION.md),
+로컬 3천/3만 행 실행계획과 동등성 결과는 [검증 보고](implementation/cohort-facts-timeout/REPORT.md)에 있다.

@@ -1,0 +1,57 @@
+{
+  "unit": {
+    "passed": 624,
+    "skipped": 116
+  },
+  "python_blueprint": {
+    "passed": 27
+  },
+  "python_product": {
+    "passed": 12
+  },
+  "new_cohort_integration": {
+    "passed": 5
+  },
+  "existing_related_integration": {
+    "passed": 17
+  },
+  "full_json_parity": {
+    "passed": 102
+  },
+  "generic_timeout_reproduction": {
+    "passed": true
+  },
+  "build": {
+    "passed": true
+  },
+  "public_artifact_scan": {
+    "passed": true
+  },
+  "manifest": {
+    "passed": true,
+    "migrations": 43,
+    "functions": 7
+  },
+  "local_restoration": {
+    "private_auth_tables_compared": 54,
+    "all_table_row_counts_and_hashes_equal": true,
+    "fact_rows": 488,
+    "original_function_restored": true,
+    "original_function_sha256": "1eb1adffa216a8de18119b780f0e17ef1facd5abbb1a4b79b8913dda32dce5d1",
+    "migration_versions_unchanged": true,
+    "migration_count": 41,
+    "fact_triggers": {
+      "community_report_facts_manifest": "O",
+      "community_report_facts_projection": "O",
+      "community_report_facts_registry_version": "O"
+    },
+    "note": "Data/schema/function restoration; physical statistics and sequence advances are not rolled back."
+  },
+  "blocked": [],
+  "not_run": [
+    "production DB/SQL/Edge/Pages/push",
+    "browser UI/Muse",
+    "unrelated OAuth/ingest Edge integration suites",
+    "existing 500k measurement suites"
+  ]
+}

@@ -1,0 +1,1 @@
+{"jit": "on", "postgres": "PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit", "work_mem": "4MB", "plan_cache_mode": "auto", "statement_timeout": "0"}

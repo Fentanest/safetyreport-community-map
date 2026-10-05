@@ -1,0 +1,16 @@
+
+> safetyreport-community-map@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-cohort
+
+
+ Test Files  53 passed | 19 skipped (72)
+      Tests  624 passed | 116 skipped (740)
+   Start at  08:39:47
+   Duration  9.56s (transform 53%, import 28%, tests 18%, worker 1%)
+
+  Transform  transforming modules took 47.16s · 53% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
