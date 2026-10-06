@@ -12,14 +12,15 @@
 | `policy` | (없음) | `policy:{version, consent_text_sha256, consent_text}` — 지금 필수 동의 정책의 **본문**(UTF-8 markdown). 중앙이 보내기 전에 본문 해시 = `consent_text_sha256` 을 확인한다 | `auth_required`(401), `server_error` |
 | `consent` | `policy_version`, `consent_text_sha256`, `via`(`safetyreport_server`/`mobile_standalone`/`mobile_client`), `accepted: true` | `grant_id`, `policy_version`, `granted_at`, `created` | `kakao_required`(403), `policy_mismatch`(409 + `required_version`), `contributor_suspended`(403) |
 | `consent-revoke` | `grant_id`(현재 또는 같은 계보의 이전 grant) | `grant_id`(실제로 철회된 활성 grant), `revoked:true`, `already_revoked`, `lineage_active:false` | `not_found`(404), `stale_grant`(409: 그 계보는 이미 닫혔고 다른 활성 동의가 있음 — status 를 다시 받아 현재 grant 로 요청) |
-| `connections` | `source_app`, `source_mode`, `platform`, `device_label`(1~40, relay 규칙), `dataset_key`(64hex), `connection_secret`(base64url 32바이트 — 서버는 sha256 만 저장), `takeover`(bool) | `connection_id`, `writer_epoch`, `superseded_previous` | `kakao_required`, `writer_conflict`(409 + `active_writer:{device_label, platform, source_app, created_at}`), `invalid_request` |
+| `connections` | `source_app`, `source_mode`, `platform`, `device_label`(1~40, relay 규칙), `dataset_key`(64hex), `connection_secret`(base64url 32바이트 — 서버는 sha256 만 저장), `takeover`(bool) | `connection_id`, `writer_epoch`, `superseded_previous` | `kakao_required`, `official_account_mismatch`(409 + 본인 `bound_dataset_key`), `official_account_taken`(409, 운영자 문의), `writer_conflict`(409 + `active_writer:{device_label, platform, source_app, created_at}`), `invalid_request` |
 | `connections-rebind` | `connection_id`, `connection_secret` | `connection_id`, `writer_epoch`, `last_accepted_revision` | `not_found`(404, 타인·없음 구분 안 함), `connection_revoked`/`connection_superseded`/`connection_suspended`(409) |
 | `connections-revoke` | `connection_id` | `connection_id`, `status:"revoked"` | `not_found` |
-| `contributions-delete` | `confirm: "DELETE_MY_SHARED_REPORTS"` | `deletion_id`, `deleted_facts`, `revoked_connections`, `deleted_at` | `kakao_required` |
+| `contributions-delete` | `confirm: "DELETE_MY_SHARED_REPORTS"` | `deletion_id`, `deleted_facts`, `revoked_connections`, `deleted_at`, `official_account_released:true` | `kakao_required` |
 
 status 응답:
 ```json
 {"protocol":1,
+ "official_account":{"dataset_key":"<64hex>|null","bound_at":"<ISO>|null"},
  "gate":{"kakao":true,"consent":true,"can_enter":true,"reasons":[]},
  "policy":{"required_version":"2026-09-26.1","consent_text_sha256":"…"},
  "consent":{"state":"active|none|revoked|outdated","grant_id":"…|null","policy_version":"…|null","granted_at":"…|null"},
@@ -50,6 +51,34 @@ status 응답:
 중앙 manifest(S-04, map 의 ingest 함수): `POST {url}/functions/v1/community-ingest/manifest` 본문 `{"protocol":1,"connection_id":"…","after":null|"<64hex>","limit":5000}`(같은 헤더·인증·연결 검사, `Cache-Control: no-store`, 로그에 남기지 않음) →
 `{"protocol":1,"dataset_key":"…","writer_epoch":N,"total":T,"manifest_token":"<10진 세대, 예: \"0\", \"17\">","key_prefixes":["<24hex>",…],"next_after":null|"<64hex>"}` — 호출자 소유·연결의 dataset_key·`public_state='completed'` fact 의 `source_report_key` 앞 24hex, 키 순서, 페이지당 최대 5000.
 클라이언트는 manifest 를 받는 동안 자기 업로드 lease(`leases('upload')`)를 잡아 자기 업로드로 세대가 바뀌지 않게 하고, `next_after` 가 null 이 될 때까지 받고, **모든 페이지의 manifest_token(`^[0-9]+$` — 그 dataset 의 완료 key 집합이 바뀔 때마다 같은 트랜잭션에서 증가하는 세대 번호, fact 표 트리거로 유지; 빈 dataset 은 `"0"`)이 같고** 받은 개수 = total 이고 중복이 없을 때만 `server_completed` 를 한 트랜잭션으로 교체한다. 토큰이 바뀌면 처음부터 다시(최대 3회), 그래도 실패하면 교체하지 않고 수집을 시작하지 않는다(`manifest_unavailable`).
-철회 규칙: `consent-revoke` 는 주어진 grant 가 속한 **계보의 활성 grant** 를 철회한다(정책 갱신으로 대체된 옛 grant ID 를 보내도 사용자가 보는 동의가 실제로 철회됨). 삭제 규칙: `contributions-delete` 는 공유 fact 삭제 + 신고 identity tombstone + 삭제 fence(그 시각 이전 captured_at 이벤트 거절) + writer 연결 전부 폐기. 앱은 성공 응답 뒤 로컬 outbox 의 대기 행을 모두 `blocked:deleted_by_user` 로 바꾸고 새 연결 등록부터 다시 시작한다.
+철회 규칙: `consent-revoke` 는 주어진 grant 가 속한 **계보의 활성 grant** 를 철회한다(정책 갱신으로 대체된 옛 grant ID 를 보내도 사용자가 보는 동의가 실제로 철회됨). 삭제 규칙: `contributions-delete` 는 공유 fact 삭제 + 신고 identity tombstone + 삭제 fence(그 시각 이전 captured_at 이벤트 거절) + writer 연결 전부 폐기 + 공식 계정 바인딩 해제. 앱은 성공 응답 뒤 로컬 outbox 의 대기 행을 모두 `blocked:deleted_by_user` 로 바꾸고 새 연결 등록부터 다시 시작한다.
 
 `dataset_key = sha256("safetyreport-dataset|v1|" + 공식 로그인 ID 소문자·앞뒤 공백 제거)` — 클라이언트 주장값(증명 아님), writer 충돌 제어와 fact 네임스페이스용.
+
+
+## 공식 계정 1:1 바인딩 (2026-10-06)
+
+카카오 사용자 1명 ↔ 공식 안전신문고 dataset 1개. `dataset_key` 알고리즘은 그대로이며,
+서버는 ID 원문을 저장하지 않는다. `connections` 성공과 바인딩 생성은 같은 트랜잭션이다.
+같은 사용자의 같은 dataset 재등록에는 기존 writer 충돌·takeover 규칙을 적용한다.
+`takeover:true`도 다른 사용자 바인딩이나 본인의 다른 dataset 바인딩을 덮지 못한다.
+
+| 오류 코드 | HTTP / retryable | message (정확한 서버 문구) |
+|---|---|---|
+| `official_account_mismatch` | 409 / false | `This community account is bound to another official account. Delete shared reports before changing accounts.` |
+| `official_account_taken` | 409 / false | `This official account is already bound. Please contact an operator (운영자에게 문의해 주세요).` |
+
+mismatch 응답의 `error.bound_dataset_key`는 본인의 바인딩만 반환한다. taken은 상대 사용자·연결·dataset 정보를 추가하지 않는다.
+`status.official_account`는 요청자 자신의 `{dataset_key,bound_at}`이며 미바인딩은 두 값 모두 JSON null이다.
+동의 철회·연결 철회·로그아웃은 바인딩을 해제하지 않는다. 공식 계정 변경은 기존
+`contributions-delete` 성공(`official_account_released:true`) 이후 새 `connections`로 진행한다.
+운영자 함수·감사·backfill·적용 순서는 `docs/implementation/official-account-binding-20261006/MIGRATION.md` 참조.
+
+안신 계정은 클라이언트 DB에 저장하지 않는다. 서버 바인딩을 정본으로 삼고, 클라이언트는 시작·복귀·약 5분마다
+현재 로그인 설정에서 계산한 dataset_key와 status의 바인딩을 대조한다. 불일치 시 로그인 설정에서
+계정을 맞추거나 경고→개인 DB 백업→초기화→새 시작 절차를 완료해야 한다. 연결 실패 시 클라우드 접속 불가
+화면, 20~30초 타임아웃·증가 간격 자동 재시도·수동 재시도를 제공한다. 이 서버 변경에는 클라이언트 UI 구현이 포함되지 않는다.
+
+운영자 수동 선점 해제는 선점자의 해당 dataset 공유 fact 삭제·identity tombstone·사용자/dataset 삭제 fence·
+해당 dataset 연결 폐기·바인딩 해제를 원자적으로 수행한다. 삭제 건수와 운영자/사유/시각은 private 감사에 남긴다.
+삭제 증거는 선점자 사용자 범위이므로 진짜 주인은 같은 dataset과 같은 신고를 새로 연결·업로드할 수 있다.

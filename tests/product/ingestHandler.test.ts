@@ -267,3 +267,21 @@ describe('community-ingest handler', () => {
     expect(calls.find(c => c.name === 'internal_community_manifest')!.args.p_user).toBe(UID);
   });
 });
+
+
+describe('binding API errors', () => {
+  it('maps missing/mismatched binding to nonretryable 409 without owner details', async () => {
+    const { handler } = setup(() => ({ error: 'official_account_mismatch', user_id: 'PRIVATE', dataset_key: 'PRIVATE' }));
+    const r = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    const j = await r.json();
+    expect(r.status).toBe(409); expect(j.error).toMatchObject({ code: 'official_account_mismatch', retryable: false });
+    expect(JSON.stringify(j)).not.toContain('PRIVATE');
+  });
+  it('returns per-event ownership rejection from the transaction', async () => {
+    const results = [{ event_id: '7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', status: 'rejected', durable: false,
+      receipt_id: null, projection_status: 'not_applicable', error: { code: 'report_owned_elsewhere', retryable: false } }];
+    const { handler } = setup(() => ({ results }));
+    const r = await handler(post(await envelope([await event(results[0].event_id)])));
+    expect(r.status).toBe(200); expect((await r.json()).results).toEqual(results);
+  });
+});

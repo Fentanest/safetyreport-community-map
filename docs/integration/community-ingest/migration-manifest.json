@@ -508,6 +508,26 @@
    "depends_on": [
     "202610060900"
    ]
+  },
+  {
+   "version": "202610061100",
+   "repo": "auth",
+   "path": "supabase/migrations/202610061100_official_account_binding.sql",
+   "sha256": "b5fb82a7e9f0db339ff3133ea9706cc974eb23ac7d0a225c75844fda0ca8fc7d",
+   "depends_on": [
+    "202609260100",
+    "202609281800"
+   ]
+  },
+  {
+   "version": "202610061101",
+   "repo": "map",
+   "path": "supabase/migrations/202610061101_official_account_ingest.sql",
+   "sha256": "215971cd5a5a72dde80e71177bed1bfb9c8cc51d4d074282c12d43f2e7c33754",
+   "depends_on": [
+    "202610061100",
+    "202609281800"
+   ]
   }
  ],
  "functions": [

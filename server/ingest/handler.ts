@@ -59,12 +59,13 @@ const POLICY = /^[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]{1,3}$/;
 const TRIGGERS = new Set(['realtime', 'manual', 'midnight', 'recovery', 'rebuild', 'reshare']);
 const EVENT_TYPES = new Set(['completed_observation', 'status_correction', 'location_supplement', 'reshare']);
 
-type Code = 'method_not_allowed' | 'unsupported_media_type' | 'payload_too_large' | 'invalid_request' | 'schema_invalid' |
+type Code = 'official_account_mismatch' | 'method_not_allowed' | 'unsupported_media_type' | 'payload_too_large' | 'invalid_request' | 'schema_invalid' |
   'payload_hash_mismatch' | 'event_type_mismatch' | 'auth_required' | 'kakao_required' | 'session_revoked' |
   'consent_missing' | 'consent_revoked' | 'consent_outdated' | 'consent_grant_unknown' | 'connection_unknown' |
   'connection_revoked' | 'connection_suspended' | 'connection_session_mismatch' | 'connection_mode_mismatch' |
   'writer_superseded' | 'contributor_suspended' | 'rate_limited' | 'busy' | 'server_error' | 'service_unavailable';
 const HTTP: Record<Code, number> = {
+  official_account_mismatch: 409,
   method_not_allowed: 405, unsupported_media_type: 415, payload_too_large: 413, invalid_request: 400, schema_invalid: 422,
   payload_hash_mismatch: 422, event_type_mismatch: 422, auth_required: 401, kakao_required: 403, session_revoked: 403,
   consent_missing: 403, consent_revoked: 403, consent_outdated: 403, consent_grant_unknown: 403, connection_unknown: 403,
@@ -266,13 +267,14 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
 }
 
 function mapRpcError(code: string): Code {
-  const known: Code[] = ['kakao_required', 'session_revoked', 'consent_missing', 'consent_revoked', 'consent_outdated',
+  const known: Code[] = ['official_account_mismatch', 'kakao_required', 'session_revoked', 'consent_missing', 'consent_revoked', 'consent_outdated',
     'consent_grant_unknown', 'connection_unknown', 'connection_revoked', 'connection_suspended', 'connection_session_mismatch',
     'connection_mode_mismatch', 'writer_superseded', 'contributor_suspended', 'invalid_request'];
   return (known as string[]).includes(code) ? code as Code : 'server_error';
 }
 
 const MESSAGE: Partial<Record<Code, string>> = {
+  official_account_mismatch: 'The upload connection does not match your bound official account.',
   auth_required: 'A valid community sign-in is required.', kakao_required: 'A Kakao-linked community account is required.',
   consent_revoked: 'Share consent was revoked.', consent_outdated: 'The share-consent policy changed; consent again.',
   writer_superseded: 'Another device took over uploading.', rate_limited: 'Too many requests.',

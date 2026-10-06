@@ -33,6 +33,16 @@
 - 주 메뉴: 지도 상황판 / 지역 분석 / 기관·담당자 / 월별 추이 / 데이터 안내.
 - 양의 신고 증가는 '좋음'의 초록 신호가 아니다. 방향은 중립 청색/회색, 상태별 semantic color와 분리한다.
 
+## 2026-10-06 사용자 결정 · 공식 계정 바인딩
+
+카카오 1계정 ↔ 안전신문고 dataset 1개를 양방향으로 강제한다. 다른 공식 계정으로 바꾸려면 공유자료 삭제로
+바인딩을 해제한 뒤 다시 연결한다. 다른 dataset의 기존 신고(source_report_key 또는 report_number 일치)는
+`report_owned_elsewhere`로 거절·감사한다. 아래 2026-09-28의 타 계정/두 번째 dataset 무제한 기여 문구는 이 규칙으로 대체한다.
+2026-10-06 r2 정정: 운영자 수동 선점 해제 시 선점자의 그 dataset 공유 자료를 삭제한다(fact·identity tombstone·
+사용자/dataset fence·연결 폐기·감사). 새 소유자는 같은 dataset/신고 업로드가 가능해야 한다.
+안신 계정은 클라이언트 DB에 저장하지 않고 서버 바인딩·status와 현재 로그인 설정을 대조한다.
+세부 API: `contracts/community-ingest/account-api.md`. 운영: `docs/implementation/official-account-binding-20261006/MIGRATION.md`.
+
 ## 2026-09-27 사용자 결정
 - 화면의 **수용률 = 수용 ÷ 결과가 나온 신고(수용+일부 수용+불수용)**, **일부수용률 = 일부 수용 ÷ 같은 분모**를 **따로** 보여 준다.
   둘을 합친 비율은 화면에 쓰지 않는다. 지도 색·지역 목록·기관/담당자 표와
