@@ -34,6 +34,8 @@ export interface FactsOptions {
 
 export interface AnalyticsRepository {
   getState(): Promise<AnalyticsState>;
+  /** Screen-only SQL aggregates, already bound to this immutable snapshot. */
+  getScreenResult?(route: string, params: URLSearchParams): unknown;
   /** Production: state and source from one STABLE SQL statement, never independent reads. */
   getSnapshot?(scope: Scope, options: FactsOptions, kind?: RollupKind, rollupOptions?: RollupOptions):
     Promise<{ state: AnalyticsState; facts?: PrivateFact[]; rollup?: RollupResult }>;
@@ -188,7 +190,7 @@ function meta(state: AnalyticsState): PublicMeta {
 }
 
 /** U03: one sort spec from `sort`/`sort_value`/`dir` (registry allowlist; legacy SOL-08 keys still accepted). */
-function parseSort(params: URLSearchParams): SortSpec {
+export function parseSort(params: URLSearchParams): SortSpec {
   const rawSort = params.get('sort'), rawValue = params.get('sort_value'), rawDir = params.get('dir');
   if (rawSort === null && rawValue === null && rawDir === null) return DEFAULT_SORT;
   const legacy = legacySort(rawSort ?? DEFAULT_SORT.column);
@@ -198,7 +200,7 @@ function parseSort(params: URLSearchParams): SortSpec {
   return { column: legacy.column, value, dir: dir as SortSpec['dir'] };
 }
 
-function pageOf(params: URLSearchParams): { page: number; pageSize: number } {
+export function pageOf(params: URLSearchParams): { page: number; pageSize: number } {
   const page = Number(params.get('page') || '1'), pageSize = Number(params.get('page_size') || '50');
   if (!Number.isInteger(page) || page < 1 || page > 10000 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
     throw new QueryError('INVALID_QUERY', 400);
@@ -374,6 +376,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         return json({ ...common, sort, items: result.items, total_rows: result.total_rows, page, page_size: pageSize }, 200);
       }
       // D14: only the routes that show a comparison read the previous window
+      if (repo.getScreenResult) return json(repo.getScreenResult(route, url.searchParams), 200);
       const facts = snap?.facts ?? await repo.getFacts(scope, { previous });
       if (placeKey !== null) {
         // R05/R07 + U02: one address, every fact of the place key under the scope (never a coordinate bbox);

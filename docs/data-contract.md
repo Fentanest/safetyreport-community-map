@@ -131,3 +131,25 @@ small state/viewer/options는 jsonb로 남지만 facts를 jsonb로 캐스트하�
 운영 aarch64의 jsonb 구성 병목은 확정됐지만 수정 후보의 운영 성능은 아직 미측정이다. **운영 재측정은 배포 후 총괄이 수행**한다.
 8초 설정과 20초 클라이언트 deadline은 유지한다. 함수 안의 statement_timeout 변경을 현재 SQL statement의 강제 취소 보장으로
 해석하지 않는다. 실제 외부 RPC 제한과 end-to-end 여유는 운영 검증 항목이다.
+
+## 2026-10-06 · 화면 서버 집계 (`202610060900`)
+
+`my-analytics/screen`은 같은 `internal_analytics_read_snapshot`에
+`p_options.screen_encoding=screen-aggregate-v1`과 panel intent를 전달한다. 옵션이 있을 때만
+state·viewer·집계 source를 하나의 STABLE statement snapshot에서 반환한다. 원시 fact JSON 생성·PostgREST
+전송·Edge columns decode를 제거한다. SQL이 대표 선출/개인 사본 제거/기간·차원 필터를 한 번 수행하고,
+현재·이전기간·월·기관·담당자·법규·지역·주소·히트맵·개인 측의 실제 교차집계, distinct 참가자·장소·차량 신고일,
+중앙값·nearest-rank p90·금액 공개 분류·별점 분포를 계산한다. 양 축의 membership과 `single-date-v1`은 유지한다.
+
+집계 source에는 원번호·report identity·계정 UUID가 없다. 차량은 전체 canonical 후보에서 TOP5를 정한 뒤 SQL에서
+마스킹한다(마스킹 충돌은 합치지 않음). 주소는 기존 `address-v1` 정규화·UTF-16 FNV 규칙과 원 좌표 대표 선정을 따른다.
+SQL 내부 분위수 배열은 DB 밖으로 반환하지 않는다. Edge는 기존 한국어 정렬·동명이인·월별 coverage·지도 노드 압축·페이지와
+공개 DTO를 조립한다. 개인 집계의 user는 인증된 viewer에서만 받고 별도의 비교 source 읽기를 하지 않는다.
+
+브라우저의 `screen-v1`, 성공 패널의 scope/version, 게이트·rate limit·no-store·100,000행 budget은 불변이다.
+장기 캐시나 새로운 무효화 규칙은 없다. 구 Edge는 기존 facts 형식을 받고, 신 Edge+구 SQL은 한 번 받은 legacy source로
+집계한다. 알 수 없는 aggregate encoding은 503이다. 독립 public-analytics·personal·rankings·앱 RPC 계약은 바꾸지 않는다.
+
+전송량은 원시 행×34개 필드에서 집계 그룹 수로 바뀐다. 고유 주소/기관/담당자 등 차원의 수가 늘면 내부 집계 source도 커지며
+항상 상수 크기라고 보장하지 않는다. 지도 압축과 정렬은 Edge에 남아 있다. 운영 end-to-end 수 초 목표는
+[로컬 보고서](implementation/screen-server-aggregate-20261006/REPORT.md)와 구분하여 **배포 후 총괄 측정**으로 판정한다.

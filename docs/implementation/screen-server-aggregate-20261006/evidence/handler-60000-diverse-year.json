@@ -1,0 +1,79 @@
+{
+  "synthetic": true,
+  "runtime": "Node; actual SQL response; auth/RPC stub; not hosted Edge",
+  "whole_packet_parity": true,
+  "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-07",
+    "end": "2026-10-06",
+    "category": "all"
+  },
+  "measurements": [
+    {
+      "phase": "before",
+      "source_bytes": 38205391,
+      "fact_rows": 54664,
+      "decoded_fact_cells": 1858576,
+      "aggregate_groups": 0,
+      "runs": [
+        {
+          "parse_ms": 303.4271060000001,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 14,
+          "handler_ms": 2920.045838,
+          "cpu_ms": 3374.394,
+          "public_bytes": 302118
+        },
+        {
+          "parse_ms": 162.52091800000017,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 2726.836945,
+          "cpu_ms": 2945.292,
+          "public_bytes": 302118
+        },
+        {
+          "parse_ms": 159.26914999999917,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 2479.935341999999,
+          "cpu_ms": 2620.162,
+          "public_bytes": 302118
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "source_bytes": 202515,
+      "fact_rows": 0,
+      "decoded_fact_cells": 0,
+      "aggregate_groups": 575,
+      "runs": [
+        {
+          "parse_ms": 1.3553790000005392,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 25.376391999998305,
+          "cpu_ms": 28.093,
+          "public_bytes": 302118
+        },
+        {
+          "parse_ms": 1.173521000000619,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 19.043206000000282,
+          "cpu_ms": 20.49,
+          "public_bytes": 302118
+        },
+        {
+          "parse_ms": 1.2413440000000264,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 23.41739199999938,
+          "cpu_ms": 30.981,
+          "public_bytes": 302118
+        }
+      ]
+    }
+  ]
+}

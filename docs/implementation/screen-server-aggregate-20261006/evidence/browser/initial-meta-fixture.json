@@ -1,0 +1,10 @@
+{
+  "mode": "local SQL aggregate + actual screen handler + Chrome; fake auth, mock Kakao; not hosted Edge or production",
+  "browser": "154.0.8037.92",
+  "checks": [],
+  "console": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "network": []
+}

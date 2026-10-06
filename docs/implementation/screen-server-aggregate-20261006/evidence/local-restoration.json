@@ -1,0 +1,13 @@
+{
+  "before": {
+    "bytes": 4275923,
+    "sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af"
+  },
+  "after": {
+    "bytes": 4275923,
+    "sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af"
+  },
+  "equal": true,
+  "method": "pg_dump full schema/data/sequence/ACL/ledger; pg_restore SQL; remove only restrict/unrestrict nonce lines",
+  "database": "{\"version\" : \"PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit\", \"work_mem\" : \"4MB\", \"candidate_function_absent\" : true}"
+}

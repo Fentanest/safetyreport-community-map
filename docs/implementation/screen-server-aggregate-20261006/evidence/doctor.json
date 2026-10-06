@@ -1,0 +1,26 @@
+{
+  "python": "3.12.3",
+  "platform": "Linux",
+  "tools": {
+    "git": true,
+    "node": true,
+    "npm": true,
+    "opencode": true,
+    "chromium": true,
+    "google-chrome": true
+  },
+  "git_head": {
+    "code": 0,
+    "output": "1d846aa2ceb879ed81ef7c49c6316223c32dc333"
+  },
+  "config_present": {
+    "VITE_KAKAO_MAP_JS_KEY": false,
+    "VITE_PUBLIC_ANALYTICS_URL": false,
+    "SUPABASE_EXPORT_DATABASE_URL": false
+  },
+  "notes": [
+    "No model was invoked and no cloud settings were changed.",
+    "Missing keys do not block fixture-based UI implementation.",
+    "Muse actual provider/model ID must be discovered on the user host."
+  ]
+}

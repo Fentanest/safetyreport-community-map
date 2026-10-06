@@ -1,0 +1,102 @@
+{
+  "synthetic": true,
+  "sql_sha256": "95f720bdf5e8ca5525343de0c41b21483a9e738f3601005f816d931bade9a83d",
+  "seed_rows": 30000,
+  "profile": "diverse",
+  "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-07",
+    "end": "2026-10-06",
+    "category": "all"
+  },
+  "iterations": 3,
+  "status": "MEASURED",
+  "exit_code": 0,
+  "elapsed_seconds": 28.273464327212423,
+  "samples": [
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 931.172,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 1134.127,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 1,
+      "ms": 850.036,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 1,
+      "ms": 996.595,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 2,
+      "ms": 842.685,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 2,
+      "ms": 1007.716,
+      "bytes": 19100322
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 2149.634,
+      "bytes": 190492
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 2273.071,
+      "bytes": 190492
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 1,
+      "ms": 2328.659,
+      "bytes": 190492
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 1,
+      "ms": 2194.633,
+      "bytes": 190492
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 2,
+      "ms": 2267.65,
+      "bytes": 190492
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 2,
+      "ms": 2150.482,
+      "bytes": 190492
+    }
+  ]
+}

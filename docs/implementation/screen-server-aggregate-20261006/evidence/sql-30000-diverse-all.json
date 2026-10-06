@@ -1,0 +1,103 @@
+{
+  "synthetic": true,
+  "sql_sha256": "599f77d5f3da0bae6a8b8a6e3bd8340438c123004926cbed2570e51670719e21",
+  "seed_rows": 30000,
+  "work_mem": "2MB",
+  "profile": "diverse",
+  "scope": {
+    "date_basis": "completed_date",
+    "start": "2019-04-23",
+    "end": "2026-10-06",
+    "category": "all"
+  },
+  "iterations": 3,
+  "status": "MEASURED",
+  "exit_code": 0,
+  "elapsed_seconds": 26.066577654099092,
+  "samples": [
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 1107.774,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 1278.384,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 1,
+      "ms": 955.098,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 1,
+      "ms": 1060.398,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 2,
+      "ms": 1011.212,
+      "bytes": 19100322
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 2,
+      "ms": 1016.314,
+      "bytes": 19100322
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 1988.649,
+      "bytes": 216506
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 1936.453,
+      "bytes": 216506
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 1,
+      "ms": 1938.952,
+      "bytes": 216506
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 1,
+      "ms": 2013.316,
+      "bytes": 216506
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 2,
+      "ms": 2009.023,
+      "bytes": 216506
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 2,
+      "ms": 1949.382,
+      "bytes": 216506
+    }
+  ]
+}

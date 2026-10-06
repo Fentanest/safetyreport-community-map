@@ -1,0 +1,38 @@
+{
+  "synthetic": true,
+  "seed_rows": 300,
+  "iterations": 1,
+  "status": "MEASURED",
+  "exit_code": 0,
+  "elapsed_seconds": 0.28161236294545233,
+  "samples": [
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 18.771,
+      "bytes": 189991
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 15.119,
+      "bytes": 189991
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 49.404,
+      "bytes": 2301
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 41.457,
+      "bytes": 2301
+    }
+  ]
+}

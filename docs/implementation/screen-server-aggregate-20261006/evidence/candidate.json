@@ -1,0 +1,34 @@
+{
+  "base": "1d846aa2ceb879ed81ef7c49c6316223c32dc333",
+  "branch": "fix/screen-server-aggregate",
+  "committed": false,
+  "files": {
+    "server/publicHandler.ts": "d5c2544735e8042763f9ad04c6e666114afa676a34013b9a18c431d45c9ff00f",
+    "server/screenHandler.ts": "983fbb8bef310a1e515fc2ffd4bf97235258bb19e5dc7cf819cb98e3204205ca",
+    "server/screenAggregate.ts": "476a2cf8b6fe2d7853107a65f62a55b9a937c42c7073d2dd413d30bfa967f2ba",
+    "supabase/migrations/202610060900_screen_server_aggregate.sql": "599f77d5f3da0bae6a8b8a6e3bd8340438c123004926cbed2570e51670719e21",
+    "tests/product/screenSnapshot.test.ts": "17cbdce6628cd73a9ed68abc0837454014148e8c95d4fadad929d52a7506e9fb",
+    "tests/integration/screen-server-aggregate.test.ts": "0cfa0387b9c815431890d9cb9c6f38ee10f0d693f32dfa874cf4a637bc142b9d",
+    "scripts/benchmark/screen_server_aggregate.py": "3ee4b233f355a045869a32e80f8df9c6f0698fdfa6111585cc337aec1a285241",
+    "scripts/browser/vite.screen-aggregate.config.ts": "57e4e77c964cc94417b441da4f05196814fac3e132f98fc3b2f6b05a00e340d1",
+    "scripts/browser/verify_screen_aggregate.mjs": "4446376f238a1f932b8cec838d164d88907d5d1ceadf853343a95ecab7a16628",
+    "docs/data-contract.md": "43213d2bfa3db29a3e94cedc21be13492e8e9b8f36e66d4ba380abd85373dcd2",
+    "docs/integration/community-ingest/migration-manifest.json": "086bf4660a1110dc02c9b2585e55594a0b2e90fa3de6c41e9955327250743140",
+    "docs/implementation/screen-server-aggregate-20261006/REPORT.md": "c44e79dba497a63cb6a30fe05486129e7f8b256047fc5191dd4fcc371cc654b0",
+    "docs/implementation/screen-server-aggregate-20261006/MIGRATION.md": "994e61eb286a9dc03a40c4792d174fe415f33c6f843fa3bac9d76564f81eee82",
+    "docs/implementation/screen-server-aggregate-20261006/REPRODUCE.md": "8e6588003c6260a8fce514dab98c1b535882459369509ff8ce854d5233f8895a",
+    "docs/implementation/screen-server-aggregate-20261006/rollback.sql": "092072201988825b8ac57c64a941a6fc819f8280729953b574f4cef75f02e95a"
+  },
+  "screenshots": {
+    "1440-dark-sorted-compare-all.png": "bf6abad97273096a89c0c81553d5c477e5392570a72c68371937f2816dd36b02",
+    "1440-dark.png": "73c04b9f4bade88bb5e0bf6b812b8434d80b54743224676b36dde1e3f375991d",
+    "1440-light.png": "7ae276a63e00a444c900f3b94502ae3adc9e70898a454f1f9ab17363491b877e",
+    "1920-dark.png": "3b2400ee7d0397150c21894e5b1ee9a87d5871c604448a32963bda8480051606",
+    "1920-light.png": "bfef831bd6a5464e2d2f5340ad9ca328efbdf0f491f13c0bc2057394961db215",
+    "2560-dark.png": "eb381fb89b5ff09b8c9ce6f81491dcadcd364b6b9c85fdc37f1444538957ba8b",
+    "2560-light.png": "3ea3d36b19e86fa502cc873d82763f56027b439ebaadb9d08c89b4bfb3755e14",
+    "390-dark.png": "685bf6e0088fb54d5138edfbae30f6fac2f7f8b32486093435563e1d6f56c06f",
+    "390-light.png": "6603bd55520dedfdcceea3d4733156260cd802083d4c3feeb02cac21387821ba"
+  },
+  "local_vite_stopped": true
+}

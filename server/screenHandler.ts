@@ -5,6 +5,7 @@ import { createPublicHandler, parseScope, QueryError, type AnalyticsState, type 
 import { aggregateCompare } from './compare.ts';
 import { todayKst, entityRows, selectScope, representatives } from './aggregate.ts';
 import { decodeScreenFacts } from './screenFacts.ts';
+import { ScreenAggregates, type ScreenAggregate } from './screenAggregate.ts';
 import type { PersonalDeps } from './personalHandler.ts';
 
 /** A bounded screen, including personal comparison, is read once. No stored snapshot or retry race. */
@@ -46,12 +47,14 @@ export function createScreenHandler(deps: PersonalDeps) {
         headers['Retry-After'] = '60'; return error('RATE_LIMITED', 429);
       }
       const source = await deps.rpc('internal_analytics_read_snapshot', { p_scope: scope, p_previous: true,
-        p_user: viewer.uid, p_session: viewer.session, p_options: { fact_encoding: 'columns-v1' } }) as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown };
-      const facts = decodeScreenFacts(source?.facts);
+        p_user: viewer.uid, p_session: viewer.session, p_options: { fact_encoding: 'columns-v1', screen_encoding: 'screen-aggregate-v1', panels } }) as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown; aggregate?: ScreenAggregate };
+      const aggregate = source?.aggregate ? new ScreenAggregates(source.aggregate, scope, source.state) : null;
+      const facts = aggregate ? [] : decodeScreenFacts(source?.facts);
       if (!source?.state || !source.viewer || !facts) return error('AGGREGATE_NOT_READY', 503);
-      // The existing public gate/strict query validators and aggregators run over this immutable in-memory source.
+      // Existing gates and query validators guard both SQL aggregates and the legacy immutable fact source.
       // No nested handler can issue another database read or charge another rate bucket.
       const local = createPublicHandler({ getState: async () => source.state, getFacts: async () => facts,
+        ...(aggregate ? { getScreenResult: (route: string, q: URLSearchParams) => aggregate.read(route, q) } : {}),
         allowRequest: async () => true }, { allowedOrigins: deps.allowedOrigins, jwtIssuer: deps.jwtIssuer,
         getUser: async () => ({ id: viewer.uid, isAnonymous: false }), viewer: async () => source.viewer });
       const read = (path: string, extra: Record<string, string> = {}) => {
@@ -69,14 +72,14 @@ export function createScreenHandler(deps: PersonalDeps) {
           if (!Number.isInteger(count) || count < 1 || count > 1000 || !['agency', 'manager'].includes(kind) ||
             Object.keys(p.params).some(k => !['kind', 'q', 'through_page'].includes(k)) || (p.params.q?.length ?? 0) > 160) throw new QueryError('INVALID_QUERY', 400);
           const needle = (p.params.q || '').trim();
-          let rows = entityRows(selectScope(representatives(facts), scope).done, kind as 'agency' | 'manager');
+          let rows = aggregate ? aggregate.entities(kind as 'agency' | 'manager') : entityRows(selectScope(representatives(facts), scope).done, kind as 'agency' | 'manager');
           if (needle) rows = rows.filter(r => r.agency_name.includes(needle) || (r.manager_name ?? '').includes(needle));
           rows.sort(compareRows(DEFAULT_SORT, r => `${r.agency_name}\u0000${r.manager_name ?? ''}`, r => r.key));
           results.push({ id: p.id, status: 200, body: { schema_version: 2, dataset_version: source.state.dataset_version,
             scope, cohort_policy_version: COHORT_POLICY_VERSION, sample: false, items: rows.slice(0, count * 100),
             sort: DEFAULT_SORT, total_rows: rows.length, page: 1, page_size: count * 100 } });
         } else if (p.path === 'compare') {
-          results.push({ id: p.id, status: 200, body: aggregateCompare(facts, scope, viewer.uid, {
+          results.push({ id: p.id, status: 200, body: aggregate ? aggregate.compare(source.viewer) : aggregateCompare(facts, scope, viewer.uid, {
             datasetVersion: source.state.dataset_version, asOf: source.state.data_max || scope.end,
             dataMin: source.state.data_min, basisBounds: source.state.basis_bounds ?? null, today: todayKst(),
             viewer: { contributor: source.viewer.contributor, has_public_facts: source.viewer.has_public_facts },

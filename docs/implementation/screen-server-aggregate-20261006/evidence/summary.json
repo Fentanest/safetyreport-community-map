@@ -1,0 +1,134 @@
+{
+  "mode": "local synthetic; medians of 3 per stage; separate runs; no network/hosted Edge latency",
+  "rows": [
+    {
+      "seed_rows": 30000,
+      "window": "year",
+      "before": {
+        "rpc_bytes": 19100320,
+        "facts": 27332,
+        "decoded_fact_cells": 929288,
+        "aggregate_groups": 0,
+        "sql_direct_ms": 894.492,
+        "postgrest_shape_ms": 973.978,
+        "parse_ms": 81.92382699999962,
+        "handler_ms": 1189.9819430000002,
+        "cpu_ms": 1331.741,
+        "public_bytes": 294319,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      },
+      "after": {
+        "rpc_bytes": 190350,
+        "facts": 0,
+        "decoded_fact_cells": 0,
+        "aggregate_groups": 528,
+        "sql_direct_ms": 1570.363,
+        "postgrest_shape_ms": 1577.174,
+        "parse_ms": 1.2115340000000288,
+        "handler_ms": 23.390972000000147,
+        "cpu_ms": 28.427,
+        "public_bytes": 294319,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      }
+    },
+    {
+      "seed_rows": 30000,
+      "window": "all",
+      "before": {
+        "rpc_bytes": 19100322,
+        "facts": 27332,
+        "decoded_fact_cells": 929288,
+        "aggregate_groups": 0,
+        "sql_direct_ms": 1011.212,
+        "postgrest_shape_ms": 1060.398,
+        "parse_ms": 79.18557899999996,
+        "handler_ms": 1897.013939,
+        "cpu_ms": 2066.863,
+        "public_bytes": 358740,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      },
+      "after": {
+        "rpc_bytes": 216506,
+        "facts": 0,
+        "decoded_fact_cells": 0,
+        "aggregate_groups": 648,
+        "sql_direct_ms": 1988.649,
+        "postgrest_shape_ms": 1949.382,
+        "parse_ms": 1.278425000000425,
+        "handler_ms": 26.795764000000418,
+        "cpu_ms": 35.512,
+        "public_bytes": 358740,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      }
+    },
+    {
+      "seed_rows": 60000,
+      "window": "year",
+      "before": {
+        "rpc_bytes": 38205391,
+        "facts": 54664,
+        "decoded_fact_cells": 1858576,
+        "aggregate_groups": 0,
+        "sql_direct_ms": 2150.698,
+        "postgrest_shape_ms": 2446.508,
+        "parse_ms": 162.52091800000017,
+        "handler_ms": 2726.836945,
+        "cpu_ms": 2945.292,
+        "public_bytes": 302118,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      },
+      "after": {
+        "rpc_bytes": 202515,
+        "facts": 0,
+        "decoded_fact_cells": 0,
+        "aggregate_groups": 575,
+        "sql_direct_ms": 3233.407,
+        "postgrest_shape_ms": 3259.073,
+        "parse_ms": 1.2413440000000264,
+        "handler_ms": 23.41739199999938,
+        "cpu_ms": 28.093,
+        "public_bytes": 302118,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      }
+    },
+    {
+      "seed_rows": 60000,
+      "window": "all",
+      "before": {
+        "rpc_bytes": 38205391,
+        "facts": 54664,
+        "decoded_fact_cells": 1858576,
+        "aggregate_groups": 0,
+        "sql_direct_ms": 2329.798,
+        "postgrest_shape_ms": 2548.382,
+        "parse_ms": 159.74723799999992,
+        "handler_ms": 4285.362487999999,
+        "cpu_ms": 4530.034,
+        "public_bytes": 360728,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      },
+      "after": {
+        "rpc_bytes": 217440,
+        "facts": 0,
+        "decoded_fact_cells": 0,
+        "aggregate_groups": 648,
+        "sql_direct_ms": 4011.328,
+        "postgrest_shape_ms": 3985.807,
+        "parse_ms": 1.2710450000013225,
+        "handler_ms": 25.297959999999875,
+        "cpu_ms": 24.863,
+        "public_bytes": 360728,
+        "handler_parse_calls": 13,
+        "source_parse_calls": 1
+      }
+    }
+  ],
+  "parse_note": "Source JSON.parse: 1 each; warm handler parses: 13 each, including final packet test parse. First legacy replay: 14 (runtime initialization). No algorithmic parse-count reduction claimed."
+}

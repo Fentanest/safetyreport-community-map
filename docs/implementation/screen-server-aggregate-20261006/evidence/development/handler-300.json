@@ -1,0 +1,55 @@
+{
+  "synthetic": true,
+  "runtime": "Node; actual SQL response; auth/RPC stub; not hosted Edge",
+  "whole_packet_parity": true,
+  "measurements": [
+    {
+      "phase": "before",
+      "source_bytes": 189991,
+      "runs": [
+        {
+          "parse_ms": 0.6928759999999556,
+          "handler_ms": 48.89681099999996,
+          "cpu_ms": 52.362,
+          "public_bytes": 19029
+        },
+        {
+          "parse_ms": 0.536658999999986,
+          "handler_ms": 12.326434000000063,
+          "cpu_ms": 22.706,
+          "public_bytes": 19029
+        },
+        {
+          "parse_ms": 0.5255889999999681,
+          "handler_ms": 12.009522999999945,
+          "cpu_ms": 17.675,
+          "public_bytes": 19029
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "source_bytes": 2301,
+      "runs": [
+        {
+          "parse_ms": 0.0418409999999767,
+          "handler_ms": 8.061787000000095,
+          "cpu_ms": 33.763,
+          "public_bytes": 19029
+        },
+        {
+          "parse_ms": 0.03389100000003964,
+          "handler_ms": 5.076286999999979,
+          "cpu_ms": 12.465,
+          "public_bytes": 19029
+        },
+        {
+          "parse_ms": 0.03179099999999835,
+          "handler_ms": 4.391031999999996,
+          "cpu_ms": 6.183,
+          "public_bytes": 19029
+        }
+      ]
+    }
+  ]
+}

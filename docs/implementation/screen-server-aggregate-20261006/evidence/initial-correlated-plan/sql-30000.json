@@ -1,0 +1,9 @@
+{
+  "synthetic": true,
+  "seed_rows": 30000,
+  "iterations": 3,
+  "status": "FAIL",
+  "exit_code": 3,
+  "elapsed_seconds": 65.20542190806009,
+  "samples": []
+}

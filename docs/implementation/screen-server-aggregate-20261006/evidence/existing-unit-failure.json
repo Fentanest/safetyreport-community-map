@@ -1,0 +1,16 @@
+{
+  "base": "1d846aa",
+  "file": "supabase/migrations/202610060800_service_role_statement_timeout.sql",
+  "unchanged": true,
+  "sha256": "c99369bb5c2ca573b09e4a11955076b4ab1828869e65cd60f463ce0c9e609597",
+  "ascii_apostrophe_comments": [
+    {
+      "line": 1,
+      "comment": "-- PostgREST connects as authenticator (statement_timeout=8s) and applies the impersonated role's settings."
+    },
+    {
+      "line": 2,
+      "comment": "-- service_role had none, so service RPCs inherited 8 s. The screen RPC plus PostgREST's json_agg(...)->0"
+    }
+  ]
+}
