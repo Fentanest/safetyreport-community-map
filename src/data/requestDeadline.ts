@@ -1,5 +1,6 @@
 /** Bound the entire read, including auth refresh and response body consumption. */
-export const ANALYTICS_READ_TIMEOUT_MS = 20_000;
+// Temporarily 60 s: production Edge currently needs 18-33 s for the screen bundle (fix/screen-server-aggregate restores 20 s).
+export const ANALYTICS_READ_TIMEOUT_MS = 60_000;
 
 export class AnalyticsReadTimeout extends Error {
   constructor() { super('Analytics read deadline exceeded'); this.name = 'AnalyticsReadTimeout'; }

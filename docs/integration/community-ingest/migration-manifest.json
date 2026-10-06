@@ -486,7 +486,7 @@
    "repo": "map",
    "version": "202610060800",
    "path": "supabase/migrations/202610060800_service_role_statement_timeout.sql",
-   "sha256": "c99369bb5c2ca573b09e4a11955076b4ab1828869e65cd60f463ce0c9e609597",
+   "sha256": "4e7f9d3bc572010f318b11dd737c98455ec4e2ad2ffd6869d4cc3c4f226e0e9f",
    "depends_on": [
     "202610060700"
    ]

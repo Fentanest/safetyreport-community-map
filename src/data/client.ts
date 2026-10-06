@@ -8,7 +8,7 @@ import {
   placesResponseSchema, type AccessErrorDetails,
 } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
-import { AnalyticsReadTimeout, withReadDeadline } from './requestDeadline';
+import { ANALYTICS_READ_TIMEOUT_MS, AnalyticsReadTimeout, withReadDeadline } from './requestDeadline';
 
 export type DataMode = 'demo' | 'live';
 export const dataMode: DataMode = import.meta.env.VITE_DATA_MODE === 'demo' ? 'demo' : 'live';
@@ -63,7 +63,7 @@ export async function read(path: string, params: URLSearchParams | null, signal?
     return await withReadDeadline(deadline => readWithinDeadline(path, params, deadline), signal);
   } catch (e) {
     if (e instanceof AnalyticsReadTimeout) throw new PublicApiError(
-      '통계 요청이 20초 안에 완료되지 않았습니다. 잠시 뒤 다시 시도해 주세요. (오류 코드 REQUEST_TIMEOUT)',
+      `통계 요청이 ${ANALYTICS_READ_TIMEOUT_MS / 1000}초 안에 완료되지 않았습니다. 잠시 뒤 다시 시도해 주세요. (오류 코드 REQUEST_TIMEOUT)`,
       null, null, 'REQUEST_TIMEOUT');
     throw e;
   }

@@ -16,11 +16,11 @@ afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals();
 const never = () => new Promise<never>(() => {});
 
 describe('analytics read deadline', () => {
-  it('aborts a stalled request at 20 seconds with a visible code, without claiming an HTTP response', async () => {
+  it('aborts a stalled request at the read deadline with a visible code, without claiming an HTTP response', async () => {
     const fetcher = vi.fn(never); vi.stubGlobal('fetch', fetcher);
     const result = read('@screen', null);
     const check = expect(result).rejects.toMatchObject({ code: 'REQUEST_TIMEOUT', status: null,
-      message: expect.stringContaining('20초') });
+      message: expect.stringContaining(`${ANALYTICS_READ_TIMEOUT_MS / 1000}초`) });
     await vi.advanceTimersByTimeAsync(ANALYTICS_READ_TIMEOUT_MS - 1);
     expect(fetcher.mock.calls).toHaveLength(1);
     await vi.advanceTimersByTimeAsync(1); await check;
