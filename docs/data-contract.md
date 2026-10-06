@@ -89,3 +89,16 @@ prod output에는 fixtures/원번호를 복사하지 않는다. 1건·0분모·�
 ## 2026-10-06 전체 쿼리 감사
 
 `202610060200`~`060500`은 공개/개인 DTO, 배열 순서, 동의 lineage·공개 정책, 날짜 기준과 행 예산을 유지한다. legacy v2의 날짜 합집합/기간 내 선거를 cohort D13 규칙으로 바꾸지 않는다. manifest generation은 completed 관측이 키 집합에 들어오거나 나갈 때의 기존 증가량 그대로이며 bulk INSERT/DELETE에서도 행 수만큼 증가한다. UPDATE의 키 이동은 기존 행 판정을 유지한다. 기관 보정은 같은 CAS 조건·applied/skipped 수를 반환하고 projection version은 계속 불투명한 무효화 토큰이다. 상세 동등성·잔여 비용은 [감사 문서](implementation/query-audit-20261006/CHANGELOG.md) 참조.
+
+
+## 2026-10-06 · 연속 업로드와 화면 스냅샷 (`screen-v1`)
+
+새 지도 웹은 `GET my-analytics/screen`으로 대시보드와 현재 표·주소 상세·지도 확대·개인 비교를 묶어 받는다. `internal_analytics_read_snapshot`의 단일 STABLE SQL 호출에서 state·적격 facts·viewer를 같은 statement MVCC snapshot으로 읽는다. 업로드 완료를 기다리거나 쓰기를 막지 않는다. Edge는 그 불변 source만으로 각 기존 집계 함수를 호출한다. `meta.dataset_version`, `dashboard.dataset_version`, 성공한 모든 panel의 버전과 scope가 일치해야만 웹에서 수용한다. 원시 facts는 Edge 안에만 있고 브라우저/저장소/공유 캐시에 보내지 않는다. 내 신고는 인증된 사용자에서만 계산하며 이 개인 묶음은 public-analytics 응답과 분리한다.
+
+쿼리는 기존 scope + `panels` JSON 배열(최대 8개/8,000자)이다. 항목은 `{id,path,params}`이며 허용 path는 `entities`, `laws`, `places`, `places/pl1:…`, `compare`, `entity-prefix`다. 마지막 항목은 기관/담당자 확장 목록의 1~N 페이지를 한 번에 계산한다(한 페이지 100개, 원천 100,000행 한도 유지). 나머지 패널의 필드·정렬·분모·페이지 결과는 기존 경로와 같다. 응답은 `{schema_version:'screen-v1',meta,dashboard,panels:[{id,status,body}]}`다. 묶음의 `expected_version`은 과거 화면의 힌트이며 불일치를 거절하지 않는다. 사라진 주소는 해당 panel 404와 새 대시보드를 함께 반환하므로 선택을 자동 해제한다.
+
+화면의 표 검색/정렬/페이지/비교 변경은 새 묶음 하나로 전체를 교체한다. 같은 렌더의 요청은 합치고 수신한 패널은 **그 화면 버전에 한해** 메모리에서 재사용한다. 계정 변경은 전부 폐기하며 늦은 응답은 generation으로 버린다. 버전은 opaque 값이라 문자열 크기로 최신을 판단하지 않는다. 새 자료 때문에 화면 맞추기 요청을 반복하는 방식이 아니므로 연속 ingest 자체가 재시도/409를 만들지 않는다. 네트워크·권한·rate·원천 행 예산 등의 기존 오류는 숨기지 않는다.
+
+공개 단일 집계도 새 SQL snapshot으로 state와 facts/rollup을 함께 읽는다. 맞춤 통계는 한 응답의 전체/내 신고·표·차트·합계를 사용하며 `consistency=latest`이면 반환 버전을 채택한다. 통계 편집기의 후보 검색은 미적용 draft의 선택 도움이며 이미 만든 결과 숫자에 합치지 않는다. 랭킹 역시 단일 STABLE SQL로 전체 페이지+내 순위를 읽고 `consistency=latest`에서는 전체 페이지를 최신 자료로 교체한다(페이지끼리 이어붙이지 않음). 새 화면 프로토콜을 모르는 기존 요청의 명시적 `expected_version` fence는 하위호환으로 유지한다. 그 구형 독립 요청을 화면처럼 혼합해서는 안 되며 SQL → Edge → Pages 순서로 함께 갱신한다.
+
+DB에 화면 사본/새 테이블/인덱스를 만들지 않고 철회/삭제 이후 새 요청은 최신 적격 자료만 읽는다. 같은 이유로 장기 pin/TTL 스냅샷은 사용하지 않는다. 단일 응답이 시작할 때 이미 유효했던 스냅샷의 진행 중 읽기까지 소급 취소하지는 않는다. 서비스 권한·JWT/카카오/활성동의/10건 gate·no-store·기존 timeout을 유지한다.

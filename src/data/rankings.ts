@@ -36,7 +36,7 @@ export async function loadRankings(
       "auth_required",
     );
   }
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ consistency: "latest" });
   for (const [k, v] of Object.entries(query)) {
     if (v !== null) params.set(k, String(v));
   }

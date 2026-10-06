@@ -33,13 +33,13 @@ export default function LawTable(p: Props) {
   const [query, setQuery] = useState<{ q: string; sort: SortSpec; page: number }>({ q: '', sort: DEFAULT_SORT, page: 1 });
   const [input, setInput] = useState('');
   const [composing, setComposing] = useState(false);
-  const [list, setList] = useState<{ key: string; items: PublicLaw[]; total: number } | null>(null);
+  const [list, setList] = useState<{ key: string; items: PublicLaw[]; total: number; version: string } | null>(null);
   const [request, setRequest] = useState<{ key: string; state: 'idle' | 'loading' | 'error' } | null>(null);
   const [reload, setReload] = useState(0);
   const scopeKey = p.scope ? `${JSON.stringify(p.scope)}|${p.version}` : '';
   // a new displayed scope starts again from page 1 (the sort choice stays)
-  const [queryScope, setQueryScope] = useState(scopeKey);
-  if (queryScope !== scopeKey) { setQueryScope(scopeKey); setQuery((q) => ({ ...q, page: 1 })); }
+  const [queryScope, setQueryScope] = useState(JSON.stringify(p.scope));
+  if (queryScope !== JSON.stringify(p.scope)) { setQueryScope(JSON.stringify(p.scope)); setQuery((q) => ({ ...q, page: 1 })); }
   useEffect(() => {
     if (composing) return;
     const t = window.setTimeout(() => { if (input.trim() !== query.q) setQuery((q) => ({ ...q, q: input.trim(), page: 1 })); }, 300);
@@ -47,7 +47,7 @@ export default function LawTable(p: Props) {
   }, [input, composing]); // eslint-disable-line react-hooks/exhaustive-deps
   const server = !!p.serverList && !!p.scope && !!p.version && (expanded || query.q !== '' || !isDefault(query.sort) || query.page > 1);
   const reqKey = `${scopeKey}|${JSON.stringify(query)}|${expanded}|${reload}`;
-  const currentList = list?.key === reqKey ? list : null;
+  const currentList = list?.key === reqKey && list.version === p.version ? list : null;
   const state = server ? (request?.key === reqKey ? request.state : 'loading') : 'idle';
   useEffect(() => {
     if (!server || !p.scope || !p.version) { setRequest(null); return; }
@@ -55,7 +55,7 @@ export default function LawTable(p: Props) {
     setList(null);
     setRequest({ key: reqKey, state: 'loading' });
     loadLaws(p.scope, { q: query.q, sort: query.sort, page: query.page, pageSize: expanded ? PAGE_SIZE : SUMMARY_ROWS }, p.version, ac.signal)
-      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows }); setRequest({ key: reqKey, state: 'idle' }); } })
+      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows, version: r.datasetVersion }); setRequest({ key: reqKey, state: 'idle' }); } })
       .catch(() => { if (!ac.signal.aborted) setRequest({ key: reqKey, state: 'error' }); });
     return () => ac.abort();
   }, [reqKey, server]); // eslint-disable-line react-hooks/exhaustive-deps

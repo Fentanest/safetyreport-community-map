@@ -105,6 +105,13 @@ export class RefreshController {
     this.opts = { ...DEFAULT_REFRESH_OPTIONS, ...opts };
   }
 
+  /** An additional panel arrived with a complete replacement screen, from the same account/scope. */
+  adopt(data: DashboardData): void {
+    if (this.disposed || this.suspended || this.inflight || !this.state.displayed || !this.state.requested ||
+      !sameScope(data.scope, this.state.requested)) return;
+    this.meta = data.meta;
+    this.set({ meta: data.meta, displayed: { data, scope: data.scope, version: data.meta.dataset_version }, error: null });
+  }
   snapshot(): RefreshState { return this.state; }
   subscribe(fn: (s: RefreshState) => void): () => void {
     this.listeners.add(fn);
@@ -249,9 +256,10 @@ export class RefreshController {
       const data = await this.deps.fetchDashboard(meta, scope, ac.signal);
       if (ac.signal.aborted || gen !== this.state.generation) return;
       this.inflight = null;
+      this.meta = data.meta;
       this.retries = 0;
       const stillWanted = this.state.requested && sameScope(this.state.requested, scope);
-      this.set({ displayed: { data, scope, version: data.meta.dataset_version }, error: null,
+      this.set({ meta: data.meta, displayed: { data, scope, version: data.meta.dataset_version }, error: null,
         // an automatic request may already be waiting for its slot behind this one: it stays visible as waiting
         refreshing: !stillWanted, scheduled: this.timer !== null, fetching: false, wait: this.timer !== null ? 'debounce' : null });
     } catch (e) {

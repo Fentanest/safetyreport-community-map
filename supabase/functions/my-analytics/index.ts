@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.1';
-import { createPersonalHandler } from '../../../server/personalHandler.ts';
+import { createScreenHandler } from '../../../server/screenHandler.ts';
+import { createPersonalHandler, type PersonalDeps } from '../../../server/personalHandler.ts';
 
 // User-only personal comparison (verify_jwt = true in config.toml AND getUser + claims in the handler).
 // The viewer id is taken from the verified user only. The service client runs the service_role-only
@@ -14,7 +15,7 @@ const client = createClient(supabaseUrl ?? 'http://invalid.local', serverKey ?? 
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
 
-Deno.serve(createPersonalHandler({
+const deps: PersonalDeps = {
   enabled,
   jwtIssuer: Deno.env.get('AUTH_JWT_ISSUER') || null,
   allowedOrigins: (Deno.env.get('MY_ANALYTICS_ALLOWED_ORIGINS') || 'https://safemap.worklazy.net')
@@ -34,4 +35,6 @@ Deno.serve(createPersonalHandler({
     return data.user ? { id: data.user.id, isAnonymous: data.user.is_anonymous === true } : null;
   },
   log: entry => console.log(JSON.stringify(entry)),
-}));
+};
+const personal = createPersonalHandler(deps), screen = createScreenHandler(deps);
+Deno.serve(request => /\/my-analytics\/screen\/?$/.test(new URL(request.url).pathname) ? screen(request) : personal(request));

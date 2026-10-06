@@ -29,6 +29,13 @@ async function rateBucket(viewerId: string): Promise<string> {
 }
 
 const handle = createPublicHandler({
+  async getSnapshot(scope, options, kind, rollupOptions) {
+    const value = await rpc('internal_analytics_read_snapshot', {
+      p_scope: scope, p_previous: options.previous, p_kind: kind ?? null, p_options: rollupOptions ?? {},
+    }) as { state: AnalyticsState; facts?: PrivateFact[]; rollup?: unknown };
+    if (!value?.state || (kind ? !value.rollup : !Array.isArray(value.facts))) throw new Error('analytics snapshot unavailable');
+    return { state: value.state, facts: value.facts, ...(kind ? { rollup: parseRollup(kind, value.rollup) } : {}) };
+  },
   async getState(): Promise<AnalyticsState> {
     // single-date-v1 state: the old state plus the 전체 기간 of each date basis
     const value = await rpc('internal_analytics_cohort_state');

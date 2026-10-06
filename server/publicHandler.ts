@@ -34,6 +34,9 @@ export interface FactsOptions {
 
 export interface AnalyticsRepository {
   getState(): Promise<AnalyticsState>;
+  /** Production: state and source from one STABLE SQL statement, never independent reads. */
+  getSnapshot?(scope: Scope, options: FactsOptions, kind?: RollupKind, rollupOptions?: RollupOptions):
+    Promise<{ state: AnalyticsState; facts?: PrivateFact[]; rollup?: RollupResult }>;
   /** facts of the scope's cohort window on scope.date_basis (representative elected before the date condition) */
   getFacts(scope: Scope, options?: FactsOptions): Promise<PrivateFact[]>;
   /** Production narrow routes return globally sorted/paged aggregate DTOs, never source observations. */
@@ -77,7 +80,7 @@ export class QueryError extends Error {
 type Headers = Record<string, string>;
 const allowed = new Set([
   'date_basis', 'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
-  'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'sort_value', 'dir', 'agency_type', 'view_bbox', 'entity_limit',
+  'consistency', 'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'sort_value', 'dir', 'agency_type', 'view_bbox', 'entity_limit',
 ]);
 /** 맞춤 통계 parameters (S05–S08): the declarative spec / candidate search; never part of the scope */
 export const STATS_ONLY = ['spec', 'kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key'];
@@ -116,6 +119,7 @@ function errorWith(code: string, status: number, headers: Headers, details?: Vie
 export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 'data_min' | 'data_max'>,
   names: ReadonlySet<string> = allowed): Scope {
   for (const name of params.keys()) if (!names.has(name) || params.getAll(name).length !== 1) throw new QueryError('INVALID_QUERY', 400);
+  if (params.has('consistency') && params.get('consistency') !== 'latest') throw new QueryError('INVALID_QUERY', 400);
   const start = params.get('start'), end = params.get('end');
   if (!start || !end || !date.test(start) || !date.test(end)) throw new QueryError('INVALID_QUERY', 400);
   // U01: one date selects the reports. An old link without it opens on the default (답변일); anything else is refused.
@@ -216,14 +220,19 @@ async function statisticsRoute(route: string, url: URL, state: AnalyticsState, r
   for (const n of STATS_ONLY) scopeParams.delete(n);
   const scopeBasisGiven = scopeParams.has('date_basis');
   let scope = parseScope(scopeParams, state);
-  if (url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) throw new QueryError('DATASET_CHANGED', 409);
-  if (!state.ready || !state.generated_at) throw new QueryError('AGGREGATE_NOT_READY', 503);
+  const read = async () => {
+    const snap = repo.getSnapshot ? await repo.getSnapshot(scope, { previous: false }) : null;
+    if (snap) state = snap.state;
+    if (url.searchParams.get('consistency') !== 'latest' && url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) throw new QueryError('DATASET_CHANGED', 409);
+    if (!state.ready || !state.generated_at) throw new QueryError('AGGREGATE_NOT_READY', 503);
+    return snap?.facts ?? await repo.getFacts(scope, { previous: false });
+  };
   if (route === 'statistics/query') {
     for (const n of ['kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key']) if (url.searchParams.has(n)) throw new QueryError('INVALID_QUERY', 400);
     const spec = parseSpec(url.searchParams.get('spec'));
     if (spec.population !== 'all') throw new QueryError('INVALID_QUERY', 400);
     scope = unifyBasis(scope, scopeBasisGiven, spec.date_basis);
-    const facts = await repo.getFacts(scope, { previous: false });
+    const facts = await read();
     return aggregateStatistics({ facts, scope, spec, datasetVersion: state.dataset_version, dataWindow: basisWindow(scope.date_basis, windowOptions(state)) });
   }
   if (url.searchParams.has('spec')) throw new QueryError('INVALID_QUERY', 400);
@@ -243,7 +252,7 @@ async function statisticsRoute(route: string, url: URL, state: AnalyticsState, r
     try { keys = JSON.parse(rawKeys); } catch { throw new QueryError('INVALID_QUERY', 400); }
     if (!Array.isArray(keys) || keys.length > 50 || keys.some(k => typeof k !== 'string' || k.length > 160)) throw new QueryError('INVALID_QUERY', 400);
   }
-  const facts = await repo.getFacts(scope, { previous: false });
+  const facts = await read();
   return statisticsCandidates({ facts, scope, datasetVersion: state.dataset_version, kind: url.searchParams.get('kind') ?? '', q, cursor, limit,
     filters: parseFilters(url.searchParams.get('filters')), basis, placeKey, keys });
 }
@@ -300,7 +309,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       const gate = mapViewerEligibility(v);
       if (!gate.ok) return errorResponse('upload_required', 403, { required: gate.required, current: gate.current });
       if (!await repo.allowRequest(request, uid)) return errorResponse('RATE_LIMITED', 429);
-      const state = await repo.getState();
+      let state = await repo.getState();
       if (route === 'meta') {
         if ([...url.searchParams].length) throw new QueryError('INVALID_QUERY', 400);
         return json(meta(state), 200);
@@ -330,11 +339,6 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
       scopeParams.delete('view_bbox');
       scopeParams.delete('entity_limit');
       const scope = parseScope(scopeParams, state);
-      if (url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) {
-        throw new QueryError('DATASET_CHANGED', 409);
-      }
-      if (!state.ready) throw new QueryError('AGGREGATE_NOT_READY', 503);
-      if (!state.generated_at) throw new QueryError('AGGREGATE_NOT_READY', 503);
       if (route === 'entities') {
         if (!['agency', 'manager'].includes(url.searchParams.get('kind') || '')) throw new QueryError('INVALID_QUERY', 400);
         const type = url.searchParams.get('agency_type');
@@ -346,6 +350,15 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         catch { throw new QueryError('INVALID_QUERY', 400); }
         if (!/^pl1:[0-9a-f]{16}$/.test(placeKey)) throw new QueryError('INVALID_QUERY', 400);
       }
+      const previous = route === 'dashboard' || route === 'overview' || placeKey !== null;
+      const narrow = !!repo.getRollup && ['entities', 'laws', 'series'].includes(route);
+      const rollupKind: RollupKind = route === 'entities' ? (url.searchParams.get('kind') === 'agency' ? 'agency' : 'manager') : route as RollupKind;
+      const snap = repo.getSnapshot ? await repo.getSnapshot(scope, { previous }, narrow ? rollupKind : undefined,
+        narrow ? { page: pageOf(url.searchParams).page, page_size: pageOf(url.searchParams).pageSize,
+          q: (url.searchParams.get('q') || '').trim(), sort: parseSort(url.searchParams), agency_type: url.searchParams.get('agency_type'), expected_version: state.dataset_version } : undefined) : null;
+      if (snap) state = snap.state;
+      if (url.searchParams.get('consistency') !== 'latest' && url.searchParams.get('expected_version') && url.searchParams.get('expected_version') !== state.dataset_version) throw new QueryError('DATASET_CHANGED', 409);
+      if (!state.ready || !state.generated_at) throw new QueryError('AGGREGATE_NOT_READY', 503);
       const common = { schema_version: 2, dataset_version: state.dataset_version, sample: false, scope,
         cohort_policy_version: COHORT_POLICY_VERSION };
       const window = basisWindow(scope.date_basis, windowOptions(state));
@@ -355,14 +368,13 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
         if (rawQ !== null && rawQ.length > 160) throw new QueryError('INVALID_QUERY', 400);
         const sort = parseSort(url.searchParams);
         const kind: RollupKind = route === 'entities' ? (url.searchParams.get('kind') === 'agency' ? 'agency' : 'manager') : route;
-        const result = await repo.getRollup(scope, kind, { page, page_size: pageSize, q: (rawQ || '').trim(), sort,
+        const result = snap?.rollup ?? await repo.getRollup(scope, kind, { page, page_size: pageSize, q: (rawQ || '').trim(), sort,
           agency_type: url.searchParams.get('agency_type'), expected_version: state.dataset_version });
         if (route === 'series') return json({ ...common, monthly: rollupMonths(result, scope, window, todayKst()) }, 200);
         return json({ ...common, sort, items: result.items, total_rows: result.total_rows, page, page_size: pageSize }, 200);
       }
       // D14: only the routes that show a comparison read the previous window
-      const previous = route === 'dashboard' || route === 'overview' || placeKey !== null;
-      const facts = await repo.getFacts(scope, { previous });
+      const facts = snap?.facts ?? await repo.getFacts(scope, { previous });
       if (placeKey !== null) {
         // R05/R07 + U02: one address, every fact of the place key under the scope (never a coordinate bbox);
         // the focus overview uses the SAME builder as the dashboard, restricted to this address

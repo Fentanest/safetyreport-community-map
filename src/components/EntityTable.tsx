@@ -111,7 +111,7 @@ export default function EntityTable(p: Props) {
   const [input, setInput] = useState('');
   const [composing, setComposing] = useState(false);
   const [query, setQuery] = useState<Query>(DEFAULT_QUERY);
-  const [list, setList] = useState<{ key: string; items: PublicEntity[]; total: number } | null>(null);
+  const [list, setList] = useState<{ key: string; items: PublicEntity[]; total: number; version: string } | null>(null);
   const [status, setStatus] = useState<{ key: string; phase: 'loading' | 'ready' | 'error'; error?: string } | null>(null);
   const [reload, setReload] = useState(0);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -131,14 +131,14 @@ export default function EntityTable(p: Props) {
   const needServer = p.serverList && (custom || expanded);
   const pageSize = expanded ? PAGE_SIZE : SUMMARY_ROWS;
   const scopeKey = `${JSON.stringify(p.scope)}|${p.version}`;
-  const [queryScope, setQueryScope] = useState(scopeKey);
+  const [queryScope, setQueryScope] = useState(JSON.stringify(p.scope));
   // Adjust before committing children/effects: no request for an old page in the new scope.
-  if (queryScope !== scopeKey) {
-    setQueryScope(scopeKey);
+  if (queryScope !== JSON.stringify(p.scope)) {
+    setQueryScope(JSON.stringify(p.scope));
     setQuery((q) => ({ ...q, page: 1 }));
   }
   const reqKey = `${scopeKey}|${p.tab}|${JSON.stringify(query)}|${pageSize}|${reload}`;
-  const currentList = list?.key === reqKey ? list : null;
+  const currentList = list?.key === reqKey && list.version === p.version ? list : null;
   const error = status?.key === reqKey && status.phase === 'error' ? status.error : null;
   const loading = needServer && !error && (!currentList || (status?.key === reqKey && status.phase === 'loading'));
   useEffect(() => {
@@ -148,7 +148,7 @@ export default function EntityTable(p: Props) {
     setStatus({ key: reqKey, phase: 'loading' });
     loadEntities(p.scope, { kind: p.tab, q: query.q, sort: query.sort, agencyType: query.type, page: query.page, pageSize },
       p.version, ac.signal)
-      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows }); setStatus({ key: reqKey, phase: 'ready' }); } })
+      .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows, version: r.datasetVersion }); setStatus({ key: reqKey, phase: 'ready' }); } })
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
         // a local table error — the map and charts stay as they are, and it is never shown as "no results"

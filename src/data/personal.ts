@@ -174,6 +174,10 @@ export async function loadCompare(scope: Scope, version: string, auth: MapAuth, 
     const { demoCompare } = await import('./demoEngine');
     return acceptCompare(await demoCompare(scope, version, auth), scope, version);
   }
+  const { screenCoordinator, readScreenPanel } = await import('./client');
+  if (screenCoordinator.matches(scope)) {
+    return personalCompareSchema.parse(await readScreenPanel(scope, { id: 'compare', path: 'compare', params: {} }, signal)) as PersonalCompare;
+  }
   const snap = auth.snapshot();
   if (snap.status === 'unconfigured') throw personalError('unconfigured');
   let token = await auth.accessToken();

@@ -150,3 +150,8 @@ RPC/Edge/Pages 계약은 불변이며 Edge·Pages 재배포는 필요 없다. �
 ## 2026-10-06 전체 쿼리 감사
 
 공유 이력의 auth `202610050100` → map `202610060100` → `202610060200` → `202610060300` → `202610060400` → `202610060500` 순서를 따른다. 이번 신규 변경은 SQL이며 Edge/Pages/앱 재배포가 필요 없다. 운영 미접속 상태의 명령·잠금·forward rollback 절차는 [MIGRATION.md](implementation/query-audit-20261006/MIGRATION.md)에 있다.
+
+
+## 2026-10-06 · DATASET_CHANGED 화면 수정
+
+쿼리 감사에 추가한 `202610060600_analytics_read_snapshot.sql`까지 SQL 적용 → `public-analytics`, `my-analytics`, `user-rankings` Edge → main Pages 순서다. 새 웹은 개인 `my-analytics/screen` 묶음을 사용하므로 Edge 전에 Pages만 배포하면 안 된다. 기존 앱 ingest/account/relay/my-reports 계약과 배포는 변경하지 않는다. 운영자가 한 번에 실행할 명령은 [MIGRATION.md](implementation/dataset-snapshot-20261006/MIGRATION.md). 이번 작업에서는 운영 접속·배포·push를 하지 않았다.

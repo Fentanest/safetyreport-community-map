@@ -67,12 +67,12 @@ export async function loadStatistics(scope: Scope, spec: StatisticsSpec, version
     const { demoStatistics } = await import('./demoEngine');
     raw = demoStatistics(scope, spec);
   } else {
-    const params = scopeParams(scope, version ?? undefined, { spec: JSON.stringify(spec) });
+    const params = scopeParams(scope, version ?? undefined, { spec: JSON.stringify(spec), consistency: 'latest' });
     raw = spec.population === 'all' ? await read('statistics/query', params, signal) : await readPersonal(params, signal);
   }
   const result = statisticsResultSchema.parse(requirePolicy(raw)) as StatisticsResult;
   // the answer must be for exactly this request (a late or mismatched answer is never shown as this one)
-  if ((version && result.dataset_version !== version) || !sameScope(result.scope, scope) || JSON.stringify(result.spec) !== JSON.stringify(spec)) throw changed();
+  if (!sameScope(result.scope, scope) || JSON.stringify(result.spec) !== JSON.stringify(spec)) throw changed();
   return result;
 }
 
@@ -83,7 +83,7 @@ export async function loadCandidates(scope: Scope, q: { kind: string; q: string;
     const { demoCandidates } = await import('./demoEngine');
     raw = demoCandidates(scope, q);
   } else {
-    const extra: Record<string, string> = { kind: q.kind, cursor: String(q.cursor), limit: String(q.limit), basis: q.basis };
+    const extra: Record<string, string> = { consistency: 'latest', kind: q.kind, cursor: String(q.cursor), limit: String(q.limit), basis: q.basis };
     if (q.q.trim()) extra.q = q.q.trim();
     if (q.filters.length) extra.filters = JSON.stringify(q.filters);
     if (q.placeKey) extra.place_key = q.placeKey;
@@ -91,6 +91,5 @@ export async function loadCandidates(scope: Scope, q: { kind: string; q: string;
     raw = await read('statistics/candidates', scopeParams(scope, version ?? undefined, extra), signal);
   }
   const page = candidatesSchema.parse(raw) as StatCandidatesPage;
-  if (version && page.dataset_version !== version) throw changed();
   return page;
 }

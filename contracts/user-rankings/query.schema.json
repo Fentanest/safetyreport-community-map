@@ -116,6 +116,10 @@
           "type": "null"
         }
       ]
+    },
+    "consistency": {
+      "type": "string",
+      "const": "latest"
     }
   },
   "required": [

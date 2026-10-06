@@ -28,7 +28,7 @@ export interface PersonalSource {
 }
 
 const SCOPE_PARAMS: ReadonlySet<string> = new Set([
-  'date_basis', 'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law', 'expected_version',
+  'date_basis', 'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law', 'expected_version', 'consistency',
 ]);
 
 const MESSAGES: Record<string, [number, string]> = {
@@ -126,7 +126,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       if (!viewer.kakao) fail('kakao_required');
       if (!viewer.session) fail('session_expired');
       const expected = url.searchParams.get('expected_version');
-      if (expected && expected !== state.dataset_version) fail('DATASET_CHANGED');
+      if (url.searchParams.get('consistency') !== 'latest' && expected && expected !== state.dataset_version) fail('DATASET_CHANGED');
       if (!state.ready || !state.generated_at) fail('AGGREGATE_NOT_READY');
       if (facts.length > 100000) fail('RESULT_TOO_LARGE');
 

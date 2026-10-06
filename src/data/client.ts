@@ -1,7 +1,10 @@
+import { z } from 'zod';
+import { personalCompareSchema } from './personal';
+import { ScreenCoordinator, type ScreenPanel, type ScreenPacket } from './screenCoordinator';
 import { COHORT_POLICY_VERSION, type DashboardData, type PlaceDetail, type PublicEntity, type PublicLaw, type PublicMeta, type PublicPoint, type Scope } from '../domain/public';
 import { DEFAULT_SORT, type SortSpec } from '../domain/tableSort';
 import {
-  entitiesResponseSchema, errorResponseSchema, lawsResponseSchema, metaSchema, dashboardResponseSchema, placeDetailResponseSchema,
+  entitiesResponseSchema, entitySchema, errorResponseSchema, lawsResponseSchema, metaSchema, dashboardResponseSchema, placeDetailResponseSchema,
   placesResponseSchema, type AccessErrorDetails,
 } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
@@ -57,7 +60,7 @@ export function sameScope(a: Scope, b: Scope): boolean {
 export async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
   if (!base) throw new PublicApiError('통계를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
-  const url = `${base}/public-analytics/${path}${params ? `?${params}` : ''}`;
+  const url = `${base}/${path === '@screen' ? 'my-analytics/screen' : `public-analytics/${path}`}${params ? `?${params}` : ''}`;
   const auth = mapAuth();
   await auth.settled();
   const token = await auth.accessToken();
@@ -162,7 +165,7 @@ const sameSort = (a: SortSpec, b: SortSpec) => a.column === b.column && a.value 
 
 // SOL-08: full-list entity browsing over /entities (server search/sort/pagination). The dashboard
 // top-100 arrays stay summary-only; this is the table's data source in live mode.
-export async function loadEntities(scope: Scope, query: EntitiesQuery, version?: string, signal?: AbortSignal): Promise<EntitiesPage> {
+export async function loadEntities(scope: Scope, query: EntitiesQuery, version?: string, signal?: AbortSignal, slot = 'entities'): Promise<EntitiesPage> {
   const extra: Record<string, string> = {
     kind: query.kind,
     page: String(query.page ?? 1),
@@ -175,8 +178,9 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
     const { demoEntities } = await import('./demoEngine');
     return demoEntities(scope, query);
   }
-  const parsed = entitiesResponseSchema.parse(requirePolicy(await read('entities', scopeParams(scope, version, extra), signal)));
-  if (version !== undefined && parsed.dataset_version !== version) {
+  const bundled = screenCoordinator.matches(scope);
+  const parsed = entitiesResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: slot, path: 'entities', params: extra }, signal) : await read('entities', scopeParams(scope, version, extra), signal)));
+  if (!bundled && version !== undefined && parsed.dataset_version !== version) {
     throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   if (!sameScope(parsed.scope, scope) || !sameSort(parsed.sort as SortSpec, query.sort ?? DEFAULT_SORT)) {
@@ -197,8 +201,9 @@ export async function loadLaws(scope: Scope, query: LawsQuery, version?: string,
     const { demoLaws } = await import('./demoEngine');
     return demoLaws(scope, query);
   }
-  const parsed = lawsResponseSchema.parse(requirePolicy(await read('laws', scopeParams(scope, version, extra), signal)));
-  if ((version !== undefined && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope) ||
+  const bundled = screenCoordinator.matches(scope);
+  const parsed = lawsResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: 'laws', path: 'laws', params: extra }, signal) : await read('laws', scopeParams(scope, version, extra), signal)));
+  if ((!bundled && version !== undefined && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope) ||
     !sameSort(parsed.sort as SortSpec, query.sort ?? DEFAULT_SORT)) {
     throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
@@ -223,12 +228,12 @@ export async function loadMeta(signal?: AbortSignal): Promise<PublicMeta> {
 /** One dashboard snapshot for `scope` checked against `meta.dataset_version` (409 when the data changed). */
 export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
   if (import.meta.env.VITE_DATA_MODE === 'demo') return loadDashboard(scope, signal);
-  const q = scopeParams(scope, meta.dataset_version);
-  const result = dashboardResponseSchema.parse(requirePolicy(await read('dashboard', q, signal)));
-  if (result.dataset_version !== meta.dataset_version || result.sample !== meta.sample ||
-      !sameScope(result.scope, scope)) {
-    throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
-  }
+  void meta; // bootstrap bounds are a hint; this response carries the actual snapshot metadata.
+  return screenCoordinator.open(scope, signal);
+}
+
+function dashboardData(meta: PublicMeta, result: z.infer<typeof dashboardResponseSchema>): DashboardData {
+  const scope = result.scope;
   return {
     meta: { ...meta, location_missing: result.location_missing ?? undefined },
     scope, overview: result.overview, points: result.points, monthly: result.monthly,
@@ -241,6 +246,36 @@ export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?:
     analytics: result.analytics ?? null,
     map_unplaced: result.map_unplaced ?? null,
   };
+}
+
+const entityPrefixSchema = entitiesResponseSchema.extend({ items: z.array(entitySchema).max(100000), page_size: z.number().int().min(100).max(100000) });
+const screenSchema = z.strictObject({ schema_version: z.literal('screen-v1'), meta: metaSchema,
+  dashboard: dashboardResponseSchema, panels: z.array(z.strictObject({ id: z.string(), status: z.number().int(), body: z.unknown() })).max(8) });
+async function readScreen(scope: Scope, panels: ScreenPanel[], signal: AbortSignal): Promise<ScreenPacket> {
+  const packet = screenSchema.parse(await read('@screen', scopeParams(scope, undefined, { panels: JSON.stringify(panels) }), signal));
+  if (packet.meta.dataset_version !== packet.dashboard.dataset_version || packet.meta.sample !== packet.dashboard.sample ||
+    !sameScope(packet.dashboard.scope, scope) || packet.panels.length !== panels.length) throw new PublicApiError('화면 응답이 일치하지 않습니다.', 503);
+  const ids = new Set<string>();
+  for (const result of packet.panels) {
+    const spec = panels.find(p => p.id === result.id);
+    if (!spec || ids.has(result.id)) throw new PublicApiError('화면 응답이 일치하지 않습니다.', 503);
+    ids.add(result.id);
+    if (result.status !== 200) { errorResponseSchema.parse(result.body); continue; }
+    const schema = spec.path === 'entity-prefix' ? entityPrefixSchema : spec.path === 'compare' ? personalCompareSchema : spec.path === 'entities' ? entitiesResponseSchema :
+      spec.path === 'laws' ? lawsResponseSchema : spec.path === 'places' ? placesResponseSchema : placeDetailResponseSchema;
+    const body = schema.parse(result.body);
+    if (body.dataset_version !== packet.meta.dataset_version || !sameScope(body.scope, scope)) throw new PublicApiError('화면 응답이 일치하지 않습니다.', 503);
+  }
+  return { data: dashboardData(packet.meta, packet.dashboard), panels: packet.panels };
+}
+export const screenCoordinator = new ScreenCoordinator(readScreen);
+export async function readScreenPanel(scope: Scope, panel: ScreenPanel, signal?: AbortSignal): Promise<unknown> {
+  const result = await screenCoordinator.panel(scope, panel, signal);
+  if (result.status !== 200) {
+    const body = errorResponseSchema.parse(result.body);
+    throw new PublicApiError(body.error.message, result.status, null, body.error.code, body.error.details ?? null);
+  }
+  return result.body;
 }
 
 export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
@@ -276,8 +311,9 @@ export async function loadPlace(scope: Scope, key: string, version: string, sign
     return detail;
   }
   const extra = entityLimit !== 100 ? { entity_limit: String(Math.min(1000, Math.max(1, entityLimit))) } : undefined;
-  const parsed = placeDetailResponseSchema.parse(requirePolicy(await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version, extra), signal)));
-  if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope) || parsed.place.key !== key) {
+  const bundled = screenCoordinator.matches(scope);
+  const parsed = placeDetailResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: 'detail', path: `places/${key}`, params: extra ?? {} }, signal) : await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version, extra), signal)));
+  if ((!bundled && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope) || parsed.place.key !== key) {
     throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
   return { dataset_version: parsed.dataset_version, scope: parsed.scope, cohort_policy_version: parsed.cohort_policy_version,
@@ -287,14 +323,31 @@ export async function loadPlace(scope: Scope, key: string, version: string, sign
 
 /** R07/F04: exact address pins inside a viewport for DISPLAY only; the statistics scope is unchanged. */
 export async function loadPlacesInView(scope: Scope, view: [number, number, number, number], version: string,
-  signal?: AbortSignal): Promise<{ points: PublicPoint[]; total: number; compacted: boolean }> {
+  signal?: AbortSignal): Promise<{ points: PublicPoint[]; total: number; compacted: boolean; datasetVersion?: string }> {
   if (import.meta.env.VITE_DATA_MODE === 'demo') {
     const { demoPlacesInView } = await import('./demoEngine');
     return demoPlacesInView(scope, view);
   }
-  const parsed = placesResponseSchema.parse(requirePolicy(await read('places', scopeParams(scope, version, { view_bbox: view.join(',') }), signal)));
-  if (parsed.dataset_version !== version || !sameScope(parsed.scope, scope)) {
+  const bundled = screenCoordinator.matches(scope);
+  const extra = { view_bbox: view.join(',') };
+  const parsed = placesResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: 'viewport', path: 'places', params: extra }, signal) : await read('places', scopeParams(scope, version, extra), signal)));
+  if ((!bundled && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope)) {
     throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
   }
-  return { points: parsed.points, total: parsed.total_places, compacted: parsed.compacted };
+  return { points: parsed.points, total: parsed.total_places, compacted: parsed.compacted, datasetVersion: parsed.dataset_version };
+}
+
+/** The expandable side list/chart receives its complete prefix in one screen, never pages from different snapshots. */
+export async function loadEntityPrefix(scope: Scope, kind: EntityKind, q: string, pages: number, version: string, signal?: AbortSignal) {
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
+    const items: PublicEntity[] = []; let total = 0;
+    for (let page = 1; page <= pages; page++) {
+      const r = await loadEntities(scope, { kind, q, page, pageSize: 100 }, version, signal);
+      items.push(...r.items); total = r.totalRows; if (items.length >= total) break;
+    }
+    return { items, total, version };
+  }
+  const r = entityPrefixSchema.parse(await readScreenPanel(scope, { id: `scope-${kind}`, path: 'entity-prefix',
+    params: { kind, q, through_page: String(pages) } }, signal));
+  return { items: r.items, total: r.total_rows, version: r.dataset_version };
 }

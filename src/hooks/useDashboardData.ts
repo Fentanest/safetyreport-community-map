@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { Scope } from '../domain/public';
-import { loadDashboardWith, loadMeta } from '../data/client';
+import { loadDashboardWith, loadMeta, screenCoordinator } from '../data/client';
 import { RefreshController, type RefreshState, type RequestSource } from '../data/refreshController';
 
 export interface DashboardDataApi extends RefreshState {
@@ -23,9 +23,10 @@ export function useDashboardData(scope: Scope, source: RequestSource, sessionKey
     setTimer: (fn, ms) => window.setTimeout(fn, ms),
     clearTimer: (id) => window.clearTimeout(id as number),
   }), []);
+  useEffect(() => screenCoordinator.subscribe(data => controller.adopt(data)), [controller]);
   const sessionRef = useRef<string | null | undefined>(undefined);
   // unmount (and React StrictMode's simulated unmount): cancel and forget; the next mount starts over
-  useEffect(() => () => { controller.reset(); sessionRef.current = undefined; }, [controller]);
+  useEffect(() => () => { controller.reset(); screenCoordinator.reset(); sessionRef.current = undefined; }, [controller]);
   const subscribe = useCallback((fn: () => void) => controller.subscribe(fn), [controller]);
   const read = useCallback(() => controller.snapshot(), [controller]);
   const state = useSyncExternalStore(subscribe, read, read);
@@ -34,7 +35,7 @@ export function useDashboardData(scope: Scope, source: RequestSource, sessionKey
   const scopeKey = JSON.stringify(scope);
   const wasEnabled = useRef(false);
   useLayoutEffect(() => {
-    if (sessionRef.current !== undefined && sessionRef.current !== sessionKey) controller.reset();
+    if (sessionRef.current !== undefined && sessionRef.current !== sessionKey) { controller.reset(); screenCoordinator.reset(); }
     const first = sessionRef.current !== sessionKey;
     sessionRef.current = sessionKey;
     if (sessionKey === null || !enabled) {

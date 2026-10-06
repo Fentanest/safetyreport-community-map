@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { DATE_BASIS_LABEL, type DashboardData, type PublicEntity, type PublicRegion, type Scope } from '../domain/public';
 import { SIDO_LIST, regionLabel, sggName, sidoOf } from '../data/regions';
-import { loadEntities } from '../data/client';
+import { loadEntityPrefix } from '../data/client';
 import { useReportActivity } from '../data/queryActivity';
 import { acceptRate, fmtDate, fmtInt, fmtPercent } from './format';
 import { entityLabel } from './entityMetrics';
@@ -49,12 +49,12 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   const [input, setInput] = useState('');
   const [q, setQ] = useState('');
   const [pages, setPages] = useState(0); // extra server pages beyond the dashboard's first page (search: from page 1)
-  const [server, setServer] = useState<{ key: string; items: PublicEntity[]; total: number } | null>(null);
+  const [server, setServer] = useState<{ key: string; items: PublicEntity[]; total: number; version: string } | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [retry, setRetry] = useState(0); // the chart's "다시 시도": the same pages again, never one page further
   const [composing, setComposing] = useState(false);
   const scopeKey = `${JSON.stringify(scope)}|${version}`;
-  useEffect(() => { setShown(PREVIEW); setPages(0); setServer(null); setInput(''); setQ(''); setRetry(0); }, [scopeKey]);
+  useEffect(() => { setShown(PREVIEW); setPages(0); setServer(null); setInput(''); setQ(''); setRetry(0); }, [JSON.stringify(scope)]);
   useEffect(() => {
     if (composing) return;
     const t = window.setTimeout(() => { if (input.trim() !== q) { setQ(input.trim()); setPages(0); setServer(null); } }, 300);
@@ -68,17 +68,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
     if (!needServer) { setState('idle'); return; }
     const ac = new AbortController();
     setState('loading');
-    (async () => {
-      const items: PublicEntity[] = [];
-      let total = 0;
-      for (let page = 1; page <= wantPages; page++) {
-        const r = await loadEntities(scope, { kind, q, page, pageSize: PAGE }, version, ac.signal);
-        items.push(...r.items);
-        total = r.totalRows;
-        if (items.length >= total) break;
-      }
-      return { items, total };
-    })().then((r) => {
+    loadEntityPrefix(scope, kind, q, wantPages, version, ac.signal).then((r) => {
       if (ac.signal.aborted) return;
       setServer({ key: cohortKey, ...r });
       setState('idle');
@@ -90,7 +80,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
     ? { resource: 'entities', phase: 'fetching', label: q ? '기관·담당자를 검색하는 중' : '목록을 더 불러오는 중' } : null);
 
   // while a new page/search loads, the rows already on screen stay (never replaced by "검색 결과 없음")
-  const currentServer = server?.key === cohortKey ? server : null;
+  const currentServer = server?.key === cohortKey && server.version === version ? server : null;
   const rows = needServer ? (currentServer?.items ?? (q ? [] : first)) : first;
   const all = needServer ? currentServer?.total ?? total : total;
   // the chart (PlaceEntityChart) pages through the same server list: one more page per click, a failed page retried as is

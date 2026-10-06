@@ -35,6 +35,7 @@ export const querySchema = z.strictObject({
   min_reports: count.min(1).default(1),
   page: count.min(1).default(1),
   page_size: count.min(1).max(50).default(20),
+  consistency: z.literal("latest").optional(),
   expected_version: z.string().regex(/^[a-f0-9]{32}$/).nullable().default(null),
 }).superRefine((q, c) => {
   const allowed = q.theme === "reporters"
@@ -54,7 +55,7 @@ export const querySchema = z.strictObject({
   if (q.period !== "month" && q.month) {
     c.addIssue({ code: "custom", message: "month conflict" });
   }
-  if (q.page > 1 && !q.expected_version) {
+  if (q.page > 1 && !q.expected_version && q.consistency !== "latest") {
     c.addIssue({ code: "custom", message: "version required" });
   }
 });

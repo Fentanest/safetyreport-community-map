@@ -284,7 +284,7 @@ describe('inactive screen and session boundaries', () => {
     let calls = 0;
     const h = harness();
     const c = new RefreshController({ fetchMeta: () => new Promise(resolve => { resolveMeta = resolve; }),
-      fetchDashboard: async (_meta, scope) => { calls++; return dataFor(scope); },
+      fetchDashboard: async (snapshotMeta, scope) => { calls++; return { ...dataFor(scope), meta: snapshotMeta }; },
       now: () => 0, setTimer: () => 1, clearTimer: () => {} });
     c.request(base); c.suspend(); c.reset();
     resolveMeta(meta('account-A')); await h.flush();

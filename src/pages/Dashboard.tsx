@@ -1,7 +1,7 @@
 import { initialTheme, resolveTheme } from '../lib/theme';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DATE_BASIS_LABEL, LAW_NONE, type DashboardData, type DateBasis, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
-import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
+import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, screenCoordinator, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
 import type { RequestSource } from '../data/refreshController';
 import AccessGate from '../components/AccessGate';
 import {
@@ -123,7 +123,7 @@ export default function Dashboard() {
   const [briefing, setBriefing] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [selection, setSelection] = useState<string | null>(null);
-  const [placeDetail, setPlaceDetail] = useState<PlaceDetailState>({ status: 'loading' });
+  const [requestedPlaceDetail, setPlaceDetail] = useState<PlaceDetailState>({ status: 'loading' });
   const [placeReload, setPlaceReload] = useState(0);
   // how many agencies/managers the place detail asks for (100 by default; the chart's "나머지 불러오기" raises it)
   const placeLimit = useRef(100);
@@ -181,6 +181,9 @@ export default function Dashboard() {
   const data = shown?.data ?? null;
   const shownScope = shown?.scope ?? null;
   const version = shown?.version ?? null;
+  const bundledPlace = shownScope && version ? screenCoordinator.peek(shownScope, version, 'detail') as import('../domain/public').PlaceDetail | null : null;
+  const placeDetail: PlaceDetailState = bundledPlace?.place.key === selection
+    ? { status: 'ready', detail: bundledPlace } : requestedPlaceDetail;
 
   // theme
   useEffect(() => {
@@ -438,7 +441,7 @@ export default function Dashboard() {
     window.clearTimeout(refineTimer.current);
     refineAbort.current?.abort();
     refineAbort.current = null;
-    setRefined(null);
+    setRefined(current => current?.key === shownKey ? current : null);
     placeMoreAbort.current?.abort();
   }, [shownKey, shown, screen]);
   const onView = (b: [number, number, number, number], zoom: number) => {
@@ -455,18 +458,21 @@ export default function Dashboard() {
         .then((r) => {
           // a late answer for other conditions (basis, dates, account, version, rate metric) is dropped
           if (ac.signal.aborted || gen !== refineGen.current || key !== shownKeyRef.current || renderModeRef.current !== 'points') return;
-          setRefined({ view: b, points: r.points, key });
+          setRefined({ view: b, points: r.points, key: r.datasetVersion ? refineKey(askScope, r.datasetVersion, sessionKey, renderMode) : key });
         })
         .catch(() => undefined); // display refinement only: the compacted nodes stay drawn
     }, 600);
   };
   const mapPoints = useMemo(() => {
     const base = data?.points ?? [];
-    if (!refined || refined.key !== shownKey) return base;
-    const keep = base.filter((pt) => !(pt.aggregate && pt.bbox && intersects(pt.bbox, refined.view)));
+    const bundled = shownScope && version && renderMode === 'points' ? screenCoordinator.peek(shownScope, version, 'viewport') as
+      { view_bbox: [number, number, number, number]; points: PublicPoint[] } | null : null;
+    const refinement = bundled ? { view: bundled.view_bbox, points: bundled.points, key: shownKey } : refined;
+    if (!refinement || refinement.key !== shownKey) return base;
+    const keep = base.filter((pt) => !(pt.aggregate && pt.bbox && intersects(pt.bbox, refinement.view)));
     const keys = new Set(keep.map((pt) => pt.key));
-    return [...keep, ...refined.points.filter((pt) => !keys.has(pt.key))];
-  }, [data, refined, shownKey]);
+    return [...keep, ...refinement.points.filter((pt) => !keys.has(pt.key))];
+  }, [data, refined, shownKey, shownScope, version, renderMode]);
 
   // ── S02: one toggle / one clear for the map pin, the place list, the panel button, Esc and a blank map click ──
   const togglePlace = useCallback((key: string | null) => setSelection((cur) => (key === null || cur === key ? null : key)), []);
@@ -526,7 +532,11 @@ export default function Dashboard() {
   const compareDisabledReason = auth.status === 'unconfigured' ? (auth.message ?? '지금은 로그인 기능을 쓸 수 없습니다.') : null;
   const briefingHidden = briefing && compareOn && !briefingShowMine;
   const compareActive = screen === 'dashboard' && compareOn && !compareDisabledReason && !briefingHidden && !!data && !unsupported;
-  const rawPersonal = usePersonalCompare(shownScope ?? scope, version, compareActive);
+  const requestedPersonal = usePersonalCompare(shownScope ?? scope, version, compareActive);
+  const bundledPersonal = compareActive && shownScope && version
+    ? screenCoordinator.peek(shownScope, version, 'compare') as import('../domain/personal').PersonalCompare | null : null;
+  const rawPersonal: PersonalState = bundledPersonal ? { status: 'ready', data: bundledPersonal, error: null, retry: requestedPersonal.retry } : requestedPersonal;
+  useEffect(() => { if (!compareActive) screenCoordinator.drop('compare'); }, [compareActive]);
   const personal: PersonalState = rawPersonal.status === 'ready' && rawPersonal.data && data && !consistentWithPublic(rawPersonal.data, data.overview)
     ? { status: 'error', data: null, retry: rawPersonal.retry,
       error: { code: 'DATASET_CHANGED', message: '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', retryAfter: null } }
@@ -692,7 +702,7 @@ export default function Dashboard() {
   // ── U02: the focus of the key-figure strip ─────────────────────────────────────────────────────────────
   const placeFocus = !!point && !point.aggregate;
   const placeReady = placeFocus && placeDetail.status === 'ready' && placeDetail.detail.place.key === point!.key &&
-    !!shownScope && sameScope(placeDetail.detail.scope, shownScope) && !!placeDetail.detail.overview;
+    !!shownScope && placeDetail.detail.dataset_version === version && sameScope(placeDetail.detail.scope, shownScope) && !!placeDetail.detail.overview;
   const kpiFocus: KpiFocus = placeFocus
     ? { kind: 'place', label: point!.address ?? '선택한 주소', basis: shownScope?.date_basis ?? scope.date_basis, start: shownScope?.start ?? scope.start, end: shownScope?.end ?? scope.end }
     : { kind: shownScope?.bbox ? 'bbox' : shownScope?.region_code ? 'region' : 'nation',
@@ -706,7 +716,7 @@ export default function Dashboard() {
   const kpiState: 'ready' | 'loading' | 'error' = placeFocus
     ? (placeReady ? 'ready' : placeDetail.status === 'error' ? 'error' : 'loading')
     : dash.isRefreshing ? 'loading' : 'ready';
-  const kpiOverview = kpiState === 'ready' ? readyOverview : lastKpi.current?.overview ?? null;
+  const kpiOverview = kpiState === 'ready' ? readyOverview : placeFocus ? null : lastKpi.current?.overview ?? null;
   const kpiStale = kpiState !== 'ready' && lastKpi.current ? (dash.isRefreshing && !placeFocus ? scopeLabel(shownScope) : lastKpi.current.label) : null;
   const err = dash.error;
   const errText = err ? `${err.status === 429 ? '요청이 많아 잠시 기다리는 중입니다' : err.message}${err.status === 429 && err.retryAfter ? ` · ${err.retryAfter}초 뒤 최신 범위로 자동으로 다시 불러옵니다` : ''}` : null;
@@ -859,7 +869,7 @@ export default function Dashboard() {
                   {point ? (
                     <PlaceDetailsPanel
                       point={point}
-                      detail={point.aggregate ? { status: 'unsupported' } : placeDetail}
+                      detail={point.aggregate ? { status: 'unsupported' } : placeDetail.status === 'ready' && placeDetail.detail.dataset_version !== version ? { status: 'loading' } : placeDetail}
                       scopeLabel={scopeLabel(shownScope)}
                       mark={showMine ? marks.get(point.key) ?? null : null}
                       onClose={clearPlace}
@@ -895,7 +905,7 @@ export default function Dashboard() {
                 </div>
               </div>
               {/* the selected address's managers: full width right under the map (it describes the address, not the scope) */}
-              {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && (
+              {point && !point.aggregate && placeDetail.status === 'ready' && placeDetail.detail.place.key === point.key && placeDetail.detail.dataset_version === version && (
                 <PlaceEntityChart
                   key={point.key}
                   exportCtx={shownScope ? { conditions: exportConditions(shownScope, point.address ?? '선택한 주소'), datasetVersion: version,

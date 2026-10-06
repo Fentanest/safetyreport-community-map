@@ -463,6 +463,15 @@
    "depends_on": [
     "202610060400"
    ]
+  },
+  {
+   "repo": "map",
+   "version": "202610060600",
+   "path": "supabase/migrations/202610060600_analytics_read_snapshot.sql",
+   "sha256": "7eb006f0cf039112c07de3524960f344582013cd148cd571ec8866a2c8e6e946",
+   "depends_on": [
+    "202610060500"
+   ]
   }
  ],
  "functions": [
@@ -555,7 +564,8 @@
     "src/domain/statistics.ts",
     "src/domain/tableSort.ts",
     "src/domain/managerNames.ts",
-    "server/rollups.ts"
+    "server/rollups.ts",
+    "server/screenHandler.ts"
    ]
   },
   {
