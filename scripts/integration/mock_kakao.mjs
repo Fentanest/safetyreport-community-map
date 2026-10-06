@@ -16,7 +16,7 @@ export const ACCOUNTS = {
   B: { id: 920002, nickname: '통합테스트B', email: 'int-b@example.invalid' },
   C: { id: 920003, nickname: '통합테스트C', email: null },
   D: { id: 920004, nickname: '통합테스트D', email: null },
-  // Viewer threshold (2026-09-28): E shares 10 distinct reports; F never consents.
+  // Viewer threshold (2026-09-28): E shares 10 distinct reports; L never consents (F is used by deletion tests).
   E: { id: 920005, nickname: '통합테스트E', email: null },
   F: { id: 920006, nickname: '통합테스트F', email: null },
   G: { id: 920007, nickname: '통합테스트G', email: null },
@@ -24,6 +24,7 @@ export const ACCOUNTS = {
   I: { id: 920009, nickname: '통합테스트I', email: null }, // my-analytics stack threshold fixture
   J: { id: 920010, nickname: '통합테스트J', email: null }, // my-reports Edge fixture (own reports, Kakao OAuth path)
   K: { id: 920011, nickname: '통합테스트K', email: null }, // my-reports Edge fixture (other account)
+  L: { id: 920012, nickname: '통합테스트L', email: null }, // isolated never-consented viewer
 };
 
 export function startMockKakao({ host = '127.0.0.1', port = 56410, clientSecret, clientId = 'mock-kakao-client', redirectUri }) {

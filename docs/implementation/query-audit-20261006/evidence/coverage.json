@@ -1,0 +1,308 @@
+[
+  {
+    "function": "private.analytics_in_polygon",
+    "case": "analytics_in_polygon"
+  },
+  {
+    "function": "private.analytics_in_ring",
+    "case": "analytics_in_ring"
+  },
+  {
+    "function": "private.analytics_law",
+    "case": "analytics_law"
+  },
+  {
+    "function": "private.analytics_region",
+    "case": "analytics_region"
+  },
+  {
+    "function": "private.analytics_rollup_source",
+    "case": "analytics_rollup_source"
+  },
+  {
+    "function": "private.community_bump_manifest",
+    "case": "community_bump_manifest"
+  },
+  {
+    "function": "private.community_bump_projection",
+    "case": "community_bump_projection"
+  },
+  {
+    "function": "private.community_current_policy",
+    "case": "community_current_policy"
+  },
+  {
+    "function": "private.community_fact_publicly_listed",
+    "case": "community_fact_publicly_listed"
+  },
+  {
+    "function": "private.community_facts_manifest_trigger",
+    "case": "triggers/insert-bulk + triggers/update-state + triggers/delete-bulk"
+  },
+  {
+    "function": "private.community_facts_projection_trigger",
+    "case": "triggers/insert-bulk + triggers/update-state + triggers/delete-bulk"
+  },
+  {
+    "function": "private.community_grant_is_current",
+    "case": "community_grant_is_current"
+  },
+  {
+    "function": "private.community_identity_state",
+    "case": "community_identity_state"
+  },
+  {
+    "function": "private.community_lineage_active",
+    "case": "community_lineage_active"
+  },
+  {
+    "function": "private.community_lock_contributor",
+    "case": "community_lock_contributor"
+  },
+  {
+    "function": "private.community_policies_immutable",
+    "case": "triggers/policy-immutable"
+  },
+  {
+    "function": "private.community_policy_texts_immutable",
+    "case": "triggers/policy-text-immutable"
+  },
+  {
+    "function": "private.community_stamp_registry_version",
+    "case": "triggers/insert-bulk + internal_agency_recompute_apply"
+  },
+  {
+    "function": "private.invalidate_analytics_v2",
+    "case": "triggers/profile-update + internal_activate_snapshot"
+  },
+  {
+    "function": "private.my_reports_address_base",
+    "case": "my_reports_address_base"
+  },
+  {
+    "function": "private.my_reports_check_query",
+    "case": "my_reports_check_query"
+  },
+  {
+    "function": "private.my_reports_gate",
+    "case": "my_reports_gate"
+  },
+  {
+    "function": "private.my_reports_managers",
+    "case": "my_reports_managers"
+  },
+  {
+    "function": "private.my_reports_matches",
+    "case": "my_reports_matches"
+  },
+  {
+    "function": "private.my_reports_norm_address",
+    "case": "my_reports_norm_address"
+  },
+  {
+    "function": "private.my_reports_norm_vehicle",
+    "case": "my_reports_norm_vehicle"
+  },
+  {
+    "function": "private.my_reports_own",
+    "case": "my_reports_own"
+  },
+  {
+    "function": "private.my_reports_page",
+    "case": "my_reports_page"
+  },
+  {
+    "function": "private.my_reports_row_json",
+    "case": "my_reports_row_json"
+  },
+  {
+    "function": "private.my_reports_stats",
+    "case": "my_reports_stats"
+  },
+  {
+    "function": "private.my_reports_version",
+    "case": "my_reports_version"
+  },
+  {
+    "function": "private.ranking_representatives",
+    "case": "ranking_representatives"
+  },
+  {
+    "function": "private.safeauth_expire_if_needed",
+    "case": "safeauth_expire_if_needed"
+  },
+  {
+    "function": "private.touch_updated_at",
+    "case": "triggers/profile-update"
+  },
+  {
+    "function": "public.internal_account_grant_consent",
+    "case": "internal_account_grant_consent/current + internal_account_grant_consent/new"
+  },
+  {
+    "function": "public.internal_account_policy",
+    "case": "internal_account_policy"
+  },
+  {
+    "function": "public.internal_account_rebind_connection",
+    "case": "internal_account_rebind_connection"
+  },
+  {
+    "function": "public.internal_account_register_connection",
+    "case": "internal_account_register_connection"
+  },
+  {
+    "function": "public.internal_account_revoke_connection",
+    "case": "internal_account_revoke_connection"
+  },
+  {
+    "function": "public.internal_account_revoke_consent",
+    "case": "internal_account_revoke_consent"
+  },
+  {
+    "function": "public.internal_account_status",
+    "case": "internal_account_status"
+  },
+  {
+    "function": "public.internal_activate_snapshot",
+    "case": "internal_activate_snapshot"
+  },
+  {
+    "function": "public.internal_agency_recompute_apply",
+    "case": "internal_agency_recompute_apply"
+  },
+  {
+    "function": "public.internal_agency_recompute_page",
+    "case": "internal_agency_recompute_page"
+  },
+  {
+    "function": "public.internal_agency_recompute_state",
+    "case": "internal_agency_recompute_state"
+  },
+  {
+    "function": "public.internal_analytics_cohort_facts",
+    "case": "internal_analytics_cohort_facts"
+  },
+  {
+    "function": "public.internal_analytics_cohort_state",
+    "case": "internal_analytics_cohort_state"
+  },
+  {
+    "function": "public.internal_analytics_rollup",
+    "case": "rollup/agency + manager + laws + series"
+  },
+  {
+    "function": "public.internal_analytics_v2_facts",
+    "case": "internal_analytics_v2_facts"
+  },
+  {
+    "function": "public.internal_analytics_v2_rate_limit",
+    "case": "internal_analytics_v2_rate_limit"
+  },
+  {
+    "function": "public.internal_analytics_v2_state",
+    "case": "internal_analytics_v2_state"
+  },
+  {
+    "function": "public.internal_analytics_viewer",
+    "case": "internal_analytics_viewer"
+  },
+  {
+    "function": "public.internal_cleanup_expired",
+    "case": "internal_cleanup_expired"
+  },
+  {
+    "function": "public.internal_community_delete_contributions",
+    "case": "internal_community_delete_contributions"
+  },
+  {
+    "function": "public.internal_community_ingest",
+    "case": "internal_community_ingest/1 + internal_community_ingest/20"
+  },
+  {
+    "function": "public.internal_community_ingest_rate_limit",
+    "case": "internal_community_ingest_rate_limit"
+  },
+  {
+    "function": "public.internal_community_manifest",
+    "case": "internal_community_manifest"
+  },
+  {
+    "function": "public.internal_my_analytics_cohort_source",
+    "case": "internal_my_analytics_cohort_source"
+  },
+  {
+    "function": "public.internal_my_analytics_source",
+    "case": "internal_my_analytics_source"
+  },
+  {
+    "function": "public.internal_my_reports_numbers",
+    "case": "internal_my_reports_numbers"
+  },
+  {
+    "function": "public.internal_my_reports_search",
+    "case": "internal_my_reports_search"
+  },
+  {
+    "function": "public.internal_my_reports_summary",
+    "case": "internal_my_reports_summary"
+  },
+  {
+    "function": "public.internal_safeauth_browser_status",
+    "case": "internal_safeauth_browser_status"
+  },
+  {
+    "function": "public.internal_safeauth_cancel",
+    "case": "internal_safeauth_cancel"
+  },
+  {
+    "function": "public.internal_safeauth_claim",
+    "case": "internal_safeauth_claim"
+  },
+  {
+    "function": "public.internal_safeauth_cleanup",
+    "case": "internal_safeauth_cleanup"
+  },
+  {
+    "function": "public.internal_safeauth_complete",
+    "case": "internal_safeauth_complete"
+  },
+  {
+    "function": "public.internal_safeauth_create",
+    "case": "internal_safeauth_create"
+  },
+  {
+    "function": "public.internal_safeauth_poll",
+    "case": "internal_safeauth_poll"
+  },
+  {
+    "function": "public.internal_safeauth_prepare",
+    "case": "internal_safeauth_prepare"
+  },
+  {
+    "function": "public.internal_safeauth_publish",
+    "case": "internal_safeauth_publish"
+  },
+  {
+    "function": "public.internal_safeauth_rate_limit",
+    "case": "internal_safeauth_rate_limit"
+  },
+  {
+    "function": "public.internal_safeauth_rotate_ticket",
+    "case": "internal_safeauth_rotate_ticket"
+  },
+  {
+    "function": "public.internal_user_rankings",
+    "case": "internal_user_rankings"
+  },
+  {
+    "function": "private.community_facts_manifest_insert_batch",
+    "case": "triggers/insert-bulk + triggers/insert-one",
+    "introduced": "202610060300"
+  },
+  {
+    "function": "private.community_facts_manifest_delete_batch",
+    "case": "triggers/delete-bulk + internal_community_delete_contributions",
+    "introduced": "202610060300"
+  }
+]

@@ -1,0 +1,214 @@
+{
+  "relay_fk_equal": true,
+  "sequences": [
+    {
+      "name": "auth.refresh_tokens_id_seq",
+      "equal": true
+    },
+    {
+      "name": "private.abuse_events_id_seq",
+      "equal": true
+    },
+    {
+      "name": "private.community_writer_epoch_seq",
+      "equal": true
+    },
+    {
+      "name": "private.upload_points_id_seq",
+      "equal": true
+    }
+  ],
+  "migration_ledger_count": 41,
+  "tables": 56,
+  "data_differences": [],
+  "schema_equal": true,
+  "publication_equal": false,
+  "product_publication_equal": true,
+  "publication_added": [
+    {
+      "pubname": "supabase_realtime_messages_publication",
+      "attnames": [
+        "topic",
+        "extension",
+        "payload",
+        "event",
+        "private",
+        "updated_at",
+        "inserted_at",
+        "id",
+        "binary_payload",
+        "skip_broadcast"
+      ],
+      "rowfilter": null,
+      "tablename": "messages_2026_10_07",
+      "schemaname": "realtime",
+      "row_count": 0
+    },
+    {
+      "pubname": "supabase_realtime_messages_publication",
+      "attnames": [
+        "topic",
+        "extension",
+        "payload",
+        "event",
+        "private",
+        "updated_at",
+        "inserted_at",
+        "id",
+        "binary_payload",
+        "skip_broadcast"
+      ],
+      "rowfilter": null,
+      "tablename": "messages_2026_10_08",
+      "schemaname": "realtime",
+      "row_count": 0
+    },
+    {
+      "pubname": "supabase_realtime_messages_publication",
+      "attnames": [
+        "topic",
+        "extension",
+        "payload",
+        "event",
+        "private",
+        "updated_at",
+        "inserted_at",
+        "id",
+        "binary_payload",
+        "skip_broadcast"
+      ],
+      "rowfilter": null,
+      "tablename": "messages_2026_10_09",
+      "schemaname": "realtime",
+      "row_count": 0
+    }
+  ],
+  "publication_removed": [
+    {
+      "pubname": "supabase_realtime_messages_publication",
+      "attnames": [
+        "topic",
+        "extension",
+        "payload",
+        "event",
+        "private",
+        "updated_at",
+        "inserted_at",
+        "id",
+        "binary_payload",
+        "skip_broadcast"
+      ],
+      "rowfilter": null,
+      "tablename": "messages_2026_09_30",
+      "schemaname": "realtime"
+    },
+    {
+      "pubname": "supabase_realtime_messages_publication",
+      "attnames": [
+        "topic",
+        "extension",
+        "payload",
+        "event",
+        "private",
+        "updated_at",
+        "inserted_at",
+        "id",
+        "binary_payload",
+        "skip_broadcast"
+      ],
+      "rowfilter": null,
+      "tablename": "messages_2026_10_02",
+      "schemaname": "realtime"
+    }
+  ],
+  "publication_note": "Realtime service created three empty future-date partitions and pruned two expired partitions during restart. Product publication is unchanged; full system publication equality is false.",
+  "containers": [
+    {
+      "name": "supabase_storage_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_rest_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_realtime_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_auth_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_kong_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_db_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "mtd-verify-redis-0923",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_safety_builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_multi-arch-builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_multiarch-builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_multi-builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "portainer_agent",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    }
+  ],
+  "owned_test_listeners_remaining": [],
+  "verified_at_utc": "2026-10-06T02:01:32.548446+00:00",
+  "verified_after_service_restart": true
+}

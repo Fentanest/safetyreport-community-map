@@ -85,3 +85,7 @@ prod output에는 fixtures/원번호를 복사하지 않는다. 1건·0분모·�
 유효 동의는 같은 lineage와 user, 공개 항목은 기존 lineage-only 판정으로 각각 보존한다.
 개인 통계는 같은 함수에 위임하므로 동일한 개선을 받으며 인증·메타데이터 계약은 바뀌지 않는다.
 [동등성·실행계획·로컬 성능](implementation/cohort-facts-timeout/REPORT.md).
+
+## 2026-10-06 전체 쿼리 감사
+
+`202610060200`~`060500`은 공개/개인 DTO, 배열 순서, 동의 lineage·공개 정책, 날짜 기준과 행 예산을 유지한다. legacy v2의 날짜 합집합/기간 내 선거를 cohort D13 규칙으로 바꾸지 않는다. manifest generation은 completed 관측이 키 집합에 들어오거나 나갈 때의 기존 증가량 그대로이며 bulk INSERT/DELETE에서도 행 수만큼 증가한다. UPDATE의 키 이동은 기존 행 판정을 유지한다. 기관 보정은 같은 CAS 조건·applied/skipped 수를 반환하고 projection version은 계속 불투명한 무효화 토큰이다. 상세 동등성·잔여 비용은 [감사 문서](implementation/query-audit-20261006/CHANGELOG.md) 참조.

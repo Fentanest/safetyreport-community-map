@@ -1,0 +1,69 @@
+{"ms": 81.927000, "case": "internal_analytics_v2_state", "bytes": 480, "error": null, "digest": "0ccdec5d913b7979a2a2c0e41a052b89", "message": null, "response_error": null}
+{"ms": 84.446000, "case": "internal_analytics_cohort_state", "bytes": 662, "error": null, "digest": "1134b327310ea405a67f0934d1fa2beb", "message": null, "response_error": null}
+{"ms": 25.729000, "case": "internal_analytics_viewer", "bytes": 125, "error": null, "digest": "28202ad31f792690cce1b0cc467df4da", "message": null, "response_error": null}
+{"ms": 210.608000, "case": "internal_analytics_cohort_facts", "bytes": 3421434, "error": null, "digest": "20d20c25e492557b69665952caf80daf", "message": null, "response_error": null}
+{"ms": 1442.504000, "case": "internal_analytics_v2_facts", "bytes": 3258993, "error": null, "digest": "3167ba9e229f283343871bcf27628ff5", "message": null, "response_error": null}
+{"ms": 298.340000, "case": "internal_my_analytics_cohort_source", "bytes": 3422230, "error": null, "digest": "29f09a9cd9593aa1fc17bc87fdcc68e0", "message": null, "response_error": null}
+{"ms": 1535.551000, "case": "internal_my_analytics_source", "bytes": 3259607, "error": null, "digest": "6e0b27af2b1c066fbc82da3264022055", "message": null, "response_error": null}
+{"ms": 0.865000, "case": "internal_account_policy", "bytes": 5519, "error": null, "digest": "881cded6569a73a0f0a9d3de68043b64", "message": null, "response_error": null}
+{"ms": 1.755000, "case": "internal_account_status", "bytes": 804, "error": null, "digest": "c7b8fc881f5c271a815dcda9e592a44e", "message": null, "response_error": null}
+{"ms": 1.909000, "case": "internal_community_manifest", "bytes": 2954, "error": null, "digest": "de19f90f424e2336195603a13af4445d", "message": null, "response_error": null}
+{"ms": 0.473000, "case": "internal_agency_recompute_state", "bytes": 14, "error": null, "digest": "1a1bd70140ff6f42c19deb1e5f5af4a1", "message": null, "response_error": null}
+{"ms": 6.441000, "case": "internal_my_reports_summary", "bytes": 1018, "error": null, "digest": "ffc655f8c3222e74fbec3e4072e9cf27", "message": null, "response_error": null}
+{"ms": 8.718000, "case": "internal_my_reports_search", "bytes": 14987, "error": null, "digest": "ed95f5da90db81f9a3fea9b55933da93", "message": null, "response_error": null}
+{"ms": 5.198000, "case": "internal_my_reports_numbers", "bytes": 2123, "error": null, "digest": "ddb7984d8fcbd00a88fb70606f588b80", "message": null, "response_error": null}
+{"ms": 52.393000, "case": "rollup/agency", "bytes": 4793, "error": null, "digest": "dd4c4e1bd9e50bff7d489f9355a10a37", "message": null, "response_error": null}
+{"ms": 49.607000, "case": "rollup/manager", "bytes": 29497, "error": null, "digest": "897af5cca945c7e5e7cb5008f2970971", "message": null, "response_error": null}
+{"ms": 55.150000, "case": "rollup/laws", "bytes": 4191, "error": null, "digest": "c6280a9e3b2e44d23f3fcc2e6b54dce7", "message": null, "response_error": null}
+{"ms": 54.577000, "case": "rollup/series", "bytes": 18424, "error": null, "digest": "7f5c1e65e0e3380561329bcc591d63e3", "message": null, "response_error": null}
+{"ms": 53.578000, "case": "internal_user_rankings", "bytes": 7108, "error": null, "digest": "c7d0f962815384b71aebd8c8093cbac1", "message": null, "response_error": null}
+{"ms": 47.964000, "case": "ranking_representatives", "bytes": 801408, "error": null, "digest": "3ed04a5b620f446429729e1bb99fbf80", "message": null, "response_error": null}
+{"ms": 4.319000, "case": "my_reports_own", "bytes": 66826, "error": null, "digest": "235d6af7eb191b3912e3a39d935bff5a", "message": null, "response_error": null}
+{"ms": 57.146000, "case": "analytics_rollup_source", "bytes": 1044198, "error": null, "digest": "4c10f3234ce6617c589eb4077c717385", "message": null, "response_error": null}
+{"ms": 5.529000, "case": "internal_agency_recompute_page", "bytes": 229800, "error": null, "digest": "4a9a39af207c0910b0b3c43a02d47665", "message": null, "response_error": null}
+{"ms": 3.240000, "case": "internal_analytics_v2_state", "bytes": 480, "error": null, "digest": "0ccdec5d913b7979a2a2c0e41a052b89", "message": null, "response_error": null}
+{"ms": 2.593000, "case": "internal_analytics_cohort_state", "bytes": 662, "error": null, "digest": "1134b327310ea405a67f0934d1fa2beb", "message": null, "response_error": null}
+{"ms": 3.025000, "case": "internal_analytics_viewer", "bytes": 125, "error": null, "digest": "28202ad31f792690cce1b0cc467df4da", "message": null, "response_error": null}
+{"ms": 189.283000, "case": "internal_analytics_cohort_facts", "bytes": 3421434, "error": null, "digest": "20d20c25e492557b69665952caf80daf", "message": null, "response_error": null}
+{"ms": 186.019000, "case": "internal_analytics_v2_facts", "bytes": 3258993, "error": null, "digest": "3167ba9e229f283343871bcf27628ff5", "message": null, "response_error": null}
+{"ms": 221.470000, "case": "internal_my_analytics_cohort_source", "bytes": 3422230, "error": null, "digest": "29f09a9cd9593aa1fc17bc87fdcc68e0", "message": null, "response_error": null}
+{"ms": 183.325000, "case": "internal_my_analytics_source", "bytes": 3259607, "error": null, "digest": "6e0b27af2b1c066fbc82da3264022055", "message": null, "response_error": null}
+{"ms": 0.357000, "case": "internal_account_policy", "bytes": 5519, "error": null, "digest": "881cded6569a73a0f0a9d3de68043b64", "message": null, "response_error": null}
+{"ms": 0.985000, "case": "internal_account_status", "bytes": 804, "error": null, "digest": "c7b8fc881f5c271a815dcda9e592a44e", "message": null, "response_error": null}
+{"ms": 1.410000, "case": "internal_community_manifest", "bytes": 2954, "error": null, "digest": "de19f90f424e2336195603a13af4445d", "message": null, "response_error": null}
+{"ms": 0.203000, "case": "internal_agency_recompute_state", "bytes": 14, "error": null, "digest": "1a1bd70140ff6f42c19deb1e5f5af4a1", "message": null, "response_error": null}
+{"ms": 5.058000, "case": "internal_my_reports_summary", "bytes": 1018, "error": null, "digest": "ffc655f8c3222e74fbec3e4072e9cf27", "message": null, "response_error": null}
+{"ms": 10.354000, "case": "internal_my_reports_search", "bytes": 14987, "error": null, "digest": "ed95f5da90db81f9a3fea9b55933da93", "message": null, "response_error": null}
+{"ms": 6.589000, "case": "internal_my_reports_numbers", "bytes": 2123, "error": null, "digest": "ddb7984d8fcbd00a88fb70606f588b80", "message": null, "response_error": null}
+{"ms": 58.217000, "case": "rollup/agency", "bytes": 4793, "error": null, "digest": "dd4c4e1bd9e50bff7d489f9355a10a37", "message": null, "response_error": null}
+{"ms": 58.575000, "case": "rollup/manager", "bytes": 29497, "error": null, "digest": "897af5cca945c7e5e7cb5008f2970971", "message": null, "response_error": null}
+{"ms": 56.320000, "case": "rollup/laws", "bytes": 4191, "error": null, "digest": "c6280a9e3b2e44d23f3fcc2e6b54dce7", "message": null, "response_error": null}
+{"ms": 48.943000, "case": "rollup/series", "bytes": 18424, "error": null, "digest": "7f5c1e65e0e3380561329bcc591d63e3", "message": null, "response_error": null}
+{"ms": 30.623000, "case": "internal_user_rankings", "bytes": 7108, "error": null, "digest": "bc315961be68ab8c84a1f6877f31615e", "message": null, "response_error": null}
+{"ms": 39.965000, "case": "ranking_representatives", "bytes": 801408, "error": null, "digest": "3ed04a5b620f446429729e1bb99fbf80", "message": null, "response_error": null}
+{"ms": 4.367000, "case": "my_reports_own", "bytes": 66826, "error": null, "digest": "235d6af7eb191b3912e3a39d935bff5a", "message": null, "response_error": null}
+{"ms": 59.141000, "case": "analytics_rollup_source", "bytes": 1044198, "error": null, "digest": "4c10f3234ce6617c589eb4077c717385", "message": null, "response_error": null}
+{"ms": 5.164000, "case": "internal_agency_recompute_page", "bytes": 229800, "error": null, "digest": "4a9a39af207c0910b0b3c43a02d47665", "message": null, "response_error": null}
+{"equal": true, "parity": "internal_analytics_v2_state", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_analytics_cohort_state", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_analytics_viewer", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_analytics_cohort_facts", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_analytics_v2_facts", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_my_analytics_cohort_source", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_my_analytics_source", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_account_policy", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_account_status", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_community_manifest", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_agency_recompute_state", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_my_reports_summary", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_my_reports_search", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_my_reports_numbers", "after_error": null, "before_error": null}
+{"equal": true, "parity": "rollup/agency", "after_error": null, "before_error": null}
+{"equal": true, "parity": "rollup/manager", "after_error": null, "before_error": null}
+{"equal": true, "parity": "rollup/laws", "after_error": null, "before_error": null}
+{"equal": true, "parity": "rollup/series", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_user_rankings", "after_error": null, "before_error": null}
+{"equal": true, "parity": "ranking_representatives", "after_error": null, "before_error": null}
+{"equal": true, "parity": "my_reports_own", "after_error": null, "before_error": null}
+{"equal": true, "parity": "analytics_rollup_source", "after_error": null, "before_error": null}
+{"equal": true, "parity": "internal_agency_recompute_page", "after_error": null, "before_error": null}

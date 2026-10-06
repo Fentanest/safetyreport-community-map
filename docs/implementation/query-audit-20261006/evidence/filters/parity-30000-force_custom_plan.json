@@ -1,0 +1,140 @@
+{
+  "size": 30000,
+  "users": 300,
+  "mode": "force_custom_plan",
+  "phase": "parity",
+  "concentrated": false,
+  "plans": false,
+  "provenance": {
+    "scripts/query-audit/benchmark.py": "be2eeeaf8f601067493554da35df91c9553617a6e07be60aaa63fa565d6c67fc",
+    "scripts/query-audit/write_benchmark.py": "8f0fa639188dc3895abd048efece4e2afd8cb732e37bc4e39d542749e2198dc2",
+    "tests/integration/helpers/cohort-timeout-seed.sql": "c5641bb15e854b04578c07454697d7223319358c705388b4edff69a3fb9ba041",
+    "supabase/migrations/202610060100_cohort_facts_setwise.sql": "cada41388f935740adfd0e026d7d45f04f08c9e77f7a9aa96bacdfba0519b5d1",
+    "supabase/migrations/202610060200_query_read_paths.sql": "b87fdd2135abb222275175161d1468c43bfa8da1724e455790b15f73e7197cde",
+    "supabase/migrations/202610060300_manifest_statement_batches.sql": "41d852c8dfb1f4d99fb6912f7b93882c65c7b97eae45cc238a0071bd25f8e542",
+    "supabase/migrations/202610060400_agency_recompute_batch.sql": "82b882663738b67e8f8fb639ee08b34edd48a6d344db8f6f8d76dd0f5b9fc362",
+    "supabase/migrations/202610060500_rollup_region_inputs.sql": "2832c8a8d2488e2f0609b5213aa28e1163cf68096c7d5be351c84253014c96e8"
+  },
+  "samples": [
+    {
+      "ms": 3081.166,
+      "case": "region",
+      "bytes": 2157,
+      "error": null,
+      "digest": "b7b3d5594f83a5f1ec59cb7a3b9127c1",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 287.174,
+      "case": "law",
+      "bytes": 566,
+      "error": null,
+      "digest": "9c3c8a67234fd5174a1aaffc7dd705b8",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 319.825,
+      "case": "bbox",
+      "bytes": 4813,
+      "error": null,
+      "digest": "003c5d0f74e2d07d2834c5a3bcab9ff6",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 38.658,
+      "case": "month",
+      "bytes": 4696,
+      "error": null,
+      "digest": "6b88115f85b97efe444e2ab53ae5a607",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 94.026,
+      "case": "agency",
+      "bytes": 569,
+      "error": null,
+      "digest": "9839074eba24830348e99021e958156b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 473.347,
+      "case": "region",
+      "bytes": 2157,
+      "error": null,
+      "digest": "b7b3d5594f83a5f1ec59cb7a3b9127c1",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 331.64,
+      "case": "law",
+      "bytes": 566,
+      "error": null,
+      "digest": "9c3c8a67234fd5174a1aaffc7dd705b8",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 343.347,
+      "case": "bbox",
+      "bytes": 4813,
+      "error": null,
+      "digest": "003c5d0f74e2d07d2834c5a3bcab9ff6",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 40.506,
+      "case": "month",
+      "bytes": 4696,
+      "error": null,
+      "digest": "6b88115f85b97efe444e2ab53ae5a607",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 81.148,
+      "case": "agency",
+      "bytes": 569,
+      "error": null,
+      "digest": "9839074eba24830348e99021e958156b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "equal": true,
+      "parity": "region",
+      "after_error": null,
+      "before_error": null
+    },
+    {
+      "equal": true,
+      "parity": "law",
+      "after_error": null,
+      "before_error": null
+    },
+    {
+      "equal": true,
+      "parity": "bbox",
+      "after_error": null,
+      "before_error": null
+    },
+    {
+      "equal": true,
+      "parity": "month",
+      "after_error": null,
+      "before_error": null
+    },
+    {
+      "equal": true,
+      "parity": "agency",
+      "after_error": null,
+      "before_error": null
+    }
+  ]
+}

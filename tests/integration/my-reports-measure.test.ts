@@ -10,7 +10,9 @@ import { createMyReportsHandler, RPC_INVALID, RPC_TIMEOUT } from '../../server/m
 import { API, DB_CONTAINER, createUser, deleteUsers, serviceClient, sql, stackKeys, type StackKeys, type TestUser } from './helpers/myReportsSeed';
 
 const enabled = process.env.COMMUNITY_STACK === '1' && process.env.MY_REPORTS_MEASURE === '1';
-const OUT = new URL('../../docs/integration/chromeextension/', import.meta.url);
+const OUT = process.env.MY_REPORTS_MEASURE_OUT
+  ? new URL(process.env.MY_REPORTS_MEASURE_OUT.replace(/\/?$/, '/'), `file://${process.cwd()}/`)
+  : new URL('../../docs/integration/chromeextension/', import.meta.url);
 const ORIGIN = 'chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const VEHICLE = '12가3456';
 

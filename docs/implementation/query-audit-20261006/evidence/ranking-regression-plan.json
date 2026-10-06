@@ -1,0 +1,406 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Subquery Scan",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Alias": "e",
+      "Startup Cost": 668.63,
+      "Total Cost": 668.72,
+      "Plan Rows": 1,
+      "Plan Width": 152,
+      "Filter": "(e.rn = 1)",
+      "Plans": [
+        {
+          "Node Type": "Nested Loop",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "CTE grants",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Semi",
+          "Startup Cost": 38.47,
+          "Total Cost": 133.29,
+          "Plan Rows": 26,
+          "Plan Width": 32,
+          "Inner Unique": false,
+          "Join Filter": "(p.user_id = a.user_id)",
+          "Plans": [
+            {
+              "Node Type": "Hash Join",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Inner",
+              "Startup Cost": 38.20,
+              "Total Cost": 88.74,
+              "Plan Rows": 104,
+              "Plan Width": 96,
+              "Inner Unique": false,
+              "Hash Cond": "(g.user_id = p.user_id)",
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "community_consent_grants",
+                  "Alias": "g",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 45.00,
+                  "Plan Rows": 1200,
+                  "Plan Width": 48
+                },
+                {
+                  "Node Type": "Hash",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 37.88,
+                  "Total Cost": 37.88,
+                  "Plan Rows": 26,
+                  "Plan Width": 48,
+                  "Plans": [
+                    {
+                      "Node Type": "Hash Join",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Inner",
+                      "Startup Cost": 27.77,
+                      "Total Cost": 37.88,
+                      "Plan Rows": 26,
+                      "Plan Width": 48,
+                      "Inner Unique": false,
+                      "Hash Cond": "(p.user_id = u.id)",
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "contributor_profiles",
+                          "Alias": "p",
+                          "Startup Cost": 0.00,
+                          "Total Cost": 8.75,
+                          "Plan Rows": 299,
+                          "Plan Width": 16,
+                          "Filter": "(status = 'active'::text)"
+                        },
+                        {
+                          "Node Type": "Hash",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 27.49,
+                          "Total Cost": 27.49,
+                          "Plan Rows": 23,
+                          "Plan Width": 32,
+                          "Plans": [
+                            {
+                              "Node Type": "Hash Join",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Join Type": "Inner",
+                              "Startup Cost": 14.05,
+                              "Total Cost": 27.49,
+                              "Plan Rows": 23,
+                              "Plan Width": 32,
+                              "Inner Unique": false,
+                              "Hash Cond": "(u.id = i_1.user_id)",
+                              "Plans": [
+                                {
+                                  "Node Type": "Seq Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Relation Name": "users",
+                                  "Alias": "u",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 12.85,
+                                  "Plan Rows": 95,
+                                  "Plan Width": 16,
+                                  "Filter": "((deleted_at IS NULL) AND (NOT COALESCE(is_anonymous, false)) AND ((banned_until IS NULL) OR (banned_until <= now())))"
+                                },
+                                {
+                                  "Node Type": "Hash",
+                                  "Parent Relationship": "Inner",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Startup Cost": 13.40,
+                                  "Total Cost": 13.40,
+                                  "Plan Rows": 52,
+                                  "Plan Width": 16,
+                                  "Plans": [
+                                    {
+                                      "Node Type": "Aggregate",
+                                      "Strategy": "Hashed",
+                                      "Partial Mode": "Simple",
+                                      "Parent Relationship": "Outer",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Startup Cost": 12.88,
+                                      "Total Cost": 13.40,
+                                      "Plan Rows": 52,
+                                      "Plan Width": 16,
+                                      "Group Key": ["i_1.user_id"],
+                                      "Planned Partitions": 0,
+                                      "Plans": [
+                                        {
+                                          "Node Type": "Seq Scan",
+                                          "Parent Relationship": "Outer",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "Relation Name": "identities",
+                                          "Alias": "i_1",
+                                          "Startup Cost": 0.00,
+                                          "Total Cost": 12.75,
+                                          "Plan Rows": 52,
+                                          "Plan Width": 16,
+                                          "Filter": "(provider = 'kakao'::text)"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Node Type": "Index Scan",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Scan Direction": "Forward",
+              "Index Name": "community_consent_grants_lineage",
+              "Relation Name": "community_consent_grants",
+              "Alias": "a",
+              "Startup Cost": 0.27,
+              "Total Cost": 0.42,
+              "Plan Rows": 1,
+              "Plan Width": 32,
+              "Index Cond": "(lineage_id = g.lineage_id)",
+              "Filter": "(g.user_id = user_id)"
+            }
+          ]
+        },
+        {
+          "Node Type": "Nested Loop",
+          "Parent Relationship": "InitPlan",
+          "Subplan Name": "CTE own",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 16.53,
+          "Total Cost": 535.14,
+          "Plan Rows": 1,
+          "Plan Width": 192,
+          "Inner Unique": false,
+          "Plans": [
+            {
+              "Node Type": "CTE Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "CTE Name": "grants",
+              "Alias": "g_1",
+              "Startup Cost": 0.00,
+              "Total Cost": 0.52,
+              "Plan Rows": 26,
+              "Plan Width": 32
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "community_report_facts",
+              "Alias": "f",
+              "Startup Cost": 16.53,
+              "Total Cost": 20.55,
+              "Plan Rows": 1,
+              "Plan Width": 293,
+              "Recheck Cond": "((g_1.grant_id = consent_grant_id) AND (g_1.user_id = contributor_id) AND (public_state = 'completed'::text))",
+              "Filter": "(status = ANY ('{accepted,partial,rejected,completed_unknown}'::text[]))",
+              "Plans": [
+                {
+                  "Node Type": "BitmapAnd",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 16.53,
+                  "Total Cost": 16.53,
+                  "Plan Rows": 1,
+                  "Plan Width": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Index Scan",
+                      "Parent Relationship": "Member",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Index Name": "community_report_facts_grant_idx",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 3.74,
+                      "Plan Rows": 50,
+                      "Plan Width": 0,
+                      "Index Cond": "(consent_grant_id = g_1.grant_id)"
+                    },
+                    {
+                      "Node Type": "Bitmap Index Scan",
+                      "Parent Relationship": "Member",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Index Name": "community_report_facts_my_reports_owner",
+                      "Startup Cost": 0.00,
+                      "Total Cost": 12.54,
+                      "Plan Rows": 99,
+                      "Plan Width": 0,
+                      "Index Cond": "(contributor_id = g_1.user_id)"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "Node Type": "WindowAgg",
+          "Parent Relationship": "Subquery",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.21,
+          "Total Cost": 0.26,
+          "Plan Rows": 2,
+          "Plan Width": 312,
+          "Run Condition": "(row_number() OVER (?) <= 1)",
+          "Plans": [
+            {
+              "Node Type": "Incremental Sort",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 0.16,
+              "Total Cost": 0.20,
+              "Plan Rows": 2,
+              "Plan Width": 200,
+              "Sort Key": ["i.contributor_id", "i.rid", "i.answer_time DESC", "i.completed_date DESC NULLS LAST", "i.first_accepted_at", "i.dataset_key"],
+              "Presorted Key": ["i.contributor_id", "i.rid"],
+              "Plans": [
+                {
+                  "Node Type": "Subquery Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Alias": "i",
+                  "Startup Cost": 0.10,
+                  "Total Cost": 0.15,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Plans": [
+                    {
+                      "Node Type": "WindowAgg",
+                      "Parent Relationship": "Subquery",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Startup Cost": 0.10,
+                      "Total Cost": 0.14,
+                      "Plan Rows": 1,
+                      "Plan Width": 304,
+                      "Plans": [
+                        {
+                          "Node Type": "Sort",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 0.10,
+                          "Total Cost": 0.11,
+                          "Plan Rows": 1,
+                          "Plan Width": 232,
+                          "Sort Key": ["o.contributor_id", "((o.source_report_key || convert_to(('|'::text || COALESCE(o.report_number, o_1.report_number, 'legacy'::text)), 'UTF8'::name)))", "o.payload_sha256 COLLATE \"C\""],
+                          "Plans": [
+                            {
+                              "Node Type": "Nested Loop",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Join Type": "Left",
+                              "Startup Cost": 0.03,
+                              "Total Cost": 0.09,
+                              "Plan Rows": 1,
+                              "Plan Width": 232,
+                              "Inner Unique": true,
+                              "Join Filter": "((o.contributor_id = o_1.contributor_id) AND (o.source_report_key = o_1.source_report_key))",
+                              "Plans": [
+                                {
+                                  "Node Type": "CTE Scan",
+                                  "Parent Relationship": "Outer",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "CTE Name": "own",
+                                  "Alias": "o",
+                                  "Startup Cost": 0.00,
+                                  "Total Cost": 0.02,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 264
+                                },
+                                {
+                                  "Node Type": "Unique",
+                                  "Parent Relationship": "Inner",
+                                  "Parallel Aware": false,
+                                  "Async Capable": false,
+                                  "Startup Cost": 0.03,
+                                  "Total Cost": 0.04,
+                                  "Plan Rows": 1,
+                                  "Plan Width": 120,
+                                  "Plans": [
+                                    {
+                                      "Node Type": "Sort",
+                                      "Parent Relationship": "Outer",
+                                      "Parallel Aware": false,
+                                      "Async Capable": false,
+                                      "Startup Cost": 0.03,
+                                      "Total Cost": 0.04,
+                                      "Plan Rows": 1,
+                                      "Plan Width": 120,
+                                      "Sort Key": ["o_1.contributor_id", "o_1.source_report_key", "o_1.first_accepted_at", "o_1.dataset_key"],
+                                      "Plans": [
+                                        {
+                                          "Node Type": "CTE Scan",
+                                          "Parent Relationship": "Outer",
+                                          "Parallel Aware": false,
+                                          "Async Capable": false,
+                                          "CTE Name": "own",
+                                          "Alias": "o_1",
+                                          "Startup Cost": 0.00,
+                                          "Total Cost": 0.02,
+                                          "Plan Rows": 1,
+                                          "Plan Width": 120,
+                                          "Filter": "(report_number IS NOT NULL)"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

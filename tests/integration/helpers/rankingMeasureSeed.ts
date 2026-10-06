@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 // Shared deterministic, rollback-only synthetic seed for the existing rankings and new public rollup measurements.
 // Triggers are disabled only during bulk insertion, then restored before every measured query.
+// Expand the identical copied record once per row, not once for every column in (function()).*.
 export function rankingMeasureSeed(size=500000, globalKeys=false):string {
  if(!Number.isInteger(size)||size<0||size>500000)throw new Error('invalid fixture size');
  return `begin;
@@ -18,8 +19,10 @@ export function rankingMeasureSeed(size=500000, globalKeys=false):string {
         case when g<=1+u.idx%50*10 then 'partial' when g%17=0 then 'completed_unknown' else 'accepted' end,
         case when g<=1+u.idx%50*10 then 'fine' else 'warning' end,'unknown','2040-09-01','2040-09-30','none',null,now(),now()${globalKeys ? ",'agency-'||(g%100),'합성 기관 '||(g%100),'manager-'||(g%500),'합성 담당 '||(g%500),'합성법 제'||(1+g%10)||'조','서울 중구'" : ''}
       from rk_users u cross join generate_series(1,500) g where (u.idx-1)*500+g<=${size};
-    insert into private.community_report_facts select (jsonb_populate_record(null::private.community_report_facts,to_jsonb(f)||jsonb_build_object('dataset_key',repeat('c',64)))).*
-      from private.community_report_facts f join rk_users u on u.id=f.contributor_id where u.idx<=200;
+    insert into private.community_report_facts select copied.*
+      from private.community_report_facts f join rk_users u on u.id=f.contributor_id
+      cross join lateral jsonb_populate_record(null::private.community_report_facts,to_jsonb(f)||jsonb_build_object('dataset_key',repeat('c',64))) copied
+      where u.idx<=200;
     analyze private.community_report_facts;
     alter table private.community_report_facts enable trigger user;
 `;

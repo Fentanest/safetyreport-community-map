@@ -427,6 +427,42 @@
     "202610010100",
     "202610040500"
    ]
+  },
+  {
+   "version": "202610060200",
+   "repo": "map",
+   "path": "supabase/migrations/202610060200_query_read_paths.sql",
+   "sha256": "b87fdd2135abb222275175161d1468c43bfa8da1724e455790b15f73e7197cde",
+   "depends_on": [
+    "202610060100"
+   ]
+  },
+  {
+   "version": "202610060300",
+   "repo": "map",
+   "path": "supabase/migrations/202610060300_manifest_statement_batches.sql",
+   "sha256": "41d852c8dfb1f4d99fb6912f7b93882c65c7b97eae45cc238a0071bd25f8e542",
+   "depends_on": [
+    "202610060200"
+   ]
+  },
+  {
+   "version": "202610060400",
+   "repo": "map",
+   "path": "supabase/migrations/202610060400_agency_recompute_batch.sql",
+   "sha256": "82b882663738b67e8f8fb639ee08b34edd48a6d344db8f6f8d76dd0f5b9fc362",
+   "depends_on": [
+    "202610060300"
+   ]
+  },
+  {
+   "version": "202610060500",
+   "repo": "map",
+   "path": "supabase/migrations/202610060500_rollup_region_inputs.sql",
+   "sha256": "2832c8a8d2488e2f0609b5213aa28e1163cf68096c7d5be351c84253014c96e8",
+   "depends_on": [
+    "202610060400"
+   ]
   }
  ],
  "functions": [

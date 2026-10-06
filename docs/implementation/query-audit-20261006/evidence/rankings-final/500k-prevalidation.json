@@ -1,0 +1,55 @@
+{
+  "seed": "refactor-rank-deterministic-v1",
+  "measurements": [
+    {
+      "label": "first",
+      "elapsed_ms": 5319.969,
+      "bytes": 12237
+    },
+    {
+      "label": "rates",
+      "elapsed_ms": 5495.222,
+      "bytes": 12959
+    },
+    {
+      "label": "monthly-reporters",
+      "elapsed_ms": 5331.678,
+      "bytes": 12242
+    },
+    {
+      "label": "monthly-fines",
+      "elapsed_ms": 5424.118,
+      "bytes": 12964
+    },
+    {
+      "label": "monthly-unlucky",
+      "elapsed_ms": 5424.68,
+      "bytes": 12969
+    },
+    {
+      "label": "cumulative-unlucky",
+      "elapsed_ms": 5105.656,
+      "bytes": 13183
+    },
+    {
+      "label": "next",
+      "elapsed_ms": 5349.563,
+      "bytes": 12264
+    },
+    {
+      "label": "all",
+      "elapsed_ms": 5104.551,
+      "bytes": 5476
+    },
+    {
+      "label": "withdrawn",
+      "elapsed_ms": 5181.727,
+      "bytes": 12237
+    },
+    {
+      "label": "after-withdrawal",
+      "elapsed_ms": 5159.471,
+      "bytes": 12186
+    }
+  ]
+}

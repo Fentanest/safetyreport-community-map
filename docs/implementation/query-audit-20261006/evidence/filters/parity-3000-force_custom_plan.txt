@@ -1,0 +1,15 @@
+{"ms": 309.021000, "case": "region", "bytes": 2131, "error": null, "digest": "e4c0b3f3186558ee6b14b022cca29f2f", "message": null, "response_error": null}
+{"ms": 32.710000, "case": "law", "bytes": 562, "error": null, "digest": "32aa7d7f4a8c951df52d5fc729b8209e", "message": null, "response_error": null}
+{"ms": 33.393000, "case": "bbox", "bytes": 4754, "error": null, "digest": "09fd4d5853c7ab6eeb1082a33301a68f", "message": null, "response_error": null}
+{"ms": 7.332000, "case": "month", "bytes": 4516, "error": null, "digest": "c4cf084699ae501150bf8a4c2d2606f3", "message": null, "response_error": null}
+{"ms": 11.282000, "case": "agency", "bytes": 564, "error": null, "digest": "e8a12b9dd4b9db007465a4a46eaf774d", "message": null, "response_error": null}
+{"ms": 52.967000, "case": "region", "bytes": 2131, "error": null, "digest": "e4c0b3f3186558ee6b14b022cca29f2f", "message": null, "response_error": null}
+{"ms": 30.527000, "case": "law", "bytes": 562, "error": null, "digest": "32aa7d7f4a8c951df52d5fc729b8209e", "message": null, "response_error": null}
+{"ms": 33.268000, "case": "bbox", "bytes": 4754, "error": null, "digest": "09fd4d5853c7ab6eeb1082a33301a68f", "message": null, "response_error": null}
+{"ms": 7.225000, "case": "month", "bytes": 4516, "error": null, "digest": "c4cf084699ae501150bf8a4c2d2606f3", "message": null, "response_error": null}
+{"ms": 10.350000, "case": "agency", "bytes": 564, "error": null, "digest": "e8a12b9dd4b9db007465a4a46eaf774d", "message": null, "response_error": null}
+{"equal": true, "parity": "region", "after_error": null, "before_error": null}
+{"equal": true, "parity": "law", "after_error": null, "before_error": null}
+{"equal": true, "parity": "bbox", "after_error": null, "before_error": null}
+{"equal": true, "parity": "month", "after_error": null, "before_error": null}
+{"equal": true, "parity": "agency", "after_error": null, "before_error": null}

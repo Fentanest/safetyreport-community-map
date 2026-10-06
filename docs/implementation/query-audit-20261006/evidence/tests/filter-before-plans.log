@@ -1,0 +1,5 @@
+{"run": "before-3000-force_custom_plan-plans", "samples": 5, "slow": [["region", 330.225, null]]}
+{"run": "before-3000-force_generic_plan-plans", "samples": 5, "slow": [["region", 220.45, null]]}
+{"run": "before-30000-force_custom_plan-plans", "samples": 5, "slow": [["region", 3287.384, null], ["law", 351.049, null], ["bbox", 396.032, null], ["agency", 114.961, null]]}
+{"run": "before-30000-force_generic_plan-plans", "samples": 5, "slow": [["region", 2204.321, null], ["law", 352.182, null], ["bbox", 370.853, null]]}
+20 filter parity checks and 4 region performance checks passed

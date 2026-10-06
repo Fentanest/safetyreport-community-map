@@ -1,0 +1,11 @@
+test_agency_batch_cas_errors_and_trigger_effects (__main__.QueryAudit.test_agency_batch_cas_errors_and_trigger_effects) ... ok
+test_legacy_validation_and_pre_filter_row_budget (__main__.QueryAudit.test_legacy_validation_and_pre_filter_row_budget) ... ok
+test_manifest_exact_generations_and_statement_rollback (__main__.QueryAudit.test_manifest_exact_generations_and_statement_rollback) ... ok
+test_reads_modes_filters_and_transitions (__main__.QueryAudit.test_reads_modes_filters_and_transitions) ... ok
+test_rollup_region_names_and_split_coordinates (__main__.QueryAudit.test_rollup_region_names_and_split_coordinates) ... ok
+test_service_acl_and_actual_rls_roles (__main__.QueryAudit.test_service_acl_and_actual_rls_roles) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 30.074s
+
+OK

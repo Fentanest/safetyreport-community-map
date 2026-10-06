@@ -1,0 +1,524 @@
+{
+  "size": 30000,
+  "users": 300,
+  "mode": "force_generic_plan",
+  "phase": "before",
+  "concentrated": true,
+  "plans": false,
+  "provenance": {
+    "scripts/query-audit/benchmark.py": "be2eeeaf8f601067493554da35df91c9553617a6e07be60aaa63fa565d6c67fc",
+    "scripts/query-audit/write_benchmark.py": "8f0fa639188dc3895abd048efece4e2afd8cb732e37bc4e39d542749e2198dc2",
+    "tests/integration/helpers/cohort-timeout-seed.sql": "c5641bb15e854b04578c07454697d7223319358c705388b4edff69a3fb9ba041",
+    "supabase/migrations/202610060100_cohort_facts_setwise.sql": "cada41388f935740adfd0e026d7d45f04f08c9e77f7a9aa96bacdfba0519b5d1",
+    "supabase/migrations/202610060200_query_read_paths.sql": "20b2eb3032d28195b93fdaa780a4d50506c23e7b9d333e4895cc7c485addf51a",
+    "supabase/migrations/202610060300_manifest_statement_batches.sql": "41d852c8dfb1f4d99fb6912f7b93882c65c7b97eae45cc238a0071bd25f8e542",
+    "supabase/migrations/202610060400_agency_recompute_batch.sql": "82b882663738b67e8f8fb639ee08b34edd48a6d344db8f6f8d76dd0f5b9fc362",
+    "supabase/migrations/202610060500_rollup_region_inputs.sql": "e35c7f465e74f5cd708822201a0cfe47140450fdef109084d858b0eed1145e2b"
+  },
+  "samples": [
+    {
+      "ms": 2.71,
+      "case": "internal_account_grant_consent/current",
+      "bytes": 154,
+      "error": null,
+      "digest": "ef808d59df8e8910299e6f003185218b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 2.241,
+      "case": "internal_account_grant_consent/new",
+      "bytes": 153,
+      "error": null,
+      "digest": "56cd6e33ade2264c18745e2ec34ccd6a",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 2.619,
+      "case": "internal_account_register_connection",
+      "bytes": 108,
+      "error": null,
+      "digest": "8c9b85af27969813dfab341a2d156be5",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.575,
+      "case": "internal_account_rebind_connection",
+      "bytes": 111,
+      "error": null,
+      "digest": "87961782467a5bc55471e4e9450b69d6",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.968,
+      "case": "internal_account_revoke_connection",
+      "bytes": 78,
+      "error": null,
+      "digest": "e3562ca031ef98621a2b23b1a20f73be",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 2.182,
+      "case": "internal_account_revoke_consent",
+      "bytes": 120,
+      "error": null,
+      "digest": "d64e9f893fe46cef6b30a1f1f06e5adc",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 8000.177,
+      "case": "internal_community_delete_contributions",
+      "bytes": null,
+      "error": "57014",
+      "digest": null,
+      "message": "canceling statement due to statement timeout",
+      "response_error": null
+    },
+    {
+      "ms": 0.449,
+      "case": "internal_analytics_v2_rate_limit",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.713,
+      "case": "internal_community_ingest_rate_limit",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.09,
+      "case": "internal_safeauth_rate_limit",
+      "bytes": 36,
+      "error": null,
+      "digest": "025d09f9fc5c3970f8ff77ced574a82e",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 2.897,
+      "case": "internal_safeauth_create",
+      "bytes": 152,
+      "error": null,
+      "digest": "be1b6bf4d2d732491e32567baae22118",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.254,
+      "case": "internal_safeauth_claim",
+      "bytes": 149,
+      "error": null,
+      "digest": "ff9217442c87767ef8c1633988c1a2d1",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.415,
+      "case": "internal_safeauth_browser_status",
+      "bytes": 70,
+      "error": null,
+      "digest": "e8c2d809480e20d72e9f78f8fb8cfb24",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.797,
+      "case": "internal_safeauth_prepare",
+      "bytes": 141,
+      "error": null,
+      "digest": "f8adc2fe776f92a4b6f53256063f753b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.893,
+      "case": "internal_safeauth_publish",
+      "bytes": 23,
+      "error": null,
+      "digest": "a0d616bfeed012b3183e1b744bd4ad8e",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.815,
+      "case": "internal_safeauth_poll",
+      "bytes": 119,
+      "error": null,
+      "digest": "43faea0ff4512b2dd5ac9b5c2189546a",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.012,
+      "case": "internal_safeauth_complete",
+      "bytes": 29,
+      "error": null,
+      "digest": "13a6882cd7653826cc63760c2d4f42b6",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.792,
+      "case": "internal_safeauth_cancel",
+      "bytes": 22,
+      "error": null,
+      "digest": "0348188e86e183ed4b21870c81bbb936",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.723,
+      "case": "internal_safeauth_rotate_ticket",
+      "bytes": 133,
+      "error": null,
+      "digest": "810d2c7e97fcd9d639f7a5c995a73104",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 98.567,
+      "case": "internal_safeauth_cleanup",
+      "bytes": 44,
+      "error": null,
+      "digest": "19a8ee03cdaa1f692463c819f923b579",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.603,
+      "case": "internal_activate_snapshot",
+      "bytes": 2,
+      "error": null,
+      "digest": "9d4568c009d203ab10e33ea9953a0264",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 259.669,
+      "case": "internal_agency_recompute_apply",
+      "bytes": 30,
+      "error": null,
+      "digest": "8af088548f8f758ed07a8b6a551177a0",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 6.236,
+      "case": "internal_community_ingest/1",
+      "bytes": 253,
+      "error": null,
+      "digest": "9a13b5bab37139a7d0c6911da1c54572",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 33.63,
+      "case": "internal_community_ingest/20",
+      "bytes": 3692,
+      "error": null,
+      "digest": "8efff4f3ff54ae36a7acdce5aa308d82",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 43.272,
+      "case": "internal_cleanup_expired",
+      "bytes": 2,
+      "error": null,
+      "digest": "9d4568c009d203ab10e33ea9953a0264",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.207,
+      "case": "community_current_policy",
+      "bytes": 168,
+      "error": null,
+      "digest": "56951481732319d5c9ee95c5f5c73aaa",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.53,
+      "case": "community_identity_state",
+      "bytes": 49,
+      "error": null,
+      "digest": "c5b250eeace470b967c42239faffa806",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.416,
+      "case": "community_lineage_active",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.475,
+      "case": "community_lock_contributor",
+      "bytes": 344,
+      "error": null,
+      "digest": "15b5bdcdd4969587992a51d5ae4277e9",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.378,
+      "case": "community_grant_is_current",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.947,
+      "case": "community_fact_publicly_listed",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.532,
+      "case": "community_bump_manifest",
+      "bytes": null,
+      "error": null,
+      "digest": null,
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.371,
+      "case": "community_bump_projection",
+      "bytes": null,
+      "error": null,
+      "digest": null,
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.81,
+      "case": "safeauth_expire_if_needed",
+      "bytes": 9,
+      "error": null,
+      "digest": "9871045f44b57d41c50cd1cdf4b683da",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.927,
+      "case": "analytics_in_ring",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.329,
+      "case": "analytics_in_polygon",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.306,
+      "case": "analytics_region",
+      "bytes": 7,
+      "error": null,
+      "digest": "ce6c2a866c9f1471292dda6f4ccd400c",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.81,
+      "case": "analytics_law",
+      "bytes": 25,
+      "error": null,
+      "digest": "f0612c8e19ccd645b3272874189c6e88",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.381,
+      "case": "my_reports_address_base",
+      "bytes": 39,
+      "error": null,
+      "digest": "0cb3035b3a90fbd352546271d9f1a2c0",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.197,
+      "case": "my_reports_norm_address",
+      "bytes": 39,
+      "error": null,
+      "digest": "0cb3035b3a90fbd352546271d9f1a2c0",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.204,
+      "case": "my_reports_norm_vehicle",
+      "bytes": 11,
+      "error": null,
+      "digest": "8cd6c3492d6881bef36fcad9aed86104",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.537,
+      "case": "my_reports_check_query",
+      "bytes": 15,
+      "error": null,
+      "digest": "4810fe094e236fcfc71a51994a465f9e",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.459,
+      "case": "my_reports_gate",
+      "bytes": 40,
+      "error": null,
+      "digest": "cd3e168bee065bed31fb7adafe69317f",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 446.795,
+      "case": "my_reports_page",
+      "bytes": 11845,
+      "error": null,
+      "digest": "cc006c2e01473f85b456fed837ca2ec8",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 545.244,
+      "case": "my_reports_managers",
+      "bytes": 5154,
+      "error": null,
+      "digest": "8ca1024a4ca06623e1565a6f79373dc3",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 382.968,
+      "case": "my_reports_stats",
+      "bytes": 491,
+      "error": null,
+      "digest": "6b6f0b43ce0fb03a3241178c71850aaa",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 505.165,
+      "case": "my_reports_version",
+      "bytes": 34,
+      "error": null,
+      "digest": "29a377d978d9471f7952551d7db53a5d",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 328.627,
+      "case": "my_reports_matches",
+      "bytes": 4,
+      "error": null,
+      "digest": "b326b5062b2f0e69046810717534cb09",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 334.296,
+      "case": "my_reports_row_json",
+      "bytes": 588,
+      "error": null,
+      "digest": "68eeaaad1d643c371f5d39e4f342153b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 8000.364,
+      "case": "triggers/insert-bulk",
+      "bytes": null,
+      "error": "57014",
+      "digest": null,
+      "message": "canceling statement due to statement timeout",
+      "response_error": null
+    },
+    {
+      "ms": 1.349,
+      "case": "triggers/insert-one",
+      "bytes": 1,
+      "error": null,
+      "digest": "c4ca4238a0b923820dcc509a6f75849b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 8000.213,
+      "case": "triggers/delete-bulk",
+      "bytes": null,
+      "error": "57014",
+      "digest": null,
+      "message": "canceling statement due to statement timeout",
+      "response_error": null
+    },
+    {
+      "ms": 8000.308,
+      "case": "triggers/update-state",
+      "bytes": null,
+      "error": "57014",
+      "digest": null,
+      "message": "canceling statement due to statement timeout",
+      "response_error": null
+    },
+    {
+      "ms": 0.728,
+      "case": "triggers/profile-update",
+      "bytes": 1,
+      "error": null,
+      "digest": "c4ca4238a0b923820dcc509a6f75849b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.893,
+      "case": "triggers/policy-immutable",
+      "bytes": null,
+      "error": "P0001",
+      "digest": null,
+      "message": "COMMUNITY_POLICY_IMMUTABLE: publish a new version instead",
+      "response_error": null
+    },
+    {
+      "ms": 0.651,
+      "case": "triggers/policy-text-immutable",
+      "bytes": null,
+      "error": "P0001",
+      "digest": null,
+      "message": "COMMUNITY_POLICY_TEXT_IMMUTABLE",
+      "response_error": null
+    }
+  ]
+}

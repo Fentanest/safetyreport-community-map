@@ -1,0 +1,30 @@
+{
+  "recorded_at_utc": "2026-10-06T02:02:01.844600+00:00",
+  "map_baseline": "5cf45c69ea2ace84877b438d61b665bbaa2fad33",
+  "auth_baseline": "151adfd",
+  "sha256": {
+    "docs/implementation/query-audit-20261006/evidence/catalog-after.json": "72a2cbbe304ede01306a7d9defdc9034a5a3310620865cd2b99aff0cd2418236",
+    "docs/implementation/query-audit-20261006/evidence/catalog-before.json": "c47ce7124739b8ad31a79c6872a99e5fc60d9383aa65245bb6bfa0644495043f",
+    "scripts/query-audit/benchmark.py": "be2eeeaf8f601067493554da35df91c9553617a6e07be60aaa63fa565d6c67fc",
+    "scripts/query-audit/catalog.py": "b831d42d5d1cbcb44d3c2c4771020b4893535a724ed8e434c126cd38ce115537",
+    "scripts/query-audit/filter_benchmark.py": "0b6afaff313f810b338a1bc44eb2226475306adb4bbe06e47bf4093457b47682",
+    "scripts/query-audit/inventory.py": "f3bfdd9594ebf81cafadaf765a5be4a6b2712e8c4bf654831bbcb06b918d367f",
+    "scripts/query-audit/performance_test.py": "5042006dc954974bea83cc74185737ba14ac219e00879862bde134aed22cafcb",
+    "scripts/query-audit/regression.py": "85025ad27ff902be329ae45b53c0a3ba5801b61c1b62b8878aff05a19cd050e2",
+    "scripts/query-audit/report.py": "f92b8d4c235df54df68ab72a368d120819fe9c24400c728c41f8064f60786e58",
+    "scripts/query-audit/rls_benchmark.py": "f06f7202dd36b6d889687316c7c046bd6490b4a0aaf2d0e7a73c162dd88ff9b7",
+    "scripts/query-audit/write_benchmark.py": "8f0fa639188dc3895abd048efece4e2afd8cb732e37bc4e39d542749e2198dc2",
+    "supabase/migrations/202610060200_query_read_paths.sql": "b87fdd2135abb222275175161d1468c43bfa8da1724e455790b15f73e7197cde",
+    "supabase/migrations/202610060300_manifest_statement_batches.sql": "41d852c8dfb1f4d99fb6912f7b93882c65c7b97eae45cc238a0071bd25f8e542",
+    "supabase/migrations/202610060400_agency_recompute_batch.sql": "82b882663738b67e8f8fb639ee08b34edd48a6d344db8f6f8d76dd0f5b9fc362",
+    "supabase/migrations/202610060500_rollup_region_inputs.sql": "2832c8a8d2488e2f0609b5213aa28e1163cf68096c7d5be351c84253014c96e8"
+  },
+  "notes": [
+    "Tests ran on the uncommitted candidate; final commit SHAs are recorded in external REPORT-2.md.",
+    "Initial full suite and write matrices preceded the final ranking plan and rollup join refinements; affected read/parity/performance and 500k ranking/rollup suites were rerun, while write paths were unchanged.",
+    "rollup-before-join-gate preserves the intermediate candidate. rollup-final and rankings-final are final candidate expansion measurements.",
+    "HTTP before/after wrappers used the same candidate database; they are repeatability evidence, not SQL before/after claims.",
+    "Local stack was restored after tests; current live local SQL is the original stack, not the committed candidate.",
+    "Committed text plan and test logs normalize trailing whitespace only; measured values and failures are preserved."
+  ]
+}

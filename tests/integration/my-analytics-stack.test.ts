@@ -46,7 +46,7 @@ const toSession = (j: Json): Session => {
 };
 
 /** A separate Kakao login = a separate GoTrue session (the app's session and the map's session are distinct). */
-async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'I'): Promise<Session> {
+async function kakaoSession(choice: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'I' | 'L'): Promise<Session> {
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
   const step1 = await fetch(`${API}/auth/v1/authorize?${new URLSearchParams({ provider: 'kakao', redirect_to: REDIRECT, code_challenge: challenge, code_challenge_method: 's256' })}`, { redirect: 'manual' });
@@ -262,7 +262,7 @@ describe.skipIf(!enabled)('my-analytics on the composed local stack', () => {
       const r = await publicGet(path, null);
       expect([r.status, r.json.error?.code], path).toEqual([401, 'auth_required']);
     }
-    const f = await kakaoSession('F'); // Kakao sign-in, never consented to share
+    const f = await kakaoSession('L'); // Dedicated never-consented user; F belongs to community deletion tests
     const refused = await publicGet('meta', f.access);
     expect([refused.status, refused.json.error?.code]).toEqual([403, 'contributor_required']);
     expect(JSON.stringify(refused.json)).not.toMatch(/dataset_version|report_count/);

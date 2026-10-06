@@ -1,0 +1,228 @@
+{
+  "mode": "direct local PostgreSQL, service RPC; synthetic; rollback; no HTTP/rate or production claims",
+  "seed": "refactor-rank-deterministic-v1/global-user-qualified-keys",
+  "unique_public_reports": 500000,
+  "observations": 600000,
+  "repeats": 10,
+  "diagnostic_timeout_seconds": 30,
+  "production_function_timeout_unchanged": true,
+  "hash_plan_candidate": false,
+  "candidate_migration": "202610060500_rollup_region_inputs.sql",
+  "samples": [
+    {
+      "ms": 4403.605,
+      "label": "before-bounded-raw",
+      "status": "422_RESULT_TOO_LARGE"
+    },
+    {
+      "n": 1000,
+      "ms": 10656.083,
+      "bytes": 108179,
+      "label": "after-manager-1",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9347.787,
+      "bytes": 108179,
+      "label": "after-manager-2",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9376.216,
+      "bytes": 108179,
+      "label": "after-manager-3",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9439.271,
+      "bytes": 108179,
+      "label": "after-manager-4",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9478.723,
+      "bytes": 108179,
+      "label": "after-manager-5",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9373.451,
+      "bytes": 108179,
+      "label": "after-manager-6",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9568.625,
+      "bytes": 108179,
+      "label": "after-manager-7",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9545.235,
+      "bytes": 108179,
+      "label": "after-manager-8",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9337.465,
+      "bytes": 108179,
+      "label": "after-manager-9",
+      "total_rows": 500
+    },
+    {
+      "n": 1000,
+      "ms": 9507.304,
+      "bytes": 108179,
+      "label": "after-manager-10",
+      "total_rows": 500
+    },
+    {
+      "n": 50000,
+      "ms": 10571.157,
+      "bytes": 4579,
+      "label": "after-laws-1",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9160.366,
+      "bytes": 4579,
+      "label": "after-laws-2",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9489.948,
+      "bytes": 4579,
+      "label": "after-laws-3",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9423.514,
+      "bytes": 4579,
+      "label": "after-laws-4",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9201.678,
+      "bytes": 4579,
+      "label": "after-laws-5",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9368.285,
+      "bytes": 4579,
+      "label": "after-laws-6",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9434.106,
+      "bytes": 4579,
+      "label": "after-laws-7",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9351.869,
+      "bytes": 4579,
+      "label": "after-laws-8",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 9587.641,
+      "bytes": 4579,
+      "label": "after-laws-9",
+      "total_rows": 10
+    },
+    {
+      "n": 50000,
+      "ms": 10002.424,
+      "bytes": 4579,
+      "label": "after-laws-10",
+      "total_rows": 10
+    },
+    {
+      "n": 500000,
+      "ms": 10352.17,
+      "bytes": 454,
+      "label": "after-series-1",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 8994.998,
+      "bytes": 454,
+      "label": "after-series-2",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 9155.543,
+      "bytes": 454,
+      "label": "after-series-3",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 9160.95,
+      "bytes": 454,
+      "label": "after-series-4",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 9238.28,
+      "bytes": 454,
+      "label": "after-series-5",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 9019.707,
+      "bytes": 454,
+      "label": "after-series-6",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 9107.297,
+      "bytes": 454,
+      "label": "after-series-7",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 8769.507,
+      "bytes": 454,
+      "label": "after-series-8",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 9060.85,
+      "bytes": 454,
+      "label": "after-series-9",
+      "total_rows": 1
+    },
+    {
+      "n": 500000,
+      "ms": 8962.546,
+      "bytes": 454,
+      "label": "after-series-10",
+      "total_rows": 1
+    }
+  ]
+}

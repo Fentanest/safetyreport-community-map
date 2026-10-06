@@ -1,0 +1,227 @@
+{
+  "size": 3000,
+  "users": 30,
+  "mode": "force_custom_plan",
+  "phase": "before",
+  "concentrated": true,
+  "plans": false,
+  "provenance": {
+    "scripts/query-audit/benchmark.py": "be2eeeaf8f601067493554da35df91c9553617a6e07be60aaa63fa565d6c67fc",
+    "scripts/query-audit/write_benchmark.py": "8f0fa639188dc3895abd048efece4e2afd8cb732e37bc4e39d542749e2198dc2",
+    "tests/integration/helpers/cohort-timeout-seed.sql": "c5641bb15e854b04578c07454697d7223319358c705388b4edff69a3fb9ba041",
+    "supabase/migrations/202610060100_cohort_facts_setwise.sql": "cada41388f935740adfd0e026d7d45f04f08c9e77f7a9aa96bacdfba0519b5d1",
+    "supabase/migrations/202610060200_query_read_paths.sql": "20b2eb3032d28195b93fdaa780a4d50506c23e7b9d333e4895cc7c485addf51a",
+    "supabase/migrations/202610060300_manifest_statement_batches.sql": "41d852c8dfb1f4d99fb6912f7b93882c65c7b97eae45cc238a0071bd25f8e542",
+    "supabase/migrations/202610060400_agency_recompute_batch.sql": "82b882663738b67e8f8fb639ee08b34edd48a6d344db8f6f8d76dd0f5b9fc362",
+    "supabase/migrations/202610060500_rollup_region_inputs.sql": "e35c7f465e74f5cd708822201a0cfe47140450fdef109084d858b0eed1145e2b"
+  },
+  "samples": [
+    {
+      "ms": 97.257,
+      "case": "internal_analytics_v2_state",
+      "bytes": 480,
+      "error": null,
+      "digest": "7e7275ea3bc3036e708208bd5aa67b9a",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 105.132,
+      "case": "internal_analytics_cohort_state",
+      "bytes": 662,
+      "error": null,
+      "digest": "9ff09f4b06818e3a86b83145c3d4670b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 652.273,
+      "case": "internal_analytics_viewer",
+      "bytes": 127,
+      "error": null,
+      "digest": "ac893e79fbf27196b022de2c8e8b5c13",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 220.719,
+      "case": "internal_analytics_cohort_facts",
+      "bytes": 3681752,
+      "error": null,
+      "digest": "1c6bfa2df323fb5e1bccc81c62a0dd52",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 475.811,
+      "case": "internal_analytics_v2_facts",
+      "bytes": 3506400,
+      "error": null,
+      "digest": "cbcb042e2af8da54c93bf7b4a8155336",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 323.672,
+      "case": "internal_my_analytics_cohort_source",
+      "bytes": 3682548,
+      "error": null,
+      "digest": "393c2aa78b1998b69f654677f4f42a1e",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 575.064,
+      "case": "internal_my_analytics_source",
+      "bytes": 3507014,
+      "error": null,
+      "digest": "258d67e86c8ef379ce2b2a8c1c6d8851",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.003,
+      "case": "internal_account_policy",
+      "bytes": 5519,
+      "error": null,
+      "digest": "881cded6569a73a0f0a9d3de68043b64",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 1.965,
+      "case": "internal_account_status",
+      "bytes": 804,
+      "error": null,
+      "digest": "11277f432ab240f271fe65a6bc378497",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 10.732,
+      "case": "internal_community_manifest",
+      "bytes": 75028,
+      "error": null,
+      "digest": "531ab07e3d6f756d353d2feff554b0ae",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 0.366,
+      "case": "internal_agency_recompute_state",
+      "bytes": 14,
+      "error": null,
+      "digest": "1a1bd70140ff6f42c19deb1e5f5af4a1",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 54.68,
+      "case": "internal_my_reports_summary",
+      "bytes": 1639,
+      "error": null,
+      "digest": "231d50fc284cf0a8b96ef1e15c53beef",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 82.199,
+      "case": "internal_my_reports_search",
+      "bytes": 17598,
+      "error": null,
+      "digest": "1e8613ba335e253ed47314368a159b52",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 67.09,
+      "case": "internal_my_reports_numbers",
+      "bytes": 10697,
+      "error": null,
+      "digest": "60401fca72d474b64e812588856c616c",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 46.697,
+      "case": "rollup/agency",
+      "bytes": 4812,
+      "error": null,
+      "digest": "57d75e68dbd2be1cdc67a29b099c4c29",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 44.621,
+      "case": "rollup/manager",
+      "bytes": 29515,
+      "error": null,
+      "digest": "70643e0ef8ca6ba41e6ca1b7a2aec204",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 41.825,
+      "case": "rollup/laws",
+      "bytes": 3786,
+      "error": null,
+      "digest": "c3925a43003f353f33a6ce431af16c9b",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 46.607,
+      "case": "rollup/series",
+      "bytes": 18733,
+      "error": null,
+      "digest": "29c4af1d589ab78fe774aa7f9768afb2",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 640.365,
+      "case": "internal_user_rankings",
+      "bytes": 1082,
+      "error": null,
+      "digest": "a67fd8d42527668e0646fc8937cd2df3",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 44.362,
+      "case": "ranking_representatives",
+      "bytes": 772859,
+      "error": null,
+      "digest": "c8d633a6584ecf8f75d4844d2aad9335",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 94.796,
+      "case": "my_reports_own",
+      "bytes": 1816292,
+      "error": null,
+      "digest": "9e42d71e5388999dd7f2231e405bb3e1",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 59.523,
+      "case": "analytics_rollup_source",
+      "bytes": 1097667,
+      "error": null,
+      "digest": "8aeed6f0284ba69e268b0e10f1c6fa30",
+      "message": null,
+      "response_error": null
+    },
+    {
+      "ms": 5.568,
+      "case": "internal_agency_recompute_page",
+      "bytes": 229818,
+      "error": null,
+      "digest": "729755118463cca394b72aa9be67c654",
+      "message": null,
+      "response_error": null
+    }
+  ]
+}

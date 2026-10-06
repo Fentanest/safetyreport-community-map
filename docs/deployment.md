@@ -146,3 +146,7 @@ RPC/Edge/Pages 계약은 불변이며 Edge·Pages 재배포는 필요 없다. �
 기존 함수 백업·적용·검증·forward rollback 순서는
 [cohort timeout 적용 메모](implementation/cohort-facts-timeout/MIGRATION.md),
 로컬 3천/3만 행 실행계획과 동등성 결과는 [검증 보고](implementation/cohort-facts-timeout/REPORT.md)에 있다.
+
+## 2026-10-06 전체 쿼리 감사
+
+공유 이력의 auth `202610050100` → map `202610060100` → `202610060200` → `202610060300` → `202610060400` → `202610060500` 순서를 따른다. 이번 신규 변경은 SQL이며 Edge/Pages/앱 재배포가 필요 없다. 운영 미접속 상태의 명령·잠금·forward rollback 절차는 [MIGRATION.md](implementation/query-audit-20261006/MIGRATION.md)에 있다.

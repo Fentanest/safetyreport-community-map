@@ -1,0 +1,116 @@
+{
+  "repo": "map",
+  "commands": "See REPRODUCE.md (map) / docs/verification.md (auth)",
+  "runs": [
+    {
+      "log": "map-all.log",
+      "summary": [
+        "Ran 5 tests in 29.918s",
+        "OK",
+        "Test Files  5 failed | 68 passed (73)",
+        "Tests  6 failed | 699 passed | 40 skipped (745)",
+        "Duration  1528.47s (tests 98%, import 2%, transform 1%)"
+      ]
+    },
+    {
+      "log": "map-oauth-rerun.log",
+      "summary": [
+        "Test Files  1 failed | 2 passed (3)",
+        "Tests  1 failed | 44 passed (45)",
+        "Duration  81.82s (tests 89%, transform 6%, import 5%)"
+      ]
+    },
+    {
+      "log": "map-personal-final.log",
+      "summary": [
+        "Test Files  1 passed (1)",
+        "Tests  7 passed (7)",
+        "Duration  17.07s (tests 59%, transform 29%, import 11%)"
+      ]
+    },
+    {
+      "log": "map-rankings-edge-final.log",
+      "summary": [
+        "Test Files  1 passed (1)",
+        "Tests  2 passed (2)",
+        "Duration  4.73s (tests 94%, import 4%, transform 2%)"
+      ]
+    },
+    {
+      "log": "map-affected-final.log",
+      "summary": [
+        "Ran 6 tests in 30.539s",
+        "OK",
+        "Test Files  6 passed (6)",
+        "Tests  28 passed (28)",
+        "Duration  727.94s (tests 99%, transform 1%)"
+      ]
+    },
+    {
+      "log": "map-rollup-final.log",
+      "summary": [
+        "Test Files  3 passed (3)",
+        "Tests  12 passed (12)",
+        "Duration  407.38s (tests 98%, transform 1%, import 1%)"
+      ]
+    },
+    {
+      "log": "map-unit-final.log",
+      "summary": [
+        "Test Files  53 passed | 20 skipped (73)",
+        "Tests  628 passed | 118 skipped (746)",
+        "Duration  10.70s (transform 58%, import 26%, tests 16%)"
+      ]
+    },
+    {
+      "log": "map-build-final.log",
+      "summary": []
+    },
+    {
+      "log": "map-scan-final.log",
+      "summary": []
+    },
+    {
+      "log": "python-blueprint.log",
+      "summary": [
+        "Ran 27 tests in 0.021s",
+        "OK"
+      ]
+    },
+    {
+      "log": "python-product.log",
+      "summary": [
+        "Ran 12 tests in 1.491s",
+        "OK"
+      ]
+    },
+    {
+      "log": "manifest-check.log",
+      "summary": [
+        "manifest check ok: 47 migrations, 7 functions (map=., auth=/home/better0101/projects/worktree/auth-perf)"
+      ]
+    },
+    {
+      "log": "regression-final.log",
+      "summary": [
+        "Ran 6 tests in 30.074s",
+        "OK"
+      ]
+    },
+    {
+      "log": "rls-final.log",
+      "summary": [
+        "3000 force_custom_plan 130 role probes passed",
+        "3000 force_generic_plan 130 role probes passed",
+        "30000 force_custom_plan 130 role probes passed",
+        "30000 force_generic_plan 130 role probes passed"
+      ]
+    },
+    {
+      "log": "filter-before-plans.log",
+      "summary": [
+        "20 filter parity checks and 4 region performance checks passed"
+      ]
+    }
+  ]
+}

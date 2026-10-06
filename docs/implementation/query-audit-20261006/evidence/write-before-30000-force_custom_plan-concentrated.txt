@@ -1,0 +1,56 @@
+{"ms": 2.448000, "case": "internal_account_grant_consent/current", "bytes": 154, "error": null, "digest": "015de4d4bc1985e3d81c8dede6f124b8", "message": null, "response_error": null}
+{"ms": 1.752000, "case": "internal_account_grant_consent/new", "bytes": 153, "error": null, "digest": "a6e5dea512817f9830441df52f49d2d7", "message": null, "response_error": null}
+{"ms": 1.871000, "case": "internal_account_register_connection", "bytes": 108, "error": null, "digest": "60b5b1358d681ee41a9eabc4b327c46e", "message": null, "response_error": null}
+{"ms": 1.204000, "case": "internal_account_rebind_connection", "bytes": 111, "error": null, "digest": "87961782467a5bc55471e4e9450b69d6", "message": null, "response_error": null}
+{"ms": 0.938000, "case": "internal_account_revoke_connection", "bytes": 78, "error": null, "digest": "e3562ca031ef98621a2b23b1a20f73be", "message": null, "response_error": null}
+{"ms": 1.722000, "case": "internal_account_revoke_consent", "bytes": 120, "error": null, "digest": "d64e9f893fe46cef6b30a1f1f06e5adc", "message": null, "response_error": null}
+{"ms": 8000.442000, "case": "internal_community_delete_contributions", "bytes": null, "error": "57014", "digest": null, "message": "canceling statement due to statement timeout", "response_error": null}
+{"ms": 0.638000, "case": "internal_analytics_v2_rate_limit", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 0.455000, "case": "internal_community_ingest_rate_limit", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 1.338000, "case": "internal_safeauth_rate_limit", "bytes": 35, "error": null, "digest": "0692882a19aae2cc161f22dcad803977", "message": null, "response_error": null}
+{"ms": 3.052000, "case": "internal_safeauth_create", "bytes": 152, "error": null, "digest": "0eaeb7dae91a0e48790abc991161b046", "message": null, "response_error": null}
+{"ms": 1.354000, "case": "internal_safeauth_claim", "bytes": 149, "error": null, "digest": "f1c6038d44795005ee11bec97d4bd608", "message": null, "response_error": null}
+{"ms": 0.519000, "case": "internal_safeauth_browser_status", "bytes": 70, "error": null, "digest": "12c8bec5ab2211fc53fd3e9a9502d55e", "message": null, "response_error": null}
+{"ms": 1.020000, "case": "internal_safeauth_prepare", "bytes": 141, "error": null, "digest": "382000f475a0d1a4022bf45ca6705145", "message": null, "response_error": null}
+{"ms": 1.101000, "case": "internal_safeauth_publish", "bytes": 23, "error": null, "digest": "a0d616bfeed012b3183e1b744bd4ad8e", "message": null, "response_error": null}
+{"ms": 0.881000, "case": "internal_safeauth_poll", "bytes": 119, "error": null, "digest": "f824db7c06cab803839c0a8f2a462a4e", "message": null, "response_error": null}
+{"ms": 1.158000, "case": "internal_safeauth_complete", "bytes": 29, "error": null, "digest": "13a6882cd7653826cc63760c2d4f42b6", "message": null, "response_error": null}
+{"ms": 0.774000, "case": "internal_safeauth_cancel", "bytes": 22, "error": null, "digest": "0348188e86e183ed4b21870c81bbb936", "message": null, "response_error": null}
+{"ms": 0.844000, "case": "internal_safeauth_rotate_ticket", "bytes": 133, "error": null, "digest": "632ae03cafd2175aceaa3e67c56e3169", "message": null, "response_error": null}
+{"ms": 101.245000, "case": "internal_safeauth_cleanup", "bytes": 44, "error": null, "digest": "19a8ee03cdaa1f692463c819f923b579", "message": null, "response_error": null}
+{"ms": 1.656000, "case": "internal_activate_snapshot", "bytes": 2, "error": null, "digest": "9d4568c009d203ab10e33ea9953a0264", "message": null, "response_error": null}
+{"ms": 331.870000, "case": "internal_agency_recompute_apply", "bytes": 30, "error": null, "digest": "8af088548f8f758ed07a8b6a551177a0", "message": null, "response_error": null}
+{"ms": 6.035000, "case": "internal_community_ingest/1", "bytes": 253, "error": null, "digest": "fbb239f101507d0f2443312cb04eda66", "message": null, "response_error": null}
+{"ms": 36.876000, "case": "internal_community_ingest/20", "bytes": 3692, "error": null, "digest": "eb88388ece639b2f1ec16e823c545dc1", "message": null, "response_error": null}
+{"ms": 30.566000, "case": "internal_cleanup_expired", "bytes": 2, "error": null, "digest": "9d4568c009d203ab10e33ea9953a0264", "message": null, "response_error": null}
+{"ms": 0.225000, "case": "community_current_policy", "bytes": 168, "error": null, "digest": "56951481732319d5c9ee95c5f5c73aaa", "message": null, "response_error": null}
+{"ms": 0.894000, "case": "community_identity_state", "bytes": 49, "error": null, "digest": "c5b250eeace470b967c42239faffa806", "message": null, "response_error": null}
+{"ms": 0.566000, "case": "community_lineage_active", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 0.378000, "case": "community_lock_contributor", "bytes": 344, "error": null, "digest": "1cb29c9af061f545cec1c1ab819285b5", "message": null, "response_error": null}
+{"ms": 0.321000, "case": "community_grant_is_current", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 0.618000, "case": "community_fact_publicly_listed", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 0.330000, "case": "community_bump_manifest", "bytes": null, "error": null, "digest": null, "message": null, "response_error": null}
+{"ms": 0.234000, "case": "community_bump_projection", "bytes": null, "error": null, "digest": null, "message": null, "response_error": null}
+{"ms": 0.553000, "case": "safeauth_expire_if_needed", "bytes": 9, "error": null, "digest": "9871045f44b57d41c50cd1cdf4b683da", "message": null, "response_error": null}
+{"ms": 0.630000, "case": "analytics_in_ring", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 0.261000, "case": "analytics_in_polygon", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 1.019000, "case": "analytics_region", "bytes": 7, "error": null, "digest": "ce6c2a866c9f1471292dda6f4ccd400c", "message": null, "response_error": null}
+{"ms": 1.287000, "case": "analytics_law", "bytes": 25, "error": null, "digest": "f0612c8e19ccd645b3272874189c6e88", "message": null, "response_error": null}
+{"ms": 0.298000, "case": "my_reports_address_base", "bytes": 39, "error": null, "digest": "0cb3035b3a90fbd352546271d9f1a2c0", "message": null, "response_error": null}
+{"ms": 0.168000, "case": "my_reports_norm_address", "bytes": 39, "error": null, "digest": "0cb3035b3a90fbd352546271d9f1a2c0", "message": null, "response_error": null}
+{"ms": 0.175000, "case": "my_reports_norm_vehicle", "bytes": 11, "error": null, "digest": "8cd6c3492d6881bef36fcad9aed86104", "message": null, "response_error": null}
+{"ms": 0.286000, "case": "my_reports_check_query", "bytes": 15, "error": null, "digest": "4810fe094e236fcfc71a51994a465f9e", "message": null, "response_error": null}
+{"ms": 0.976000, "case": "my_reports_gate", "bytes": 40, "error": null, "digest": "cd3e168bee065bed31fb7adafe69317f", "message": null, "response_error": null}
+{"ms": 413.236000, "case": "my_reports_page", "bytes": 11845, "error": null, "digest": "cc006c2e01473f85b456fed837ca2ec8", "message": null, "response_error": null}
+{"ms": 580.468000, "case": "my_reports_managers", "bytes": 5154, "error": null, "digest": "8ca1024a4ca06623e1565a6f79373dc3", "message": null, "response_error": null}
+{"ms": 403.704000, "case": "my_reports_stats", "bytes": 491, "error": null, "digest": "6b6f0b43ce0fb03a3241178c71850aaa", "message": null, "response_error": null}
+{"ms": 538.547000, "case": "my_reports_version", "bytes": 34, "error": null, "digest": "29a377d978d9471f7952551d7db53a5d", "message": null, "response_error": null}
+{"ms": 328.070000, "case": "my_reports_matches", "bytes": 4, "error": null, "digest": "b326b5062b2f0e69046810717534cb09", "message": null, "response_error": null}
+{"ms": 337.122000, "case": "my_reports_row_json", "bytes": 588, "error": null, "digest": "68eeaaad1d643c371f5d39e4f342153b", "message": null, "response_error": null}
+{"ms": 8000.164000, "case": "triggers/insert-bulk", "bytes": null, "error": "57014", "digest": null, "message": "canceling statement due to statement timeout", "response_error": null}
+{"ms": 1.547000, "case": "triggers/insert-one", "bytes": 1, "error": null, "digest": "c4ca4238a0b923820dcc509a6f75849b", "message": null, "response_error": null}
+{"ms": 8000.328000, "case": "triggers/delete-bulk", "bytes": null, "error": "57014", "digest": null, "message": "canceling statement due to statement timeout", "response_error": null}
+{"ms": 8000.624000, "case": "triggers/update-state", "bytes": null, "error": "57014", "digest": null, "message": "canceling statement due to statement timeout", "response_error": null}
+{"ms": 0.512000, "case": "triggers/profile-update", "bytes": 1, "error": null, "digest": "c4ca4238a0b923820dcc509a6f75849b", "message": null, "response_error": null}
+{"ms": 0.322000, "case": "triggers/policy-immutable", "bytes": null, "error": "P0001", "digest": null, "message": "COMMUNITY_POLICY_IMMUTABLE: publish a new version instead", "response_error": null}
+{"ms": 0.851000, "case": "triggers/policy-text-immutable", "bytes": null, "error": "P0001", "digest": null, "message": "COMMUNITY_POLICY_TEXT_IMMUTABLE", "response_error": null}

@@ -1,0 +1,916 @@
+LOG:  duration: 8021.715 ms  plan:
+Query Text:
+ with grants as materialized (
+   select g.grant_id,g.user_id,
+     bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
+   from private.community_consent_grants g
+   join private.contributor_profiles c on c.user_id=g.user_id and c.status='active'
+   join private.community_consent_grants a on a.lineage_id=g.lineage_id and a.user_id=g.user_id and a.revoked_at is null
+   left join private.community_policy_disclosures d on d.version=a.policy_version
+   group by g.grant_id,g.user_id
+ ), candidates as (
+   -- A safe candidate superset, including earlier observations. No grouping/election within the period.
+   select distinct f.source_report_key from private.community_report_facts f
+   join grants g on g.grant_id=f.consent_grant_id and g.user_id=f.contributor_id
+   where f.public_state='completed'
+     and (case $1->>'date_basis' when 'report_date' then f.report_date else f.completed_date end)
+       between ($1->>'start')::date and ($1->>'end')::date
+     and ($1->>'category'='all' or f.category=$1->>'category')
+     and ($1->>'agency_key' is null or f.agency_key=$1->>'agency_key')
+     and ($1->>'manager_key' is null or f.manager_key=$1->>'manager_key')
+ ), observations as materialized (
+   select f.source_report_key collate "C" as source_report_key,f.report_number collate "C" as report_number,
+     f.payload_sha256 collate "C" as payload_sha256,f.contributor_id,f.answer_accepted_at,f.first_accepted_at,
+     f.report_date,f.completed_date,f.category,f.status,f.disposition,f.agency_key,
+     coalesce(nullif(f.agency_current_name,''),nullif(f.agency_name,''),'기관 정보 없음') as agency_name,
+     f.manager_key,f.manager_name,f.region_code,f.lat,f.lng,
+     case when g.law_public then f.violation_law else null end as law,
+     case when g.rating_public then f.rating else null end as rating,
+     case when g.amounts_public and f.amount_kind='fine' and f.disposition='fine' and f.status in ('accepted','partial')
+       then f.amount_confirmed_won else null end as amount_won
+   from private.community_report_facts f join grants g on g.grant_id=f.consent_grant_id and g.user_id=f.contributor_id
+   where f.public_state='completed' and f.source_report_key in (select source_report_key from candidates)
+ ), normalized_laws as materialized (
+   -- Pure text normalization once per distinct disclosed input in this query, never a saved result.
+   select k.raw,private.analytics_law(k.raw) as normalized
+   from (select distinct law as raw from observations where law is not null) k
+ ), key_numbers as (
+   select distinct on(source_report_key) source_report_key,report_number as key_number from observations
+   where report_number is not null order by source_report_key,first_accepted_at,contributor_id
+ ), identified as (
+   select o.*,o.source_report_key||'|'||coalesce(o.report_number,k.key_number,'legacy') as rid,
+     max(o.answer_accepted_at) over(partition by (o.source_report_key||'|'||coalesce(o.report_number,k.key_number,'legacy')),o.payload_sha256) as answer_time
+   from observations o left join key_numbers k using(source_report_key)
+ ), elected as (
+   select i.*,row_number() over(partition by rid order by answer_time desc,completed_date desc nulls last,first_accepted_at,contributor_id) as rn
+   from identified i
+ ) select e.rid,e.report_date,e.completed_date,e.category,e.status,e.disposition,e.agency_key,e.agency_name,e.manager_key,e.manager_name,
+   l.normalized,e.amount_won,e.rating::integer
+ from elected e left join normalized_laws l on l.raw=e.law where e.rn=1
+   and (case $1->>'date_basis' when 'report_date' then e.report_date else e.completed_date end)
+     between ($1->>'start')::date and ($1->>'end')::date
+   and ($1->>'category'='all' or e.category=$1->>'category')
+   and ($1->>'agency_key' is null or e.agency_key=$1->>'agency_key')
+   and ($1->>'manager_key' is null or e.manager_key=$1->>'manager_key')
+   and ($1->>'region_code' is null or private.analytics_region(e.region_code,e.lat,e.lng) like ($1->>'region_code')||'%')
+   and ($1->>'law' is null or case when $1->>'law'='__none__' then l.normalized is null else l.normalized=private.analytics_law($1->>'law') end)
+   and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
+     and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
+
+Hash Left Join  (cost=105346.43..105346.55 rows=1 width=308) (actual time=5205.929..7655.115 rows=500000 loops=1)
+  Hash Cond: (e.law = l.raw)
+  Buffers: shared hit=13261 read=61903, temp read=66994 written=44605
+  CTE grants
+    ->  GroupAggregate  (cost=182.78..182.80 rows=1 width=35) (actual time=2.227..2.751 rows=1017 loops=1)
+          Group Key: g.grant_id
+          Buffers: shared hit=84
+          ->  Sort  (cost=182.78..182.78 rows=1 width=35) (actual time=2.222..2.287 rows=1017 loops=1)
+                Sort Key: g.grant_id
+                Sort Method: quicksort  Memory: 80kB
+                Buffers: shared hit=84
+                ->  Hash Right Join  (cost=156.95..182.77 rows=1 width=35) (actual time=1.835..2.001 rows=1017 loops=1)
+                      Hash Cond: (d.version = a.policy_version)
+                      Buffers: shared hit=84
+                      ->  Seq Scan on community_policy_disclosures d  (cost=0.00..21.50 rows=1150 width=35) (actual time=0.006..0.007 rows=3 loops=1)
+                            Buffers: shared hit=1
+                      ->  Hash  (cost=156.93..156.93 rows=1 width=45) (actual time=1.826..1.831 rows=1017 loops=1)
+                            Buckets: 1024  Batches: 1  Memory Usage: 85kB
+                            Buffers: shared hit=83
+                            ->  Hash Join  (cost=101.73..156.93 rows=1 width=45) (actual time=1.163..1.621 rows=1017 loops=1)
+                                  Hash Cond: ((g.user_id = c.user_id) AND (g.lineage_id = a.lineage_id))
+                                  Buffers: shared hit=83
+                                  ->  Seq Scan on community_consent_grants g  (cost=0.00..46.11 rows=1211 width=48) (actual time=0.006..0.115 rows=1211 loops=1)
+                                        Buffers: shared hit=34
+                                  ->  Hash  (cost=89.07..89.07 rows=844 width=61) (actual time=1.138..1.141 rows=1010 loops=1)
+                                        Buckets: 1024  Batches: 1  Memory Usage: 100kB
+                                        Buffers: shared hit=49
+                                        ->  Hash Join  (cost=40.30..89.07 rows=844 width=61) (actual time=0.388..0.938 rows=1010 loops=1)
+                                              Hash Cond: (a.user_id = c.user_id)
+                                              Buffers: shared hit=49
+                                              ->  Seq Scan on community_consent_grants a  (cost=0.00..46.11 rows=1010 width=45) (actual time=0.023..0.367 rows=1010 loops=1)
+                                                    Filter: (revoked_at IS NULL)
+                                                    Rows Removed by Filter: 201
+                                                    Buffers: shared hit=34
+                                              ->  Hash  (cost=27.65..27.65 rows=1012 width=16) (actual time=0.362..0.363 rows=1012 loops=1)
+                                                    Buckets: 1024  Batches: 1  Memory Usage: 56kB
+                                                    Buffers: shared hit=15
+                                                    ->  Seq Scan on contributor_profiles c  (cost=0.00..27.65 rows=1012 width=16) (actual time=0.007..0.214 rows=1012 loops=1)
+                                                          Filter: (status = 'active'::text)
+                                                          Buffers: shared hit=15
+  CTE observations
+    ->  Hash Join  (cost=58546.96..105163.11 rows=1 width=300) (actual time=1792.489..3065.201 rows=600000 loops=1)
+          Hash Cond: ((f.consent_grant_id = g_1.grant_id) AND (f.contributor_id = g_1.user_id))
+          Buffers: shared hit=13249 read=61903
+          ->  Hash Join  (cost=58546.93..105163.04 rows=1 width=372) (actual time=1789.188..2737.334 rows=600000 loops=1)
+                Hash Cond: (f.source_report_key = f_1.source_report_key)
+                Buffers: shared hit=13165 read=61903
+                ->  Seq Scan on community_report_facts f  (cost=0.00..45039.88 rows=600470 width=372) (actual time=0.016..415.366 rows=600488 loops=1)
+                      Filter: (public_state = 'completed'::text)
+                      Buffers: shared hit=6598 read=30936
+                ->  Hash  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1789.155..1789.158 rows=500000 loops=1)
+                      Buckets: 524288 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 51460kB
+                      Buffers: shared hit=6567 read=30967
+                      ->  Unique  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1381.252..1653.264 rows=500000 loops=1)
+                            Buffers: shared hit=6567 read=30967
+                            ->  Sort  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1381.248..1424.224 rows=600000 loops=1)
+                                  Sort Key: f_1.source_report_key
+                                  Sort Method: quicksort  Memory: 24577kB
+                                  Buffers: shared hit=6567 read=30967
+                                  ->  Hash Join  (cost=0.04..58546.90 rows=1 width=65) (actual time=0.316..855.925 rows=600000 loops=1)
+                                        Hash Cond: ((f_1.consent_grant_id = g_2.grant_id) AND (f_1.contributor_id = g_2.user_id))
+                                        Buffers: shared hit=6567 read=30967
+                                        ->  Seq Scan on community_report_facts f_1  (cost=0.00..54046.93 rows=599990 width=97) (actual time=0.005..673.150 rows=600000 loops=1)
+                                              Filter: ((public_state = 'completed'::text) AND (completed_date >= ('2040-09-01'::cstring)::date) AND (completed_date <= ('2040-09-30'::cstring)::date))
+                                              Rows Removed by Filter: 488
+                                              Buffers: shared hit=6567 read=30967
+                                        ->  Hash  (cost=0.02..0.02 rows=1 width=32) (actual time=0.307..0.308 rows=1017 loops=1)
+                                              Buckets: 1024  Batches: 1  Memory Usage: 72kB
+                                              ->  CTE Scan on grants g_2  (cost=0.00..0.02 rows=1 width=32) (actual time=0.000..0.116 rows=1017 loops=1)
+          ->  Hash  (cost=0.02..0.02 rows=1 width=35) (actual time=3.287..3.288 rows=1017 loops=1)
+                Buckets: 1024  Batches: 1  Memory Usage: 75kB
+                Buffers: shared hit=84
+                ->  CTE Scan on grants g_1  (cost=0.00..0.02 rows=1 width=35) (actual time=2.228..3.089 rows=1017 loops=1)
+                      Buffers: shared hit=84
+  CTE normalized_laws
+    ->  Subquery Scan on k_1  (cost=0.02..0.28 rows=1 width=64) (actual time=298.968..299.319 rows=10 loops=1)
+          Buffers: shared hit=12, temp read=22395
+          ->  HashAggregate  (cost=0.02..0.03 rows=1 width=32) (actual time=297.515..297.524 rows=10 loops=1)
+                Group Key: observations_1.law
+                Batches: 1  Memory Usage: 24kB
+                Buffers: temp read=22395
+                ->  CTE Scan on observations observations_1  (cost=0.00..0.02 rows=1 width=32) (actual time=0.008..177.959 rows=600000 loops=1)
+                      Filter: (law IS NOT NULL)
+                      Buffers: temp read=22395
+  ->  Subquery Scan on e  (cost=0.20..0.31 rows=1 width=308) (actual time=4906.577..7170.032 rows=500000 loops=1)
+        Filter: ((e.rn = 1) AND (e.completed_date >= ('2040-09-01'::cstring)::date) AND (e.completed_date <= ('2040-09-30'::cstring)::date))
+        Buffers: shared hit=13249 read=61903, temp read=44599 written=44605
+        ->  WindowAgg  (cost=0.20..0.25 rows=2 width=500) (actual time=4906.564..6766.488 rows=500000 loops=1)
+              Run Condition: (row_number() OVER (?) <= 1)
+              Buffers: shared hit=13249 read=61903, temp read=44599 written=44605
+              ->  Incremental Sort  (cost=0.16..0.20 rows=2 width=340) (actual time=4906.541..6280.769 rows=600000 loops=1)
+                    Sort Key: i.rid COLLATE "C", i.answer_time DESC, i.completed_date DESC NULLS LAST, i.first_accepted_at, i.contributor_id
+                    Presorted Key: i.rid
+                    Full-sort Groups: 18656  Sort Method: quicksort  Average Memory: 32kB  Peak Memory: 32kB
+                    Buffers: shared hit=13249 read=61903, temp read=44599 written=44605
+                    ->  Subquery Scan on i  (cost=0.11..0.15 rows=1 width=340) (actual time=4906.437..5895.071 rows=600000 loops=1)
+                          Buffers: shared hit=13249 read=61903, temp read=44599 written=44605
+                          ->  WindowAgg  (cost=0.11..0.14 rows=1 width=492) (actual time=4906.434..5796.411 rows=600000 loops=1)
+                                Buffers: shared hit=13249 read=61903, temp read=44599 written=44605
+                                ->  Sort  (cost=0.11..0.11 rows=1 width=372) (actual time=4906.413..5145.025 rows=600000 loops=1)
+                                      Sort Key: (((o.source_report_key || '|'::text) || COALESCE(o.report_number, k.key_number, 'legacy'::text))) COLLATE "C", o.payload_sha256 COLLATE "C"
+                                      Sort Method: external merge  Disk: 177632kB
+                                      Buffers: shared hit=13249 read=61903, temp read=44599 written=44605
+                                      ->  Hash Left Join  (cost=0.06..0.10 rows=1 width=372) (actual time=3833.822..4278.968 rows=600000 loops=1)
+                                            Hash Cond: (o.source_report_key = k.source_report_key)
+                                            Buffers: shared hit=13249 read=61903, temp read=22395 written=22395
+                                            ->  CTE Scan on observations o  (cost=0.00..0.02 rows=1 width=404) (actual time=1792.495..1924.967 rows=600000 loops=1)
+                                                  Buffers: shared hit=6651 read=30968, temp read=22395 written=1
+                                            ->  Hash  (cost=0.05..0.05 rows=1 width=64) (actual time=2041.303..2041.305 rows=0 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 8kB
+                                                  Buffers: shared hit=6598 read=30935, temp written=22394
+                                                  ->  Subquery Scan on k  (cost=0.03..0.05 rows=1 width=64) (actual time=2041.301..2041.303 rows=0 loops=1)
+                                                        Buffers: shared hit=6598 read=30935, temp written=22394
+                                                        ->  Unique  (cost=0.03..0.04 rows=1 width=88) (actual time=2041.300..2041.301 rows=0 loops=1)
+                                                              Buffers: shared hit=6598 read=30935, temp written=22394
+                                                              ->  Sort  (cost=0.03..0.04 rows=1 width=88) (actual time=2041.299..2041.299 rows=0 loops=1)
+                                                                    Sort Key: observations.source_report_key COLLATE "C", observations.first_accepted_at, observations.contributor_id
+                                                                    Sort Method: quicksort  Memory: 25kB
+                                                                    Buffers: shared hit=6598 read=30935, temp written=22394
+                                                                    ->  CTE Scan on observations  (cost=0.00..0.02 rows=1 width=88) (actual time=2041.286..2041.286 rows=0 loops=1)
+                                                                          Filter: (report_number IS NOT NULL)
+                                                                          Rows Removed by Filter: 600000
+                                                                          Buffers: shared hit=6598 read=30935, temp written=22394
+  ->  Hash  (cost=0.02..0.02 rows=1 width=64) (actual time=299.333..299.333 rows=10 loops=1)
+        Buckets: 1024  Batches: 1  Memory Usage: 9kB
+        Buffers: shared hit=12, temp read=22395
+        ->  CTE Scan on normalized_laws l  (cost=0.00..0.02 rows=1 width=64) (actual time=298.972..299.327 rows=10 loops=1)
+              Buffers: shared hit=12, temp read=22395
+LOG:  duration: 10798.573 ms  plan:
+Query Text: with source as (
+   select s.*,case p_kind when 'agency' then coalesce(nullif(s.agency_key,''),'agency-unknown')
+     when 'manager' then coalesce(nullif(s.agency_key,''),'agency-unknown')||':'||coalesce(nullif(s.manager_key,''),'manager-unknown')
+     when 'laws' then coalesce(s.law,'')
+     else to_char(case p_scope->>'date_basis' when 'report_date' then s.report_date else s.completed_date end,'YYYY-MM') end as group_key,
+     case when s.completed_date>=s.report_date and s.status in ('accepted','partial','rejected','completed_unknown') then s.completed_date-s.report_date else null end as days
+   from private.analytics_rollup_source(p_scope) s
+   where p_kind='series' or s.status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')
+ ), groups as materialized (
+   select group_key,count(*) as c,count(*) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as dc,
+     (array_agg(agency_key order by identity collate "C"))[1] as agency_key,
+     (array_agg(agency_name order by identity collate "C"))[1] as agency_name,
+     (array_agg(manager_key order by identity collate "C"))[1] as manager_key,
+     (array_agg(manager_name order by identity collate "C"))[1] as manager_name,
+     (array_agg(law order by identity collate "C"))[1] as law,
+     count(*) filter(where status='accepted') as accepted,count(*) filter(where status='partial') as partial,
+     count(*) filter(where status='rejected') as rejected,count(*) filter(where disposition='fine' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as fine,
+     count(*) filter(where disposition='warning' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as warning,count(*) filter(where disposition='penalty' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as penalty,
+     count(days) as duration_count,percentile_cont(0.5) within group(order by days) as median_days,sum(days)::double precision/nullif(count(days),0) as mean_days,
+     count(amount_won) as amount_count,sum(amount_won) as sum_won,sum(amount_won)::double precision/nullif(count(amount_won),0) as mean_won,
+     count(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as rating_count,sum(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred'))::double precision/nullif(count(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')),0) as mean_rating
+   from source group by group_key
+ ), values as (
+   select g.*,case when btrim(agency_name)~'경찰(청|서)|지구대|파출소|치안센터|경찰대학|경찰교육원|경찰인재개발원|경찰수사연수원' then 'police'
+     when agency_key like 'inst:%' or btrim(agency_name)~'(특별시|광역시|특별자치시|특별자치도|도|시|군|구)(청)?$|(시청|구청|군청|도청|공사|공단|사업소|관리소|주민센터|행정복지센터)$' then 'non_police' else 'unknown' end as agency_type,
+     jsonb_build_object('accepted',accepted,'partial',partial,'rejected',rejected,'result_known',accepted+partial+rejected,'result_unknown',dc-accepted-partial-rejected) as outcomes,
+     jsonb_build_object('fine_count',fine,'confirmed_count',amount_count,'sum_won',sum_won,'mean_won',mean_won) as amount,
+     jsonb_build_object('count',duration_count,'median_days',median_days,'mean_days',mean_days) as duration,
+     jsonb_build_object('count',rating_count,'mean',mean_rating) as rating,
+     case p_kind when 'laws' then coalesce(law,'법규 미상') else agency_name||case when p_kind='manager' then coalesce(manager_name,'') else '' end end as display_name
+   from groups g
+ ), filtered as (
+   select v.*,
+     case sort_column when 'completed' then c::numeric when 'accepted' then accepted::numeric when 'partial' then partial::numeric when 'rejected' then rejected::numeric
+       when 'fine' then fine::numeric when 'warning' then warning::numeric when 'penalty' then case when p_kind='laws' then penalty::numeric else null end
+       when 'duration' then case when p_kind='laws' then null when sort_value='count' then duration_count::numeric else median_days::numeric end
+       when 'amount' then case when sort_value='count' then amount_count::numeric else sum_won::numeric end
+       when 'rating' then case when sort_value='count' then rating_count::numeric else mean_rating::text::numeric end end as num,
+     case when sort_value='rate' then case when sort_column in ('accepted','partial','rejected') then nullif(accepted+partial+rejected,0) else c end else 1 end as den
+   from values v where (p_options->>'agency_type' is null or v.agency_type=p_options->>'agency_type')
+     and (needle='' or case when p_kind='laws' then strpos(v.display_name,needle)>0 else strpos(v.agency_name,needle)>0 or strpos(coalesce(v.manager_name,''),needle)>0 end)
+ ), ordered as (
+   select f.*,row_number() over(order by
+     case when direction='asc' then div(num::numeric*10000000000000000000000000000000000000000::numeric,den::numeric) end asc nulls last,
+     case when direction='desc' then div(num::numeric*10000000000000000000000000000000000000000::numeric,den::numeric) end desc nulls last,
+     display_name collate "ko-x-icu",case when p_kind='laws' then coalesce(law,U&'\FFFF') else group_key end collate "C") as ord
+   from filtered f
+ ), page as (
+   select o.ord,case when p_kind='laws' then jsonb_build_object('law',law,'completed_count',c,'outcomes',outcomes,
+       'accept_rate',accepted::double precision*100/nullif(accepted+partial+rejected,0),'partial_rate',partial::double precision*100/nullif(accepted+partial+rejected,0),
+       'fine_count',fine,'fine_rate',fine::double precision*100/nullif(c,0),'penalty_count',penalty,'warning_count',warning,'fine_amount',amount,'rating',rating)
+     when p_kind='series' then jsonb_build_object('month',group_key,'report_count',c,'completed_count',dc,'fine_count',fine,
+       'outcomes',outcomes,'duration',duration,'fine_amount',amount,'rating',rating)
+     else jsonb_build_object('key',group_key,'agency_key',agency_key,'manager_key',case when p_kind='manager' then manager_key else null end,
+       'agency_name',agency_name,'manager_name',case when p_kind='manager' then manager_name else null end,'agency_type',agency_type,
+       'completed_count',c,'outcomes',outcomes,'fine_count',fine,'warning_count',warning,'duration',duration,'fine_amount',amount,'rating',rating) end as value
+   from ordered o where p_kind='series' or (o.ord>(page_no-1)*page_size and o.ord<=page_no*page_size)
+ ) select jsonb_build_object('items',coalesce((select jsonb_agg(value order by ord) from page),'[]'::jsonb),
+   'total_rows',(select count(*) from filtered),
+   'names',case when p_kind='manager' then coalesce((select jsonb_agg(jsonb_build_object('key',group_key,'agency_name',agency_name,'manager_name',manager_name) order by group_key collate "C") from groups),'[]'::jsonb) else '[]'::jsonb end)
+Result  (cost=31.80..31.81 rows=1 width=32) (actual time=10798.548..10798.553 rows=1 loops=1)
+  Buffers: shared hit=13285 read=61904, temp read=91853 written=69467
+  CTE groups
+    ->  GroupAggregate  (cost=18.79..25.10 rows=28 width=344) (actual time=9837.260..10778.511 rows=500 loops=1)
+          Group Key: (((COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) || ':'::text) || COALESCE(NULLIF(s.manager_key, ''::text), 'manager-unknown'::text)))
+          Buffers: shared hit=13280 read=61903, temp read=91853 written=69467
+          ->  Sort  (cost=18.79..18.86 rows=30 width=308) (actual time=9835.128..10017.885 rows=500000 loops=1)
+                Sort Key: (((COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) || ':'::text) || COALESCE(NULLIF(s.manager_key, ''::text), 'manager-unknown'::text))), s.identity COLLATE "C"
+                Sort Method: external merge  Disk: 103280kB
+                Buffers: shared hit=13280 read=61903, temp read=91853 written=69467
+                ->  Function Scan on analytics_rollup_source s  (cost=0.25..18.05 rows=30 width=308) (actual time=8073.883..8340.655 rows=500000 loops=1)
+                      Filter: (status = ANY ('{accepted,partial,rejected,completed_unknown,withdrawn,transferred}'::text[]))
+                      Buffers: shared hit=13280 read=61903, temp read=78943 written=56554
+  CTE filtered
+    ->  CTE Scan on groups g  (cost=0.00..1.68 rows=28 width=576) (actual time=9837.423..10789.640 rows=500 loops=1)
+          Buffers: shared hit=13280 read=61903, temp read=91853 written=69467
+  InitPlan 3
+    ->  Aggregate  (cost=2.92..2.93 rows=1 width=32) (actual time=10796.047..10796.049 rows=1 loops=1)
+          Buffers: shared hit=13285 read=61904, temp read=91853 written=69467
+          ->  Sort  (cost=2.85..2.87 rows=9 width=352) (actual time=10794.190..10794.199 rows=100 loops=1)
+                Sort Key: o.ord
+                Sort Method: quicksort  Memory: 73kB
+                Buffers: shared hit=13285 read=61904, temp read=91853 written=69467
+                ->  Subquery Scan on o  (cost=1.47..2.70 rows=9 width=352) (actual time=10794.059..10794.138 rows=100 loops=1)
+                      Filter: (o.ord > '0'::bigint)
+                      Buffers: shared hit=13285 read=61904, temp read=91853 written=69467
+                      ->  WindowAgg  (cost=1.47..2.35 rows=28 width=712) (actual time=10794.058..10794.122 rows=100 loops=1)
+                            Run Condition: (row_number() OVER (?) <= '100'::bigint)
+                            Buffers: shared hit=13285 read=61904, temp read=91853 written=69467
+                            ->  Sort  (cost=1.44..1.51 rows=28 width=472) (actual time=10794.041..10794.048 rows=101 loops=1)
+                                  Sort Key: (div((f.num * '10000000000000000000000000000000000000000'::numeric), (f.den)::numeric)) DESC NULLS LAST, ((f.display_name)::text) COLLATE "ko-x-icu", ((f.group_key)::text) COLLATE "C"
+                                  Sort Method: quicksort  Memory: 296kB
+                                  Buffers: shared hit=13285 read=61904, temp read=91853 written=69467
+                                  ->  CTE Scan on filtered f  (cost=0.00..0.77 rows=28 width=472) (actual time=9837.431..10792.039 rows=500 loops=1)
+                                        Buffers: shared hit=13280 read=61903, temp read=91853 written=69467
+  InitPlan 4
+    ->  Aggregate  (cost=0.63..0.64 rows=1 width=8) (actual time=0.173..0.174 rows=1 loops=1)
+          ->  CTE Scan on filtered  (cost=0.00..0.56 rows=28 width=0) (actual time=0.001..0.131 rows=500 loops=1)
+  InitPlan 5
+    ->  Aggregate  (cost=1.45..1.46 rows=1 width=32) (actual time=1.781..1.782 rows=1 loops=1)
+          ->  Sort  (cost=1.23..1.30 rows=28 width=96) (actual time=0.355..0.383 rows=500 loops=1)
+                Sort Key: groups.group_key COLLATE "C"
+                Sort Method: quicksort  Memory: 62kB
+                ->  CTE Scan on groups  (cost=0.00..0.56 rows=28 width=96) (actual time=0.001..0.145 rows=500 loops=1)
+LOG:  duration: 10842.914 ms  plan:
+Query Text: with started as materialized(select clock_timestamp() at),result as materialized(select public.internal_analytics_rollup('{"start":"2040-09-01","end":"2040-09-30","date_basis":"completed_date","category":"all","region_code":null,"agency_key":null,"manager_key":null,"bbox":null,"law":null}'::jsonb,'manager',jsonb_build_object('page',1,'page_size',100,'q','','sort',jsonb_build_object('column','completed','value','count','dir','desc'),'agency_type',null,'expected_version',(select dataset_version from private.analytics_state where singleton))) body, at from started)
+   select jsonb_build_object('label','after-manager-1','ms',extract(epoch from clock_timestamp()-at)*1000,'bytes',octet_length(body::text),'total_rows',body->'total_rows','n',case when 'after-manager-1' like '%series%' then body->'items'->0->'report_count' else body->'items'->0->'completed_count' end) from result;
+CTE Scan on result  (cost=2.31..2.36 rows=1 width=32) (actual time=10842.901..10842.907 rows=1 loops=1)
+  Buffers: shared hit=13727 read=61927 dirtied=1, temp read=91853 written=69467
+  CTE started
+    ->  Result  (cost=0.00..0.01 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+  CTE result
+    ->  CTE Scan on started  (cost=2.02..2.29 rows=1 width=40) (actual time=10842.103..10842.106 rows=1 loops=1)
+          Buffers: shared hit=13727 read=61927 dirtied=1, temp read=91853 written=69467
+          InitPlan 2
+            ->  Seq Scan on analytics_state  (cost=0.00..2.02 rows=1 width=37) (actual time=0.017..0.020 rows=1 loops=1)
+                  Filter: singleton
+                  Buffers: shared read=2 dirtied=1
+LOG:  duration: 7918.524 ms  plan:
+Query Text:
+ with grants as materialized (
+   select g.grant_id,g.user_id,
+     bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
+   from private.community_consent_grants g
+   join private.contributor_profiles c on c.user_id=g.user_id and c.status='active'
+   join private.community_consent_grants a on a.lineage_id=g.lineage_id and a.user_id=g.user_id and a.revoked_at is null
+   left join private.community_policy_disclosures d on d.version=a.policy_version
+   group by g.grant_id,g.user_id
+ ), candidates as (
+   -- A safe candidate superset, including earlier observations. No grouping/election within the period.
+   select distinct f.source_report_key from private.community_report_facts f
+   join grants g on g.grant_id=f.consent_grant_id and g.user_id=f.contributor_id
+   where f.public_state='completed'
+     and (case $1->>'date_basis' when 'report_date' then f.report_date else f.completed_date end)
+       between ($1->>'start')::date and ($1->>'end')::date
+     and ($1->>'category'='all' or f.category=$1->>'category')
+     and ($1->>'agency_key' is null or f.agency_key=$1->>'agency_key')
+     and ($1->>'manager_key' is null or f.manager_key=$1->>'manager_key')
+ ), observations as materialized (
+   select f.source_report_key collate "C" as source_report_key,f.report_number collate "C" as report_number,
+     f.payload_sha256 collate "C" as payload_sha256,f.contributor_id,f.answer_accepted_at,f.first_accepted_at,
+     f.report_date,f.completed_date,f.category,f.status,f.disposition,f.agency_key,
+     coalesce(nullif(f.agency_current_name,''),nullif(f.agency_name,''),'기관 정보 없음') as agency_name,
+     f.manager_key,f.manager_name,f.region_code,f.lat,f.lng,
+     case when g.law_public then f.violation_law else null end as law,
+     case when g.rating_public then f.rating else null end as rating,
+     case when g.amounts_public and f.amount_kind='fine' and f.disposition='fine' and f.status in ('accepted','partial')
+       then f.amount_confirmed_won else null end as amount_won
+   from private.community_report_facts f join grants g on g.grant_id=f.consent_grant_id and g.user_id=f.contributor_id
+   where f.public_state='completed' and f.source_report_key in (select source_report_key from candidates)
+ ), normalized_laws as materialized (
+   -- Pure text normalization once per distinct disclosed input in this query, never a saved result.
+   select k.raw,private.analytics_law(k.raw) as normalized
+   from (select distinct law as raw from observations where law is not null) k
+ ), key_numbers as (
+   select distinct on(source_report_key) source_report_key,report_number as key_number from observations
+   where report_number is not null order by source_report_key,first_accepted_at,contributor_id
+ ), identified as (
+   select o.*,o.source_report_key||'|'||coalesce(o.report_number,k.key_number,'legacy') as rid,
+     max(o.answer_accepted_at) over(partition by (o.source_report_key||'|'||coalesce(o.report_number,k.key_number,'legacy')),o.payload_sha256) as answer_time
+   from observations o left join key_numbers k using(source_report_key)
+ ), elected as (
+   select i.*,row_number() over(partition by rid order by answer_time desc,completed_date desc nulls last,first_accepted_at,contributor_id) as rn
+   from identified i
+ ) select e.rid,e.report_date,e.completed_date,e.category,e.status,e.disposition,e.agency_key,e.agency_name,e.manager_key,e.manager_name,
+   l.normalized,e.amount_won,e.rating::integer
+ from elected e left join normalized_laws l on l.raw=e.law where e.rn=1
+   and (case $1->>'date_basis' when 'report_date' then e.report_date else e.completed_date end)
+     between ($1->>'start')::date and ($1->>'end')::date
+   and ($1->>'category'='all' or e.category=$1->>'category')
+   and ($1->>'agency_key' is null or e.agency_key=$1->>'agency_key')
+   and ($1->>'manager_key' is null or e.manager_key=$1->>'manager_key')
+   and ($1->>'region_code' is null or private.analytics_region(e.region_code,e.lat,e.lng) like ($1->>'region_code')||'%')
+   and ($1->>'law' is null or case when $1->>'law'='__none__' then l.normalized is null else l.normalized=private.analytics_law($1->>'law') end)
+   and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
+     and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
+
+Hash Left Join  (cost=105346.43..105346.55 rows=1 width=308) (actual time=5071.429..7551.652 rows=500000 loops=1)
+  Hash Cond: (e.law = l.raw)
+  Buffers: shared hit=14529 read=60623, temp read=66994 written=44605
+  CTE grants
+    ->  GroupAggregate  (cost=182.78..182.80 rows=1 width=35) (actual time=2.630..3.252 rows=1017 loops=1)
+          Group Key: g.grant_id
+          Buffers: shared hit=84
+          ->  Sort  (cost=182.78..182.78 rows=1 width=35) (actual time=2.624..2.731 rows=1017 loops=1)
+                Sort Key: g.grant_id
+                Sort Method: quicksort  Memory: 80kB
+                Buffers: shared hit=84
+                ->  Hash Right Join  (cost=156.95..182.77 rows=1 width=35) (actual time=2.230..2.394 rows=1017 loops=1)
+                      Hash Cond: (d.version = a.policy_version)
+                      Buffers: shared hit=84
+                      ->  Seq Scan on community_policy_disclosures d  (cost=0.00..21.50 rows=1150 width=35) (actual time=0.007..0.009 rows=3 loops=1)
+                            Buffers: shared hit=1
+                      ->  Hash  (cost=156.93..156.93 rows=1 width=45) (actual time=2.218..2.222 rows=1017 loops=1)
+                            Buckets: 1024  Batches: 1  Memory Usage: 85kB
+                            Buffers: shared hit=83
+                            ->  Hash Join  (cost=101.73..156.93 rows=1 width=45) (actual time=1.551..1.995 rows=1017 loops=1)
+                                  Hash Cond: ((g.user_id = c.user_id) AND (g.lineage_id = a.lineage_id))
+                                  Buffers: shared hit=83
+                                  ->  Seq Scan on community_consent_grants g  (cost=0.00..46.11 rows=1211 width=48) (actual time=0.012..0.129 rows=1211 loops=1)
+                                        Buffers: shared hit=34
+                                  ->  Hash  (cost=89.07..89.07 rows=844 width=61) (actual time=1.517..1.520 rows=1010 loops=1)
+                                        Buckets: 1024  Batches: 1  Memory Usage: 100kB
+                                        Buffers: shared hit=49
+                                        ->  Hash Join  (cost=40.30..89.07 rows=844 width=61) (actual time=0.424..1.047 rows=1010 loops=1)
+                                              Hash Cond: (a.user_id = c.user_id)
+                                              Buffers: shared hit=49
+                                              ->  Seq Scan on community_consent_grants a  (cost=0.00..46.11 rows=1010 width=45) (actual time=0.023..0.422 rows=1010 loops=1)
+                                                    Filter: (revoked_at IS NULL)
+                                                    Rows Removed by Filter: 201
+                                                    Buffers: shared hit=34
+                                              ->  Hash  (cost=27.65..27.65 rows=1012 width=16) (actual time=0.397..0.398 rows=1012 loops=1)
+                                                    Buckets: 1024  Batches: 1  Memory Usage: 56kB
+                                                    Buffers: shared hit=15
+                                                    ->  Seq Scan on contributor_profiles c  (cost=0.00..27.65 rows=1012 width=16) (actual time=0.007..0.224 rows=1012 loops=1)
+                                                          Filter: (status = 'active'::text)
+                                                          Buffers: shared hit=15
+  CTE observations
+    ->  Hash Join  (cost=58546.96..105163.11 rows=1 width=300) (actual time=1753.491..2997.990 rows=600000 loops=1)
+          Hash Cond: ((f.consent_grant_id = g_1.grant_id) AND (f.contributor_id = g_1.user_id))
+          Buffers: shared hit=14529 read=60623
+          ->  Hash Join  (cost=58546.93..105163.04 rows=1 width=372) (actual time=1749.595..2674.133 rows=600000 loops=1)
+                Hash Cond: (f.source_report_key = f_1.source_report_key)
+                Buffers: shared hit=14445 read=60623
+                ->  Seq Scan on community_report_facts f  (cost=0.00..45039.88 rows=600470 width=372) (actual time=0.095..401.884 rows=600488 loops=1)
+                      Filter: (public_state = 'completed'::text)
+                      Buffers: shared hit=7238 read=30296
+                ->  Hash  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1749.481..1749.484 rows=500000 loops=1)
+                      Buckets: 524288 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 51460kB
+                      Buffers: shared hit=7207 read=30327
+                      ->  Unique  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1382.217..1649.522 rows=500000 loops=1)
+                            Buffers: shared hit=7207 read=30327
+                            ->  Sort  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1382.212..1423.861 rows=600000 loops=1)
+                                  Sort Key: f_1.source_report_key
+                                  Sort Method: quicksort  Memory: 24577kB
+                                  Buffers: shared hit=7207 read=30327
+                                  ->  Hash Join  (cost=0.04..58546.90 rows=1 width=65) (actual time=0.353..884.505 rows=600000 loops=1)
+                                        Hash Cond: ((f_1.consent_grant_id = g_2.grant_id) AND (f_1.contributor_id = g_2.user_id))
+                                        Buffers: shared hit=7207 read=30327
+                                        ->  Seq Scan on community_report_facts f_1  (cost=0.00..54046.93 rows=599990 width=97) (actual time=0.011..692.982 rows=600000 loops=1)
+                                              Filter: ((public_state = 'completed'::text) AND (completed_date >= ('2040-09-01'::cstring)::date) AND (completed_date <= ('2040-09-30'::cstring)::date))
+                                              Rows Removed by Filter: 488
+                                              Buffers: shared hit=7207 read=30327
+                                        ->  Hash  (cost=0.02..0.02 rows=1 width=32) (actual time=0.337..0.338 rows=1017 loops=1)
+                                              Buckets: 1024  Batches: 1  Memory Usage: 72kB
+                                              ->  CTE Scan on grants g_2  (cost=0.00..0.02 rows=1 width=32) (actual time=0.001..0.125 rows=1017 loops=1)
+          ->  Hash  (cost=0.02..0.02 rows=1 width=35) (actual time=3.883..3.884 rows=1017 loops=1)
+                Buckets: 1024  Batches: 1  Memory Usage: 75kB
+                Buffers: shared hit=84
+                ->  CTE Scan on grants g_1  (cost=0.00..0.02 rows=1 width=35) (actual time=2.631..3.617 rows=1017 loops=1)
+                      Buffers: shared hit=84
+  CTE normalized_laws
+    ->  Subquery Scan on k_1  (cost=0.02..0.28 rows=1 width=64) (actual time=307.322..307.798 rows=10 loops=1)
+          Buffers: temp read=22395
+          ->  HashAggregate  (cost=0.02..0.03 rows=1 width=32) (actual time=307.155..307.160 rows=10 loops=1)
+                Group Key: observations_1.law
+                Batches: 1  Memory Usage: 24kB
+                Buffers: temp read=22395
+                ->  CTE Scan on observations observations_1  (cost=0.00..0.02 rows=1 width=32) (actual time=0.007..186.473 rows=600000 loops=1)
+                      Filter: (law IS NOT NULL)
+                      Buffers: temp read=22395
+  ->  Subquery Scan on e  (cost=0.20..0.31 rows=1 width=308) (actual time=4763.589..7051.518 rows=500000 loops=1)
+        Filter: ((e.rn = 1) AND (e.completed_date >= ('2040-09-01'::cstring)::date) AND (e.completed_date <= ('2040-09-30'::cstring)::date))
+        Buffers: shared hit=14529 read=60623, temp read=44599 written=44605
+        ->  WindowAgg  (cost=0.20..0.25 rows=2 width=500) (actual time=4763.578..6646.181 rows=500000 loops=1)
+              Run Condition: (row_number() OVER (?) <= 1)
+              Buffers: shared hit=14529 read=60623, temp read=44599 written=44605
+              ->  Incremental Sort  (cost=0.16..0.20 rows=2 width=340) (actual time=4763.571..6154.906 rows=600000 loops=1)
+                    Sort Key: i.rid COLLATE "C", i.answer_time DESC, i.completed_date DESC NULLS LAST, i.first_accepted_at, i.contributor_id
+                    Presorted Key: i.rid
+                    Full-sort Groups: 18656  Sort Method: quicksort  Average Memory: 32kB  Peak Memory: 32kB
+                    Buffers: shared hit=14529 read=60623, temp read=44599 written=44605
+                    ->  Subquery Scan on i  (cost=0.11..0.15 rows=1 width=340) (actual time=4763.482..5768.957 rows=600000 loops=1)
+                          Buffers: shared hit=14529 read=60623, temp read=44599 written=44605
+                          ->  WindowAgg  (cost=0.11..0.14 rows=1 width=492) (actual time=4763.481..5672.307 rows=600000 loops=1)
+                                Buffers: shared hit=14529 read=60623, temp read=44599 written=44605
+                                ->  Sort  (cost=0.11..0.11 rows=1 width=372) (actual time=4763.457..5014.090 rows=600000 loops=1)
+                                      Sort Key: (((o.source_report_key || '|'::text) || COALESCE(o.report_number, k.key_number, 'legacy'::text))) COLLATE "C", o.payload_sha256 COLLATE "C"
+                                      Sort Method: external merge  Disk: 177632kB
+                                      Buffers: shared hit=14529 read=60623, temp read=44599 written=44605
+                                      ->  Hash Left Join  (cost=0.06..0.10 rows=1 width=372) (actual time=3709.222..4138.175 rows=600000 loops=1)
+                                            Hash Cond: (o.source_report_key = k.source_report_key)
+                                            Buffers: shared hit=14529 read=60623, temp read=22395 written=22395
+                                            ->  CTE Scan on observations o  (cost=0.00..0.02 rows=1 width=404) (actual time=1753.498..1882.364 rows=600000 loops=1)
+                                                  Buffers: shared hit=7291 read=30328, temp read=22395 written=1
+                                            ->  Hash  (cost=0.05..0.05 rows=1 width=64) (actual time=1955.685..1955.686 rows=0 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 8kB
+                                                  Buffers: shared hit=7238 read=30295, temp written=22394
+                                                  ->  Subquery Scan on k  (cost=0.03..0.05 rows=1 width=64) (actual time=1955.684..1955.685 rows=0 loops=1)
+                                                        Buffers: shared hit=7238 read=30295, temp written=22394
+                                                        ->  Unique  (cost=0.03..0.04 rows=1 width=88) (actual time=1955.682..1955.683 rows=0 loops=1)
+                                                              Buffers: shared hit=7238 read=30295, temp written=22394
+                                                              ->  Sort  (cost=0.03..0.04 rows=1 width=88) (actual time=1955.681..1955.682 rows=0 loops=1)
+                                                                    Sort Key: observations.source_report_key COLLATE "C", observations.first_accepted_at, observations.contributor_id
+                                                                    Sort Method: quicksort  Memory: 25kB
+                                                                    Buffers: shared hit=7238 read=30295, temp written=22394
+                                                                    ->  CTE Scan on observations  (cost=0.00..0.02 rows=1 width=88) (actual time=1955.669..1955.669 rows=0 loops=1)
+                                                                          Filter: (report_number IS NOT NULL)
+                                                                          Rows Removed by Filter: 600000
+                                                                          Buffers: shared hit=7238 read=30295, temp written=22394
+  ->  Hash  (cost=0.02..0.02 rows=1 width=64) (actual time=307.820..307.820 rows=10 loops=1)
+        Buckets: 1024  Batches: 1  Memory Usage: 9kB
+        Buffers: temp read=22395
+        ->  CTE Scan on normalized_laws l  (cost=0.00..0.02 rows=1 width=64) (actual time=307.326..307.810 rows=10 loops=1)
+              Buffers: temp read=22395
+LOG:  duration: 10723.910 ms  plan:
+Query Text: with source as (
+   select s.*,case p_kind when 'agency' then coalesce(nullif(s.agency_key,''),'agency-unknown')
+     when 'manager' then coalesce(nullif(s.agency_key,''),'agency-unknown')||':'||coalesce(nullif(s.manager_key,''),'manager-unknown')
+     when 'laws' then coalesce(s.law,'')
+     else to_char(case p_scope->>'date_basis' when 'report_date' then s.report_date else s.completed_date end,'YYYY-MM') end as group_key,
+     case when s.completed_date>=s.report_date and s.status in ('accepted','partial','rejected','completed_unknown') then s.completed_date-s.report_date else null end as days
+   from private.analytics_rollup_source(p_scope) s
+   where p_kind='series' or s.status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')
+ ), groups as materialized (
+   select group_key,count(*) as c,count(*) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as dc,
+     (array_agg(agency_key order by identity collate "C"))[1] as agency_key,
+     (array_agg(agency_name order by identity collate "C"))[1] as agency_name,
+     (array_agg(manager_key order by identity collate "C"))[1] as manager_key,
+     (array_agg(manager_name order by identity collate "C"))[1] as manager_name,
+     (array_agg(law order by identity collate "C"))[1] as law,
+     count(*) filter(where status='accepted') as accepted,count(*) filter(where status='partial') as partial,
+     count(*) filter(where status='rejected') as rejected,count(*) filter(where disposition='fine' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as fine,
+     count(*) filter(where disposition='warning' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as warning,count(*) filter(where disposition='penalty' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as penalty,
+     count(days) as duration_count,percentile_cont(0.5) within group(order by days) as median_days,sum(days)::double precision/nullif(count(days),0) as mean_days,
+     count(amount_won) as amount_count,sum(amount_won) as sum_won,sum(amount_won)::double precision/nullif(count(amount_won),0) as mean_won,
+     count(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as rating_count,sum(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred'))::double precision/nullif(count(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')),0) as mean_rating
+   from source group by group_key
+ ), values as (
+   select g.*,case when btrim(agency_name)~'경찰(청|서)|지구대|파출소|치안센터|경찰대학|경찰교육원|경찰인재개발원|경찰수사연수원' then 'police'
+     when agency_key like 'inst:%' or btrim(agency_name)~'(특별시|광역시|특별자치시|특별자치도|도|시|군|구)(청)?$|(시청|구청|군청|도청|공사|공단|사업소|관리소|주민센터|행정복지센터)$' then 'non_police' else 'unknown' end as agency_type,
+     jsonb_build_object('accepted',accepted,'partial',partial,'rejected',rejected,'result_known',accepted+partial+rejected,'result_unknown',dc-accepted-partial-rejected) as outcomes,
+     jsonb_build_object('fine_count',fine,'confirmed_count',amount_count,'sum_won',sum_won,'mean_won',mean_won) as amount,
+     jsonb_build_object('count',duration_count,'median_days',median_days,'mean_days',mean_days) as duration,
+     jsonb_build_object('count',rating_count,'mean',mean_rating) as rating,
+     case p_kind when 'laws' then coalesce(law,'법규 미상') else agency_name||case when p_kind='manager' then coalesce(manager_name,'') else '' end end as display_name
+   from groups g
+ ), filtered as (
+   select v.*,
+     case sort_column when 'completed' then c::numeric when 'accepted' then accepted::numeric when 'partial' then partial::numeric when 'rejected' then rejected::numeric
+       when 'fine' then fine::numeric when 'warning' then warning::numeric when 'penalty' then case when p_kind='laws' then penalty::numeric else null end
+       when 'duration' then case when p_kind='laws' then null when sort_value='count' then duration_count::numeric else median_days::numeric end
+       when 'amount' then case when sort_value='count' then amount_count::numeric else sum_won::numeric end
+       when 'rating' then case when sort_value='count' then rating_count::numeric else mean_rating::text::numeric end end as num,
+     case when sort_value='rate' then case when sort_column in ('accepted','partial','rejected') then nullif(accepted+partial+rejected,0) else c end else 1 end as den
+   from values v where (p_options->>'agency_type' is null or v.agency_type=p_options->>'agency_type')
+     and (needle='' or case when p_kind='laws' then strpos(v.display_name,needle)>0 else strpos(v.agency_name,needle)>0 or strpos(coalesce(v.manager_name,''),needle)>0 end)
+ ), ordered as (
+   select f.*,row_number() over(order by
+     case when direction='asc' then div(num::numeric*10000000000000000000000000000000000000000::numeric,den::numeric) end asc nulls last,
+     case when direction='desc' then div(num::numeric*10000000000000000000000000000000000000000::numeric,den::numeric) end desc nulls last,
+     display_name collate "ko-x-icu",case when p_kind='laws' then coalesce(law,U&'\FFFF') else group_key end collate "C") as ord
+   from filtered f
+ ), page as (
+   select o.ord,case when p_kind='laws' then jsonb_build_object('law',law,'completed_count',c,'outcomes',outcomes,
+       'accept_rate',accepted::double precision*100/nullif(accepted+partial+rejected,0),'partial_rate',partial::double precision*100/nullif(accepted+partial+rejected,0),
+       'fine_count',fine,'fine_rate',fine::double precision*100/nullif(c,0),'penalty_count',penalty,'warning_count',warning,'fine_amount',amount,'rating',rating)
+     when p_kind='series' then jsonb_build_object('month',group_key,'report_count',c,'completed_count',dc,'fine_count',fine,
+       'outcomes',outcomes,'duration',duration,'fine_amount',amount,'rating',rating)
+     else jsonb_build_object('key',group_key,'agency_key',agency_key,'manager_key',case when p_kind='manager' then manager_key else null end,
+       'agency_name',agency_name,'manager_name',case when p_kind='manager' then manager_name else null end,'agency_type',agency_type,
+       'completed_count',c,'outcomes',outcomes,'fine_count',fine,'warning_count',warning,'duration',duration,'fine_amount',amount,'rating',rating) end as value
+   from ordered o where p_kind='series' or (o.ord>(page_no-1)*page_size and o.ord<=page_no*page_size)
+ ) select jsonb_build_object('items',coalesce((select jsonb_agg(value order by ord) from page),'[]'::jsonb),
+   'total_rows',(select count(*) from filtered),
+   'names',case when p_kind='manager' then coalesce((select jsonb_agg(jsonb_build_object('key',group_key,'agency_name',agency_name,'manager_name',manager_name) order by group_key collate "C") from groups),'[]'::jsonb) else '[]'::jsonb end)
+Result  (cost=34.61..34.63 rows=1 width=32) (actual time=10723.900..10723.906 rows=1 loops=1)
+  Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+  CTE groups
+    ->  GroupAggregate  (cost=22.20..30.25 rows=33 width=344) (actual time=9835.035..10722.610 rows=10 loops=1)
+          Group Key: (CASE $2 WHEN 'agency'::text THEN COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) WHEN 'manager'::text THEN ((COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) || ':'::text) || COALESCE(NULLIF(s.manager_key, ''::text), 'manager-unknown'::text)) WHEN 'laws'::text THEN COALESCE(s.law, ''::text) ELSE to_char((CASE ($1 ->> 'date_basis'::text) WHEN 'report_date'::text THEN s.report_date ELSE s.completed_date END)::timestamp with time zone, 'YYYY-MM'::text) END)
+          Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+          ->  Sort  (cost=22.20..22.29 rows=35 width=308) (actual time=9740.327..9924.264 rows=500000 loops=1)
+                Sort Key: (CASE $2 WHEN 'agency'::text THEN COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) WHEN 'manager'::text THEN ((COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) || ':'::text) || COALESCE(NULLIF(s.manager_key, ''::text), 'manager-unknown'::text)) WHEN 'laws'::text THEN COALESCE(s.law, ''::text) ELSE to_char((CASE ($1 ->> 'date_basis'::text) WHEN 'report_date'::text THEN s.report_date ELSE s.completed_date END)::timestamp with time zone, 'YYYY-MM'::text) END), s.identity COLLATE "C"
+                Sort Method: external merge  Disk: 101384kB
+                Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+                ->  Function Scan on analytics_rollup_source s  (cost=0.25..21.30 rows=35 width=308) (actual time=7971.367..8232.027 rows=500000 loops=1)
+                      Filter: (($2 = 'series'::text) OR (status = ANY ('{accepted,partial,rejected,completed_unknown,withdrawn,transferred}'::text[])))
+                      Buffers: shared hit=14548 read=60623, temp read=78943 written=56554
+  CTE filtered
+    ->  CTE Scan on groups g  (cost=0.00..2.36 rows=1 width=576) (actual time=9835.110..10723.333 rows=10 loops=1)
+          Filter: (((($3 ->> 'agency_type'::text) IS NULL) OR (CASE WHEN (btrim(agency_name) ~ '경찰(청|서)|지구대|파출소|치안센터|경찰대학|경찰교육원|경찰인재개발원|경찰수사연수원'::text) THEN 'police'::text WHEN ((agency_key ~~ 'inst:%'::text) OR (btrim(agency_name) ~ '(특별시|광역시|특별자치시|특별자치도|도|시|군|구)(청)?$|(시청|구청|군청|도청|공사|공단|사업소|관리소|주민센터|행정복지센터)$'::text)) THEN 'non_police'::text ELSE 'unknown'::text END = ($3 ->> 'agency_type'::text))) AND (($11 = ''::text) OR CASE WHEN ($2 = 'laws'::text) THEN (strpos(CASE $2 WHEN 'laws'::text THEN COALESCE(law, '법규 미상'::text) ELSE (agency_name || CASE WHEN ($2 = 'manager'::text) THEN COALESCE(manager_name, ''::text) ELSE ''::text END) END, $11) > 0) ELSE ((strpos(agency_name, $11) > 0) OR (strpos(COALESCE(manager_name, ''::text), $11) > 0)) END))
+          Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+  InitPlan 3
+    ->  Aggregate  (cost=0.21..0.22 rows=1 width=32) (actual time=10723.830..10723.832 rows=1 loops=1)
+          Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+          ->  Sort  (cost=0.14..0.14 rows=1 width=424) (actual time=10723.620..10723.623 rows=10 loops=1)
+                Sort Key: o.ord
+                Sort Method: quicksort  Memory: 30kB
+                Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+                ->  Subquery Scan on o  (cost=0.05..0.13 rows=1 width=424) (actual time=10723.595..10723.607 rows=10 loops=1)
+                      Filter: (($2 = 'series'::text) OR ((o.ord > (($9 - 1) * $10)) AND (o.ord <= ($9 * $10))))
+                      Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+                      ->  WindowAgg  (cost=0.05..0.10 rows=1 width=712) (actual time=10723.592..10723.601 rows=10 loops=1)
+                            Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+                            ->  Sort  (cost=0.05..0.06 rows=1 width=544) (actual time=10723.544..10723.545 rows=10 loops=1)
+                                  Sort Key: (CASE WHEN ($8 = 'asc'::text) THEN div((f.num * '10000000000000000000000000000000000000000'::numeric), (f.den)::numeric) ELSE NULL::numeric END), (CASE WHEN ($8 = 'desc'::text) THEN div((f.num * '10000000000000000000000000000000000000000'::numeric), (f.den)::numeric) ELSE NULL::numeric END) DESC NULLS LAST, ((f.display_name)::text) COLLATE "ko-x-icu", ((CASE WHEN ($2 = 'laws'::text) THEN COALESCE(f.law, '￿'::text) ELSE f.group_key END)::text) COLLATE "C"
+                                  Sort Method: quicksort  Memory: 30kB
+                                  Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+                                  ->  CTE Scan on filtered f  (cost=0.00..0.04 rows=1 width=544) (actual time=9835.139..10723.485 rows=10 loops=1)
+                                        Buffers: shared hit=14548 read=60623, temp read=91616 written=69230
+  InitPlan 4
+    ->  Aggregate  (cost=0.02..0.03 rows=1 width=8) (actual time=0.021..0.021 rows=1 loops=1)
+          ->  CTE Scan on filtered  (cost=0.00..0.02 rows=1 width=0) (actual time=0.001..0.004 rows=10 loops=1)
+  InitPlan 5
+    ->  Aggregate  (cost=1.74..1.75 rows=1 width=32) (never executed)
+          ->  Sort  (cost=1.49..1.57 rows=33 width=96) (never executed)
+                Sort Key: groups.group_key COLLATE "C"
+                ->  CTE Scan on groups  (cost=0.00..0.66 rows=33 width=96) (never executed)
+LOG:  duration: 10764.335 ms  plan:
+Query Text: with started as materialized(select clock_timestamp() at),result as materialized(select public.internal_analytics_rollup('{"start":"2040-09-01","end":"2040-09-30","date_basis":"completed_date","category":"all","region_code":null,"agency_key":null,"manager_key":null,"bbox":null,"law":null}'::jsonb,'laws',jsonb_build_object('page',1,'page_size',100,'q','','sort',jsonb_build_object('column','completed','value','count','dir','desc'),'agency_type',null,'expected_version',(select dataset_version from private.analytics_state where singleton))) body, at from started)
+   select jsonb_build_object('label','after-laws-1','ms',extract(epoch from clock_timestamp()-at)*1000,'bytes',octet_length(body::text),'total_rows',body->'total_rows','n',case when 'after-laws-1' like '%series%' then body->'items'->0->'report_count' else body->'items'->0->'completed_count' end) from result;
+CTE Scan on result  (cost=2.31..2.36 rows=1 width=32) (actual time=10764.323..10764.327 rows=1 loops=1)
+  Buffers: shared hit=14555 read=60623, temp read=91616 written=69230
+  CTE started
+    ->  Result  (cost=0.00..0.01 rows=1 width=8) (actual time=0.001..0.001 rows=1 loops=1)
+  CTE result
+    ->  CTE Scan on started  (cost=2.02..2.29 rows=1 width=40) (actual time=10764.234..10764.237 rows=1 loops=1)
+          Buffers: shared hit=14555 read=60623, temp read=91616 written=69230
+          InitPlan 2
+            ->  Seq Scan on analytics_state  (cost=0.00..2.02 rows=1 width=37) (actual time=0.012..0.014 rows=1 loops=1)
+                  Filter: singleton
+                  Buffers: shared hit=2
+LOG:  duration: 7016.956 ms  plan:
+Query Text:
+ with grants as materialized (
+   select g.grant_id,g.user_id,
+     bool_or(d.amounts_public) as amounts_public,bool_or(d.violation_law_public) as law_public,bool_or(d.rating_public) as rating_public
+   from private.community_consent_grants g
+   join private.contributor_profiles c on c.user_id=g.user_id and c.status='active'
+   join private.community_consent_grants a on a.lineage_id=g.lineage_id and a.user_id=g.user_id and a.revoked_at is null
+   left join private.community_policy_disclosures d on d.version=a.policy_version
+   group by g.grant_id,g.user_id
+ ), candidates as (
+   -- A safe candidate superset, including earlier observations. No grouping/election within the period.
+   select distinct f.source_report_key from private.community_report_facts f
+   join grants g on g.grant_id=f.consent_grant_id and g.user_id=f.contributor_id
+   where f.public_state='completed'
+     and (case $1->>'date_basis' when 'report_date' then f.report_date else f.completed_date end)
+       between ($1->>'start')::date and ($1->>'end')::date
+     and ($1->>'category'='all' or f.category=$1->>'category')
+     and ($1->>'agency_key' is null or f.agency_key=$1->>'agency_key')
+     and ($1->>'manager_key' is null or f.manager_key=$1->>'manager_key')
+ ), observations as materialized (
+   select f.source_report_key collate "C" as source_report_key,f.report_number collate "C" as report_number,
+     f.payload_sha256 collate "C" as payload_sha256,f.contributor_id,f.answer_accepted_at,f.first_accepted_at,
+     f.report_date,f.completed_date,f.category,f.status,f.disposition,f.agency_key,
+     coalesce(nullif(f.agency_current_name,''),nullif(f.agency_name,''),'기관 정보 없음') as agency_name,
+     f.manager_key,f.manager_name,f.region_code,f.lat,f.lng,
+     case when g.law_public then f.violation_law else null end as law,
+     case when g.rating_public then f.rating else null end as rating,
+     case when g.amounts_public and f.amount_kind='fine' and f.disposition='fine' and f.status in ('accepted','partial')
+       then f.amount_confirmed_won else null end as amount_won
+   from private.community_report_facts f join grants g on g.grant_id=f.consent_grant_id and g.user_id=f.contributor_id
+   where f.public_state='completed' and f.source_report_key in (select source_report_key from candidates)
+ ), normalized_laws as materialized (
+   -- Pure text normalization once per distinct disclosed input in this query, never a saved result.
+   select k.raw,private.analytics_law(k.raw) as normalized
+   from (select distinct law as raw from observations where law is not null) k
+ ), key_numbers as (
+   select distinct on(source_report_key) source_report_key,report_number as key_number from observations
+   where report_number is not null order by source_report_key,first_accepted_at,contributor_id
+ ), identified as (
+   select o.*,o.source_report_key||'|'||coalesce(o.report_number,k.key_number,'legacy') as rid,
+     max(o.answer_accepted_at) over(partition by (o.source_report_key||'|'||coalesce(o.report_number,k.key_number,'legacy')),o.payload_sha256) as answer_time
+   from observations o left join key_numbers k using(source_report_key)
+ ), elected as (
+   select i.*,row_number() over(partition by rid order by answer_time desc,completed_date desc nulls last,first_accepted_at,contributor_id) as rn
+   from identified i
+ ) select e.rid,e.report_date,e.completed_date,e.category,e.status,e.disposition,e.agency_key,e.agency_name,e.manager_key,e.manager_name,
+   l.normalized,e.amount_won,e.rating::integer
+ from elected e left join normalized_laws l on l.raw=e.law where e.rn=1
+   and (case $1->>'date_basis' when 'report_date' then e.report_date else e.completed_date end)
+     between ($1->>'start')::date and ($1->>'end')::date
+   and ($1->>'category'='all' or e.category=$1->>'category')
+   and ($1->>'agency_key' is null or e.agency_key=$1->>'agency_key')
+   and ($1->>'manager_key' is null or e.manager_key=$1->>'manager_key')
+   and ($1->>'region_code' is null or private.analytics_region(e.region_code,e.lat,e.lng) like ($1->>'region_code')||'%')
+   and ($1->>'law' is null or case when $1->>'law'='__none__' then l.normalized is null else l.normalized=private.analytics_law($1->>'law') end)
+   and ($1->'bbox'='null'::jsonb or not $1?'bbox' or (e.lat is not null and e.lng between ($1->'bbox'->>0)::double precision and ($1->'bbox'->>2)::double precision
+     and e.lat between ($1->'bbox'->>1)::double precision and ($1->'bbox'->>3)::double precision));
+
+Hash Left Join  (cost=105346.43..105346.55 rows=1 width=308) (actual time=4528.061..6741.007 rows=500000 loops=1)
+  Hash Cond: (e.law = l.raw)
+  Buffers: shared hit=15809 read=59343, temp read=66994 written=44605
+  CTE grants
+    ->  GroupAggregate  (cost=182.78..182.80 rows=1 width=35) (actual time=2.257..2.808 rows=1017 loops=1)
+          Group Key: g.grant_id
+          Buffers: shared hit=84
+          ->  Sort  (cost=182.78..182.78 rows=1 width=35) (actual time=2.252..2.323 rows=1017 loops=1)
+                Sort Key: g.grant_id
+                Sort Method: quicksort  Memory: 80kB
+                Buffers: shared hit=84
+                ->  Hash Right Join  (cost=156.95..182.77 rows=1 width=35) (actual time=1.883..2.047 rows=1017 loops=1)
+                      Hash Cond: (d.version = a.policy_version)
+                      Buffers: shared hit=84
+                      ->  Seq Scan on community_policy_disclosures d  (cost=0.00..21.50 rows=1150 width=35) (actual time=0.006..0.008 rows=3 loops=1)
+                            Buffers: shared hit=1
+                      ->  Hash  (cost=156.93..156.93 rows=1 width=45) (actual time=1.873..1.879 rows=1017 loops=1)
+                            Buckets: 1024  Batches: 1  Memory Usage: 85kB
+                            Buffers: shared hit=83
+                            ->  Hash Join  (cost=101.73..156.93 rows=1 width=45) (actual time=1.209..1.660 rows=1017 loops=1)
+                                  Hash Cond: ((g.user_id = c.user_id) AND (g.lineage_id = a.lineage_id))
+                                  Buffers: shared hit=83
+                                  ->  Seq Scan on community_consent_grants g  (cost=0.00..46.11 rows=1211 width=48) (actual time=0.008..0.118 rows=1211 loops=1)
+                                        Buffers: shared hit=34
+                                  ->  Hash  (cost=89.07..89.07 rows=844 width=61) (actual time=1.180..1.184 rows=1010 loops=1)
+                                        Buckets: 1024  Batches: 1  Memory Usage: 100kB
+                                        Buffers: shared hit=49
+                                        ->  Hash Join  (cost=40.30..89.07 rows=844 width=61) (actual time=0.408..0.981 rows=1010 loops=1)
+                                              Hash Cond: (a.user_id = c.user_id)
+                                              Buffers: shared hit=49
+                                              ->  Seq Scan on community_consent_grants a  (cost=0.00..46.11 rows=1010 width=45) (actual time=0.024..0.385 rows=1010 loops=1)
+                                                    Filter: (revoked_at IS NULL)
+                                                    Rows Removed by Filter: 201
+                                                    Buffers: shared hit=34
+                                              ->  Hash  (cost=27.65..27.65 rows=1012 width=16) (actual time=0.381..0.383 rows=1012 loops=1)
+                                                    Buckets: 1024  Batches: 1  Memory Usage: 56kB
+                                                    Buffers: shared hit=15
+                                                    ->  Seq Scan on contributor_profiles c  (cost=0.00..27.65 rows=1012 width=16) (actual time=0.006..0.225 rows=1012 loops=1)
+                                                          Filter: (status = 'active'::text)
+                                                          Buffers: shared hit=15
+  CTE observations
+    ->  Hash Join  (cost=58546.96..105163.11 rows=1 width=300) (actual time=1582.123..2639.497 rows=600000 loops=1)
+          Hash Cond: ((f.consent_grant_id = g_1.grant_id) AND (f.contributor_id = g_1.user_id))
+          Buffers: shared hit=15809 read=59343
+          ->  Hash Join  (cost=58546.93..105163.04 rows=1 width=372) (actual time=1578.736..2360.388 rows=600000 loops=1)
+                Hash Cond: (f.source_report_key = f_1.source_report_key)
+                Buffers: shared hit=15725 read=59343
+                ->  Seq Scan on community_report_facts f  (cost=0.00..45039.88 rows=600470 width=372) (actual time=0.045..343.112 rows=600488 loops=1)
+                      Filter: (public_state = 'completed'::text)
+                      Buffers: shared hit=7878 read=29656
+                ->  Hash  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1578.677..1578.681 rows=500000 loops=1)
+                      Buckets: 524288 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 51460kB
+                      Buffers: shared hit=7847 read=29687
+                      ->  Unique  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1258.225..1492.470 rows=500000 loops=1)
+                            Buffers: shared hit=7847 read=29687
+                            ->  Sort  (cost=58546.91..58546.91 rows=1 width=65) (actual time=1258.220..1296.023 rows=600000 loops=1)
+                                  Sort Key: f_1.source_report_key
+                                  Sort Method: quicksort  Memory: 24577kB
+                                  Buffers: shared hit=7847 read=29687
+                                  ->  Hash Join  (cost=0.04..58546.90 rows=1 width=65) (actual time=0.325..802.677 rows=600000 loops=1)
+                                        Hash Cond: ((f_1.consent_grant_id = g_2.grant_id) AND (f_1.contributor_id = g_2.user_id))
+                                        Buffers: shared hit=7847 read=29687
+                                        ->  Seq Scan on community_report_facts f_1  (cost=0.00..54046.93 rows=599990 width=97) (actual time=0.006..629.414 rows=600000 loops=1)
+                                              Filter: ((public_state = 'completed'::text) AND (completed_date >= ('2040-09-01'::cstring)::date) AND (completed_date <= ('2040-09-30'::cstring)::date))
+                                              Rows Removed by Filter: 488
+                                              Buffers: shared hit=7847 read=29687
+                                        ->  Hash  (cost=0.02..0.02 rows=1 width=32) (actual time=0.300..0.301 rows=1017 loops=1)
+                                              Buckets: 1024  Batches: 1  Memory Usage: 72kB
+                                              ->  CTE Scan on grants g_2  (cost=0.00..0.02 rows=1 width=32) (actual time=0.001..0.120 rows=1017 loops=1)
+          ->  Hash  (cost=0.02..0.02 rows=1 width=35) (actual time=3.374..3.375 rows=1017 loops=1)
+                Buckets: 1024  Batches: 1  Memory Usage: 75kB
+                Buffers: shared hit=84
+                ->  CTE Scan on grants g_1  (cost=0.00..0.02 rows=1 width=35) (actual time=2.258..3.142 rows=1017 loops=1)
+                      Buffers: shared hit=84
+  CTE normalized_laws
+    ->  Subquery Scan on k_1  (cost=0.02..0.28 rows=1 width=64) (actual time=292.057..292.467 rows=10 loops=1)
+          Buffers: temp read=22395
+          ->  HashAggregate  (cost=0.02..0.03 rows=1 width=32) (actual time=291.910..291.914 rows=10 loops=1)
+                Group Key: observations_1.law
+                Batches: 1  Memory Usage: 24kB
+                Buffers: temp read=22395
+                ->  CTE Scan on observations observations_1  (cost=0.00..0.02 rows=1 width=32) (actual time=0.007..175.434 rows=600000 loops=1)
+                      Filter: (law IS NOT NULL)
+                      Buffers: temp read=22395
+  ->  Subquery Scan on e  (cost=0.20..0.31 rows=1 width=308) (actual time=4235.558..6281.379 rows=500000 loops=1)
+        Filter: ((e.rn = 1) AND (e.completed_date >= ('2040-09-01'::cstring)::date) AND (e.completed_date <= ('2040-09-30'::cstring)::date))
+        Buffers: shared hit=15809 read=59343, temp read=44599 written=44605
+        ->  WindowAgg  (cost=0.20..0.25 rows=2 width=500) (actual time=4235.547..5916.523 rows=500000 loops=1)
+              Run Condition: (row_number() OVER (?) <= 1)
+              Buffers: shared hit=15809 read=59343, temp read=44599 written=44605
+              ->  Incremental Sort  (cost=0.16..0.20 rows=2 width=340) (actual time=4235.542..5474.912 rows=600000 loops=1)
+                    Sort Key: i.rid COLLATE "C", i.answer_time DESC, i.completed_date DESC NULLS LAST, i.first_accepted_at, i.contributor_id
+                    Presorted Key: i.rid
+                    Full-sort Groups: 18656  Sort Method: quicksort  Average Memory: 32kB  Peak Memory: 32kB
+                    Buffers: shared hit=15809 read=59343, temp read=44599 written=44605
+                    ->  Subquery Scan on i  (cost=0.11..0.15 rows=1 width=340) (actual time=4235.461..5128.225 rows=600000 loops=1)
+                          Buffers: shared hit=15809 read=59343, temp read=44599 written=44605
+                          ->  WindowAgg  (cost=0.11..0.14 rows=1 width=492) (actual time=4235.459..5040.886 rows=600000 loops=1)
+                                Buffers: shared hit=15809 read=59343, temp read=44599 written=44605
+                                ->  Sort  (cost=0.11..0.11 rows=1 width=372) (actual time=4235.429..4450.332 rows=600000 loops=1)
+                                      Sort Key: (((o.source_report_key || '|'::text) || COALESCE(o.report_number, k.key_number, 'legacy'::text))) COLLATE "C", o.payload_sha256 COLLATE "C"
+                                      Sort Method: external merge  Disk: 177632kB
+                                      Buffers: shared hit=15809 read=59343, temp read=44599 written=44605
+                                      ->  Hash Left Join  (cost=0.06..0.10 rows=1 width=372) (actual time=3237.318..3640.687 rows=600000 loops=1)
+                                            Hash Cond: (o.source_report_key = k.source_report_key)
+                                            Buffers: shared hit=15809 read=59343, temp read=22395 written=22395
+                                            ->  CTE Scan on observations o  (cost=0.00..0.02 rows=1 width=404) (actual time=1582.129..1698.206 rows=600000 loops=1)
+                                                  Buffers: shared hit=7931 read=29688, temp read=22395 written=1
+                                            ->  Hash  (cost=0.05..0.05 rows=1 width=64) (actual time=1655.160..1655.163 rows=0 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 8kB
+                                                  Buffers: shared hit=7878 read=29655, temp written=22394
+                                                  ->  Subquery Scan on k  (cost=0.03..0.05 rows=1 width=64) (actual time=1655.159..1655.161 rows=0 loops=1)
+                                                        Buffers: shared hit=7878 read=29655, temp written=22394
+                                                        ->  Unique  (cost=0.03..0.04 rows=1 width=88) (actual time=1655.158..1655.159 rows=0 loops=1)
+                                                              Buffers: shared hit=7878 read=29655, temp written=22394
+                                                              ->  Sort  (cost=0.03..0.04 rows=1 width=88) (actual time=1655.157..1655.158 rows=0 loops=1)
+                                                                    Sort Key: observations.source_report_key COLLATE "C", observations.first_accepted_at, observations.contributor_id
+                                                                    Sort Method: quicksort  Memory: 25kB
+                                                                    Buffers: shared hit=7878 read=29655, temp written=22394
+                                                                    ->  CTE Scan on observations  (cost=0.00..0.02 rows=1 width=88) (actual time=1655.145..1655.145 rows=0 loops=1)
+                                                                          Filter: (report_number IS NOT NULL)
+                                                                          Rows Removed by Filter: 600000
+                                                                          Buffers: shared hit=7878 read=29655, temp written=22394
+  ->  Hash  (cost=0.02..0.02 rows=1 width=64) (actual time=292.484..292.484 rows=10 loops=1)
+        Buckets: 1024  Batches: 1  Memory Usage: 9kB
+        Buffers: temp read=22395
+        ->  CTE Scan on normalized_laws l  (cost=0.00..0.02 rows=1 width=64) (actual time=292.061..292.475 rows=10 loops=1)
+              Buffers: temp read=22395
+LOG:  duration: 8859.365 ms  plan:
+Query Text: with source as (
+   select s.*,case p_kind when 'agency' then coalesce(nullif(s.agency_key,''),'agency-unknown')
+     when 'manager' then coalesce(nullif(s.agency_key,''),'agency-unknown')||':'||coalesce(nullif(s.manager_key,''),'manager-unknown')
+     when 'laws' then coalesce(s.law,'')
+     else to_char(case p_scope->>'date_basis' when 'report_date' then s.report_date else s.completed_date end,'YYYY-MM') end as group_key,
+     case when s.completed_date>=s.report_date and s.status in ('accepted','partial','rejected','completed_unknown') then s.completed_date-s.report_date else null end as days
+   from private.analytics_rollup_source(p_scope) s
+   where p_kind='series' or s.status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')
+ ), groups as materialized (
+   select group_key,count(*) as c,count(*) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as dc,
+     (array_agg(agency_key order by identity collate "C"))[1] as agency_key,
+     (array_agg(agency_name order by identity collate "C"))[1] as agency_name,
+     (array_agg(manager_key order by identity collate "C"))[1] as manager_key,
+     (array_agg(manager_name order by identity collate "C"))[1] as manager_name,
+     (array_agg(law order by identity collate "C"))[1] as law,
+     count(*) filter(where status='accepted') as accepted,count(*) filter(where status='partial') as partial,
+     count(*) filter(where status='rejected') as rejected,count(*) filter(where disposition='fine' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as fine,
+     count(*) filter(where disposition='warning' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as warning,count(*) filter(where disposition='penalty' and status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as penalty,
+     count(days) as duration_count,percentile_cont(0.5) within group(order by days) as median_days,sum(days)::double precision/nullif(count(days),0) as mean_days,
+     count(amount_won) as amount_count,sum(amount_won) as sum_won,sum(amount_won)::double precision/nullif(count(amount_won),0) as mean_won,
+     count(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')) as rating_count,sum(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred'))::double precision/nullif(count(rating) filter(where status in ('accepted','partial','rejected','completed_unknown','withdrawn','transferred')),0) as mean_rating
+   from source group by group_key
+ ), values as (
+   select g.*,case when btrim(agency_name)~'경찰(청|서)|지구대|파출소|치안센터|경찰대학|경찰교육원|경찰인재개발원|경찰수사연수원' then 'police'
+     when agency_key like 'inst:%' or btrim(agency_name)~'(특별시|광역시|특별자치시|특별자치도|도|시|군|구)(청)?$|(시청|구청|군청|도청|공사|공단|사업소|관리소|주민센터|행정복지센터)$' then 'non_police' else 'unknown' end as agency_type,
+     jsonb_build_object('accepted',accepted,'partial',partial,'rejected',rejected,'result_known',accepted+partial+rejected,'result_unknown',dc-accepted-partial-rejected) as outcomes,
+     jsonb_build_object('fine_count',fine,'confirmed_count',amount_count,'sum_won',sum_won,'mean_won',mean_won) as amount,
+     jsonb_build_object('count',duration_count,'median_days',median_days,'mean_days',mean_days) as duration,
+     jsonb_build_object('count',rating_count,'mean',mean_rating) as rating,
+     case p_kind when 'laws' then coalesce(law,'법규 미상') else agency_name||case when p_kind='manager' then coalesce(manager_name,'') else '' end end as display_name
+   from groups g
+ ), filtered as (
+   select v.*,
+     case sort_column when 'completed' then c::numeric when 'accepted' then accepted::numeric when 'partial' then partial::numeric when 'rejected' then rejected::numeric
+       when 'fine' then fine::numeric when 'warning' then warning::numeric when 'penalty' then case when p_kind='laws' then penalty::numeric else null end
+       when 'duration' then case when p_kind='laws' then null when sort_value='count' then duration_count::numeric else median_days::numeric end
+       when 'amount' then case when sort_value='count' then amount_count::numeric else sum_won::numeric end
+       when 'rating' then case when sort_value='count' then rating_count::numeric else mean_rating::text::numeric end end as num,
+     case when sort_value='rate' then case when sort_column in ('accepted','partial','rejected') then nullif(accepted+partial+rejected,0) else c end else 1 end as den
+   from values v where (p_options->>'agency_type' is null or v.agency_type=p_options->>'agency_type')
+     and (needle='' or case when p_kind='laws' then strpos(v.display_name,needle)>0 else strpos(v.agency_name,needle)>0 or strpos(coalesce(v.manager_name,''),needle)>0 end)
+ ), ordered as (
+   select f.*,row_number() over(order by
+     case when direction='asc' then div(num::numeric*10000000000000000000000000000000000000000::numeric,den::numeric) end asc nulls last,
+     case when direction='desc' then div(num::numeric*10000000000000000000000000000000000000000::numeric,den::numeric) end desc nulls last,
+     display_name collate "ko-x-icu",case when p_kind='laws' then coalesce(law,U&'\FFFF') else group_key end collate "C") as ord
+   from filtered f
+ ), page as (
+   select o.ord,case when p_kind='laws' then jsonb_build_object('law',law,'completed_count',c,'outcomes',outcomes,
+       'accept_rate',accepted::double precision*100/nullif(accepted+partial+rejected,0),'partial_rate',partial::double precision*100/nullif(accepted+partial+rejected,0),
+       'fine_count',fine,'fine_rate',fine::double precision*100/nullif(c,0),'penalty_count',penalty,'warning_count',warning,'fine_amount',amount,'rating',rating)
+     when p_kind='series' then jsonb_build_object('month',group_key,'report_count',c,'completed_count',dc,'fine_count',fine,
+       'outcomes',outcomes,'duration',duration,'fine_amount',amount,'rating',rating)
+     else jsonb_build_object('key',group_key,'agency_key',agency_key,'manager_key',case when p_kind='manager' then manager_key else null end,
+       'agency_name',agency_name,'manager_name',case when p_kind='manager' then manager_name else null end,'agency_type',agency_type,
+       'completed_count',c,'outcomes',outcomes,'fine_count',fine,'warning_count',warning,'duration',duration,'fine_amount',amount,'rating',rating) end as value
+   from ordered o where p_kind='series' or (o.ord>(page_no-1)*page_size and o.ord<=page_no*page_size)
+ ) select jsonb_build_object('items',coalesce((select jsonb_agg(value order by ord) from page),'[]'::jsonb),
+   'total_rows',(select count(*) from filtered),
+   'names',case when p_kind='manager' then coalesce((select jsonb_agg(jsonb_build_object('key',group_key,'agency_name',agency_name,'manager_name',manager_name) order by group_key collate "C") from groups),'[]'::jsonb) else '[]'::jsonb end)
+Result  (cost=34.61..34.63 rows=1 width=32) (actual time=8859.356..8859.363 rows=1 loops=1)
+  Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+  CTE groups
+    ->  GroupAggregate  (cost=22.20..30.25 rows=33 width=344) (actual time=8859.147..8859.150 rows=1 loops=1)
+          Group Key: (CASE $2 WHEN 'agency'::text THEN COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) WHEN 'manager'::text THEN ((COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) || ':'::text) || COALESCE(NULLIF(s.manager_key, ''::text), 'manager-unknown'::text)) WHEN 'laws'::text THEN COALESCE(s.law, ''::text) ELSE to_char((CASE ($1 ->> 'date_basis'::text) WHEN 'report_date'::text THEN s.report_date ELSE s.completed_date END)::timestamp with time zone, 'YYYY-MM'::text) END)
+          Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+          ->  Sort  (cost=22.20..22.29 rows=35 width=308) (actual time=7886.637..8053.982 rows=500000 loops=1)
+                Sort Key: (CASE $2 WHEN 'agency'::text THEN COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) WHEN 'manager'::text THEN ((COALESCE(NULLIF(s.agency_key, ''::text), 'agency-unknown'::text) || ':'::text) || COALESCE(NULLIF(s.manager_key, ''::text), 'manager-unknown'::text)) WHEN 'laws'::text THEN COALESCE(s.law, ''::text) ELSE to_char((CASE ($1 ->> 'date_basis'::text) WHEN 'report_date'::text THEN s.report_date ELSE s.completed_date END)::timestamp with time zone, 'YYYY-MM'::text) END), s.identity COLLATE "C"
+                Sort Method: external merge  Disk: 96176kB
+                Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+                ->  Function Scan on analytics_rollup_source s  (cost=0.25..21.30 rows=35 width=308) (actual time=7074.596..7571.181 rows=500000 loops=1)
+                      Filter: (($2 = 'series'::text) OR (status = ANY ('{accepted,partial,rejected,completed_unknown,withdrawn,transferred}'::text[])))
+                      Buffers: shared hit=15828 read=59343, temp read=78943 written=56554
+  CTE filtered
+    ->  CTE Scan on groups g  (cost=0.00..2.36 rows=1 width=576) (actual time=8859.223..8859.224 rows=1 loops=1)
+          Filter: (((($3 ->> 'agency_type'::text) IS NULL) OR (CASE WHEN (btrim(agency_name) ~ '경찰(청|서)|지구대|파출소|치안센터|경찰대학|경찰교육원|경찰인재개발원|경찰수사연수원'::text) THEN 'police'::text WHEN ((agency_key ~~ 'inst:%'::text) OR (btrim(agency_name) ~ '(특별시|광역시|특별자치시|특별자치도|도|시|군|구)(청)?$|(시청|구청|군청|도청|공사|공단|사업소|관리소|주민센터|행정복지센터)$'::text)) THEN 'non_police'::text ELSE 'unknown'::text END = ($3 ->> 'agency_type'::text))) AND (($11 = ''::text) OR CASE WHEN ($2 = 'laws'::text) THEN (strpos(CASE $2 WHEN 'laws'::text THEN COALESCE(law, '법규 미상'::text) ELSE (agency_name || CASE WHEN ($2 = 'manager'::text) THEN COALESCE(manager_name, ''::text) ELSE ''::text END) END, $11) > 0) ELSE ((strpos(agency_name, $11) > 0) OR (strpos(COALESCE(manager_name, ''::text), $11) > 0)) END))
+          Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+  InitPlan 3
+    ->  Aggregate  (cost=0.21..0.22 rows=1 width=32) (actual time=8859.338..8859.340 rows=1 loops=1)
+          Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+          ->  Sort  (cost=0.14..0.14 rows=1 width=424) (actual time=8859.282..8859.284 rows=1 loops=1)
+                Sort Key: o.ord
+                Sort Method: quicksort  Memory: 25kB
+                Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+                ->  Subquery Scan on o  (cost=0.05..0.13 rows=1 width=424) (actual time=8859.275..8859.278 rows=1 loops=1)
+                      Filter: (($2 = 'series'::text) OR ((o.ord > (($9 - 1) * $10)) AND (o.ord <= ($9 * $10))))
+                      Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+                      ->  WindowAgg  (cost=0.05..0.10 rows=1 width=712) (actual time=8859.272..8859.274 rows=1 loops=1)
+                            Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+                            ->  Sort  (cost=0.05..0.06 rows=1 width=544) (actual time=8859.264..8859.264 rows=1 loops=1)
+                                  Sort Key: (CASE WHEN ($8 = 'asc'::text) THEN div((f.num * '10000000000000000000000000000000000000000'::numeric), (f.den)::numeric) ELSE NULL::numeric END), (CASE WHEN ($8 = 'desc'::text) THEN div((f.num * '10000000000000000000000000000000000000000'::numeric), (f.den)::numeric) ELSE NULL::numeric END) DESC NULLS LAST, ((f.display_name)::text) COLLATE "ko-x-icu", ((CASE WHEN ($2 = 'laws'::text) THEN COALESCE(f.law, '￿'::text) ELSE f.group_key END)::text) COLLATE "C"
+                                  Sort Method: quicksort  Memory: 25kB
+                                  Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+                                  ->  CTE Scan on filtered f  (cost=0.00..0.04 rows=1 width=544) (actual time=8859.252..8859.254 rows=1 loops=1)
+                                        Buffers: shared hit=15828 read=59343, temp read=90965 written=68579
+  InitPlan 4
+    ->  Aggregate  (cost=0.02..0.03 rows=1 width=8) (actual time=0.007..0.008 rows=1 loops=1)
+          ->  CTE Scan on filtered  (cost=0.00..0.02 rows=1 width=0) (actual time=0.000..0.001 rows=1 loops=1)
+  InitPlan 5
+    ->  Aggregate  (cost=1.74..1.75 rows=1 width=32) (never executed)
+          ->  Sort  (cost=1.49..1.57 rows=33 width=96) (never executed)
+                Sort Key: groups.group_key COLLATE "C"
+                ->  CTE Scan on groups  (cost=0.00..0.66 rows=33 width=96) (never executed)
+LOG:  duration: 8893.825 ms  plan:
+Query Text: with started as materialized(select clock_timestamp() at),result as materialized(select public.internal_analytics_rollup('{"start":"2040-09-01","end":"2040-09-30","date_basis":"completed_date","category":"all","region_code":null,"agency_key":null,"manager_key":null,"bbox":null,"law":null}'::jsonb,'series',jsonb_build_object('page',1,'page_size',100,'q','','sort',jsonb_build_object('column','completed','value','count','dir','desc'),'agency_type',null,'expected_version',(select dataset_version from private.analytics_state where singleton))) body, at from started)
+   select jsonb_build_object('label','after-series-1','ms',extract(epoch from clock_timestamp()-at)*1000,'bytes',octet_length(body::text),'total_rows',body->'total_rows','n',case when 'after-series-1' like '%series%' then body->'items'->0->'report_count' else body->'items'->0->'completed_count' end) from result;
+CTE Scan on result  (cost=2.31..2.36 rows=1 width=32) (actual time=8893.814..8893.818 rows=1 loops=1)
+  Buffers: shared hit=15832 read=59343, temp read=90965 written=68579
+  CTE started
+    ->  Result  (cost=0.00..0.01 rows=1 width=8) (actual time=0.001..0.002 rows=1 loops=1)
+  CTE result
+    ->  CTE Scan on started  (cost=2.02..2.29 rows=1 width=40) (actual time=8893.763..8893.766 rows=1 loops=1)
+          Buffers: shared hit=15832 read=59343, temp read=90965 written=68579
+          InitPlan 2
+            ->  Seq Scan on analytics_state  (cost=0.00..2.02 rows=1 width=37) (actual time=0.012..0.013 rows=1 loops=1)
+                  Filter: singleton
+                  Buffers: shared hit=2

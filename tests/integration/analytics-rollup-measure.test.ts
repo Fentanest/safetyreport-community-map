@@ -17,7 +17,8 @@ describe.skipIf(!enabled)('large native rollup SQL measurements',()=>{
   const call=(kind:string)=>`public.internal_analytics_rollup('${JSON.stringify(scope)}'::jsonb,'${kind}',jsonb_build_object('page',1,'page_size',100,'q','','sort',jsonb_build_object('column','completed','value','count','dir','desc'),'agency_type',null,'expected_version',(select dataset_version from private.analytics_state where singleton)))`;
   const sample=(label:string,expression:string)=>`with started as materialized(select clock_timestamp() at),result as materialized(select ${expression} body, at from started)
    select jsonb_build_object('label','${label}','ms',extract(epoch from clock_timestamp()-at)*1000,'bytes',octet_length(body::text),'total_rows',body->'total_rows','n',case when '${label}' like '%series%' then body->'items'->0->'report_count' else body->'items'->0->'completed_count' end) from result;`;
-  const sourcePlan=readFileSync('supabase/migrations/202610040600_rollup_scope_plan.sql','utf8').split('$plan$')[1].replace(/\$1/g,"'"+JSON.stringify(scope)+"'::jsonb");
+  const candidateMigration=process.env.ROLLUP_SOURCE_MIGRATION??'202610040600_rollup_scope_plan.sql';
+  const sourcePlan=readFileSync(`supabase/migrations/${candidateMigration}`,'utf8').split('$plan$')[1].replace(/\$1/g,"'"+JSON.stringify(scope)+"'::jsonb");
   let script=rankingMeasureSeed(500000,true)+`explain (format json) ${sourcePlan};analyze private.contributor_profiles;analyze private.community_consent_grants;${process.env.ROLLUP_HASH_PLAN==='1'?"alter function private.analytics_rollup_source(jsonb) set enable_nestloop=off;":''}explain (format json) ${sourcePlan};`+`set statement_timeout='${diagnosticTimeout}s';set application_name='analytics-rollup-measure';
    create temporary table raw_attempt(status text,ms double precision);
    do $measure$ declare started timestamptz:=clock_timestamp();begin perform ${source};insert into raw_attempt values('200',extract(epoch from clock_timestamp()-started)*1000);
@@ -35,7 +36,7 @@ describe.skipIf(!enabled)('large native rollup SQL measurements',()=>{
   writeFileSync(`${out}/partial-output.jsonl`,execution.stdout??'');
   expect(execution.status,execution.stderr?.slice(-1500)).toBe(0);
   const samples=(execution.stdout??'').trim().split('\n').filter(x=>x.startsWith('{')).map(x=>JSON.parse(x));
-  writeFileSync(`${out}/measurements.json`,JSON.stringify({mode:'direct local PostgreSQL, service RPC; synthetic; rollback; no HTTP/rate or production claims',seed:'refactor-rank-deterministic-v1/global-user-qualified-keys',unique_public_reports:500000,observations:600000,repeats,diagnostic_timeout_seconds:diagnosticTimeout,production_function_timeout_unchanged:true,hash_plan_candidate:process.env.ROLLUP_HASH_PLAN==='1',candidate_migration:'202610040600_rollup_scope_plan.sql',samples},null,2));
+  writeFileSync(`${out}/measurements.json`,JSON.stringify({mode:'direct local PostgreSQL, service RPC; synthetic; rollback; no HTTP/rate or production claims',seed:'refactor-rank-deterministic-v1/global-user-qualified-keys',unique_public_reports:500000,observations:600000,repeats,diagnostic_timeout_seconds:diagnosticTimeout,production_function_timeout_unchanged:true,hash_plan_candidate:process.env.ROLLUP_HASH_PLAN==='1',candidate_migration:candidateMigration,samples},null,2));
   expect(samples[0].status).toBe('422_RESULT_TOO_LARGE');
   expect(samples).toHaveLength(1+3*repeats);
   for(const sample of samples.slice(1)){

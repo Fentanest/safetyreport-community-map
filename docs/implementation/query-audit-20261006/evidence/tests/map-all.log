@@ -1,0 +1,302 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-cohort
+
+ ❯ tests/product/migrationEditorSafe.test.ts (16 tests | 1 failed) 24ms
+   ❯ migrations paste cleanly into the Supabase SQL Editor (16)
+     × 202610060200_query_read_paths.sql has no ASCII apostrophe in a comment 10ms
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ERROR:  DATASET_CHANGED
+CONTEXT:  PL/pgSQL function public.internal_analytics_rollup(jsonb,text,jsonb) line 8 at RAISE
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+NOTICE:  relation "it_realtime_control" already exists, skipping
+stdout | tests/integration/community-stack.test.ts > community ingest on the composed local stack
+[realtime] control delivery ready after 4709 ms
+
+ ❯ tests/integration/community-stack.test.ts (33 tests | 33 skipped) 7230ms
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function public.internal_analytics_cohort_facts(text,date,date,boolean,text,text,text,text,double precision[]) line 12 at RAISE
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function public.internal_analytics_cohort_facts(text,date,date,boolean,text,text,text,text,double precision[]) line 12 at RAISE
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ ❯ tests/integration/my-analytics-stack.test.ts (7 tests | 5 failed) 6671ms
+   ❯ my-analytics on the composed local stack (7)
+     × returns all = the public numbers and mine = only the verified user, from one version 50ms
+     × answers 409 for a stale public version and refuses foreign origins 34ms
+     × keeps the source RPC service_role-only 39ms
+     × releases fine amounts only while the current grant of the lineage publishes them (2026-09-28.1 does) 1534ms
+     × contributor-only map: no sign-in → 401; no consent, zero or nine reports → 403; ten reports → 200 55ms
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ ❯ tests/integration/my-reports-edge.test.ts (5 tests | 5 skipped) 2963ms
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function private.my_reports_check_query(text,text) line 6 at RAISE
+PL/pgSQL function public.internal_my_reports_numbers(uuid,uuid,text,text,integer,integer,integer,text) line 14 at assignment
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function public.internal_my_reports_summary(uuid,uuid,date,date,boolean,integer,integer,text) line 11 at RAISE
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ ❯ tests/integration/user-rankings-edge.test.ts (2 tests | 2 skipped) 4995ms
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+test_agency_batch_cas_errors_and_trigger_effects (__main__.QueryAudit.test_agency_batch_cas_errors_and_trigger_effects) ... ok
+test_legacy_validation_and_pre_filter_row_budget (__main__.QueryAudit.test_legacy_validation_and_pre_filter_row_budget) ... ok
+test_manifest_exact_generations_and_statement_rollback (__main__.QueryAudit.test_manifest_exact_generations_and_statement_rollback) ... ok
+test_reads_modes_filters_and_transitions (__main__.QueryAudit.test_reads_modes_filters_and_transitions) ... ok
+test_service_acl_and_actual_rls_roles (__main__.QueryAudit.test_service_acl_and_actual_rls_roles) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 29.918s
+
+OK
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/community-stack.test.ts > community ingest on the composed local stack
+TypeError: Failed to parse URL from null
+ ❯ kakaoSession tests/integration/community-stack.test.ts:97:17
+     95|   decide.search = new URLSearchParams({ state: kakao.searchParams.get(…
+     96|   const step2 = await fetch(decide, { redirect: 'manual' });
+     97|   const step3 = await fetch(step2.headers.get('location')!, { redirect…
+       |                 ^
+     98|   const landed = new URL(step3.headers.get('location')!);
+     99|   const code = landed.searchParams.get('code');
+ ❯ writerFor tests/integration/community-stack.test.ts:144:19
+ ❯ viewer tests/integration/community-stack.test.ts:69:15
+ ❯ tests/integration/community-stack.test.ts:243:5
+
+Caused by: TypeError: Invalid URL
+ ❯ kakaoSession tests/integration/community-stack.test.ts:97:23
+ ❯ writerFor tests/integration/community-stack.test.ts:144:19
+ ❯ viewer tests/integration/community-stack.test.ts:69:15
+ ❯ tests/integration/community-stack.test.ts:243:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: 'null' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  tests/integration/my-reports-edge.test.ts > my-reports Edge function (deno-local gateway, mock Kakao OAuth)
+TypeError: Failed to parse URL from null
+ ❯ kakao tests/integration/my-reports-edge.test.ts:34:17
+     32|   decide.search = new URLSearchParams({ state: k.searchParams.get('sta…
+     33|   const step2 = await fetch(decide, { redirect: 'manual' });
+     34|   const step3 = await fetch(step2.headers.get('location')!, { redirect…
+       |                 ^
+     35|   const code = new URL(step3.headers.get('location')!).searchParams.ge…
+     36|   const res = await fetch(`${API}/auth/v1/token?grant_type=pkce`, { me…
+ ❯ tests/integration/my-reports-edge.test.ts:74:9
+
+Caused by: TypeError: Invalid URL
+ ❯ kakao tests/integration/my-reports-edge.test.ts:34:23
+ ❯ tests/integration/my-reports-edge.test.ts:74:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: 'null' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  tests/integration/user-rankings-edge.test.ts > actual user-rankings Edge entry in local Deno
+Error: Local Deno failed: error: Uncaught (in promise) AddrInUse: Address already in use (os error 98)
+    at listen (ext:deno_net/01_net.js:1:7011)
+    at serveInner (ext:deno_http/00_serve.ts:1:16770)
+    at serve (ext:deno_http/00_serve.ts:1:15240)
+    at Object.Deno.serve (file:///home/better0101/projects/worktree/map-cohort/.agent-runtime/rankings-edge-runtime.ts:1:61)
+    at file:///home/better0101/projects/worktree/map-cohort/supabase/functions/user-rankings/index.ts:13:6
+
+ ❯ listen ext:deno_net/01_net.js:1:7011
+ ❯ serveInner ext:deno_http/00_serve.ts:1:16770
+ ❯ serve ext:deno_http/00_serve.ts:1:15240
+ ❯ Object.Deno.serve .agent-runtime/rankings-edge-runtime.ts:1:61
+ ❯ supabase/functions/user-rankings/index.ts:13:6
+ ❯ tests/integration/user-rankings-edge.test.ts:72:17
+     70|         } catch {}
+     71|         if (proc.exitCode !== null) {
+     72|           throw new Error(
+       |                 ^
+     73|             "Local Deno failed: " +
+     74|               stderr.replace(/eyJ[A-Za-z0-9._-]+/g, "[redacted]"),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > returns all = the public numbers and mine = only the verified user, from one version
+TypeError: Failed to parse URL from null
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:17
+     56|   decide.search = new URLSearchParams({ state: kakao.searchParams.get(…
+     57|   const step2 = await fetch(decide, { redirect: 'manual' });
+     58|   const step3 = await fetch(step2.headers.get('location')!, { redirect…
+       |                 ^
+     59|   const code = new URL(step3.headers.get('location')!).searchParams.ge…
+     60|   const token = await call('POST', '/auth/v1/token?grant_type=pkce', {…
+ ❯ writer tests/integration/my-analytics-stack.test.ts:84:19
+ ❯ tests/integration/my-analytics-stack.test.ts:140:15
+
+Caused by: TypeError: Invalid URL
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:23
+ ❯ writer tests/integration/my-analytics-stack.test.ts:84:19
+ ❯ tests/integration/my-analytics-stack.test.ts:140:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: 'null' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > answers 409 for a stale public version and refuses foreign origins
+TypeError: Failed to parse URL from null
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:17
+     56|   decide.search = new URLSearchParams({ state: kakao.searchParams.get(…
+     57|   const step2 = await fetch(decide, { redirect: 'manual' });
+     58|   const step3 = await fetch(step2.headers.get('location')!, { redirect…
+       |                 ^
+     59|   const code = new URL(step3.headers.get('location')!).searchParams.ge…
+     60|   const token = await call('POST', '/auth/v1/token?grant_type=pkce', {…
+ ❯ tests/integration/my-analytics-stack.test.ts:174:15
+
+Caused by: TypeError: Invalid URL
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:23
+ ❯ tests/integration/my-analytics-stack.test.ts:174:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: 'null' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > keeps the source RPC service_role-only
+TypeError: Failed to parse URL from null
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:17
+     56|   decide.search = new URLSearchParams({ state: kakao.searchParams.get(…
+     57|   const step2 = await fetch(decide, { redirect: 'manual' });
+     58|   const step3 = await fetch(step2.headers.get('location')!, { redirect…
+       |                 ^
+     59|   const code = new URL(step3.headers.get('location')!).searchParams.ge…
+     60|   const token = await call('POST', '/auth/v1/token?grant_type=pkce', {…
+ ❯ tests/integration/my-analytics-stack.test.ts:200:18
+
+Caused by: TypeError: Invalid URL
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:23
+ ❯ tests/integration/my-analytics-stack.test.ts:200:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: 'null' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > releases fine amounts only while the current grant of the lineage publishes them (2026-09-28.1 does)
+TypeError: Failed to parse URL from null
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:17
+     56|   decide.search = new URLSearchParams({ state: kakao.searchParams.get(…
+     57|   const step2 = await fetch(decide, { redirect: 'manual' });
+     58|   const step3 = await fetch(step2.headers.get('location')!, { redirect…
+       |                 ^
+     59|   const code = new URL(step3.headers.get('location')!).searchParams.ge…
+     60|   const token = await call('POST', '/auth/v1/token?grant_type=pkce', {…
+ ❯ writer tests/integration/my-analytics-stack.test.ts:84:19
+ ❯ viewer tests/integration/my-analytics-stack.test.ts:117:15
+ ❯ publicGet tests/integration/my-analytics-stack.test.ts:127:102
+ ❯ tests/integration/my-analytics-stack.test.ts:240:19
+
+Caused by: TypeError: Invalid URL
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:23
+ ❯ writer tests/integration/my-analytics-stack.test.ts:84:19
+ ❯ viewer tests/integration/my-analytics-stack.test.ts:117:15
+ ❯ publicGet tests/integration/my-analytics-stack.test.ts:127:102
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: 'null' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  tests/integration/my-analytics-stack.test.ts > my-analytics on the composed local stack > contributor-only map: no sign-in → 401; no consent, zero or nine reports → 403; ten reports → 200
+TypeError: Failed to parse URL from null
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:17
+     56|   decide.search = new URLSearchParams({ state: kakao.searchParams.get(…
+     57|   const step2 = await fetch(decide, { redirect: 'manual' });
+     58|   const step3 = await fetch(step2.headers.get('location')!, { redirect…
+       |                 ^
+     59|   const code = new URL(step3.headers.get('location')!).searchParams.ge…
+     60|   const token = await call('POST', '/auth/v1/token?grant_type=pkce', {…
+ ❯ tests/integration/my-analytics-stack.test.ts:265:15
+
+Caused by: TypeError: Invalid URL
+ ❯ kakaoSession tests/integration/my-analytics-stack.test.ts:58:23
+ ❯ tests/integration/my-analytics-stack.test.ts:265:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_INVALID_URL', input: 'null' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  tests/product/migrationEditorSafe.test.ts > migrations paste cleanly into the Supabase SQL Editor > 202610060200_query_read_paths.sql has no ASCII apostrophe in a comment
+AssertionError: expected [ [ 122, …(1) ], [ 161, …(1) ], …(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   [
++     122,
++     "               -- a missing number joins the key's first numbered group, else the legacy group.",
++   ],
++   [
++     161,
++     "        -- whether the answer stated an amount at all (existence only, never the value) — keeps 'not stated' apart from 'not published'",
++   ],
++   [
++     164,
++     "        -- (v1 payload, not extracted, or the lineage's policy does not publish it)",
++   ],
++ ]
+
+ ❯ tests/product/migrationEditorSafe.test.ts:15:17
+     13|       .map((line, i) => [i + 1, line] as const)
+     14|       .filter(([, line]) => { const c = line.indexOf('--'); return c >…
+     15|     expect(bad).toEqual([]);
+       |                 ^
+     16|   });
+     17| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  5 failed | 68 passed (73)
+      Tests  6 failed | 699 passed | 40 skipped (745)
+   Start at  09:38:38
+   Duration  1528.47s (tests 98%, import 2%, transform 1%)
+
+    Isolate  73 workers spawned · ~140ms startup each (spawn + environment, per file)
+             at least ~10.07s faster with isolate: false — reuses workers across files instead of one per file
