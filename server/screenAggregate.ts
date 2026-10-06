@@ -1,5 +1,6 @@
 /** Service-only sufficient statistics. No fact identities, account IDs or raw observations.
- * SQL owns elections, exact counts and quantiles; this module owns DTOs, locale sorting and paging.
+ * SQL owns elections, exact counts, quantiles and bounded heatmap rows/cells.
+ * This module assembles the unchanged public DTOs and handles other locale sorting/paging.
  */
 import { basisWindow, growth, mapNodes, monthSpine, previousWindow, todayKst } from './aggregate.ts';
 import { agencyTypeOf } from './agencyType.ts';
@@ -20,8 +21,19 @@ interface Stat {
   amount: [number, number | null, number | null, number, number, number, number, number, number];
   rating: [number, number | null]; histogram: number[]; ratings: number[][];
 }
+interface ScreenHeatmap {
+  row_kind: string;
+  rows: { key: string; agency_key: string | null; manager_key: string | null;
+    agency_name: string; manager_name: string | null; completed_count: number }[];
+  laws: { law_key: string; completed_count: number }[];
+  cells: { row_key: string; law_key: string; completed_count: number;
+    outcomes: ReturnType<typeof outcomes>; fine_count: number }[];
+  total_rows: number;
+  total_laws: number;
+}
 export interface ScreenAggregate {
-  encoding: 'screen-aggregate-v1'; stats: Stat[];
+  encoding: 'screen-aggregate-v1' | 'screen-aggregate-v2'; stats: Stat[];
+  heat?: ScreenHeatmap;
   anchors: [string, string, number, number, string, string | null][];
   full: [number, string, number, number, boolean][];
   vehicles: { identifiable: number; top: [string, number][]; days: number[]; excluded: [number, number] };
@@ -53,23 +65,29 @@ const ratingDistribution = (s: Stat,basis: DateBasis) => ({ basis,
 
 export class ScreenAggregates {
   private rows: Map<string, Stat[]> = new Map();
+  private keyed = new Map<string, Stat>();
+  private anchors = new Map<string, ScreenAggregate['anchors'][number]>();
+  private fullCounts = new Map<string, ScreenAggregate['full'][number]>();
   constructor(readonly data: ScreenAggregate,readonly scope: Scope,readonly state: AnalyticsState) {
-    if (data?.encoding !== 'screen-aggregate-v1' || !Array.isArray(data.stats) || !Array.isArray(data.anchors) || !Array.isArray(data.full) || !data.vehicles) {
+    if (!['screen-aggregate-v1','screen-aggregate-v2'].includes(data?.encoding) || !Array.isArray(data.stats) || !Array.isArray(data.anchors) || !Array.isArray(data.full) || !data.vehicles) {
       throw new Error('invalid aggregate encoding');
     }
+    for(const a of data.anchors) this.anchors.set(JSON.stringify([a[0],a[1]]),a);
+    for(const f of data.full) this.fullCounts.set(JSON.stringify([f[0],f[1]]),f);
     for (const s of data.stats) {
       const key=JSON.stringify([s.side,s.period,s.kind,s.focus]);
+      this.keyed.set(JSON.stringify([s.side,s.period,s.kind,s.focus,s.k]),s);
       const list=this.rows.get(key); if(list) list.push(s); else this.rows.set(key,[s]);
     }
   }
   private list(kind: string,side='all',period=0,focus='') { return this.rows.get(JSON.stringify([side,period,kind,focus])) ?? []; }
-  private stat(kind='summary',side='all',period=0,focus='',key='') { return this.list(kind,side,period,focus).find(s=>s.k===key) ?? empty; }
+  private stat(kind='summary',side='all',period=0,focus='',key='') { return this.keyed.get(JSON.stringify([side,period,kind,focus,key])) ?? empty; }
   private common() { return { schema_version:2,dataset_version:this.state.dataset_version,sample:false,scope:this.scope,cohort_policy_version:COHORT_POLICY_VERSION }; }
   private window(fallback=true) {
     const w=basisWindow(this.scope.date_basis,{basisBounds:this.state.basis_bounds,dataMin:this.state.data_min,asOf:this.state.data_max || this.scope.end});
     return { ...w,min:w.min ?? (fallback ? this.data.source_min : null) };
   }
-  private full(period=0,focus='') { return this.data.full.find(s=>s[0]===period && s[1]===focus) ?? [period,focus,0,0,false] as const; }
+  private full(period=0,focus='') { return this.fullCounts.get(JSON.stringify([period,focus])) ?? [period,focus,0,0,false] as const; }
   overview(focus='') {
     const s=this.stat(focus?'focus':'summary','all',0,focus),p=this.stat(focus?'focus':'summary','all',1,focus);
     const basis=this.scope.date_basis,prev=previousWindow(this.scope.start,this.scope.end);
@@ -106,7 +124,7 @@ export class ScreenAggregates {
     return this.list('region').map(s=>({...this.regionLabel(s),report_count:s.n,completed_count:s.c,outcomes:outcomes(s),fine_count:s.f,
       duration:briefDuration(s),fine_amount:briefAmount(s),rating:rating(s)})).sort(regionSort);
   }
-  private anchor(side:string,key:string) { return this.data.anchors.find(a=>a[0]===side&&a[1]===key); }
+  private anchor(side:string,key:string) { return this.anchors.get(JSON.stringify([side,key])); }
   private place(s:Stat,anchor:ScreenAggregate['anchors'][number]):PublicPoint {
     return {key:s.k,place_key:s.k,grouping_version:PLACE_GROUPING_VERSION,lat:anchor[2],lng:anchor[3],address:anchor[4],region_code:anchor[5],
       report_count:s.n,completed_count:s.c,outcomes:outcomes(s),fine_count:s.f,warning_count:s.w};
@@ -138,6 +156,7 @@ export class ScreenAggregates {
     const agencies=rows('agency'),managers=rows('manager');return {agencies:agencies.slice(0,500),managers:managers.slice(0,500),agency_total:agencies.length,manager_total:managers.length};
   }
   private heatmap() {
+    if(this.data.heat) return this.data.heat;
     // Cell order follows the first occurrence of each law inside each entity, as in the raw aggregator.
     const cells=[...this.rows.values()].flat().filter(s=>s.kind==='heat').sort((a,b)=>a.ord-b.ord);
     const rows=new Map<string,{s:Stat,n:number}>(),laws=new Map<string,number>();

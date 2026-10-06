@@ -1,0 +1,53 @@
+{
+  "base_commit": "0964d903199eb447f744005acf1b6d129a2693a7",
+  "committed": false,
+  "unit": {
+    "passed": 658,
+    "skipped": 145
+  },
+  "local_integration": {
+    "screen": 11,
+    "cohort": 5,
+    "transport": 9,
+    "benchmark_skipped_in_suite": 1
+  },
+  "large_whole_packet_parity": [
+    "30000-production-year",
+    "30000-production-all",
+    "60000-production-all"
+  ],
+  "python": {
+    "blueprint": 27,
+    "product": 12
+  },
+  "build": "PASS with existing chunk/dynamic-import warnings",
+  "scan": {
+    "passed": true,
+    "issues": []
+  },
+  "manifest": {
+    "migrations": 52,
+    "functions": 7
+  },
+  "browser": {
+    "functional": "PASS",
+    "screen_responses": 13,
+    "console_errors": 0,
+    "data_mode": "synthetic auth, local SQL exports, mock Kakao",
+    "visual_observation": "existing 16-column heatmap table wraps labels and values in narrow card"
+  },
+  "local_restoration": {
+    "before": {
+      "sql_bytes": 4275923,
+      "sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af"
+    },
+    "after": {
+      "sql_bytes": 4275923,
+      "sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af"
+    },
+    "equal": true
+  },
+  "production_access_or_deployment": false,
+  "production_5_second_target": "NOT_VERIFIED",
+  "muse_review": "NOT_RUN"
+}

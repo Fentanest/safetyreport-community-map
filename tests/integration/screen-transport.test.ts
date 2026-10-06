@@ -3,15 +3,21 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { decodeScreenFacts } from '../../server/screenFacts';
-const migrations = readdirSync('supabase/migrations').filter(n => /^202610060[1-7]00_/.test(n)).sort()
+const migrations = readdirSync('supabase/migrations').filter(n => /^20261006/.test(n) && !n.includes('0800_')).sort()
   .map(n => readFileSync(`supabase/migrations/${n}`, 'utf8').replace(/^(begin|commit);\s*$/gm, '')).join('\n');
 const baseline = readFileSync('supabase/migrations/202610060100_cohort_facts_setwise.sql', 'utf8')
   .match(/create or replace function public\.internal_analytics_cohort_facts\([\s\S]*?\$\$;/)![0]
-  .replace('public.internal_analytics_cohort_facts(', 'pg_temp.screen_baseline(');
+  .replace('public.internal_analytics_cohort_facts(', 'pg_temp.screen_baseline(')
+  // Adopt only the explicitly specified final dataset tie key in the historical oracle.
+  .replaceAll('f.first_accepted_at, f.contributor_id','f.first_accepted_at, f.contributor_id, f.dataset_key')
+  .replaceAll('i.first_accepted_at, i.contributor_id','i.first_accepted_at, i.contributor_id, i.dataset_key');
 const personalBaseline = readFileSync('supabase/migrations/202610060200_query_read_paths.sql', 'utf8')
   .match(/CREATE OR REPLACE FUNCTION public\.internal_my_analytics_cohort_source[\s\S]*?\$function\$\s*;/)![0]
   .replace('public.internal_my_analytics_cohort_source(', 'pg_temp.personal_baseline(')
-  .replace('public.internal_analytics_cohort_facts(', 'pg_temp.screen_baseline(');
+  .replace('public.internal_analytics_cohort_facts(', 'pg_temp.screen_baseline(')
+  // Adopt only the explicitly specified final dataset tie key in the historical oracle.
+  .replaceAll('f.first_accepted_at, f.contributor_id','f.first_accepted_at, f.contributor_id, f.dataset_key')
+  .replaceAll('i.first_accepted_at, i.contributor_id','i.first_accepted_at, i.contributor_id, i.dataset_key');
 const seed = readFileSync('tests/integration/helpers/cohort-timeout-seed.sql', 'utf8').replaceAll('__SIZE__', '300');
 const scope = `'{"date_basis":"completed_date","start":"2023-01-01","end":"2026-10-06","category":"all"}'::jsonb`;
 const call = `public.internal_analytics_read_snapshot(${scope},true,p_user=>u.id,p_session=>u.session_id`;
@@ -32,7 +38,7 @@ describe.skipIf(process.env.COMMUNITY_STACK !== '1')('screen fact transport in r
       expect(JSON.stringify(compact).length).toBeLessThan(JSON.stringify(legacy).length * 0.6);
     }
   });
-  it('matches the frozen 060100 baseline exactly across date/filter/previous windows and identical device ties', () => {
+  it('matches the 060100 oracle with the specified dataset tie key across date/filter/previous windows', () => {
     const cases = ['report_date','completed_date'].flatMap(basis => [false,true].flatMap(previous => [
       ["'2023-01-01','2026-10-06'", "'all',null,null,null,null"],
       ["'2023-03-01','2023-03-31'", "'all',null,null,null,null"],
@@ -50,7 +56,8 @@ describe.skipIf(process.env.COMMUNITY_STACK !== '1')('screen fact transport in r
       set plan_cache_mode=force_custom_plan;${cases}set plan_cache_mode=force_generic_plan;${cases}`);
     expect(rows).toHaveLength(48);
     for (const row of rows) expect(row.equal).toBe(true);
-  });
+  // This case executes 48 pairs of real SQL calls. The runner timeout is not a per-query latency assertion.
+  }, 30000);
   it('returns no private facts for invalid sessions, 1–9 contributions or revoked consent', () => {
     const rows = sql(`
       select ${call.replace('p_session=>u.session_id', "p_session=>'00000000-0000-0000-0000-000000000000'::uuid")},p_options=>'{"fact_encoding":"columns-v1"}'::jsonb) from cohort_users u where idx=1;

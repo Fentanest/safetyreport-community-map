@@ -1,0 +1,61 @@
+{
+  "synthetic": true,
+  "sql_sha256": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+  "seed_rows": 300,
+  "work_mem": "2MB",
+  "profile": "production",
+  "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-07",
+    "end": "2026-10-06",
+    "category": "all"
+  },
+  "iterations": 1,
+  "status": "MEASURED",
+  "exit_code": 0,
+  "elapsed_seconds": 0.4338032070081681,
+  "samples": [
+    {
+      "phase": "legacy",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 17.833,
+      "bytes": 194321
+    },
+    {
+      "phase": "legacy",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 13.321,
+      "bytes": 194321
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 56.187,
+      "bytes": 13512
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 44.543,
+      "bytes": 13512
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 39.715,
+      "bytes": 2216
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 33.03,
+      "bytes": 2216
+    }
+  ]
+}

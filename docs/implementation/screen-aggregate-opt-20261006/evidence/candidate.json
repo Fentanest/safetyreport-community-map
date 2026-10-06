@@ -1,0 +1,20 @@
+{
+  "base_commit": "0964d903199eb447f744005acf1b6d129a2693a7",
+  "committed": false,
+  "files": {
+    "docs/data-contract.md": "e8ba200430788c01c308aae8ab05b6cbb707ab391d4a42c7ad24872a78e72336",
+    "docs/integration/community-ingest/migration-manifest.json": "c9626f9d78c406559290a17407f071206d7060b709bea493c52b7bcfb930156d",
+    "docs/product-decisions.md": "b0b9e5ca3873668b4d7e8861d18f61b12daf4326c51b7b520d166743beaa73ca",
+    "server/screenAggregate.ts": "e01d3d73f9d1cc4d07144f3fdfdd03fdae39273d0567df1639572a4c902f4a40",
+    "server/screenHandler.ts": "832af49eaad5f55109a30f1f9c3c7607f0bd568cbb1f0384685bef71807949c6",
+    "tests/integration/cohort-timeout.test.ts": "ecd7847b733bef1299606a8ab7117e993b180ab7ffae57d309d4abe4e09ae4e6",
+    "tests/integration/screen-server-aggregate.test.ts": "491ba04b3a65f11ccbe97b62e44da1fadbb4d7ae1c221a933aff5a5ad929d203",
+    "tests/integration/screen-transport.test.ts": "0a77af5f65f1506166e1450442b77e97669ef2bc1a67b5aa276b56dc26b07150",
+    "tests/product/screenSnapshot.test.ts": "c37340e97fc7f666035ae8beb1b776f78ecfda7a0bbaade19a424158bc5cc268",
+    "supabase/migrations/202610061000_screen_aggregate_opt.sql": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+    "scripts/benchmark/screen_aggregate_opt.py": "1ee93ea9fd01a4d27ad49c5223596865ae54ad44d21d3dfaaead4cb455350b31",
+    "tests/integration/screen-aggregate-opt.test.ts": "582ca1dde203bfea5e62772ffda4fad80146b979beccbeb4cfe6c43ea7e728cb",
+    "scripts/browser/vite.screen-aggregate-opt.config.ts": "112b022147010968669d6f79e59934f5c604d44048b44f3053821e50298afc75",
+    "scripts/browser/verify_screen_aggregate_opt.mjs": "c94295e8b83bc86a473b4e09049f85b658f53459fd4aeb162d9d41f4701ee85a"
+  }
+}

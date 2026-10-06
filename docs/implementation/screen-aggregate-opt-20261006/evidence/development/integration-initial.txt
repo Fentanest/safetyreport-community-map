@@ -1,0 +1,37 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-agg-opt
+
+ERROR:  operator does not exist: jsonb = json
+LINE 1: ...-01','2026-10-01',false,'all',null,null,null,null)=public.in...
+                                                             ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+ ❯ tests/integration/cohort-timeout.test.ts (5 tests | 1 failed) 37685ms
+   ❯ cohort timeout: exact ordered JSON and unchanged boundaries (5)
+     × keeps personal source authentication/state and RPC settings/privileges unchanged 239ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/cohort-timeout.test.ts > cohort timeout: exact ordered JSON and unchanged boundaries > keeps personal source authentication/state and RPC settings/privileges unchanged
+Error: Command failed: docker exec -i supabase_db_ci0926-int psql -X -U supabase_admin -d postgres -qAt -v ON_ERROR_STOP=1
+ERROR:  operator does not exist: jsonb = json
+LINE 1: ...-01','2026-10-01',false,'all',null,null,null,null)=public.in...
+                                                             ^
+HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+ ❯ sql tests/integration/cohort-timeout.test.ts:22:10
+     20| const prefix = `begin;${seed}${frozen}${personal}${migration}set plan_…
+     21| function sql(query: string): any[] {
+     22|   return execFileSync('docker', ['exec', '-i', 'supabase_db_ci0926-int…
+       |          ^
+     23|     { input: prefix + query + '\nrollback;', encoding: 'utf8', maxBuff…
+     24|     .split('\n').filter(s => s.startsWith('{')).map(s => JSON.parse(s)…
+ ❯ tests/integration/cohort-timeout.test.ts:89:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 13 passed | 1 skipped (15)
+   Start at  17:25:17
+   Duration  58.13s (tests 99%, transform 1%)
+

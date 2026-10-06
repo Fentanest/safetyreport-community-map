@@ -1,0 +1,28 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-agg-opt
+
+ ❯ tests/integration/screen-transport.test.ts (9 tests | 1 failed) 9015ms
+   ❯ screen fact transport in real local PostgreSQL (9)
+     × matches the 060100 oracle with the specified dataset tie key across date/filter/previous windows 5042ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/screen-transport.test.ts > screen fact transport in real local PostgreSQL > matches the 060100 oracle with the specified dataset tie key across date/filter/previous windows
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ tests/integration/screen-transport.test.ts:41:3
+     39|     }
+     40|   });
+     41|   it('matches the 060100 oracle with the specified dataset tie key acr…
+       |   ^
+     42|     const cases = ['report_date','completed_date'].flatMap(basis => [f…
+     43|       ["'2023-01-01','2026-10-06'", "'all',null,null,null,null"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 24 passed | 1 skipped (26)
+   Start at  17:38:57
+   Duration  69.00s (tests 99%, transform 1%)
+

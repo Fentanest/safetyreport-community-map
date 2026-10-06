@@ -45,7 +45,7 @@
 - ~~다른 카카오 계정의 같은 링크 ID와 같은 신고번호를 가진 fact는 Observation payload 가 **완전히 같을 때만** 나중에 올린 계정으로 이전한다~~ — 사용자 규칙(계정별 기여)으로 대체되어 소유 이전을 하지 않는다. A 의 fact·연결은 보존하고 B 에도 연결한다(B 의 내 신고·개인 통계에 1건). 전체 지도·기관·담당자·공개 통계는 고유 신고 1건(대표행만 집계, `contribution-dedupe-v1`).
 - 같은 신고의 타 계정 업로드는 payload·신고번호가 달라도 정상 수신(`accepted`)한다. `transferred`·`cross_account_mismatch`·`report_identity_mismatch`·`ambiguous_existing_owners`는 폐기(구버전 앱이 받아도 무해하도록 문서에만 유지). 이전 감사 표는 역사 기록으로 남기고 새로 쓰지 않는다.
 - 같은 계정의 PC·모바일·두 번째 dataset·복원본 업로드는 개인 집계에서도 identity당 1건으로 collapse 된다.
-- 대표 선출: 공개 목록 중 `first_accepted_at`이 가장 이른 행(동점시 contributor_id 순). 실제 결과가 계정마다 다르면 각 관측을 보존하고 대표는 최초 기여로 유지한다. 한 계정의 삭제/철회는 그 계정만 처리하고 대표는 유효 기여로 승계된다.
+- 대표 선출: 전체 적격 이력에서 같은 identity·payload의 최신 채택 시각 `answer_time DESC` → `completed_date DESC NULLS LAST` → `first_accepted_at ASC` → `contributor_id ASC`(202610060200). 각 계정 관측은 보존한다. 완전 동률은 이번 추가 migration 202610061000의 `dataset_key ASC`로 결정한다. 최초 기여 고정 규칙은 폐기되었다. 한 계정의 삭제/철회는 그 계정만 처리하고 대표는 유효 기여로 승계된다.
 - 아래 2026-09-28 신고번호 수집 문단 중 이전 관련 내용은 위 규칙으로 대체된다. 신고번호 private 수집·해시 제외·공개 비노출은 유지한다.
 
 ## 2026-09-28 답변 완료만 중앙 수집 (같은 날 확정)

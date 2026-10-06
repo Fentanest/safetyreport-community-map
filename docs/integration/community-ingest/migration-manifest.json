@@ -499,6 +499,15 @@
    "depends_on": [
     "202610060800"
    ]
+  },
+  {
+   "repo": "map",
+   "version": "202610061000",
+   "path": "supabase/migrations/202610061000_screen_aggregate_opt.sql",
+   "sha256": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+   "depends_on": [
+    "202610060900"
+   ]
   }
  ],
  "functions": [

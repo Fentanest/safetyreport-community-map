@@ -1,0 +1,9 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-agg-opt
+
+
+ Test Files  1 passed (1)
+      Tests  11 passed | 1 skipped (12)
+   Start at  17:42:46
+   Duration  22.16s (tests 97%, transform 2%, import 1%)
+

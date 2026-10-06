@@ -46,7 +46,7 @@ describe('one screen from one source snapshot', () => {
     const run = (payload: unknown) => createScreenHandler({ enabled: true, allowedOrigins: [], jwtIssuer: null,
       getUser: async () => ({ id: DEMO_VIEWER_ID, isAnonymous: false }), rpc: async (name, args) => {
         if (name.endsWith('rate_limit')) return true;
-        expect(args.p_options).toEqual({ fact_encoding: 'columns-v1', screen_encoding: 'screen-aggregate-v1', panels });
+        expect(args.p_options).toEqual({ fact_encoding: 'columns-v1', screen_encoding: 'screen-aggregate-v2', panels });
         return { state, viewer, facts: payload };
       } })(req());
     const before = await run(facts), after = await run(compact);

@@ -6,7 +6,7 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 개별 report fact 또는 아래 차원을 보존한 joint cube가 필요하다.
 | 의미 | 타입/규칙 |
 |---|---|
-| fact_identity | private 중복 제거 키. 공개 금지. 계정 간 이전은 링크 ID와 private `report_number`가 모두 같고 처리상태 외 Observation이 같을 때만 |
+| fact_identity | private 중복 제거 키. 공개 금지. 기여자별 행 보존. 계정 간 fact 소유 이전 없음(202609281300) |
 | contributor_id / snapshot_id | private. community ingest 는 신고별 최신 fact(`snapshot_id='ingest-v1'`), 구 snapshot 경로는 공개 소스에서 제외(가드) |
 | report_date | KST ISO date, null 허용하되 신고일 지표 제외 수 보고 |
 | completed_date | 확인된 처리완료일 KST date, null은 결측. 업로드일로 대체 금지 |
@@ -19,7 +19,7 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 | agency_key / agency_name | 검증된 기관 코드 우선. 정규화 규칙 version |
 | manager_key / manager_name | agency_key + name + 가능하면 안정 담당자 식별. 이름 단독 전역 병합 금지 |
 | vehicle_raw | private 원번호(업로드 원문). 공개 전 `parsePlate` 로 정규화(지역 접두어 보존)·마스킹 |
-| report_number | private `STTEMNT_NO`/신고번호. 공개 API·DTO·로그에서 제외. NULL 레거시는 계정 간 이전 불가 |
+| report_number | private `STTEMNT_NO`/신고번호. 공개 API·DTO·로그에서 제외. NULL은 같은 source_report_key의 최초 알려진 번호로 identity 보완, 없으면 legacy |
 | amount_kind / amount_confirmed_won / penalty_points | private 저장(답변에 적힌 금액·종류·벌점). 공개 RPC는 **사실의 동의 정책이 금액 공개를 허용할 때만**(`private.community_policy_disclosures.amounts_public`) 금액 값을 내보내고, 아니면 null + `amount_stated`(적혔는지 여부)만. 공개 DTO에는 집계(합계·평균·중앙값·건수)만. 벌점은 내보내지 않는다 |
 | violation_law | 위반법규(법 이름·조항, 예: `도로교통법 제32조`) text 1..60자 또는 null. observation-v2(2026-09-28)의 payload 값을 그대로 저장(`private.community_report_facts.violation_law`, map `202609281100`). v1 payload(구 앱)는 null. 공개 RPC는 **사실의 동의 계보가 위반법규 공개를 허용할 때만**(`community_policy_disclosures.violation_law_public`) 값을 내보내고, 아니면 null(=법규 미상) |
 | count | fact=1; joint cube면 1 이상의 가중치 |
@@ -38,7 +38,8 @@ status/처분 구분이 combined뿐이면 warning_or_penalty를 유지하며 금
 
 ## C. 중복 제거 단위
 같은 기여자·같은 공식 계정(dataset_key)·같은 신고는 fact 하나(`(writer_epoch, source_revision)` 순서, 같은 event_id 는 멱등). 좌표 없는 fact 는 통계에 포함하고 지도 지점에서만 제외한다.
-서로 다른 계정은 링크 ID와 private 신고번호가 모두 같고 처리상태 외 Observation이 같은 경우에만 나중 업로드한 계정으로 fact를 이전한다. 레거시 NULL 번호·내용 불일치는 합치지 않고 새 공개 fact 생성을 거절한다. 기존에 이미 생긴 다중 소유 행은 자동 정리하지 않는다.
+202609281300_account_contributions.sql부터 기여자별 행을 보존하며 다른 계정으로 fact를 이전하지 않는다. 같은 신고의 다른 계정 관측도 정상 수신하고 개인 집계는 계정별 identity당 1건, 공개 집계는 identity당 대표 1건이다. identity는 `source_report_key | coalesce(report_number, key의 최초 알려진 번호, 'legacy')`이며 서로 다른 유효 번호는 분리한다.
+공개 대표는 전체 적격 이력에서 `answer_time DESC → completed_date DESC NULLS LAST → first_accepted_at ASC → contributor_id ASC`로 선출한다(202610060200_query_read_paths.sql). `answer_time`은 같은 identity·payload_sha256 관측의 answer_accepted_at 최댓값이다. 이번 추가 migration 202610061000은 완전 동률의 마지막 규칙으로 `dataset_key ASC`를 추가한다. 최초 알려진 번호 선택도 first_accepted_at·contributor_id·dataset_key 순서다. 날짜·차원 필터 전에 대표를 정하며 철회·삭제는 해당 계정만 처리하고 남은 적격 기여에서 다시 선출한다.
 복수 신고자가 같은 차량/위치에 신고한 건은 별도 신고일 수 있다. 좌표+차량+날짜만 같다는 이유로 임의 삭제 금지.
 `dedupe_policy_version`과 `coverage_note`를 meta에 넣는다.
 
@@ -153,3 +154,18 @@ SQL 내부 분위수 배열은 DB 밖으로 반환하지 않는다. Edge는 기�
 전송량은 원시 행×34개 필드에서 집계 그룹 수로 바뀐다. 고유 주소/기관/담당자 등 차원의 수가 늘면 내부 집계 source도 커지며
 항상 상수 크기라고 보장하지 않는다. 지도 압축과 정렬은 Edge에 남아 있다. 운영 end-to-end 수 초 목표는
 [로컬 보고서](implementation/screen-server-aggregate-20261006/REPORT.md)와 구분하여 **배포 후 총괄 측정**으로 판정한다.
+
+## 2026-10-06 · 화면 집계 v2 최적화 (`202610061000`)
+
+이번 후보의 `my-analytics/screen`은 `screen-aggregate-v2`를 요청한다. 기존 v1과 facts fallback은 유지한다.
+히트맵은 전체 후보의 실제 건수로 SQL에서 40행·16법규를 선택하고 해당 셀만 반환한다. 전체 행/법규 수와
+선택된 행/법규의 전체 건수는 별도 보존하며 잘린 셀을 전체 분모로 사용하지 않는다. 히트맵의 결과·정렬·셀 순서는
+기존 DTO와 동일하다. 장소·히트맵의 집계는 사용하지 않는 분위수/금액/별점 분포를 계산하지 않고, 히스토그램·별점
+분포는 summary에만 생성한다. 주소별 full contribution은 요약·요청 상세·개인 지점의 shared 계산에 필요한 것만 반환한다.
+
+기관/담당자/법규 전체 목록은 기존 검색·정렬·페이지·동명이인·비교 의미를 유지하도록 집계 source에 남긴다.
+지도는 원 좌표 대표와 전체 장소의 작은 건수 통계를 보내 기존 Node 압축 및 view_bbox 의미를 유지한다.
+무제한 sufficient statistics를 그대로 보내는 v1에서 부분적으로 줄인 방식이며, 모든 화면 요소의 SQL 페이지화를
+완료했다고 주장하지 않는다. Edge의 장소·통계·기여 lookup은 요청 단위 Map으로 바꾸며 저장 캐시가 아니다.
+
+성능·검사·배포 호환성은 [최적화 보고서](implementation/screen-aggregate-opt-20261006/REPORT.md)를 따른다.

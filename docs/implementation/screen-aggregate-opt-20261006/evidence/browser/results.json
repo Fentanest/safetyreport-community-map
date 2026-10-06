@@ -1,0 +1,164 @@
+{
+  "status": "PASS",
+  "mode": "local SQL aggregate + actual screen handler + Chrome; fake auth, mock Kakao; not hosted Edge or production",
+  "browser": "154.0.8037.92",
+  "checks": [
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    },
+    {
+      "sort": "ascending",
+      "personal_compare": true,
+      "whole_range": true,
+      "version_consistent": true
+    },
+    {
+      "heatmap_expanded_rows": 40,
+      "heatmap_laws": 16,
+      "heatmap_cells": 640,
+      "table_alternative": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "dark",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "theme": "dark",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "light",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "theme": "light",
+      "loaded": true,
+      "overflow": false,
+      "sql_report_count": 12589
+    }
+  ],
+  "console": [],
+  "network": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1920,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 2560,
+      "theme": "dark",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 1920,
+      "theme": "light",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    },
+    {
+      "width": 2560,
+      "theme": "light",
+      "status": 200,
+      "path": "/functions/v1/my-analytics/screen"
+    }
+  ]
+}

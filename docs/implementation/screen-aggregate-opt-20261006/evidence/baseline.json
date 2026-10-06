@@ -1,0 +1,7 @@
+{
+  "commit": "0964d903199eb447f744005acf1b6d129a2693a7",
+  "files": {
+    "server/screenHandler.ts": "983fbb8bef310a1e515fc2ffd4bf97235258bb19e5dc7cf819cb98e3204205ca",
+    "server/screenAggregate.ts": "476a2cf8b6fe2d7853107a65f62a55b9a937c42c7073d2dd413d30bfa967f2ba"
+  }
+}

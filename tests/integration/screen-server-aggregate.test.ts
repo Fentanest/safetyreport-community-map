@@ -23,7 +23,7 @@ async function replay(source:unknown,scope=base,ps:typeof panels=panels) {
   return {status:response.status,body:JSON.parse(text),ms:performance.now()-start,cpu_ms:(used.user+used.system)/1000,bytes:Buffer.byteLength(text)};
 }
 const migrations=readdirSync('supabase/migrations').filter(n=>/^202610060[1-9]00_/.test(n)&&!n.includes('0800_')).sort()
-  .map(n=>readFileSync(`supabase/migrations/${n}`,'utf8').replace(/^(begin|commit);\s*$/gm,'')).join('\n');
+  .map(n=>readFileSync(`supabase/migrations/${n}`,'utf8').replace(/^(begin|commit);\s*$/gm,'')).join('\n')+'\n'+readFileSync('supabase/migrations/202610061000_screen_aggregate_opt.sql','utf8').replace(/^(begin|commit);\s*$/gm,'');
 const seed=readFileSync('tests/integration/helpers/cohort-timeout-seed.sql','utf8').replaceAll('__SIZE__','600');
 const sql=(body:string,size=600)=>execFileSync('docker',['exec','-i','supabase_db_ci0926-int','psql','-X','-U','supabase_admin','-d','postgres','-qAt','-v','ON_ERROR_STOP=1'],
   {input:`begin;${migrations}${seed.replace('generate_series(1,600)',`generate_series(1,${size})`)}${body}\nrollback;`,encoding:'utf8',timeout:180000,maxBuffer:64*1024*1024}).split('\n').filter(s=>s.startsWith('{')).map(s=>JSON.parse(s));
@@ -87,13 +87,14 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
     const body=cases.map(scope=>{
       const s={...scope,...('bbox' in scope?{bbox:scope.bbox!.split(',').map(Number)}:{})};
       const call=`public.internal_analytics_read_snapshot('${JSON.stringify(s)}',true,p_user=>u.id,p_session=>u.session_id`;
-      return `select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels:ps})}')) from cohort_users u where idx=1;`;
+      return `select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'v1',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels:ps})}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v2',panels:ps})}')) from cohort_users u where idx=1;`;
     }).join('\n');
     const rows=sql(body);expect(rows).toHaveLength(cases.length);
     for(let i=0;i<rows.length;i++) {
       const before=await replay(rows[i].legacy,cases[i],ps),after=await replay(rows[i].new,cases[i],ps);
       expect(after.status,JSON.stringify(cases[i])).toBe(200);assertPacket(after.body);
       expect(after.body,JSON.stringify(cases[i])).toEqual(before.body);
+      expect((await replay(rows[i].v1,cases[i],ps)).body).toEqual(before.body);
       if(cases[i].start===cases[i].end)expect(after.body.dashboard.overview.report_count.value).toBe(1);
     }
   },180000);
@@ -124,7 +125,7 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
     const scope={date_basis:'report_date',start:'2023-01-01',end:'2026-10-06',category:'all'};
     const ps=[...panels,{id:'focus',path:`places/${placeKeyOf('서울특별시 중구 도로 10-2')}`,params:{}}] as typeof panels;
     const call=`public.internal_analytics_read_snapshot('${JSON.stringify(scope)}',true,p_user=>u.id,p_session=>u.session_id`;
-    const query=`select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels:ps})}')) from cohort_users u where idx=1;`;
+    const query=`select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'v1',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels:ps})}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v2',panels:ps})}')) from cohort_users u where idx=1;`;
     const rows=sql(mutation+['force_custom_plan','force_generic_plan'].map(mode=>`set plan_cache_mode=${mode};${query}`).join('\n'));
     expect(rows).toHaveLength(2);
     for(const row of rows){
@@ -134,7 +135,7 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
     }
   });
   it('denies failed viewers before aggregation and keeps service-only STABLE permissions',()=>{
-    const call=`public.internal_analytics_read_snapshot('${JSON.stringify(base)}',true,p_user=>u.id,p_session=>u.session_id,p_options=>'{"screen_encoding":"screen-aggregate-v1"}')`;
+    const call=`public.internal_analytics_read_snapshot('${JSON.stringify(base)}',true,p_user=>u.id,p_session=>u.session_id,p_options=>'{"screen_encoding":"screen-aggregate-v2"}')`;
     const rows=sql(`
       select ${call.replace('p_session=>u.session_id',"p_session=>'00000000-0000-0000-0000-000000000000'::uuid")} from cohort_users u where idx=1;
       delete from private.community_report_facts where contributor_id=(select id from cohort_users where idx=1) and source_report_id not in
@@ -144,8 +145,8 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
       select ${call} from cohort_users u where idx=1;
       select json_build_object('name',proname,'stable',provolatile='s','definer',prosecdef,'path',proconfig @> array['search_path=""'],
         'anon',has_function_privilege('anon',oid,'execute'),'authenticated',has_function_privilege('authenticated',oid,'execute'))
-        from pg_proc where proname in ('internal_analytics_read_snapshot','analytics_screen_aggregate');`);
-    expect(rows).toHaveLength(5);
+        from pg_proc where proname in ('internal_analytics_read_snapshot','analytics_screen_aggregate','analytics_screen_aggregate_v2');`);
+    expect(rows).toHaveLength(6);
     for(const row of rows.slice(0,3)){expect(row.facts).toEqual([]);expect(row.aggregate).toBeUndefined();}
     expect(rows[0].viewer.session).toBe(false);expect(rows[1].viewer.public_fact_count).toBeLessThan(10);expect(rows[2].viewer.contributor).toBe('revoked');
     for(const row of rows.slice(3))expect(row).toMatchObject({stable:true,definer:true,path:true,anon:false,authenticated:false});
@@ -156,7 +157,7 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
     const ps=[...panels,{id:'focus',path:`places/${placeKeyOf('합성 주소 synthetic-31')}`,params:{}}] as typeof panels;
     const call=`public.internal_analytics_read_snapshot('${JSON.stringify(scope)}',true,p_user=>u.id,p_session=>u.session_id`;
     const rows=sql(`update private.community_report_facts set address='합성 주소 '||source_report_id;
-      select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels:ps})}')) from cohort_users u where idx=1;`,2400);
+      select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'v1',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels:ps})}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v2',panels:ps})}')) from cohort_users u where idx=1;`,2400);
     expect(rows).toHaveLength(1);
     const before=await replay(rows[0].legacy,scope,ps),after=await replay(rows[0].new,scope,ps);
     expect(after.status).toBe(200);expect(after.body.dashboard.points.some((p:any)=>p.aggregate)).toBe(true);
@@ -171,7 +172,7 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
   it('keeps current-baseline election ties across duplicate datasets without sorting away differences',async()=>{
     const scope={date_basis:'completed_date',start:'2023-01-01',end:'2026-10-06',category:'all'};
     const call=`public.internal_analytics_read_snapshot('${JSON.stringify(scope)}',true,p_user=>u.id,p_session=>u.session_id`;
-    const query=`select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels})}')) from cohort_users u where idx=1;`;
+    const query=`select json_build_object('legacy',${call},p_options=>'{"fact_encoding":"columns-v1"}'),'new',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v2',panels})}')) from cohort_users u where idx=1;`;
     const rows=sql(`insert into private.community_report_facts select (jsonb_populate_record(null::private.community_report_facts,
       to_jsonb(f)||jsonb_build_object('dataset_key',repeat('b',64),'status','accepted','disposition','fine','amount_confirmed_won',0))).*
       from private.community_report_facts f where source_report_id in ('synthetic-11','synthetic-12','synthetic-30','synthetic-31');
@@ -182,12 +183,12 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
 
   it('rolls back SQL independently while the new Edge still returns the same complete packet',async()=>{
     const scope={date_basis:'completed_date',start:'2023-01-01',end:'2026-10-06',category:'all'};
-    const call=`public.internal_analytics_read_snapshot('${JSON.stringify(scope)}',true,p_user=>u.id,p_session=>u.session_id,p_options=>'${JSON.stringify({fact_encoding:'columns-v1',screen_encoding:'screen-aggregate-v1',panels})}')`;
+    const call=`public.internal_analytics_read_snapshot('${JSON.stringify(scope)}',true,p_user=>u.id,p_session=>u.session_id,p_options=>'${JSON.stringify({fact_encoding:'columns-v1',screen_encoding:'screen-aggregate-v2',panels})}')`;
     const rollback=readFileSync('docs/implementation/screen-server-aggregate-20261006/rollback.sql','utf8').replace(/^(begin|commit);\s*$/gm,'');
     const rows=sql(`select ${call} from cohort_users u where idx=1;${rollback}select ${call} from cohort_users u where idx=1;
       select json_build_object('removed',to_regprocedure('private.analytics_screen_aggregate(jsonb,uuid,jsonb)') is null,
       'owner',pg_get_userbyid(proowner),'service',has_function_privilege('service_role',oid,'execute')) from pg_proc where proname='internal_analytics_read_snapshot';`);
-    expect(rows).toHaveLength(3);expect(rows[0].aggregate.encoding).toBe('screen-aggregate-v1');expect(rows[1].facts.encoding).toBe('columns-v1');
+    expect(rows).toHaveLength(3);expect(rows[0].aggregate.encoding).toBe('screen-aggregate-v2');expect(rows[1].facts.encoding).toBe('columns-v1');
     expect(rows[2]).toEqual({removed:true,owner:'postgres',service:true});
     const a=await replay(rows[0],scope),b=await replay(rows[1],scope);expect(a.status).toBe(200);expect(b.status).toBe(200);expect(b.body).toEqual(a.body);
   });
@@ -206,5 +207,30 @@ describe.skipIf(process.env.COMMUNITY_STACK!=='1')('screen aggregate local SQL p
       end $probe$;select row_to_json(b) from budget_errors b;`,120000);
     expect(rows).toEqual([{encoding:'columns-v1',code:'RESULT_TOO_LARGE'},{encoding:'screen-aggregate-v1',code:'RESULT_TOO_LARGE'}]);
   },180000);
+
+  it('restores work_mem and rolls back the v2 optimization while retaining packet equality',async()=>{
+    const scope={date_basis:'completed_date',start:'2023-01-01',end:'2026-10-06',category:'all'};
+    const call=`public.internal_analytics_read_snapshot('${JSON.stringify(scope)}',true,p_user=>u.id,p_session=>u.session_id,p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v2',panels})}')`;
+    const rollback=readFileSync('docs/implementation/screen-aggregate-opt-20261006/rollback.sql','utf8').replace(/^(begin|commit);\s*$/gm,'');
+    const rows=sql(`set work_mem='2MB';select ${call} from cohort_users u where idx=1;
+      select json_build_object('work_mem',current_setting('work_mem'));
+      ${rollback}select ${call} from cohort_users u where idx=1;
+      select json_build_object('removed',to_regprocedure('private.analytics_screen_aggregate_v2(jsonb,uuid,jsonb)') is null);`);
+    expect(rows).toHaveLength(4);expect(rows[0].aggregate.encoding).toBe('screen-aggregate-v2');
+    expect(rows[1]).toEqual({work_mem:'2MB'});expect(rows[2].aggregate.encoding).toBe('screen-aggregate-v1');expect(rows[3]).toEqual({removed:true});
+    expect((await replay(rows[0],scope)).body).toEqual((await replay(rows[2],scope)).body);
+  });
+
+  it('keeps the initial screen without optional panels equal to legacy and v1',async()=>{
+    const scope={date_basis:'completed_date',start:'2023-01-01',end:'2026-10-06',category:'all'};
+    const call=`public.internal_analytics_read_snapshot('${JSON.stringify(scope)}',true,p_user=>u.id,p_session=>u.session_id`;
+    const rows=sql(`select json_build_object('legacy',${call},p_options=>'{}'),
+      'v1',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v1',panels:[]})}'),
+      'v2',${call},p_options=>'${JSON.stringify({screen_encoding:'screen-aggregate-v2',panels:[]})}')) from cohort_users u where idx=1;`);
+    expect(rows).toHaveLength(1);
+    const legacy=await replay(rows[0].legacy,scope,[]),v1=await replay(rows[0].v1,scope,[]),v2=await replay(rows[0].v2,scope,[]);
+    expect(v2.status).toBe(200);assertPacket(v2.body);expect(v2.body).toEqual(legacy.body);expect(v2.body).toEqual(v1.body);
+    expect(rows[0].v2.aggregate.stats.some((s:any)=>s.side==='mine'||s.kind==='heat')).toBe(false);
+  });
 
 });

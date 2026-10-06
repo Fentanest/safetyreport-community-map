@@ -1,0 +1,154 @@
+{
+  "synthetic": true,
+  "sql_sha256": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+  "seed_rows": 30000,
+  "work_mem": "2MB",
+  "function_work_mem": "16MB",
+  "diversity": {
+    "facts": 30000,
+    "places": 4507,
+    "agencies": 127,
+    "managers": 1016,
+    "laws": 31,
+    "vehicles": 8000
+  },
+  "profile": "production",
+  "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-07",
+    "end": "2026-10-06",
+    "category": "all"
+  },
+  "iterations": 3,
+  "status": "MEASURED",
+  "exit_code": 0,
+  "elapsed_seconds": 48.202304146951064,
+  "samples": [
+    {
+      "phase": "legacy",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 1011.149,
+      "bytes": 19293448
+    },
+    {
+      "phase": "legacy",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 1124.233,
+      "bytes": 19293448
+    },
+    {
+      "phase": "legacy",
+      "mode": "direct",
+      "iteration": 1,
+      "ms": 908.904,
+      "bytes": 19293448
+    },
+    {
+      "phase": "legacy",
+      "mode": "postgrest",
+      "iteration": 1,
+      "ms": 1010.116,
+      "bytes": 19293448
+    },
+    {
+      "phase": "legacy",
+      "mode": "direct",
+      "iteration": 2,
+      "ms": 905.426,
+      "bytes": 19293448
+    },
+    {
+      "phase": "legacy",
+      "mode": "postgrest",
+      "iteration": 2,
+      "ms": 988.762,
+      "bytes": 19293448
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 2676.962,
+      "bytes": 4254985
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 2552.886,
+      "bytes": 4254985
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 1,
+      "ms": 2609.349,
+      "bytes": 4254985
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 1,
+      "ms": 2813.307,
+      "bytes": 4254985
+    },
+    {
+      "phase": "before",
+      "mode": "direct",
+      "iteration": 2,
+      "ms": 2605.587,
+      "bytes": 4254985
+    },
+    {
+      "phase": "before",
+      "mode": "postgrest",
+      "iteration": 2,
+      "ms": 2754.954,
+      "bytes": 4254985
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 0,
+      "ms": 1772.861,
+      "bytes": 1748904
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 0,
+      "ms": 1821.437,
+      "bytes": 1748904
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 1,
+      "ms": 1860.398,
+      "bytes": 1748904
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 1,
+      "ms": 1858.051,
+      "bytes": 1748904
+    },
+    {
+      "phase": "after",
+      "mode": "direct",
+      "iteration": 2,
+      "ms": 1656.236,
+      "bytes": 1748904
+    },
+    {
+      "phase": "after",
+      "mode": "postgrest",
+      "iteration": 2,
+      "ms": 1706.863,
+      "bytes": 1748904
+    }
+  ]
+}

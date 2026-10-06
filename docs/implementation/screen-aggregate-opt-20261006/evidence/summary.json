@@ -1,0 +1,188 @@
+[
+  {
+    "seed_rows": 30000,
+    "scope": {
+      "date_basis": "completed_date",
+      "start": "2019-04-23",
+      "end": "2026-10-06",
+      "category": "all"
+    },
+    "diversity": {
+      "facts": 30000,
+      "places": 4507,
+      "agencies": 127,
+      "managers": 1016,
+      "laws": 31,
+      "vehicles": 8000
+    },
+    "work_mem": "2MB",
+    "function_work_mem": "16MB",
+    "iterations": 3,
+    "status": "MEASURED",
+    "sql_sha256": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+    "phases": {
+      "legacy": {
+        "bytes": 19293448,
+        "direct_median_ms": 895.005,
+        "postgrest_median_ms": 1024.214,
+        "handler_median_ms": 2590.805877,
+        "parse_median_ms": 146.98945700000058,
+        "public_bytes": 848210
+      },
+      "before": {
+        "bytes": 5012912,
+        "direct_median_ms": 3228.624,
+        "postgrest_median_ms": 3219.664,
+        "handler_median_ms": 659.2252630000003,
+        "parse_median_ms": 45.6412049999999,
+        "public_bytes": 848210
+      },
+      "after": {
+        "bytes": 2279686,
+        "direct_median_ms": 1944.801,
+        "postgrest_median_ms": 1938.369,
+        "handler_median_ms": 97.40735400000085,
+        "parse_median_ms": 19.34453200000098,
+        "public_bytes": 848210
+      }
+    },
+    "whole_packet_parity": true
+  },
+  {
+    "seed_rows": 30000,
+    "scope": {
+      "date_basis": "completed_date",
+      "start": "2025-10-07",
+      "end": "2026-10-06",
+      "category": "all"
+    },
+    "diversity": {
+      "facts": 30000,
+      "places": 4507,
+      "agencies": 127,
+      "managers": 1016,
+      "laws": 31,
+      "vehicles": 8000
+    },
+    "work_mem": "2MB",
+    "function_work_mem": "2MB",
+    "iterations": 3,
+    "status": "MEASURED",
+    "sql_sha256": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+    "phases": {
+      "legacy": {
+        "bytes": 19293448,
+        "direct_median_ms": 952.486,
+        "postgrest_median_ms": 1039.328
+      },
+      "before": {
+        "bytes": 4254985,
+        "direct_median_ms": 2535.03,
+        "postgrest_median_ms": 2636.117
+      },
+      "after": {
+        "bytes": 1748904,
+        "direct_median_ms": 1806.975,
+        "postgrest_median_ms": 1856.102
+      }
+    }
+  },
+  {
+    "seed_rows": 30000,
+    "scope": {
+      "date_basis": "completed_date",
+      "start": "2025-10-07",
+      "end": "2026-10-06",
+      "category": "all"
+    },
+    "diversity": {
+      "facts": 30000,
+      "places": 4507,
+      "agencies": 127,
+      "managers": 1016,
+      "laws": 31,
+      "vehicles": 8000
+    },
+    "work_mem": "2MB",
+    "function_work_mem": "16MB",
+    "iterations": 3,
+    "status": "MEASURED",
+    "sql_sha256": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+    "phases": {
+      "legacy": {
+        "bytes": 19293448,
+        "direct_median_ms": 908.904,
+        "postgrest_median_ms": 1010.116,
+        "handler_median_ms": 1779.8283870000005,
+        "parse_median_ms": 134.57309199999963,
+        "public_bytes": 711317
+      },
+      "before": {
+        "bytes": 4254985,
+        "direct_median_ms": 2609.349,
+        "postgrest_median_ms": 2754.954,
+        "handler_median_ms": 410.44826999999987,
+        "parse_median_ms": 44.62289899999996,
+        "public_bytes": 711317
+      },
+      "after": {
+        "bytes": 1748904,
+        "direct_median_ms": 1772.861,
+        "postgrest_median_ms": 1821.437,
+        "handler_median_ms": 106.11408500000107,
+        "parse_median_ms": 14.774013000000195,
+        "public_bytes": 711317
+      }
+    },
+    "whole_packet_parity": true
+  },
+  {
+    "seed_rows": 60000,
+    "scope": {
+      "date_basis": "completed_date",
+      "start": "2019-04-23",
+      "end": "2026-10-06",
+      "category": "all"
+    },
+    "diversity": {
+      "facts": 60000,
+      "places": 4507,
+      "agencies": 127,
+      "managers": 1016,
+      "laws": 31,
+      "vehicles": 8000
+    },
+    "work_mem": "2MB",
+    "function_work_mem": "16MB",
+    "iterations": 3,
+    "status": "MEASURED",
+    "sql_sha256": "38048f777c4ea7df9f4159c3f17e431a7988eee6b1da36080a020e8e01cc7239",
+    "phases": {
+      "legacy": {
+        "bytes": 38591728,
+        "direct_median_ms": 2242.082,
+        "postgrest_median_ms": 2510.482,
+        "handler_median_ms": 4402.067781,
+        "parse_median_ms": 168.20764000000054,
+        "public_bytes": 855368
+      },
+      "before": {
+        "bytes": 5265061,
+        "direct_median_ms": 5744.355,
+        "postgrest_median_ms": 5580.724,
+        "handler_median_ms": 652.2708340000008,
+        "parse_median_ms": 47.049589999998716,
+        "public_bytes": 855368
+      },
+      "after": {
+        "bytes": 2562810,
+        "direct_median_ms": 3743.175,
+        "postgrest_median_ms": 3849.631,
+        "handler_median_ms": 99.37609499999962,
+        "parse_median_ms": 18.362938999998732,
+        "public_bytes": 855368
+      }
+    },
+    "whole_packet_parity": true
+  }
+]

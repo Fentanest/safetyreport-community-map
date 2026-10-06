@@ -1,0 +1,112 @@
+{
+  "synthetic": true,
+  "runtime": "Node; actual SQL response; auth/RPC stub; not hosted Edge",
+  "whole_packet_parity": true,
+  "scope": {
+    "date_basis": "completed_date",
+    "start": "2019-04-23",
+    "end": "2026-10-06",
+    "category": "all"
+  },
+  "measurements": [
+    {
+      "phase": "legacy",
+      "source_bytes": 19293448,
+      "fact_rows": 27332,
+      "decoded_fact_cells": 929288,
+      "aggregate_groups": 0,
+      "runs": [
+        {
+          "parse_ms": 212.39956700000005,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 14,
+          "handler_ms": 2897.0601430000006,
+          "cpu_ms": 3082.359,
+          "public_bytes": 848210
+        },
+        {
+          "parse_ms": 101.61360999999943,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 2590.805877,
+          "cpu_ms": 2599.084,
+          "public_bytes": 848210
+        },
+        {
+          "parse_ms": 146.98945700000058,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 2519.696964999999,
+          "cpu_ms": 2453.293,
+          "public_bytes": 848210
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "source_bytes": 5012912,
+      "fact_rows": 0,
+      "decoded_fact_cells": 0,
+      "aggregate_groups": 11285,
+      "runs": [
+        {
+          "parse_ms": 46.67752199999995,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 746.8811260000002,
+          "cpu_ms": 881.261,
+          "public_bytes": 848210
+        },
+        {
+          "parse_ms": 45.6412049999999,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 651.4558820000002,
+          "cpu_ms": 620.542,
+          "public_bytes": 848210
+        },
+        {
+          "parse_ms": 36.241359999999986,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 659.2252630000003,
+          "cpu_ms": 610.027,
+          "public_bytes": 848210
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "source_bytes": 2279686,
+      "fact_rows": 0,
+      "decoded_fact_cells": 0,
+      "aggregate_groups": 7348,
+      "runs": [
+        {
+          "parse_ms": 22.219192000000476,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 115.46407299999919,
+          "cpu_ms": 141.21,
+          "public_bytes": 848210
+        },
+        {
+          "parse_ms": 19.34453200000098,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 97.40735400000085,
+          "cpu_ms": 116.522,
+          "public_bytes": 848210
+        },
+        {
+          "parse_ms": 14.282036999999036,
+          "source_parse_calls": 1,
+          "handler_parse_calls": 13,
+          "handler_ms": 83.15147100000104,
+          "cpu_ms": 120.062,
+          "public_bytes": 848210
+        }
+      ]
+    }
+  ]
+}

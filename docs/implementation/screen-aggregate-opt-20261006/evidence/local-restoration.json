@@ -1,0 +1,11 @@
+{
+  "before": {
+    "sql_bytes": 4275923,
+    "sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af"
+  },
+  "after": {
+    "sql_bytes": 4275923,
+    "sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af"
+  },
+  "equal": true
+}

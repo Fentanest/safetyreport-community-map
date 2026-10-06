@@ -1,0 +1,6 @@
+............
+----------------------------------------------------------------------
+Ran 12 tests in 1.352s
+
+OK
+{"snapshot": "skipped", "reason": "public projection not ready"}

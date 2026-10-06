@@ -1,13 +1,17 @@
 // Local Docker PostgreSQL only. Every fixture, function replacement and assertion is rolled back.
 // Run sequentially: COMMUNITY_STACK=1 npx vitest run tests/integration/cohort-timeout.test.ts --maxWorkers=1
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const old = read('supabase/migrations/202610010100_single_date_cohort.sql');
-const migration = read('supabase/migrations/202610060100_cohort_facts_setwise.sql').replace(/^(begin|commit);\s*$/gm, '');
-const frozen = old.match(/create or replace function public\.internal_analytics_cohort_facts\([\s\S]*?\$\$;/)![0]
+const migration = readdirSync('supabase/migrations').filter(n=>/^20261006/.test(n)&&!n.includes('0800_')).sort()
+  .map(n=>read(`supabase/migrations/${n}`).replace(/^(begin|commit);\s*$/gm, '')).join('\n');
+// The historical oracle adopts only the explicitly specified final dataset tie key.
+const deterministic = old.replaceAll('f.first_accepted_at, f.contributor_id','f.first_accepted_at, f.contributor_id, f.dataset_key')
+  .replaceAll('i.first_accepted_at, i.contributor_id','i.first_accepted_at, i.contributor_id, i.dataset_key');
+const frozen = deterministic.match(/create or replace function public\.internal_analytics_cohort_facts\([\s\S]*?\$\$;/)![0]
   .replace('public.internal_analytics_cohort_facts(', 'pg_temp.cohort_before(');
 const personal = old.match(/create or replace function public\.internal_my_analytics_cohort_source\([\s\S]*?\$\$;/)![0]
   .replace('public.internal_my_analytics_cohort_source(', 'pg_temp.personal_before(')
@@ -29,7 +33,7 @@ const scopes = [
   ['category-region', "'2023-01-01','2026-10-01'", "'traffic','서울 중구',null,null,null"],
   ['empty', "'2040-01-01','2040-01-31'", "'all',null,null,null,null"],
 ];
-const compare = (label: string, args = broad) => `select jsonb_build_object('case','${label}','equal',pg_temp.cohort_before(${args})=public.internal_analytics_cohort_facts(${args}));`;
+const compare = (label: string, args = broad) => `select jsonb_build_object('case','${label}','equal',pg_temp.cohort_before(${args})=public.internal_analytics_cohort_facts(${args})::jsonb);`;
 
 describe.skipIf(process.env.COMMUNITY_STACK !== '1')('cohort timeout: exact ordered JSON and unchanged boundaries', () => {
   it('matches frozen original arrays, fields and nulls across both bases, previous windows and filters, including cached generic plans', () => {
@@ -51,13 +55,15 @@ describe.skipIf(process.env.COMMUNITY_STACK !== '1')('cohort timeout: exact orde
         to_jsonb(f)||jsonb_build_object('dataset_key',repeat('b',64)))).* from private.community_report_facts f
         where source_report_id in ('synthetic-11','synthetic-12');
       ${compare('duplicates and ties')}
+      select jsonb_build_object('winners',jsonb_agg(left(x->>'fact_identity',64) order by x->>'source_report_key')) from json_array_elements(public.internal_analytics_cohort_facts(${broad})) x where (x->>'is_representative')::boolean and x->>'source_report_key' in (select source_report_key from private.community_report_facts where source_report_id in ('synthetic-11','synthetic-12'));
       ${compare('august cannot revive old answer', "'completed_date','2025-08-01','2025-08-31',false,'all',null,null,null,null")}
       ${compare('may contains September answer', "'report_date','2025-05-01','2025-05-31',false,'all',null,null,null,null")}
-      select jsonb_build_object('august_n',jsonb_array_length(public.internal_analytics_cohort_facts('completed_date','2025-08-01','2025-08-31',false,'all',null,null,null,null)),
-        'may_n',jsonb_array_length(public.internal_analytics_cohort_facts('report_date','2025-05-01','2025-05-31',false,'all',null,null,null,null)));
+      select jsonb_build_object('august_n',json_array_length(public.internal_analytics_cohort_facts('completed_date','2025-08-01','2025-08-31',false,'all',null,null,null,null)),
+        'may_n',json_array_length(public.internal_analytics_cohort_facts('report_date','2025-05-01','2025-05-31',false,'all',null,null,null,null)));
     `);
-    for (const r of rows.slice(0,3)) expect(r.equal, r.case).toBe(true);
-    expect(rows[3]).toEqual({ august_n:0, may_n:2 });
+    for (const r of [rows[0],rows[2],rows[3]]) expect(r.equal, r.case).toBe(true);
+    expect(rows[1]).toEqual({winners:['a'.repeat(64),'a'.repeat(64)]});
+    expect(rows[4]).toEqual({ august_n:0, may_n:2 });
   }, 120000);
 
   it('retains disclosure and active-lineage semantics through withdrawal, reconsent, suspension, missing grants and deletion', () => {
@@ -81,9 +87,9 @@ describe.skipIf(process.env.COMMUNITY_STACK !== '1')('cohort timeout: exact orde
 
   it('keeps personal source authentication/state and RPC settings/privileges unchanged', () => {
     const rows=sql(`set enable_nestloop=on;
-      select jsonb_build_object('equal',pg_temp.personal_before(u.id,u.session_id,${broad})=public.internal_my_analytics_cohort_source(u.id,u.session_id,${broad}),
+      select jsonb_build_object('equal',pg_temp.personal_before(u.id,u.session_id,${broad})=public.internal_my_analytics_cohort_source(u.id,u.session_id,${broad})::jsonb,
         'valid',(public.internal_my_analytics_cohort_source(u.id,u.session_id,${broad})->'viewer'->>'session')::boolean) from cohort_users u where idx=1;
-      select jsonb_build_object('equal',pg_temp.personal_before(u.id,'00000000-0000-0000-0000-000000000000',${broad})=public.internal_my_analytics_cohort_source(u.id,'00000000-0000-0000-0000-000000000000',${broad}),
+      select jsonb_build_object('equal',pg_temp.personal_before(u.id,'00000000-0000-0000-0000-000000000000',${broad})=public.internal_my_analytics_cohort_source(u.id,'00000000-0000-0000-0000-000000000000',${broad})::jsonb,
         'facts',public.internal_my_analytics_cohort_source(u.id,'00000000-0000-0000-0000-000000000000',${broad})->'facts') from cohort_users u where idx=1;
       select jsonb_build_object('nestloop_restored',current_setting('enable_nestloop')='on',
         'stable',p.provolatile='s','definer',p.prosecdef,'search_path',p.proconfig @> array['search_path=""'],
@@ -99,7 +105,7 @@ describe.skipIf(process.env.COMMUNITY_STACK !== '1')('cohort timeout: exact orde
     const outcome = `create function pg_temp.outcome(before boolean, args jsonb) returns text language plpgsql as $$
       begin
         if before then return jsonb_array_length(pg_temp.cohort_before(args->>0,(args->>1)::date,(args->>2)::date,(args->>3)::boolean,args->>4,args->>5,args->>6,null,null))::text;
-        else return jsonb_array_length(public.internal_analytics_cohort_facts(args->>0,(args->>1)::date,(args->>2)::date,(args->>3)::boolean,args->>4,args->>5,args->>6,null,null))::text;end if;
+        else return json_array_length(public.internal_analytics_cohort_facts(args->>0,(args->>1)::date,(args->>2)::date,(args->>3)::boolean,args->>4,args->>5,args->>6,null,null))::text;end if;
       exception when others then return sqlerrm;end;$$;`;
     const check = (label:string,args:unknown[]) => `select jsonb_build_object('case','${label}','before',pg_temp.outcome(true,'${JSON.stringify(args)}'), 'after',pg_temp.outcome(false,'${JSON.stringify(args)}'));`;
     const args:unknown[]=['completed_date','2023-01-01','2026-10-01',false,'all',null,null];
