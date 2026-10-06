@@ -1,0 +1,11 @@
+{
+  "owned_container_absent": true,
+  "ci0926_preserved": true,
+  "vite_5198_closed": true,
+  "browser_closed_by_finally": true,
+  "ci_rollback": {
+    "screen_v1_absent": true,
+    "precompute_absent": true,
+    "fixture_users": 0
+  }
+}

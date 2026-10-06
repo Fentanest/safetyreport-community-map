@@ -1,0 +1,53 @@
+{
+  "status": "NOT_READY",
+  "performance_target": "FAIL",
+  "unit": {
+    "passed": 660,
+    "failed": 0,
+    "skipped": 165
+  },
+  "shared_ci": {
+    "passed": 39,
+    "failed": 0,
+    "skipped": 7
+  },
+  "resource_limited_db": {
+    "passed": 38,
+    "failed": 1,
+    "skipped": 7
+  },
+  "full_packet_parity": {
+    "passed": 5,
+    "failed": 0,
+    "skipped": 15
+  },
+  "concurrency": {
+    "passed": 2,
+    "failed": 0
+  },
+  "browser": {
+    "functional_checks": 10,
+    "console_errors": 0,
+    "screen_responses_200": 13,
+    "visual_issues": 1
+  },
+  "blueprint": {
+    "passed": 27,
+    "failed": 0
+  },
+  "python_product": {
+    "passed": 12,
+    "failed": 0,
+    "snapshot_generation": "SKIPPED_NOT_READY"
+  },
+  "build": "PASS",
+  "scan": "PASS",
+  "manifest": {
+    "status": "PASS",
+    "migrations": 53,
+    "functions": 7
+  },
+  "commit": false,
+  "production_access": false,
+  "deployment": false
+}

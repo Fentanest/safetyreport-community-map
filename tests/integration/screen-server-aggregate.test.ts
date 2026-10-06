@@ -25,7 +25,7 @@ async function replay(source:unknown,scope=base,ps:typeof panels=panels) {
 const migrations=readdirSync('supabase/migrations').filter(n=>/^202610060[1-9]00_/.test(n)&&!n.includes('0800_')).sort()
   .map(n=>readFileSync(`supabase/migrations/${n}`,'utf8').replace(/^(begin|commit);\s*$/gm,'')).join('\n')+'\n'+readFileSync('supabase/migrations/202610061000_screen_aggregate_opt.sql','utf8').replace(/^(begin|commit);\s*$/gm,'');
 const seed=readFileSync('tests/integration/helpers/cohort-timeout-seed.sql','utf8').replaceAll('__SIZE__','600');
-const sql=(body:string,size=600)=>execFileSync('docker',['exec','-i','supabase_db_ci0926-int','psql','-X','-U','supabase_admin','-d','postgres','-qAt','-v','ON_ERROR_STOP=1'],
+const sql=(body:string,size=600)=>execFileSync('docker',['exec','-i',(process.env.PRECOMPUTE_DISPOSABLE==='1'?'astra-precompute-pg':'supabase_db_ci0926-int'),'psql','-X','-U','supabase_admin','-d','postgres','-qAt','-v','ON_ERROR_STOP=1'],
   {input:`begin;${migrations}${seed.replace('generate_series(1,600)',`generate_series(1,${size})`)}${body}\nrollback;`,encoding:'utf8',timeout:180000,maxBuffer:64*1024*1024}).split('\n').filter(s=>s.startsWith('{')).map(s=>JSON.parse(s));
 function assertPacket(packet:any) {
   dashboardResponseSchema.parse(packet.dashboard);

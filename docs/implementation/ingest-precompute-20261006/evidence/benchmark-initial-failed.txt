@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/better0101/projects/safetyreport-community-map-precompute/scripts/benchmark/ingest_precompute.py", line 157, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/better0101/projects/safetyreport-community-map-precompute/scripts/benchmark/ingest_precompute.py", line 153, in main
+    (RUNTIME/'benchmark-error.txt').write_text(error.stderr or str(error));raise RuntimeError('benchmark failed; see ignored runtime error') from None
+                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: benchmark failed; see ignored runtime error

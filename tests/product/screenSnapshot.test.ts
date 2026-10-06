@@ -65,6 +65,15 @@ describe('one screen from one source snapshot', () => {
     expect(response.status).toBe(503);
     expect(await response.json()).toMatchObject({ error: { code: 'AGGREGATE_NOT_READY' } });
   });
+  it('fails closed on malformed precomputed row widths and required counters', async () => {
+    for(const row of [[],Array(23).fill(null),['all',0,'summary','','',1,null,'invalid',0,0,0,0,0,0,...Array(9).fill(null)]]) {
+      const handler=createScreenHandler({enabled:true,allowedOrigins:[],jwtIssuer:null,
+        getUser:async()=>({id:DEMO_VIEWER_ID,isAnonymous:false}),rpc:async name=>name.endsWith('rate_limit')?true:
+          {state,viewer,facts:demoFacts(),aggregate:{encoding:'screen-precompute-v1',stats:[row],anchors:[],full:[],vehicles:{}}}});
+      const response=await handler(req());expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({error:{code:'AGGREGATE_NOT_READY'}});
+    }
+  });
   it('expands a table/chart prefix within one snapshot, including rows beyond the first page', async () => {
     const facts = Array.from({ length: 230 }, (_, i) => ({ ...demoFacts()[0], fact_identity: `row-${i}`, report_identity: `id-${i}`,
       is_representative: true, report_date: scope.start, completed_date: scope.start,

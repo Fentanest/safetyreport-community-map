@@ -1,0 +1,27 @@
+{
+  "base_commit": "c53d44ea810cf941390be50f9db089f2b1de6ed5",
+  "branch": "perf/ingest-precompute",
+  "committed": false,
+  "generated_at": "2026-10-06T10:30:34.018650+00:00",
+  "sha256": {
+    "supabase/migrations/202610061200_ingest_precompute.sql": "9a69a64d4b1882f26c96dd848aa6f1268105ab24476a49f96cf959cc40869d75",
+    "server/screenAggregate.ts": "b4fc4b70f52bd6a8dcd11deff85ec5d960f8d761d9e51438ca04810aec9044e6",
+    "tests/integration/ingest-precompute.test.ts": "b7fc228e7f7488e63f2cf050b5a7cca79ca604c84874d441a269beee254a4404",
+    "tests/integration/cohort-timeout.test.ts": "da85da7d34b48aa130c8d2399ee2f027045bf6acf6efc1c1973e78c90f0321c4",
+    "tests/integration/screen-transport.test.ts": "fba13075f0ff7a356f2b39b9a51a8ec88f4133339915ae0e6d92c67082b1dc30",
+    "tests/integration/screen-server-aggregate.test.ts": "26eb283fedc39a9184bc8bbfa6dc9f60258d5142637eae2d84e94aa650367968",
+    "tests/product/screenSnapshot.test.ts": "cdb3df6a7c2a33aac180bec7caf4e377c1986fcfaa39549429f189374fe68543",
+    "scripts/benchmark/ingest_precompute.py": "b777ca8c543749a3c9961366825d52a9fd4e1ff4214344290371f03f6ca05701",
+    "scripts/benchmark/verify_ingest_precompute_concurrency.py": "cdd0fea0af775f4148c0f7fb4c4ebaeeca3068528ad93369320bf987c1d58846",
+    "scripts/benchmark/verify_ingest_precompute_isolated.py": "cb5754572b526154ffedb988b6b0bcc382b15d6ad5da8d81bd0d705d61df3c38",
+    "scripts/browser/verify_ingest_precompute.mjs": "a6d83a130e2361f6b4c1acfc48ec6c380579f9efb3da2e915c5e32167b22a5b4",
+    "scripts/browser/vite.ingest-precompute.config.ts": "7a7a60da597f9bc36277cd5c649525c820c7152800849425d81ba37cf2f26705",
+    "docs/data-contract.md": "31a9d3bf6ae96a9b0be7741066c370b37ee325ec7a9ae6823686372b31dd7382",
+    "docs/integration/community-ingest/migration-manifest.json": "a49787bd6daa39eaeca102881ee844d666ec75129e9d5c6ba0d4873c3ef934ea",
+    "docs/implementation/ingest-precompute-20261006/rollback.sql": "59ba1e973c5c8c8cea3523ab375b3e1701bf3aa170bb0e2a9c1ca0c48c2d7587",
+    "docs/implementation/ingest-precompute-20261006/REPORT.md": "b18f46c431857eb252f0c1122496fad4a9e30609eb59f266d5904f3d84de0554",
+    "docs/implementation/ingest-precompute-20261006/MIGRATION.md": "a3c0f579b0ed01c30bcbbd948d1d478c4b30d2d3fb1b3e5944ed5abf04b07161",
+    "docs/implementation/ingest-precompute-20261006/REPRODUCE.md": "e9d044c007579fc62da9e1ff68738e450a55412316dd2ab3b27c063df58cc6f2",
+    "docs/implementation/ingest-precompute-20261006/BROWSER.md": "6a70491748a61d2f3b26eb0aa8d42c0093e35d03768b57730cb704e76557255c"
+  }
+}

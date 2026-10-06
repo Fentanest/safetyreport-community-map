@@ -32,7 +32,7 @@ interface ScreenHeatmap {
   total_laws: number;
 }
 export interface ScreenAggregate {
-  encoding: 'screen-aggregate-v1' | 'screen-aggregate-v2'; stats: Stat[];
+  encoding: 'screen-aggregate-v1' | 'screen-aggregate-v2' | 'screen-precompute-v1'; stats: Stat[];
   heat?: ScreenHeatmap;
   anchors: [string, string, number, number, string, string | null][];
   full: [number, string, number, number, boolean][];
@@ -69,8 +69,21 @@ export class ScreenAggregates {
   private anchors = new Map<string, ScreenAggregate['anchors'][number]>();
   private fullCounts = new Map<string, ScreenAggregate['full'][number]>();
   constructor(readonly data: ScreenAggregate,readonly scope: Scope,readonly state: AnalyticsState) {
-    if (!['screen-aggregate-v1','screen-aggregate-v2'].includes(data?.encoding) || !Array.isArray(data.stats) || !Array.isArray(data.anchors) || !Array.isArray(data.full) || !data.vehicles) {
+    if (!['screen-aggregate-v1','screen-aggregate-v2','screen-precompute-v1'].includes(data?.encoding) || !Array.isArray(data.stats) || !Array.isArray(data.anchors) || !Array.isArray(data.full) || !data.vehicles) {
       throw new Error('invalid aggregate encoding');
+    }
+    if(data.encoding==='screen-precompute-v1') {
+      const columns = ['side','period','kind','k','focus','ord','label','n','c','a','p','r','f','w','penalty','places','missing','answer_missing','duration','amount','rating','histogram','ratings'] as const;
+      this.data = { ...data, stats: data.stats.map((row: unknown) => {
+        if(!Array.isArray(row) || row.length!==columns.length || !['all','mine'].includes(row[0]) || ![0,1].includes(row[1]) ||
+          !['summary','month','agency','manager','law','region','place','focus'].includes(row[2]) ||
+          typeof row[3]!=='string' || typeof row[4]!=='string' ||
+          row.slice(7,14).some(v=>!Number.isSafeInteger(v)||v<0)) throw new Error('invalid precompute row');
+        const decoded = { ...empty } as unknown as Record<string,unknown>;
+        columns.forEach((key,i) => { if(row[i]!==null) decoded[key]=row[i]; });
+        return decoded as unknown as Stat;
+      }) };
+      data = this.data;
     }
     for(const a of data.anchors) this.anchors.set(JSON.stringify([a[0],a[1]]),a);
     for(const f of data.full) this.fullCounts.set(JSON.stringify([f[0],f[1]]),f);

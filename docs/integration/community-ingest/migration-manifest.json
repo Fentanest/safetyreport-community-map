@@ -508,6 +508,15 @@
    "depends_on": [
     "202610060900"
    ]
+  },
+  {
+   "repo": "map",
+   "version": "202610061200",
+   "path": "supabase/migrations/202610061200_ingest_precompute.sql",
+   "sha256": "9a69a64d4b1882f26c96dd848aa6f1268105ab24476a49f96cf959cc40869d75",
+   "depends_on": [
+    "202610061000"
+   ]
   }
  ],
  "functions": [

@@ -21,7 +21,7 @@ const personalBaseline = readFileSync('supabase/migrations/202610060200_query_re
 const seed = readFileSync('tests/integration/helpers/cohort-timeout-seed.sql', 'utf8').replaceAll('__SIZE__', '300');
 const scope = `'{"date_basis":"completed_date","start":"2023-01-01","end":"2026-10-06","category":"all"}'::jsonb`;
 const call = `public.internal_analytics_read_snapshot(${scope},true,p_user=>u.id,p_session=>u.session_id`;
-const sql = (body: string) => execFileSync('docker', ['exec','-i','supabase_db_ci0926-int','psql','-X','-U','supabase_admin','-d','postgres','-qAt','-v','ON_ERROR_STOP=1'],
+const sql = (body: string) => execFileSync('docker', ['exec','-i',(process.env.PRECOMPUTE_DISPOSABLE==='1'?'astra-precompute-pg':'supabase_db_ci0926-int'),'psql','-X','-U','supabase_admin','-d','postgres','-qAt','-v','ON_ERROR_STOP=1'],
   { input: `begin;${migrations}${seed}${baseline}${personalBaseline}${body}\nrollback;`, encoding: 'utf8', maxBuffer: 8*1024*1024, timeout: 120000 })
   .split('\n').filter(s => s.startsWith('{')).map(s => JSON.parse(s));
 

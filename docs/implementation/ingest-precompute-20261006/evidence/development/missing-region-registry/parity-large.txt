@@ -1,0 +1,744 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-precompute
+
+ ❯ tests/integration/ingest-precompute.test.ts (20 tests | 4 failed | 16 skipped) 25651ms
+   ❯ resource-limited SQL exports (4)
+     × 35000 year: legacy/v1/precompute whole-packet deep equality 3795ms
+     × 35000 all: legacy/v1/precompute whole-packet deep equality 4023ms
+     × 100000 year: legacy/v1/precompute whole-packet deep equality 7407ms
+     × 100000 all: legacy/v1/precompute whole-packet deep equality 10423ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/ingest-precompute.test.ts > resource-limited SQL exports > 35000 year: legacy/v1/precompute whole-packet deep equality
+AssertionError: expected { schema_version: 'screen-v1', …(3) } to deeply equal { schema_version: 'screen-v1', …(3) }
+
+- Expected
++ Received
+
+@@ -28575,11 +28575,11 @@
+            "rejected": 95,
+            "result_known": 266,
+            "result_unknown": 85,
+          },
+          "point_count": 77,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 351,
+          "warning_count": 85,
+        },
+        {
+          "address": null,
+@@ -28601,11 +28601,11 @@
+            "rejected": 97,
+            "result_known": 261,
+            "result_unknown": 84,
+          },
+          "point_count": 82,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 345,
+          "warning_count": 75,
+        },
+        {
+          "address": null,
+@@ -28653,11 +28653,11 @@
+            "rejected": 85,
+            "result_known": 228,
+            "result_unknown": 55,
+          },
+          "point_count": 70,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 283,
+          "warning_count": 92,
+        },
+        {
+          "address": null,
+@@ -28679,11 +28679,11 @@
+            "rejected": 80,
+            "result_known": 226,
+            "result_unknown": 55,
+          },
+          "point_count": 78,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 281,
+          "warning_count": 99,
+        },
+        {
+          "address": null,
+@@ -28705,84 +28705,22 @@
+            "rejected": 65,
+            "result_known": 170,
+            "result_unknown": 42,
+          },
+          "point_count": 50,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 212,
+          "warning_count": 36,
+        },
+      ],
+      "regions": [
+        {
+-         "completed_count": 6191,
+-         "duration": {
+-           "count": 6103,
+-           "mean_days": 45.867933803047684,
+-           "median_days": 46,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sido",
+-         "name": "서울특별시",
+-         "outcomes": {
+-           "accepted": 3097,
+-           "partial": 0,
+-           "rejected": 3094,
+-           "result_known": 6191,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 3378,
+-           "mean": 3.1734754292480756,
+-         },
+-         "region_code": "11",
+-         "report_count": 6191,
+-         "sido_code": null,
+-       },
+-       {
+-         "completed_count": 6191,
++         "completed_count": 14643,
+          "duration": {
+-           "count": 6103,
+-           "mean_days": 45.867933803047684,
++           "count": 14434,
++           "mean_days": 45.592420673410004,
+            "median_days": 46,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sgg",
+-         "name": "서울 중구",
+-         "outcomes": {
+-           "accepted": 3097,
+-           "partial": 0,
+-           "rejected": 3094,
+-           "result_known": 6191,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 3378,
+-           "mean": 3.1734754292480756,
+-         },
+-         "region_code": "11140",
+-         "report_count": 6191,
+-         "sido_code": "11",
+-       },
+-       {
+-         "completed_count": 8452,
+-         "duration": {
+-           "count": 8331,
+-           "mean_days": 45.39058936502221,
+-           "median_days": 47,
+          },
+          "fine_amount": {
+            "confirmed_count": 1300,
+            "fine_count": 3394,
+            "mean_won": 67599.38076923077,
+@@ -28790,22 +28728,22 @@
+          },
+          "fine_count": 3394,
+          "level": "unknown",
+          "name": "지역 미확인",
+          "outcomes": {
+-           "accepted": 869,
++           "accepted": 3966,
+            "partial": 3383,
+-           "rejected": 830,
+-           "result_known": 5082,
++           "rejected": 3924,
++           "result_known": 11273,
+            "result_unknown": 3370,
+          },
+          "rating": {
+-           "count": 1115,
+-           "mean": 1,
++           "count": 4493,
++           "mean": 2.63409748497663,
+          },
+          "region_code": null,
+-         "report_count": 8452,
++         "report_count": 14643,
+          "sido_code": null,
+        },
+      ],
+      "sample": false,
+      "schema_version": 2,
+
+ ❯ tests/integration/ingest-precompute.test.ts:265:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  tests/integration/ingest-precompute.test.ts > resource-limited SQL exports > 35000 all: legacy/v1/precompute whole-packet deep equality
+AssertionError: expected { schema_version: 'screen-v1', …(3) } to deeply equal { schema_version: 'screen-v1', …(3) }
+
+- Expected
++ Received
+
+@@ -30116,11 +30116,11 @@
+            "rejected": 227,
+            "result_known": 624,
+            "result_unknown": 186,
+          },
+          "point_count": 122,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 810,
+          "warning_count": 193,
+        },
+        {
+          "address": null,
+@@ -30168,11 +30168,11 @@
+            "rejected": 196,
+            "result_known": 558,
+            "result_unknown": 166,
+          },
+          "point_count": 110,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 724,
+          "warning_count": 167,
+        },
+        {
+          "address": null,
+@@ -30194,11 +30194,11 @@
+            "rejected": 192,
+            "result_known": 553,
+            "result_unknown": 165,
+          },
+          "point_count": 109,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 718,
+          "warning_count": 185,
+        },
+        {
+          "address": null,
+@@ -30220,11 +30220,11 @@
+            "rejected": 181,
+            "result_known": 507,
+            "result_unknown": 150,
+          },
+          "point_count": 101,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 657,
+          "warning_count": 178,
+        },
+        {
+          "address": null,
+@@ -30246,83 +30246,21 @@
+            "rejected": 128,
+            "result_known": 350,
+            "result_unknown": 96,
+          },
+          "point_count": 65,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 446,
+          "warning_count": 91,
+        },
+      ],
+      "regions": [
+        {
+-         "completed_count": 12528,
+-         "duration": {
+-           "count": 12353,
+-           "mean_days": 43.802639035052216,
+-           "median_days": 44,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sido",
+-         "name": "서울특별시",
+-         "outcomes": {
+-           "accepted": 6264,
+-           "partial": 0,
+-           "rejected": 6264,
+-           "result_known": 12528,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 6833,
+-           "mean": 3.166837406702766,
+-         },
+-         "region_code": "11",
+-         "report_count": 12528,
+-         "sido_code": null,
+-       },
+-       {
+-         "completed_count": 12528,
++         "completed_count": 29634,
+          "duration": {
+-           "count": 12353,
+-           "mean_days": 43.802639035052216,
+-           "median_days": 44,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sgg",
+-         "name": "서울 중구",
+-         "outcomes": {
+-           "accepted": 6264,
+-           "partial": 0,
+-           "rejected": 6264,
+-           "result_known": 12528,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 6833,
+-           "mean": 3.166837406702766,
+-         },
+-         "region_code": "11140",
+-         "report_count": 12528,
+-         "sido_code": "11",
+-       },
+-       {
+-         "completed_count": 17106,
+-         "duration": {
+-           "count": 16865,
+-           "mean_days": 43.19495997628224,
++           "count": 29218,
++           "mean_days": 43.451878978711754,
+            "median_days": 43,
+          },
+          "fine_amount": {
+            "confirmed_count": 2587,
+            "fine_count": 6833,
+@@ -30331,22 +30269,22 @@
+          },
+          "fine_count": 6833,
+          "level": "unknown",
+          "name": "지역 미확인",
+          "outcomes": {
+-           "accepted": 1709,
++           "accepted": 7973,
+            "partial": 6844,
+-           "rejected": 1708,
+-           "result_known": 10261,
++           "rejected": 7972,
++           "result_known": 22789,
+            "result_unknown": 6845,
+          },
+          "rating": {
+-           "count": 2278,
+-           "mean": 1,
++           "count": 9111,
++           "mean": 2.6250685983975415,
+          },
+          "region_code": null,
+-         "report_count": 17106,
++         "report_count": 29634,
+          "sido_code": null,
+        },
+      ],
+      "sample": false,
+      "schema_version": 2,
+
+ ❯ tests/integration/ingest-precompute.test.ts:265:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  tests/integration/ingest-precompute.test.ts > resource-limited SQL exports > 100000 year: legacy/v1/precompute whole-packet deep equality
+AssertionError: expected { schema_version: 'screen-v1', …(3) } to deeply equal { schema_version: 'screen-v1', …(3) }
+
+- Expected
++ Received
+
+@@ -28744,11 +28744,11 @@
+            "rejected": 301,
+            "result_known": 828,
+            "result_unknown": 238,
+          },
+          "point_count": 114,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 1066,
+          "warning_count": 248,
+        },
+        {
+          "address": null,
+@@ -28770,11 +28770,11 @@
+            "rejected": 259,
+            "result_known": 752,
+            "result_unknown": 232,
+          },
+          "point_count": 105,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 984,
+          "warning_count": 232,
+        },
+        {
+          "address": null,
+@@ -28796,11 +28796,11 @@
+            "rejected": 237,
+            "result_known": 683,
+            "result_unknown": 200,
+          },
+          "point_count": 94,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 883,
+          "warning_count": 220,
+        },
+        {
+          "address": null,
+@@ -28822,11 +28822,11 @@
+            "rejected": 245,
+            "result_known": 668,
+            "result_unknown": 201,
+          },
+          "point_count": 95,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 869,
+          "warning_count": 213,
+        },
+        {
+          "address": null,
+@@ -28848,84 +28848,22 @@
+            "rejected": 147,
+            "result_known": 406,
+            "result_unknown": 122,
+          },
+          "point_count": 56,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 528,
+          "warning_count": 114,
+        },
+      ],
+      "regions": [
+        {
+-         "completed_count": 17765,
+-         "duration": {
+-           "count": 17509,
+-           "mean_days": 45.835056256782224,
+-           "median_days": 46,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sido",
+-         "name": "서울특별시",
+-         "outcomes": {
+-           "accepted": 8893,
+-           "partial": 0,
+-           "rejected": 8872,
+-           "result_known": 17765,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 9691,
+-           "mean": 3.1726344030543805,
+-         },
+-         "region_code": "11",
+-         "report_count": 17765,
+-         "sido_code": null,
+-       },
+-       {
+-         "completed_count": 17765,
++         "completed_count": 42014,
+          "duration": {
+-           "count": 17509,
+-           "mean_days": 45.835056256782224,
++           "count": 41420,
++           "mean_days": 45.53952197006277,
+            "median_days": 46,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sgg",
+-         "name": "서울 중구",
+-         "outcomes": {
+-           "accepted": 8893,
+-           "partial": 0,
+-           "rejected": 8872,
+-           "result_known": 17765,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 9691,
+-           "mean": 3.1726344030543805,
+-         },
+-         "region_code": "11140",
+-         "report_count": 17765,
+-         "sido_code": "11",
+-       },
+-       {
+-         "completed_count": 24249,
+-         "duration": {
+-           "count": 23911,
+-           "mean_days": 45.323114884362845,
+-           "median_days": 47,
+          },
+          "fine_amount": {
+            "confirmed_count": 3714,
+            "fine_count": 9744,
+            "mean_won": 100125.67985998924,
+@@ -28933,22 +28871,22 @@
+          },
+          "fine_count": 9744,
+          "level": "unknown",
+          "name": "지역 미확인",
+          "outcomes": {
+-           "accepted": 2478,
++           "accepted": 11371,
+            "partial": 9685,
+-           "rejected": 2396,
+-           "result_known": 14559,
++           "rejected": 11268,
++           "result_known": 32324,
+            "result_unknown": 9690,
+          },
+          "rating": {
+-           "count": 3200,
+-           "mean": 1,
++           "count": 12891,
++           "mean": 2.6333100612830656,
+          },
+          "region_code": null,
+-         "report_count": 24249,
++         "report_count": 42014,
+          "sido_code": null,
+        },
+      ],
+      "sample": false,
+      "schema_version": 2,
+
+ ❯ tests/integration/ingest-precompute.test.ts:265:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  tests/integration/ingest-precompute.test.ts > resource-limited SQL exports > 100000 all: legacy/v1/precompute whole-packet deep equality
+AssertionError: expected { schema_version: 'screen-v1', …(3) } to deeply equal { schema_version: 'screen-v1', …(3) }
+
+- Expected
++ Received
+
+@@ -30142,11 +30142,11 @@
+            "rejected": 572,
+            "result_known": 1586,
+            "result_unknown": 463,
+          },
+          "point_count": 109,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 2049,
+          "warning_count": 478,
+        },
+        {
+          "address": null,
+@@ -30168,11 +30168,11 @@
+            "rejected": 546,
+            "result_known": 1559,
+            "result_unknown": 469,
+          },
+          "point_count": 108,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 2028,
+          "warning_count": 472,
+        },
+        {
+          "address": null,
+@@ -30194,11 +30194,11 @@
+            "rejected": 538,
+            "result_known": 1508,
+            "result_unknown": 451,
+          },
+          "point_count": 105,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 1959,
+          "warning_count": 456,
+        },
+        {
+          "address": null,
+@@ -30220,11 +30220,11 @@
+            "rejected": 507,
+            "result_known": 1416,
+            "result_unknown": 414,
+          },
+          "point_count": 97,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 1830,
+          "warning_count": 433,
+        },
+        {
+          "address": null,
+@@ -30246,83 +30246,21 @@
+            "rejected": 296,
+            "result_known": 846,
+            "result_unknown": 259,
+          },
+          "point_count": 58,
+-         "region_code": "11140",
++         "region_code": null,
+          "report_count": 1105,
+          "warning_count": 248,
+        },
+      ],
+      "regions": [
+        {
+-         "completed_count": 35794,
+-         "duration": {
+-           "count": 35290,
+-           "mean_days": 43.80646075375461,
+-           "median_days": 44,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sido",
+-         "name": "서울특별시",
+-         "outcomes": {
+-           "accepted": 17897,
+-           "partial": 0,
+-           "rejected": 17897,
+-           "result_known": 35794,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 19521,
+-           "mean": 3.166589826340864,
+-         },
+-         "region_code": "11",
+-         "report_count": 35794,
+-         "sido_code": null,
+-       },
+-       {
+-         "completed_count": 35794,
++         "completed_count": 84669,
+          "duration": {
+-           "count": 35290,
+-           "mean_days": 43.80646075375461,
+-           "median_days": 44,
+-         },
+-         "fine_amount": {
+-           "confirmed_count": 0,
+-           "fine_count": 0,
+-           "mean_won": null,
+-           "sum_won": null,
+-         },
+-         "fine_count": 0,
+-         "level": "sgg",
+-         "name": "서울 중구",
+-         "outcomes": {
+-           "accepted": 17897,
+-           "partial": 0,
+-           "rejected": 17897,
+-           "result_known": 35794,
+-           "result_unknown": 0,
+-         },
+-         "rating": {
+-           "count": 19521,
+-           "mean": 3.166589826340864,
+-         },
+-         "region_code": "11140",
+-         "report_count": 35794,
+-         "sido_code": "11",
+-       },
+-       {
+-         "completed_count": 48875,
+-         "duration": {
+-           "count": 48186,
+-           "mean_days": 43.19789980492259,
++           "count": 83476,
++           "mean_days": 43.45517274426182,
+            "median_days": 43,
+          },
+          "fine_amount": {
+            "confirmed_count": 7395,
+            "fine_count": 19523,
+@@ -30331,22 +30269,22 @@
+          },
+          "fine_count": 19523,
+          "level": "unknown",
+          "name": "지역 미확인",
+          "outcomes": {
+-           "accepted": 4881,
++           "accepted": 22778,
+            "partial": 19555,
+-           "rejected": 4881,
+-           "result_known": 29317,
++           "rejected": 22778,
++           "result_known": 65111,
+            "result_unknown": 19558,
+          },
+          "rating": {
+-           "count": 6508,
+-           "mean": 1,
++           "count": 26029,
++           "mean": 2.624879941603596,
+          },
+          "region_code": null,
+-         "report_count": 48875,
++         "report_count": 84669,
+          "sido_code": null,
+        },
+      ],
+      "sample": false,
+      "schema_version": 2,
+
+ ❯ tests/integration/ingest-precompute.test.ts:265:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 16 skipped (20)
+   Start at  18:49:41
+   Duration  26.69s (tests 97%, transform 2%, import 1%)
+

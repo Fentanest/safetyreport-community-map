@@ -1,0 +1,64 @@
+[
+  {
+    "name": "unit",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--configLoader",
+      "runner",
+      "--no-cache"
+    ],
+    "exit_code": 0,
+    "seconds": 16.22281315200962
+  },
+  {
+    "name": "build",
+    "command": [
+      "npm",
+      "run",
+      "build",
+      "--",
+      "--configLoader",
+      "runner"
+    ],
+    "exit_code": 0,
+    "seconds": 21.61833373294212
+  },
+  {
+    "name": "scan",
+    "command": [
+      "npm",
+      "run",
+      "scan"
+    ],
+    "exit_code": 0,
+    "seconds": 3.077479065861553
+  },
+  {
+    "name": "blueprint",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests/blueprint"
+    ],
+    "exit_code": 0,
+    "seconds": 0.13068645307794213
+  },
+  {
+    "name": "python-product",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "tests/product"
+    ],
+    "exit_code": 0,
+    "seconds": 1.5454949559643865
+  }
+]
