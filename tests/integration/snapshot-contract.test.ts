@@ -17,7 +17,7 @@ describe.skipIf(process.env.COMMUNITY_STACK !== '1')('SQL screen snapshot bounda
       declare before_version text; before_count integer; result jsonb;
       begin
         before_version:=public.internal_analytics_cohort_state()->>'dataset_version';
-        before_count:=jsonb_array_length(public.internal_analytics_cohort_facts('completed_date','2024-01-01','2028-12-31',true,'all',null,null,null,null));
+        before_count:=jsonb_array_length(public.internal_analytics_cohort_facts('completed_date','2024-01-01','2028-12-31',true,'all',null,null,null,null)::jsonb);
         perform pg_sleep(3);
         result:=public.internal_analytics_read_snapshot(${scope},true);
         return jsonb_build_object('before_version',before_version,'snapshot_version',result->'state'->>'dataset_version',

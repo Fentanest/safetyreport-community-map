@@ -472,6 +472,15 @@
    "depends_on": [
     "202610060500"
    ]
+  },
+  {
+   "repo": "map",
+   "version": "202610060700",
+   "path": "supabase/migrations/202610060700_screen_fact_transport.sql",
+   "sha256": "92758d95998d3b7048bcb39cbd1c12e7e6236cc7d44d98564e80177eb152ac7e",
+   "depends_on": [
+    "202610060600"
+   ]
   }
  ],
  "functions": [
@@ -565,7 +574,8 @@
     "src/domain/tableSort.ts",
     "src/domain/managerNames.ts",
     "server/rollups.ts",
-    "server/screenHandler.ts"
+    "server/screenHandler.ts",
+    "server/screenFacts.ts"
    ]
   },
   {

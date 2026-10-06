@@ -1,0 +1,17 @@
+
+> safetyreport-community-map@0.1.0 test
+> vitest run --configLoader runner --no-cache
+
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-screen-timeout
+
+
+ Test Files  55 passed | 25 skipped (80)
+      Tests  654 passed | 129 skipped (783)
+   Start at  13:47:23
+   Duration  14.04s (transform 61%, import 28%, tests 10%)
+
+  Transform  transforming modules took 94.92s · 61% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

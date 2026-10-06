@@ -1,0 +1,232 @@
+
+> safetyreport-community-map@0.1.0 test
+> vitest run --configLoader runner --no-cache
+
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-screen-timeout
+
+ ❯ tests/product/composeScript.test.ts (11 tests | 11 failed) 3457ms
+   ❯ compose_supabase.mjs auth path (2)
+     × fails clearly when no auth repository is given 92ms
+     × fails clearly when the auth path is not a community-auth checkout 165ms
+   ❯ compose_supabase.mjs staging coverage (9)
+     × fails when a transitive import (json with-attribute, resolver, type-only) is not staged 333ms
+     × passes when the full import closure is staged 349ms
+     × fails when a staged shared file is not imported 340ms
+     × ignores fake imports inside comments and string literals 319ms
+     × detects a two-argument dynamic import (import attributes as second argument) 378ms
+     × tracks a fixed template-literal dynamic import 338ms
+     × allows imports of other files inside the same function directory 320ms
+     × uses the same function-file filter as compose, including names containing node_modules 347ms
+     × still fails when a JSON import target is missing 473ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs auth path > fails clearly when no auth repository is given
+AssertionError: expected '' to contain 'auth repository path required'
+
+- Expected
++ Received
+
+- auth repository path required
+
+ ❯ tests/product/composeScript.test.ts:19:22
+     17|     const r = run(['check']);
+     18|     expect(r.status).toBe(2);
+     19|     expect(r.stderr).toContain('auth repository path required');
+       |                      ^
+     20|   });
+     21|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs auth path > fails clearly when the auth path is not a community-auth checkout
+AssertionError: expected '' to contain 'not a community-auth checkout'
+
+- Expected
++ Received
+
+- not a community-auth checkout
+
+ ❯ tests/product/composeScript.test.ts:27:27
+     25|     const viaEnv = run(['check'], { SR_AUTH_REPO: empty });
+     26|     expect(viaEnv.status).toBe(2);
+     27|     expect(viaEnv.stderr).toContain('not a community-auth checkout');
+       |                           ^
+     28|   });
+     29| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > fails when a transitive import (json with-attribute, resolver, type-only) is not staged
+AssertionError: expected '' to contain 'shared/reg/data.json'
+
+- Expected
++ Received
+
+- shared/reg/data.json
+
+ ❯ tests/product/composeScript.test.ts:78:22
+     76|     const r = check();
+     77|     expect(r.status).toBe(1);
+     78|     expect(r.stderr).toContain('shared/reg/data.json');
+       |                      ^
+     79|     expect(r.stderr).toContain('shared/reg/resolve.ts');
+     80|     expect(r.stderr).toContain('shared/reg/types.ts');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > passes when the full import closure is staged
+AssertionError: expected '' to contain 'manifest check ok'
+
+- Expected
++ Received
+
+- manifest check ok
+
+ ❯ tests/product/composeScript.test.ts:88:22
+     86|     const r = check();
+     87|     expect(r.status).toBe(0);
+     88|     expect(r.stdout).toContain('manifest check ok');
+       |                      ^
+     89|   });
+     90|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > fails when a staged shared file is not imported
+AssertionError: expected '' to contain 'server/unused.ts'
+
+- Expected
++ Received
+
+- server/unused.ts
+
+ ❯ tests/product/composeScript.test.ts:98:22
+     96|     const r = check();
+     97|     expect(r.status).toBe(1);
+     98|     expect(r.stderr).toContain('server/unused.ts');
+       |                      ^
+     99|     expect(r.stderr).toContain('is not imported');
+    100|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > ignores fake imports inside comments and string literals
+AssertionError: expected '' to contain 'manifest check ok'
+
+- Expected
++ Received
+
+- manifest check ok
+
+ ❯ tests/product/composeScript.test.ts:123:22
+    121|     const r = check();
+    122|     expect(r.status).toBe(0);
+    123|     expect(r.stdout).toContain('manifest check ok');
+       |                      ^
+    124|   });
+    125|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > detects a two-argument dynamic import (import attributes as second argument)
+AssertionError: expected '' to contain 'shared/reg/lazy.ts'
+
+- Expected
++ Received
+
+- shared/reg/lazy.ts
+
+ ❯ tests/product/composeScript.test.ts:139:25
+    137|     const fail = missing.check();
+    138|     expect(fail.status).toBe(1);
+    139|     expect(fail.stderr).toContain('shared/reg/lazy.ts');
+       |                         ^
+    140|     expect(fail.stderr).toContain('is not staged');
+    141|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > tracks a fixed template-literal dynamic import
+AssertionError: expected '' to contain 'shared/reg/lazy.ts'
+
+- Expected
++ Received
+
+- shared/reg/lazy.ts
+
+ ❯ tests/product/composeScript.test.ts:162:25
+    160|     const fail = missing.check();
+    161|     expect(fail.status).toBe(1);
+    162|     expect(fail.stderr).toContain('shared/reg/lazy.ts');
+       |                         ^
+    163|     expect(fail.stderr).toContain('is not staged');
+    164|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > allows imports of other files inside the same function directory
+AssertionError: expected '' to contain 'manifest check ok'
+
+- Expected
++ Received
+
+- manifest check ok
+
+ ❯ tests/product/composeScript.test.ts:190:22
+    188|     const r = check();
+    189|     expect(r.status).toBe(0);
+    190|     expect(r.stdout).toContain('manifest check ok');
+       |                      ^
+    191|   });
+    192|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > uses the same function-file filter as compose, including names containing node_modules
+AssertionError: expected '' to contain 'node_modules-helper.ts'
+
+- Expected
++ Received
+
+- node_modules-helper.ts
+
+ ❯ tests/product/composeScript.test.ts:202:25
+    200|     const fail = excluded.check();
+    201|     expect(fail.status).toBe(1);
+    202|     expect(fail.stderr).toContain('node_modules-helper.ts');
+       |                         ^
+    203|     expect(fail.stderr).toContain('is not staged');
+    204|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/11]⎯
+
+ FAIL  tests/product/composeScript.test.ts > compose_supabase.mjs staging coverage > still fails when a JSON import target is missing
+AssertionError: expected '' to contain 'shared/reg/data.json'
+
+- Expected
++ Received
+
+- shared/reg/data.json
+
+ ❯ tests/product/composeScript.test.ts:224:22
+    222|     const r = check();
+    223|     expect(r.status).toBe(1);
+    224|     expect(r.stderr).toContain('shared/reg/data.json');
+       |                      ^
+    225|     expect(r.stderr).toContain('is not staged');
+    226|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/11]⎯
+
+
+ Test Files  1 failed | 54 passed | 23 skipped (78)
+      Tests  11 failed | 641 passed | 122 skipped (774)
+   Start at  12:49:40
+   Duration  11.79s (transform 59%, import 30%, tests 11%)
+
+  Transform  transforming modules took 77.03s · 59% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

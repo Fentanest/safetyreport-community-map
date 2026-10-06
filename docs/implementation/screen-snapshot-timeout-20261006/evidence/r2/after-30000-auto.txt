@@ -1,0 +1,26 @@
+{"phase":"direct","iteration":1,"ms":1798.329000,"sqlstate":"00000","characters":33049952,"bytes":34279872,"facts":27332,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":1,"ms":1286.898000,"sqlstate":"00000","characters":17581279,"bytes":18811275,"facts":27332,"parity":true}
+{"phase":"snapshot-viewer","iteration":1,"ms":1227.082000,"sqlstate":"00000","characters":17581401,"bytes":18811397,"facts":27332,"parity":true}
+{"phase":"direct","iteration":2,"ms":1775.833000,"sqlstate":"00000","characters":33049952,"bytes":34279872,"facts":27332,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":2,"ms":1203.742000,"sqlstate":"00000","characters":17581279,"bytes":18811275,"facts":27332,"parity":true}
+{"phase":"snapshot-viewer","iteration":2,"ms":1205.077000,"sqlstate":"00000","characters":17581401,"bytes":18811397,"facts":27332,"parity":true}
+{"phase":"direct","iteration":3,"ms":1817.234000,"sqlstate":"00000","characters":33049952,"bytes":34279872,"facts":27332,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":3,"ms":1219.190000,"sqlstate":"00000","characters":17581279,"bytes":18811275,"facts":27332,"parity":true}
+{"phase":"snapshot-viewer","iteration":3,"ms":1241.833000,"sqlstate":"00000","characters":17581401,"bytes":18811397,"facts":27332,"parity":true}
+{"phase":"direct","iteration":4,"ms":1793.929000,"sqlstate":"00000","characters":33049952,"bytes":34279872,"facts":27332,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":4,"ms":1231.105000,"sqlstate":"00000","characters":17581279,"bytes":18811275,"facts":27332,"parity":true}
+{"phase":"snapshot-viewer","iteration":4,"ms":1233.053000,"sqlstate":"00000","characters":17581401,"bytes":18811397,"facts":27332,"parity":true}
+{"phase":"direct","iteration":5,"ms":1832.000000,"sqlstate":"00000","characters":33049952,"bytes":34279872,"facts":27332,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":5,"ms":1193.314000,"sqlstate":"00000","characters":17581279,"bytes":18811275,"facts":27332,"parity":true}
+{"phase":"snapshot-viewer","iteration":5,"ms":1259.703000,"sqlstate":"00000","characters":17581401,"bytes":18811397,"facts":27332,"parity":true}
+{"phase":"direct","iteration":6,"ms":1858.582000,"sqlstate":"00000","characters":33049952,"bytes":34279872,"facts":27332,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":6,"ms":1232.300000,"sqlstate":"00000","characters":17581279,"bytes":18811275,"facts":27332,"parity":true}
+{"phase":"snapshot-viewer","iteration":6,"ms":1265.083000,"sqlstate":"00000","characters":17581401,"bytes":18811397,"facts":27332,"parity":true}
+Result  (cost=0.00..0.27 rows=1 width=4) (actual time=2122.940..2134.010 rows=1 loops=1)
+  Buffers: shared hit=8869, temp read=11389 written=11395
+Planning Time: 0.014 ms
+Execution Time: 2137.496 ms
+Result  (cost=0.00..0.27 rows=1 width=4) (actual time=1383.723..1393.571 rows=1 loops=1)
+  Buffers: shared hit=13313, temp read=7072 written=7078
+Planning Time: 0.032 ms
+Execution Time: 1393.650 ms

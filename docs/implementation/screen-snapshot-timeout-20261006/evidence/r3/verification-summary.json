@@ -1,0 +1,36 @@
+{
+  "sql_phase_samples": {
+    "before": 18,
+    "after": 18
+  },
+  "ordered_parity_all": true,
+  "node_packet_parity": true,
+  "tests": {
+    "transport_final": {
+      "pass": 9,
+      "fail": 0
+    },
+    "cohort_historical": {
+      "pass": 4,
+      "fail": 1,
+      "detail": "pre-existing exact-tie ordered array difference; no 060700 applied"
+    },
+    "handler_and_screen": {
+      "pass": 11
+    },
+    "unit": {
+      "pass": 654,
+      "skip": 132
+    },
+    "blueprint": 27,
+    "python_product": 12
+  },
+  "build": "PASS with existing chunk/import warnings",
+  "scan": "PASS",
+  "manifest": {
+    "migrations": 49,
+    "functions": 7
+  },
+  "production_remeasurement": "NOT_RUN; after deployment by lead",
+  "commit": "NOT_CREATED; explicitly prohibited"
+}

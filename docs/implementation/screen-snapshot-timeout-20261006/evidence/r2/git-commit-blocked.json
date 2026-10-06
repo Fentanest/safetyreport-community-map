@@ -1,0 +1,9 @@
+{
+  "git_add_exit_code": 128,
+  "git_commit_exit_code": 128,
+  "error": "Unable to create index.lock: Read-only file system",
+  "git_dir": "/home/better0101/projects/safetyreport-community-map/.git/worktrees/safetyreport-community-map-screen-timeout",
+  "findmnt_options": "ro,nosuid,nodev,relatime",
+  "new_commit": null,
+  "worktree_changes_preserved": true
+}

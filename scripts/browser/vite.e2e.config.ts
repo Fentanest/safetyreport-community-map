@@ -199,11 +199,12 @@ function e2eApi(): Plugin {
             await send(res, response);
             return;
           }
-          const handler = per.createPersonalHandler({
+          const screen = await server.ssrLoadModule('/server/screenHandler.ts');
+          const handler = (url.pathname.endsWith('/screen') ? screen.createScreenHandler : per.createPersonalHandler)({
             enabled: true, allowedOrigins: [ORIGIN], jwtIssuer: null, getUser,
             rpc: async (name: string) => {
               if (name === 'internal_community_ingest_rate_limit') return true;
-              return { state: state(), viewer: { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true }, facts };
+              return { state: state(), viewer: { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, public_fact_count: 12 }, facts };
             },
           });
           const response = await handler(await toRequest(req));

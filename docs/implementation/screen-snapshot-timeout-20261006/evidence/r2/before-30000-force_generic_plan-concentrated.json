@@ -1,0 +1,71 @@
+{
+  "synthetic": true,
+  "size": 30000,
+  "plan_mode": "force_generic_plan",
+  "phase": "before",
+  "concentrated": true,
+  "samples": [
+    {
+      "phase": "direct",
+      "iteration": 1,
+      "ms": 1870.462,
+      "sqlstate": "00000",
+      "characters": 35357095,
+      "bytes": 36528455,
+      "facts": 29284,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 1,
+      "ms": 2126.207,
+      "sqlstate": "00000",
+      "characters": 35357719,
+      "bytes": 36529155,
+      "facts": 29284,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 1,
+      "ms": 2211.597,
+      "sqlstate": "00000",
+      "characters": 35357843,
+      "bytes": 36529279,
+      "facts": 29284,
+      "parity": true
+    },
+    {
+      "phase": "direct",
+      "iteration": 2,
+      "ms": 1806.771,
+      "sqlstate": "00000",
+      "characters": 35357095,
+      "bytes": 36528455,
+      "facts": 29284,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 2,
+      "ms": 2184.306,
+      "sqlstate": "00000",
+      "characters": 35357719,
+      "bytes": 36529155,
+      "facts": 29284,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 2,
+      "ms": 2272.087,
+      "sqlstate": "00000",
+      "characters": 35357843,
+      "bytes": 36529279,
+      "facts": 29284,
+      "parity": true
+    }
+  ],
+  "status": "MEASURED",
+  "exit_code": 0
+}

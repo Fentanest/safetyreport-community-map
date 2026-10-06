@@ -8,6 +8,7 @@ import {
   placesResponseSchema, type AccessErrorDetails,
 } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
+import { AnalyticsReadTimeout, withReadDeadline } from './requestDeadline';
 
 export type DataMode = 'demo' | 'live';
 export const dataMode: DataMode = import.meta.env.VITE_DATA_MODE === 'demo' ? 'demo' : 'live';
@@ -58,18 +59,32 @@ export function sameScope(a: Scope, b: Scope): boolean {
 // No static snapshot: while the map is contributor-only every read goes through the API's viewer check, and the
 // Pages artifact carries no data files (publish-pages.yml no longer exports one).
 export async function read(path: string, params: URLSearchParams | null, signal?: AbortSignal): Promise<unknown> {
+  try {
+    return await withReadDeadline(deadline => readWithinDeadline(path, params, deadline), signal);
+  } catch (e) {
+    if (e instanceof AnalyticsReadTimeout) throw new PublicApiError(
+      '통계 요청이 20초 안에 완료되지 않았습니다. 잠시 뒤 다시 시도해 주세요. (오류 코드 REQUEST_TIMEOUT)',
+      null, null, 'REQUEST_TIMEOUT');
+    throw e;
+  }
+}
+
+async function readWithinDeadline(path: string, params: URLSearchParams | null, signal: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
   if (!base) throw new PublicApiError('통계를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
   const url = `${base}/${path === '@screen' ? 'my-analytics/screen' : `public-analytics/${path}`}${params ? `?${params}` : ''}`;
   const auth = mapAuth();
   await auth.settled();
+  signal.throwIfAborted();
   const token = await auth.accessToken();
+  signal.throwIfAborted();
   if (!token) throw new PublicApiError('카카오 로그인이 필요합니다.', 401, null, 'auth_required');
   const send = (token: string | null) => fetch(url, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
     headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
   let res = await send(token);
   if (res.status === 401 && token) {
     const refreshed = await auth.refreshToken();
+    signal.throwIfAborted();
     if (refreshed) res = await send(refreshed);
   }
   if (!res.ok) {
@@ -95,10 +110,11 @@ export async function read(path: string, params: URLSearchParams | null, signal?
     // the server's fixed messages for these codes are safe to show and tell the user what to change;
     // an unknown failure carries its code in plain words so a report to us still names the real cause
     const known = code === 'RESULT_TOO_LARGE' || code === 'INVALID_QUERY' || code === 'AGGREGATE_NOT_READY';
-    throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.'
+    const description = res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.'
       : access && message ? message
         : known ? message ?? '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
-          : `통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요. (오류 코드 ${code ?? res.status})`,
+          : '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.';
+    throw new PublicApiError(access ? description : `${description} (오류 코드 ${code ?? 'UNKNOWN'}, HTTP ${res.status})`,
       res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code, details);
   }
   return res.json();

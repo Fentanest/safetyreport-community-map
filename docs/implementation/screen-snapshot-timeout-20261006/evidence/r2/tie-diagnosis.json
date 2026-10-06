@@ -1,0 +1,17 @@
+{
+  "fixture": "300 synthetic rows plus identical device copies; real local PostgreSQL",
+  "old_migration": "202610010100",
+  "baseline": "202610060100",
+  "candidate": "202610060700",
+  "old_equals_baseline": false,
+  "baseline_equals_candidate": true,
+  "differing_array_positions": [
+    100,
+    101,
+    198,
+    199
+  ],
+  "differing_fields": [
+    "fact_identity"
+  ]
+}

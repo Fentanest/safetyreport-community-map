@@ -1,0 +1,37 @@
+{
+  "mode": "local synthetic HTTP; fake auth; mocked Kakao SDK; no production",
+  "checks": [
+    {
+      "width": 390,
+      "loaded": true,
+      "overflow": false
+    },
+    {
+      "timeout_ms": 20378,
+      "no_automatic_retry": true,
+      "manual_retry": true
+    },
+    {
+      "width": 1440,
+      "loaded": true,
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "loaded": true,
+      "overflow": false
+    },
+    {
+      "width": 2560,
+      "loaded": true,
+      "overflow": false
+    }
+  ],
+  "console": [],
+  "network": [
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200
+    }
+  ]
+}

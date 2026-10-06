@@ -1,0 +1,32 @@
+{
+  "base_commit": "373112669158dad533f62fce172757feea683b23",
+  "branch": "fix/screen-snapshot-timeout",
+  "candidate": "uncommitted worktree; no commit requested",
+  "sha256": {
+    "docs/data-contract.md": "d38be2e0014800f00770d68902b367e01decb3e5cac62d161fc6556402986514",
+    "docs/implementation/screen-snapshot-timeout-20261006/CALLERS.md": "78d9c527fe7a32bae6eb4bf3b8b3aa5038267150a43c0ff155649d47f31ea9e9",
+    "docs/implementation/screen-snapshot-timeout-20261006/MIGRATION.md": "cc95192d63286fea8627a080b0ed0ba26f01a0290e172c244386a50521cd4c75",
+    "docs/implementation/screen-snapshot-timeout-20261006/REPORT.md": "2de821a826319d66a8822cdbd9985ba0e67b004934fe1f787b28c4da9c395921",
+    "docs/implementation/screen-snapshot-timeout-20261006/REPRODUCE.md": "ded741c417daee0a8f2ace968c2495a1dfbddcfc87dd6e356fc21b6c77485bc7",
+    "docs/implementation/screen-snapshot-timeout-20261006/rollback.sql": "a41806ad53e4a7e6f2736fc08bb890eda97b2cf4cc6d7d56cd8048a79a58cd2b",
+    "docs/integration/community-ingest/migration-manifest.json": "0acf9f805fabcc4fe7e5713a1b883cd35a1f56947bf0eeaaa9ad85628076c08c",
+    "scripts/benchmark/screen_snapshot_timeout.py": "8daec3ea5b3f4d06b851e71efb8ac1a89e3bbce23a0363e1825427599309c47b",
+    "scripts/browser/verify_screen_timeout.mjs": "d0dd48a166bcfbdcca0362deef88cef6f7ec91a0f1c6efebbc14c6f80ec0d2db",
+    "scripts/browser/vite.e2e.config.ts": "6554ae6afaa986e19bfe38bfda24243c2a1dd1a60e4e7e6b02f8bcf09a2a6b13",
+    "server/screenFacts.ts": "8c730c1b2d7a2fc6e89dede7470b112c15468238fa156a893dc38fd6f454041a",
+    "server/screenHandler.ts": "5749c371fd4d8ce9523e4ca8708bff6453a8652b3e4c5507a565ff9a39cffd11",
+    "src/data/client.ts": "8405b82dca27637c8f76ee42fec76810635f9ec1dea629e6a6fc5117a6736277",
+    "src/data/refreshController.ts": "505fc1948ac8c7b20c5d716c5dbc4947147d1b3a30423b041d9492f362e20119",
+    "src/data/requestDeadline.ts": "76f60a1142d34c3b44ff03340ca6c33388d0e759cad979a3f8c8840bd2ddf037",
+    "supabase/migrations/202610060700_screen_fact_transport.sql": "92758d95998d3b7048bcb39cbd1c12e7e6236cc7d44d98564e80177eb152ac7e",
+    "tests/integration/date-basis-sql.test.ts": "f281d32864513c806aa476cb178cb71de6a71459baba9f3e25e59affefb06238",
+    "tests/integration/screen-handler-measure.test.ts": "cc9da617372ba58bb9b5d1db4d6e4f6001356f12c0f1f8a13df00438bc94551f",
+    "tests/integration/screen-transport.test.ts": "c56fccd799cc47019024bf43ec07a2762f37bcd7db7942feb455580fabf61e5d",
+    "tests/integration/snapshot-contract.test.ts": "afea91ef32ace76958d36a11847548fdb057f41ba778d9d721699b3cf0db843f",
+    "tests/product/accessClient.test.ts": "4cebd1642b63492a2c51df210977209e01467ef776b12c2482351a60f6477245",
+    "tests/product/analyticsDeadline.test.ts": "336e976676e40f751229d963ba7aa8626332ac556db01703a5b2ebb8fedaa1a9",
+    "tests/product/refreshController.test.ts": "7200af355db649305542cf39ca3250cbf972fcf90437f4396e19ad53b0d32bc2",
+    "tests/product/screenSnapshot.test.ts": "e24fd1d038d093d7a27c6a69ec91f29d59c43c0ef136406ad31f6a765bba4cdd",
+    "tests/product/screenTimeoutMeasure.test.ts": "f9272409dcd313f98a9731097ff9c16be2553408ef0f11a93596b832cd49736c"
+  }
+}

@@ -107,6 +107,22 @@ describe('coalescing and stale responses (P02)', () => {
 });
 
 describe('failures (P03/P04)', () => {
+  it('shows a deadline error without automatically duplicating a slow server read; explicit retry remains available', async () => {
+    const h = harness();
+    h.c.request(base); await h.flush();
+    h.pending.shift()!.resolve(dataFor(base)); await h.flush();
+    h.c.request(bbox(1)); await h.flush();
+    h.pending.shift()!.reject(new PublicApiError('20초 (REQUEST_TIMEOUT)', null, null, 'REQUEST_TIMEOUT'));
+    await h.flush(); await h.advance(120_000);
+    expect(h.pending).toHaveLength(0);
+    expect(h.c.snapshot().fetching).toBe(false);
+    expect(h.c.snapshot().refreshing).toBe(false);
+    expect(h.c.snapshot().error?.code).toBe('REQUEST_TIMEOUT');
+    expect(h.c.snapshot().displayed?.scope).toEqual(base);
+    h.c.retry(); await h.flush();
+    expect(h.pending).toHaveLength(1);
+  });
+
   it('429: no request before Retry-After, keeps data, then only the latest range', async () => {
     const h = harness();
     h.c.request(base);

@@ -61,7 +61,7 @@ describe('statistics client while the map is contributor-only', () => {
     const error = await loadDashboard(scope).catch((e: unknown) => e);
     expect(isAccessError(error)).toBe(false);
     expect(error).toMatchObject({ status: 503, code: 'AGGREGATE_NOT_READY' });
-    // the real cause stays on the error (code/status) and the message is plain language (no HTTP jargon)
-    expect((error as Error).message).not.toMatch(/HTTP/);
+    // Keep the friendly server explanation and diagnostics visible in mobile failure reports.
+    expect((error as Error).message).toBe('server:AGGREGATE_NOT_READY (오류 코드 AGGREGATE_NOT_READY, HTTP 503)');
   });
 });

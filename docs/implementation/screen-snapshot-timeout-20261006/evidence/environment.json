@@ -1,0 +1,30 @@
+{
+  "base_commit": "373112669158dad533f62fce172757feea683b23",
+  "docker": "permission denied while trying to connect to the docker API at unix:///var/run/docker.sock",
+  "local_api": {
+    "url": "http://127.0.0.1:56321",
+    "http_status": "000",
+    "connected": false
+  },
+  "postgres_server_binaries": false,
+  "node_spawnSync_probe": {
+    "command": "node scripts/integration/compose_supabase.mjs check",
+    "status": 2,
+    "error": "spawnSync node EPERM",
+    "stdout": "",
+    "stderr": ""
+  },
+  "browser": {
+    "tool": "Playwright /usr/bin/google-chrome headless",
+    "status": "BLOCKED",
+    "error": "crashpad/util/linux/socket.cc:45 setsockopt: Operation not permitted (1)",
+    "signal": "SIGTRAP"
+  },
+  "operational_access": "NOT_ATTEMPTED (user prohibition)",
+  "muse_review": "NOT_RUN; browser launch blocked; no substitute model review claimed",
+  "git_stage": {
+    "exit_code": 128,
+    "error": "index.lock: Read-only file system",
+    "new_commit": null
+  }
+}

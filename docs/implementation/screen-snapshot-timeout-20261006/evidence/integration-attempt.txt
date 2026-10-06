@@ -1,0 +1,23 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-screen-timeout
+
+ ❯ tests/integration/snapshot-contract.test.ts (2 tests | 1 failed | 1 skipped) 35ms
+   ❯ SQL screen snapshot boundary (2)
+     × keeps read functions stable and inaccessible to browser database roles 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/snapshot-contract.test.ts > SQL screen snapshot boundary > keeps read functions stable and inaccessible to browser database roles
+Error: spawnSync docker EPERM
+ ❯ sql tests/integration/snapshot-contract.test.ts:4:31
+
+ ❯ tests/integration/snapshot-contract.test.ts:7:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 skipped (2)
+   Start at  12:49:23
+   Duration  225ms (tests 50%, transform 24%, import 19%, worker 7%)
+

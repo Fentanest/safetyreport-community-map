@@ -1,0 +1,7 @@
+{
+  "method": "complete local pg_dump schema/data/sequence comparison; remove random psql restrict nonce only",
+  "identical": true,
+  "before_sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af",
+  "after_sha256": "adcb305b483759bc3699f2d63a2fd66d0d85da388a66c4af6c28a1676c0305af",
+  "mutations": "All SQL DDL/seed/test mutations enclosed in BEGIN/ROLLBACK; no committed migrations or ledger changes"
+}

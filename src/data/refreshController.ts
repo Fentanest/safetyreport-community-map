@@ -291,7 +291,8 @@ export class RefreshController {
         this.set({ pausedUntil: until, error: { ...err, retryAfter: Math.ceil(wait / 1000) }, refreshing: true, scheduled: true, fetching: false, wait: 'rate_limit' });
         return;
       }
-      const transient = err.status === null || err.status >= 500;
+      // A timed-out read may still be executing on the server. Require an explicit retry.
+      const transient = err.code !== 'REQUEST_TIMEOUT' && (err.status === null || err.status >= 500);
       if (transient && this.retries < 1) {
         this.retries += 1;
         this.set({ refreshing: true, scheduled: true, fetching: false, wait: 'retry' });

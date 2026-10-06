@@ -1,0 +1,191 @@
+{
+  "synthetic": true,
+  "size": 30000,
+  "plan_mode": "auto",
+  "phase": "before",
+  "concentrated": false,
+  "samples": [
+    {
+      "phase": "direct",
+      "iteration": 1,
+      "ms": 1716.971,
+      "sqlstate": "00000",
+      "characters": 33049952,
+      "bytes": 34279872,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 1,
+      "ms": 2007.651,
+      "sqlstate": "00000",
+      "characters": 33050576,
+      "bytes": 34280572,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 1,
+      "ms": 2005.966,
+      "sqlstate": "00000",
+      "characters": 33050698,
+      "bytes": 34280694,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "direct",
+      "iteration": 2,
+      "ms": 1743.699,
+      "sqlstate": "00000",
+      "characters": 33049952,
+      "bytes": 34279872,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 2,
+      "ms": 1947.458,
+      "sqlstate": "00000",
+      "characters": 33050576,
+      "bytes": 34280572,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 2,
+      "ms": 1962.833,
+      "sqlstate": "00000",
+      "characters": 33050698,
+      "bytes": 34280694,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "direct",
+      "iteration": 3,
+      "ms": 1692.883,
+      "sqlstate": "00000",
+      "characters": 33049952,
+      "bytes": 34279872,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 3,
+      "ms": 2248.118,
+      "sqlstate": "00000",
+      "characters": 33050576,
+      "bytes": 34280572,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 3,
+      "ms": 2037.731,
+      "sqlstate": "00000",
+      "characters": 33050698,
+      "bytes": 34280694,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "direct",
+      "iteration": 4,
+      "ms": 1775.547,
+      "sqlstate": "00000",
+      "characters": 33049952,
+      "bytes": 34279872,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 4,
+      "ms": 2022.96,
+      "sqlstate": "00000",
+      "characters": 33050576,
+      "bytes": 34280572,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 4,
+      "ms": 2007.412,
+      "sqlstate": "00000",
+      "characters": 33050698,
+      "bytes": 34280694,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "direct",
+      "iteration": 5,
+      "ms": 1758.163,
+      "sqlstate": "00000",
+      "characters": 33049952,
+      "bytes": 34279872,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 5,
+      "ms": 1991.34,
+      "sqlstate": "00000",
+      "characters": 33050576,
+      "bytes": 34280572,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 5,
+      "ms": 2013.105,
+      "sqlstate": "00000",
+      "characters": 33050698,
+      "bytes": 34280694,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "direct",
+      "iteration": 6,
+      "ms": 1733.764,
+      "sqlstate": "00000",
+      "characters": 33049952,
+      "bytes": 34279872,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-no-viewer",
+      "iteration": 6,
+      "ms": 1960.416,
+      "sqlstate": "00000",
+      "characters": 33050576,
+      "bytes": 34280572,
+      "facts": 27332,
+      "parity": true
+    },
+    {
+      "phase": "snapshot-viewer",
+      "iteration": 6,
+      "ms": 2190.704,
+      "sqlstate": "00000",
+      "characters": 33050698,
+      "bytes": 34280694,
+      "facts": 27332,
+      "parity": true
+    }
+  ],
+  "status": "MEASURED",
+  "exit_code": 0
+}

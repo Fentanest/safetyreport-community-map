@@ -1,0 +1,14 @@
+{"phase":"direct","iteration":1,"ms":1914.689000,"sqlstate":"00000","characters":35357095,"bytes":36528455,"facts":29284,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":1,"ms":1363.288000,"sqlstate":"00000","characters":18783590,"bytes":19955026,"facts":29284,"parity":true}
+{"phase":"snapshot-viewer","iteration":1,"ms":1398.343000,"sqlstate":"00000","characters":18783714,"bytes":19955150,"facts":29284,"parity":true}
+{"phase":"direct","iteration":2,"ms":1983.230000,"sqlstate":"00000","characters":35357095,"bytes":36528455,"facts":29284,"parity":true}
+{"phase":"snapshot-no-viewer","iteration":2,"ms":1336.544000,"sqlstate":"00000","characters":18783590,"bytes":19955026,"facts":29284,"parity":true}
+{"phase":"snapshot-viewer","iteration":2,"ms":1528.457000,"sqlstate":"00000","characters":18783714,"bytes":19955150,"facts":29284,"parity":true}
+Result  (cost=0.00..0.27 rows=1 width=4) (actual time=2280.148..2290.533 rows=1 loops=1)
+  Buffers: shared hit=8695, temp read=12611 written=12618
+Planning Time: 0.014 ms
+Execution Time: 2293.442 ms
+Result  (cost=0.00..0.27 rows=1 width=4) (actual time=1542.008..1549.476 rows=1 loops=1)
+  Buffers: shared hit=13052, temp read=8016 written=8023
+Planning Time: 0.037 ms
+Execution Time: 1549.698 ms

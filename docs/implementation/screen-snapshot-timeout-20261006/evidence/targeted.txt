@@ -1,0 +1,9 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-screen-timeout
+
+
+ Test Files  4 passed (4)
+      Tests  43 passed (43)
+   Start at  12:49:42
+   Duration  1.10s (transform 40%, tests 35%, import 24%, worker 1%)
+

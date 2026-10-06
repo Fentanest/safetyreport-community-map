@@ -104,3 +104,30 @@ prod output에는 fixtures/원번호를 복사하지 않는다. 1건·0분모·�
 DB에 화면 사본/새 테이블/인덱스를 만들지 않고 철회/삭제 이후 새 요청은 최신 적격 자료만 읽는다. 같은 이유로 장기 pin/TTL 스냅샷은 사용하지 않는다. 단일 응답이 시작할 때 이미 유효했던 스냅샷의 진행 중 읽기까지 소급 취소하지는 않는다. 서비스 권한·JWT/카카오/활성동의/10건 gate·no-store·기존 timeout을 유지한다.
 
 화면 전환 중 남아 있는 이전 범위의 패널 intent는 진행 중인 화면 요청을 기다린다. A→B→A 취소는 마지막 완전한 A DTO 묶음을 복구한 뒤 필요한 패널을 새 묶음으로 읽으며, B가 성공하면 이전 A intent를 취소한다. 계정 reset은 복구용 DTO도 지운다. 활성 화면의 패널은 이 경합에서 legacy 개별 fence 요청으로 돌아가지 않는다.
+
+2026-10-06 화면 timeout 부분 보완: 클라이언트의 각 공개 통계/screen read는 auth 준비·refresh·응답 body를 포함해 20초로 제한한다.
+상한을 넘으면 `REQUEST_TIMEOUT`을 표시하고 자동 재시도하지 않으며, 이미 표시한 정상 화면은 유지하고 수동 재시도를 제공한다.
+일반 API 실패는 메시지에 오류 코드·HTTP 상태를 남긴다. scope 전환/로그아웃 취소는 timeout으로 바꾸지 않는다.
+이는 DB/Edge의 실행 제한이나 단일 snapshot 계약을 변경하지 않으며 서버 SQL 취소·성능 개선을 보장하지 않는다.
+운영 jsonb 생성·재포장 병목은 총괄의 실측으로 확정됐으며, 수정 후 운영 전체 응답시간은 배포 후 총괄이 검증한다([보고서](implementation/screen-snapshot-timeout-20261006/REPORT.md)).
+
+
+2026-10-06 화면 내부 전송 v1 (`202610060700`): `my-analytics/screen`만
+`p_options.fact_encoding=columns-v1`을 요청한다. 단일 STABLE RPC는 동일한 34개 private fact 필드를
+`{encoding, columns, rows}`로 손실 없이 전달하고 Edge가 검증된 열 순서로 원 객체를 복원한다.
+이 형식은 public DTO가 아니며 브라우저·공유·정적 파일에 노출하지 않는다. 대표 선출·이전기간·개인 비교·공개
+동의·10만 행 예산은 그대로다. `p_kind` rollup 경로와 옵션 없는 기존 RPC 호출은 기존 형식을 유지한다.
+새 Edge는 구 SQL의 객체 배열도 읽으며, 알 수 없는 encoding/열 순서/행 길이는 503으로 거부한다.
+`private.analytics_cohort_payload`는 전송 형식만 분기하는 공통 구현이고 화면 snapshot 경계나 데이터 캐시를 추가하지 않는다.
+로컬 실측은 [보고서](implementation/screen-snapshot-timeout-20261006/REPORT.md)에 있다.
+r3에서 대형 payload의 집계·포장·반환을 PostgreSQL `json`으로 바꾼다. `internal_analytics_cohort_facts`,
+`internal_analytics_read_snapshot`, `internal_my_analytics_cohort_source`는 인자를 유지하며 jsonb→json 반환형만 변경한다.
+small state/viewer/options는 jsonb로 남지만 facts를 jsonb로 캐스트하거나 재포장하지 않는다.
+개인 래퍼의 CASE 빈 배열도 json으로 맞춘다. SQL→Edge는 기존과 같은 JSON 값이고 브라우저 공개 DTO는 불변이다.
+객체 키 순서·공백·숫자 인쇄 형식은 의미 계약이 아니며, 고정 키는 중복되지 않는다. 배열 순서·중복 행·null·boolean·정수·원 좌표는
+보존하며 실제 native JSON 파싱, SQL 값 비교, 공개 전체 화면 deep equality로 검증한다.
+반환형 변경은 동일 transaction의 DROP/CREATE(무CASCADE), postgres 소유권·service_role 전용 ACL 복원과 PostgREST schema reload를 요구한다.
+[전수 호출자 목록](implementation/screen-snapshot-timeout-20261006/CALLERS.md)을 따른다.
+운영 aarch64의 jsonb 구성 병목은 확정됐지만 수정 후보의 운영 성능은 아직 미측정이다. **운영 재측정은 배포 후 총괄이 수행**한다.
+8초 설정과 20초 클라이언트 deadline은 유지한다. 함수 안의 statement_timeout 변경을 현재 SQL statement의 강제 취소 보장으로
+해석하지 않는다. 실제 외부 RPC 제한과 end-to-end 여유는 운영 검증 항목이다.

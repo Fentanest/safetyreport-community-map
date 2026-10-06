@@ -1,0 +1,36 @@
+{
+  "mode": "synthetic Node handler only; RPC stub; NOT database or hosted Edge",
+  "node": "v22.17.1",
+  "facts": 30000,
+  "db_sql_ms": null,
+  "source_bytes": 26583373,
+  "source_characters": 24343455,
+  "source_parse_ms": 185.195294,
+  "standalone_public_dashboard_ms": 475.01420599999983,
+  "parity": {
+    "dashboard": true,
+    "entities": true,
+    "laws": true,
+    "compare": true
+  },
+  "measurements": [
+    {
+      "run": 1,
+      "handler_wall_ms": 1087.4129010000001,
+      "cpu_ms": 1492.532,
+      "public_bytes": 136190
+    },
+    {
+      "run": 2,
+      "handler_wall_ms": 841.227965,
+      "cpu_ms": 1012.417,
+      "public_bytes": 136190
+    },
+    {
+      "run": 3,
+      "handler_wall_ms": 781.4863439999999,
+      "cpu_ms": 807.976,
+      "public_bytes": 136190
+    }
+  ]
+}

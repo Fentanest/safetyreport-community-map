@@ -166,9 +166,9 @@ describe.skipIf(!enabled)('single-date cohort SQL on real Postgres', () => {
         perform public.internal_analytics_cohort_facts('completed_date', date '2019-06-01', date '2019-06-30', false, 'all', null, null, null, null);
         insert into budget_out values ('national', 'ok');
       exception when others then insert into budget_out values ('national', sqlerrm); end $$;
-      insert into budget_out select 'narrow', jsonb_array_length(public.internal_analytics_cohort_facts('completed_date', date '2019-06-01', date '2019-06-30', false, 'all', null, '${AGENCY}', null, null))::text;
+      insert into budget_out select 'narrow', jsonb_array_length(public.internal_analytics_cohort_facts('completed_date', date '2019-06-01', date '2019-06-30', false, 'all', null, '${AGENCY}', null, null)::jsonb)::text;
       insert into budget_out select 'oracle', (select string_agg(x->>'source_report_key', ',') from jsonb_array_elements(
-        public.internal_analytics_cohort_facts('completed_date', date '${oracle.range.start}', date '${oracle.range.end}', false, 'all', null, '${AGENCY}', null, null)) x where (x->>'is_representative')::boolean);
+        public.internal_analytics_cohort_facts('completed_date', date '${oracle.range.start}', date '${oracle.range.end}', false, 'all', null, '${AGENCY}', null, null)::jsonb) x where (x->>'is_representative')::boolean);
       select k || '=' || v from budget_out order by k;
       rollback;`);
     const got = Object.fromEntries(out.split('\n').filter((l) => l.includes('=')).map((l) => l.split('=')));

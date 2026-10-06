@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SCREEN_FACT_COLUMNS, decodeScreenFacts } from '../../server/screenFacts';
 import { createScreenHandler } from '../../server/screenHandler';
 import { createPublicHandler } from '../../server/publicHandler';
 import { demoFacts, demoMeta, demoEngineDashboard, DEMO_VIEWER_ID } from '../../src/data/demoEngine';
@@ -37,6 +38,24 @@ describe('one screen from one source snapshot', () => {
     expect(personal.all.report_count).toBe(body.dashboard.overview.report_count.value);
     expect(body.panels.every((p: any) => p.status === 200 && p.body.dataset_version === body.meta.dataset_version)).toBe(true);
     expect(JSON.stringify(body)).not.toContain(DEMO_VIEWER_ID);
+  });
+  it('losslessly decodes compact SQL rows and preserves the complete screen, including personal comparison', async () => {
+    const facts = demoFacts();
+    const compact = { encoding: 'columns-v1', columns: SCREEN_FACT_COLUMNS,
+      rows: facts.map(f => SCREEN_FACT_COLUMNS.map(k => f[k])) };
+    const run = (payload: unknown) => createScreenHandler({ enabled: true, allowedOrigins: [], jwtIssuer: null,
+      getUser: async () => ({ id: DEMO_VIEWER_ID, isAnonymous: false }), rpc: async (name, args) => {
+        if (name.endsWith('rate_limit')) return true;
+        expect(args.p_options).toEqual({ fact_encoding: 'columns-v1' });
+        return { state, viewer, facts: payload };
+      } })(req());
+    const before = await run(facts), after = await run(compact);
+    expect(after.status).toBe(200);
+    expect(await after.json()).toEqual(await before.json());
+    expect(decodeScreenFacts({ ...compact, encoding: 'future' })).toBeNull();
+    expect(decodeScreenFacts({ ...compact, columns: [...SCREEN_FACT_COLUMNS].reverse() })).toBeNull();
+    expect(decodeScreenFacts({ ...compact, rows: [[null]] })).toBeNull();
+    expect((await run({ ...compact, encoding: 'future' })).status).toBe(503);
   });
   it('expands a table/chart prefix within one snapshot, including rows beyond the first page', async () => {
     const facts = Array.from({ length: 230 }, (_, i) => ({ ...demoFacts()[0], fact_identity: `row-${i}`, report_identity: `id-${i}`,
