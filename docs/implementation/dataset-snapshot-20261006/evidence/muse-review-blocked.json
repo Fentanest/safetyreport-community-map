@@ -1,0 +1,37 @@
+{
+  "status": "UI_REVIEW_BLOCKED",
+  "reason": "OpenCode Go usage limit exceeded before any review output/tool action",
+  "candidate_commit": "f8d68e7f257f76478bb4f775ddeb69a2cb3940f5",
+  "request": {
+    "model_requested": "opencode-go/muse-spark-1.3-contributor",
+    "variant_requested": null,
+    "worktree": "/home/better0101/projects/worktree/map-cohort/.agent-runtime/dataset-snapshot-20261006/muse-review",
+    "prompt_file": "/home/better0101/projects/worktree/map-cohort/.agent-runtime/dataset-snapshot-20261006/muse-review/.agent-runtime/task.md",
+    "resume_session": null,
+    "fork": false
+  },
+  "process_result": {
+    "state": "process_exited",
+    "exit_code": -15,
+    "session_ids": [],
+    "job": "/home/better0101/projects/worktree/map-cohort/.agent-runtime/dataset-snapshot-20261006/muse-review/.agent-runtime/jobs/20261006T023820Z-2a746342",
+    "actual_model_verification": "PENDING: inspect exact session export and result artifacts",
+    "ui_review": "PENDING: process exit is not review approval"
+  },
+  "verified_session": "ses_ef0ec7035ffeSZRqOru2Niho7y",
+  "verified_directory": "/home/better0101/projects/worktree/map-cohort/.agent-runtime/dataset-snapshot-20261006/muse-review",
+  "assistant_models_from_export": [
+    {
+      "provider": "opencode-go",
+      "model": "muse-spark-1.3-contributor"
+    }
+  ],
+  "provider_log_evidence": [
+    "timestamp=2026-10-06T02:38:23.634Z level=INFO run=8b4893ae message=stream providerID=opencode-go modelID=muse-spark-1.3-contributor session.id=ses_ef0ec7035ffeSZRqOru2Niho7y small=true agent=title mode=primary",
+    "timestamp=2026-10-06T02:38:26.546Z level=INFO run=8b4893ae message=stream providerID=opencode-go modelID=muse-spark-1.3-contributor session.id=ses_ef0ec7035ffeSZRqOru2Niho7y small=false agent=build mode=primary",
+    "timestamp=2026-10-06T02:38:27.196Z level=ERROR run=8b4893ae message=\"stream error\" providerID=opencode-go modelID=muse-spark-1.3-contributor session.id=ses_ef0ec7035ffeSZRqOru2Niho7y small=false agent=build mode=primary error.error=\"AI_APICallError: Go usage limit exceeded\"",
+    "timestamp=2026-10-06T02:38:31.183Z level=ERROR run=8b4893ae message=\"stream error\" providerID=opencode-go modelID=muse-spark-1.3-contributor session.id=ses_ef0ec7035ffeSZRqOru2Niho7y small=true agent=title mode=primary error.error=\"AI_RetryError: Failed after 3 attempts. Last error: Go usage limit exceeded\""
+  ],
+  "review_artifacts": [],
+  "action": "Terminated only owned process group after confirmed quota error. No billing/model/config fallback. No Muse approval claimed."
+}

@@ -1,0 +1,118 @@
+{
+  "relay_fk_equal": true,
+  "sequences": [
+    {
+      "name": "auth.refresh_tokens_id_seq",
+      "equal": true
+    },
+    {
+      "name": "private.abuse_events_id_seq",
+      "equal": true
+    },
+    {
+      "name": "private.community_writer_epoch_seq",
+      "equal": true
+    },
+    {
+      "name": "private.upload_points_id_seq",
+      "equal": true
+    }
+  ],
+  "migration_ledger_count": 41,
+  "tables": 56,
+  "data_differences": [],
+  "schema_equal": true,
+  "publication_equal": true,
+  "product_publication_equal": true,
+  "publication_added": [],
+  "publication_removed": [],
+  "containers": [
+    {
+      "name": "supabase_storage_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_rest_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_realtime_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_auth_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_kong_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "supabase_db_ci0926-int",
+      "same_id": true,
+      "running": true,
+      "health": "healthy",
+      "unrelated_start_unchanged": null
+    },
+    {
+      "name": "mtd-verify-redis-0923",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_safety_builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_multi-arch-builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_multiarch-builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "buildx_buildkit_multi-builder0",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    },
+    {
+      "name": "portainer_agent",
+      "same_id": true,
+      "running": true,
+      "health": "no healthcheck",
+      "unrelated_start_unchanged": true
+    }
+  ],
+  "owned_test_listeners_remaining": [],
+  "verified_at_utc": "2026-10-06T02:57:54.865970+00:00",
+  "verified_after_service_restart": true
+}

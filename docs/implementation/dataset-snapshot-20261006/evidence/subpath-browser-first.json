@@ -1,0 +1,36 @@
+{
+  "mode": "live build under /community-map/, unsigned login gate only",
+  "responses": [
+    {
+      "url": "http://127.0.0.1:56510/community-map/",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:56510/community-map/assets/rolldown-runtime-hePW80VL.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:56510/community-map/assets/index--PTbIBdV.css",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:56510/community-map/assets/index-X9myt4vV.js",
+      "status": 200
+    },
+    {
+      "url": "https://ads-partners.coupang.com/widgets.html",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:56510/community-map/assets/family-mark-CvINNr4v.png",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:56510/community-map/assets/gate-news-quote-BDyhS1QK.jpg",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "passed": false,
+  "failure": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('카카오로 시작하기', { exact: true }) to be visible\u001b[22m\n"
+}

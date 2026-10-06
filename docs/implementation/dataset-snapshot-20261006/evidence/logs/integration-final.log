@@ -1,0 +1,64 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-cohort
+
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ERROR:  DATASET_CHANGED
+CONTEXT:  PL/pgSQL function public.internal_analytics_rollup(jsonb,text,jsonb) line 8 at RAISE
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+NOTICE:  relation "it_realtime_control" already exists, skipping
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function public.internal_analytics_cohort_facts(text,date,date,boolean,text,text,text,text,double precision[]) line 12 at RAISE
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function public.internal_analytics_cohort_facts(text,date,date,boolean,text,text,text,text,double precision[]) line 12 at RAISE
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function private.my_reports_check_query(text,text) line 6 at RAISE
+PL/pgSQL function public.internal_my_reports_numbers(uuid,uuid,text,text,integer,integer,integer,text) line 14 at assignment
+ERROR:  INVALID_QUERY
+CONTEXT:  PL/pgSQL function public.internal_my_reports_summary(uuid,uuid,date,date,boolean,integer,integer,text) line 11 at RAISE
+test_agency_batch_cas_errors_and_trigger_effects (__main__.QueryAudit.test_agency_batch_cas_errors_and_trigger_effects) ... ok
+test_legacy_validation_and_pre_filter_row_budget (__main__.QueryAudit.test_legacy_validation_and_pre_filter_row_budget) ... ok
+test_manifest_exact_generations_and_statement_rollback (__main__.QueryAudit.test_manifest_exact_generations_and_statement_rollback) ... ok
+test_reads_modes_filters_and_transitions (__main__.QueryAudit.test_reads_modes_filters_and_transitions) ... ok
+test_rollup_region_names_and_split_coordinates (__main__.QueryAudit.test_rollup_region_names_and_split_coordinates) ... ok
+test_service_acl_and_actual_rls_roles (__main__.QueryAudit.test_service_acl_and_actual_rls_roles) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 28.243s
+
+OK
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+
+ Test Files  14 passed | 7 skipped (21)
+      Tests  110 passed | 9 skipped (119)
+   Start at  11:44:38
+   Duration  288.89s (tests 94%, import 4%, transform 2%)

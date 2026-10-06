@@ -1,0 +1,73 @@
+
+> safetyreport-community-map@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-cohort
+
+ ❯ tests/product/refreshController.test.ts (16 tests | 1 failed) 180ms
+   ❯ inactive screen and session boundaries (3)
+     × account reset while hidden clears all protected state and an earlier metadata response 11ms
+ ❯ tests/product/rankings.test.ts (10 tests | 1 failed) 105ms
+   ❯ ranking strict contract and authenticated boundary (10)
+     × generated JSON schemas stay synchronized with runtime allowlists 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/product/rankings.test.ts > ranking strict contract and authenticated boundary > generated JSON schemas stay synchronized with runtime allowlists
+AssertionError: expected { …(5) } to deeply equal { …(6) }
+
+- Expected
++ Received
+
+@@ -10,14 +10,10 @@
+          "parking",
+          "other",
+        ],
+        "type": "string",
+      },
+-     "consistency": {
+-       "const": "latest",
+-       "type": "string",
+-     },
+      "date_basis": {
+        "default": "completed_date",
+        "enum": [
+          "completed_date",
+          "report_date",
+
+ ❯ tests/product/rankings.test.ts:218:9
+    216|           ),
+    217|         ),
+    218|       ).toEqual(z.toJSONSchema(schema));
+       |         ^
+    219|     }
+    220|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/product/refreshController.test.ts > inactive screen and session boundaries > account reset while hidden clears all protected state and an earlier metadata response
+AssertionError: expected 'v1' to be 'account-B' // Object.is equality
+
+Expected: "account-B"
+Received: "v1"
+
+ ❯ tests/product/refreshController.test.ts:294:48
+    292|     expect(calls).toBe(0);
+    293|     c.resume(bbox(2)); resolveMeta(meta('account-B')); await h.flush();
+    294|     expect(c.snapshot().meta?.dataset_version).toBe('account-B');
+       |                                                ^
+    295|     expect(c.snapshot().displayed?.scope).toEqual(bbox(2));
+    296|     expect(calls).toBe(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 51 passed | 21 skipped (74)
+      Tests  2 failed | 627 passed | 119 skipped (748)
+   Start at  11:13:47
+   Duration  11.30s (transform 64%, import 24%, tests 12%)
+
+  Transform  transforming modules took 79.48s · 64% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns

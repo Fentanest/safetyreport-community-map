@@ -1,0 +1,109 @@
+{
+  "mode": "local-real-auth-db-edge; mock-map-sdk; external-network-blocked",
+  "started": "2026-10-06T02:25:45.846Z",
+  "responses": [
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:25:46.381Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:25:46.916Z",
+      "version": "1da1f722-1426-480a-a459-e789c2884765",
+      "count": 1954,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:25:49.011Z",
+      "version": "e0382bc5-e8f5-43bb-a7a5-762c84b1afac",
+      "count": 1964,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:25:50.627Z",
+      "version": "0ac04698-20eb-4dff-a221-c29209812904",
+      "count": 1969,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:25:51.155Z",
+      "version": "2dc2b22b-2f5f-4b05-b7e3-cf1566ed3720",
+      "count": 1974,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:25:52.162Z",
+      "version": "82c8f7f2-02bb-4053-a8b3-53aba09a4af9",
+      "count": 1979,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "status": 200,
+      "at": "2026-10-06T02:25:52.826Z"
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "status": 200,
+      "at": "2026-10-06T02:25:53.209Z"
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "screen": "dashboard",
+      "bundles": 5,
+      "errors": []
+    }
+  ],
+  "passed": false,
+  "failure": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '통계 만들기', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button disabled type=\"button\" class=\"primary-button\">통계 만들기</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    56 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not enabled\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n",
+  "finished": "2026-10-06T02:26:22.444Z"
+}

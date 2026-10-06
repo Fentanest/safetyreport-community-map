@@ -1,0 +1,157 @@
+{
+  "mode": "local-real-auth-db-edge; mock-map-sdk; external-network-blocked",
+  "started": "2026-10-06T02:27:10.015Z",
+  "responses": [
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:27:10.552Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:27:11.908Z",
+      "version": "9b86f1a1-49e5-43fd-89cd-0e8ead42567d",
+      "count": 2294,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:27:14.861Z",
+      "version": "82995517-17eb-4a03-895b-b8f54a405450",
+      "count": 2304,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:27:16.587Z",
+      "version": "132867ba-e465-421c-8c7a-df911393f73e",
+      "count": 2309,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "status": 200,
+      "at": "2026-10-06T02:27:17.902Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:27:17.932Z",
+      "version": "6a8321f5-7d57-4a12-b36b-ed54fe710835",
+      "count": 2314,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "status": 200,
+      "at": "2026-10-06T02:27:19.333Z"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "at": "2026-10-06T02:27:19.812Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:27:22.697Z",
+      "version": "23e64c82-a65a-4a3b-b435-efdcfa9ee407",
+      "count": 2334,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:27:24.102Z",
+      "version": "0959b569-8a7f-4b6d-8cf2-fb8a59e7cf98",
+      "count": 2339,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        },
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "screen": "dashboard",
+      "bundles": 3,
+      "errors": []
+    },
+    {
+      "screen": "statistics",
+      "errors": []
+    },
+    {
+      "screen": "rankings",
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "overflow": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "dark",
+      "overflow": 0
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "theme": "light",
+      "overflow": 0
+    },
+    {
+      "monitorAt": "2026-10-06T02:27:25.536Z",
+      "errors": []
+    }
+  ],
+  "passed": true,
+  "finished": "2026-10-06T02:27:30.018Z"
+}

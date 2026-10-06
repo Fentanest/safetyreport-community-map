@@ -1,0 +1,16 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 10000ms exceeded.
+Call log:
+  - waiting for getByText('카카오로 시작하기', { exact: true }) to be visible
+
+    at /home/better0101/projects/worktree/map-cohort/.agent-runtime/dataset-snapshot-20261006/subpath-browser.mjs:10:64 {
+  log: [
+    "  - waiting for getByText('카카오로 시작하기', { exact: true }) to be visible"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.17.1

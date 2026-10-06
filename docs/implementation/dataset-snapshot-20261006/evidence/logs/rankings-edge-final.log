@@ -1,0 +1,11 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-cohort
+
+Stopped services: [supabase_inbucket_ci0926-int supabase_imgproxy_ci0926-int supabase_pg_meta_ci0926-int supabase_studio_ci0926-int supabase_edge_runtime_ci0926-int supabase_analytics_ci0926-int supabase_vector_ci0926-int supabase_pooler_ci0926-int]
+A new version of Supabase CLI is available: v2.119.0 (currently installed v2.118.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  11:51:08
+   Duration  3.92s (tests 95%, import 3%, transform 2%)

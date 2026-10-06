@@ -1,0 +1,8 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-cohort
+
+
+ Test Files  2 passed (2)
+      Tests  25 passed (25)
+   Start at  11:50:56
+   Duration  994ms (transform 45%, tests 31%, import 23%, worker 1%)

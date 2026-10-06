@@ -1,0 +1,211 @@
+{
+  "mode": "local-real-auth-db-edge; mock-map-sdk; external-network-blocked",
+  "started": "2026-10-06T02:43:38.640Z",
+  "responses": [
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:43:39.189Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:43:39.750Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:43:41.782Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:43:44.515Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:43:45.363Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:43:46.030Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "status": 200,
+      "at": "2026-10-06T02:43:46.631Z"
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "status": 200,
+      "at": "2026-10-06T02:43:47.120Z"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "at": "2026-10-06T02:43:48.470Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:43:50.608Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:43:51.924Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        },
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "laws",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:44:10.196Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:44:10.751Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:44:11.397Z",
+      "version": "01b94c7f-313d-4449-b9e8-a9a2ef140e7c",
+      "count": 3909,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "screen": "dashboard",
+      "bundles": 5,
+      "errors": []
+    },
+    {
+      "screen": "statistics",
+      "errors": []
+    },
+    {
+      "screen": "rankings",
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "overflow": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "dark",
+      "overflow": 0
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "theme": "light",
+      "overflow": 0
+    },
+    {
+      "monitorAt": "2026-10-06T02:43:55.931Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:44:10.822Z",
+      "errors": []
+    }
+  ],
+  "passed": true,
+  "finished": "2026-10-06T02:44:18.646Z"
+}

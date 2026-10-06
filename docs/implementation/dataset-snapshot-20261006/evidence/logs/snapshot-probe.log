@@ -1,0 +1,44 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-cohort
+
+ERROR:  operator is not unique: "char" || unknown
+LINE 1: select provolatile || '|' || prosecdef || '|' || coalesce(ar...
+                           ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+ ❯ tests/integration/snapshot-contract.test.ts (2 tests | 2 failed) 3443ms
+   ❯ SQL screen snapshot boundary (2)
+     × keeps read functions stable and inaccessible to browser database roles 86ms
+     × holds state and facts fixed while real ingest commits during a delayed stable call 3355ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/snapshot-contract.test.ts > SQL screen snapshot boundary > keeps read functions stable and inaccessible to browser database roles
+Error: Command failed: docker exec -i supabase_db_ci0926-int psql -X -U supabase_admin -d postgres -qAt -v ON_ERROR_STOP=1
+ERROR:  operator is not unique: "char" || unknown
+LINE 1: select provolatile || '|' || prosecdef || '|' || coalesce(ar...
+                           ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+
+ ❯ sql tests/integration/snapshot-contract.test.ts:4:31
+
+ ❯ tests/integration/snapshot-contract.test.ts:7:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/integration/snapshot-contract.test.ts > SQL screen snapshot boundary > holds state and facts fixed while real ingest commits during a delayed stable call
+AssertionError: expected '604e009f-d32e-4412-8f9d-16f169bed46d' not to be '604e009f-d32e-4412-8f9d-16f169bed46d' // Object.is equality
+ ❯ tests/integration/snapshot-contract.test.ts:32:42
+     30|     expect(lines[0].before_version).toBe(lines[0].snapshot_version);
+     31|     expect(lines[0].before_count).toBe(lines[0].snapshot_count);
+     32|     expect(lines[1].outside_version).not.toBe(lines[0].snapshot_versio…
+       |                                          ^
+     33|     const out = process.env.SNAPSHOT_PROBE_OUT;
+     34|     if (out) writeFileSync(out, JSON.stringify(lines, null, 2) + '\n');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  11:24:16
+   Duration  3.64s (tests 99%, transform 1%)

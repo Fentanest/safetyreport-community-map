@@ -1,0 +1,39 @@
+
+> safetyreport-community-map@0.1.0 build
+> tsc -b && vite build
+
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 833 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                             0.73 kB │ gzip:   0.50 kB
+dist/assets/export.worker-BGwrVHy1.js                      41.02 kB
+dist/assets/gate-news-quote-BDyhS1QK.jpg                   67.77 kB
+dist/assets/family-mark-CvINNr4v.png                       89.43 kB
+dist/assets/excelize.wasm-C-38TlP1.gz                   4,098.07 kB
+dist/assets/index--PTbIBdV.css                             93.56 kB │ gzip:  17.33 kB
+dist/assets/rolldown-runtime-hePW80VL.js                    0.71 kB │ gzip:   0.42 kB
+dist/assets/createSeriesData-BQv2WlJ3.js                    3.12 kB │ gzip:   1.28 kB
+dist/assets/core-BogqMG7l.js                                4.78 kB │ gzip:   2.22 kB
+dist/assets/renderers-DFyJKv0x.js                          33.68 kB │ gzip:  13.05 kB
+dist/assets/runner-Cw1DWKKE.js                             38.65 kB │ gzip:  14.13 kB
+dist/assets/StatisticsPage-BnHtZvXA.js                     54.26 kB │ gzip:  16.53 kB
+dist/assets/customGraphicKeyframeAnimation-DefSHLqZ.js    144.14 kB │ gzip:  49.51 kB
+dist/assets/graphic-jFGxoSIf.js                           149.01 kB │ gzip:  50.00 kB
+dist/assets/dist-DuT5GCvf.js                              214.19 kB │ gzip:  55.01 kB
+dist/assets/parseGeoJson-DCGvU9iI.js                      244.67 kB │ gzip:  84.54 kB
+dist/assets/charts-bFAQGn-M.js                            258.86 kB │ gzip:  84.67 kB
+dist/assets/components-CsmM30as.js                        258.89 kB │ gzip:  82.91 kB
+dist/assets/index-BROhDnQG.js                             652.91 kB │ gzip: 196.26 kB
+
+[INEFFECTIVE_DYNAMIC_IMPORT] src/hooks/usePersonal.ts is dynamically imported by src/data/personal.ts but also statically imported by src/App.tsx, src/data/client.ts, src/data/rankings.ts, src/pages/Dashboard.tsx, src/pages/RankingsPage.tsx, dynamic import will not move module into another chunk.
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[INEFFECTIVE_DYNAMIC_IMPORT] src/data/client.ts is dynamically imported by src/data/personal.ts but also statically imported by src/App.tsx, src/components/EntityTable.tsx, src/components/LawTable.tsx, src/components/ScopeDetailsPanel.tsx, src/components/TopBar.tsx, ..., dynamic import will not move module into another chunk.
+
+✓ built in 1.10s

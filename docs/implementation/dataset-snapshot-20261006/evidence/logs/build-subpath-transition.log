@@ -1,0 +1,35 @@
+vite v8.3.0 building client environment for production...
+transforming...
+✓ 833 modules transformed.
+rendering chunks...
+computing gzip size...
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/index.html                                             0.79 kB │ gzip:   0.51 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/export.worker-CpxQV5ox.js                      41.04 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/gate-news-quote-BDyhS1QK.jpg                   67.77 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/family-mark-CvINNr4v.png                       89.43 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/excelize.wasm-C-38TlP1.gz                   4,098.07 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/index--PTbIBdV.css                             93.56 kB │ gzip:  17.33 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/rolldown-runtime-hePW80VL.js                    0.71 kB │ gzip:   0.42 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/createSeriesData-BQv2WlJ3.js                    3.12 kB │ gzip:   1.28 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/core-BogqMG7l.js                                4.78 kB │ gzip:   2.22 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/renderers-DFyJKv0x.js                          33.68 kB │ gzip:  13.05 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/runner-YWBhBRqH.js                             38.66 kB │ gzip:  14.14 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/StatisticsPage-CFVqa7_Y.js                     54.26 kB │ gzip:  16.53 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/customGraphicKeyframeAnimation-DefSHLqZ.js    144.14 kB │ gzip:  49.51 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/graphic-jFGxoSIf.js                           149.01 kB │ gzip:  50.00 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/dist-DuT5GCvf.js                              214.19 kB │ gzip:  55.01 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/parseGeoJson-DCGvU9iI.js                      244.67 kB │ gzip:  84.54 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/charts-bFAQGn-M.js                            258.86 kB │ gzip:  84.67 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/components-CsmM30as.js                        258.89 kB │ gzip:  82.91 kB
+.agent-runtime/dataset-snapshot-20261006/dist-subpath/assets/index-aHUSXBsC.js                             652.99 kB │ gzip: 196.28 kB
+
+[INEFFECTIVE_DYNAMIC_IMPORT] src/hooks/usePersonal.ts is dynamically imported by src/data/personal.ts but also statically imported by src/App.tsx, src/data/client.ts, src/data/rankings.ts, src/pages/Dashboard.tsx, src/pages/RankingsPage.tsx, dynamic import will not move module into another chunk.
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[INEFFECTIVE_DYNAMIC_IMPORT] src/data/client.ts is dynamically imported by src/data/personal.ts but also statically imported by src/App.tsx, src/components/EntityTable.tsx, src/components/LawTable.tsx, src/components/ScopeDetailsPanel.tsx, src/components/TopBar.tsx, ..., dynamic import will not move module into another chunk.
+
+✓ built in 670ms

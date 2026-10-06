@@ -1,0 +1,154 @@
+{
+  "mode": "local-real-auth-db-edge; mock-map-sdk; external-network-blocked",
+  "started": "2026-10-06T02:42:31.603Z",
+  "responses": [
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:42:32.125Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:42:32.606Z",
+      "version": "4e58631d-9f4c-472c-a767-c16d014501e4",
+      "count": 3689,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:42:34.856Z",
+      "version": "ded8d3ee-9410-40e8-b3cf-f19f40c3db56",
+      "count": 3694,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:42:37.558Z",
+      "version": "c2afb443-453a-4a5e-bb0a-a27e58ed8085",
+      "count": 3704,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:42:38.266Z",
+      "version": "cff6d27d-18c3-483d-b1b3-f2ca20b15b5e",
+      "count": 3709,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:42:39.144Z",
+      "version": "0b2d0dd7-4706-4815-839e-317e407ce739",
+      "count": 3714,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "status": 200,
+      "at": "2026-10-06T02:42:39.710Z"
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "status": 200,
+      "at": "2026-10-06T02:42:40.209Z"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "at": "2026-10-06T02:42:41.551Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:42:43.608Z",
+      "version": "18afc244-7465-4e6f-b3b3-fdd89998a9c6",
+      "count": 3729,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:42:44.156Z",
+      "version": "6c4a91ce-b254-4fa6-8415-db20d7a94e9d",
+      "count": 3734,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        },
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "screen": "dashboard",
+      "bundles": 5,
+      "errors": []
+    },
+    {
+      "screen": "statistics",
+      "errors": []
+    },
+    {
+      "screen": "rankings",
+      "errors": []
+    }
+  ],
+  "passed": false,
+  "failure": "law table bundle received",
+  "finished": "2026-10-06T02:42:45.878Z"
+}

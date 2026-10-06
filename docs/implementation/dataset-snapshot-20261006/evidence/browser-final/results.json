@@ -1,0 +1,655 @@
+{
+  "mode": "local-real-auth-db-edge; mock-map-sdk; external-network-blocked",
+  "started": "2026-10-06T02:38:30.230Z",
+  "responses": [
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:38:30.762Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:31.228Z",
+      "version": "4be939ed-abcb-41b4-873c-fb4bf19a950a",
+      "count": 2724,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:33.377Z",
+      "version": "d35dead0-5a85-41fe-bdce-07d2b14ac352",
+      "count": 2729,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:34.962Z",
+      "version": "6b7e6441-5534-450d-bda7-a6132f0c008c",
+      "count": 2739,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:35.411Z",
+      "version": "6b7e6441-5534-450d-bda7-a6132f0c008c",
+      "count": 2739,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:36.617Z",
+      "version": "03004715-a610-4cf4-b5b4-9a825e15404c",
+      "count": 2744,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/catalog",
+      "status": 200,
+      "at": "2026-10-06T02:38:37.229Z"
+    },
+    {
+      "path": "/functions/v1/public-analytics/statistics/query",
+      "status": 200,
+      "at": "2026-10-06T02:38:37.650Z"
+    },
+    {
+      "path": "/functions/v1/user-rankings",
+      "status": 200,
+      "at": "2026-10-06T02:38:39.036Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:41.086Z",
+      "version": "e8fcfe6d-3054-45df-b45a-bfcd529522d5",
+      "count": 2759,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:41.583Z",
+      "version": "b470afec-a5f3-49f6-9f09-cf16d652e795",
+      "count": 2764,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "entities",
+          "status": 200
+        },
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:38:55.045Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:55.453Z",
+      "version": "0cecfac8-a7b7-463d-882a-7d54043cfa94",
+      "count": 2819,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:38:55.971Z",
+      "version": "0cecfac8-a7b7-463d-882a-7d54043cfa94",
+      "count": 2819,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:39:05.740Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:06.125Z",
+      "version": "007cdec0-9ebc-4b1c-8812-d2b2a12fa824",
+      "count": 2859,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:06.645Z",
+      "version": "ac2b00a4-358b-4fad-b05c-089f68f95d90",
+      "count": 2864,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:39:16.457Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:16.881Z",
+      "version": "b5503fed-7e1e-48f3-a48a-ab7f19b21df4",
+      "count": 2904,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:17.383Z",
+      "version": "b5503fed-7e1e-48f3-a48a-ab7f19b21df4",
+      "count": 2904,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:39:27.166Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:27.557Z",
+      "version": "90d8a2bf-0623-4014-9a86-6ee991ade6b5",
+      "count": 2949,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:28.049Z",
+      "version": "90d8a2bf-0623-4014-9a86-6ee991ade6b5",
+      "count": 2949,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:39:37.831Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:38.225Z",
+      "version": "f15ca4ee-100d-415b-8121-197384359218",
+      "count": 2989,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:38.731Z",
+      "version": "630ace9b-0382-4af8-ada8-cf8c6b81653f",
+      "count": 2994,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:39:48.509Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:48.989Z",
+      "version": "cad3033b-81c6-4cb5-a80a-9d6b1144097a",
+      "count": 3034,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:49.510Z",
+      "version": "cad3033b-81c6-4cb5-a80a-9d6b1144097a",
+      "count": 3034,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:39:59.333Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:39:59.789Z",
+      "version": "d15bb31f-8c4f-4f3b-b7b9-a282a3c02ee3",
+      "count": 3074,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:00.323Z",
+      "version": "24332a15-c5ad-4613-be28-95ee080f1a4b",
+      "count": 3079,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:40:10.110Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:10.514Z",
+      "version": "b73e9ba3-1646-4f68-b896-8c8c6cbe588c",
+      "count": 3119,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:11.058Z",
+      "version": "b73e9ba3-1646-4f68-b896-8c8c6cbe588c",
+      "count": 3119,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:40:20.805Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:21.230Z",
+      "version": "3273e847-d091-487c-856e-873202a7b645",
+      "count": 3164,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:21.772Z",
+      "version": "3273e847-d091-487c-856e-873202a7b645",
+      "count": 3164,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:40:31.548Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:31.975Z",
+      "version": "7150f048-b368-44fa-831d-ad86dd6a5bd4",
+      "count": 3204,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:32.513Z",
+      "version": "7150f048-b368-44fa-831d-ad86dd6a5bd4",
+      "count": 3204,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:40:43.062Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:43.527Z",
+      "version": "7c98d007-4ce0-4963-8a8b-d76c5c06df22",
+      "count": 3249,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:44.080Z",
+      "version": "6961d975-77c1-40df-893d-c46954ff2ca2",
+      "count": 3254,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:40:53.806Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:54.246Z",
+      "version": "9f5a80f0-56ce-46e7-8906-0261b6d2e08e",
+      "count": 3294,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:40:54.795Z",
+      "version": "9f5a80f0-56ce-46e7-8906-0261b6d2e08e",
+      "count": 3294,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:41:04.529Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:41:04.948Z",
+      "version": "768d3865-2249-439e-93d2-b6facd3f2835",
+      "count": 3334,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:41:05.535Z",
+      "version": "363ad4b8-af2c-44db-9088-4fbc6c11ef5a",
+      "count": 3339,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:41:15.269Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:41:15.715Z",
+      "version": "6cb81ff6-3a66-4c3c-ba25-24cb3484f66f",
+      "count": 3379,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:41:16.308Z",
+      "version": "6cb81ff6-3a66-4c3c-ba25-24cb3484f66f",
+      "count": 3379,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:41:26.002Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:41:26.551Z",
+      "version": "3eb8a234-5e0e-4556-bce5-1af4e55db144",
+      "count": 3424,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:41:27.103Z",
+      "version": "3eb8a234-5e0e-4556-bce5-1af4e55db144",
+      "count": 3424,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "screen": "dashboard",
+      "bundles": 5,
+      "errors": []
+    },
+    {
+      "screen": "statistics",
+      "errors": []
+    },
+    {
+      "screen": "rankings",
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "overflow": 0
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "theme": "dark",
+      "overflow": 0
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "theme": "light",
+      "overflow": 0
+    },
+    {
+      "monitorAt": "2026-10-06T02:38:44.802Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:38:55.531Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:39:06.189Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:39:16.956Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:39:27.623Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:39:38.302Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:39:49.059Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:39:59.857Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:40:10.603Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:40:21.313Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:40:32.065Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:40:43.596Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:40:54.319Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:41:05.029Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:41:15.790Z",
+      "errors": []
+    },
+    {
+      "monitorAt": "2026-10-06T02:41:26.616Z",
+      "errors": []
+    }
+  ],
+  "passed": true,
+  "finished": "2026-10-06T02:41:30.232Z"
+}

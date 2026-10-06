@@ -1,0 +1,99 @@
+{
+  "mode": "local-real-auth-db-edge; mock-map-sdk; external-network-blocked",
+  "started": "2026-10-06T02:23:25.635Z",
+  "responses": [
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 200,
+      "at": "2026-10-06T02:23:26.376Z"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:23:26.634Z",
+      "version": "10987f2f-353c-47e3-ae0f-cc9597fb9221",
+      "count": 1849,
+      "mixed": false,
+      "panels": []
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:23:28.729Z",
+      "version": "babfb2b3-df73-4408-a9cd-d3da81bbacaa",
+      "count": 1854,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:23:30.333Z",
+      "version": "6c71f735-4f3e-4d0d-b61d-2e5704bba4d5",
+      "count": 1864,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:23:30.680Z",
+      "version": "6c71f735-4f3e-4d0d-b61d-2e5704bba4d5",
+      "count": 1864,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 200,
+      "at": "2026-10-06T02:23:31.916Z",
+      "version": "453061d0-a4b4-4ca5-8a51-ccd7705a5e3a",
+      "count": 1869,
+      "mixed": false,
+      "panels": [
+        {
+          "id": "compare",
+          "status": 200
+        },
+        {
+          "id": "entities",
+          "status": 200
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "checks": [
+    {
+      "screen": "dashboard",
+      "bundles": 5,
+      "errors": []
+    }
+  ],
+  "passed": false,
+  "failure": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('tab', { name: '맞춤 통계', exact: true })\u001b[22m\n",
+  "finished": "2026-10-06T02:24:02.281Z"
+}

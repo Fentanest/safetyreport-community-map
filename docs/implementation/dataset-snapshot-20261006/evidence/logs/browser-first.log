@@ -1,0 +1,16 @@
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for getByRole('tab', { name: '맞춤 통계', exact: true })
+
+    at /home/better0101/projects/worktree/map-cohort/scripts/browser/verify_dataset_snapshot.mjs:51:56 {
+  log: [
+    "  - waiting for getByRole('tab', { name: '맞춤 통계', exact: true })"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.17.1

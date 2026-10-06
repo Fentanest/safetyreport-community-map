@@ -1,0 +1,1075 @@
+{
+  "phase": "after",
+  "started": "2026-10-06T02:20:34.577Z",
+  "elapsedMs": 182587,
+  "uploads": [
+    {
+      "at": 124,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 1343,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 2598,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 3937,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 5085,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 6338,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 7609,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 8839,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 10178,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 11335,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 12585,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 13825,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 15088,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 16330,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 17589,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 18841,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 20089,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 21350,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 22580,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 23847,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 25087,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 26449,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 27586,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 28848,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 30093,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 31339,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 32631,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 33845,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 35093,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 36348,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 37601,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 38885,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 40098,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 41352,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 42598,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 43855,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 45159,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 46353,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 47603,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 48860,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 50101,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 51400,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 52600,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 53865,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 55106,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 56354,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 57664,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 58881,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 60115,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 61352,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 62604,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 63905,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 65106,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 66366,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 67609,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 68868,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 70111,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 71361,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 72613,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 73864,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 75160,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 76362,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 77629,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 78865,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 80118,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 81365,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 82630,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 83872,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 85111,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 86388,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 87615,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 88877,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 90124,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 91419,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 92630,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 93866,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 95118,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 96370,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 97632,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 98873,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 100133,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 101376,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 102694,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 103872,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 105124,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 106374,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 107631,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 108880,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 110131,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 111388,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 112634,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 113944,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 115126,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 116439,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 117623,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 118888,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 120132,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 121391,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 122683,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 123880,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 125194,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 126383,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 127637,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 128947,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 130147,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 131450,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 132634,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 133892,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 135143,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 136393,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 137643,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 138907,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 140146,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 141396,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 142695,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 143893,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 145152,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 146396,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 147651,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 148949,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 150153,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 151402,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 152650,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 153904,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 155197,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 156407,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 157651,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 158904,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 160150,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 161510,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 162653,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 163905,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 165157,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 166407,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 167705,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 168911,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 170160,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 171416,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 172664,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 173922,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 175163,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 176411,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 177666,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 178972,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 180168,
+      "status": 200,
+      "published": 5
+    },
+    {
+      "at": 181420,
+      "status": 200,
+      "published": 5
+    }
+  ],
+  "samples": [
+    {
+      "at": 1,
+      "dashboard": 200,
+      "version": "004170cb-acf4-4737-b112-56897af8dce8",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1169,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 6501,
+      "dashboard": 200,
+      "version": "ec973e4c-499f-440c-a81b-c330b3429471",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1194,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 13002,
+      "dashboard": 200,
+      "version": "129802bd-d1dc-4269-abec-e32059bda78e",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1219,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 19501,
+      "dashboard": 200,
+      "version": "48624106-97eb-426d-a4e7-8115dca2cc22",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1244,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 26001,
+      "dashboard": 200,
+      "version": "8b41de83-daa1-424c-ba62-8e39a5150f11",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1274,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 32502,
+      "dashboard": 200,
+      "version": "e8143737-eccf-4ba7-9d63-a7b9f93128d6",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1299,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 39003,
+      "dashboard": 200,
+      "version": "ee59ff0f-3566-4487-8704-3ace1cb3dd07",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1324,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 45504,
+      "dashboard": 200,
+      "version": "1ba8479d-0728-47b3-acbf-01d306958dbb",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1349,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 52003,
+      "dashboard": 200,
+      "version": "8e2adc5a-3e0b-4d32-9588-7ee4290b055d",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1374,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 58503,
+      "dashboard": 200,
+      "version": "327733c9-5b45-4f38-b314-e5bba50c9199",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1404,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 65005,
+      "dashboard": 200,
+      "version": "a23bf93f-8cc6-4781-93b4-749ae58541e3",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1429,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 71504,
+      "dashboard": 200,
+      "version": "50ad5f4d-444d-49be-862f-b1a6ce9661c0",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1454,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 78004,
+      "dashboard": 200,
+      "version": "1e144ee1-ae9a-455c-a2c1-c6c319b2e58d",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1479,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 84504,
+      "dashboard": 200,
+      "version": "06b49af2-c8bb-443d-aadb-4a21e2ede1d7",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1504,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 91005,
+      "dashboard": 200,
+      "version": "c138e7af-7548-474d-aa41-f691135ba5be",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1534,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 97505,
+      "dashboard": 200,
+      "version": "6e808de5-d367-430d-990d-2384c18cffc1",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1559,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 104004,
+      "dashboard": 200,
+      "version": "ed7cf5a5-1981-4750-8dc1-994b60ba50fa",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1584,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 110505,
+      "dashboard": 200,
+      "version": "7238c94a-c86d-4ec3-9d9f-4d639650a2a9",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1609,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 117004,
+      "dashboard": 200,
+      "version": "1143db0b-7f15-47ae-b92e-312f45eff746",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1634,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 123505,
+      "dashboard": 200,
+      "version": "ffc3dd94-eb13-4bc5-9d5b-e720e3adca9a",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1659,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 130006,
+      "dashboard": 200,
+      "version": "5c69de51-5265-4ed2-976b-5c65151c9ab1",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1689,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 136506,
+      "dashboard": 200,
+      "version": "62ce1174-395b-4391-bcb9-336bd23eb384",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1714,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 143010,
+      "dashboard": 200,
+      "version": "64db3260-1c71-4a95-844c-459c58049a70",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1739,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 149509,
+      "dashboard": 200,
+      "version": "7791433a-0309-4763-9ac1-97f18d99e0b5",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1764,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 156010,
+      "dashboard": 200,
+      "version": "97e0958d-2e72-44e1-8f0d-7684af5b48e0",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1789,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 162510,
+      "dashboard": 200,
+      "version": "ee4c7364-7d74-4cd6-849a-6085907531de",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1819,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 169011,
+      "dashboard": 200,
+      "version": "5b66433c-4d5e-4c5a-b149-782fc4ab9a94",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1844,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    },
+    {
+      "at": 175513,
+      "dashboard": 200,
+      "version": "453061d0-a4b4-4ca5-8a51-ccd7705a5e3a",
+      "mixed": false,
+      "countMismatch": false,
+      "publicCount": 1869,
+      "statistics": 200,
+      "personalStatistics": 200,
+      "ranking": 200,
+      "rankingPage": 200
+    }
+  ]
+}
