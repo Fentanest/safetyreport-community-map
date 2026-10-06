@@ -499,7 +499,7 @@ export default function Dashboard() {
     loadPlace(shownScope, selection, version, ac.signal, placeLimit.current)
       .then((detail) => { if (!ac.signal.aborted) setPlaceDetail({ status: 'ready', detail }); })
       .catch((e: unknown) => {
-        if (ac.signal.aborted) return;
+        if (ac.signal.aborted || e instanceof Error && e.name === 'AbortError') return;
         setPlaceDetail(e instanceof PublicApiError && e.status === 404
           ? { status: 'error', message: '이 주소는 지금 조건의 결과에 없습니다.' }
           : { status: 'error', message: '이 주소의 기관·담당자를 불러오지 못했습니다.' });
@@ -523,7 +523,7 @@ export default function Dashboard() {
         setPlaceDetail({ status: 'ready', detail });
         setPlaceMore(null);
       })
-      .catch(() => { if (!ac.signal.aborted) setPlaceMore({ key, state: 'error' }); });
+      .catch((e: unknown) => { if (!ac.signal.aborted && !(e instanceof Error && e.name === 'AbortError')) setPlaceMore({ key, state: 'error' }); });
   };
 
   const resolvedTheme: 'dark' | 'light' = resolveTheme(theme);

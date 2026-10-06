@@ -56,7 +56,7 @@ export default function LawTable(p: Props) {
     setRequest({ key: reqKey, state: 'loading' });
     loadLaws(p.scope, { q: query.q, sort: query.sort, page: query.page, pageSize: expanded ? PAGE_SIZE : SUMMARY_ROWS }, p.version, ac.signal)
       .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows, version: r.datasetVersion }); setRequest({ key: reqKey, state: 'idle' }); } })
-      .catch(() => { if (!ac.signal.aborted) setRequest({ key: reqKey, state: 'error' }); });
+      .catch((e: unknown) => { if (!ac.signal.aborted && !(e instanceof Error && e.name === 'AbortError')) setRequest({ key: reqKey, state: 'error' }); });
     return () => ac.abort();
   }, [reqKey, server]); // eslint-disable-line react-hooks/exhaustive-deps
   useReportActivity('laws', state === 'loading' ? { resource: 'entities', phase: 'fetching', label: '위반법규 목록을 불러오는 중' } : null);

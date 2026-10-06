@@ -72,7 +72,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
       if (ac.signal.aborted) return;
       setServer({ key: cohortKey, ...r });
       setState('idle');
-    }).catch(() => { if (!ac.signal.aborted) setState('error'); });
+    }).catch((e: unknown) => { if (!ac.signal.aborted && !(e instanceof Error && e.name === 'AbortError')) setState('error'); });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reqKey, needServer]);

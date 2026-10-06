@@ -72,6 +72,37 @@ describe('one screen from one source snapshot', () => {
 });
 
 describe('complete-screen browser coordinator', () => {
+  it('restores the displayed frame when a scope transition is cancelled and bundles its pending table intent', async () => {
+    let calls = 0; let release!: () => void;
+    const coordinator = new ScreenCoordinator(async (s, panels) => {
+      if (++calls === 2) await new Promise<void>(resolve => { release = resolve; });
+      const data = demoEngineDashboard(s); data.meta.dataset_version = `version-${calls}`;
+      return { data, panels: panels.map(p => ({ id: p.id, status: 200, body: { ...p.params, dataset_version: data.meta.dataset_version } })) };
+    });
+    await coordinator.open(scope);
+    const ac = new AbortController();
+    const moving = coordinator.open({ ...scope, category: 'parking' }, ac.signal);
+    const rejected = expect(moving).rejects.toMatchObject({ name: 'AbortError' });
+    expect(coordinator.active()).toBe(true);
+    const table = coordinator.panel(scope, { id: 'laws', path: 'laws', params: { q: 'after-return' } });
+    ac.abort(); release(); await rejected;
+    expect((await table).body).toEqual({ q: 'after-return', dataset_version: 'version-3' });
+    expect(coordinator.matches(scope)).toBe(true); expect(calls).toBe(3);
+  });
+  it('supersedes an old displayed-scope panel when the new scope succeeds', async () => {
+    let release!: () => void, calls = 0;
+    const coordinator = new ScreenCoordinator(async s => {
+      if (++calls === 2) await new Promise<void>(resolve => { release = resolve; });
+      return { data: demoEngineDashboard(s), panels: [] };
+    });
+    await coordinator.open(scope);
+    const next = { ...scope, category: 'parking' as const };
+    const moving = coordinator.open(next);
+    const old = coordinator.panel(scope, panels[0]);
+    const rejected = expect(old).rejects.toMatchObject({ name: 'AbortError' });
+    release(); await moving; await rejected;
+    expect(coordinator.matches(next)).toBe(true); expect(calls).toBe(2);
+  });
   it('coalesces concurrent panels, installs one complete replacement and reuses its version without a retry loop', async () => {
     let calls = 0; const published: string[] = [];
     const coordinator = new ScreenCoordinator(async (scope, panels) => {

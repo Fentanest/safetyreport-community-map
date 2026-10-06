@@ -82,7 +82,7 @@ export function usePersonalCompare(scope: Scope, version: string | null, enabled
         setLoading(false);
       })
       .catch((e: unknown) => {
-        if (ac.signal.aborted) return;
+        if (ac.signal.aborted || e instanceof Error && e.name === 'AbortError') return;
         // Never show numbers from another scope/version next to the current public view.
         setData(null);
         setError(e instanceof PersonalApiError

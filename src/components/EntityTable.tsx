@@ -150,7 +150,7 @@ export default function EntityTable(p: Props) {
       p.version, ac.signal)
       .then((r) => { if (!ac.signal.aborted) { setList({ key: reqKey, items: r.items, total: r.totalRows, version: r.datasetVersion }); setStatus({ key: reqKey, phase: 'ready' }); } })
       .catch((e: unknown) => {
-        if (ac.signal.aborted) return;
+        if (ac.signal.aborted || e instanceof Error && e.name === 'AbortError') return;
         // a local table error — the map and charts stay as they are, and it is never shown as "no results"
         setStatus({ key: reqKey, phase: 'error', error: e instanceof Error ? e.message : '목록을 불러오지 못했습니다.' });
       });

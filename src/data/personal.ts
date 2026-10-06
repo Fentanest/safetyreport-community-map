@@ -175,7 +175,7 @@ export async function loadCompare(scope: Scope, version: string, auth: MapAuth, 
     return acceptCompare(await demoCompare(scope, version, auth), scope, version);
   }
   const { screenCoordinator, readScreenPanel } = await import('./client');
-  if (screenCoordinator.matches(scope)) {
+  if (screenCoordinator.active()) {
     return personalCompareSchema.parse(await readScreenPanel(scope, { id: 'compare', path: 'compare', params: {} }, signal)) as PersonalCompare;
   }
   const snap = auth.snapshot();

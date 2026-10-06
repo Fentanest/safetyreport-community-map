@@ -178,7 +178,7 @@ export async function loadEntities(scope: Scope, query: EntitiesQuery, version?:
     const { demoEntities } = await import('./demoEngine');
     return demoEntities(scope, query);
   }
-  const bundled = screenCoordinator.matches(scope);
+  const bundled = screenCoordinator.active();
   const parsed = entitiesResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: slot, path: 'entities', params: extra }, signal) : await read('entities', scopeParams(scope, version, extra), signal)));
   if (!bundled && version !== undefined && parsed.dataset_version !== version) {
     throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
@@ -201,7 +201,7 @@ export async function loadLaws(scope: Scope, query: LawsQuery, version?: string,
     const { demoLaws } = await import('./demoEngine');
     return demoLaws(scope, query);
   }
-  const bundled = screenCoordinator.matches(scope);
+  const bundled = screenCoordinator.active();
   const parsed = lawsResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: 'laws', path: 'laws', params: extra }, signal) : await read('laws', scopeParams(scope, version, extra), signal)));
   if ((!bundled && version !== undefined && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope) ||
     !sameSort(parsed.sort as SortSpec, query.sort ?? DEFAULT_SORT)) {
@@ -311,7 +311,7 @@ export async function loadPlace(scope: Scope, key: string, version: string, sign
     return detail;
   }
   const extra = entityLimit !== 100 ? { entity_limit: String(Math.min(1000, Math.max(1, entityLimit))) } : undefined;
-  const bundled = screenCoordinator.matches(scope);
+  const bundled = screenCoordinator.active();
   const parsed = placeDetailResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: 'detail', path: `places/${key}`, params: extra ?? {} }, signal) : await read(`places/${encodeURIComponent(key)}`, scopeParams(scope, version, extra), signal)));
   if ((!bundled && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope) || parsed.place.key !== key) {
     throw new PublicApiError('그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.', 409);
@@ -328,7 +328,7 @@ export async function loadPlacesInView(scope: Scope, view: [number, number, numb
     const { demoPlacesInView } = await import('./demoEngine');
     return demoPlacesInView(scope, view);
   }
-  const bundled = screenCoordinator.matches(scope);
+  const bundled = screenCoordinator.active();
   const extra = { view_bbox: view.join(',') };
   const parsed = placesResponseSchema.parse(requirePolicy(bundled ? await readScreenPanel(scope, { id: 'viewport', path: 'places', params: extra }, signal) : await read('places', scopeParams(scope, version, extra), signal)));
   if ((!bundled && parsed.dataset_version !== version) || !sameScope(parsed.scope, scope)) {
