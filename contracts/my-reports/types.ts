@@ -40,14 +40,15 @@ export const LIMITS = {
 export type Kind = 'vehicle' | 'address';
 export type Status = 'accepted' | 'partial' | 'rejected' | 'completed_unknown';
 export type Disposition = 'fine' | 'warning' | 'penalty' | 'none' | 'unknown';
-export type Category = 'traffic' | 'parking' | 'other';
+// 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json.
+export type Category = 'traffic' | 'parking' | 'safety' | 'living' | 'other';
 export type AmountKind = 'fine' | 'penalty' | 'combined' | 'unknown';
 export type ContributorState = 'active' | 'none' | 'revoked';
 export type SearchPart = 'reports' | 'managers';
 
 export const STATUSES: readonly Status[] = ['accepted', 'partial', 'rejected', 'completed_unknown'];
 export const DISPOSITIONS: readonly Disposition[] = ['fine', 'warning', 'penalty', 'none', 'unknown'];
-export const CATEGORIES: readonly Category[] = ['traffic', 'parking', 'other'];
+export const CATEGORIES: readonly Category[] = ['traffic', 'parking', 'safety', 'living', 'other'];
 export const AMOUNT_KINDS: readonly AmountKind[] = ['fine', 'penalty', 'combined', 'unknown'];
 
 export const STATUS_LABEL: Record<Status, string> = {
@@ -127,7 +128,7 @@ export interface ReportRow {
 
 export interface StatusCounts { accepted: number; partial: number; rejected: number; completed_unknown: number }
 export interface DispositionCounts { fine: number; warning: number; penalty: number; none: number; unknown: number }
-export interface CategoryCounts { traffic: number; parking: number; other: number }
+export interface CategoryCounts { traffic: number; parking: number; safety: number; living: number; other: number }
 
 export interface FineAmount {
   /** reports with disposition 'fine' */

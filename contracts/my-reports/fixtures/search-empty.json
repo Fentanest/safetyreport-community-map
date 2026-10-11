@@ -34,6 +34,8 @@
     "category": {
       "traffic": 0,
       "parking": 0,
+      "safety": 0,
+      "living": 0,
       "other": 0
     },
     "completed_date_missing": 0,

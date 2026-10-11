@@ -31,6 +31,8 @@
       "enum": [
         "traffic",
         "parking",
+        "safety",
+        "living",
         "other"
       ]
     },
@@ -117,6 +119,8 @@
       "required": [
         "traffic",
         "parking",
+        "safety",
+        "living",
         "other"
       ],
       "properties": {
@@ -125,6 +129,14 @@
           "minimum": 0
         },
         "parking": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "safety": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "living": {
           "type": "integer",
           "minimum": 0
         },

@@ -154,7 +154,7 @@ TypeScript 정의는 `types.ts`, JSON 예시는 `fixtures/`에 있다.
 | `official_url` | (서버 생성) | §4 |
 | `vehicle_number` | `vehicle_raw` | 본인 업로드 원본 |
 | `report_date` / `completed_date` | 같은 이름 | null 가능 |
-| `category` | `category` | traffic / parking / other |
+| `category` | `category` | traffic / parking / safety / living / other (observation-v5, 2026-10-11) |
 | `status`, `status_label` | `status` | 4종, 라벨은 `types.ts STATUS_LABEL` |
 | `disposition` | `disposition` | fine / warning / penalty / none / unknown |
 | `amount_kind` | `amount_kind` | fine / penalty / combined / unknown |
@@ -193,7 +193,7 @@ contributor UUID·dataset_key·source_report_key·grant/receipt/connection ID·p
 | `fine_amount.confirmed_sum_won` | 위 신고 금액의 합. `confirmed_count = 0`이면 null(확인된 0원 합은 0) |
 | `fine_amount.unconfirmed_count` | 과태료지만 금액이 없는 신고(금액 종류 무관) |
 | `fine_amount.other_count` | 과태료이고 금액은 있지만 확정 과태료가 아닌 신고(금액 종류가 범칙금·혼합·미상이거나 상태가 수용/일부 수용이 아님). `fine_count = confirmed + unconfirmed + other` |
-| `category.*` | 분류별 수(합 = `total`). 교통위반 전용 요약은 제공하지 않는다 |
+| `category.*` | 분류별 수(5분류 합 = `total`). 교통위반 전용 요약은 제공하지 않는다 |
 | `completed_date_missing` | 답변일 없는 신고 수 |
 | `report_number_missing` | 신고번호 없는 신고 수(번호 복사에서 빠지는 수. `numbers`의 `without_number`와 같은 범위면 같은 값) |
 
