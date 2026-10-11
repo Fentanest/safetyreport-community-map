@@ -80,6 +80,14 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
   `community-ingest` 는 `service_unavailable` 로 답한다. 앱의 전송 대기열(outbox)·개인 DB 는 지우지 않으므로 재개하면 그대로 다시 보낸다.
 - 되돌리기: `supabase secrets unset COMMUNITY_INGEST_ENABLED --project-ref nxdcxccixoswvqgjeprh`(또는 `true`). 공개 읽기(지도)는 영향 없음.
 
+## 2026-10-11 클라우드 → 셀프호스트 데이터 이전(운영 적용함)
+- 사용자 승인으로 셀프호스트 Supabase 의 기존(이전 클라우드 사본·테스트) 데이터를 비우고 클라우드 데이터로 바꿨다. 두 쪽 migration 이력이 같아(54개) 데이터만 옮겼다.
+- 한 트랜잭션: 트리거 끔(replica) → auth·public·private·storage 표 비움(migration 기록 표 제외) → `supabase db dump --linked --data-only` 넣기 → 68개 표 건수를 같은 덤프의 격리 리허설 값과 대조 → 커밋.
+  결과 auth.users 69, community_report_facts 89,237, community_ingest_events 162,081.
+- 이어서 `202610110100_five_categories.sql` 을 셀프호스트에 적용·기록했다(클라우드에는 적용하지 않음 — 업로드 중단 상태).
+- 백업·되돌리기는 이 레포 `.agent-runtime/supabase-trial-20261010/server-changes/20261011-cloud-to-selfhost.md`(추적 안 함)와 로컬 `~/backups/supabase/`.
+- 덤프 뒤 클라우드에 새로 가입·로그인한 사용자는 앱이 셀프호스트로 바뀐 뒤 다시 로그인하면 된다.
+
 ## 내 신고 비교(my-analytics) 운영 적용 — 별도 승인 필요
 1. 운영 DB에 `supabase/migrations/202609270100_my_analytics.sql` 적용(읽기 전용 STABLE RPC 1개, service_role만 실행). 수집·동의·writer 스키마 변경 없음.
 2. `supabase functions deploy my-analytics`(verify_jwt=true), secret `MY_ANALYTICS_ALLOWED_ORIGINS`.
