@@ -3,6 +3,7 @@ import type { Scope } from '../domain/public';
 import type { StatCatalog, StatisticsResult, StatisticsSpec } from '../domain/statistics';
 import { loadCatalog, loadStatistics } from '../data/statistics';
 import { PublicApiError } from '../data/client';
+import { sharedRetryCooldown } from '../data/retryCooldown';
 import { useReportActivity } from '../data/queryActivity';
 import {
   CHART_LABEL, DEFAULT_CHART, PRESETS, baseSpec, chartAvailability, filterOf, normalizeRecipe, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
@@ -122,6 +123,14 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const runRef = useRef<StatsRecipe | null>(null);
   const onSharedDoneRef = useRef(onSharedDone);
   onSharedDoneRef.current = onSharedDone;
+  // ③: a shared breaker (①) may already be cooling down from a failure elsewhere (dashboard, personal…). While
+  // it is, cooldownUntil drives a visible "잠시 기다리는 중" wait instead of hitting the network again right away.
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+  const cooldownTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearCooldownWait = useCallback(() => {
+    if (cooldownTimer.current !== null) { clearTimeout(cooldownTimer.current); cooldownTimer.current = null; }
+    setCooldownUntil(null);
+  }, []);
   const execute = useCallback((input: StatsRecipe) => {
     const recipe = normalizeRecipe(input);
     if (!activeRef.current || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) {
@@ -131,8 +140,25 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       abort.current = null;
       gen.current += 1;
       runRef.current = recipe;
+      clearCooldownWait();
       return;
     }
+    // ③: wait for the shared breaker instead of trying (and immediately failing) again. The interrupted/queued
+    // recipe stays in runRef so a tab return never skips ahead of an outage still in progress.
+    const cooldownMs = sharedRetryCooldown.remainingMs();
+    if (cooldownMs > 0) {
+      runRef.current = recipe;
+      if (cooldownTimer.current !== null) clearTimeout(cooldownTimer.current);
+      setCooldownUntil(Date.now() + cooldownMs);
+      setRun({ status: 'loading', recipe });
+      cooldownTimer.current = setTimeout(() => {
+        cooldownTimer.current = null;
+        setCooldownUntil(null);
+        if (runRef.current === recipe) execute(recipe);
+      }, cooldownMs + 50);
+      return;
+    }
+    clearCooldownWait();
     abort.current?.abort(); // client-side cancel of the older run; its late answer is ignored by the generation
     const ac = new AbortController();
     abort.current = ac;
@@ -156,33 +182,35 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         if (e instanceof PublicApiError && e.status === 409) changedRef.current?.();
         setRun({ status: 'error', recipe, code, message: e instanceof Error ? e.message : '통계를 만들지 못했습니다.' });
       });
-  }, [version]);
+  }, [version, clearCooldownWait]);
   // unmount cancels the client wait; a remount (React StrictMode, or a page that comes back) resumes the same run.
   // Returning from hidden/inactive also resumes the latest suspended intent once.
   useEffect(() => {
-    if (runRef.current && !abort.current) execute(runRef.current);
-    return () => { abort.current?.abort(); abort.current = null; };
-  }, [execute]);
+    if (runRef.current && !abort.current && !cooldownTimer.current) execute(runRef.current);
+    return () => { abort.current?.abort(); abort.current = null; clearCooldownWait(); };
+  }, [execute, clearCooldownWait]);
   useEffect(() => {
     if (!active) {
       abort.current?.abort(); abort.current = null; gen.current += 1;
+      clearCooldownWait();
       return;
     }
-    if (typeof document !== 'undefined' && !document.hidden && runRef.current && !abort.current) execute(runRef.current);
-  }, [active, execute]);
+    if (typeof document !== 'undefined' && !document.hidden && runRef.current && !abort.current && !cooldownTimer.current) execute(runRef.current);
+  }, [active, execute, clearCooldownWait]);
   useEffect(() => {
     const onVis = () => {
       if (document.hidden) {
         abort.current?.abort();
         abort.current = null;
         gen.current += 1;
-      } else if (activeRef.current && runRef.current && !abort.current) {
+        clearCooldownWait();
+      } else if (activeRef.current && runRef.current && !abort.current && !cooldownTimer.current) {
         execute(runRef.current);
       }
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
-  }, [execute]);
+  }, [execute, clearCooldownWait]);
 
   // C01: this component instance belongs to ONE viewer — Dashboard remounts it (key = session key) on any account
   // change, so the previous account's draft, result, hand-off, run and catalog can never be saved under the new one.
@@ -220,9 +248,11 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     setHidden((h) => { const next = effectiveHidden(universe, h); return next.length === h.length ? h : next; });
   }, [result, catalog]);
 
-  useReportActivity('statistics', run.status === 'loading'
-    ? { resource: 'statistics', phase: 'fetching', label: result ? '선택한 조건으로 통계를 다시 만드는 중' : '선택한 조건으로 통계를 만드는 중' }
-    : run.status === 'error' ? { resource: 'statistics', phase: 'error', label: '맞춤 통계를 만들지 못했습니다' } : null);
+  useReportActivity('statistics', cooldownUntil
+    ? { resource: 'statistics', phase: 'retry_wait', label: '연결이 불안정해 잠시 기다리는 중', retryAt: cooldownUntil }
+    : run.status === 'loading'
+      ? { resource: 'statistics', phase: 'fetching', label: result ? '선택한 조건으로 통계를 다시 만드는 중' : '선택한 조건으로 통계를 만드는 중' }
+      : run.status === 'error' ? { resource: 'statistics', phase: 'error', label: '맞춤 통계를 만들지 못했습니다' } : null);
 
   const dimLabel = (id: string) => catalog?.dimensions.find((d) => d.id === id)?.label ?? id;
   const metricLabel = (id: string) => catalog?.metrics.find((m) => m.id === id)?.label ?? id;

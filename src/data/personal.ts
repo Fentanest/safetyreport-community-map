@@ -10,6 +10,7 @@ import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
 import { COHORT_POLICY_VERSION } from '../domain/public';
 import { durationDistributionSchema, ratingDistributionSchema, scopeSchema } from './schema';
+import { sharedRetryCooldown } from './retryCooldown';
 const cohortDiagnostics = z.strictObject({ date_basis: z.enum(['report_date', 'completed_date']), selected_date_missing: z.number().int().nonnegative(), other_date_missing: z.number().int().nonnegative() });
 
 const count = z.number().int().nonnegative();
@@ -153,6 +154,8 @@ async function fetchLive(scope: Scope, version: string, token: string, signal?: 
       signal, headers, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
     });
   } catch (e) {
+    // A genuine network failure (offline, DNS, CORS…), never a client-side abort: a shared-breaker event (①).
+    if (!signal?.aborted) sharedRetryCooldown.recordFailure({ status: null });
     if (signal?.aborted) throw e;
     throw personalError('network');
   }
@@ -162,11 +165,14 @@ async function errorFrom(res: Response): Promise<PersonalApiError> {
   let code: string | null = null;
   try { code = ((await res.json()) as { error?: { code?: string } })?.error?.code ?? null; } catch { /* ignore */ }
   const retry = Number(res.headers.get('retry-after'));
-  if (res.status === 429) return personalError('rate_limited', Number.isFinite(retry) && retry > 0 ? retry : 60);
+  const retryAfterSeconds = Number.isFinite(retry) && retry > 0 ? retry : null;
+  // 429/5xx feed the shared breaker (①); any other status (401/403/409…) is the server working normally.
+  sharedRetryCooldown.recordFailure({ status: res.status, retryAfterSeconds });
+  if (res.status === 429) return personalError('rate_limited', retryAfterSeconds ?? 60);
   if (code && CODES.has(code as PersonalErrorCode)) return personalError(code as PersonalErrorCode);
   if (res.status === 401) return personalError('session_expired');
   if (res.status === 409) return personalError('DATASET_CHANGED');
-  return personalError('service_unavailable');
+  return personalError('service_unavailable', res.status >= 500 ? retryAfterSeconds : null);
 }
 
 export async function loadCompare(scope: Scope, version: string, auth: MapAuth, signal?: AbortSignal): Promise<PersonalCompare> {
@@ -178,6 +184,10 @@ export async function loadCompare(scope: Scope, version: string, auth: MapAuth, 
   if (screenCoordinator.active()) {
     return personalCompareSchema.parse(await readScreenPanel(scope, { id: 'compare', path: 'compare', params: {} }, signal)) as PersonalCompare;
   }
+  // Shared breaker (①): a recent network/429/5xx failure anywhere (dashboard, statistics…) blocks this fetcher
+  // too, without even trying the network — no second, independent retry loop during the same outage.
+  const blocked = sharedRetryCooldown.blockedError();
+  if (blocked) throw personalError('service_unavailable', blocked.retryAfterSeconds);
   const snap = auth.snapshot();
   if (snap.status === 'unconfigured') throw personalError('unconfigured');
   let token = await auth.accessToken();
@@ -189,6 +199,7 @@ export async function loadCompare(scope: Scope, version: string, auth: MapAuth, 
     res = await fetchLive(scope, version, token, signal);
   }
   if (!res.ok) throw await errorFrom(res);
+  sharedRetryCooldown.recordSuccess();
   let body: unknown;
   try { body = await res.json(); } catch { throw personalError('invalid_response'); }
   return acceptCompare(body, scope, version);
@@ -218,13 +229,24 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
   const { mapAuth } = await import('../hooks/usePersonal');
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
   if (!base) throw new PublicApiError('내 신고를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
+  // Shared breaker (①): see client.ts readWithinDeadline / loadCompare above for the same rule.
+  const blocked = sharedRetryCooldown.blockedError();
+  if (blocked) throw new PublicApiError('네트워크 장애가 있어 잠시 기다리는 중입니다. 자동으로 다시 시도합니다.',
+    429, blocked.retryAfterSeconds, 'COOLDOWN');
   const auth = mapAuth();
   await auth.settled();
   let token = await auth.accessToken();
   if (!token) throw new PublicApiError('내 신고를 보려면 로그인이 필요합니다.', 401, null, 'auth_required');
   const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)?.trim();
-  const send = (t: string) => fetch(`${base}/my-analytics/statistics?${params}`, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${t}`, ...(key ? { apikey: key } : {}) } });
+  const send = async (t: string): Promise<Response> => {
+    try {
+      return await fetch(`${base}/my-analytics/statistics?${params}`, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+        headers: { Accept: 'application/json', Authorization: `Bearer ${t}`, ...(key ? { apikey: key } : {}) } });
+    } catch (e) {
+      if (!signal?.aborted) sharedRetryCooldown.recordFailure({ status: null });
+      throw e;
+    }
+  };
   let res = await send(token);
   if (res.status === 401) {
     token = await auth.refreshToken();
@@ -235,8 +257,11 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
     let code: string | null = null, message: string | null = null;
     try { const b = await res.json() as { error?: { code?: string; message?: string } }; code = b.error?.code ?? null; message = b.error?.message ?? null; } catch { /* ignore */ }
     const retry = Number(res.headers.get('retry-after'));
+    const retryAfterSeconds = Number.isFinite(retry) && retry > 0 ? retry : null;
+    sharedRetryCooldown.recordFailure({ status: res.status, retryAfterSeconds });
     throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : message ?? '내 신고 통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
-      res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code);
+      res.status, retryAfterSeconds, code);
   }
+  sharedRetryCooldown.recordSuccess();
   return res.json();
 }

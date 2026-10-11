@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ANALYTICS_READ_TIMEOUT_MS, AnalyticsReadTimeout, withReadDeadline } from '../../src/data/requestDeadline';
 import { PublicApiError, read } from '../../src/data/client';
+import { sharedRetryCooldown } from '../../src/data/retryCooldown';
 
 const auth = vi.hoisted(() => ({ settled: vi.fn(), accessToken: vi.fn(), refreshToken: vi.fn() }));
 vi.mock('../../src/hooks/usePersonal', () => ({ mapAuth: () => auth }));
@@ -11,6 +12,10 @@ beforeEach(() => {
   auth.settled.mockResolvedValue(undefined);
   auth.accessToken.mockResolvedValue('synthetic-token');
   auth.refreshToken.mockResolvedValue('synthetic-refreshed');
+  // This file imports client.ts statically (no vi.resetModules() between cases, unlike accessClient.test.ts), so
+  // the shared breaker (①) is the SAME singleton across every `it()` here — clear it or an earlier case's 5xx/429
+  // fixture blocks a later case that expects its own fetch mock to actually be called.
+  sharedRetryCooldown.recordSuccess();
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 const never = () => new Promise<never>(() => {});

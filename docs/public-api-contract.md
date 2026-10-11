@@ -55,6 +55,20 @@ base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽
   debounce·최소 간격 1.2초·분당 20회 예산, 429는 Retry-After 동안 중지 후 최신 범위만, 5xx/네트워크는 1회 지연 재시도.
   한 번의 논리 갱신은 `dashboard` 1회(+내 신고 비교가 켜져 있으면 `my-analytics` 1회). 기관표는 요약 상태에서는 dashboard
   행을 쓰고 검색·정렬·페이지·전체 보기에서만 `/entities`를 부른다.
+- **탭 공용 실패 차단기(`src/data/retryCooldown.ts`, 2026-10-11)**: `src/data/client.ts`(dashboard·entities·laws·
+  statistics 전체 population)와 `src/data/personal.ts`(내 신고 비교·통계)의 네트워크 실패/429/5xx 는 탭 하나가 메모리로만
+  들고 있는 공용 쿨다운을 공유한다 — 하나가 장애를 겪으면 그 쿨다운 동안은 다른 fetcher 도 네트워크를 다시 시도하지
+  않는다(저장소에 쓰지 않음; 새로고침·새 탭은 항상 깨끗하게 시작). 지터 ±20%, 지수 백오프 5초·2^(n-1) 상한 120초, 서버
+  `Retry-After` 가 더 길면 그 값을 따르고(절대 줄이지 않음), 성공하면 바로 풀린다. 차단기가 열려 있는 동안 걸린 요청은
+  (실제 네트워크 시도 없이) 429 `COOLDOWN` 모양으로 즉시 거절되므로, 기존 429 처리(Retry-After 동안 중지 후 재개)가
+  그대로 적용된다. `src/pages/StatisticsPage.tsx`의 탭 복귀 재개 로직(성공한 결과는 다시 조회하지 않고, 중단된 실행만
+  이어서 재개)은 재개 직전에 이 차단기를 확인해서, 열려 있으면 실제로 다시 시도하지 않고 풀릴 때까지 기다린다(상태
+  표시는 '연결이 불안정해 잠시 기다리는 중'). 랭킹 탭(`src/data/rankings.ts`)은 이 공용 client를 거치지 않는 별도
+  fetch라 이 차단기의 보호를 받지 않는다(알려진 범위 제외 — `contracts/user-rankings/`, `server/rankings/**` 소유).
+- **로그인 자동 갱신 일시정지(`src/auth/mapAuth.ts`, 2026-10-11)**: supabase-js `autoRefreshToken` 타이머는 탭이 숨겨지면
+  `stopAutoRefresh()`, 다시 보이면 `startAutoRefresh()`로 멈추고 다시 켠다 — 숨은 탭이 장애 중에도 토큰 갱신을 계속
+  시도하던 문제(탭당 분당 약 5회) 수정. 수동 `refreshToken()`(401 후 1회)의 실패가 네트워크/5xx 성격이면 위 공용
+  차단기에도 기록된다(단순 "리프레시 토큰 만료"는 차단기를 열지 않는다).
 
 공통 query: start/end(ISO date), category, region_code, agency_key, manager_key,
 bbox=minLng,minLat,maxLng,maxLat, expected_version, metric별 result/disposition 조건.

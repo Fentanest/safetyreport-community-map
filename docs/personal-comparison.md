@@ -31,9 +31,13 @@ KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가�
 - 응답 헤더: `Cache-Control: private, no-store, max-age=0`, `Vary: Origin, Authorization`, `Pragma: no-cache`.
   허용 Origin만 `Access-Control-Allow-Origin` 에코(와일드카드 없음).
 - 오류: 401 `auth_required`/`session_expired`, 403 `kakao_required`/`account_ineligible`/`origin_forbidden`, 400 `INVALID_QUERY`,
-  409 `DATASET_CHANGED`, 429 `rate_limited`(Retry-After 60), 503 `AGGREGATE_NOT_READY`/`service_unavailable`. 본문에 id·SQL·토큰 없음.
+  409 `DATASET_CHANGED`, 429 `rate_limited`(Retry-After 60), 503 `AGGREGATE_NOT_READY`/`service_unavailable`(2026-10-11부터
+  Retry-After 30도 포함). 두 재시도 가능 코드 모두 헤더와 **본문 `error.retry_after_seconds`**에 같은 초 값이 있다.
+  `Access-Control-Expose-Headers: Retry-After`로 실제 브라우저에서도 헤더를 읽을 수 있다. 본문에 id·SQL·토큰 없음.
 - 개인 응답은 공개 API·정적 스냅샷(현재 만들지 않음)·exporter·Service Worker·localStorage에 넣지 않는다. exporter는 `mine`·`viewer`·`my_points`
   필드를 거부한다(`tests/product/test_export_snapshot.py`).
+- `src/data/personal.ts`의 `loadCompare`/`readPersonalStatistics`는 `src/data/client.ts`와 같은 탭 공용 실패 차단기
+  (`src/data/retryCooldown.ts`)를 공유한다 — 자세한 내용은 docs/public-api-contract.md의 "탭 공용 실패 차단기" 절.
 
 ### 3.1 같은 scope·모집단·게시 버전
 - `internal_my_analytics_source`는 STABLE 함수 한 번으로 `state`(dataset_version), 신원 상태, 사실 행을 **한 스냅숏**에서 돌려준다.

@@ -15,12 +15,26 @@ function installWindow(search = '') {
     history: { state: null, replaceState }, localStorage, sessionStorage: localStorage,
   });
 }
+/** ②: a minimal `document` so the visibility-driven stopAutoRefresh/startAutoRefresh wiring can run in node
+ *  (vitest's environment is 'node' — there is no real `document` unless a test installs one). */
+function installDocument(hidden = false) {
+  const listeners = new Set<() => void>();
+  const doc = {
+    hidden,
+    addEventListener: (type: string, listener: () => void) => { if (type === 'visibilitychange') listeners.add(listener); },
+    removeEventListener: (type: string, listener: () => void) => { if (type === 'visibilitychange') listeners.delete(listener); },
+  };
+  vi.stubGlobal('document', doc);
+  return { setHidden: (next: boolean) => { doc.hidden = next; for (const fn of listeners) fn(); } };
+}
 
 const signOut = vi.fn(async (_opts?: unknown) => ({ error: null }));
 const signInWithOAuth = vi.fn(async (_opts?: unknown) => ({ data: {}, error: null }));
 const storedSession = { access_token: 'user-jwt', user: { user_metadata: { nickname: '합성', email: 'x@y.z' } } };
 let sessionResult: typeof storedSession | null = storedSession;
 let emitInitialNull = false;
+const stopAutoRefresh = vi.fn();
+const startAutoRefresh = vi.fn();
 const createClient = vi.fn((_url: string, _key: string, _opts: unknown) => ({
   auth: {
     onAuthStateChange: vi.fn((listener: (_event: string, session: null) => void) => {
@@ -28,10 +42,13 @@ const createClient = vi.fn((_url: string, _key: string, _opts: unknown) => ({
     }),
     getSession: vi.fn(async () => ({ data: { session: sessionResult } })),
     refreshSession: vi.fn(async () => ({ data: { session: null }, error: { status: 400 } })),
-    signOut, signInWithOAuth,
+    signOut, signInWithOAuth, stopAutoRefresh, startAutoRefresh,
   },
 }));
-vi.mock('@supabase/supabase-js', () => ({ createClient }));
+// ②: mapAuth.ts captures isAuthRetryableFetchError from this same lazy import to decide whether a failed refresh
+// feeds the shared breaker (never a static top-level import, so it must be part of this mock too).
+const isAuthRetryableFetchError = vi.fn((e: unknown) => (e as { __retryable?: boolean } | null)?.__retryable === true);
+vi.mock('@supabase/supabase-js', () => ({ createClient, isAuthRetryableFetchError }));
 
 beforeEach(() => {
   store.clear();
@@ -101,6 +118,63 @@ describe('map web login (separate from relay and app sessions)', () => {
     expect(auth.snapshot().status).toBe('unconfigured');
     await auth.signOut();
     expect(signOut).not.toHaveBeenCalled();
+  });
+
+  // ②: a hidden tab must stop autoRefreshToken's own timer instead of letting it keep polling the token endpoint
+  // during an outage (2026-10-11 사용자 보고: ~5 req/min per hidden tab). stopAutoRefresh/startAutoRefresh track
+  // document.visibilitychange, both ways.
+  it('stops and restarts the SDK auto-refresh timer as the tab is hidden/shown', async () => {
+    installWindow('');
+    store.set('cm-map-auth-v1', '{}');
+    const doc = installDocument(false);
+    const { createLiveAuth } = await import('../../src/auth/mapAuth');
+    const auth = createLiveAuth();
+    await vi.waitFor(() => expect(auth.snapshot().status).toBe('signed_in'));
+    expect(stopAutoRefresh).not.toHaveBeenCalled();
+    doc.setHidden(true);
+    expect(stopAutoRefresh).toHaveBeenCalledTimes(1);
+    expect(startAutoRefresh).not.toHaveBeenCalled();
+    doc.setHidden(false);
+    expect(startAutoRefresh).toHaveBeenCalledTimes(1);
+    doc.setHidden(true);
+    expect(stopAutoRefresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('already-hidden on creation stops auto-refresh immediately, without waiting for a visibility event', async () => {
+    installWindow('');
+    store.set('cm-map-auth-v1', '{}');
+    installDocument(true);
+    const { createLiveAuth } = await import('../../src/auth/mapAuth');
+    const auth = createLiveAuth();
+    await vi.waitFor(() => expect(auth.snapshot().status).toBe('signed_in'));
+    expect(stopAutoRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  // ②: a refresh failure feeds the SAME shared breaker every fetcher respects (①) only when it is retryable
+  // (network/5xx-ish) — a genuinely invalid/expired refresh token must not block other fetchers.
+  it('a retryable refresh failure opens the shared breaker; signing out does not by itself', async () => {
+    installWindow('');
+    store.set('cm-map-auth-v1', '{}');
+    const { createLiveAuth } = await import('../../src/auth/mapAuth');
+    const { sharedRetryCooldown } = await import('../../src/data/retryCooldown');
+    const auth = createLiveAuth();
+    await vi.waitFor(() => expect(auth.snapshot().status).toBe('signed_in'));
+    expect(sharedRetryCooldown.blockedError()).toBeNull();
+    expect(await auth.refreshToken()).toBeNull(); // the mock's refreshSession() always errors with {status:400}
+    expect(auth.snapshot().status).toBe('signed_out');
+    expect(sharedRetryCooldown.blockedError()).toBeNull(); // status 400 is not retryable (isAuthRetryableFetchError → false)
+  });
+
+  it('a retryable (network-shaped) refresh failure does open the shared breaker', async () => {
+    installWindow('');
+    store.set('cm-map-auth-v1', '{}');
+    isAuthRetryableFetchError.mockReturnValueOnce(true);
+    const { createLiveAuth } = await import('../../src/auth/mapAuth');
+    const { sharedRetryCooldown } = await import('../../src/data/retryCooldown');
+    const auth = createLiveAuth();
+    await vi.waitFor(() => expect(auth.snapshot().status).toBe('signed_in'));
+    expect(await auth.refreshToken()).toBeNull();
+    expect(sharedRetryCooldown.blockedError()).not.toBeNull();
   });
 });
 

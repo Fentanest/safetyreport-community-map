@@ -71,15 +71,19 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
     const base: Record<string, string> = {
       'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store, max-age=0',
       Pragma: 'no-cache', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin, Authorization',
-      ...(originAllowed ? { 'Access-Control-Allow-Origin': origin! } : {}),
+      ...(originAllowed ? { 'Access-Control-Allow-Origin': origin!, 'Access-Control-Expose-Headers': 'Retry-After' } : {}),
     };
     const respond = (status: number, body: unknown, extra: Record<string, string> = {}) =>
       new Response(JSON.stringify(body), { status, headers: { ...base, ...extra } });
     const error = (code: string) => {
       const [status, message] = MESSAGES[code] ?? MESSAGES.service_unavailable;
       deps.log?.({ event: 'my_analytics', outcome: code, request_id: rid });
-      return respond(status, { error: { code: MESSAGES[code] ? code : 'service_unavailable', message } },
-        status === 429 ? { 'Retry-After': '60' } : status === 401 ? { 'WWW-Authenticate': 'Bearer' } : {});
+      // cloud-retry-brief.md ④: every 429/503 carries a Retry-After (header + body), not only rate_limited — a
+      // caller (내 신고 비교/통계) must never guess how long to back off during AGGREGATE_NOT_READY/service_unavailable.
+      const retryAfter = status === 429 ? 60 : status === 503 ? 30 : null;
+      return respond(status, { error: { code: MESSAGES[code] ? code : 'service_unavailable', message,
+        ...(retryAfter ? { retry_after_seconds: retryAfter } : {}) } },
+        retryAfter ? { 'Retry-After': String(retryAfter) } : status === 401 ? { 'WWW-Authenticate': 'Bearer' } : {});
     };
     try {
       if (origin !== null && !originAllowed) fail('origin_forbidden');

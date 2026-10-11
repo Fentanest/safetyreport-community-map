@@ -271,9 +271,38 @@ describe('community-ingest handler', () => {
     const revoked = setup(() => ({ error: 'consent_revoked' }));
     const r = await revoked.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
     expect(r.status).toBe(403); expect((await r.json()).error.code).toBe('consent_revoked');
+    expect(r.headers.get('retry-after')).toBeNull(); // not a retryable code: never a Retry-After
     const busy = setup(() => { throw new Error('rpc 40P01'); });
     const b = await busy.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
     expect(b.status).toBe(503); expect((await b.json()).error.retryable).toBe(true);
+  });
+
+  // cloud-retry-brief.md ④: every retryable 5xx (busy/service_unavailable/server_error) always carries a
+  // Retry-After — a caller must never guess how long to back off — with the matching body field and, so a real
+  // cross-origin browser can read the header at all, Access-Control-Expose-Headers.
+  it('busy/service_unavailable/server_error always carry Retry-After (header + body), even without an explicit RPC hint', async () => {
+    const busy = setup(() => { throw new Error('rpc 40P01'); });
+    const busyFromMap = new Request('https://p.supabase.co/functions/v1/community-ingest', { method: 'POST',
+      body: JSON.stringify(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])),
+      headers: { 'content-type': 'application/json', apikey: 'sb_publishable_x', authorization: `Bearer ${jwt(claims)}`, origin: 'https://safemap.worklazy.net' } });
+    const b = await busy.handler(busyFromMap);
+    expect(b.status).toBe(503);
+    expect(b.headers.get('retry-after')).toBe('30');
+    expect(b.headers.get('access-control-expose-headers')).toContain('Retry-After');
+    expect((await b.json()).error).toMatchObject({ code: 'busy', retryable: true, retry_after_seconds: 30 });
+
+    const unavailable = createIngestHandler({ enabled: false, jwtIssuer: null, allowedOrigins: ['https://safemap.worklazy.net'],
+      getUser: async () => null, rpc: async () => ({ results: [] }) });
+    const u = await unavailable(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    expect(u.status).toBe(503);
+    expect(u.headers.get('retry-after')).toBe('30');
+    expect((await u.json()).error).toMatchObject({ code: 'service_unavailable', retry_after_seconds: 30 });
+
+    const broken = setup(() => { throw new Error('boom'); }); // unrecognised failure → server_error (500)
+    const s = await broken.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    expect(s.status).toBe(500);
+    expect(s.headers.get('retry-after')).toBe('10');
+    expect((await s.json()).error).toMatchObject({ code: 'server_error', retry_after_seconds: 10 });
   });
 
   it('manifest pages go through the same auth and validate the cursor', async () => {

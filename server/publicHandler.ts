@@ -106,13 +106,16 @@ const ACCESS_MESSAGES: Record<string, string> = {
 };
 
 function errorWith(code: string, status: number, headers: Headers, details?: ViewerThresholdDetails): Response {
+  // cloud-retry-brief.md ④: a retryable 429/503 always carries Retry-After (header + body retry_after_seconds) —
+  // the shared breaker every fetcher respects (지도 웹 ①) must never guess how long to back off.
+  const retryAfter = status === 429 ? 60 : status === 503 ? 30 : null;
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
     code === 'AGGREGATE_NOT_READY' ? '통계가 아직 준비되지 않았습니다. 잠시 뒤 다시 확인해 주세요.' :
       code === 'DATASET_CHANGED' ? '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.' :
         code === 'RESULT_TOO_LARGE' ? '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.' :
         ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.',
-    ...(details !== undefined ? { details } : {}) } }, status, headers);
-  if (status === 429) res.headers.set('Retry-After', '60');
+    ...(details !== undefined ? { details } : {}), ...(retryAfter ? { retry_after_seconds: retryAfter } : {}) } }, status, headers);
+  if (retryAfter) res.headers.set('Retry-After', String(retryAfter));
   if (status === 401) res.headers.set('WWW-Authenticate', 'Bearer');
   return res;
 }
@@ -278,7 +281,7 @@ export function createPublicHandler(repo: AnalyticsRepository, access: PublicAcc
     const headers: Headers = {
       'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store, max-age=0',
       Pragma: 'no-cache', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin, Authorization',
-      ...(originAllowed && origin ? { 'Access-Control-Allow-Origin': origin } : {}),
+      ...(originAllowed && origin ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Expose-Headers': 'Retry-After' } : {}),
     };
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
     const errorResponse = (code: string, status: number, details?: ViewerThresholdDetails) =>
