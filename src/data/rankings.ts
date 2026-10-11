@@ -49,9 +49,10 @@ function wireRankingsCacheInvalidation(): void {
   try {
     const auth = mapAuth();
     const initial = auth.snapshot();
-    rankingsLastViewer = initial.status === "signed_in" ? initial.viewerId : null;
+    rankingsLastViewer = initial.status === "signed_in" ? `${initial.viewerId}|${initial.sessionId ?? ""}` : null;
     auth.subscribe((next) => {
-      const nowViewer = next.status === "signed_in" ? next.viewerId : null;
+      // 같은 계정이라도 로그인 세션(JWT session_id)이 바뀌면 다른 세션이다(다른 탭의 OAuth 완료 등, Astra 재검수2 #2).
+      const nowViewer = next.status === "signed_in" ? `${next.viewerId}|${next.sessionId ?? ""}` : null;
       if (nowViewer !== rankingsLastViewer) {
         // 로그아웃, 계정 전환, 같은 계정 재로그인(새 세션) 모두 이전 캐시를 무효화한다.
         rankingsSessionEpoch += 1;

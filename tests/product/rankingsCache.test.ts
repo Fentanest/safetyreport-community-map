@@ -135,6 +135,18 @@ describe('rankings module cache (app-wide, not tied to RankingsPage mount)', () 
     expect(rankingsCacheGet('u1', 'board:x')).toEqual(listPayload('fresh-from-second-session'));
   });
 
+  it('same account, NEW login session without a signed_out in between (another tab\'s OAuth) — old cache misses (Astra 재검수2 #2)', async () => {
+    const withSession = (sessionId: string): AuthSnapshot => ({ ...signedIn('u1'), sessionId });
+    const sim = fakeMapAuth(withSession('s1'));
+    sharedAuth.current = sim.auth;
+    const { rankingsCacheGet, rankingsCacheSet } = await import('../../src/data/rankings');
+    rankingsCacheSet('u1', 'board:x', listPayload('session-1'));
+    sim.emit(withSession('s1')); // token refresh keeps the same session id — cache survives
+    expect(rankingsCacheGet('u1', 'board:x')).toEqual(listPayload('session-1'));
+    sim.emit(withSession('s2')); // SIGNED_IN with a different session, no signed_out first
+    expect(rankingsCacheGet('u1', 'board:x')).toBeNull();
+  });
+
   it('clearRankingsCache() clears explicitly (e.g. a 409 means every cached page/condition is stale)', async () => {
     sharedAuth.current = fakeMapAuth(signedIn('u1')).auth;
     const { clearRankingsCache, rankingsCacheGet, rankingsCacheSet } = await import('../../src/data/rankings');

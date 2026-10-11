@@ -178,6 +178,30 @@ describe('map web login (separate from relay and app sessions)', () => {
   });
 });
 
+describe('sessionIdOf / refresh does not clear an active API cooldown (Astra 재검수2)', () => {
+  it('reads session_id from the JWT payload, null when unreadable', async () => {
+    const { sessionIdOf } = await import('../../src/auth/mapAuth');
+    const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
+    expect(sessionIdOf(`h.${b64({ sub: 'u', session_id: 'sess-1' })}.sig`)).toBe('sess-1');
+    expect(sessionIdOf('not-a-jwt')).toBeNull();
+    expect(sessionIdOf(null)).toBeNull();
+  });
+
+  it('a successful token refresh leaves a server Retry-After cooldown in place (#1)', async () => {
+    installWindow('');
+    store.set('cm-map-auth-v1', '{}');
+    const { createLiveAuth } = await import('../../src/auth/mapAuth');
+    const { sharedRetryCooldown } = await import('../../src/data/retryCooldown');
+    const auth = createLiveAuth();
+    await vi.waitFor(() => expect(auth.snapshot().status).toBe('signed_in'));
+    sharedRetryCooldown.recordFailure({ status: 429, retryAfterSeconds: 60 });
+    const client = createClient.mock.results.at(-1)!.value as { auth: { refreshSession: ReturnType<typeof vi.fn> } };
+    client.auth.refreshSession.mockResolvedValueOnce({ data: { session: { access_token: 'fresh', user: { id: 'u' } } }, error: null });
+    expect(await auth.refreshToken()).toBe('fresh');
+    expect(sharedRetryCooldown.blockedError()).not.toBeNull();
+  });
+});
+
 describe('session-expired guidance (docs/personal-comparison.md §6)', () => {
   it('tells the viewer to sign in again', async () => {
     installWindow('?me=expired');

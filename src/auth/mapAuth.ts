@@ -22,6 +22,9 @@ export interface AuthSnapshot {
   /** C01: the Supabase Auth user id of this session (internal account boundary for caches, restores and late
    *  answers). Never shown, logged or put in a URL; the server still decides access from the verified JWT. */
   viewerId: string | null;
+  /** 로그인 세션 식별자(JWT `session_id`). 토큰 갱신에는 그대로, 새 로그인(다른 탭의 OAuth 포함)마다 바뀐다 — 세션 단위
+   *  메모리 캐시(랭킹)의 경계. 화면·로그·URL 에 쓰지 않는다. 없으면 null. */
+  sessionId?: string | null;
   /** true only for the explicit demo fixture login */
   synthetic: boolean;
   message: string | null;
@@ -75,6 +78,18 @@ function nickname(meta: Record<string, unknown> | undefined): string | null {
   return null;
 }
 
+/** access token(JWT) payload 의 session_id. 해석 못하면 null(서명 검증은 서버 몫 — 여기서는 캐시 경계로만 쓴다). */
+export function sessionIdOf(accessToken: string | null | undefined): string | null {
+  try {
+    const part = (accessToken ?? '').split('.')[1];
+    if (!part) return null;
+    const json = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '=')));
+    return typeof json?.session_id === 'string' ? json.session_id : null;
+  } catch {
+    return null;
+  }
+}
+
 class Emitter {
   private listeners = new Set<(s: AuthSnapshot) => void>();
   constructor(public state: AuthSnapshot) {}
@@ -125,8 +140,9 @@ export function createLiveAuth(): MapAuth {
         // trigger another redirect while getSession() is still checking the callback.
         if (!session && (checkingInitial || startingOAuth || (oauthReturn && emitter.state.status === 'error'))) return;
         emitter.set(session
-          ? { status: 'signed_in', displayName: nickname(session.user.user_metadata), viewerId: session.user.id, message: null }
-          : { status: 'signed_out', displayName: null, viewerId: null });
+          ? { status: 'signed_in', displayName: nickname(session.user.user_metadata), viewerId: session.user.id,
+              sessionId: sessionIdOf(session.access_token), message: null }
+          : { status: 'signed_out', displayName: null, viewerId: null, sessionId: null });
       });
       // ②: a hidden tab must not keep polling the token endpoint (autoRefreshToken's own timer) while a Supabase
       // outage keeps the previous attempt failing — that was ~5 req/min per hidden tab (2026-10-11 사용자 보고).
@@ -150,7 +166,8 @@ export function createLiveAuth(): MapAuth {
       .then(c => c.auth.getSession())
       .then(({ data }) => {
         emitter.set(data.session
-          ? { status: 'signed_in', displayName: nickname(data.session.user.user_metadata), viewerId: data.session.user.id, message: null }
+          ? { status: 'signed_in', displayName: nickname(data.session.user.user_metadata), viewerId: data.session.user.id,
+              sessionId: sessionIdOf(data.session.access_token), message: null }
           : failed || oauthReturn
             ? { status: 'error', message: '카카오 로그인이 취소되었거나 끝나지 않았습니다. 다시 시도해 주세요.' }
             : { status: 'signed_out' });
@@ -189,7 +206,7 @@ export function createLiveAuth(): MapAuth {
       const c = await client();
       // Only this browser's map session. Never 'global' or 'others' (would end the app's upload sessions).
       await c.auth.signOut({ scope: 'local' });
-      emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: null });
+      emitter.set({ status: 'signed_out', displayName: null, viewerId: null, sessionId: null, message: null });
     },
     async accessToken() {
       if (!config || emitter.state.status !== 'signed_in') return null;
@@ -198,19 +215,17 @@ export function createLiveAuth(): MapAuth {
     },
     async refreshToken() {
       if (!config || !clientPromise) return null;
-      // Astra 검수 ②(2026-10-12): captured before the refresh call, so a concurrent fetcher's failure recorded
-      // while this refresh is in flight is never erased by this refresh's own (possibly late) success below.
-      const startGen = sharedRetryCooldown.currentGeneration();
       const { data, error } = await (await client()).auth.refreshSession();
       if (error || !data.session) {
         // ②: a network/5xx-ish refresh failure feeds the SAME shared breaker every fetcher respects (①) — a
         // genuinely expired/invalid refresh token (no network issue) never opens it, since isRetryableAuthError
         // is false for that case.
         if (error && isRetryableAuthError?.(error)) sharedRetryCooldown.recordFailure({ status: null });
-        emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
+        emitter.set({ status: 'signed_out', displayName: null, viewerId: null, sessionId: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
         return null;
       }
-      sharedRetryCooldown.recordSuccess(startGen);
+      // 토큰 갱신 성공은 API 쿨다운을 풀지 않는다(Astra 재검수2 #1): 다른 요청이 받은 429·Retry-After 마감이 아직 유효할 수
+      // 있다. 쿨다운은 마감 뒤 허용된 다음 API 요청의 성공이 푼다.
       return data.session.access_token;
     },
     settled: () => settledOf(emitter),
@@ -251,7 +266,7 @@ export function createDemoAuth(search: string): MapAuth & { viewer(): DemoViewer
     },
     async signOut() {
       try { window.sessionStorage.removeItem(DEMO_AUTH_KEY); } catch { /* ignore */ }
-      emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: null });
+      emitter.set({ status: 'signed_out', displayName: null, viewerId: null, sessionId: null, message: null });
     },
     async accessToken() { return emitter.state.status === 'signed_in' ? 'demo-synthetic-token' : null; },
     settled: () => Promise.resolve(),
