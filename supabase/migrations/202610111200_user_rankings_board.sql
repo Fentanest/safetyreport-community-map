@@ -6,7 +6,7 @@
 --   - 지표마다 top K(기본 5, 최대 10) + 그 지표의 내 순위(me, TOP 밖이어도 전체 기준) + total_participants.
 --   - dataset_version 은 기존과 같은 방식: 정규화한 scope·진단·**전체 참여자 집계**의 SHA-256 앞 32자.
 -- 5분류(observation-v5, 202610110100)로 처음부터 작성한다. service_role 전용, search_path 비움(기존 함수와 같은 보안 패턴).
--- 기존 internal_user_rankings(페이지형 '전체 보기')는 그대로 둔다.
+-- 기존 internal_user_rankings(페이지형 전체 보기 목록)는 그대로 둔다.
 -- 되돌리기: drop function public.internal_user_rankings_board(uuid,uuid,jsonb); (다른 객체·자료 변경 없음)
 begin;
 create or replace function public.internal_user_rankings_board(p_user uuid,p_session uuid,p_query jsonb)
