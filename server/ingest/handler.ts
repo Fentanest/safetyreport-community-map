@@ -73,6 +73,9 @@ const HTTP: Record<Code, number> = {
   writer_superseded: 403, contributor_suspended: 403, rate_limited: 429, busy: 503, server_error: 500, service_unavailable: 503,
 };
 const RETRYABLE = new Set<Code>(['rate_limited', 'busy', 'server_error', 'service_unavailable']);
+/** cloud-retry-brief.md ④: a retryable failure always carries a Retry-After, even when no RPC error gave one
+ *  explicitly — a caller (PC/모바일/지도 웹) must never guess how long to back off. */
+const DEFAULT_RETRY_AFTER: Partial<Record<Code, number>> = { busy: 30, service_unavailable: 30, server_error: 10 };
 
 class Failure extends Error {
   constructor(readonly code: Code, readonly retryAfter?: number, readonly detail?: string) { super(code); }
@@ -144,7 +147,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
     const rid = requestId();
     const origin = request.headers.get('origin');
     const cors: Record<string, string> = origin && deps.allowedOrigins.includes(origin)
-      ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {};
+      ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Expose-Headers': 'Retry-After' } : {};
     let route = 'ingest';
     try {
       if (request.method === 'OPTIONS') {
@@ -260,9 +263,10 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       const f = error instanceof Failure ? error
         : new Failure(/40P01|40001|deadlock|could not serialize/i.test(String(error)) ? 'busy' : 'server_error');
       deps.log?.({ event: 'community_ingest', route, outcome: f.code, request_id: rid });
-      const headers: Record<string, string> = { ...cors, ...(f.retryAfter ? { 'Retry-After': String(f.retryAfter) } : {}) };
+      const retryAfter = f.retryAfter ?? DEFAULT_RETRY_AFTER[f.code];
+      const headers: Record<string, string> = { ...cors, ...(retryAfter ? { 'Retry-After': String(retryAfter) } : {}) };
       return json(HTTP[f.code], { error: { code: f.code, message: MESSAGE[f.code] ?? 'Request failed.', request_id: rid,
-        retryable: RETRYABLE.has(f.code), ...(f.retryAfter ? { retry_after_seconds: f.retryAfter } : {}) } }, headers);
+        retryable: RETRYABLE.has(f.code), ...(retryAfter ? { retry_after_seconds: retryAfter } : {}) } }, headers);
     }
   };
 }

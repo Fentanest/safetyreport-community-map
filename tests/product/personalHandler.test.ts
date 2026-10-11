@@ -155,6 +155,16 @@ describe('my-analytics response boundary', () => {
     expect((await setup().handle(req(`/functions/v1/my-analytics/facts?${QS}`))).status).toBe(404);
   });
 
+  // cloud-retry-brief.md ④: a 503 always carries Retry-After (header + body retry_after_seconds), exposed to a
+  // real cross-origin browser, so the shared breaker (지도 웹 ①) never has to guess how long to back off.
+  it('a 503 carries Retry-After (header + body) and exposes it for a cross-origin browser', async () => {
+    const res = await setup({}, { state: { ...state, ready: false } }).handle(req());
+    expect(res.status).toBe(503);
+    expect(res.headers.get('retry-after')).toBe('30');
+    expect(res.headers.get('access-control-expose-headers')).toContain('Retry-After');
+    expect((await body(res)).error).toMatchObject({ code: 'AGGREGATE_NOT_READY', retry_after_seconds: 30 });
+  });
+
   it('computes all/mine from the one RPC snapshot it received (no second read)', async () => {
     const { handle, calls } = setup();
     await handle(req());

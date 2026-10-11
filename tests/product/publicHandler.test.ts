@@ -59,8 +59,13 @@ describe('public analytics API boundary', () => {
     const meta = await metaResponse.json();
     expect(metaSchema.safeParse(meta).success).toBe(true);
     expect(meta.capabilities.vehicle_top5.status).toBe('missing');
-    expect((await handler(endpoint(`dashboard?${q}`))).status).toBe(503);
+    const unready = await handler(endpoint(`dashboard?${q}`));
+    expect(unready.status).toBe(503);
     expect(factCalls).toBe(0);
+    // cloud-retry-brief.md ④: a 503 always carries Retry-After (header + body), exposed for a real browser.
+    expect(unready.headers.get('retry-after')).toBe('30');
+    expect(unready.headers.get('access-control-expose-headers')).toContain('Retry-After');
+    expect((await unready.json()).error).toMatchObject({ code: 'AGGREGATE_NOT_READY', retry_after_seconds: 30 });
   });
   it('rejects query abuse, stale versions, and rate limits without private errors', async () => {
     const handler = createPublicHandler(makeRepo(), fixtureAccess());

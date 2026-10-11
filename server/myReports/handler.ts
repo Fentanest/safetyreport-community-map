@@ -220,6 +220,7 @@ export function createMyReportsHandler(deps: MyReportsDeps): (request: Request) 
     const error = (code: ErrorCode) => {
       const e = ERRORS[code];
       log(code);
+      // Retry-After 는 헤더로만 준다 — 오류 본문은 my-reports-v1 계약(ErrorResponse, additionalProperties:false)과 같아야 한다.
       const extra: Record<string, string> = code === 'RATE_LIMITED' ? { 'Retry-After': '60' }
         : e.status === 503 ? { 'Retry-After': '5' } : e.status === 401 ? { 'WWW-Authenticate': 'Bearer' } : {};
       return new Response(JSON.stringify({ error: { code, message: e.message, retryable: e.retryable }, request_id: rid }),

@@ -9,6 +9,7 @@ import {
 } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
 import { ANALYTICS_READ_TIMEOUT_MS, AnalyticsReadTimeout, withReadDeadline } from './requestDeadline';
+import { sharedRetryCooldown } from './retryCooldown';
 
 export type DataMode = 'demo' | 'live';
 export const dataMode: DataMode = import.meta.env.VITE_DATA_MODE === 'demo' ? 'demo' : 'live';
@@ -72,6 +73,13 @@ export async function read(path: string, params: URLSearchParams | null, signal?
 async function readWithinDeadline(path: string, params: URLSearchParams | null, signal: AbortSignal): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
   if (!base) throw new PublicApiError('통계를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.');
+  // Shared breaker (cloud-retry-brief.md 지도 웹 ①): a recent network failure/429/5xx anywhere (dashboard,
+  // statistics, personal…) opens this for every fetcher that goes through `read()`. No network attempt while
+  // blocked — the caller gets the same shape as a server 429 so the dashboard's existing Retry-After handling
+  // (pause + auto-resume) applies here too, without a second, duplicate pause mechanism.
+  const blocked = sharedRetryCooldown.blockedError();
+  if (blocked) throw new PublicApiError('네트워크 장애가 있어 잠시 기다리는 중입니다. 자동으로 다시 시도합니다.',
+    429, blocked.retryAfterSeconds, 'COOLDOWN');
   const url = `${base}/${path === '@screen' ? 'my-analytics/screen' : `public-analytics/${path}`}${params ? `?${params}` : ''}`;
   const auth = mapAuth();
   await auth.settled();
@@ -79,8 +87,16 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
   const token = await auth.accessToken();
   signal.throwIfAborted();
   if (!token) throw new PublicApiError('카카오 로그인이 필요합니다.', 401, null, 'auth_required');
-  const send = (token: string | null) => fetch(url, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
-    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+  const send = async (token: string | null): Promise<Response> => {
+    try {
+      return await fetch(url, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
+        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+    } catch (e) {
+      // A genuine network failure (offline, DNS, CORS…), never a client-side abort: that is a breaker event.
+      if (!signal.aborted) sharedRetryCooldown.recordFailure({ status: null });
+      throw e;
+    }
+  };
   let res = await send(token);
   if (res.status === 401 && token) {
     const refreshed = await auth.refreshToken();
@@ -89,6 +105,8 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
   }
   if (!res.ok) {
     const retry = Number(res.headers.get('retry-after'));
+    const retryAfterSeconds = Number.isFinite(retry) && retry > 0 ? retry : null;
+    sharedRetryCooldown.recordFailure({ status: res.status, retryAfterSeconds });
     let code: string | null = null;
     let message: string | null = null;
     let details: AccessErrorDetails | null = null;
@@ -115,8 +133,9 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
         : known ? message ?? '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
           : '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.';
     throw new PublicApiError(access ? description : `${description} (오류 코드 ${code ?? 'UNKNOWN'}, HTTP ${res.status})`,
-      res.status, Number.isFinite(retry) && retry > 0 ? retry : null, code, details);
+      res.status, retryAfterSeconds, code, details);
   }
+  sharedRetryCooldown.recordSuccess();
   return res.json();
 }
 

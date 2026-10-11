@@ -148,3 +148,28 @@
 - 서버는 새 RPC `public.internal_user_rankings_board`(migration `202610111200`)와 같은 `user-rankings` Edge 의 `/board` 경로로
   한 번에 집계한다(자격·대표 선출·집계 1회, 순위 규칙은 기존과 동일). 새 Edge 함수·verify_jwt 설정·라이브러리는 늘리지 않는다.
 - 브라우저 120초 메모리 재사용(2026-10-11 앞선 결정)은 보드에도 같다. 이번 작업은 로컬 커밋만 하며 운영 적용·배포·push는 하지 않는다.
+
+## 2026-10-12 사용자 보고 · Supabase 장애 중 반복 요청 줄이기(지도 웹)
+
+Supabase에 접속되지 않는 동안 지도를 조작하면 탭 하나가 분당 수십 번 요청을 보내던 문제(PC·모바일·지도 웹 공통 보고,
+`cloud-retry-brief.md`)의 지도 웹 부분. 승인된 4가지 중 지도 웹 몫만 반영한다.
+
+- **탭 공용 실패 차단기** (`src/data/retryCooldown.ts`): `src/data/client.ts`(dashboard·entities·laws·맞춤 통계
+  population=all)와 `src/data/personal.ts`(내 신고 비교·통계)가 네트워크 실패·429·5xx 를 공유하는 메모리 전용(탭 안,
+  저장소 금지) 쿨다운 하나로 합친다. 지터 ±20%, 지수 백오프 5초·2^(n-1) 상한 120초, 서버 Retry-After 가 더 길면 그
+  값을 따른다(절대 줄이지 않음), 성공하면 바로 풀린다. 랭킹(`src/data/rankings.ts`)은 별도 fetch라 이번 범위 밖이다.
+- **로그인 자동 갱신**: `src/auth/mapAuth.ts`가 탭이 숨겨지면 supabase-js `stopAutoRefresh()`, 다시 보이면
+  `startAutoRefresh()`로 묶는다 — 숨은 탭이 장애 중에도 토큰 갱신을 계속 시도하던 문제(탭당 분당 약 5회) 수정.
+  수동 refresh 실패가 네트워크/5xx 성격이면 위 차단기에도 기록한다.
+- **`src/pages/StatisticsPage.tsx`**: 탭 복귀 재개는 이미 "마지막 결과가 성공이면 다시 실행하지 않고, 중단된 실행만
+  이어서"였다(2026-10-04 `7d25a9f`). 이번에 재개 직전 위 차단기를 확인해, 열려 있으면 실제 네트워크 시도 없이
+  풀릴 때까지 기다리게 추가했다(상태: '연결이 불안정해 잠시 기다리는 중').
+- **Edge 5xx Retry-After**: `server/ingest/handler.ts`·`server/personalHandler.ts`·`server/publicHandler.ts` 의
+  재시도 가능 5xx(`busy`/`service_unavailable` 503, `server_error` 500 등)에 기본 Retry-After(503=30초, 500=10초)를
+  헤더와 본문 `retry_after_seconds`에 싣고, `Access-Control-Expose-Headers: Retry-After`로 실제 브라우저에서도
+  읽을 수 있게 했다(기존 429 `rate_limited`만 되던 것을 확장). `server/myReports/handler.ts`는 기존 Retry-After
+  값(60/5초)을 유지하고 본문에 같은 값을 추가했다. `server/rankings/handler.ts`·`server/screenHandler.ts`는 다른
+  작업과 겹쳐 이번에 손대지 않았다.
+- 상세: docs/public-api-contract.md "탭 공용 실패 차단기"/"로그인 자동 갱신 일시정지" 절, docs/personal-comparison.md
+  §3 오류. push·운영 배포는 하지 않았다 — Edge 재배포가 필요한 함수: `public-analytics`, `my-analytics`,
+  `community-ingest`(코드만 바꿈, DB/계약 호환).

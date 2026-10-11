@@ -11,6 +11,7 @@
  * - Nothing here derives ownership: the server takes the viewer id from the verified token only.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { sharedRetryCooldown } from '../data/retryCooldown';
 
 export type AuthStatus = 'unconfigured' | 'loading' | 'signed_out' | 'signed_in' | 'error';
 
@@ -105,10 +106,14 @@ export function createLiveAuth(): MapAuth {
   });
   let clientPromise: Promise<SupabaseClient> | null = null;
   let startingOAuth = false;
+  // Captured from the same lazy SDK import as the client itself (never a static top-level import of
+  // @supabase/supabase-js — an anonymous visitor must still never download it).
+  let isRetryableAuthError: ((e: unknown) => boolean) | null = null;
 
   const client = (): Promise<SupabaseClient> => {
     if (!config) return Promise.reject(new Error('unconfigured'));
-    clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) => {
+    clientPromise ??= import('@supabase/supabase-js').then(({ createClient, isAuthRetryableFetchError }) => {
+      isRetryableAuthError = isAuthRetryableFetchError;
       const c = createClient(config.url, config.key, {
         auth: {
           flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
@@ -123,6 +128,17 @@ export function createLiveAuth(): MapAuth {
           ? { status: 'signed_in', displayName: nickname(session.user.user_metadata), viewerId: session.user.id, message: null }
           : { status: 'signed_out', displayName: null, viewerId: null });
       });
+      // ②: a hidden tab must not keep polling the token endpoint (autoRefreshToken's own timer) while a Supabase
+      // outage keeps the previous attempt failing — that was ~5 req/min per hidden tab (2026-10-11 사용자 보고).
+      // stopAutoRefresh/startAutoRefresh only pause/resume the SDK's internal timer; a still-valid session and
+      // persisted storage are untouched, and a tab that is visible when created keeps refreshing as before.
+      if (typeof document !== 'undefined') {
+        if (document.hidden) c.auth.stopAutoRefresh();
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) c.auth.stopAutoRefresh();
+          else c.auth.startAutoRefresh();
+        });
+      }
       return c;
     });
     return clientPromise;
@@ -184,9 +200,14 @@ export function createLiveAuth(): MapAuth {
       if (!config || !clientPromise) return null;
       const { data, error } = await (await client()).auth.refreshSession();
       if (error || !data.session) {
+        // ②: a network/5xx-ish refresh failure feeds the SAME shared breaker every fetcher respects (①) — a
+        // genuinely expired/invalid refresh token (no network issue) never opens it, since isRetryableAuthError
+        // is false for that case.
+        if (error && isRetryableAuthError?.(error)) sharedRetryCooldown.recordFailure({ status: null });
         emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
         return null;
       }
+      sharedRetryCooldown.recordSuccess();
       return data.session.access_token;
     },
     settled: () => settledOf(emitter),
