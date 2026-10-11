@@ -73,6 +73,13 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
 새 build 실패면 배포하지 않음. 배포 후 문제가 생기면 직전 검증 artifact로 rollback(권한 승인 범위),
 다만 삭제 요청으로 폐기된 data version으로 되돌아가면 안 됨. 코드 rollback과 데이터 version은 분리 관리.
 
+## 2026-10-11 클라우드 업로드 중단(운영 적용함)
+- 사용자 지시(2026-10-11): 수집 앱 저장 구조 개편(서버 스키마 6·앱 DB 17) 완료 뒤 클라우드 Supabase(`nxdcxccixoswvqgjeprh`) 업로드를 막는다.
+  셀프호스트 Supabase 로 옮기는 동안 클라우드에 새 자료가 쌓이지 않게 하려는 것.
+- 적용: `supabase secrets set COMMUNITY_INGEST_ENABLED=false --project-ref nxdcxccixoswvqgjeprh`(2026-10-11 08:48:26 UTC, `secrets list` 의 값 다이제스트가 `false` 의 sha256 과 같음 확인).
+  `community-ingest` 는 `service_unavailable` 로 답한다. 앱의 전송 대기열(outbox)·개인 DB 는 지우지 않으므로 재개하면 그대로 다시 보낸다.
+- 되돌리기: `supabase secrets unset COMMUNITY_INGEST_ENABLED --project-ref nxdcxccixoswvqgjeprh`(또는 `true`). 공개 읽기(지도)는 영향 없음.
+
 ## 내 신고 비교(my-analytics) 운영 적용 — 별도 승인 필요
 1. 운영 DB에 `supabase/migrations/202609270100_my_analytics.sql` 적용(읽기 전용 STABLE RPC 1개, service_role만 실행). 수집·동의·writer 스키마 변경 없음.
 2. `supabase functions deploy my-analytics`(verify_jwt=true), secret `MY_ANALYTICS_ALLOWED_ORIGINS`.
