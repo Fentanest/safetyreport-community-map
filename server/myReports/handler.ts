@@ -220,13 +220,10 @@ export function createMyReportsHandler(deps: MyReportsDeps): (request: Request) 
     const error = (code: ErrorCode) => {
       const e = ERRORS[code];
       log(code);
-      // cloud-retry-brief.md ④: the body always carries the same Retry-After the header does, so a caller that
-      // cannot read response headers (or a log of the response body alone) still knows how long to back off.
-      const retryAfterSeconds = code === 'RATE_LIMITED' ? 60 : e.status === 503 ? 5 : null;
-      const extra: Record<string, string> = retryAfterSeconds !== null ? { 'Retry-After': String(retryAfterSeconds) }
-        : e.status === 401 ? { 'WWW-Authenticate': 'Bearer' } : {};
-      return new Response(JSON.stringify({ error: { code, message: e.message, retryable: e.retryable,
-        ...(retryAfterSeconds !== null ? { retry_after_seconds: retryAfterSeconds } : {}) }, request_id: rid }),
+      // Retry-After 는 헤더로만 준다 — 오류 본문은 my-reports-v1 계약(ErrorResponse, additionalProperties:false)과 같아야 한다.
+      const extra: Record<string, string> = code === 'RATE_LIMITED' ? { 'Retry-After': '60' }
+        : e.status === 503 ? { 'Retry-After': '5' } : e.status === 401 ? { 'WWW-Authenticate': 'Bearer' } : {};
+      return new Response(JSON.stringify({ error: { code, message: e.message, retryable: e.retryable }, request_id: rid }),
         { status: e.status, headers: { ...base, ...extra } });
     };
     try {
