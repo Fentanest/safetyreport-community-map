@@ -150,12 +150,15 @@ export function demoFacts(): PrivateFact[] {
   // Synthetic 위반법규 (law name + article, as the parser extracts it) from their own generator so every other synthetic
   // value stays unchanged; about one in eight answers has no law (법규 미상).
   const lawRand = mulberry32(20260929);
-  const LAWS: Record<'traffic' | 'parking' | 'other', readonly string[]> = {
+  // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other.
+  const LAWS: Record<'traffic' | 'parking' | 'safety' | 'living' | 'other', readonly string[]> = {
     parking: ['도로교통법 제32조', '도로교통법 제32조', '도로교통법 제33조', '도로교통법 제34조', '주차장법 제29조'],
     traffic: ['도로교통법 제5조', '도로교통법 제5조', '도로교통법 제5조의2', '도로교통법 제13조', '도로교통법 제25조', '도로교통법 제27조', '도로교통법 제38조'],
+    safety: ['시설물의 안전 및 유지관리에 관한 특별법 제12조', '산업안전보건법 제38조', '도로법 제45조'],
+    living: ['폐기물관리법 제8조', '하수도법 제34조', '경범죄처벌법 제3조'],
     other: ['도로교통법 제49조', '자동차관리법 제10조', '도로교통법 제35조'],
   };
-  const lawOf = (category: 'traffic' | 'parking' | 'other'): string | null => {
+  const lawOf = (category: 'traffic' | 'parking' | 'safety' | 'living' | 'other'): string | null => {
     const r = lawRand();
     const list = LAWS[category];
     if (r < 0.12) return null;
@@ -186,7 +189,10 @@ export function demoFacts(): PrivateFact[] {
     const lat = +(area.lat + (spot - 1) * 0.0071 + (spot === 2 ? 0.0033 : 0) + jitter).toFixed(6);
     const lng = +(area.lng + (spot - 1) * 0.0093 - jitter / 2).toFixed(6);
     const manager = area.managers[spot % area.managers.length];
-    const category = pick(['traffic', 'traffic', 'parking', 'parking', 'other'] as const);
+    // 5분류(observation-v5, 2026-10-11): other은 실제 통계 밖(코드 없음)의 작은 몫만 남고 safety·living이 새로 갈라진다.
+    const category = pick(['traffic', 'traffic', 'traffic', 'traffic', 'traffic', 'traffic', 'traffic',
+      'parking', 'parking', 'parking', 'parking', 'parking', 'parking', 'parking',
+      'safety', 'safety', 'safety', 'living', 'living', 'other'] as const);
     facts.push({
       fact_identity: `synthetic-${index}`, contributor_id: contributor, snapshot_id: 'synthetic', snapshot_generation: 1,
       report_date: report, completed_date: completed, category,

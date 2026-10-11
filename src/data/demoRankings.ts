@@ -22,7 +22,9 @@ type Person = { uuid: string; reports: number; fine: number; rejected: number; p
 function people(q: RankingQuery): Person[] {
   // the period and category scale the counts so each choice shows a different, plausible table
   const scale = q.period === 'month' ? 0.12 : q.period === 'range' ? 0.45 : 1;
-  const cat = q.category === 'all' ? 1 : q.category === 'traffic' ? 0.55 : q.category === 'parking' ? 0.35 : 0.1;
+  // 5분류(observation-v5, 2026-10-11): safety·living은 교통위반·주정차보다 작은 몫, other는 더 작은 몫.
+  const cat = q.category === 'all' ? 1 : q.category === 'traffic' ? 0.55 : q.category === 'parking' ? 0.35
+    : q.category === 'safety' ? 0.12 : q.category === 'living' ? 0.08 : 0.04;
   const seed = [...`${q.period}|${q.month}|${q.start}|${q.end}|${q.category}|${q.date_basis}`].reduce((a, c) => a * 31 + c.charCodeAt(0), 7);
   const id = rng(20261004);
   const r = rng(seed);

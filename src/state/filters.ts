@@ -30,11 +30,14 @@ export interface DraftFilters {
   law: string | null;
 }
 
-const CATEGORIES: Category[] = ['all', 'traffic', 'parking', 'other'];
+// 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json.
+const CATEGORIES: Category[] = ['all', 'traffic', 'parking', 'safety', 'living', 'other'];
 export const CATEGORY_LABEL: Record<Category, string> = {
   all: '전체',
   traffic: '교통위반',
   parking: '주정차',
+  safety: '안전신고',
+  living: '생활불편',
   other: '기타',
 };
 

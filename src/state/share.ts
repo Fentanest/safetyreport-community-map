@@ -26,7 +26,9 @@ const date = z.string().refine(isValidDate, 'date');
 const payloadSchema = z.strictObject({
   v: z.literal(1),
   scope: z.strictObject({
-    start: date, end: date, category: z.enum(['all', 'traffic', 'parking', 'other']),
+    start: date, end: date,
+    // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 옛 공유 링크의 category=other도 그대로 통과한다.
+    category: z.enum(['all', 'traffic', 'parking', 'safety', 'living', 'other']),
     region_code: z.string().regex(/^\d{2}(\d{3})?$/).nullable(),
     agency_key: key.nullable(), manager_key: key.nullable(),
     law: z.string().max(200).refine((s) => isLawParam(s), 'law').nullable(),

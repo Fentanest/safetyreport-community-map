@@ -1,4 +1,5 @@
-export type Category = 'all' | 'traffic' | 'parking' | 'other';
+// 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json.
+export type Category = 'all' | 'traffic' | 'parking' | 'safety' | 'living' | 'other';
 export type CapabilityState = 'supported' | 'partial' | 'missing';
 export type TimeBasis = 'report_date' | 'completed_date';
 /** The one date that selects the report set of every indicator (U01, docs/implementation/date-basis-dashboard). */

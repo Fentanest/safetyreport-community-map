@@ -46,10 +46,13 @@ const VALUE_HEADERS: Record<Metric, string> = {
   partial_rate: '일부수용 비율',
 };
 
+// 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other.
 const CATEGORY_LABEL: Record<RankingQuery['category'], string> = {
   all: '전체',
   traffic: '교통위반',
   parking: '주정차',
+  safety: '안전신고',
+  living: '생활불편',
   other: '기타',
 };
 
@@ -795,6 +798,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
               <option value="all">모든 분류</option>
               <option value="traffic">교통위반</option>
               <option value="parking">주정차</option>
+              <option value="safety">안전신고</option>
+              <option value="living">생활불편</option>
               <option value="other">기타</option>
             </select>
           </label>

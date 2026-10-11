@@ -41,7 +41,8 @@ interface Props {
   extra?: ReactNode;
 }
 
-const CATS: Category[] = ['all', 'traffic', 'parking', 'other'];
+// 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other.
+const CATS: Category[] = ['all', 'traffic', 'parking', 'safety', 'living', 'other'];
 
 export default function CommandBar(p: Props) {
   const [open, setOpen] = useState(false);

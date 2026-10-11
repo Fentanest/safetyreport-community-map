@@ -9,7 +9,9 @@ const nullableCount = count.nullable();
 const basis = z.enum(['report_date', 'completed_date']);
 
 export const scopeSchema = z.strictObject({
-  date_basis: basis, start: date, end: date, category: z.enum(['all', 'traffic', 'parking', 'other']),
+  date_basis: basis, start: date, end: date,
+  // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other.
+  category: z.enum(['all', 'traffic', 'parking', 'safety', 'living', 'other']),
   region_code: z.string().nullable(), agency_key: z.string().nullable(),
   manager_key: z.string().nullable(), bbox: z.tuple([positive, positive, positive, positive]).nullable(),
   // 위반법규 exact text or '__none__' (법규 미상); null = all laws
