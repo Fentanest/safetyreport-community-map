@@ -15,7 +15,7 @@ UUID bans, limited to this API's aggregate row. Map/my-reports contracts and pri
 | start/end | ISO calendar dates, inclusive, required together for range; no duration cap |
 | month | YYYY-MM for month; omitted = server's current Asia/Seoul month |
 | date_basis | completed_date (default) / report_date |
-| category | all (default), traffic, parking, other |
+| category | all (default), traffic, parking, safety, living, other (5분류, observation-v5 2026-10-11) |
 | min_reports | integer ≥1, default 1; independent of viewer's 10-report all-history gate |
 | page/page_size | 1-based; default 1/20; page_size ≤50; no arbitrary page-count cap |
 | expected_version | 32 hex digits; REQUIRED when page >1, optional on first page |

@@ -31,7 +31,8 @@ export const querySchema = z.strictObject({
   date_basis: z.enum(["completed_date", "report_date"]).default(
     "completed_date",
   ),
-  category: z.enum(["all", "traffic", "parking", "other"]).default("all"),
+  // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other.
+  category: z.enum(["all", "traffic", "parking", "safety", "living", "other"]).default("all"),
   min_reports: count.min(1).default(1),
   page: count.min(1).default(1),
   page_size: count.min(1).max(50).default(20),
@@ -87,7 +88,7 @@ export const responseSchema = z.strictObject({
     end: date.nullable(),
     month: z.string().nullable(),
     date_basis: z.enum(["report_date", "completed_date"]),
-    category: z.enum(["all", "traffic", "parking", "other"]),
+    category: z.enum(["all", "traffic", "parking", "safety", "living", "other"]),
     min_reports: count.min(1),
     timezone: z.literal("Asia/Seoul"),
     in_progress: z.boolean(),

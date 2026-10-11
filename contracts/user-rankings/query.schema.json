@@ -84,6 +84,8 @@
         "all",
         "traffic",
         "parking",
+        "safety",
+        "living",
         "other"
       ]
     },
