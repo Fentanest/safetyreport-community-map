@@ -107,8 +107,8 @@ DB에 화면 사본/새 테이블/인덱스를 만들지 않고 철회/삭제 �
 화면 전환 중 남아 있는 이전 범위의 패널 intent는 진행 중인 화면 요청을 기다린다. A→B→A 취소는 마지막 완전한 A DTO 묶음을 복구한 뒤 필요한 패널을 새 묶음으로 읽으며, B가 성공하면 이전 A intent를 취소한다. 계정 reset은 복구용 DTO도 지운다. 활성 화면의 패널은 이 경합에서 legacy 개별 fence 요청으로 돌아가지 않는다.
 
 2026-10-06 화면 timeout 부분 보완: 클라이언트의 각 공개 통계/screen read는 auth 준비·refresh·응답 body를 포함해 20초로 제한한다.
-(현재 코드 `src/data/requestDeadline.ts` 는 2693180 부터 임시로 60초다. 2026-10-11 셀프호스트 실측으로는 20초 복원이 여유 기준에
-못 미쳐 30초를 제안했다 — [셀프호스트 측정](implementation/selfhost-perf-20261011/REPORT.md).)
+(현재 코드 `src/data/requestDeadline.ts` 는 **30초**다(2026-10-12 사용자 결정). 2693180 부터 임시로 60초였고, 셀프호스트 실측으로는 20초 복원이
+여유 기준에 못 미쳐 서버 취소 시점(service_role 30초)과 같은 30초로 정했다 — [셀프호스트 측정](implementation/selfhost-perf-20261011/REPORT.md).)
 상한을 넘으면 `REQUEST_TIMEOUT`을 표시하고 자동 재시도하지 않으며, 이미 표시한 정상 화면은 유지하고 수동 재시도를 제공한다.
 일반 API 실패는 메시지에 오류 코드·HTTP 상태를 남긴다. scope 전환/로그아웃 취소는 timeout으로 바꾸지 않는다.
 이는 DB/Edge의 실행 제한이나 단일 snapshot 계약을 변경하지 않으며 서버 SQL 취소·성능 개선을 보장하지 않는다.

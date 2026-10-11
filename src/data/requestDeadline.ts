@@ -1,6 +1,7 @@
 /** Bound the entire read, including auth refresh and response body consumption. */
-// Temporarily 60 s: production Edge currently needs 18-33 s for the screen bundle (fix/screen-server-aggregate restores 20 s).
-export const ANALYTICS_READ_TIMEOUT_MS = 60_000;
+// 30 s (2026-10-12 사용자 결정): 셀프호스트 실측 최악 약 11초(동시 4개 15초)의 2배이고, 서버(service_role)가 30초에
+// 쿼리를 취소하므로 더 기다려도 얻는 것이 없다. 무료 클라우드 때 임시로 늘린 60초(2693180)를 대신한다.
+export const ANALYTICS_READ_TIMEOUT_MS = 30_000;
 
 export class AnalyticsReadTimeout extends Error {
   constructor() { super('Analytics read deadline exceeded'); this.name = 'AnalyticsReadTimeout'; }
