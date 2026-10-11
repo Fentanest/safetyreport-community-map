@@ -1,0 +1,157 @@
+{
+ "runtime": "Node v22.17.1; real self-hosted SQL sources; auth/RPC stubbed; not hosted Edge (Deno)",
+ "cases": {
+  "all-all": {
+   "source_bytes": {
+    "v1": 11976690,
+    "v2": 9156075
+   },
+   "public_bytes": 1789243,
+   "packet_equal": true,
+   "runs": {
+    "v1": [
+     {
+      "parse_ms": 95.2,
+      "handler_ms": 469.3
+     },
+     {
+      "parse_ms": 84.9,
+      "handler_ms": 447.4
+     },
+     {
+      "parse_ms": 126.9,
+      "handler_ms": 463.9
+     }
+    ],
+    "v2": [
+     {
+      "parse_ms": 69.7,
+      "handler_ms": 425.6
+     },
+     {
+      "parse_ms": 67.7,
+      "handler_ms": 395.7
+     },
+     {
+      "parse_ms": 61.1,
+      "handler_ms": 402.6
+     }
+    ]
+   }
+  },
+  "all-parking": {
+   "source_bytes": {
+    "v1": 2004582,
+    "v2": 1636347
+   },
+   "public_bytes": 849830,
+   "packet_equal": true,
+   "runs": {
+    "v1": [
+     {
+      "parse_ms": 13.3,
+      "handler_ms": 71.7
+     },
+     {
+      "parse_ms": 15.4,
+      "handler_ms": 72.7
+     },
+     {
+      "parse_ms": 10.3,
+      "handler_ms": 101.2
+     }
+    ],
+    "v2": [
+     {
+      "parse_ms": 11.5,
+      "handler_ms": 77.4
+     },
+     {
+      "parse_ms": 10.8,
+      "handler_ms": 67.5
+     },
+     {
+      "parse_ms": 8.1,
+      "handler_ms": 70.8
+     }
+    ]
+   }
+  },
+  "12m-all": {
+   "source_bytes": {
+    "v1": 9309851,
+    "v2": 6999021
+   },
+   "public_bytes": 1812500,
+   "packet_equal": true,
+   "runs": {
+    "v1": [
+     {
+      "parse_ms": 68.4,
+      "handler_ms": 341.4
+     },
+     {
+      "parse_ms": 69.3,
+      "handler_ms": 303.2
+     },
+     {
+      "parse_ms": 61.6,
+      "handler_ms": 282
+     }
+    ],
+    "v2": [
+     {
+      "parse_ms": 34.3,
+      "handler_ms": 273.4
+     },
+     {
+      "parse_ms": 33.9,
+      "handler_ms": 326.1
+     },
+     {
+      "parse_ms": 43.7,
+      "handler_ms": 275.7
+     }
+    ]
+   }
+  },
+  "12m-parking": {
+   "source_bytes": {
+    "v1": 1348756,
+    "v2": 1054111
+   },
+   "public_bytes": 654723,
+   "packet_equal": true,
+   "runs": {
+    "v1": [
+     {
+      "parse_ms": 10,
+      "handler_ms": 46.1
+     },
+     {
+      "parse_ms": 6.9,
+      "handler_ms": 53.6
+     },
+     {
+      "parse_ms": 8.4,
+      "handler_ms": 50.4
+     }
+    ],
+    "v2": [
+     {
+      "parse_ms": 5.1,
+      "handler_ms": 41.8
+     },
+     {
+      "parse_ms": 5.1,
+      "handler_ms": 44.8
+     },
+     {
+      "parse_ms": 5.7,
+      "handler_ms": 46.1
+     }
+    ]
+   }
+  }
+ }
+}

@@ -47,8 +47,9 @@ export function createScreenHandler(deps: PersonalDeps) {
         headers['Retry-After'] = '60'; return error('RATE_LIMITED', 429);
       }
       const source = await deps.rpc('internal_analytics_read_snapshot', { p_scope: scope, p_previous: true,
-        // v2 (202610061000) measured slower on the production aarch64 host (8.2-10.4 s vs 6.2-7.2 s); request v1 until v2 is tuned there.
-        p_user: viewer.uid, p_session: viewer.session, p_options: { fact_encoding: 'columns-v1', screen_encoding: 'screen-aggregate-v1', panels } }) as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown; aggregate?: ScreenAggregate };
+        // v2 (202610061000): on the self-hosted x86 host (2026-10-11, 89k facts) 10-23% faster SQL and 18-25% smaller than v1
+        // with identical public packets (docs/implementation/selfhost-perf-20261011). The old aarch64 cloud host preferred v1.
+        p_user: viewer.uid, p_session: viewer.session, p_options: { fact_encoding: 'columns-v1', screen_encoding: 'screen-aggregate-v2', panels } }) as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown; aggregate?: ScreenAggregate };
       const aggregate = source?.aggregate ? new ScreenAggregates(source.aggregate, scope, source.state) : null;
       const facts = aggregate ? [] : decodeScreenFacts(source?.facts);
       if (!source?.state || !source.viewer || !facts) return error('AGGREGATE_NOT_READY', 503);
