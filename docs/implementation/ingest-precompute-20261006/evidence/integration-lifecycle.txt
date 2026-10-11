@@ -1,0 +1,42 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-precompute
+
+ERROR:  insert or update on table "community_manifest_generations" violates foreign key constraint "community_manifest_generations_contributor_id_fkey"
+DETAIL:  Key (contributor_id)=(c129bd04-0543-cc45-7892-8312a356c91b) is not present in table "users".
+CONTEXT:  SQL statement "insert into private.community_manifest_generations(contributor_id,dataset_key,generation)
+    select contributor_id,dataset_key,count(*) from old_facts
+     where public_state='completed'
+     group by contributor_id,dataset_key order by contributor_id,dataset_key
+    on conflict(contributor_id,dataset_key) do update
+       set generation=private.community_manifest_generations.generation+excluded.generation"
+PL/pgSQL function private.community_facts_manifest_delete_batch() line 3 at SQL statement
+ ❯ tests/integration/ingest-precompute.test.ts (11 tests | 1 failed | 1 skipped) 18511ms
+   ❯ precompute lifecycle and rollout (3)
+     × updates withdrawal, fresh/superseding lineage, reshare, suspension, disclosures, deletion fences and auth cascade in the same transaction 4042ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/ingest-precompute.test.ts > precompute lifecycle and rollout > updates withdrawal, fresh/superseding lineage, reshare, suspension, disclosures, deletion fences and auth cascade in the same transaction
+Error: Command failed: docker exec -i supabase_db_ci0926-int psql -X -U supabase_admin -d postgres -qAt -v ON_ERROR_STOP=1
+ERROR:  insert or update on table "community_manifest_generations" violates foreign key constraint "community_manifest_generations_contributor_id_fkey"
+DETAIL:  Key (contributor_id)=(c129bd04-0543-cc45-7892-8312a356c91b) is not present in table "users".
+CONTEXT:  SQL statement "insert into private.community_manifest_generations(contributor_id,dataset_key,generation)
+    select contributor_id,dataset_key,count(*) from old_facts
+     where public_state='completed'
+     group by contributor_id,dataset_key order by contributor_id,dataset_key
+    on conflict(contributor_id,dataset_key) do update
+       set generation=private.community_manifest_generations.generation+excluded.generation"
+PL/pgSQL function private.community_facts_manifest_delete_batch() line 3 at SQL statement
+
+ ❯ sql tests/integration/ingest-precompute.test.ts:30:35
+
+ ❯ tests/integration/ingest-precompute.test.ts:199:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed | 1 skipped (11)
+   Start at  18:24:16
+   Duration  19.51s (tests 96%, transform 3%, import 1%)
+

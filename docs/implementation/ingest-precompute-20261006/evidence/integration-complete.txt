@@ -1,0 +1,183 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-precompute
+
+ERROR:  canceling statement due to statement timeout
+CONTEXT:  SQL statement "insert into private.screen_observations
+    with disclosures as materialized (
+        select g.lineage_id,
+               coalesce(bool_or(d.amounts_public), false) as amount_public,
+               coalesce(bool_or(d.violation_law_public), false) as law_public,
+               coalesce(bool_or(d.rating_public), false) as rating_public
+          from private.community_consent_grants g
+          left join private.community_policy_disclosures d on d.version = g.policy_version
+         where g.revoked_at is null
+         group by g.lineage_id
+    ), active_grants as materialized (
+        select g.grant_id, d.amount_public, d.law_public, d.rating_public
+          from private.community_consent_grants g
+          join private.community_consent_grants a
+            on a.lineage_id = g.lineage_id and a.user_id = g.user_id and a.revoked_at is null
+          join disclosures d on d.lineage_id = g.lineage_id
+    ), scoped as materialized (
+        -- D13: keep the whole eligible history of each candidate key for election.
+        select f.dataset_key, f.source_report_key, f.report_number, f.payload_sha256, f.answer_accepted_at, f.contributor_id, f.first_accepted_at, f.report_date, f.completed_date, f.status, f.disposition, f.vehicle_raw, f.lat, f.lng, f.address, f.region_code, f.agency_key, f.agency_name, f.agency_current_name, f.manager_key, f.manager_name, f.amount_kind, f.amount_confirmed_won, f.violation_law, f.rating, f.category, g.amount_public, g.law_public, g.rating_public
+          from private.community_report_facts f
+          join private.contributor_profiles c on c.user_id = f.contributor_id and c.status = 'active'
+          join active_grants g on g.grant_id = f.consent_grant_id
+          
+         where f.public_state = 'completed' and f.source_report_key = any(p_keys)
+    ), budget as materialized (
+        select count(*) as n from scoped
+    ), admitted as materialized (
+        -- Do not rank or build any JSON if the whole-history row budget is exceeded.
+        select s.* from scoped s
+    ), key_numbers as (
+        -- R2: first known number over exactly the same eligible history as scoped.
+        select distinct on (f.source_report_key) f.source_report_key, f.report_number as key_number
+          from admitted f
+         order by f.source_report_key, (f.report_number is null), f.first_accepted_at, f.contributor_id, f.dataset_key
+    ),
+    identified as materialized (
+        select s.*, k.key_number,
+               (s.source_report_key || '|' || coalesce(s.report_number, k.key_number, 'legacy')) as report_identity
+          from admitted s join key_numbers k using (source_report_key)
+    ), answers as (
+        select report_identity,payload_sha256,max(answer_accepted_at) as answer_time
+          from identified group by report_identity,payload_sha256
+    ), answered as materialized (
+        select i.*,a.answer_time from identified i join answers a using(report_identity,payload_sha256)
+    ), elected as (
+        -- Avoid unbounded-window tuple stores for a single identity with a very large history.
+        select distinct on (report_identity) report_identity,contributor_id,dataset_key,report_date,completed_date
+          from answered
+         order by report_identity,answer_time desc,completed_date desc nulls last,first_accepted_at,contributor_id,dataset_key
+    ), contributions as (
+        select report_identity,count(*) as contribution_count from answered group by report_identity
+    ), ranked as (
+        select i.*,(i.contributor_id=e.contributor_id and i.dataset_key=e.dataset_key) as is_representative,
+               e.report_date as identity_report_date,e.completed_date as identity_completed_date,c.contribution_count
+          from answered i join elected e using(report_identity) join contributions c using(report_identity)
+    )
+select r.*,private.screen_address(address) as place_address,
+ private.screen_place_key(private.screen_address(address)) as place,
+ coalesce(private.analytics_region(region_code,null,null),private.analytics_region(region_code,lat,lng)) as region,
+ case when law_public then private.screen_law(violation_law) end as law,
+ private.screen_plate(vehicle_raw) as plate,
+ private.screen_mask_plate(private.screen_plate(vehicle_raw)) as plate_mask,
+ status in ('accepted','partial','rejected','withdrawn','transferred','completed_unknown') as done,
+ case when status in ('accepted','partial','rejected','completed_unknown') and completed_date>=report_date then completed_date-report_date end as days,
+ case when amount_kind='combined' then 'combined' when amount_kind='penalty' then case when disposition='fine' then 'conflict' else 'penalty' end
+ when amount_kind='fine' and disposition<>'fine' then 'conflict' when disposition<>'fine' then 'none'
+ when amount_kind is distinct from 'fine' or status not in ('accepted','partial') then 'conflict'
+ when not amount_public then case when amount_confirmed_won is null then 'unconfirmed' else 'undisclosed' end
+ when amount_confirmed_won is null then 'unconfirmed' else 'confirmed' end as amount_class,
+ case when rating_public then rating end as stars
+ from ranked r"
+PL/pgSQL function private.screen_refresh_keys(text[]) line 6 at SQL statement
+SQL statement "SELECT private.screen_refresh_keys(keys)"
+PL/pgSQL function private.screen_facts_changed() line 9 at PERFORM
+ ❯ tests/integration/cohort-timeout.test.ts (5 tests | 1 failed) 43584ms
+   ❯ cohort timeout: exact ordered JSON and unchanged boundaries (5)
+     × keeps validation errors and the whole-history 100000-row budget, including the region-filter asymmetry 32828ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/cohort-timeout.test.ts > cohort timeout: exact ordered JSON and unchanged boundaries > keeps validation errors and the whole-history 100000-row budget, including the region-filter asymmetry
+Error: Command failed: docker exec -i astra-precompute-pg psql -X -U supabase_admin -d postgres -qAt -v ON_ERROR_STOP=1
+ERROR:  canceling statement due to statement timeout
+CONTEXT:  SQL statement "insert into private.screen_observations
+    with disclosures as materialized (
+        select g.lineage_id,
+               coalesce(bool_or(d.amounts_public), false) as amount_public,
+               coalesce(bool_or(d.violation_law_public), false) as law_public,
+               coalesce(bool_or(d.rating_public), false) as rating_public
+          from private.community_consent_grants g
+          left join private.community_policy_disclosures d on d.version = g.policy_version
+         where g.revoked_at is null
+         group by g.lineage_id
+    ), active_grants as materialized (
+        select g.grant_id, d.amount_public, d.law_public, d.rating_public
+          from private.community_consent_grants g
+          join private.community_consent_grants a
+            on a.lineage_id = g.lineage_id and a.user_id = g.user_id and a.revoked_at is null
+          join disclosures d on d.lineage_id = g.lineage_id
+    ), scoped as materialized (
+        -- D13: keep the whole eligible history of each candidate key for election.
+        select f.dataset_key, f.source_report_key, f.report_number, f.payload_sha256, f.answer_accepted_at, f.contributor_id, f.first_accepted_at, f.report_date, f.completed_date, f.status, f.disposition, f.vehicle_raw, f.lat, f.lng, f.address, f.region_code, f.agency_key, f.agency_name, f.agency_current_name, f.manager_key, f.manager_name, f.amount_kind, f.amount_confirmed_won, f.violation_law, f.rating, f.category, g.amount_public, g.law_public, g.rating_public
+          from private.community_report_facts f
+          join private.contributor_profiles c on c.user_id = f.contributor_id and c.status = 'active'
+          join active_grants g on g.grant_id = f.consent_grant_id
+          
+         where f.public_state = 'completed' and f.source_report_key = any(p_keys)
+    ), budget as materialized (
+        select count(*) as n from scoped
+    ), admitted as materialized (
+        -- Do not rank or build any JSON if the whole-history row budget is exceeded.
+        select s.* from scoped s
+    ), key_numbers as (
+        -- R2: first known number over exactly the same eligible history as scoped.
+        select distinct on (f.source_report_key) f.source_report_key, f.report_number as key_number
+          from admitted f
+         order by f.source_report_key, (f.report_number is null), f.first_accepted_at, f.contributor_id, f.dataset_key
+    ),
+    identified as materialized (
+        select s.*, k.key_number,
+               (s.source_report_key || '|' || coalesce(s.report_number, k.key_number, 'legacy')) as report_identity
+          from admitted s join key_numbers k using (source_report_key)
+    ), answers as (
+        select report_identity,payload_sha256,max(answer_accepted_at) as answer_time
+          from identified group by report_identity,payload_sha256
+    ), answered as materialized (
+        select i.*,a.answer_time from identified i join answers a using(report_identity,payload_sha256)
+    ), elected as (
+        -- Avoid unbounded-window tuple stores for a single identity with a very large history.
+        select distinct on (report_identity) report_identity,contributor_id,dataset_key,report_date,completed_date
+          from answered
+         order by report_identity,answer_time desc,completed_date desc nulls last,first_accepted_at,contributor_id,dataset_key
+    ), contributions as (
+        select report_identity,count(*) as contribution_count from answered group by report_identity
+    ), ranked as (
+        select i.*,(i.contributor_id=e.contributor_id and i.dataset_key=e.dataset_key) as is_representative,
+               e.report_date as identity_report_date,e.completed_date as identity_completed_date,c.contribution_count
+          from answered i join elected e using(report_identity) join contributions c using(report_identity)
+    )
+select r.*,private.screen_address(address) as place_address,
+ private.screen_place_key(private.screen_address(address)) as place,
+ coalesce(private.analytics_region(region_code,null,null),private.analytics_region(region_code,lat,lng)) as region,
+ case when law_public then private.screen_law(violation_law) end as law,
+ private.screen_plate(vehicle_raw) as plate,
+ private.screen_mask_plate(private.screen_plate(vehicle_raw)) as plate_mask,
+ status in ('accepted','partial','rejected','withdrawn','transferred','completed_unknown') as done,
+ case when status in ('accepted','partial','rejected','completed_unknown') and completed_date>=report_date then completed_date-report_date end as days,
+ case when amount_kind='combined' then 'combined' when amount_kind='penalty' then case when disposition='fine' then 'conflict' else 'penalty' end
+ when amount_kind='fine' and disposition<>'fine' then 'conflict' when disposition<>'fine' then 'none'
+ when amount_kind is distinct from 'fine' or status not in ('accepted','partial') then 'conflict'
+ when not amount_public then case when amount_confirmed_won is null then 'unconfirmed' else 'undisclosed' end
+ when amount_confirmed_won is null then 'unconfirmed' else 'confirmed' end as amount_class,
+ case when rating_public then rating end as stars
+ from ranked r"
+PL/pgSQL function private.screen_refresh_keys(text[]) line 6 at SQL statement
+SQL statement "SELECT private.screen_refresh_keys(keys)"
+PL/pgSQL function private.screen_facts_changed() line 9 at PERFORM
+
+ ❯ sql tests/integration/cohort-timeout.test.ts:22:10
+
+ ❯ tests/integration/cohort-timeout.test.ts:113:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 38 passed | 7 skipped (46)
+   Start at  19:12:34
+   Duration  157.68s (tests 99%)
+
+Traceback (most recent call last):
+  File "/home/better0101/projects/safetyreport-community-map-precompute/scripts/benchmark/verify_ingest_precompute_isolated.py", line 26, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/better0101/projects/safetyreport-community-map-precompute/scripts/benchmark/verify_ingest_precompute_isolated.py", line 22, in main
+    subprocess.run(command,cwd=b.ROOT,env=env,check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node_modules/.bin/vitest', 'run', 'tests/integration/ingest-precompute.test.ts', 'tests/integration/cohort-timeout.test.ts', 'tests/integration/screen-transport.test.ts', 'tests/integration/screen-server-aggregate.test.ts', '--configLoader', 'runner', '--no-cache', '--no-file-parallelism', '--maxWorkers=1']' returned non-zero exit status 1.

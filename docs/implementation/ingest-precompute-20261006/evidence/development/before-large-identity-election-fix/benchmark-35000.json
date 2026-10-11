@@ -1,0 +1,1092 @@
+{
+  "synthetic": true,
+  "size": 35000,
+  "architecture": "x86_64 resource-limited; not production ARM",
+  "diversity": {
+    "facts": 35000,
+    "places": 4507,
+    "agencies": 127,
+    "managers": 1016,
+    "laws": 31,
+    "vehicles": 8000
+  },
+  "storage": {
+    "observations": 32332,
+    "rollup_rows": 161979,
+    "observations_bytes": 47194112,
+    "rollup_bytes": 157736960
+  },
+  "migration_sha256": "1cadc9d756cd5978550dd0b72a52af1bbae666168edfe5d94ce68f1801581635",
+  "reads": [
+    {
+      "phase": "before",
+      "window": "year",
+      "samples": [
+        {
+          "ms": 2991.55,
+          "bytes": 4505479,
+          "iteration": 0,
+          "cache": "shared_buffers_cold_OS_cache_uncontrolled"
+        },
+        {
+          "ms": 3097.057,
+          "bytes": 4505479,
+          "iteration": 1,
+          "cache": "warm"
+        },
+        {
+          "ms": 3035.639,
+          "bytes": 4505479,
+          "iteration": 2,
+          "cache": "warm"
+        },
+        {
+          "ms": 2994.685,
+          "bytes": 4505479,
+          "iteration": 3,
+          "cache": "warm"
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "window": "all",
+      "samples": [
+        {
+          "ms": 4462.09,
+          "bytes": 5049430,
+          "iteration": 0,
+          "cache": "shared_buffers_cold_OS_cache_uncontrolled"
+        },
+        {
+          "ms": 3846.809,
+          "bytes": 5049430,
+          "iteration": 1,
+          "cache": "warm"
+        },
+        {
+          "ms": 4068.817,
+          "bytes": 5049430,
+          "iteration": 2,
+          "cache": "warm"
+        },
+        {
+          "ms": 3941.153,
+          "bytes": 5049430,
+          "iteration": 3,
+          "cache": "warm"
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "window": "year",
+      "samples": [
+        {
+          "ms": 1767.088,
+          "bytes": 1460897,
+          "iteration": 0,
+          "cache": "shared_buffers_cold_OS_cache_uncontrolled"
+        },
+        {
+          "ms": 1876.071,
+          "bytes": 1460897,
+          "iteration": 1,
+          "cache": "warm"
+        },
+        {
+          "ms": 1830.44,
+          "bytes": 1460897,
+          "iteration": 2,
+          "cache": "warm"
+        },
+        {
+          "ms": 1684.195,
+          "bytes": 1460897,
+          "iteration": 3,
+          "cache": "warm"
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "window": "all",
+      "samples": [
+        {
+          "ms": 2312.436,
+          "bytes": 1864361,
+          "iteration": 0,
+          "cache": "shared_buffers_cold_OS_cache_uncontrolled"
+        },
+        {
+          "ms": 2107.463,
+          "bytes": 1864361,
+          "iteration": 1,
+          "cache": "warm"
+        },
+        {
+          "ms": 2211.607,
+          "bytes": 1864361,
+          "iteration": 2,
+          "cache": "warm"
+        },
+        {
+          "ms": 2133.62,
+          "bytes": 1864361,
+          "iteration": 3,
+          "cache": "warm"
+        }
+      ]
+    }
+  ],
+  "writes": [
+    {
+      "phase": "before",
+      "events": 1,
+      "ms": 27.42,
+      "accepted": 1
+    },
+    {
+      "phase": "before",
+      "events": 20,
+      "ms": 52.573,
+      "accepted": 20
+    },
+    {
+      "phase": "after",
+      "events": 1,
+      "ms": 431.095,
+      "accepted": 1
+    },
+    {
+      "phase": "after",
+      "events": 20,
+      "ms": 433.657,
+      "accepted": 20
+    }
+  ],
+  "backfill_seconds": 39.71782360202633,
+  "backfill_batches": [
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 195.87933109141886
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 190.93892304226756
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 215.0750400032848
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 195.29461511410773
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 204.60709696635604
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 182.2200738824904
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 191.46391400136054
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 199.7843449935317
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 213.4477288927883
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 181.6975101828575
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 223.6351768951863
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 206.93055307492614
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 190.81180496141315
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 210.0585140287876
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 196.60288793966174
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 204.63763503357768
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 259.88564104773104
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 191.9553210027516
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 209.85756302252412
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 250.39948895573616
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 232.05826804041862
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 216.54776600189507
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 206.989562837407
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 205.80141991376877
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 233.71257516555488
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 248.93064610660076
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 201.9956901203841
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 195.731044979766
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 175.48030405305326
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 185.60123001225293
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 189.06897609122097
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 210.6424029916525
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 214.58603790961206
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 195.15635003335774
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 225.7880480028689
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 236.86560499481857
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 228.766153100878
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 190.00649196095765
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 222.18422614969313
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 199.61136509664357
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 193.30816995352507
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 223.5197809059173
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 296.6883678454906
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 201.13446796312928
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 220.60601599514484
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 224.71000906080008
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 204.5258400030434
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 226.078286068514
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 185.42630691081285
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 252.1477818954736
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 210.91219689697027
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 200.9717479813844
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 205.14449384063482
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 198.18807090632617
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 233.60586096532643
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 253.5977689549327
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 237.03701212070882
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 224.26679590716958
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 239.07273798249662
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 195.44461485929787
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 231.2817790079862
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 208.36116513237357
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 235.84726196713746
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 219.25856382586062
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 190.98726497031748
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 330.51340584643185
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 190.83375786431134
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 197.44956609793007
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 206.7496250383556
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 198.2841300778091
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 248.53098904713988
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 250.9178000036627
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 192.2899871133268
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 212.21020282246172
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 224.15050398558378
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 216.56248508952558
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 235.32152315601707
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 194.84512298367918
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 198.7210838124156
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 221.3089931756258
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 206.08390285633504
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 211.31046302616596
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 228.26917399652302
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 203.3784301020205
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 215.8314709085971
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 202.18221889808774
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 374.7618440538645
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 204.61066905409098
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 217.0008399989456
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 209.2708358541131
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 226.09165008179843
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 260.0165531039238
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 174.10763795487583
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 196.98305800557137
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 190.75498613528907
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 217.35510206781328
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 198.26821004971862
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 220.50687205046415
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 208.83739297278225
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 202.01754616573453
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 232.20397299155593
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 271.041780943051
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 220.61133501119912
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 251.83633598499
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 248.33829887211323
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 220.73357901535928
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 204.97234794311225
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 216.5456439834088
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 219.04302784241736
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 224.55402789637446
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 218.92784093506634
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 293.69535692967474
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 241.68727593496442
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 193.70596297085285
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 186.18074688129127
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 183.612909168005
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 184.4812559429556
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 190.55798999033868
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 207.12522487156093
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 236.08327796682715
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 241.76052608527243
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 201.54737890698016
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 227.35555097460747
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 232.25387604907155
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 194.18632006272674
+    },
+    {
+      "done": false,
+      "keys": 250,
+      "months": 0,
+      "wall_ms": 210.46572201885283
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 326.43702207133174
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 400.89965309016407
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 506.8107801489532
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 521.0254630073905
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 476.35286091826856
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 445.0503960251808
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 517.1409961767495
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 472.4965048953891
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 482.2464289609343
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 450.3437918610871
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 471.9271350186318
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 555.1272879820317
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 481.47288896143436
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 524.8632149305195
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 473.3271971344948
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 472.04660112038255
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 503.94328497350216
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 519.7468250989914
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 528.8386309985071
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 563.579014968127
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 784.3544399365783
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 687.9037690814584
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 489.3721411935985
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 404.6584661118686
+    },
+    {
+      "done": false,
+      "keys": 0,
+      "months": 1,
+      "wall_ms": 266.19569514878094
+    },
+    {
+      "done": true,
+      "keys": 0,
+      "months": 0,
+      "wall_ms": 107.85098210908473
+    }
+  ],
+  "constraints": {
+    "cpus": 1,
+    "memory_bytes": 1073741824,
+    "shared_buffers": "224MB",
+    "work_mem": "2MB",
+    "max_parallel_workers_per_gather": 1,
+    "jit": "off"
+  },
+  "cold_limit": "Container restart clears shared_buffers. Host OS page cache not cleared."
+}

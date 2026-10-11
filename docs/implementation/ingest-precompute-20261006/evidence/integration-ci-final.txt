@@ -1,0 +1,9 @@
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-precompute
+
+
+ Test Files  4 passed (4)
+      Tests  39 passed | 7 skipped (46)
+   Start at  19:25:29
+   Duration  191.33s (tests 99%)
+

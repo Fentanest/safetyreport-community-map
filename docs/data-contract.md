@@ -174,3 +174,26 @@ v2 가 SQL 10–23% 빠르고 내부 source 가 18–25% 작으며 공개 packet
 완료했다고 주장하지 않는다. Edge의 장소·통계·기여 lookup은 요청 단위 Map으로 바꾸며 저장 캐시가 아니다.
 
 성능·검사·배포 호환성은 [최적화 보고서](implementation/screen-aggregate-opt-20261006/REPORT.md)를 따른다.
+
+## 2026-10-06 · ingest-precompute 로컬 후보 (기본 경로 미전환)
+
+`202610061200_ingest_precompute.sql`은 private `screen_observations`에 공개 자격을 통과한 관측의
+정규화·마스킹·R2 identity·대표 및 identity 날짜·contribution_count를 저장한다. INSERT/UPDATE/DELETE 시
+영향받은 source_report_key 전체 적격 이력만 다시 선출한다. 동의 user/lineage, contributor 상태, 정책 공개범위
+변경도 같은 유지 경로를 탄다. 정규화 함수나 지역 registry 자체를 바꿀 때는 별도 전체 재계산이 필요하다.
+
+private `screen_month_rollups`는 날짜축×월×카테고리의 패널별 충분통계다. 정확한 기간 중앙값/p90을 위해
+private duration/amount 배열을 유지하며 월 중앙값의 평균이나 월 TOP5 합산을 하지 않는다.
+완전한 월의 전역/카테고리 패널 집계를 병합하고, 경계일·교차 필터·bbox·개인/좌표/차량 등은 저장 관측을 읽는다.
+따라서 **모든 화면이 소량 rollup만 읽는 구조와 fact 수에 무관한 요청 비용은 아직 달성하지 못했다.**
+
+내부 opt-in `screen-precompute-v1`은 고정 23열의 stats 배열을 반환한다. 열 순서는
+`side,period,kind,k,focus,ord,label,n,c,a,p,r,f,w,penalty,places,missing,answer_missing,duration,amount,rating,histogram,ratings`다.
+원번호·차량 연결키·report_identity·contributor UUID를 이 source/공개 DTO에 추가하지 않는다.
+Edge decoder만 이 배열을 복원하며 브라우저의 `screen-v1` 공개 DTO와 인증/10건 gate/no-store 계약은 그대로다.
+현재 Edge는 `screen-aggregate-v2`를 계속 요청하고, 새 opt-in의 backfill 미완료 시 기존 v2 source로 응답한다.
+
+한 화면은 기존 STABLE 단일 RPC에서 state/viewer/aggregate를 읽는다. fact와 저장 관측·월 집계는 동일 트랜잭션으로
+반영된다. 월 dirty queue는 DEFERRABLE constraint trigger가 커밋 전에 병합하고, 같은 쓰기 트랜잭션의 flush 전 읽기는 v2로 처리한다. 새 backfill은 dataset_version을 바꾸지 않으며 동의/정지/disclosure 변경은 버전을 무효화한다.
+변경 경로·미달 목표·측정·적용/롤백은 [후보 보고서](implementation/ingest-precompute-20261006/REPORT.md)를 따른다.
+운영 반영·기본 경로 전환·채택 완료를 뜻하지 않는다.

@@ -1,0 +1,9 @@
+
+> safetyreport-community-map@0.1.0 scan
+> python3 scripts/scan_public_dist.py --dir dist
+
+{
+  "checked_directory": "dist",
+  "passed": true,
+  "issues": []
+}

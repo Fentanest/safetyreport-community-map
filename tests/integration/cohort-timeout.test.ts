@@ -19,7 +19,7 @@ const personal = old.match(/create or replace function public\.internal_my_analy
 const seed = read('tests/integration/helpers/cohort-timeout-seed.sql').replaceAll('__SIZE__', '300');
 const prefix = `begin;${seed}${frozen}${personal}${migration}set plan_cache_mode=force_custom_plan;set statement_timeout='60s';`;
 function sql(query: string): any[] {
-  return execFileSync('docker', ['exec', '-i', 'supabase_db_ci0926-int', 'psql', '-X', '-U', 'supabase_admin', '-d', 'postgres', '-qAt', '-v', 'ON_ERROR_STOP=1'],
+  return execFileSync('docker', ['exec', '-i', (process.env.PRECOMPUTE_DISPOSABLE==='1'?'astra-precompute-pg':'supabase_db_ci0926-int'), 'psql', '-X', '-U', 'supabase_admin', '-d', 'postgres', '-qAt', '-v', 'ON_ERROR_STOP=1'],
     { input: prefix + query + '\nrollback;', encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 300000 })
     .split('\n').filter(s => s.startsWith('{')).map(s => JSON.parse(s));
 }

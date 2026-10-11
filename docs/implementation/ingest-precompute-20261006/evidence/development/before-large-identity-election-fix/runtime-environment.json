@@ -1,0 +1,18 @@
+{
+  "nano_cpus": 1000000000,
+  "memory_bytes": 1073741824,
+  "shm_bytes": 268435456,
+  "postgres": {
+    "version": "PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+    "shared_buffers": "224MB",
+    "work_mem": "2MB",
+    "max_parallel_workers_per_gather": "1",
+    "max_connections": "60",
+    "jit": "off",
+    "read_function_settings": [
+      "search_path=\"\"",
+      "enable_nestloop=off",
+      "enable_sort=off"
+    ]
+  }
+}

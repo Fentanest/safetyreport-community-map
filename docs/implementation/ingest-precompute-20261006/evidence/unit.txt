@@ -1,0 +1,17 @@
+
+> safetyreport-community-map@0.1.0 test
+> vitest run --configLoader runner --no-cache
+
+
+ RUN  v5.0.1 /home/better0101/projects/safetyreport-community-map-precompute
+
+
+ Test Files  55 passed | 28 skipped (83)
+      Tests  660 passed | 165 skipped (825)
+   Start at  18:49:21
+   Duration  15.41s (transform 62%, import 27%, tests 11%, worker 1%)
+
+  Transform  transforming modules took 103.75s · 62% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

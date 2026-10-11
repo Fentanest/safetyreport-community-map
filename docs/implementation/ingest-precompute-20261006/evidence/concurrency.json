@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "synthetic": true,
+  "checks": [
+    {
+      "name": "concurrent same identity writes + automatic deferred COMMIT flush",
+      "passed": true,
+      "dirty": 0,
+      "winner": "rejected",
+      "contributions": 2
+    },
+    {
+      "name": "STABLE single statement retains whole packet across concurrent commit",
+      "passed": true
+    }
+  ]
+}

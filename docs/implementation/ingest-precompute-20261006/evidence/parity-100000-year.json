@@ -1,0 +1,29 @@
+{
+  "whole_packet_deep_equal": true,
+  "synthetic": true,
+  "size": 100000,
+  "window": "year",
+  "measurements": [
+    {
+      "phase": "legacy",
+      "source_bytes": 64382180,
+      "parse_ms": 699.6279320000003,
+      "handler_ms": 5553.121331,
+      "public_bytes": 803295
+    },
+    {
+      "phase": "before",
+      "source_bytes": 5346065,
+      "parse_ms": 38.825048999999126,
+      "handler_ms": 137.9202069999992,
+      "public_bytes": 803295
+    },
+    {
+      "phase": "after",
+      "source_bytes": 2044317,
+      "parse_ms": 19.137912000000142,
+      "handler_ms": 123.41495899999973,
+      "public_bytes": 803295
+    }
+  ]
+}
