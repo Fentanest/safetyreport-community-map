@@ -6,9 +6,14 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { canonicalJson, deriveFact, sha256Hex } from '../../server/ingest/observation';
 const auth = process.env.SR_AUTH_REPO ?? '/home/better0101/projects/worktree/auth-account-binding';
 const strip = (s: string) => s.replace(/^(begin|commit);\s*$/gm, '');
-const migration = strip(readFileSync(resolve(auth, 'supabase/migrations/202610061100_official_account_binding.sql'), 'utf8'))
-  + strip(readFileSync('supabase/migrations/202610061101_official_account_ingest.sql', 'utf8'));
-const fixture = readFileSync(resolve(auth, 'tests/support/official-binding-fixture.sql'), 'utf8');
+// 로컬 스택(COMMUNITY_STACK=1)에서만 외부 auth 레포 파일을 읽는다 — 그 밖(CI·Pages 빌드)에서는 import 단계에서 ENOENT 로
+// 스위트 전체를 깨지 않게(2026-10-12, Pages 빌드가 이 파일 때문에 10-06 부터 실패하던 것).
+const stackEnabled = process.env.COMMUNITY_STACK === '1';
+const migration = stackEnabled
+  ? strip(readFileSync(resolve(auth, 'supabase/migrations/202610061100_official_account_binding.sql'), 'utf8'))
+    + strip(readFileSync('supabase/migrations/202610061101_official_account_ingest.sql', 'utf8'))
+  : '';
+const fixture = stackEnabled ? readFileSync(resolve(auth, 'tests/support/official-binding-fixture.sql'), 'utf8') : '';
 let helpers: string;
 const lit = (s: string) => "'" + s.replaceAll("'", "''") + "'";
 const send = (i = 1, key = 'a', number = 'SPP-2610-1000001', rev = 1, type = 'completed_observation') =>
@@ -23,7 +28,7 @@ const rows = (body: string, before = '') => {
 };
 const code = (r: any) => r.results[0].error?.code;
 const accepted = (r: any) => expect(r.results[0]).toMatchObject({ status: 'accepted', durable: true });
-describe.skipIf(process.env.COMMUNITY_STACK !== '1')('binding-aware ingest on local PostgreSQL (rollback)', () => {
+describe.skipIf(!stackEnabled)('binding-aware ingest on local PostgreSQL (rollback)', () => {
   beforeAll(async () => {
     const vectors = JSON.parse(readFileSync('contracts/community-ingest/vectors/observations.json', 'utf8'));
     const payload = vectors.cases.find((c: any) => c.name === 'accepted_fine').expected_payload;

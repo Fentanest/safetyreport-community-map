@@ -246,7 +246,7 @@ describe('personal client', () => {
     expect(new URL(String(url)).searchParams.get('region_code')).toBe('서울 중구');
     expect(init).toMatchObject({ cache: 'no-store', credentials: 'omit' });
     expect(init.headers.Authorization).toBe('Bearer token-2');
-  });
+  }, 30_000); // 단언은 그대로 — 부하 높은 러너에서 동적 import(서버 집계·데모 엔진)가 5초를 넘던 시간 초과 flake 대응
 
   it('stops after one refresh and maps 429 with Retry-After', async () => {
     installWindow('');
