@@ -57,4 +57,19 @@ Deno.serve(createRankingHandler({
     }
     return data;
   },
+  async boardRpc(user, session, query, signal) {
+    const { data, error } = await db.rpc("internal_user_rankings_board", {
+      p_user: user,
+      p_session: session,
+      p_query: query,
+    }).abortSignal(signal);
+    if (error) {
+      throw new Error(
+        /INVALID_QUERY/.test(error.message)
+          ? "INVALID_QUERY"
+          : "ranking unavailable",
+      );
+    }
+    return data;
+  },
 }));

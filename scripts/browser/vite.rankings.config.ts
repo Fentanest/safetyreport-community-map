@@ -3,6 +3,8 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import { createRankingHandler } from "../../server/rankings/handler.ts";
 import { querySchema } from "../../contracts/user-rankings/types.ts";
+import { boardQuerySchema } from "../../contracts/user-rankings-board/types.ts";
+import { readFileSync } from "node:fs";
 import {
   createUser,
   deleteUsers,
@@ -34,6 +36,20 @@ const logs: Array<
   }
 > = [];
 let nextFailure = 0;
+// Board RPC: use the installed function, or — on a stack without migration 202610111200 — create it inside a
+// transaction that is rolled back after the call (the shared local stack is never changed by this server).
+const boardSql = readFileSync("supabase/migrations/202610111200_user_rankings_board.sql", "utf8")
+  .replace(/^begin;\s*$/gm, "").replace(/^commit;\s*$/gm, "");
+function boardCall(user: string, session: string, query: unknown): unknown {
+  const call = `select public.internal_user_rankings_board('${user}','${session}',${
+    lit(JSON.stringify(boardQuerySchema.parse(query)))
+  }::jsonb);`;
+  const installed = sql(
+    "select to_regprocedure('public.internal_user_rankings_board(uuid,uuid,jsonb)') is not null",
+  ) === "t";
+  const out = installed ? sql(call) : sql(`begin;\n${boardSql}\n${call}\nrollback;`);
+  return JSON.parse(out.split("\n").filter((l) => l.startsWith("{")).pop() ?? "null");
+}
 let seeding: Promise<void> | null = null;
 async function seed() {
   if (!seeding) seeding = seedData().finally(() => { seeding = null; });
@@ -236,7 +252,8 @@ function api(): Plugin {
           res.end(await reply.text());
           return;
         }
-        if (u.pathname !== "/functions/v1/user-rankings") {
+        const boardRoute = u.pathname === "/functions/v1/user-rankings/board";
+        if (u.pathname !== "/functions/v1/user-rankings" && !boardRoute) {
           next();
           return;
         }
@@ -257,7 +274,7 @@ function api(): Plugin {
             },
           }));
           logs.push({
-            route: "rankings",
+            route: boardRoute ? "board" : "rankings",
             query: Object.fromEntries(u.searchParams),
             status,
             bytes: 0,
@@ -281,6 +298,7 @@ function api(): Plugin {
                 }::jsonb)`,
               ),
             ),
+          boardRpc: async (user, session, query) => boardCall(user, session, query),
         });
         const headers = new Headers();
         for (const [k, v] of Object.entries(req.headers)) {
@@ -291,7 +309,7 @@ function api(): Plugin {
         result.headers.forEach((v, k) => res.setHeader(k, v));
         const body = await result.text();
         logs.push({
-          route: "rankings",
+          route: boardRoute ? "board" : "rankings",
           query: Object.fromEntries(u.searchParams),
           status: result.status,
           bytes: Buffer.byteLength(body),

@@ -3,19 +3,20 @@ import {
   type RankingResponse,
   responseSchema,
 } from "../../contracts/user-rankings/types";
+import {
+  type BoardQuery,
+  type BoardResponse,
+  boardResponseSchema,
+} from "../../contracts/user-rankings-board/types";
 import { mapAuth } from "../hooks/usePersonal";
 import { PublicApiError } from "./client";
-export async function loadRankings(
-  query: RankingQuery,
+
+/** One authenticated GET to the user-rankings function (list `''` or board `'/board'`). */
+async function getRankings(
+  path: "" | "/board",
+  query: Record<string, unknown>,
   signal?: AbortSignal,
-): Promise<RankingResponse> {
-  // Literal env check (not `dataMode`) so live builds drop the synthetic rankings chunk entirely.
-  if (import.meta.env.VITE_DATA_MODE === "demo") {
-    const { demoRankings } = await import("./demoRankings");
-    await new Promise((r) => setTimeout(r, 150));
-    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
-    return demoRankings(query);
-  }
+): Promise<unknown> {
   const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, "");
   if (!base) {
     throw new PublicApiError(
@@ -38,10 +39,10 @@ export async function loadRankings(
   }
   const params = new URLSearchParams({ consistency: "latest" });
   for (const [k, v] of Object.entries(query)) {
-    if (v !== null) params.set(k, String(v));
+    if (v !== null && v !== undefined) params.set(k, String(v));
   }
   const send = (t: string) =>
-    fetch(`${base}/user-rankings?${params}`, {
+    fetch(`${base}/user-rankings${path}?${params}`, {
       signal,
       cache: "no-store",
       credentials: "omit",
@@ -63,5 +64,36 @@ export async function loadRankings(
       body?.error?.details ?? null,
     );
   }
-  return responseSchema.parse(await res.json());
+  return res.json();
+}
+
+/** Paged list of one theme/metric — the '전체 보기' sub-screen. */
+export async function loadRankings(
+  query: RankingQuery,
+  signal?: AbortSignal,
+): Promise<RankingResponse> {
+  // Literal env check (not `dataMode`) so live builds drop the synthetic rankings chunk entirely.
+  if (import.meta.env.VITE_DATA_MODE === "demo") {
+    const { demoRankings } = await import("./demoRankings");
+    performance.mark("rankings-demo-list"); // demo-only request counter for browser checks (no network in demo)
+    await new Promise((r) => setTimeout(r, 150));
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    return demoRankings(query);
+  }
+  return responseSchema.parse(await getRankings("", query, signal));
+}
+
+/** One-page board: three themes × seven metrics, top K each + own rank, in ONE request (2026-10-11). */
+export async function loadRankingsBoard(
+  query: BoardQuery,
+  signal?: AbortSignal,
+): Promise<BoardResponse> {
+  if (import.meta.env.VITE_DATA_MODE === "demo") {
+    const { demoRankingsBoard } = await import("./demoRankings");
+    performance.mark("rankings-demo-board");
+    await new Promise((r) => setTimeout(r, 150));
+    if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    return demoRankingsBoard(query);
+  }
+  return boardResponseSchema.parse(await getRankings("/board", query, signal));
 }
