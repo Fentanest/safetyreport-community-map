@@ -17,7 +17,7 @@ declare
     changed_functions int := 0;
     changed_constraints int := 0;
 begin
-    -- 1) 함수: 소스의 'traffic','parking','other' 목록(공백 허용) → 5분류, my_reports_stats 의 분류별 건수에 safety·living 추가
+    -- 1) 함수: 소스의 ’traffic’,’parking’,’other’ 목록(공백 허용) → 5분류, my_reports_stats 의 분류별 건수에 safety·living 추가
     for fn in
         select p.oid, n.nspname, p.proname
         from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -39,7 +39,7 @@ begin
         end if;
     end loop;
 
-    -- 2) CHECK 제약: Postgres 가 저장한 형태('traffic'::text, 'parking'::text, 'other'::text)
+    -- 2) CHECK 제약: Postgres 가 저장한 형태(’traffic’::text, ’parking’::text, ’other’::text)
     for con in
         select c.oid, c.conname, c.conrelid::regclass as rel, pg_get_constraintdef(c.oid) as condef
         from pg_constraint c join pg_namespace n on n.oid = c.connamespace
