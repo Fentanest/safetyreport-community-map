@@ -12,6 +12,20 @@
 [data-theme="light"] {
   --filter-active-bg: #0b1f4d; --filter-active-fg: #ffffff; --filter-active-border: #0b1f4d;
 }
+/* Ranking board semantics (2026-10-11): podium bricks, block figures and their small effects, both themes. */
+:root, [data-theme="dark"] {
+  --rk-podium-1: var(--gold); --rk-podium-1-ink: var(--gold-ink);
+  --rk-podium-2: var(--silver); --rk-podium-2-ink: var(--silver-ink);
+  --rk-podium-3: var(--bronze); --rk-podium-3-ink: var(--bronze-ink);
+  --rk-skin: var(--block-yellow); --rk-face: var(--block-ink); --rk-outline: rgba(0, 0, 0, 0.45);
+  --rk-shirt-1: #e5484d; --rk-shirt-2: #3b82f6; --rk-shirt-3: #22a861; --rk-pants: #3f4a5a;
+  --rk-cloud: #8b95a5; --rk-rain: #7cc4ff; --rk-umbrella: #ec4899; --rk-coin: var(--gold); --rk-coin-stud: #ffe27a;
+  --rk-confetti-0: #e5484d; --rk-confetti-1: #3b82f6; --rk-confetti-2: #f2c230; --rk-confetti-3: #22a861;
+}
+[data-theme="light"] {
+  --rk-outline: rgba(15, 23, 42, 0.4); --rk-pants: #475569; --rk-cloud: #94a3b8; --rk-rain: #3b82f6;
+  --rk-shirt-1: #dc2626; --rk-shirt-2: #2563eb; --rk-shirt-3: #16a34a; --rk-coin-stud: #fff1a8;
+}
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 main { gap: var(--card-gap); }
 .page-heading h1 { font-size: 22px; line-height: 30px; }

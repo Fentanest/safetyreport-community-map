@@ -1,5 +1,6 @@
-/* Rankings page. 2026-10-04 layout: page tabs → one condition toolbar → slim 내 순위 → list | counting rules.
-   Token-driven, 390px safe. No TOP3/crown/podium (ui-spec §14). */
+/* Rankings page. 2026-10-11 layout (user decision, ui-spec §14): one condition toolbar → one-page board of three theme
+   sections (metric cards with a block-brick podium, 4–5위, 내 순위, 전체 보기) → counting rules. '전체 보기' keeps the
+   2026-10-04 list (slim 내 순위 → list | rules). Token-driven, 390px safe. Figures/effects: transform/opacity only. */
 .rk-page { display: flex; flex-direction: column; gap: 14px; min-width: 0; max-width: 100%; }
 .rk-page[hidden] { display: none; }
 
@@ -8,17 +9,10 @@
 .rk-sub { margin: 2px 0 0; font-size: 14px; color: var(--text-secondary); }
 .rk-disclaimer { margin: 0; font-size: 12px; color: var(--muted); }
 
-/* page-level ranking tabs */
-.rk-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
-.rk-tabs button { border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; padding: 0 18px; min-height: 48px;
-  cursor: pointer; color: var(--muted); font-size: 15px; font-weight: 600; white-space: nowrap; }
-.rk-tabs button:hover { color: var(--text); }
-.rk-tabs button.selected { color: var(--text); border-bottom-color: var(--brand-ink); font-weight: 700; }
-
 /* one toolbar row of conditions */
 .rk-controls { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .rk-toolbar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
-.rk-metric-row, .rk-period { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rk-period { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .rk-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; max-width: 100%; }
 .rk-seg button { border: 0; background: transparent; padding: 8px 14px; min-height: 40px; cursor: pointer; color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
 .rk-seg button + button { border-left: 1px solid var(--border); }
@@ -111,10 +105,9 @@
 }
 @media (max-width: 700px) {
   .rk-head h1 { font-size: 20px; line-height: 28px; }
-  .rk-tabs button { flex: 1 1 0; padding: 0 8px; font-size: 14px; }
   .rk-controls, .rk-panel { padding: 12px; }
   .rk-toolbar { gap: 8px; }
-  .rk-metric-row, .rk-period { width: 100%; }
+  .rk-period { width: 100%; }
   .rk-seg { width: 100%; }
   .rk-seg button { flex: 1 1 0; min-width: 0; padding: 8px 6px; }
   .rk-category { flex: 1 1 0; }
@@ -134,6 +127,163 @@
   .rk-list-bar { grid-column: 2 / -1; max-width: none; height: 4px; }
   .rk-list-sub { grid-column: 2 / -1; font-size: 12px; color: var(--text-secondary); }
 }
+
+
+/* ── '전체 보기' header ─────────────────────────────────────────────────────────────────────── */
+.rk-full-head { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.rk-back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 650; }
+.rk-full-theme { font-size: 13px; color: var(--text-secondary); }
+
+/* ── one-page board (2026-10-11) ────────────────────────────────────────────────────────────── */
+.rk-board-wrap { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.rk-board { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 20px var(--card-gap, 16px); align-items: start; min-width: 0; }
+.rk-theme { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rk-theme-unlucky { grid-column: 1 / -1; }
+.rk-theme-reporters { --rk-accent: var(--brand-ink); }
+.rk-theme-fines { --rk-accent: var(--fine); }
+.rk-theme-unlucky { --rk-accent: var(--rejected); }
+.rk-theme-head { display: flex; align-items: baseline; gap: 2px 12px; flex-wrap: wrap; padding-left: 10px; border-left: 4px solid var(--rk-accent); }
+.rk-theme-head h2 { margin: 0; font-size: 17px; line-height: 24px; font-weight: 700; }
+.rk-theme-head p { margin: 0; font-size: 12px; color: var(--muted); }
+.rk-cards { display: grid; gap: var(--card-gap, 16px); grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.rk-theme-fines .rk-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rk-theme-unlucky .rk-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.rk-board-scope { margin: 0; }
+
+.rk-card { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; border-top: 3px solid var(--rk-accent); }
+.rk-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 8px; flex-wrap: wrap; }
+.rk-card-head h3 { margin: 0; font-size: 15px; line-height: 22px; font-weight: 650; }
+.rk-card-empty { margin: 0; }
+
+/* podium: centre = 1st position, left = 2nd, right = 3rd; DOM order stays 1 → 2 → 3 for assistive technology */
+.rk-podium { list-style: none; margin: 4px auto 0; padding: 0; width: 100%; max-width: 440px; display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto; column-gap: 4px; align-items: end; }
+.rk-step { grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; min-width: 0; text-align: center; }
+.rk-pos-0 { grid-column: 2; }
+.rk-pos-1 { grid-column: 1; }
+.rk-pos-2 { grid-column: 3; }
+.rk-pos-0 .rk-fig { --shirt: var(--rk-shirt-1); }
+.rk-pos-1 .rk-fig { --shirt: var(--rk-shirt-2); }
+.rk-pos-2 .rk-fig { --shirt: var(--rk-shirt-3); }
+.rk-stage { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; }
+.rk-brick { position: relative; width: 100%; height: var(--rk-step-h); margin-top: 5px; background: var(--rk-brick); color: var(--rk-brick-ink);
+  border-radius: 4px 4px 0 0; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16); }
+.rk-place-1 { --rk-brick: var(--rk-podium-1); --rk-brick-ink: var(--rk-podium-1-ink); --rk-step-h: 58px; }
+.rk-place-2 { --rk-brick: var(--rk-podium-2); --rk-brick-ink: var(--rk-podium-2-ink); --rk-step-h: 42px; }
+.rk-place-3 { --rk-brick: var(--rk-podium-3); --rk-brick-ink: var(--rk-podium-3-ink); --rk-step-h: 30px; }
+.rk-studs { position: absolute; top: -5px; left: 12%; right: 12%; height: 5px; display: flex; justify-content: space-between; }
+.rk-studs i { width: 16%; height: 5px; background: var(--rk-brick); border-radius: 2px 2px 0 0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.rk-brick-rank { font-size: 20px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
+.rk-brick-rank small { font-size: 12px; font-weight: 700; margin-left: 1px; }
+.rk-caption { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px 0; min-width: 0; font-size: 12px; line-height: 18px; }
+.rk-caption-who { display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px; min-width: 0; max-width: 100%; }
+.rk-caption .rk-uuid-btn { margin: 0; padding: 4px 2px; max-width: 100%; }
+.rk-caption .rk-uuid { font-size: 12px; }
+.rk-caption .rk-me-badge { margin-left: 2px; padding: 1px 7px; }
+.rk-caption-value { font-size: 15px; line-height: 20px; font-variant-numeric: tabular-nums; }
+.rk-caption small { font-size: 12px; color: var(--muted); }
+.rk-podium li.rk-me-row { background: none; }
+.rk-podium li.rk-me-row .rk-caption { background: var(--hover); border-radius: 0 0 8px 8px; box-shadow: inset 0 2px 0 var(--brand-ink); }
+
+.rk-card-rest { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+.rk-card-rest li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 4px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.rk-rest-rank { font-weight: 700; font-variant-numeric: tabular-nums; }
+.rk-rest-who { display: inline-flex; align-items: center; min-width: 0; flex-wrap: wrap; }
+.rk-rest-who .rk-me-badge { margin-left: 4px; padding: 1px 7px; }
+.rk-rest-value { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.rk-rest-value small { font-size: 12px; color: var(--muted); }
+.rk-card-me { margin: 0; display: flex; gap: 4px 8px; flex-wrap: wrap; align-items: baseline; font-size: 13px; padding: 8px 10px; border-radius: 10px; background: var(--hover); }
+.rk-card-me b { font-variant-numeric: tabular-nums; }
+.rk-card-more { align-self: flex-end; min-height: 40px; font-weight: 600; }
+
+/* ── block figures (decorative, aria-hidden) ───────────────────────────────────────────────── */
+.rk-fig { display: block; width: 76px; height: auto; overflow: visible; }
+.rk-fig .rk-head, .rk-fig .rk-stud-head { fill: var(--rk-skin); }
+.rk-fig .rk-eye { fill: var(--rk-face); }
+.rk-fig .rk-mouth { fill: none; stroke: var(--rk-face); stroke-width: 1.4; stroke-linecap: round; }
+.rk-fig .rk-torso, .rk-fig .rk-sleeve { fill: var(--shirt, var(--rk-shirt-2)); }
+.rk-fig .rk-hips, .rk-fig .rk-leg { fill: var(--rk-pants); }
+.rk-fig .rk-hand { fill: none; stroke: var(--rk-skin); stroke-width: 2.2; }
+.rk-fig .rk-head, .rk-fig .rk-stud-head, .rk-fig .rk-torso, .rk-fig .rk-sleeve, .rk-fig .rk-hips, .rk-fig .rk-leg {
+  stroke: var(--rk-outline); stroke-width: 0.7; stroke-linejoin: round; }
+.rk-fig .rk-crown rect { fill: var(--rk-podium-1); stroke: var(--rk-outline); stroke-width: 0.6; }
+.rk-fig .rk-flag line { stroke: var(--text-secondary); stroke-width: 1.2; }
+.rk-fig .rk-flag rect { fill: var(--brand); }
+.rk-fig .rk-flag text { fill: #fff; font-size: 7px; font-weight: 800; font-family: var(--font); }
+.rk-fig .rk-cloud { fill: var(--rk-cloud); }
+.rk-fig .rk-drop { fill: var(--rk-rain); opacity: 0.85; }
+.rk-fig .rk-umbrella { fill: var(--rk-umbrella); stroke: var(--rk-outline); stroke-width: 0.6; }
+.rk-fig .rk-umbrella-shaft { stroke: var(--text-secondary); stroke-width: 1.2; stroke-linecap: round; }
+.rk-fig .rk-coin circle { fill: var(--rk-coin); stroke: var(--rk-outline); stroke-width: 0.6; }
+.rk-fig .rk-coin .rk-coin-stud { fill: var(--rk-coin-stud); }
+.rk-fig .rk-bit rect { fill: var(--rk-bit); }
+.rk-bit-0 { --rk-bit: var(--rk-confetti-0); } .rk-bit-1 { --rk-bit: var(--rk-confetti-1); }
+.rk-bit-2 { --rk-bit: var(--rk-confetti-2); } .rk-bit-3 { --rk-bit: var(--rk-confetti-3); }
+
+/* poses: arms rotate around the shoulder (user units of the 64×94 viewBox) */
+.rk-fig .rk-arm, .rk-fig .rk-fig-body { transform-box: view-box; }
+.rk-fig .rk-arm-l { transform-origin: 11px 19px; }
+.rk-fig .rk-arm-r { transform-origin: 29px 19px; }
+.rk-fig .rk-arm-cheer.rk-arm-l { transform: rotate(150deg); }
+.rk-fig .rk-arm-cheer.rk-arm-r { transform: rotate(-150deg); }
+.rk-fig .rk-arm-shrug.rk-arm-l { transform: rotate(32deg); }
+.rk-fig .rk-arm-shrug.rk-arm-r { transform: rotate(-32deg); }
+.rk-fig .rk-arm-umbrella.rk-arm-l { transform: rotate(10deg); }
+.rk-fig .rk-arm-umbrella.rk-arm-r { transform: rotate(-165deg); }
+.rk-fig-shrug .rk-fig-body { transform-origin: 20px 52px; }
+
+/* motion: transform/opacity only. Loops pause while the card is off screen; bursts run once when it is first seen. */
+.rk-fig .rk-arm-cheer.rk-arm-l { animation: rk-wave-l 0.9s ease-in-out infinite; }
+.rk-fig .rk-arm-cheer.rk-arm-r { animation: rk-wave-r 0.9s ease-in-out -0.45s infinite; }
+.rk-fig-jump .rk-fig-body { animation: rk-jump 0.9s ease-in-out infinite; }
+.rk-fig-shrug .rk-fig-body { animation: rk-sway 2.6s ease-in-out infinite; }
+.rk-fig .rk-drop { animation: rk-rain 0.9s linear infinite; }
+.rk-card:not(.rk-onscreen) .rk-fig, .rk-card:not(.rk-onscreen) .rk-fig * { animation-play-state: paused; }
+.rk-fig .rk-bit { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.rk-card.rk-seen .rk-fig .rk-bit { animation: rk-confetti 1.05s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.rk-card:not(.rk-seen) .rk-fig .rk-coin { opacity: 0; }
+.rk-card.rk-seen .rk-fig .rk-coin { animation: rk-coin 0.8s cubic-bezier(0.35, 0, 0.6, 1) both; }
+@keyframes rk-wave-l { 0%, 100% { transform: rotate(150deg); } 50% { transform: rotate(116deg); } }
+@keyframes rk-wave-r { 0%, 100% { transform: rotate(-150deg); } 50% { transform: rotate(-116deg); } }
+@keyframes rk-jump { 0%, 100% { transform: translateY(0); } 35%, 55% { transform: translateY(-5px); } }
+@keyframes rk-sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes rk-rain { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 0.9; } 100% { transform: translateY(9px); opacity: 0; } }
+@keyframes rk-confetti {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg) scale(0.6); }
+  12% { opacity: 1; }
+  55% { opacity: 1; transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 24px)) rotate(calc(var(--r) * 1.6)) scale(1); }
+}
+@keyframes rk-coin {
+  0% { opacity: 0; transform: translateY(-84px); }
+  15% { opacity: 1; }
+  72% { transform: translateY(0); }
+  86% { transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1600px) {
+  .rk-theme-unlucky .rk-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  .rk-board { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .rk-board { gap: 18px; }
+  .rk-theme-fines .rk-cards, .rk-theme-unlucky .rk-cards { grid-template-columns: minmax(0, 1fr); }
+  .rk-card { padding: 12px; }
+  .rk-fig { width: 60px; }
+  .rk-place-1 { --rk-step-h: 48px; }
+  .rk-place-2 { --rk-step-h: 36px; }
+  .rk-place-3 { --rk-step-h: 26px; }
+  .rk-brick-rank { font-size: 18px; }
+  .rk-caption-value { font-size: 14px; }
+  .rk-card-more { align-self: stretch; }
+}
+/* Still pose: no waving, jumping, swaying, rain or burst (the global app.css rule also zeroes durations). */
 @media (prefers-reduced-motion: reduce) {
   .rk-page *, .rk-page *::before, .rk-page *::after { transition-duration: 0ms !important; }
+  .rk-board .rk-fig, .rk-board .rk-fig * { animation: none !important; }
+  .rk-board .rk-confetti { display: none; }
+  .rk-board .rk-card .rk-fig .rk-coin { opacity: 1; }
 }

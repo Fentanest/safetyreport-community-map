@@ -75,9 +75,10 @@ export async function loadRankings(
   // Literal env check (not `dataMode`) so live builds drop the synthetic rankings chunk entirely.
   if (import.meta.env.VITE_DATA_MODE === "demo") {
     const { demoRankings } = await import("./demoRankings");
-    performance.mark("rankings-demo-list"); // demo-only request counter for browser checks (no network in demo)
     await new Promise((r) => setTimeout(r, 150));
     if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    // demo-only counter of answered loads for browser checks (no network in demo; dev StrictMode's aborted twin is not counted)
+    performance.mark("rankings-demo-list");
     return demoRankings(query);
   }
   return responseSchema.parse(await getRankings("", query, signal));
@@ -90,9 +91,9 @@ export async function loadRankingsBoard(
 ): Promise<BoardResponse> {
   if (import.meta.env.VITE_DATA_MODE === "demo") {
     const { demoRankingsBoard } = await import("./demoRankings");
-    performance.mark("rankings-demo-board");
     await new Promise((r) => setTimeout(r, 150));
     if (signal?.aborted) throw new DOMException("aborted", "AbortError");
+    performance.mark("rankings-demo-board");
     return demoRankingsBoard(query);
   }
   return boardResponseSchema.parse(await getRankings("/board", query, signal));

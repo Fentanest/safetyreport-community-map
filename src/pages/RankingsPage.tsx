@@ -3,27 +3,32 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   kstMonth,
   monthBounds,
-  querySchema,
   type RankingQuery,
   type RankingResponse,
   type RankingRow,
 } from '../../contracts/user-rankings/types';
-import { RANKING_THEME_METRICS } from '../domain/rankingPeriods';
-import { loadRankings } from '../data/rankings';
+import { BOARD_TOP_DEFAULT, type BoardResponse } from '../../contracts/user-rankings-board/types';
+import {
+  BOARD_SECTIONS,
+  boardQueryOf,
+  defaultRankingQuery,
+  rankingPeriodLabel,
+  rankingStateFromSearch,
+  type RankingView,
+  writeRankingParams,
+} from '../domain/rankingPeriods';
+import { loadRankings, loadRankingsBoard } from '../data/rankings';
 import { useMapAuth } from '../hooks/usePersonal';
 import { ACCESS_CODES, PublicApiError, type AccessCode } from '../data/client';
 import Icon from '../components/icons';
 import AccessGate from '../components/AccessGate';
+import { BoardCard, CARD_TITLES, formatRankValue as formatValue, shortUuid } from '../components/RankingBoard';
 import '../styles/rankings.css';
 
 type Theme = RankingQuery['theme'];
 type Metric = RankingQuery['metric'];
 
-const TABS: Array<{ id: Theme; label: string }> = [
-  { id: 'reporters', label: '신고 랭킹' },
-  { id: 'fines', label: '과태료 랭킹' },
-  { id: 'unlucky', label: '불운 랭킹' },
-];
+const THEME_LABEL: Record<Theme, string> = { reporters: '신고 랭킹', fines: '과태료 랭킹', unlucky: '불운 랭킹' };
 
 const METRIC_TITLES: Record<Metric, string> = {
   reports_count: '완료 신고가 많은 순위',
@@ -68,10 +73,12 @@ const FRESH_MS = 120_000;
 
 // 화면 전환으로 이 페이지가 다시 마운트돼도 같은 조회를 보내지 않게 하는 메모리 캐시(탭 안에서만, 저장소 아님).
 // 계약(contracts/user-rankings/README.md): localStorage·Service Worker 금지, 로그아웃·pagehide 에서 버린다.
-const memo = new Map<string, { data: RankingResponse; at: number }>();
+// 2026-10-11: 보드(테마 3 × 지표 7, 요청 1번)와 '전체 보기' 목록이 같은 규칙(viewer+query 키, 120초)을 쓴다.
+type Payload = { kind: 'board'; data: BoardResponse } | { kind: 'list'; data: RankingResponse };
+const memo = new Map<string, { data: Payload; at: number }>();
 const MEMO_LIMIT = 24;
 const memoKey = (viewer: string, key: string) => `${viewer}\u0000${key}`;
-function memoGet(viewer: string | null, key: string): RankingResponse | null {
+function memoGet(viewer: string | null, key: string): Payload | null {
   if (!viewer) return null;
   const hit = memo.get(memoKey(viewer, key));
   if (!hit) return null;
@@ -81,7 +88,7 @@ function memoGet(viewer: string | null, key: string): RankingResponse | null {
   }
   return hit.data;
 }
-function memoSet(viewer: string, key: string, data: RankingResponse) {
+function memoSet(viewer: string, key: string, data: Payload) {
   memo.delete(memoKey(viewer, key));
   memo.set(memoKey(viewer, key), { data, at: Date.now() });
   while (memo.size > MEMO_LIMIT) memo.delete(memo.keys().next().value as string);
@@ -91,46 +98,8 @@ function memoKeepOnly(viewer: string | null) {
   for (const k of [...memo.keys()]) if (!k.startsWith(`${viewer}\u0000`)) memo.delete(k);
 }
 
-function defaultQuery(): RankingQuery {
-  return {
-    theme: 'reporters',
-    metric: 'reports_count',
-    period: 'all',
-    start: null,
-    end: null,
-    month: null,
-    date_basis: 'completed_date',
-    category: 'all',
-    min_reports: 1,
-    page: 1,
-    page_size: PAGE_SIZE,
-    expected_version: null,
-  };
-}
-
-const RK = (k: string) => `rk_${k}`;
-
-function queryFromSearch(search: string): RankingQuery | null {
-  const p = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
-  const keys = ['theme', 'metric', 'period', 'start', 'end', 'month', 'basis', 'category', 'min'];
-  if (!keys.some((k) => p.get(RK(k)) !== null)) return null;
-  const raw = {
-    theme: p.get(RK('theme')) ?? undefined,
-    metric: p.get(RK('metric')) ?? undefined,
-    period: p.get(RK('period')) ?? undefined,
-    start: p.get(RK('start')) ?? null,
-    end: p.get(RK('end')) ?? null,
-    month: p.get(RK('month')) ?? null,
-    date_basis: p.get(RK('basis')) ?? undefined,
-    category: p.get(RK('category')) ?? undefined,
-    min_reports: p.has(RK('min')) ? Number(p.get(RK('min'))) : undefined,
-    page: 1,
-    page_size: PAGE_SIZE,
-    expected_version: null,
-  };
-  const parsed = querySchema.safeParse(raw);
-  return parsed.success ? { ...parsed.data, page: 1, expected_version: null } : defaultQuery();
-}
+const defaultQuery = () => defaultRankingQuery(PAGE_SIZE);
+const initialState = () => rankingStateFromSearch(window.location.search, PAGE_SIZE);
 
 function shiftMonth(month: string, delta: number): string | null {
   const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(month);
@@ -143,46 +112,22 @@ function shiftMonth(month: string, delta: number): string | null {
   return `${y}-${String(mo).padStart(2, '0')}`;
 }
 
-function shortUuid(u: string): string {
-  return u.length > 13 ? `${u.slice(0, 8)}…${u.slice(-4)}` : u;
-}
-
-function formatValue(row: RankingRow, metric: Metric): string {
-  if (metric.endsWith('_rate')) return `${row.value.toFixed(1)}%`;
-  return `${row.value.toLocaleString('ko-KR')}건`;
-}
-
-function periodPrefix(q: RankingQuery, nowMonth: string): string {
-  if (q.period === 'range' && q.start && q.end) return `${q.start} — ${q.end} · `;
-  if (q.period === 'month' && q.month) {
-    if (q.month === nowMonth) return '이달 · ';
-    const [y, m] = q.month.split('-');
-    return `${y}년 ${Number(m)}월 · `;
-  }
-  return '';
-}
-
 export default function RankingsPage({ active }: { active: boolean }) {
   const { auth, signIn, signOut } = useMapAuth();
   const nowMonth = useMemo(() => kstMonth(), []);
-  const [applied, setApplied] = useState<RankingQuery>(() => queryFromSearch(window.location.search) ?? defaultQuery());
-  // Last metric per theme (in-memory only, never persisted). Returning to a theme
-  // restores its own metric — e.g. unlucky/partial_* survives a fines round-trip.
-  const [lastMetric, setLastMetric] = useState<Record<Theme, Metric>>(() => {
-    const q = queryFromSearch(window.location.search);
-    const base: Record<Theme, Metric> = { reporters: 'reports_count', fines: 'fine_count', unlucky: 'rejected_count' };
-    if (q && RANKING_THEME_METRICS[q.theme].includes(q.metric)) base[q.theme] = q.metric;
-    return base;
-  });
+  const [applied, setApplied] = useState<RankingQuery>(() => initialState()?.query ?? defaultQuery());
+  // 2026-10-11: 'board' shows every theme on one page (one request); 'full' is the paged list of ONE metric
+  // ('전체 보기'). An older link with rk_theme/rk_metric opens that metric's full list.
+  const [view, setView] = useState<RankingView>(() => initialState()?.view ?? 'board');
   // Range + advanced drafts. Consumed ONLY by their own 조회/적용 buttons.
-  // Immediate controls (tab/metric/category/month) always use APPLIED values.
-  const [rangeStart, setRangeStart] = useState(() => queryFromSearch(window.location.search)?.start ?? '');
-  const [rangeEnd, setRangeEnd] = useState(() => queryFromSearch(window.location.search)?.end ?? '');
-  const [periodView, setPeriodView] = useState<RankingQuery['period']>(() => (queryFromSearch(window.location.search) ?? defaultQuery()).period);
-  const [advBasis, setAdvBasis] = useState<RankingQuery['date_basis']>(() => (queryFromSearch(window.location.search) ?? defaultQuery()).date_basis);
-  const [advMin, setAdvMin] = useState(() => String((queryFromSearch(window.location.search) ?? defaultQuery()).min_reports));
+  // Immediate controls (category/month) always use APPLIED values.
+  const [rangeStart, setRangeStart] = useState(() => initialState()?.query.start ?? '');
+  const [rangeEnd, setRangeEnd] = useState(() => initialState()?.query.end ?? '');
+  const [periodView, setPeriodView] = useState<RankingQuery['period']>(() => (initialState()?.query ?? defaultQuery()).period);
+  const [advBasis, setAdvBasis] = useState<RankingQuery['date_basis']>(() => (initialState()?.query ?? defaultQuery()).date_basis);
+  const [advMin, setAdvMin] = useState(() => String((initialState()?.query ?? defaultQuery()).min_reports));
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [response, setResponse] = useState<{ data: RankingResponse; viewer: string | null; queryKey: string } | null>(null);
+  const [response, setResponse] = useState<{ data: Payload; viewer: string | null; queryKey: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message: string; status: number | null; retryAfter: number | null } | null>(null);
   const [access, setAccess] = useState<AccessCode | null>(null);
@@ -195,15 +140,22 @@ export default function RankingsPage({ active }: { active: boolean }) {
   const [now, setNow] = useState(() => Date.now());
   const [dialogUuid, setDialogUuid] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'done' | 'fail'>('idle');
+  // the card whose '전체 보기' opened the list: focus returns to it on the way back
+  const [returnTo, setReturnTo] = useState<Metric | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const genRef = useRef(0);
   const appliedKey = useMemo(() => JSON.stringify(applied), [applied]);
+  const boardQuery = useMemo(() => boardQueryOf(applied, BOARD_TOP_DEFAULT), [applied]);
+  // What the screen currently asks for: the board of the applied period/filters, or the applied list page.
+  const requestKey = view === 'board' ? `board:${JSON.stringify(boardQuery)}` : `list:${appliedKey}`;
   const viewer = auth.status === 'signed_in' ? auth.viewerId : null;
   const appliedRef = useRef(applied);
   appliedRef.current = applied;
-  const appliedKeyRef = useRef(appliedKey);
-  appliedKeyRef.current = appliedKey;
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const requestKeyRef = useRef(requestKey);
+  requestKeyRef.current = requestKey;
   const activeRef = useRef(active);
   activeRef.current = active;
   const authRef = useRef(auth.status);
@@ -216,6 +168,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
   viewerRef.current = viewer;
   const openerRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const backRef = useRef<HTMLButtonElement | null>(null);
+  const pageRef = useRef<HTMLElement | null>(null);
 
   // Committed period follows the applied query; the range editor never stages into it.
   useEffect(() => { setPeriodView(applied.period); }, [applied.period]);
@@ -227,37 +181,20 @@ export default function RankingsPage({ active }: { active: boolean }) {
     }
   }, [applied.date_basis, applied.min_reports, detailsOpen]);
 
-  const writeUrl = useCallback((q: RankingQuery) => {
+  /** rk_* follow the applied conditions; rk_theme/rk_metric only while a full list is open. */
+  const writeUrl = useCallback((q: RankingQuery, v: RankingView = viewRef.current) => {
     try {
       const url = new URL(window.location.href);
-      const params = url.searchParams;
-      params.set(RK('theme'), q.theme);
-      params.set(RK('metric'), q.metric);
-      params.set(RK('period'), q.period);
-      if (q.period === 'range' && q.start && q.end) {
-        params.set(RK('start'), q.start);
-        params.set(RK('end'), q.end);
-      } else {
-        params.delete(RK('start'));
-        params.delete(RK('end'));
-      }
-      if (q.period === 'month' && q.month) params.set(RK('month'), q.month);
-      else params.delete(RK('month'));
-      params.set(RK('basis'), q.date_basis);
-      params.set(RK('category'), q.category);
-      params.set(RK('min'), String(q.min_reports));
-      window.history.replaceState(window.history.state, '', `${url.pathname}?${params.toString()}${url.hash}`);
+      writeRankingParams(url.searchParams, q, v);
+      window.history.replaceState(window.history.state, '', `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
     } catch { /* URL sync is optional */ }
   }, []);
 
-  /** Single commit path. Identical queries are dropped (no refetch of the selected tab/button). */
+  /** Single commit path. Identical queries are dropped (no refetch of the selected button). */
   const commit = useCallback((next: RankingQuery) => {
     const key = JSON.stringify({ ...next, page: 1, expected_version: null });
     const curKey = JSON.stringify({ ...appliedRef.current, page: 1, expected_version: null });
     if (key === curKey) return;
-    if (next.theme !== appliedRef.current.theme || next.metric !== appliedRef.current.metric) {
-      setLastMetric((m) => ({ ...m, [next.theme]: next.metric }));
-    }
     setFormError(null);
     setNotice(null);
     if (retryAtRef.current !== null && Date.now() < retryAtRef.current) {
@@ -275,17 +212,30 @@ export default function RankingsPage({ active }: { active: boolean }) {
     commit({ ...cur, ...patch, page: 1, expected_version: null });
   }, [commit]);
 
-  const selectTab = useCallback((t: Theme) => {
-    const cur = appliedRef.current;
-    if (t === cur.theme) return;
-    commit({ ...cur, theme: t, metric: lastMetric[t], page: 1, expected_version: null });
-  }, [commit, lastMetric]);
+  /** '전체 보기' of one card: the existing paged list of that metric with the same period/filters. */
+  const openFull = useCallback((theme: Theme, metric: Metric) => {
+    const cur = pendingRef.current ?? appliedRef.current;
+    const next = { ...cur, theme, metric, page: 1, expected_version: null };
+    setReturnTo(metric);
+    setView('full');
+    setNotice(null);
+    if (retryAtRef.current !== null && Date.now() < retryAtRef.current) setPendingIntent(next);
+    else { setPendingIntent(null); setApplied(next); }
+    writeUrl(next, 'full');
+    window.requestAnimationFrame(() => {
+      pageRef.current?.scrollIntoView({ block: 'start' });
+      backRef.current?.focus({ preventScroll: true });
+    });
+  }, [writeUrl]);
 
-  const selectMetric = useCallback((m: Metric) => {
-    const cur = appliedRef.current;
-    if (m === cur.metric) return;
-    commit({ ...cur, metric: m, page: 1, expected_version: null });
-  }, [commit]);
+  /** Back to the one-page board; the board of the same conditions is usually still in the 120 s memory. */
+  const backToBoard = useCallback(() => {
+    const cur = { ...appliedRef.current, page: 1, expected_version: null };
+    setView('board');
+    setNotice(null);
+    setApplied(cur);
+    writeUrl(cur, 'board');
+  }, [writeUrl]);
 
   const selectCategory = useCallback((c: RankingQuery['category']) => {
     const cur = appliedRef.current;
@@ -354,7 +304,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
   }, [advBasis, advMin, commit]);
 
   const reset = useCallback(() => {
-    const d = defaultQuery();
+    // Conditions only: an open '전체 보기' keeps its metric, the board stays the board.
+    const d = { ...defaultQuery(), theme: appliedRef.current.theme, metric: appliedRef.current.metric };
     setRangeStart('');
     setRangeEnd('');
     setAdvBasis(d.date_basis);
@@ -363,7 +314,6 @@ export default function RankingsPage({ active }: { active: boolean }) {
     setNotice(null);
     setPendingIntent(null);
     setRetryAt(null);
-    setLastMetric({ reporters: 'reports_count', fines: 'fine_count', unlucky: 'rejected_count' });
     if (retryAtRef.current !== null && Date.now() < retryAtRef.current) {
       setPendingIntent(d);
       return;
@@ -379,7 +329,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
       setPendingIntent({ ...cur, page, expected_version: page > 1 ? cur.expected_version : null });
       return;
     }
-    const version = response?.data.dataset_version ?? cur.expected_version;
+    const version = (response?.data.kind === 'list' ? response.data.data.dataset_version : null) ?? cur.expected_version;
     const next = { ...cur, page, expected_version: page > 1 ? version : null };
     setPendingIntent(null);
     setApplied(next);
@@ -429,7 +379,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
   useEffect(() => {
     if (dialogUuid !== null) closeDialog(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, viewer, appliedKey]);
+  }, [active, viewer, requestKey]);
 
   // Hidden / logout / account switch: abort, advance generation, clear protected state.
   // Plain setState (no flushSync): this runs inside a passive effect.
@@ -456,9 +406,10 @@ export default function RankingsPage({ active }: { active: boolean }) {
   // clears prefixed state to the default instead of showing a stale snapshot.
   useEffect(() => {
     const onPop = () => {
-      const q = queryFromSearch(window.location.search);
-      if (!q) {
+      const state = rankingStateFromSearch(window.location.search, PAGE_SIZE);
+      if (!state) {
         const d = defaultQuery();
+        setView('board');
         setRangeStart('');
         setRangeEnd('');
         setAdvBasis(d.date_basis);
@@ -469,11 +420,12 @@ export default function RankingsPage({ active }: { active: boolean }) {
         setApplied(d);
         return;
       }
+      const q = state.query;
+      setView(state.view);
       setRangeStart(q.start ?? '');
       setRangeEnd(q.end ?? '');
       setAdvBasis(q.date_basis);
       setAdvMin(String(q.min_reports));
-      setLastMetric((m) => ({ ...m, [q.theme]: q.metric }));
       setNotice(null);
       setError(null);
       setPendingIntent(null);
@@ -494,7 +446,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
       }
       if (authRef.current !== 'signed_in' || !appliedRef.current) return;
       if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return;
-      if (memoGet(viewerRef.current, appliedKeyRef.current)) return;
+      if (memoGet(viewerRef.current, requestKeyRef.current)) return;
       setNonce((n) => n + 1);
     };
     // Hidden tab: stop waiting for an in-flight answer (its late result is dropped by the generation), keep what is shown.
@@ -538,13 +490,13 @@ export default function RankingsPage({ active }: { active: boolean }) {
     if (!active || auth.status !== 'signed_in' || !applied) return undefined;
     if (document.visibilityState === 'hidden') return undefined;
     if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return undefined;
-    const cached = memoGet(viewer, appliedKey);
+    const cached = memoGet(viewer, requestKey);
     if (cached) {
-      // 같은 조건을 최근에 받았다: 서버에 다시 묻지 않는다(화면 전환·조건 되돌리기).
+      // 같은 조건을 최근에 받았다: 서버에 다시 묻지 않는다(화면 전환·조건 되돌리기·보드↔전체 보기 왕복).
       abortRef.current?.abort();
       abortRef.current = null;
       genRef.current += 1;
-      setResponse({ data: cached, viewer, queryKey: appliedKey });
+      setResponse({ data: cached, viewer, queryKey: requestKey });
       setLoading(false);
       setError(null);
       setAccess(null);
@@ -552,7 +504,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
     }
     const myGen = ++genRef.current;
     const requestViewer = viewer;
-    const requestKey = appliedKey;
+    const myKey = requestKey;
     const ac = new AbortController();
     abortRef.current?.abort();
     abortRef.current = ac;
@@ -560,14 +512,18 @@ export default function RankingsPage({ active }: { active: boolean }) {
     setResponse(null);
     setError(null);
     setAccess(null);
-    loadRankings(applied, ac.signal)
+    // One request per screen state: the whole board (three themes × seven metrics) or one list page.
+    const load: Promise<Payload> = view === 'board'
+      ? loadRankingsBoard(boardQuery, ac.signal).then((data) => ({ kind: 'board', data }))
+      : loadRankings(applied, ac.signal).then((data) => ({ kind: 'list', data }));
+    load
       .then((data) => {
         if (ac.signal.aborted || myGen !== genRef.current) return;
         if (!activeRef.current || document.visibilityState === 'hidden') return;
         if ((authRef.current === 'signed_in' ? requestViewer : null) !== requestViewer) return;
-        if (appliedKeyRef.current !== requestKey) return;
-        setResponse({ data, viewer: requestViewer, queryKey: requestKey });
-        if (requestViewer) memoSet(requestViewer, requestKey, data);
+        if (requestKeyRef.current !== myKey) return;
+        setResponse({ data, viewer: requestViewer, queryKey: myKey });
+        if (requestViewer) memoSet(requestViewer, myKey, data);
         setRetryAt(null);
         setPendingIntent(null);
         setLoading(false);
@@ -581,7 +537,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
           if (e.status === 409) {
             memo.clear(); // 자료가 바뀌었다 — 받아 둔 다른 페이지·조건도 낡았다
             const cur = appliedRef.current;
-            if (cur && (cur.page !== 1 || cur.expected_version !== null)) {
+            if (viewRef.current === 'full' && cur && (cur.page !== 1 || cur.expected_version !== null)) {
               setNotice('그사이 새 자료가 들어왔습니다. 첫 페이지부터 다시 불러옵니다.');
               const first = { ...cur, page: 1, expected_version: null };
               setApplied(first);
@@ -611,7 +567,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
       });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliedKey, nonce, active, auth.status, viewer]);
+  }, [requestKey, nonce, active, auth.status, viewer]);
 
   const openDialog = useCallback((uuid: string, opener: HTMLButtonElement) => {
     openerRef.current = opener;
@@ -657,12 +613,18 @@ export default function RankingsPage({ active }: { active: boolean }) {
     }
   }, []);
 
-  const data = response?.data ?? null;
-  // Guard: never render another account's snapshot or a stale query's rows.
-  const guarded = data && response && response.viewer === viewer && response.queryKey === appliedKey && auth.status === 'signed_in' ? data : null;
+  const payload = response && response.viewer === viewer && response.queryKey === requestKey && auth.status === 'signed_in'
+    ? response.data : null;
+  // Guard: never render another account's snapshot, a stale query's rows or the other view's payload.
+  const guarded = payload?.kind === 'list' && view === 'full' ? payload.data : null;
+  const board = payload?.kind === 'board' && view === 'board' ? payload.data : null;
+  const shown = guarded ?? board;
   const appliedMetric: Metric = applied.metric;
   const metricTitle = METRIC_TITLES[appliedMetric];
-  const heading = `${periodPrefix(applied, nowMonth)}${metricTitle}`;
+  const periodText = rankingPeriodLabel(applied);
+  const heading = view === 'board'
+    ? `${periodText} · 테마별 TOP ${BOARD_TOP_DEFAULT}`
+    : `${periodText === '전체 기간' ? '' : `${periodText} · `}${metricTitle}`;
   const retryWait = retryAt !== null ? Math.max(0, Math.ceil((retryAt - now) / 1000)) : 0;
 
   const scopeText = useMemo(() => {
@@ -687,8 +649,6 @@ export default function RankingsPage({ active }: { active: boolean }) {
   const pageSize = guarded?.page_size ?? PAGE_SIZE;
   const rangeStartRow = guarded ? (guarded.page - 1) * pageSize + 1 : 0;
   const rangeEndRow = guarded ? rangeStartRow + rows.length - 1 : 0;
-  const unluckyDim: 'rejected' | 'partial' = appliedMetric.startsWith('partial') ? 'partial' : 'rejected';
-  const rateCount: 'count' | 'rate' = isRate ? 'rate' : 'count';
   const rangeDirty = periodView === 'range' && (
     rangeStart !== (applied.start ?? '') || rangeEnd !== (applied.end ?? '') || applied.period !== 'range'
   );
@@ -701,12 +661,41 @@ export default function RankingsPage({ active }: { active: boolean }) {
   };
   const appliedMonth = applied.period === 'month' && applied.month ? applied.month : nowMonth;
 
-  // 2026-10-04 layout: the page-level tabs, one compact condition toolbar, a slim "내 순위" line, then the list
-  // with the counting rules beside it. Logic and requests are unchanged.
+  // Back on the board: return keyboard focus to the card that opened the full list.
+  useEffect(() => {
+    if (view !== 'board' || !board || !returnTo) return;
+    const el = pageRef.current?.querySelector<HTMLButtonElement>(`[data-rk-more="${returnTo}"]`);
+    if (el) { el.focus(); setReturnTo(null); }
+  }, [view, board, returnTo]);
+
   const maxValue = rows.reduce((m, r) => Math.max(m, r.value), 0);
   const barWidth = (row: RankingRow) => `${maxValue > 0 && row.value > 0 ? Math.max(2, (row.value / maxValue) * 100) : 0}%`;
+  const rulesPanel = (d: BoardResponse['diagnostics']) => (
+    <aside className="cm-panel rk-panel rk-rules" aria-label="집계 기준">
+      <h2>집계 기준</h2>
+      <details open>
+        <summary>완료 신고를 세는 방법</summary>
+        <p>완료 신고는 수용·일부수용·불수용·결과 미확인을 모두 포함한, 공유된 완료 신고 건수입니다. 표본이 1건이어도 숨기지 않습니다.</p>
+      </details>
+      <details>
+        <summary>과태료·불운을 세는 방법</summary>
+        <p>과태료는 수용·일부수용 중 실제 처분이 과태료인 신고입니다(금액이 없어도 포함). 불수용·일부수용은 각 결과에 해당한 신고입니다. 비율은 같은 모임의 완료 신고를 분모로 나눈 값입니다.</p>
+      </details>
+      <details>
+        <summary>개발용 진단 수치</summary>
+        <p>
+          선택 날짜 없음 {d.selected_date_missing.toLocaleString('ko-KR')}건 ·
+          결과 미확인 {d.completed_unknown.toLocaleString('ko-KR')}건 ·
+          처분 불일치 {d.inconsistent_disposition.toLocaleString('ko-KR')}건.
+          순위는 서버가 전체 신고 집합에서 매깁니다. 비율은 각각 R/N, P/N, F/N × 100이며 주요 값이 같으면 공동 순위입니다.
+        </p>
+      </details>
+    </aside>
+  );
+  // 2026-10-11 layout: title → one condition toolbar (period · category · 상세 조건) → board of three theme sections
+  // (each metric card: podium 1–3위 + 4–5위 + 내 순위 + 전체 보기) → counting rules. '전체 보기' = the paged list below.
   return (
-    <section className="rk-page" aria-labelledby="rk-title" hidden={!active}>
+    <section className="rk-page" aria-labelledby="rk-title" hidden={!active} ref={pageRef}>
       <header className="rk-head">
         <div>
           <h1 id="rk-title">참여자 랭킹</h1>
@@ -715,69 +704,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
         <p className="rk-disclaimer">이 서비스에 공유된 완료 신고를 기준으로 집계합니다.</p>
       </header>
 
-      <div className="rk-tabs" role="group" aria-label="랭킹 종류">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={applied.theme === t.id ? 'selected' : ''}
-            aria-pressed={applied.theme === t.id}
-            onClick={() => selectTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       <div className="rk-controls cm-panel" role="group" aria-label="랭킹 조건">
         <div className="rk-toolbar">
-          {!isReporters && (
-            <div className="rk-metric-row">
-              {applied.theme === 'unlucky' && (
-                <div className="rk-seg" role="group" aria-label="불운 종류">
-                  <button
-                    type="button"
-                    className={unluckyDim === 'rejected' ? 'selected' : ''}
-                    aria-pressed={unluckyDim === 'rejected'}
-                    onClick={() => selectMetric(rateCount === 'rate' ? 'rejected_rate' : 'rejected_count')}
-                  >
-                    불수용
-                  </button>
-                  <button
-                    type="button"
-                    className={unluckyDim === 'partial' ? 'selected' : ''}
-                    aria-pressed={unluckyDim === 'partial'}
-                    onClick={() => selectMetric(rateCount === 'rate' ? 'partial_rate' : 'partial_count')}
-                  >
-                    일부수용
-                  </button>
-                </div>
-              )}
-              <div className="rk-seg" role="group" aria-label="정렬 기준">
-                <button
-                  type="button"
-                  className={!isRate ? 'selected' : ''}
-                  aria-pressed={!isRate}
-                  onClick={() => selectMetric(applied.theme === 'fines'
-                    ? 'fine_count'
-                    : unluckyDim === 'partial' ? 'partial_count' : 'rejected_count')}
-                >
-                  건수순
-                </button>
-                <button
-                  type="button"
-                  className={isRate ? 'selected' : ''}
-                  aria-pressed={isRate}
-                  onClick={() => selectMetric(applied.theme === 'fines'
-                    ? 'fine_rate'
-                    : unluckyDim === 'partial' ? 'partial_rate' : 'rejected_rate')}
-                >
-                  비율순
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="rk-period" role="group" aria-labelledby="rk-period-label">
             <span id="rk-period-label" className="sr-only">기간</span>
             <div className="rk-seg">
@@ -899,8 +827,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
             <Icon name="reset" />
           </button>
         </div>
-        {isRate && (
-          <p className="rk-hint">비율순에서는 최소 건수 조건이 순위에 크게 영향을 줍니다. 현재 조건: 최소 {applied.min_reports}건 (상세 조건에서 변경).</p>
+        {(view === 'board' || isRate) && (
+          <p className="rk-hint">비율 순위는 최소 신고 건수 조건의 영향을 크게 받습니다. 현재 조건: 최소 {applied.min_reports}건 (상세 조건에서 변경).</p>
         )}
         {periodView === 'range' && rangeDirty && (
           <p className="rk-hint" role="status">입력한 범위는 조회를 누르기 전에는 반영되지 않습니다.</p>
@@ -911,9 +839,18 @@ export default function RankingsPage({ active }: { active: boolean }) {
         )}
       </div>
 
+      {view === 'full' && (
+        <div className="rk-full-head">
+          <button ref={backRef} type="button" className="ghost-btn rk-back" onClick={backToBoard}>
+            <span aria-hidden="true">←</span> 테마별 랭킹으로
+          </button>
+          <span className="rk-full-theme">{THEME_LABEL[applied.theme]} · 전체 보기</span>
+        </div>
+      )}
+
       <div aria-live="polite" className="rk-live">
         {notice && <p className="banner warn rk-notice" role="status">{notice}</p>}
-        {guarded?.scope.in_progress && (
+        {shown?.scope.in_progress && (
           <p className="banner rk-notice" role="note">집계 중 — 진행 중인 달이라 순위가 계속 바뀝니다. 같은 경과 기간끼리 비교해 주세요.</p>
         )}
       </div>
@@ -932,13 +869,13 @@ export default function RankingsPage({ active }: { active: boolean }) {
         </div>
       ) : access ? (
         <AccessGate code={access} auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={() => setNonce((n) => n + 1)} progress={access === 'upload_required' ? accessDetails : null} />
-      ) : loading && !guarded ? (
+      ) : loading && !shown ? (
         <div className="cm-panel rk-panel" aria-busy="true" aria-label="랭킹을 불러오는 중">
           <div className="skeleton" />
           <div className="skeleton" />
           <p className="cm-muted">랭킹을 불러오는 중입니다…</p>
         </div>
-      ) : error && !guarded ? (
+      ) : error && !shown ? (
         <div className="cm-panel rk-panel" role="alert">
           <h2>랭킹을 불러오지 못했습니다</h2>
           <p className="cm-muted">{error.message}</p>
@@ -947,6 +884,39 @@ export default function RankingsPage({ active }: { active: boolean }) {
               {retryWait > 0 ? `${retryWait}초 뒤 다시 시도` : '다시 시도'}
             </button>
           </div>
+        </div>
+      ) : board ? (
+        <div className="rk-board-wrap">
+          {board.total_participants === 0 ? (
+            <div className="cm-panel rk-panel" role="status">
+              <h2>결과가 없습니다</h2>
+              <p className="cm-muted">{scopeText} 조건의 순위가 비어 있습니다. 기간·분류·최소 신고 건수를 완화해 보세요.</p>
+            </div>
+          ) : (
+            <div className="rk-board">
+              {BOARD_SECTIONS.map((section) => (
+                <section key={section.theme} className={`rk-theme rk-theme-${section.theme}`} aria-labelledby={`rk-theme-${section.theme}`}>
+                  <header className="rk-theme-head">
+                    <h2 id={`rk-theme-${section.theme}`}>{section.label}</h2>
+                    <p>{section.note}</p>
+                  </header>
+                  <div className="rk-cards">
+                    {board.boards.filter((b) => b.theme === section.theme).map((entry) => (
+                      <BoardCard
+                        key={entry.metric}
+                        entry={entry}
+                        title={CARD_TITLES[entry.metric]}
+                        onOpenFull={openFull}
+                        onOpenUuid={openDialog}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+          <p className="rk-scope-line rk-board-scope">{scopeText} · 참여자 {board.total_participants.toLocaleString('ko-KR')}명 · 피규어와 효과는 장식입니다.</p>
+          {rulesPanel(board.diagnostics)}
         </div>
       ) : guarded ? (
         <div className="rk-body">
@@ -1088,26 +1058,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
             )}
           </div>
 
-          <aside className="cm-panel rk-panel rk-rules" aria-label="집계 기준">
-            <h2>집계 기준</h2>
-            <details open>
-              <summary>완료 신고를 세는 방법</summary>
-              <p>완료 신고는 수용·일부수용·불수용·결과 미확인을 모두 포함한, 공유된 완료 신고 건수입니다. 표본이 1건이어도 숨기지 않습니다.</p>
-            </details>
-            <details>
-              <summary>과태료·불운을 세는 방법</summary>
-              <p>과태료는 수용·일부수용 중 실제 처분이 과태료인 신고입니다(금액이 없어도 포함). 불수용·일부수용은 각 결과에 해당한 신고입니다. 비율은 같은 모임의 완료 신고를 분모로 나눈 값입니다.</p>
-            </details>
-            <details>
-              <summary>개발용 진단 수치</summary>
-              <p>
-                선택 날짜 없음 {guarded.diagnostics.selected_date_missing.toLocaleString('ko-KR')}건 ·
-                결과 미확인 {guarded.diagnostics.completed_unknown.toLocaleString('ko-KR')}건 ·
-                처분 불일치 {guarded.diagnostics.inconsistent_disposition.toLocaleString('ko-KR')}건.
-                순위는 서버가 전체 신고 집합에서 매깁니다. 비율은 각각 R/N, P/N, F/N × 100이며 주요 값이 같으면 공동 순위입니다.
-              </p>
-            </details>
-          </aside>
+          {rulesPanel(guarded.diagnostics)}
         </div>
       ) : null}
 
