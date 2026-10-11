@@ -461,6 +461,9 @@ describe.skipIf(!enabled)(
               }::jsonb)`,
             ),
           ),
+        boardRpc: async () => {
+          throw new Error("board route not used here");
+        },
       });
       const request = (query = "") =>
         new Request("http://local/user-rankings" + query, {

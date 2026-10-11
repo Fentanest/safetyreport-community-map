@@ -3,6 +3,10 @@ import {
   responseSchema,
 } from "../../contracts/user-rankings/types.ts";
 import {
+  boardQuerySchema,
+  boardResponseSchema,
+} from "../../contracts/user-rankings-board/types.ts";
+import {
   authenticate,
   type ViewerAuthDeps,
   ViewerAuthError,
@@ -11,6 +15,13 @@ import {
 export interface RankingDeps extends ViewerAuthDeps {
   allowedOrigins: string[];
   rpc(
+    user: string,
+    session: string,
+    query: Record<string, unknown>,
+    signal: AbortSignal,
+  ): Promise<unknown>;
+  /** `/user-rankings/board`: public.internal_user_rankings_board (same gate, same rate bucket). */
+  boardRpc(
     user: string,
     session: string,
     query: Record<string, unknown>,
@@ -88,18 +99,25 @@ export function createRankingHandler(deps: RankingDeps) {
     }
     if (request.method !== "GET") return error("METHOD_NOT_ALLOWED");
     const url = new URL(request.url);
-    if (!/\/user-rankings\/?$/.test(url.pathname)) return error("NOT_FOUND");
+    // Two routes of ONE function (no new deploy/verify_jwt entry): the paged list and the one-page board.
+    const board = /\/user-rankings\/board\/?$/.test(url.pathname);
+    if (!board && !/\/user-rankings\/?$/.test(url.pathname)) {
+      return error("NOT_FOUND");
+    }
     try {
       const viewer = await authenticate(request, deps);
       if (url.search.length > 4096) return error("INVALID_QUERY");
       const raw: Record<string, unknown> = {};
+      const numeric = board
+        ? ["min_reports", "top"]
+        : ["min_reports", "page", "page_size"];
       for (const [key, value] of url.searchParams) {
         if (key in raw) return error("INVALID_QUERY");
-        raw[key] = ["min_reports", "page", "page_size"].includes(key)
-          ? Number(value)
-          : value;
+        raw[key] = numeric.includes(key) ? Number(value) : value;
       }
-      const parsed = querySchema.safeParse(raw);
+      const parsed = board
+        ? boardQuerySchema.safeParse(raw)
+        : querySchema.safeParse(raw);
       if (!parsed.success) return error("INVALID_QUERY");
       if (!await deps.allowRequest(viewer.uid)) return error("rate_limited");
       const controller = new AbortController();
@@ -108,7 +126,7 @@ export function createRankingHandler(deps: RankingDeps) {
       request.signal.addEventListener("abort", abort, { once: true });
       let data: unknown;
       try {
-        data = await deps.rpc(
+        data = await (board ? deps.boardRpc : deps.rpc)(
           viewer.uid,
           viewer.session,
           parsed.data,
@@ -143,12 +161,28 @@ export function createRankingHandler(deps: RankingDeps) {
         return error(code, details);
       }
       // Strict nested allowlist. Private DB fields cause a closed failure, never an opaque pass-through.
+      const ownRows = (
+        rows: Array<{ uuid: string; is_me: boolean }>,
+        me: { uuid: string; is_me: boolean } | null,
+      ) =>
+        rows.every((r) => r.is_me === (r.uuid === viewer.uid)) &&
+        (!me || (me.uuid === viewer.uid && me.is_me));
+      if (board) {
+        const safe = boardResponseSchema.parse(data);
+        const q = parsed.data as { top: number; min_reports: number };
+        if (
+          safe.scope.top !== q.top ||
+          safe.scope.min_reports !== q.min_reports ||
+          !safe.boards.every((b) => ownRows(b.rows, b.me))
+        ) return error("service_unavailable");
+        return new Response(JSON.stringify(safe), { status: 200, headers });
+      }
       const safe = responseSchema.parse(data);
+      const q = parsed.data as { page: number; page_size: number };
       if (
-        safe.page !== parsed.data.page ||
-        safe.page_size !== parsed.data.page_size || safe.rows.some((r) =>
-          r.is_me !== (r.uuid === viewer.uid)
-        ) || (safe.me && safe.me.uuid !== viewer.uid)
+        safe.page !== q.page || safe.page_size !== q.page_size ||
+        safe.rows.some((r) => r.is_me !== (r.uuid === viewer.uid)) ||
+        (safe.me && safe.me.uuid !== viewer.uid)
       ) return error("service_unavailable");
       return new Response(JSON.stringify(safe), { status: 200, headers });
     } catch (e) {

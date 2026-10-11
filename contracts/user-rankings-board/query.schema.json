@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "period": {
+      "default": "all",
+      "type": "string",
+      "enum": [
+        "all",
+        "range",
+        "month"
+      ]
+    },
+    "start": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "end": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "month": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "date_basis": {
+      "default": "completed_date",
+      "type": "string",
+      "enum": [
+        "completed_date",
+        "report_date"
+      ]
+    },
+    "category": {
+      "default": "all",
+      "type": "string",
+      "enum": [
+        "all",
+        "traffic",
+        "parking",
+        "safety",
+        "living",
+        "other"
+      ]
+    },
+    "min_reports": {
+      "default": 1,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "top": {
+      "default": 5,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "consistency": {
+      "type": "string",
+      "const": "latest"
+    }
+  },
+  "required": [
+    "period",
+    "start",
+    "end",
+    "month",
+    "date_basis",
+    "category",
+    "min_reports",
+    "top"
+  ],
+  "additionalProperties": false
+}

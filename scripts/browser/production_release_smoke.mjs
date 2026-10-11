@@ -26,7 +26,7 @@ try {
       const keyboardFocus = await page.getByRole('button', { name: '카카오로 로그인' }).evaluate((el) => el === document.activeElement);
       await page.reload({ waitUntil: 'networkidle' });
       await page.getByRole('heading', { name: '지금은 신고를 10건 이상 공유한 분만 볼 수 있어요' }).waitFor();
-      const metrics = await page.evaluate(() => ({ theme: document.documentElement.dataset.theme, width: innerWidth, scrollWidth: document.documentElement.scrollWidth, rankingRows: document.querySelectorAll('.rk-row').length }));
+      const metrics = await page.evaluate(() => ({ theme: document.documentElement.dataset.theme, width: innerWidth, scrollWidth: document.documentElement.scrollWidth, rankingRows: document.querySelectorAll('.rk-row, .rk-card, .rk-table tbody tr').length }));
       const screenshot = `${width}-${theme}.png`;
       await page.screenshot({ path: join(out, screenshot), fullPage: true });
       const passed = response.status() === 200 && metrics.theme === theme && metrics.scrollWidth <= metrics.width && keyboardFocus && protectedRequests.length === 0 && metrics.rankingRows === 0 && assets.every((a) => a.status === 200);

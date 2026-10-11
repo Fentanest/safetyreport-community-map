@@ -18,7 +18,23 @@ export function rankingFixture(query, viewer=E2E_UID) {
  const size=Number(query.get('page_size')||20),page=Number(query.get('page')||1);
  return {schema_version:'user-rankings-v1',cohort_policy_version:'single-date-v1',dataset_version:createHash('md5').update(JSON.stringify(scope)+size).digest('hex'),generated_at:new Date().toISOString(),scope,total_participants:rows.length,rows:rows.slice((page-1)*size,page*size),me:rows.find(r=>r.is_me)??null,page,page_size:size,next_page:page*size<rows.length?page+1:null,diagnostics:{selected_date_missing:0,completed_unknown:0,inconsistent_disposition:0}};
 }
+const BOARD_METRICS=[['reporters','reports_count'],['fines','fine_count'],['fines','fine_rate'],['unlucky','rejected_count'],['unlucky','rejected_rate'],['unlucky','partial_count'],['unlucky','partial_rate']];
+/** 2026-10-11 board DTO: page 1 of each metric with page_size = top (the same rows the paged fixture shows). */
+export function rankingBoardFixture(query, viewer=E2E_UID) {
+ const top=Number(query.get('top')||5);
+ const boards=BOARD_METRICS.map(([theme,metric])=>{const q=new URLSearchParams(query);q.set('theme',theme);q.set('metric',metric);q.set('page','1');q.set('page_size',String(top));
+  const r=rankingFixture(q,viewer);return {theme,metric,total_participants:r.total_participants,rows:r.rows,me:r.me};});
+ const base=rankingFixture(query,viewer);const {theme:_t,metric:_m,...scope}=base.scope;
+ return {schema_version:'user-rankings-board-v1',cohort_policy_version:'single-date-v1',dataset_version:createHash('md5').update(JSON.stringify(scope)+'board'+top).digest('hex'),generated_at:new Date().toISOString(),scope:{...scope,top},total_participants:boards[0].total_participants,boards,diagnostics:base.diagnostics};
+}
 export async function attachRankingFixture(context,{delay=()=>0}={}) {
+ await context.route('**/functions/v1/user-rankings/board?*',async route=>{
+  const q=new URL(route.request().url()).searchParams;
+  const token=route.request().headers().authorization?.split(' ')[1];let viewer=E2E_UID;
+  try{viewer=JSON.parse(Buffer.from(token.split('.')[1],'base64url')).sub;}catch{}
+  if(delay(q))await new Promise(r=>setTimeout(r,delay(q)));
+  await route.fulfill({status:200,contentType:'application/json',headers:{'cache-control':'private, no-store'},body:JSON.stringify(rankingBoardFixture(q,viewer))}).catch(()=>{});
+ });
  await context.route('**/functions/v1/user-rankings?*',async route=>{
   const q=new URL(route.request().url()).searchParams;
   const token=route.request().headers().authorization?.split(' ')[1];let viewer=E2E_UID;

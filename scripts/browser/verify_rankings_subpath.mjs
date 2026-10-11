@@ -45,13 +45,13 @@ try {
   const url =
     "http://127.0.0.1:5193/safetyreport-community-map/" + search;
   await page.goto(url);
-  await page.locator(".rk-page .rk-list li").first().waitFor({timeout:10000});
+  await page.locator(".rk-page .rk-card, .rk-page .rk-list li").first().waitFor({timeout:10000}); // board (2026-10-11) or a full list
   assert.equal(new URL(page.url()).pathname, "/safetyreport-community-map/");
   reloading = true;
   await page.reload();
-  await page.locator(".rk-page .rk-list li").first().waitFor({timeout:10000});
+  await page.locator(".rk-page .rk-card, .rk-page .rk-list li").first().waitFor({timeout:10000}); // board (2026-10-11) or a full list
   reloading = false;
-  assert.equal(await page.locator(".rk-me-badge:visible").count(), 1);
+  assert.ok(await page.locator(".rk-me-badge:visible").count() >= 1); // the board can show the viewer in several cards
   for (const [key, value] of new URLSearchParams(search)) {
     assert.equal(new URL(page.url()).searchParams.get(key), value, `subpath refresh preserves ${key}`);
   }

@@ -1,11 +1,15 @@
 /**
  * Synthetic user rankings for the demo build only (loaded through a literal VITE_DATA_MODE check, so live builds
  * drop this chunk). Participants and numbers are made up; ranks follow the same rules the server states
- * (descending value, equal values share a rank, rates compared as exact fractions).
+ * (descending value, equal values share a competition rank, rates compared as exact fractions, then larger N,
+ * then UUID ascending for display order).
  */
 import {
   type RankingQuery, type RankingResponse, type RankingRow, kstMonth, monthBounds, responseSchema,
 } from '../../contracts/user-rankings/types';
+import {
+  BOARD_METRICS, type BoardQuery, type BoardResponse, boardResponseSchema,
+} from '../../contracts/user-rankings-board/types';
 
 const N = 37;
 const ME = 6; // the demo viewer
@@ -17,9 +21,10 @@ function rng(seed: number) {
 }
 const hex = (r: () => number, n: number) => Array.from({ length: n }, () => Math.floor(r() * 16).toString(16)).join('');
 
+type Cohort = Pick<RankingQuery, 'period' | 'month' | 'start' | 'end' | 'category' | 'date_basis' | 'min_reports'>;
 type Person = { uuid: string; reports: number; fine: number; rejected: number; partial: number; unknown: number };
 
-function people(q: RankingQuery): Person[] {
+function people(q: Cohort): Person[] {
   // the period and category scale the counts so each choice shows a different, plausible table
   const scale = q.period === 'month' ? 0.12 : q.period === 'range' ? 0.45 : 1;
   // 5분류(observation-v5, 2026-10-11): safety·living은 교통위반·주정차보다 작은 몫, other는 더 작은 몫.
@@ -40,13 +45,14 @@ function people(q: RankingQuery): Person[] {
   });
 }
 
-export function demoRankings(q: RankingQuery): RankingResponse {
-  const numer = (p: Person) => (q.metric.startsWith('fine') ? p.fine : q.metric.startsWith('rejected') ? p.rejected : q.metric.startsWith('partial') ? p.partial : p.reports);
-  const isRate = q.metric.endsWith('_rate');
+/** Every eligible participant ranked by one metric, in the server's display order (rank → N desc → UUID). */
+function rankAll(q: Cohort, metric: RankingQuery['metric']): RankingRow[] {
+  const numer = (p: Person) => (metric.startsWith('fine') ? p.fine : metric.startsWith('rejected') ? p.rejected : metric.startsWith('partial') ? p.partial : p.reports);
+  const isRate = metric.endsWith('_rate');
   const all = people(q).map((p, i) => ({ p, me: i === ME })).filter(({ p }) => p.reports >= q.min_reports);
   // exact comparison: a/b vs c/d by cross-multiplication for rates
   const cmp = (a: Person, b: Person) => (isRate ? numer(b) * a.reports - numer(a) * b.reports : numer(b) - numer(a));
-  all.sort((x, y) => cmp(x.p, y.p) || x.p.uuid.localeCompare(y.p.uuid));
+  all.sort((x, y) => cmp(x.p, y.p) || y.p.reports - x.p.reports || (x.p.uuid < y.p.uuid ? -1 : x.p.uuid > y.p.uuid ? 1 : 0));
   const rows: RankingRow[] = [];
   all.forEach(({ p, me }, i) => {
     const prev = rows[i - 1];
@@ -61,21 +67,30 @@ export function demoRankings(q: RankingQuery): RankingResponse {
   const ties = new Map<number, number>();
   rows.forEach((r) => ties.set(r.rank, (ties.get(r.rank) ?? 0) + 1));
   rows.forEach((r) => { r.tie_count = ties.get(r.rank) ?? 1; });
-  const start = (q.page - 1) * q.page_size;
+  return rows;
+}
+
+function demoScope(q: Cohort) {
   const month = q.period === 'month' ? q.month ?? kstMonth() : null;
   const bounds = month ? monthBounds(month) : null;
+  return {
+    period: q.period,
+    start: q.period === 'range' ? q.start : bounds?.start ?? null,
+    end: q.period === 'range' ? q.end : bounds?.end ?? null,
+    month, date_basis: q.date_basis, category: q.category, min_reports: q.min_reports,
+    timezone: 'Asia/Seoul' as const, in_progress: month === kstMonth(),
+  };
+}
+
+export function demoRankings(q: RankingQuery): RankingResponse {
+  const rows = rankAll(q, q.metric);
+  const start = (q.page - 1) * q.page_size;
   return responseSchema.parse({
     schema_version: 'user-rankings-v1',
     cohort_policy_version: 'single-date-v1',
     dataset_version: 'd3e0c0de0000000000000000000a1b2c',
     generated_at: new Date().toISOString(),
-    scope: {
-      theme: q.theme, metric: q.metric, period: q.period,
-      start: q.period === 'range' ? q.start : bounds?.start ?? null,
-      end: q.period === 'range' ? q.end : bounds?.end ?? null,
-      month, date_basis: q.date_basis, category: q.category, min_reports: q.min_reports,
-      timezone: 'Asia/Seoul', in_progress: month === kstMonth(),
-    },
+    scope: { theme: q.theme, metric: q.metric, ...demoScope(q) },
     total_participants: rows.length,
     rows: rows.slice(start, start + q.page_size),
     me: rows.find((r) => r.is_me) ?? null,
@@ -83,5 +98,23 @@ export function demoRankings(q: RankingQuery): RankingResponse {
     page_size: q.page_size,
     next_page: start + q.page_size < rows.length ? q.page + 1 : null,
     diagnostics: { selected_date_missing: 0, completed_unknown: rows.reduce((a, r) => a + r.completed_unknown, 0), inconsistent_disposition: 0 },
+  });
+}
+
+/** One-page board: each metric's top K and own rank, the same rows the paged demo list shows on its first page. */
+export function demoRankingsBoard(q: BoardQuery): BoardResponse {
+  const boards = BOARD_METRICS.map(({ theme, metric }) => {
+    const rows = rankAll(q, metric);
+    return { theme, metric, total_participants: rows.length, rows: rows.slice(0, q.top), me: rows.find((r) => r.is_me) ?? null };
+  });
+  return boardResponseSchema.parse({
+    schema_version: 'user-rankings-board-v1',
+    cohort_policy_version: 'single-date-v1',
+    dataset_version: 'd3e0c0de0000000000000000000b0a2d',
+    generated_at: new Date().toISOString(),
+    scope: { ...demoScope(q), top: q.top },
+    total_participants: boards[0].total_participants,
+    boards,
+    diagnostics: { selected_date_missing: 0, completed_unknown: rankAll(q, 'reports_count').reduce((a, r) => a + r.completed_unknown, 0), inconsistent_disposition: 0 },
   });
 }

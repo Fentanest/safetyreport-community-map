@@ -12,6 +12,18 @@
 전체 분자/분모가 함께 바뀐다. 과태료 금액을 추정하지 않는다. 월별 세 테마 모두 KST 현재 월이 기본이며 집계 중임을 표시한다.
 이전 월 제목은 해당 연월이다. 과거월에 공유 자료가 없으면 빈 상태이며 과거의 전체 안전신문고 활동을 재구성하지 않는다.
 
+## 한 페이지 보드 (2026-10-11 사용자 결정)
+
+화면은 기간(전체/월별/기간 지정)·분류·상세 조건만 고르면 세 테마(신고·과태료·불운)의 일곱 지표 TOP 5를 한 페이지에 보인다.
+요청은 `GET …/user-rankings/board` 1번이다(같은 `user-rankings` Edge 안의 경로 — 새 함수·verify_jwt 설정 없음, 같은 rate 버킷).
+DB는 `public.internal_user_rankings_board(uuid,uuid,jsonb)`(migration `202610111200_user_rankings_board.sql`)가 열람 자격·대표 선출·
+집계를 **한 번만** 하고 지표 7개에 기존 함수와 같은 순위 규칙(competition rank, 정확한 분수 정렬, min_reports)을 적용한다.
+지표마다 rows(top K, 기본 5·최대 10)·me(전체 기준)·total_participants가 페이지형 함수 page1(page_size=K)과 같다 —
+`COMMUNITY_STACK=1 npx vitest run tests/integration/user-rankings-board.test.ts`(로컬 스택, 한 트랜잭션에서 최신 함수·5분류·보드를
+만들고 144개 조건 × 7지표를 비교한 뒤 롤백). 계약은 [contracts/user-rankings-board/README.md](../contracts/user-rankings-board/README.md).
+카드의 '전체 보기'는 기존 페이지형 목록(`/user-rankings`)을 그 지표로 연다. 보드·목록 모두 120초 메모리 재사용 규칙을 따른다.
+1~3위는 블록 브릭 시상대 위 일반 블록 피규어(장식, aria-hidden)이며 reduced-motion이면 정지 포즈다([ui-spec §14](ui-spec.md)).
+
 ## 원천과 집계
 
 실제 `private.community_report_facts`의 (contributor_id,dataset_key,source_report_key) 관측을 읽는다.
@@ -38,13 +50,17 @@ private 직접 권한은 추가하지 않는다. 금액·차량·담당자·좌�
   관측60만, 사용자1000 fixture. 대량 fixture는 트랜잭션 rollback, 생성 로그인 계정은 정리.
 - `deno check --config supabase/functions/user-rankings/deno.json supabase/functions/user-rankings/index.ts`
 - `RANKINGS_PORT=5192 npx vite --config scripts/browser/vite.rankings.config.ts`, 별도 터미널
-  `node scripts/browser/verify_rankings.mjs`와 `node scripts/browser/verify_ranking_periods.mjs`;
+  `node scripts/browser/verify_rankings.mjs`와 `node scripts/browser/verify_ranking_periods.mjs`(2026-10-11 보드 구조).
+  스택에 보드 migration·최신 목록 함수(060600)가 없으면 검수 서버가 호출마다 롤백 트랜잭션 안에서 만들어 쓴다(스택 불변).
+  워크트리처럼 `.integration-stack`이 없으면 `COMMUNITY_STACK_DIR=<원래 레포>/.integration-stack`, Playwright 위치는 `PLAYWRIGHT_PATH`;
   완료 후 `/__rankings/cleanup`과 서버 종료. 동시 실행 서버는 같은 DB 후보를 공유하므로 검수는 순차 실행한다.
   운영 도메인과 무관한 루프백 전용 서버다. 실제 로컬 DB/RPC·GoTrue JWT + 합성 사용자/신고로 검수한다.
 - 하위 경로 검증: 위 서버 실행 중 `node scripts/browser/build_rankings_subpath.mjs`,
   `node scripts/browser/verify_rankings_subpath.mjs` (검사 동안만5193 정적 서버를 자체 실행·정리). LOCAL GoTrue56321의 공개 키만 런타임에서 읽으며
   별도 origin인 정적 서버가 개발용 인증 프록시를 공유하지 않도록 한다. 확인 후 `VITE_DATA_MODE=live npm run build && npm run scan`으로
   일반 빌드를 복원한다. service_role은 프런트에 넣지 않는다.
+- 데모 보드(DB 없음): `VITE_DATA_MODE=demo npx vite --host 127.0.0.1 --port 5291 --strictPort` 후
+  `node scripts/browser/verify_rankings_board_demo.mjs`(1280/390 × 라이트/다크, reduced-motion, 보드 1번·전체 보기 왕복, 예전 링크).
 - 접근성/로그아웃: `node scripts/browser/verify_rankings_accessibility.mjs` (마지막에 실제 로그아웃하므로
   다음 검수는 `/__rankings/cleanup` 후 시작).
 
@@ -58,6 +74,11 @@ private 직접 권한은 추가하지 않는다. 금액·차량·담당자·좌�
 이전 증거를 덮어쓰지 않고 실행한다. 전체 suite 검증은 `npx vitest run --maxWorkers=2`를 사용했다.
 
 ## 운영 적용 준비 (이번 작업에서는 실행하지 않음)
+
+2026-10-11 보드 추가분: (1) `202610111200_user_rankings_board.sql` 적용(새 함수 1개·grant만, 자료 변경 없음, 5분류 `202610110100` 뒤),
+(2) `user-rankings` Edge 재배포(함수별 deno.json 포함, 새 secret·verify_jwt 변경 없음 — 같은 함수에 `/board` 경로 추가),
+(3) Pages live 빌드·scan 후 배포. 순서는 SQL → Edge → Pages(새 웹은 보드 경로를 먼저 부르므로 Edge 전에 Pages만 배포하면 안 된다).
+되돌리기: 이전 Pages·Edge 복원 후 `drop function public.internal_user_rankings_board(uuid,uuid,jsonb);`.
 
 1. 운영 선행 스키마/정책 확인: 정본 composed manifest의 auth/map migrations 및 최신 my-reports 202610020100.
 2. 추가 migration `202610030100_user_rankings.sql` → `202610030200_user_ranking_periods.sql` 순서로 적용.

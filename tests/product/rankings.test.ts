@@ -64,6 +64,9 @@ const setup = (extra = {}) => {
     jwtIssuer: null,
     getUser: async () => ({ id: uid, isAnonymous: false }),
     rpc,
+    boardRpc: async () => {
+      throw new Error("board route not used here");
+    },
     allowRequest,
     ...extra,
   });
