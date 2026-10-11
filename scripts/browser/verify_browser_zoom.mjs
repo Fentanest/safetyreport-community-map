@@ -14,7 +14,7 @@ try{
  const page=context.pages()[0];const cdp=await context.newCDPSession(page);
  for(const theme of ['dark','light'])for(const screen of ['rankings','statistics']){
   await page.goto(`${ORIGIN}/?screen=${screen}`);await page.evaluate(t=>{localStorage.setItem('cm-theme',t);document.documentElement.dataset.theme=t;},theme);
-  await page.locator(screen==='rankings'?'.rk-table tbody tr':'.pivot-table tbody tr').first().waitFor({state:'attached',timeout:20000});
+  await page.locator(screen==='rankings'?'.rk-card':'.pivot-table tbody tr').first().waitFor({state:'attached',timeout:20000});
   const dimensions=await page.evaluate(()=>({innerWidth,outerWidth,dpr:devicePixelRatio,scrollWidth:document.documentElement.scrollWidth,cssZoom:getComputedStyle(document.body).zoom}));
   console.log(JSON.stringify(dimensions));await page.keyboard.press('Tab');const keyboard=await page.evaluate(()=>document.activeElement!==document.body);
   const shot=await cdp.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});writeFileSync(`${out}/${screen}-${theme}-actual200.png`,Buffer.from(shot.data,'base64'));

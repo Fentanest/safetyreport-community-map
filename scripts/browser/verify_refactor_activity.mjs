@@ -4,7 +4,7 @@ import { mkdirSync,writeFileSync } from 'node:fs';
 import { chromium,api,openPage,waitMap } from './harness.mjs';
 import { attachRankingFixture } from './ranking_fixture.mjs';
 const out=process.argv[2]||'docs/refactoring/map-performance/evidence/activity-browser';mkdirSync(out,{recursive:true});
-const browser=await chromium.launch({args:['--no-sandbox','--lang=ko-KR']});const checks=[],notes=[];
+const browser=await chromium.launch({...(process.env.E2E_BROWSER?{executablePath:process.env.E2E_BROWSER}:{}),args:['--no-sandbox','--lang=ko-KR']});const checks=[],notes=[];
 const check=(name,condition)=>{assert.ok(condition,name);checks.push({name,status:'PASS'});};
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 try{
@@ -24,16 +24,20 @@ try{
  const original=await counts();const cycles=[];const rankRequests=[];
  page.on('request',r=>{if(r.url().includes('/user-rankings?'))rankRequests.push(new URL(r.url()).searchParams.get('metric'));});
  for(let i=0;i<20;i++){
-  await nav.getByRole('button',{name:'유저 랭킹',exact:true}).click();await page.locator('.rk-table:visible tbody tr').first().waitFor();await pause(150);
-  await page.locator('.rk-page').getByRole('button',{name:'초기화',exact:true}).click();
-  await page.locator('.rk-tabs button[aria-pressed="true"]').filter({hasText:'신고 랭킹'}).waitFor();await pause(150);
+  // 2026-10-11 board: the ranking screen opens on the one-page board; the overlapping requests are two '전체 보기' lists.
+  await nav.getByRole('button',{name:'유저 랭킹',exact:true}).click();await page.locator('.rk-page .rk-card').first().waitFor();await pause(150);
+  const back=page.locator('.rk-page').getByRole('button',{name:/테마별 랭킹으로/});if(await back.isVisible())await back.click();
+  await page.locator('.rk-page').getByRole('button',{name:'조건 초기화',exact:true}).click();
+  await page.locator('.rk-page .rk-card').first().waitFor();await pause(150);
   const atHide=await counts(),requestStart=(await api('log')).length;
   await page.evaluate(()=>{window.__cmCommits=[];});
   const rankingStart=rankRequests.length;
-  const rk=page.locator('.rk-page');await rk.getByRole('button',{name:'과태료 랭킹',exact:true}).click();await rk.getByRole('button',{name:'비율순',exact:true}).click();
+  const rk=page.locator('.rk-page');await rk.getByRole('button',{name:'과태료 처분 건수 전체 보기',exact:true}).click();
+  await rk.getByRole('button',{name:/테마별 랭킹으로/}).click();await rk.getByRole('button',{name:'과태료 처분율 전체 보기',exact:true}).click();
   await page.waitForFunction(()=>new URLSearchParams(location.search).get('rk_metric')==='fine_rate');await pause(900);
   check(`cycle ${i+1}: late count answer cannot overwrite latest rate`,(await rk.locator('.rk-sub').innerText()).includes('과태료 처분율'));
-  check(`cycle ${i+1}: exercised both overlapping ranking requests`,rankRequests.length===rankingStart+2);
+  // cycle 1 sends both lists; later cycles may reuse them from the 120 s in-memory map (2026-10-11), never more than two
+  check(`cycle ${i+1}: overlapping ranking requests (2 on the first cycle, at most 2 later)`,i===0?rankRequests.length===rankingStart+2:rankRequests.length<=rankingStart+2);
   const after=await counts();
   check(`cycle ${i+1}: hidden chart builds unchanged`,after.builds===atHide.builds);
   check(`cycle ${i+1}: hidden dashboard has no Profiler commit`,after.commits.length===0);

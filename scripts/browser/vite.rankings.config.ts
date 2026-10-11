@@ -40,6 +40,20 @@ let nextFailure = 0;
 // transaction that is rolled back after the call (the shared local stack is never changed by this server).
 const boardSql = readFileSync("supabase/migrations/202610111200_user_rankings_board.sql", "utf8")
   .replace(/^begin;\s*$/gm, "").replace(/^commit;\s*$/gm, "");
+// A stack older than 202610060600 has a list RPC that refuses `consistency=latest` (always sent by the client):
+// then the 060600 body is created inside a rolled-back transaction for the call, like the board above.
+const listSql = (readFileSync("supabase/migrations/202610060600_analytics_read_snapshot.sql", "utf8")
+  .match(/create or replace function public\.internal_user_rankings\([\s\S]*?\$\$;/) ?? [""])[0];
+function listCall(user: string, session: string, query: unknown): unknown {
+  const call = `select public.internal_user_rankings('${user}','${session}',${
+    lit(JSON.stringify(querySchema.parse(query)))
+  }::jsonb);`;
+  const current = sql(
+    "select coalesce(bool_or(prosrc like '%consistency%'),false) from pg_proc where proname='internal_user_rankings'",
+  ) === "t";
+  const out = current ? sql(call) : sql(`begin;\n${listSql}\n${call}\nrollback;`);
+  return JSON.parse(out.split("\n").filter((l) => l.startsWith("{")).pop() ?? "null");
+}
 function boardCall(user: string, session: string, query: unknown): unknown {
   const call = `select public.internal_user_rankings_board('${user}','${session}',${
     lit(JSON.stringify(boardQuerySchema.parse(query)))
@@ -290,14 +304,7 @@ function api(): Plugin {
             return data.user ? { id: data.user.id, isAnonymous: false } : null;
           },
           allowRequest: async () => true,
-          rpc: async (user, session, query) =>
-            JSON.parse(
-              sql(
-                `select public.internal_user_rankings('${user}','${session}',${
-                  lit(JSON.stringify(querySchema.parse(query)))
-                }::jsonb)`,
-              ),
-            ),
+          rpc: async (user, session, query) => listCall(user, session, query),
           boardRpc: async (user, session, query) => boardCall(user, session, query),
         });
         const headers = new Headers();

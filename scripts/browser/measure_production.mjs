@@ -28,7 +28,7 @@ try{
     const started=performance.now();let success=true;
     try{
      await page.goto(`http://127.0.0.1:5198/safetyreport-community-map/?screen=${screen}&me=signed`);
-     await page.waitForFunction(selector=>{const e=document.querySelector(selector);return !!e&&e.getBoundingClientRect().height>0&&getComputedStyle(e).visibility!=='hidden';},screen==='dashboard'?'.kpi-strip .kpi-row':screen==='statistics'?'.pivot-table tbody tr':'.rk-table tbody tr',{timeout:30000,polling:'raf'});
+     await page.waitForFunction(selector=>{const e=document.querySelector(selector);return !!e&&e.getBoundingClientRect().height>0&&getComputedStyle(e).visibility!=='hidden';},screen==='dashboard'?'.kpi-strip .kpi-row':screen==='statistics'?'.pivot-table tbody tr':'.rk-card',{timeout:30000,polling:'raf'});
     }catch(e){success=false;failures.push({variant,screen,i,message:e.message});}
     const firstContentMs=performance.now()-started;
     if(screen==='dashboard'&&success){try{await page.waitForFunction(()=>window.__kakaoStats?.maps>0&&document.querySelectorAll('[_echarts_instance_]').length>=7,null,{timeout:10000,polling:'raf'});}catch(e){success=false;failures.push({variant,screen,i,message:'map/charts incomplete: '+e.message});}}
