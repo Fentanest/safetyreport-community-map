@@ -12,7 +12,7 @@
 | `policy` | (없음) | `policy:{version, consent_text_sha256, consent_text}` — 지금 필수 동의 정책의 **본문**(UTF-8 markdown). 중앙이 보내기 전에 본문 해시 = `consent_text_sha256` 을 확인한다 | `auth_required`(401), `server_error` |
 | `consent` | `policy_version`, `consent_text_sha256`, `via`(`safetyreport_server`/`mobile_standalone`/`mobile_client`), `accepted: true` | `grant_id`, `policy_version`, `granted_at`, `created` | `kakao_required`(403), `policy_mismatch`(409 + `required_version`), `contributor_suspended`(403) |
 | `consent-revoke` | `grant_id`(현재 또는 같은 계보의 이전 grant) | `grant_id`(실제로 철회된 활성 grant), `revoked:true`, `already_revoked`, `lineage_active:false` | `not_found`(404), `stale_grant`(409: 그 계보는 이미 닫혔고 다른 활성 동의가 있음 — status 를 다시 받아 현재 grant 로 요청) |
-| `connections` | `source_app`, `source_mode`, `platform`, `device_label`(1~40, relay 규칙), `dataset_key`(64hex), `connection_secret`(base64url 32바이트 — 서버는 sha256 만 저장), `takeover`(bool) | `connection_id`, `writer_epoch`, `superseded_previous` | `kakao_required`, `official_account_mismatch`(409 + 본인 `bound_dataset_key`), `official_account_taken`(409, 운영자 문의), `writer_conflict`(409 + `active_writer:{device_label, platform, source_app, created_at}`), `invalid_request` |
+| `connections` | `source_app`, `source_mode`, `platform`, `device_label`(1~40, relay 규칙), `dataset_key`(64hex), `connection_secret`(base64url 32바이트 — 서버는 sha256 만 저장), `takeover`(bool) | `connection_id`, `writer_epoch`, `superseded_previous` | `official_account_mismatch`(409 + 본인 `bound_dataset_key`), `official_account_taken`(409, 운영자 문의 안내), `kakao_required`, `writer_conflict`(409 + `active_writer:{device_label, platform, source_app, created_at}`), `invalid_request` |
 | `connections-rebind` | `connection_id`, `connection_secret` | `connection_id`, `writer_epoch`, `last_accepted_revision` | `not_found`(404, 타인·없음 구분 안 함), `connection_revoked`/`connection_superseded`/`connection_suspended`(409) |
 | `connections-revoke` | `connection_id` | `connection_id`, `status:"revoked"` | `not_found` |
 | `contributions-delete` | `confirm: "DELETE_MY_SHARED_REPORTS"` | `deletion_id`, `deleted_facts`, `revoked_connections`, `deleted_at`, `official_account_released:true` | `kakao_required` |
@@ -20,13 +20,13 @@
 status 응답:
 ```json
 {"protocol":1,
- "official_account":{"dataset_key":"<64hex>|null","bound_at":"<ISO>|null"},
  "gate":{"kakao":true,"consent":true,"can_enter":true,"reasons":[]},
  "policy":{"required_version":"2026-09-26.1","consent_text_sha256":"…"},
  "consent":{"state":"active|none|revoked|outdated","grant_id":"…|null","policy_version":"…|null","granted_at":"…|null"},
  "contributor":{"status":"active|suspended|deletion_pending|none"},
  "connection":null | {"status":"active|superseded|revoked|suspended","writer_epoch":5,"bound_to_current_session":true,
                       "last_accepted_revision":120,"source_app":"safetyreport","source_mode":"server","dataset_key":"…"},
+ "official_account":{"dataset_key":"<64hex>|null","bound_at":"<ISO>|null"},
  "projection":{"ready":false},
  "account":{"fingerprint":"<32hex>","display_name":"…|null"},
  "server_time":"2026-09-26T03:00:00.000Z"}
@@ -56,29 +56,69 @@ status 응답:
 `dataset_key = sha256("safetyreport-dataset|v1|" + 공식 로그인 ID 소문자·앞뒤 공백 제거)` — 클라이언트 주장값(증명 아님), writer 충돌 제어와 fact 네임스페이스용.
 
 
-## 공식 계정 1:1 바인딩 (2026-10-06)
+## 공식 계정 양방향 1:1 바인딩 (2026-10-06)
 
-카카오 사용자 1명 ↔ 공식 안전신문고 dataset 1개. `dataset_key` 알고리즘은 그대로이며,
-서버는 ID 원문을 저장하지 않는다. `connections` 성공과 바인딩 생성은 같은 트랜잭션이다.
-같은 사용자의 같은 dataset 재등록에는 기존 writer 충돌·takeover 규칙을 적용한다.
-`takeover:true`도 다른 사용자 바인딩이나 본인의 다른 dataset 바인딩을 덮지 못한다.
+카카오 사용자 하나에 안전신문고 dataset 하나, dataset 하나에 카카오 사용자 하나만 허용한다.
+`status.official_account`는 호출한 사용자 본인의 바인딩만 반환한다. 미바인딩은 실제 JSON null 두 개다.
+원문 ID·다른 사용자 식별자·상대 바인딩 정보는 반환하지 않는다.
 
 | 오류 코드 | HTTP / retryable | message (정확한 서버 문구) |
 |---|---|---|
 | `official_account_mismatch` | 409 / false | `This community account is bound to another official account. Delete shared reports before changing accounts.` |
 | `official_account_taken` | 409 / false | `This official account is already bound. Please contact an operator (운영자에게 문의해 주세요).` |
 
-mismatch 응답의 `error.bound_dataset_key`는 본인의 바인딩만 반환한다. taken은 상대 사용자·연결·dataset 정보를 추가하지 않는다.
-`status.official_account`는 요청자 자신의 `{dataset_key,bound_at}`이며 미바인딩은 두 값 모두 JSON null이다.
-동의 철회·연결 철회·로그아웃은 바인딩을 해제하지 않는다. 공식 계정 변경은 기존
-`contributions-delete` 성공(`official_account_released:true`) 이후 새 `connections`로 진행한다.
-운영자 함수·감사·backfill·적용 순서는 `docs/implementation/official-account-binding-20261006/MIGRATION.md` 참조.
+앱 화면 문구는 아래 각 경우의 한국어 안내를 쓴다(서버 문구를 그대로 보이지 않는다).
 
-안신 계정은 클라이언트 DB에 저장하지 않는다. 서버 바인딩을 정본으로 삼고, 클라이언트는 시작·복귀·약 5분마다
-현재 로그인 설정에서 계산한 dataset_key와 status의 바인딩을 대조한다. 불일치 시 로그인 설정에서
-계정을 맞추거나 경고→개인 DB 백업→초기화→새 시작 절차를 완료해야 한다. 연결 실패 시 클라우드 접속 불가
-화면, 20~30초 타임아웃·증가 간격 자동 재시도·수동 재시도를 제공한다. 이 서버 변경에는 클라이언트 UI 구현이 포함되지 않는다.
+`connections`는 등록과 같은 트랜잭션에서 다음 조건을 검사한다.
+- 사용자와 dataset 모두 미바인딩: 바인딩 생성 후 연결 등록.
+- 같은 사용자와 dataset: 기존 writer 규칙 적용(takeover는 같은 사용자/같은 dataset에만 적용).
+- 사용자가 다른 dataset에 바인딩됨: HTTP 409 `official_account_mismatch`, `error.bound_dataset_key`는 본인의 키만 반환 가능.
+  사용자 문구: “연결된 안전신문고 계정과 설정이 다릅니다. 바인딩된 계정으로 되돌리거나, 기존 데이터를 백업·초기화하고 새 계정으로 시작하세요.”
+- dataset이 다른 사용자에게 바인딩됨: HTTP 409 `official_account_taken`. 상대 정보 없이
+  “이 안전신문고 계정은 이미 다른 카카오 계정에 연결되어 있습니다. 운영자에게 문의해 주세요.”
+
+변경은 경고·개인 DB 백업 검증 → `contributions-delete` → 로컬 신고 자료 초기화 → 새 설정 저장 → 새 `connections` 순서다.
+삭제 응답의 `official_account_released:true` 확인 전에는 개인 DB를 비우지 않는다. 삭제 응답 유실 후 재요청을 허용하며
+삭제 fence·연결 폐기·바인딩 해제는 함께 적용한다. `consent-revoke`, 로그아웃, writer revoke만으로 바인딩을 해제하지 않는다.
+
+클라이언트는 시작·포그라운드 복귀·약 5분마다 config의 정규화 dataset과 대조한다. 불일치는 설정에 가두고
+크롤링·업로드를 중지한다. PC의 기존 60초 게이트 poll은 유지하며 탐색 때도 300초를 넘긴 바인딩은 재확인한다.
+카카오 미연동 사용자는 본인 status 토큰이 없으므로 기존 필수 연결 화면을 사용한다.
+
+클라우드 일시 장애는 계정 불일치와 구분한다(2026-10-07 로컬 사용 정책, 2026-10-11 재시도 개선).
+저장된 로그인 계정과 개인 DB 주인이 일치하고 바인딩 불일치·계정 변경 미완료·이용정지 제한이 없으면
+로컬 조회·수집을 유지한다. 공유 업로드는 서버의 현재 인증·동의·연결 검증을 통과해야 한다.
+장애 대기는 상단 배너에서 안내하며 수동 재시도로 대기시간을 우회하지 않는다. 연속 실패 n의 공통 대기는
+기본 300·2^(n-1)초(기본값 상한 1800초)에 ±20% 지터를 적용하고, 서버 Retry-After가 더 길면 그 값을 따른다.
+재시작·화면 복귀로 남은 대기를 줄이지 않으며, 정상 응답을 받으면 연속 실패 횟수를 초기화한다.
+
+### 코드 대조 정정
+| 이전 설명 | 현행 동작 |
+|---|---|
+| status 연결 실패면 성공 캐시가 있어도 전체 화면 차단 | 계정·DB 주인이 확인된 로컬 이용은 유지하고 공유 업로드를 별도로 검증 |
+| 2/5/10초 자동 재시도 3회와 수동 재시도 | 영속 공통 쿨다운·점증·지터와 남은 시간 배너, 재시작·수동 우회 없음 |
+
+### PC·모바일 구서버 정책과 로컬 DB 교환
+`official_account` 필드가 **없으면 원격 바인딩 대조만 생략**하고 기존 카카오 인증·동의·writer 연결 규칙으로 정상 동작한다.
+필드가 있는 응답은 구조/키를 검사한다. `{dataset_key:null,bound_at:null}`은 미바인딩이며 현재 config로 `connections` 등록을 시도한다.
+`official_account:null`, 필수 키 누락, 잘못된 dataset 형식은 `official_account_protocol_required`로 차단한다.
+구서버 status에 클라이언트가 임의 바인딩 필드를 만들어 넣지 않는다. 기존 writer를 재사용하고 등록 오류는 동일하게 처리한다.
+구서버라도 계정 변경 경고·백업 검증·초기화 순서는 동일하며, `official_account_released:true`가 없는 삭제 응답으로는 변경을 완료하지 않는다.
+
+안전신문고 ID 원문·해시는 개인 DB(`mysafety_sync_meta`/`sync_meta` 포함)에 기록하지 않는다.
+1:1은 config의 ID에서 계산한 dataset과 중앙 status의 대조 및 `connections` 거절로 보장한다.
+DB 가져오기·복원의 주인 검사는 **기존 카카오 주인 검사만** 유지한다. 같은 카카오면 다른 안신 계정 시절/안신 정보 없는 백업도 허용한다.
+카카오 주인 누락·불일치·로그인 미확인은 거절한다. 개발 중 남은 안신 메타는 읽어 판정하거나 새로 기록하지 않으며,
+기존 임의 sync_meta 무손실 교환 규칙에 따라 보존한다(별도 삭제 마이그레이션 없음). 테이블/열/스키마 버전 변경은 없다.
+
+### 서버 구현·운영 경계
+기존 연결·fact에서 바인딩 backfill을 수행하며 사용자당 dataset/ dataset당 사용자 충돌은 migration 실패로 처리한다.
+충돌을 덮어쓰지 않는다. 운영자 수동 해제는 service_role 전용 SQL 함수만 허용하고 감사 기록을 남긴다.
+함수 이름·호출법·검증 절차는 auth 구현의 운영 런북에 명시한다. 이 PC 변경은 운영 호출이나 migration을 실행하지 않는다.
+map ingest는 연결 dataset과 사용자 바인딩 불일치를 방어적으로 거절한다. 신고가 다른 dataset에 이미 있으면
+`report_owned_elsewhere`로 거절하고 감사 기록을 남기며 상대 정보를 반환하지 않는다.
 
 운영자 수동 선점 해제는 선점자의 해당 dataset 공유 fact 삭제·identity tombstone·사용자/dataset 삭제 fence·
 해당 dataset 연결 폐기·바인딩 해제를 원자적으로 수행한다. 삭제 건수와 운영자/사유/시각은 private 감사에 남긴다.
 삭제 증거는 선점자 사용자 범위이므로 진짜 주인은 같은 dataset과 같은 신고를 새로 연결·업로드할 수 있다.
+운영자 함수·감사·backfill·적용 순서는 지도 레포 `docs/implementation/official-account-binding-20261006/MIGRATION.md` 참조.
