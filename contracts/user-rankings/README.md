@@ -73,4 +73,8 @@ upload_required (details required:10,current:N|null)/origin_forbidden; 409 DATAS
 503 service_unavailable. Method/path errors 405 METHOD_NOT_ALLOWED / 404 NOT_FOUND. SQL/stack/private inputs are
 never echoed. Bounded page and narrow SQL projection keep response bytes bounded independently of fact volume.
 
+One-page board (2026-10-11): `GET …/user-rankings/board` of the SAME function returns all seven metrics' top K + own
+rank in one request with these exact rules — see [user-rankings-board-v1](../user-rankings-board/README.md). This paged
+list stays as the board's '전체 보기' of one metric; old links carrying `rk_theme`/`rk_metric` open that list.
+
 Local implementation only. Production SQL/Edge/Pages apply is NOT performed. See docs/user-rankings.md.
