@@ -62,7 +62,34 @@ const BASIS_LABEL: Record<RankingQuery['date_basis'], string> = {
 };
 
 const PAGE_SIZE = 20;
-const REVALIDATE_MS = 500;
+// 한 번 받은 랭킹은 이 시간 동안 다시 묻지 않는다. 한 번 조회가 서버에서 전체 대표 선출·집계(수 초)라,
+// 화면 전환·창 포커스·탭 복귀마다 다시 보내면 부하가 크다(2026-10-11 사용자 보고).
+const FRESH_MS = 120_000;
+
+// 화면 전환으로 이 페이지가 다시 마운트돼도 같은 조회를 보내지 않게 하는 메모리 캐시(탭 안에서만, 저장소 아님).
+// 계약(contracts/user-rankings/README.md): localStorage·Service Worker 금지, 로그아웃·pagehide 에서 버린다.
+const memo = new Map<string, { data: RankingResponse; at: number }>();
+const MEMO_LIMIT = 24;
+const memoKey = (viewer: string, key: string) => `${viewer}\u0000${key}`;
+function memoGet(viewer: string | null, key: string): RankingResponse | null {
+  if (!viewer) return null;
+  const hit = memo.get(memoKey(viewer, key));
+  if (!hit) return null;
+  if (Date.now() - hit.at >= FRESH_MS) {
+    memo.delete(memoKey(viewer, key));
+    return null;
+  }
+  return hit.data;
+}
+function memoSet(viewer: string, key: string, data: RankingResponse) {
+  memo.delete(memoKey(viewer, key));
+  memo.set(memoKey(viewer, key), { data, at: Date.now() });
+  while (memo.size > MEMO_LIMIT) memo.delete(memo.keys().next().value as string);
+}
+function memoKeepOnly(viewer: string | null) {
+  if (!viewer) { memo.clear(); return; }
+  for (const k of [...memo.keys()]) if (!k.startsWith(`${viewer}\u0000`)) memo.delete(k);
+}
 
 function defaultQuery(): RankingQuery {
   return {
@@ -185,7 +212,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
   pendingRef.current = pendingIntent;
   const retryAtRef = useRef(retryAt);
   retryAtRef.current = retryAt;
-  const lastFetch = useRef(0);
+  const viewerRef = useRef(viewer);
+  viewerRef.current = viewer;
   const openerRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -406,6 +434,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
   // Hidden / logout / account switch: abort, advance generation, clear protected state.
   // Plain setState (no flushSync): this runs inside a passive effect.
   useEffect(() => {
+    memoKeepOnly(auth.status === 'signed_in' ? viewer : null);
     if (!active || auth.status !== 'signed_in') {
       abortRef.current?.abort();
       abortRef.current = null;
@@ -454,7 +483,8 @@ export default function RankingsPage({ active }: { active: boolean }) {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // pageshow / focus / visibility: abort while hidden; revalidate once when returning.
+  // pageshow / focus / visibility: abort while hidden; when returning, recheck only if what we show is older than FRESH_MS
+  // (a fresh answer stays on screen — focus/탭 복귀마다 다시 묻지 않는다).
   useEffect(() => {
     if (!active) return undefined;
     const maybeRevalidate = () => {
@@ -464,22 +494,31 @@ export default function RankingsPage({ active }: { active: boolean }) {
       }
       if (authRef.current !== 'signed_in' || !appliedRef.current) return;
       if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return;
-      if (Date.now() - lastFetch.current < REVALIDATE_MS) return;
+      if (memoGet(viewerRef.current, appliedKeyRef.current)) return;
       setNonce((n) => n + 1);
     };
+    // Hidden tab: stop waiting for an in-flight answer (its late result is dropped by the generation), keep what is shown.
+    const onHidden = () => {
+      if (!abortRef.current) return;
+      abortRef.current.abort();
+      abortRef.current = null;
+      genRef.current += 1;
+      setLoading(false);
+    };
+    // pagehide (leaving / bfcache): drop the protected response and the memory cache (계약).
     const onHide = () => {
       abortRef.current?.abort();
       abortRef.current = null;
       genRef.current += 1;
+      memo.clear();
       flushSync(() => { setResponse(null); setLoading(false); });
       setDialogUuid(null);
-      lastFetch.current = 0;
     };
-    const onShow = () => { setResponse(null); lastFetch.current = 0; maybeRevalidate(); };
+    const onShow = () => { setResponse(null); maybeRevalidate(); };
     const onFocus = () => maybeRevalidate();
     const onVis = () => {
       if (!document.hidden) maybeRevalidate();
-      else onHide();
+      else onHidden();
     };
     window.addEventListener('pageshow', onShow);
     window.addEventListener('pagehide', onHide);
@@ -499,6 +538,18 @@ export default function RankingsPage({ active }: { active: boolean }) {
     if (!active || auth.status !== 'signed_in' || !applied) return undefined;
     if (document.visibilityState === 'hidden') return undefined;
     if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return undefined;
+    const cached = memoGet(viewer, appliedKey);
+    if (cached) {
+      // 같은 조건을 최근에 받았다: 서버에 다시 묻지 않는다(화면 전환·조건 되돌리기).
+      abortRef.current?.abort();
+      abortRef.current = null;
+      genRef.current += 1;
+      setResponse({ data: cached, viewer, queryKey: appliedKey });
+      setLoading(false);
+      setError(null);
+      setAccess(null);
+      return undefined;
+    }
     const myGen = ++genRef.current;
     const requestViewer = viewer;
     const requestKey = appliedKey;
@@ -516,9 +567,9 @@ export default function RankingsPage({ active }: { active: boolean }) {
         if ((authRef.current === 'signed_in' ? requestViewer : null) !== requestViewer) return;
         if (appliedKeyRef.current !== requestKey) return;
         setResponse({ data, viewer: requestViewer, queryKey: requestKey });
+        if (requestViewer) memoSet(requestViewer, requestKey, data);
         setRetryAt(null);
         setPendingIntent(null);
-        lastFetch.current = Date.now();
         setLoading(false);
       })
       .catch((e: unknown) => {
@@ -528,6 +579,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
         setLoading(false);
         if (e instanceof PublicApiError) {
           if (e.status === 409) {
+            memo.clear(); // 자료가 바뀌었다 — 받아 둔 다른 페이지·조건도 낡았다
             const cur = appliedRef.current;
             if (cur && (cur.page !== 1 || cur.expected_version !== null)) {
               setNotice('그사이 새 자료가 들어왔습니다. 첫 페이지부터 다시 불러옵니다.');
