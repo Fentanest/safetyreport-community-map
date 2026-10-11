@@ -4,7 +4,6 @@ import {
   kstMonth,
   monthBounds,
   type RankingQuery,
-  type RankingResponse,
   type RankingRow,
 } from '../../contracts/user-rankings/types';
 import { BOARD_TOP_DEFAULT, type BoardResponse } from '../../contracts/user-rankings-board/types';
@@ -17,7 +16,10 @@ import {
   type RankingView,
   writeRankingParams,
 } from '../domain/rankingPeriods';
-import { loadRankings, loadRankingsBoard } from '../data/rankings';
+import {
+  clearRankingsCache, loadRankings, loadRankingsBoard, rankingsCacheGet, rankingsCacheSet,
+  type RankingsCachePayload,
+} from '../data/rankings';
 import { useMapAuth } from '../hooks/usePersonal';
 import { ACCESS_CODES, PublicApiError, type AccessCode } from '../data/client';
 import Icon from '../components/icons';
@@ -67,36 +69,14 @@ const BASIS_LABEL: Record<RankingQuery['date_basis'], string> = {
 };
 
 const PAGE_SIZE = 20;
-// 한 번 받은 랭킹은 이 시간 동안 다시 묻지 않는다. 한 번 조회가 서버에서 전체 대표 선출·집계(수 초)라,
-// 화면 전환·창 포커스·탭 복귀마다 다시 보내면 부하가 크다(2026-10-11 사용자 보고).
-const FRESH_MS = 120_000;
 
-// 화면 전환으로 이 페이지가 다시 마운트돼도 같은 조회를 보내지 않게 하는 메모리 캐시(탭 안에서만, 저장소 아님).
-// 계약(contracts/user-rankings/README.md): localStorage·Service Worker 금지, 로그아웃·pagehide 에서 버린다.
-// 2026-10-11: 보드(테마 3 × 지표 7, 요청 1번)와 '전체 보기' 목록이 같은 규칙(viewer+query 키, 120초)을 쓴다.
-type Payload = { kind: 'board'; data: BoardResponse } | { kind: 'list'; data: RankingResponse };
-const memo = new Map<string, { data: Payload; at: number }>();
-const MEMO_LIMIT = 24;
-const memoKey = (viewer: string, key: string) => `${viewer}\u0000${key}`;
-function memoGet(viewer: string | null, key: string): Payload | null {
-  if (!viewer) return null;
-  const hit = memo.get(memoKey(viewer, key));
-  if (!hit) return null;
-  if (Date.now() - hit.at >= FRESH_MS) {
-    memo.delete(memoKey(viewer, key));
-    return null;
-  }
-  return hit.data;
-}
-function memoSet(viewer: string, key: string, data: Payload) {
-  memo.delete(memoKey(viewer, key));
-  memo.set(memoKey(viewer, key), { data, at: Date.now() });
-  while (memo.size > MEMO_LIMIT) memo.delete(memo.keys().next().value as string);
-}
-function memoKeepOnly(viewer: string | null) {
-  if (!viewer) { memo.clear(); return; }
-  for (const k of [...memo.keys()]) if (!k.startsWith(`${viewer}\u0000`)) memo.delete(k);
-}
+// 한 번 받은 랭킹은 120초 동안 다시 묻지 않는다(화면 전환·창 포커스·탭 복귀마다 다시 보내면 부하가 크다 — 2026-10-11
+// 사용자 보고). 그 메모리 캐시는 2026-10-12부터 src/data/rankings.ts 가 전역으로 소유한다(Astra 검수 ①): 이
+// 컴포넌트는 Dashboard가 `screen === 'rankings'`일 때만 마운트되므로, 캐시를 비우는 로그아웃·pagehide 리스너가
+// 여기 있으면 다른 화면으로 이동한 뒤의 로그아웃·계정 전환을 비우지 못한다. 데이터 모듈 쪽은 컴포넌트 생명주기와
+// 무관하게 계속 듣는다. 이 컴포넌트는 그 캐시의 얇은 래퍼만 쓴다.
+type Payload = RankingsCachePayload;
+const cacheGet = (viewer: string | null, key: string): Payload | null => (viewer ? rankingsCacheGet(viewer, key) : null);
 
 const defaultQuery = () => defaultRankingQuery(PAGE_SIZE);
 const initialState = () => rankingStateFromSearch(window.location.search, PAGE_SIZE);
@@ -383,8 +363,9 @@ export default function RankingsPage({ active }: { active: boolean }) {
 
   // Hidden / logout / account switch: abort, advance generation, clear protected state.
   // Plain setState (no flushSync): this runs inside a passive effect.
+  // (The rankings cache itself is invalidated app-wide by src/data/rankings.ts's own mapAuth/pagehide listeners,
+  // which keep running even while this component is unmounted — not by this effect.)
   useEffect(() => {
-    memoKeepOnly(auth.status === 'signed_in' ? viewer : null);
     if (!active || auth.status !== 'signed_in') {
       abortRef.current?.abort();
       abortRef.current = null;
@@ -446,7 +427,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
       }
       if (authRef.current !== 'signed_in' || !appliedRef.current) return;
       if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return;
-      if (memoGet(viewerRef.current, requestKeyRef.current)) return;
+      if (cacheGet(viewerRef.current, requestKeyRef.current)) return;
       setNonce((n) => n + 1);
     };
     // Hidden tab: stop waiting for an in-flight answer (its late result is dropped by the generation), keep what is shown.
@@ -457,12 +438,13 @@ export default function RankingsPage({ active }: { active: boolean }) {
       genRef.current += 1;
       setLoading(false);
     };
-    // pagehide (leaving / bfcache): drop the protected response and the memory cache (계약).
+    // pagehide (leaving / bfcache): drop the protected response and the memory cache (계약). The cache itself is
+    // also cleared by src/data/rankings.ts's own app-wide pagehide listener; this call is just immediate/local.
     const onHide = () => {
       abortRef.current?.abort();
       abortRef.current = null;
       genRef.current += 1;
-      memo.clear();
+      clearRankingsCache();
       flushSync(() => { setResponse(null); setLoading(false); });
       setDialogUuid(null);
     };
@@ -490,7 +472,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
     if (!active || auth.status !== 'signed_in' || !applied) return undefined;
     if (document.visibilityState === 'hidden') return undefined;
     if (retryAtRef.current !== null && Date.now() < retryAtRef.current) return undefined;
-    const cached = memoGet(viewer, requestKey);
+    const cached = cacheGet(viewer, requestKey);
     if (cached) {
       // 같은 조건을 최근에 받았다: 서버에 다시 묻지 않는다(화면 전환·조건 되돌리기·보드↔전체 보기 왕복).
       abortRef.current?.abort();
@@ -523,7 +505,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
         if ((authRef.current === 'signed_in' ? requestViewer : null) !== requestViewer) return;
         if (requestKeyRef.current !== myKey) return;
         setResponse({ data, viewer: requestViewer, queryKey: myKey });
-        if (requestViewer) memoSet(requestViewer, myKey, data);
+        if (requestViewer) rankingsCacheSet(requestViewer, myKey, data);
         setRetryAt(null);
         setPendingIntent(null);
         setLoading(false);
@@ -535,7 +517,7 @@ export default function RankingsPage({ active }: { active: boolean }) {
         setLoading(false);
         if (e instanceof PublicApiError) {
           if (e.status === 409) {
-            memo.clear(); // 자료가 바뀌었다 — 받아 둔 다른 페이지·조건도 낡았다
+            clearRankingsCache(); // 자료가 바뀌었다 — 받아 둔 다른 페이지·조건도 낡았다
             const cur = appliedRef.current;
             if (viewRef.current === 'full' && cur && (cur.page !== 1 || cur.expected_version !== null)) {
               setNotice('그사이 새 자료가 들어왔습니다. 첫 페이지부터 다시 불러옵니다.');

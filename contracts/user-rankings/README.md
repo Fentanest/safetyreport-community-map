@@ -62,11 +62,22 @@ raw changes with no ranking effect are not a pagination change. No monthly top-l
 
 HTTP: private/no-store/max-age=0, Pragma:no-cache, Vary:Origin,Authorization, nosniff. Explicit Origin allowlist;
 Origin does not replace authentication. Per verified user DB rate bucket, 60/min using existing limiter;
-429 rate_limited + Retry-After:60. Browser aborts hidden/stale requests, drops responses on logout/pagehide and
-rechecks when returning/focusing only once the shown answer is older than 120 s; the same viewer+query answered
-within 120 s is reused from an in-memory (tab-only, non-persistent) map instead of re-asking — so a withdrawal or
+429 rate_limited + Retry-After:60 (delta-seconds or an HTTP-date; `src/data/retryCooldown.ts` `parseRetryAfterHeader()`
+parses either, shared with client.ts/personal.ts — 2026-10-12 fix, a numbers-only parser used to drop an HTTP-date
+to NaN). Browser aborts hidden/stale requests, drops responses on logout/pagehide and rechecks when
+returning/focusing only once the shown answer is older than 120 s; the same login-session+query answered within
+120 s is reused from an in-memory (tab-only, non-persistent) map instead of re-asking — so a withdrawal or
 suspension can show up to 120 s late (2026-10-11 user decision: screen switch/focus re-runs the full ~8 s aggregate).
 No protected response in localStorage, Service Worker or Pages data files.
+
+Cache ownership (2026-10-12 fix): the cache lives in `src/data/rankings.ts`, not inside the `RankingsPage`
+component — Dashboard only renders that component while the rankings screen is shown, so a component-owned cache
+and its logout/pagehide listeners used to disappear the instant the user left the screen, leaving a stale answer
+reachable again after a logout+re-login elsewhere. The data module keeps listening to `mapAuth`'s login-state
+transitions and `window pagehide` for the life of the tab once first used, independent of which screen is mounted.
+Its cache key includes a session generation this module bumps on every login transition — including a re-login to
+the SAME account — so a new login session never reuses an earlier session's cached answer, even with the same
+viewer id.
 
 Stable errors: 400 INVALID_QUERY; 401 auth_required/session_expired; 403 kakao_required/contributor_required/
 upload_required (details required:10,current:N|null)/origin_forbidden; 409 DATASET_CHANGED; 429 rate_limited;

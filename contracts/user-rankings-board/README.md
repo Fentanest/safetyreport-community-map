@@ -42,7 +42,9 @@ aggregates — the same construction as the list, so it changes when any rank/ex
 
 Edge: same rate bucket as the list (60/min per verified user), strict nested response parse, `is_me` must be true
 exactly on the viewer's rows in every board, `me.uuid` must be the viewer, `scope.top`/`min_reports` must echo the
-request — any mismatch is a closed 503. Browser: one request per applied condition, reused from an in-memory map for
-120 s per viewer+query (cleared on logout, account switch, pagehide and 409); never localStorage/Service Worker.
+request — any mismatch is a closed 503. Browser: one request per applied condition, reused from an in-memory map
+(`src/data/rankings.ts`, owned app-wide — not the `RankingsPage` component, see [user-rankings README](../user-rankings/README.md))
+for 120 s per login-session+query (cleared on logout, account switch — including a re-login to the SAME account —
+pagehide and 409); never localStorage/Service Worker.
 
 Local implementation only. Production SQL/Edge/Pages apply is NOT performed.

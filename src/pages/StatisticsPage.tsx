@@ -6,7 +6,7 @@ import { PublicApiError } from '../data/client';
 import { sharedRetryCooldown } from '../data/retryCooldown';
 import { useReportActivity } from '../data/queryActivity';
 import {
-  CHART_LABEL, DEFAULT_CHART, PRESETS, baseSpec, chartAvailability, filterOf, normalizeRecipe, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
+  CHART_LABEL, DEFAULT_CHART, PRESETS, RunGate, baseSpec, chartAvailability, filterOf, normalizeRecipe, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
   type ChartSettings, type SavedRecipe, type StatsRecipe,
 } from '../state/statistics';
 import PivotTable, { type RowSort } from '../components/stats/PivotTable';
@@ -87,7 +87,13 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   // Mobile result-first: the builder becomes a "조건 변경" editing panel on narrow
   // screens (CSS orders the result first and hides the builder unless open).
   const [editorOpen, setEditorOpen] = useState(true);
-  const gen = useRef(0);
+  // S04 ③ (Astra 검수 2026-10-12): accepting a new query must immediately cancel/invalidate whatever an older one
+  // left running OR waiting on the shared breaker's cooldown — see RunGate in src/state/statistics.ts. `abort` is
+  // kept only as a lightweight "a fetch is currently in flight" flag for the resume effects below; the gate is
+  // the single source of truth for cancellation and generation.
+  const runGateRef = useRef<RunGate | null>(null);
+  runGateRef.current ??= new RunGate();
+  const runGate = runGateRef.current;
   const abort = useRef<AbortController | null>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
@@ -134,41 +140,49 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const execute = useCallback((input: StatsRecipe) => {
     const recipe = normalizeRecipe(input);
     if (!activeRef.current || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) {
-      // Suspended (hidden/inactive): retain the latest intended recipe and resume once
-      // visible. The generation advance drops any late in-flight answer.
-      abort.current?.abort();
+      // Suspended (hidden/inactive): retain the latest intended recipe and resume once visible. accept() cancels
+      // whatever was running/waiting and advances the generation, so a late in-flight answer is dropped.
+      runGate.accept();
       abort.current = null;
-      gen.current += 1;
       runRef.current = recipe;
       clearCooldownWait();
       return;
     }
+    // S04 ③ (Astra 검수 2026-10-12): accepting this query IMMEDIATELY supersedes whatever the gate's previous
+    // accept() left running or waiting — unconditionally, before deciding whether THIS query fetches now or has
+    // to wait for the shared breaker's cooldown below. Without this ordering, a query accepted while the breaker
+    // was cooling down left an older in-flight fetch "current": its late completion could still overwrite the
+    // screen, and this query's own cooldown-wait timer would resume into an already-stale generation and never
+    // run its fetch at all.
+    const my = runGate.accept();
+    runRef.current = recipe;
     // ③: wait for the shared breaker instead of trying (and immediately failing) again. The interrupted/queued
     // recipe stays in runRef so a tab return never skips ahead of an outage still in progress.
     const cooldownMs = sharedRetryCooldown.remainingMs();
     if (cooldownMs > 0) {
-      runRef.current = recipe;
-      if (cooldownTimer.current !== null) clearTimeout(cooldownTimer.current);
       setCooldownUntil(Date.now() + cooldownMs);
       setRun({ status: 'loading', recipe });
-      cooldownTimer.current = setTimeout(() => {
-        cooldownTimer.current = null;
+      const handle = setTimeout(() => {
+        if (cooldownTimer.current === handle) cooldownTimer.current = null;
         setCooldownUntil(null);
-        if (runRef.current === recipe) execute(recipe);
+        // Resume only if nothing newer has superseded this wait (same generation, same still-pending intent).
+        if (runGate.isCurrent(my) && runRef.current === recipe) execute(recipe);
       }, cooldownMs + 50);
+      cooldownTimer.current = handle;
+      runGate.onCancel(my, () => { clearTimeout(handle); if (cooldownTimer.current === handle) cooldownTimer.current = null; });
       return;
     }
     clearCooldownWait();
-    abort.current?.abort(); // client-side cancel of the older run; its late answer is ignored by the generation
     const ac = new AbortController();
     abort.current = ac;
-    runRef.current = recipe;
-    const my = ++gen.current;
+    runGate.onCancel(my, () => ac.abort()); // client-side cancel of this run; its late answer is ignored below
     setRun({ status: 'loading', recipe });
     loadStatistics(recipe.scope, recipe.spec, version, ac.signal)
       .then((r) => {
-        if (ac.signal.aborted || my !== gen.current || !activeRef.current || document.hidden) return;
+        if (!runGate.isCurrent(my) || !activeRef.current || document.hidden) return;
+        runGate.settle(my);
         // one commit: the result, its recipe and the idle state together (no half-updated table/chart)
+        abort.current = null;
         runRef.current = null;
         setResult(r);
         setApplied(recipe);
@@ -176,33 +190,35 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         if (recipe.origin === '공유 링크') { dropShareParam(); onSharedDoneRef.current?.(); }
       })
       .catch((e: unknown) => {
-        if (ac.signal.aborted || my !== gen.current || !activeRef.current || document.hidden) return;
+        if (!runGate.isCurrent(my) || !activeRef.current || document.hidden) return;
+        runGate.settle(my);
+        abort.current = null;
         runRef.current = null;
         const code = e instanceof PublicApiError ? e.code : null;
         if (e instanceof PublicApiError && e.status === 409) changedRef.current?.();
         setRun({ status: 'error', recipe, code, message: e instanceof Error ? e.message : '통계를 만들지 못했습니다.' });
       });
-  }, [version, clearCooldownWait]);
+  }, [version, clearCooldownWait, runGate]);
   // unmount cancels the client wait; a remount (React StrictMode, or a page that comes back) resumes the same run.
   // Returning from hidden/inactive also resumes the latest suspended intent once.
   useEffect(() => {
     if (runRef.current && !abort.current && !cooldownTimer.current) execute(runRef.current);
-    return () => { abort.current?.abort(); abort.current = null; clearCooldownWait(); };
-  }, [execute, clearCooldownWait]);
+    return () => { runGate.accept(); abort.current = null; clearCooldownWait(); };
+  }, [execute, clearCooldownWait, runGate]);
   useEffect(() => {
     if (!active) {
-      abort.current?.abort(); abort.current = null; gen.current += 1;
+      runGate.accept();
+      abort.current = null;
       clearCooldownWait();
       return;
     }
     if (typeof document !== 'undefined' && !document.hidden && runRef.current && !abort.current && !cooldownTimer.current) execute(runRef.current);
-  }, [active, execute, clearCooldownWait]);
+  }, [active, execute, clearCooldownWait, runGate]);
   useEffect(() => {
     const onVis = () => {
       if (document.hidden) {
-        abort.current?.abort();
+        runGate.accept();
         abort.current = null;
-        gen.current += 1;
         clearCooldownWait();
       } else if (activeRef.current && runRef.current && !abort.current && !cooldownTimer.current) {
         execute(runRef.current);
@@ -210,7 +226,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
-  }, [execute, clearCooldownWait]);
+  }, [execute, clearCooldownWait, runGate]);
 
   // C01: this component instance belongs to ONE viewer — Dashboard remounts it (key = session key) on any account
   // change, so the previous account's draft, result, hand-off, run and catalog can never be saved under the new one.

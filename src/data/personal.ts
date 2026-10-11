@@ -10,7 +10,7 @@ import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
 import { COHORT_POLICY_VERSION } from '../domain/public';
 import { durationDistributionSchema, ratingDistributionSchema, scopeSchema } from './schema';
-import { sharedRetryCooldown } from './retryCooldown';
+import { parseRetryAfterHeader, sharedRetryCooldown } from './retryCooldown';
 const cohortDiagnostics = z.strictObject({ date_basis: z.enum(['report_date', 'completed_date']), selected_date_missing: z.number().int().nonnegative(), other_date_missing: z.number().int().nonnegative() });
 
 const count = z.number().int().nonnegative();
@@ -164,8 +164,7 @@ async function fetchLive(scope: Scope, version: string, token: string, signal?: 
 async function errorFrom(res: Response): Promise<PersonalApiError> {
   let code: string | null = null;
   try { code = ((await res.json()) as { error?: { code?: string } })?.error?.code ?? null; } catch { /* ignore */ }
-  const retry = Number(res.headers.get('retry-after'));
-  const retryAfterSeconds = Number.isFinite(retry) && retry > 0 ? retry : null;
+  const retryAfterSeconds = parseRetryAfterHeader(res.headers.get('retry-after'));
   // 429/5xx feed the shared breaker (①); any other status (401/403/409…) is the server working normally.
   sharedRetryCooldown.recordFailure({ status: res.status, retryAfterSeconds });
   if (res.status === 429) return personalError('rate_limited', retryAfterSeconds ?? 60);
@@ -188,6 +187,9 @@ export async function loadCompare(scope: Scope, version: string, auth: MapAuth, 
   // too, without even trying the network — no second, independent retry loop during the same outage.
   const blocked = sharedRetryCooldown.blockedError();
   if (blocked) throw personalError('service_unavailable', blocked.retryAfterSeconds);
+  // Astra 검수 ②: captured before the first network attempt, so a concurrent fetcher's failure recorded while
+  // this request is still in flight is never erased by this request's own (possibly late) success below.
+  const startGen = sharedRetryCooldown.currentGeneration();
   const snap = auth.snapshot();
   if (snap.status === 'unconfigured') throw personalError('unconfigured');
   let token = await auth.accessToken();
@@ -199,7 +201,7 @@ export async function loadCompare(scope: Scope, version: string, auth: MapAuth, 
     res = await fetchLive(scope, version, token, signal);
   }
   if (!res.ok) throw await errorFrom(res);
-  sharedRetryCooldown.recordSuccess();
+  sharedRetryCooldown.recordSuccess(startGen);
   let body: unknown;
   try { body = await res.json(); } catch { throw personalError('invalid_response'); }
   return acceptCompare(body, scope, version);
@@ -233,6 +235,7 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
   const blocked = sharedRetryCooldown.blockedError();
   if (blocked) throw new PublicApiError('네트워크 장애가 있어 잠시 기다리는 중입니다. 자동으로 다시 시도합니다.',
     429, blocked.retryAfterSeconds, 'COOLDOWN');
+  const startGen = sharedRetryCooldown.currentGeneration();
   const auth = mapAuth();
   await auth.settled();
   let token = await auth.accessToken();
@@ -256,12 +259,11 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
   if (!res.ok) {
     let code: string | null = null, message: string | null = null;
     try { const b = await res.json() as { error?: { code?: string; message?: string } }; code = b.error?.code ?? null; message = b.error?.message ?? null; } catch { /* ignore */ }
-    const retry = Number(res.headers.get('retry-after'));
-    const retryAfterSeconds = Number.isFinite(retry) && retry > 0 ? retry : null;
+    const retryAfterSeconds = parseRetryAfterHeader(res.headers.get('retry-after'));
     sharedRetryCooldown.recordFailure({ status: res.status, retryAfterSeconds });
     throw new PublicApiError(res.status === 429 ? '요청이 많아 잠시 후 다시 시도해 주세요.' : message ?? '내 신고 통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
       res.status, retryAfterSeconds, code);
   }
-  sharedRetryCooldown.recordSuccess();
+  sharedRetryCooldown.recordSuccess(startGen);
   return res.json();
 }

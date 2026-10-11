@@ -58,6 +58,54 @@ export function handoffRecipe(scope: Scope, opts: { origin: string; placeKey?: s
   };
 }
 
+// ── run-generation gate (S04 ③, Astra 검수 2026-10-12) ─────────────────────────────────────────────────────
+/**
+ * Guards StatisticsPage's `execute()` against accepting a new query (B) while an older one (A) is still either
+ * in flight or waiting out the shared network breaker's cooldown. The bug this fixes: entering the cooldown-wait
+ * branch did not cancel A's in-flight fetch or advance the generation, so A's late completion could still land
+ * (overwriting B's screen) and B's own cooldown-wait timer resumed into an already-superseded generation (so B
+ * itself silently never ran). The fix is `accept()` always running the previous accepted run's cancel callback
+ * and advancing the generation BEFORE the caller decides whether to fetch now or wait — unconditionally, so the
+ * two paths can never diverge again. Pure/side-effect-free beyond invoking the caller-supplied cancel callback
+ * (no timers, no fetch, no React) — unit-tested directly.
+ */
+export class RunGate {
+  private gen = 0;
+  private cancelCurrent: (() => void) | null = null;
+
+  /** The generation of the run currently accepted (fetching or waiting out a cooldown). */
+  current(): number {
+    return this.gen;
+  }
+
+  /** True while `gen` is still the latest accepted run — false once a newer `accept()` has superseded it. */
+  isCurrent(gen: number): boolean {
+    return gen === this.gen;
+  }
+
+  /** Accept a new run (or a bare "stop everything" with no new run to follow): cancels whatever the previous
+   *  accepted run registered via {@link onCancel} and advances the generation. Returns the new generation id for
+   *  the caller to compare against in its own async callbacks (fetch result, cooldown-wait timeout). */
+  accept(): number {
+    this.cancelCurrent?.();
+    this.cancelCurrent = null;
+    this.gen += 1;
+    return this.gen;
+  }
+
+  /** The run at `gen` registers how to cancel it (abort its fetch, or clear its cooldown-wait timer). A no-op if
+   *  `gen` has already been superseded by a newer `accept()` between minting it and this call. */
+  onCancel(gen: number, cancel: () => void): void {
+    if (gen === this.gen) this.cancelCurrent = cancel;
+  }
+
+  /** The run at `gen` finished on its own (success/error) — clears its registered cancel without invoking it, so
+   *  a later `accept()` does not call a stale no-op. A no-op if `gen` is no longer current. */
+  settle(gen: number): void {
+    if (gen === this.gen) this.cancelCurrent = null;
+  }
+}
+
 // ── chart compatibility (S07) ───────────────────────────────────────────────────────────────────────────
 const K_PARTITION = ['accepted_count', 'partial_count', 'rejected_count'];
 const C_PARTITION = ['accepted_count', 'partial_count', 'rejected_count', 'unknown_count'];

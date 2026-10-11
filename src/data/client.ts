@@ -9,7 +9,7 @@ import {
 } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
 import { ANALYTICS_READ_TIMEOUT_MS, AnalyticsReadTimeout, withReadDeadline } from './requestDeadline';
-import { sharedRetryCooldown } from './retryCooldown';
+import { parseRetryAfterHeader, sharedRetryCooldown } from './retryCooldown';
 
 export type DataMode = 'demo' | 'live';
 export const dataMode: DataMode = import.meta.env.VITE_DATA_MODE === 'demo' ? 'demo' : 'live';
@@ -80,6 +80,9 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
   const blocked = sharedRetryCooldown.blockedError();
   if (blocked) throw new PublicApiError('네트워크 장애가 있어 잠시 기다리는 중입니다. 자동으로 다시 시도합니다.',
     429, blocked.retryAfterSeconds, 'COOLDOWN');
+  // Astra 검수 ②(2026-10-12): captured BEFORE this request is sent, so a concurrent request's failure recorded
+  // while this one is still in flight is never erased by this request's own (possibly late) success below.
+  const startGen = sharedRetryCooldown.currentGeneration();
   const url = `${base}/${path === '@screen' ? 'my-analytics/screen' : `public-analytics/${path}`}${params ? `?${params}` : ''}`;
   const auth = mapAuth();
   await auth.settled();
@@ -104,8 +107,7 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
     if (refreshed) res = await send(refreshed);
   }
   if (!res.ok) {
-    const retry = Number(res.headers.get('retry-after'));
-    const retryAfterSeconds = Number.isFinite(retry) && retry > 0 ? retry : null;
+    const retryAfterSeconds = parseRetryAfterHeader(res.headers.get('retry-after'));
     sharedRetryCooldown.recordFailure({ status: res.status, retryAfterSeconds });
     let code: string | null = null;
     let message: string | null = null;
@@ -135,7 +137,7 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
     throw new PublicApiError(access ? description : `${description} (오류 코드 ${code ?? 'UNKNOWN'}, HTTP ${res.status})`,
       res.status, retryAfterSeconds, code, details);
   }
-  sharedRetryCooldown.recordSuccess();
+  sharedRetryCooldown.recordSuccess(startGen);
   return res.json();
 }
 

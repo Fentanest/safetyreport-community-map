@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCooldownFailure, RetryCooldown } from '../../src/data/retryCooldown';
+import { isCooldownFailure, parseRetryAfterHeader, RetryCooldown } from '../../src/data/retryCooldown';
 
 /** Shared per-tab failure breaker (cloud-retry-brief.md 지도 웹 ①): a manual clock and a fixed "random" so the
  *  jitter/backoff math is exact, never flaky. */
@@ -96,5 +96,89 @@ describe('RetryCooldown', () => {
     expect(isCooldownFailure(500)).toBe(true);
     expect(isCooldownFailure(503)).toBe(true);
     for (const status of [200, 400, 401, 403, 404, 409, 422]) expect(isCooldownFailure(status)).toBe(false);
+  });
+
+  // Astra 검수 ②(2026-10-12): a success that started BEFORE a newer failure was recorded must never erase that
+  // failure's streak or the server deadline it set — only a success whose own request started at (or after) the
+  // CURRENT generation may reset the breaker. `recordSuccess()` with no argument keeps the old (no-race) default.
+  describe('generation-gated recordSuccess (late success never erases a newer failure)', () => {
+    it('a late success of an older request preserves a newer failure\'s streak and server deadline', () => {
+      const { now } = clock();
+      const c = new RetryCooldown(now, () => 0.5);
+      const startGen = c.currentGeneration(); // request A "starts" here, before B's failure is recorded
+      c.recordFailure({ status: 429, retryAfterSeconds: 90 }); // request B fails concurrently, opens the breaker
+      expect(c.blockedError()!.retryAfterSeconds).toBe(90);
+      expect(c.failureStreak()).toBe(1);
+      c.recordSuccess(startGen); // A's late 200 arrives — it started before B's failure, so it must not win
+      expect(c.blockedError()!.retryAfterSeconds).toBe(90); // the server deadline must still stand
+      expect(c.failureStreak()).toBe(1); // the streak must still stand
+    });
+
+    it('a success whose request started at the CURRENT generation (no newer failure since) still clears it', () => {
+      const { now } = clock();
+      const c = new RetryCooldown(now, () => 0.5);
+      c.recordFailure({ status: 503 });
+      expect(c.blockedError()).not.toBeNull();
+      const startGen = c.currentGeneration(); // a retry starts only now, after the one and only failure
+      c.recordSuccess(startGen);
+      expect(c.blockedError()).toBeNull();
+      expect(c.failureStreak()).toBe(0);
+    });
+
+    it('bare recordSuccess() (no generation) keeps the old always-reset behavior for non-racing callers', () => {
+      const { now } = clock();
+      const c = new RetryCooldown(now, () => 0.5);
+      c.recordFailure({ status: 503 });
+      c.recordSuccess();
+      expect(c.blockedError()).toBeNull();
+      expect(c.failureStreak()).toBe(0);
+    });
+
+    it('currentGeneration never advances on success, time passing, or a non-outage status', () => {
+      const { now } = clock();
+      const c = new RetryCooldown(now, () => 0.5);
+      const g0 = c.currentGeneration();
+      c.recordFailure({ status: 404 }); // not an outage signal
+      expect(c.currentGeneration()).toBe(g0);
+      c.recordSuccess();
+      expect(c.currentGeneration()).toBe(g0);
+      c.recordFailure({ status: 503 });
+      expect(c.currentGeneration()).toBe(g0 + 1);
+    });
+  });
+});
+
+describe('parseRetryAfterHeader (RFC 9110 §10.2.3: delta-seconds or an HTTP-date)', () => {
+  it('parses plain delta-seconds', () => {
+    expect(parseRetryAfterHeader('60')).toBe(60);
+    expect(parseRetryAfterHeader('1')).toBe(1);
+  });
+
+  it('rejects zero, negative, non-numeric and missing values', () => {
+    expect(parseRetryAfterHeader('0')).toBeNull();
+    expect(parseRetryAfterHeader('-5')).toBeNull();
+    expect(parseRetryAfterHeader('abc')).toBeNull();
+    expect(parseRetryAfterHeader('')).toBeNull();
+    expect(parseRetryAfterHeader(null)).toBeNull();
+    expect(parseRetryAfterHeader(undefined)).toBeNull();
+  });
+
+  // The exact bug Astra found: a server that answers with an HTTP-date Retry-After (instead of delta-seconds) was
+  // silently discarded by `Number(...)` → NaN, so the client fell back to the short local backoff instead of the
+  // server's actual deadline.
+  it('parses an HTTP-date Retry-After relative to `now`, rounding up to whole seconds', () => {
+    const now = () => Date.parse('2026-10-12T00:00:00.000Z');
+    expect(parseRetryAfterHeader('Mon, 12 Oct 2026 00:01:00 GMT', now)).toBe(60);
+    expect(parseRetryAfterHeader('Mon, 12 Oct 2026 00:00:30.500 GMT'.replace('.500', ''), now)).toBe(30);
+  });
+
+  it('an HTTP-date already in the past (or exactly now) is null, never a negative/zero wait', () => {
+    const now = () => Date.parse('2026-10-12T00:01:00.000Z');
+    expect(parseRetryAfterHeader('Mon, 12 Oct 2026 00:00:00 GMT', now)).toBeNull();
+    expect(parseRetryAfterHeader('Mon, 12 Oct 2026 00:01:00 GMT', now)).toBeNull();
+  });
+
+  it('an unparseable date-like string is null, never NaN', () => {
+    expect(parseRetryAfterHeader('not-a-date-or-number')).toBeNull();
   });
 });

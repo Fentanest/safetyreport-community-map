@@ -198,6 +198,9 @@ export function createLiveAuth(): MapAuth {
     },
     async refreshToken() {
       if (!config || !clientPromise) return null;
+      // Astra 검수 ②(2026-10-12): captured before the refresh call, so a concurrent fetcher's failure recorded
+      // while this refresh is in flight is never erased by this refresh's own (possibly late) success below.
+      const startGen = sharedRetryCooldown.currentGeneration();
       const { data, error } = await (await client()).auth.refreshSession();
       if (error || !data.session) {
         // ②: a network/5xx-ish refresh failure feeds the SAME shared breaker every fetcher respects (①) — a
@@ -207,7 +210,7 @@ export function createLiveAuth(): MapAuth {
         emitter.set({ status: 'signed_out', displayName: null, viewerId: null, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
         return null;
       }
-      sharedRetryCooldown.recordSuccess();
+      sharedRetryCooldown.recordSuccess(startGen);
       return data.session.access_token;
     },
     settled: () => settledOf(emitter),

@@ -63,12 +63,23 @@ base는 환경별 공개 URL. response projection은 fixed allowlist. 누가 읽
   (실제 네트워크 시도 없이) 429 `COOLDOWN` 모양으로 즉시 거절되므로, 기존 429 처리(Retry-After 동안 중지 후 재개)가
   그대로 적용된다. `src/pages/StatisticsPage.tsx`의 탭 복귀 재개 로직(성공한 결과는 다시 조회하지 않고, 중단된 실행만
   이어서 재개)은 재개 직전에 이 차단기를 확인해서, 열려 있으면 실제로 다시 시도하지 않고 풀릴 때까지 기다린다(상태
-  표시는 '연결이 불안정해 잠시 기다리는 중'). 랭킹 탭(`src/data/rankings.ts`)은 이 공용 client를 거치지 않는 별도
+  표시는 '연결이 불안정해 잠시 기다리는 중'). 이 대기 중에도 새 조회가 접수되면(`execute()`) 접수 즉시(쿨다운이 더
+  필요한지 보기도 전에) 이전 실행을 취소하고 세대를 올린다(`src/state/statistics.ts` `RunGate`) — 그래야 이전 실행의
+  늦은 완료가 화면에 나타나거나, 새 조회의 대기 타이머가 이미 낡은 세대로 재개되는 일이 없다(2026-10-12, Astra 검수
+  ③). 랭킹 탭(`src/data/rankings.ts`)은 이 공용 client를 거치지 않는 별도
   fetch라 이 차단기의 보호를 받지 않는다(알려진 범위 제외 — `contracts/user-rankings/`, `server/rankings/**` 소유).
+  `Retry-After` 는 초 단위 숫자와 HTTP-date(RFC 9110 §10.2.3) 모두 `parseRetryAfterHeader()`(같은 파일)로 해석한다 —
+  `client.ts`·`personal.ts`·`rankings.ts` 모두 같은 파서를 쓴다(2026-10-12, Astra 검수 ⑤: 숫자 전용 `Number(...)` 파싱은
+  HTTP-date 를 `NaN`으로 버려 서버 마감 대신 짧은 로컬 백오프를 적용했다).
+  `recordSuccess()`는 그 요청이 시작될 때의 세대(`currentGeneration()`)를 받아, 그 뒤에 기록된 더 최근 실패·서버 마감을
+  지우지 않는다 — 동시에 보낸 두 요청 중 하나가 실패해 차단기를 열거나 늘린 뒤 다른 하나가 늦게 성공해도, 그 성공이
+  방금 연 차단을 지우지 못한다(2026-10-12, Astra 검수 ②). `client.ts`·`personal.ts`·`src/auth/mapAuth.ts`의 토큰 갱신
+  성공 경로 모두 요청 시작 시점에 `currentGeneration()`을 찍어 `recordSuccess(startGen)`에 넘긴다.
 - **로그인 자동 갱신 일시정지(`src/auth/mapAuth.ts`, 2026-10-11)**: supabase-js `autoRefreshToken` 타이머는 탭이 숨겨지면
   `stopAutoRefresh()`, 다시 보이면 `startAutoRefresh()`로 멈추고 다시 켠다 — 숨은 탭이 장애 중에도 토큰 갱신을 계속
   시도하던 문제(탭당 분당 약 5회) 수정. 수동 `refreshToken()`(401 후 1회)의 실패가 네트워크/5xx 성격이면 위 공용
-  차단기에도 기록된다(단순 "리프레시 토큰 만료"는 차단기를 열지 않는다).
+  차단기에도 기록된다(단순 "리프레시 토큰 만료"는 차단기를 열지 않는다). 성공 시의 `recordSuccess()`도 위 세대 규칙을
+  따른다.
 
 공통 query: start/end(ISO date), category, region_code, agency_key, manager_key,
 bbox=minLng,minLat,maxLng,maxLat, expected_version, metric별 result/disposition 조건.
