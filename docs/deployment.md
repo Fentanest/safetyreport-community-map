@@ -80,6 +80,16 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
   `community-ingest` 는 `service_unavailable` 로 답한다. 앱의 전송 대기열(outbox)·개인 DB 는 지우지 않으므로 재개하면 그대로 다시 보낸다.
 - 되돌리기: `supabase secrets unset COMMUNITY_INGEST_ENABLED --project-ref nxdcxccixoswvqgjeprh`(또는 `true`). 공개 읽기(지도)는 영향 없음.
 
+## 2026-10-12 랭킹 보드·재시도·성능 운영 적용(운영 적용함)
+- 사용자 승인("Astra 검수 후 전부 배포"). 순서: migration → Edge → Postgres 설정 → Pages(보드 화면은 Edge 보다 먼저 올리면 실패).
+- migration `202610111200_user_rankings_board.sql` 적용·기록(함수 1개 + service_role grant).
+- Edge 재배포: `user-rankings`(`/board` 경로), `my-analytics`(screen-aggregate v2 — 셀프호스트 실측으로 v1 보다 10–23% 빠름, Retry-After),
+  `public-analytics`·`community-ingest`(5xx Retry-After). 워커 메모리 한도 150→512MB(`volumes/functions/main/index.ts`).
+- Postgres: `shared_buffers` 128MB→1GB, `effective_cache_size` 128MB→8GB(ALTER SYSTEM, db 재시작 약 6초).
+- 검증: deno check 4함수, 업로드 해시 일치, 전 서비스 healthy, 함수 5종 앱 수준 응답, auth health 200.
+- 백업·되돌리기: `.agent-runtime/supabase-trial-20261010/server-changes/journal.jsonl` 의 2026-10-12 항목(추적 안 함).
+- Pages: 이 배포부터 운영 지도가 셀프호스트(`LOCAL_*` Variables)를 쓴다 — 이용자는 지도에 다시 로그인한다.
+
 ## 2026-10-11 셀프호스트 Edge Functions 5분류 배포(운영 적용함)
 - 사용자 승인으로 셀프호스트의 community-ingest·my-reports·public-analytics 를 5분류 코드로 바꿨다(파일 6개, 나머지는 서버와 같았음).
   새 앱(observation-v5)이 안전신고·생활불편 관측을 보내도 422 로 거절·격리되지 않게, **앱 배포보다 먼저** 해야 하는 단계였다(최종 감사 지적).
