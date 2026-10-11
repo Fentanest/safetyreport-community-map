@@ -10,7 +10,7 @@ upstream 데이터가 이미 적재된다는 가정 아래 필요한 의미 계�
 | contributor_id / snapshot_id | private. community ingest 는 신고별 최신 fact(`snapshot_id='ingest-v1'`), 구 snapshot 경로는 공개 소스에서 제외(가드) |
 | report_date | KST ISO date, null 허용하되 신고일 지표 제외 수 보고 |
 | completed_date | 확인된 처리완료일 KST date, null은 결측. 업로드일로 대체 금지 |
-| category | traffic / parking / other |
+| category | traffic / parking / safety / living / other (5분류, observation-v5 2026-10-11. 코드표: contracts/report-categories.json) |
 | status | accepted / partial / rejected / processing / supplement / withdrawn / transferred / completed_unknown / other |
 | disposition | fine / penalty / warning / none / unknown (SQL·`server/aggregate.ts` 정본. 2026-09-26 문서 정정: 이전 문서의 warning_or_penalty/other 는 코드에 없음) |
 | lat / lng | WGS84 원 double 값. finite·대한민국 서비스 범위 검증. 주소→좌표 재생성으로 원 좌표 덮지 않음 |

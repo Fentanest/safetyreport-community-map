@@ -2,7 +2,7 @@
 
 ## 01. 지도 상황판(기본)
 상단: family icon + 커뮤니티 신고 지도 / 데이터기준 / 테마 / 브리핑 / 도움말.
-command: 기간 picker, category segmented(전체·교통·주정차·기타), 전국 breadcrumb,
+command: 기간 picker, category segmented(전체·교통·주정차·안전신고·생활불편·기타, 5분류 2026-10-11), 전국 breadcrumb,
 상세필터 button+count, [공유], [초기화].
 KPI6: 신고 접수, 처리완료, 수용·일부수용 비중, 과태료 처분 신고, 신고 지점, 기여 계정.
 main: Kakao 전국 지도 + 우측 선택 범위 인사이트.

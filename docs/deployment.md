@@ -157,3 +157,14 @@ RPC/Edge/Pages 계약은 불변이며 Edge·Pages 재배포는 필요 없다. �
 ## 2026-10-06 · DATASET_CHANGED 화면 수정
 
 쿼리 감사에 추가한 `202610060600_analytics_read_snapshot.sql`까지 SQL 적용 → `public-analytics`, `my-analytics`, `user-rankings` Edge → main Pages 순서다. 새 웹은 개인 `my-analytics/screen` 묶음을 사용하므로 Edge 전에 Pages만 배포하면 안 된다. 기존 앱 ingest/account/relay/my-reports 계약과 배포는 변경하지 않는다. 운영자가 한 번에 실행할 명령은 [MIGRATION.md](implementation/dataset-snapshot-20261006/MIGRATION.md). 이번 작업에서는 운영 접속·배포·push를 하지 않았다.
+
+## 2026-10-11 · 신고 분류 5분류(traffic·parking·safety·living·other) 준비
+
+지도 `202610110100_five_categories.sql` 한 파일 적용이 필요하다(기존 3분류 목록을 나열한 모든 함수·CHECK 제약을 5분류로 다시 만들고
+`private.my_reports_stats`에 safety·living 건수를 추가; 3분류 목록이 남아 있으면 트랜잭션이 실패해 되돌린다). RPC 응답 모양은 바뀌지
+않는다(분류별 카운트 객체에 safety·living 키가 늘어날 뿐). Edge(`community-ingest`, `public-analytics`, `my-analytics`, `my-reports`,
+`user-rankings`)는 이번 코드 변경으로 함께 재배포해야 한다(허용 category 값·분류 축 라벨 갱신). Pages도 같은 빌드로 재배포한다(공유
+링크의 `category=other`는 그대로 유지되고, 새 `category=safety`/`category=living` 값이 추가된다). 이미 올라간 기존 신고(특히 예전
+`other`로 분류된 안전신고·생활불편)는 수집 앱이 재크롤링(`source-rebuild-2026-10-11.1`)으로 다시 올릴 때만 새 분류로 바뀐다 — 이
+마이그레이션 자체는 기존 행의 `category` 값을 고치지 않는다. 운영 적용·Edge/Pages 배포는 이번 작업에서 하지 않았다(로컬 커밋만,
+`npx vitest run`/`npx tsc -b`/`npm run build`로 검증).
