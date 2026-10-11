@@ -228,3 +228,30 @@ describe('C05 / MS-10: 0건 vs 확인할 수 없음', () => {
     expect(r.filter_members.map((m) => m.status)).toEqual(['ok', 'unconfirmed']);
   });
 });
+
+describe('observation-v5 5분류 분류 축 (traffic·parking·safety·living·other)', () => {
+  it('breaks the 신고 분류 row down into all 5 members, in their natural order and with 안전신고/생활불편 labels', () => {
+    const facts = [
+      ...Array.from({ length: 4 }, () => f({ category: 'traffic' })),
+      ...Array.from({ length: 3 }, () => f({ category: 'parking' })),
+      ...Array.from({ length: 2 }, () => f({ category: 'safety' })),
+      f({ category: 'living' }),
+      f({ category: 'other' }),
+    ];
+    const r = run(facts, { rows: ['category'], metrics: ['completed_count'] });
+    expect(r.row_members).toEqual([
+      { key: ['traffic'], label: ['교통위반'] }, { key: ['parking'], label: ['주정차'] },
+      { key: ['safety'], label: ['안전신고'] }, { key: ['living'], label: ['생활불편'] }, { key: ['other'], label: ['기타'] },
+    ]);
+    expect(cell(r, ['traffic'])!.values.completed_count.value).toBe(4);
+    expect(cell(r, ['parking'])!.values.completed_count.value).toBe(3);
+    expect(cell(r, ['safety'])!.values.completed_count.value).toBe(2);
+    expect(cell(r, ['living'])!.values.completed_count.value).toBe(1);
+    expect(cell(r, ['other'])!.values.completed_count.value).toBe(1);
+    expect(r.grand_totals[0].values.completed_count.value).toBe(11);
+  });
+  it('the category dimension of the catalog lists all 5 members as natural order', () => {
+    const dim = statisticsCatalog().dimensions.find((d) => d.id === 'category')!;
+    expect(dim.order).toBe('natural');
+  });
+});

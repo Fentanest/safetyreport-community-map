@@ -32,6 +32,16 @@ describe('public UI states', () => {
     }
   });
 
+  it('round-trips the observation-v5 5분류 category through a share URL, including an old category=other link', () => {
+    for (const category of ['traffic', 'parking', 'safety', 'living', 'other'] as const) {
+      const scope = { ...DEMO_SCOPE, category };
+      expect(scopeFromSearch(scopeToSearch(scope), DEMO_SCOPE).category).toBe(category);
+      expect(parseScope(new URLSearchParams(scopeToSearch(scope)), { data_min: null, data_max: null }).category).toBe(category);
+    }
+    // an unknown category value (never issued by this app) falls back to the current scope rather than crashing
+    expect(scopeFromSearch('?category=bogus', DEMO_SCOPE).category).toBe(DEMO_SCOPE.category);
+  });
+
   it('rejects calendar-invalid dates rather than accepting normalized dates', () => {
     expect(validateRange('2026-02-30', '2026-03-01', null, null)).not.toBeNull();
   });

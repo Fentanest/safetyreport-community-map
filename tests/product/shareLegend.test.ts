@@ -39,6 +39,17 @@ describe('F02 share link', () => {
     expect(back.recipe.labels).toEqual({});
     expect(checkAgainstCatalog(d.payload, catalog)).toBeNull();
   });
+  it('round-trips the observation-v5 safety/living scope category through a share link', () => {
+    for (const category of ['safety', 'living'] as const) {
+      const out = shareUrl(toPayload(recipe({}, { category }), { type: 'auto', primary: null, overlay: false }, 'table'), base);
+      expect(out.ok).toBe(true);
+      if (!out.ok) return;
+      const d = decodeShare(sp(out.url));
+      expect(d.ok).toBe(true);
+      if (!d.ok) return;
+      expect(d.payload.scope.category).toBe(category);
+    }
+  });
   it('FN-07/08 exclusions are reported to the sharer (address, bbox, mine) — never silently dropped', () => {
     expect(shareExclusions(recipe({ place_key: 'pl1:x', population: 'compare' }, { bbox: [1, 2, 3, 4] }))).toEqual({ place: true, bbox: true, mine: true });
     expect(shareExclusions(recipe())).toEqual({ place: false, bbox: false, mine: false });

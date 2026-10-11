@@ -240,6 +240,25 @@ describe('community-ingest handler', () => {
     expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
   });
 
+  it('accepts the observation-v5 safety/living categories and rejects a category outside the 5분류', async () => {
+    const caseOf = (name: string) => vectors.cases.find((c: { name: string }) => c.name === name).expected_payload;
+    const ok = setup(() => ({ results: [] }));
+    const safety = await ok.handler(post(await envelope([
+      await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7e', 'R1', caseOf('v5_safety_by_code'))])));
+    expect(safety.status).toBe(200);
+    const living = await ok.handler(post(await envelope([
+      await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7d', 'R2', caseOf('v5_living_by_menu'))])));
+    expect(living.status).toBe(200);
+    expect(ok.calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(2);
+    // a category outside {traffic,parking,safety,living,other} (unknown code route, typo, old client bug, …) is schema_invalid
+    const { handler, calls } = setup();
+    const bad = { ...payload, category: 'unknown' };
+    const res = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7c', 'R1', bad)])));
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.code).toBe('schema_invalid');
+    expect(calls.filter(c => c.name === 'internal_community_ingest')).toHaveLength(0);
+  });
+
   it('marks a status that does not follow its raw label for quarantine instead of trusting the client', async () => {
     const { handler, calls } = setup(() => ({ results: [] }));
     const wrong = { ...payload, status: 'partial' };  // status_raw 수용 → accepted

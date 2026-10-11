@@ -228,3 +228,15 @@ describe('community ingest facts without coordinates (S-01)', () => {
     expect(data.overview.report_count.value).toBe(1);
   });
 });
+
+describe('observation-v5 5분류 (traffic·parking·safety·living·other)', () => {
+  it('a category scope keeps only that category, and 전체 keeps every one of the 5', () => {
+    const facts = [fact(1, { category: 'traffic' }), fact(2, { category: 'parking' }), fact(3, { category: 'safety' }),
+      fact(4, { category: 'living' }), fact(5, { category: 'other' })];
+    for (const category of ['traffic', 'parking', 'safety', 'living', 'other'] as const) {
+      const data = aggregateDashboard(facts, { ...scope('2026-01-01', '2026-02-28'), category }, options);
+      expect(data.overview.report_count.value).toBe(1);
+    }
+    expect(aggregate(facts).overview.report_count.value).toBe(5);
+  });
+});
