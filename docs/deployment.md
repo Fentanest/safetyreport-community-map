@@ -80,6 +80,14 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
   `community-ingest` 는 `service_unavailable` 로 답한다. 앱의 전송 대기열(outbox)·개인 DB 는 지우지 않으므로 재개하면 그대로 다시 보낸다.
 - 되돌리기: `supabase secrets unset COMMUNITY_INGEST_ENABLED --project-ref nxdcxccixoswvqgjeprh`(또는 `true`). 공개 읽기(지도)는 영향 없음.
 
+## 2026-10-11 셀프호스트 Edge Functions 5분류 배포(운영 적용함)
+- 사용자 승인으로 셀프호스트의 community-ingest·my-reports·public-analytics 를 5분류 코드로 바꿨다(파일 6개, 나머지는 서버와 같았음).
+  새 앱(observation-v5)이 안전신고·생활불편 관측을 보내도 422 로 거절·격리되지 않게, **앱 배포보다 먼저** 해야 하는 단계였다(최종 감사 지적).
+  구앱(3분류) 관측도 그대로 받는다.
+- 검증: 세 함수 `deno check`, 업로드 해시 일치, functions 컨테이너 healthy·로그 오류 없음, 세 함수의 앱 수준 응답 확인.
+- 백업·되돌리기: `.agent-runtime/supabase-trial-20261010/server-changes/journal.jsonl` 의 `deploy-functions-five-categories`(추적 안 함).
+- user-rankings·my-analytics 는 바꾸지 않았다.
+
 ## 2026-10-11 클라우드 → 셀프호스트 데이터 이전(운영 적용함)
 - 사용자 승인으로 셀프호스트 Supabase 의 기존(이전 클라우드 사본·테스트) 데이터를 비우고 클라우드 데이터로 바꿨다. 두 쪽 migration 이력이 같아(54개) 데이터만 옮겼다.
 - 한 트랜잭션: 트리거 끔(replica) → auth·public·private·storage 표 비움(migration 기록 표 제외) → `supabase db dump --linked --data-only` 넣기 → 68개 표 건수를 같은 덤프의 격리 리허설 값과 대조 → 커밋.
