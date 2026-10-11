@@ -1,0 +1,1089 @@
+{
+ "viewer_public_fact_count": 14354,
+ "bounds": {
+  "report_date": {
+   "max": "2026-10-09",
+   "min": "2019-04-20"
+  },
+  "completed_date": {
+   "max": "2026-10-10",
+   "min": "2019-04-23"
+  }
+ },
+ "panels": [
+  {
+   "id": "entities",
+   "path": "entities",
+   "params": {
+    "kind": "agency"
+   }
+  },
+  {
+   "id": "laws",
+   "path": "laws",
+   "params": {}
+  },
+  {
+   "id": "compare",
+   "path": "compare",
+   "params": {}
+  },
+  {
+   "id": "places",
+   "path": "places",
+   "params": {
+    "view_bbox": "126,36,129,39"
+   }
+  },
+  {
+   "id": "prefix",
+   "path": "entity-prefix",
+   "params": {
+    "kind": "agency",
+    "through_page": "2"
+   }
+  }
+ ],
+ "cases": {
+  "v1|all|all": {
+   "encoding": "v1",
+   "window": "all",
+   "category": "all",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2019-04-23",
+    "end": "2026-10-10",
+    "category": "all",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 10966.8,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    },
+    {
+     "server_ms": 10854.4,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    },
+    {
+     "server_ms": 10884.8,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    }
+   ],
+   "cold_fetch_ms": [
+    10930.582,
+    11676.679
+   ],
+   "warm": [
+    {
+     "server_ms": 10899.9,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    },
+    {
+     "server_ms": 10887.6,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    },
+    {
+     "server_ms": 10652.9,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    },
+    {
+     "server_ms": 10795.9,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    },
+    {
+     "server_ms": 10669.7,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 125997,
+     "temp_written": 78301,
+     "db_temp_files": 29,
+     "db_temp_bytes": 600950977
+    }
+   ],
+   "warm_fetch_ms": [
+    10730.739,
+    10893.275,
+    10954.537
+   ],
+   "payload_bytes": 11976689,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 10884.8,
+     "max": 10966.8,
+     "min": 10854.4
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 11303.6,
+     "max": 11676.7,
+     "min": 10930.6
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 10795.9,
+     "max": 10899.9,
+     "min": 10652.9
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 10893.3,
+     "max": 10954.5,
+     "min": 10730.7
+    },
+    "temp_written_max": 78301,
+    "db_temp_bytes_max": 600950977
+   }
+  },
+  "v2|all|all": {
+   "encoding": "v2",
+   "window": "all",
+   "category": "all",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2019-04-23",
+    "end": "2026-10-10",
+    "category": "all",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 8229.0,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    },
+    {
+     "server_ms": 8476.1,
+     "shared_hit": 68767,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    },
+    {
+     "server_ms": 8409.0,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    }
+   ],
+   "cold_fetch_ms": [
+    8555.039,
+    8797.055
+   ],
+   "warm": [
+    {
+     "server_ms": 9801.8,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    },
+    {
+     "server_ms": 8359.8,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    },
+    {
+     "server_ms": 8341.7,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    },
+    {
+     "server_ms": 8424.3,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    },
+    {
+     "server_ms": 8464.9,
+     "shared_hit": 68727,
+     "shared_read": 0,
+     "temp_read": 127277,
+     "temp_written": 49331,
+     "db_temp_files": 11,
+     "db_temp_bytes": 402459648
+    }
+   ],
+   "warm_fetch_ms": [
+    8829.745,
+    8657.505,
+    8479.85
+   ],
+   "payload_bytes": 9156074,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 8409.0,
+     "max": 8476.1,
+     "min": 8229.0
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 8676.0,
+     "max": 8797.1,
+     "min": 8555.0
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 8424.3,
+     "max": 9801.8,
+     "min": 8341.7
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 8657.5,
+     "max": 8829.7,
+     "min": 8479.9
+    },
+    "temp_written_max": 49331,
+    "db_temp_bytes_max": 402459648
+   }
+  },
+  "v1|all|parking": {
+   "encoding": "v1",
+   "window": "all",
+   "category": "parking",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2019-04-23",
+    "end": "2026-10-10",
+    "category": "parking",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 2620.4,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    },
+    {
+     "server_ms": 2732.0,
+     "shared_hit": 62644,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    },
+    {
+     "server_ms": 2684.8,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    }
+   ],
+   "cold_fetch_ms": [
+    2732.246,
+    2852.861
+   ],
+   "warm": [
+    {
+     "server_ms": 2721.0,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    },
+    {
+     "server_ms": 2726.7,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    },
+    {
+     "server_ms": 2723.7,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    },
+    {
+     "server_ms": 2751.7,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    },
+    {
+     "server_ms": 2686.7,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 31026,
+     "temp_written": 16136,
+     "db_temp_files": 14,
+     "db_temp_bytes": 129731074
+    }
+   ],
+   "warm_fetch_ms": [
+    2756.804,
+    2779.229,
+    2686.39
+   ],
+   "payload_bytes": 2004581,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 2684.8,
+     "max": 2732.0,
+     "min": 2620.4
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 2792.6,
+     "max": 2852.9,
+     "min": 2732.2
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 2723.7,
+     "max": 2751.7,
+     "min": 2686.7
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 2756.8,
+     "max": 2779.2,
+     "min": 2686.4
+    },
+    "temp_written_max": 16136,
+    "db_temp_bytes_max": 129731074
+   }
+  },
+  "v2|all|parking": {
+   "encoding": "v2",
+   "window": "all",
+   "category": "parking",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2019-04-23",
+    "end": "2026-10-10",
+    "category": "parking",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 2182.1,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    },
+    {
+     "server_ms": 2247.4,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    },
+    {
+     "server_ms": 2241.1,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    }
+   ],
+   "cold_fetch_ms": [
+    2255.88,
+    2268.137
+   ],
+   "warm": [
+    {
+     "server_ms": 2253.5,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    },
+    {
+     "server_ms": 2235.2,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    },
+    {
+     "server_ms": 2308.9,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    },
+    {
+     "server_ms": 2279.1,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    },
+    {
+     "server_ms": 2282.9,
+     "shared_hit": 62604,
+     "shared_read": 0,
+     "temp_read": 5611,
+     "temp_written": 5612,
+     "db_temp_files": 3,
+     "db_temp_bytes": 45955594
+    }
+   ],
+   "warm_fetch_ms": [
+    2272.763,
+    2251.068,
+    2238.422
+   ],
+   "payload_bytes": 1636346,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 2241.1,
+     "max": 2247.4,
+     "min": 2182.1
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 2262.0,
+     "max": 2268.1,
+     "min": 2255.9
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 2279.1,
+     "max": 2308.9,
+     "min": 2235.2
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 2251.1,
+     "max": 2272.8,
+     "min": 2238.4
+    },
+    "temp_written_max": 5612,
+    "db_temp_bytes_max": 45955594
+   }
+  },
+  "v1|12m|all": {
+   "encoding": "v1",
+   "window": "12m",
+   "category": "all",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-12",
+    "end": "2026-10-11",
+    "category": "all",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 8443.5,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    },
+    {
+     "server_ms": 8746.5,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    },
+    {
+     "server_ms": 8697.0,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    }
+   ],
+   "cold_fetch_ms": [
+    8673.1,
+    8995.814
+   ],
+   "warm": [
+    {
+     "server_ms": 8952.0,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    },
+    {
+     "server_ms": 9162.2,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    },
+    {
+     "server_ms": 8796.7,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    },
+    {
+     "server_ms": 8714.5,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    },
+    {
+     "server_ms": 8781.8,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 107345,
+     "temp_written": 63793,
+     "db_temp_files": 24,
+     "db_temp_bytes": 497993607
+    }
+   ],
+   "warm_fetch_ms": [
+    8621.919,
+    8709.988,
+    8858.915
+   ],
+   "payload_bytes": 9309850,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 8697.0,
+     "max": 8746.5,
+     "min": 8443.5
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 8834.5,
+     "max": 8995.8,
+     "min": 8673.1
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 8796.7,
+     "max": 9162.2,
+     "min": 8714.5
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 8710.0,
+     "max": 8858.9,
+     "min": 8621.9
+    },
+    "temp_written_max": 63793,
+    "db_temp_bytes_max": 497993607
+   }
+  },
+  "v2|12m|all": {
+   "encoding": "v2",
+   "window": "12m",
+   "category": "all",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-12",
+    "end": "2026-10-11",
+    "category": "all",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 6789.7,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    },
+    {
+     "server_ms": 7329.6,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    },
+    {
+     "server_ms": 6928.0,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    }
+   ],
+   "cold_fetch_ms": [
+    7133.041,
+    7202.392
+   ],
+   "warm": [
+    {
+     "server_ms": 7184.2,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    },
+    {
+     "server_ms": 7164.3,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    },
+    {
+     "server_ms": 7059.5,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    },
+    {
+     "server_ms": 7204.0,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    },
+    {
+     "server_ms": 7120.5,
+     "shared_hit": 67814,
+     "shared_read": 0,
+     "temp_read": 111639,
+     "temp_written": 42530,
+     "db_temp_files": 11,
+     "db_temp_bytes": 347707692
+    }
+   ],
+   "warm_fetch_ms": [
+    7231.173,
+    7280.8,
+    7394.228
+   ],
+   "payload_bytes": 6999020,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 6928.0,
+     "max": 7329.6,
+     "min": 6789.7
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 7167.7,
+     "max": 7202.4,
+     "min": 7133.0
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 7164.3,
+     "max": 7204.0,
+     "min": 7059.5
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 7280.8,
+     "max": 7394.2,
+     "min": 7231.2
+    },
+    "temp_written_max": 42530,
+    "db_temp_bytes_max": 347707692
+   }
+  },
+  "v1|12m|parking": {
+   "encoding": "v1",
+   "window": "12m",
+   "category": "parking",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-12",
+    "end": "2026-10-11",
+    "category": "parking",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 2049.6,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    },
+    {
+     "server_ms": 2243.8,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    },
+    {
+     "server_ms": 2140.6,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    }
+   ],
+   "cold_fetch_ms": [
+    2226.157,
+    2197.883
+   ],
+   "warm": [
+    {
+     "server_ms": 2290.5,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    },
+    {
+     "server_ms": 2193.2,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    },
+    {
+     "server_ms": 2163.6,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    },
+    {
+     "server_ms": 2102.4,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    },
+    {
+     "server_ms": 2145.7,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 27531,
+     "temp_written": 13633,
+     "db_temp_files": 12,
+     "db_temp_bytes": 110687570
+    }
+   ],
+   "warm_fetch_ms": [
+    2185.629,
+    2265.317,
+    2261.407
+   ],
+   "payload_bytes": 1348755,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 2140.6,
+     "max": 2243.8,
+     "min": 2049.6
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 2212.0,
+     "max": 2226.2,
+     "min": 2197.9
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 2163.6,
+     "max": 2290.5,
+     "min": 2102.4
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 2261.4,
+     "max": 2265.3,
+     "min": 2185.6
+    },
+    "temp_written_max": 13633,
+    "db_temp_bytes_max": 110687570
+   }
+  },
+  "v2|12m|parking": {
+   "encoding": "v2",
+   "window": "12m",
+   "category": "parking",
+   "scope": {
+    "date_basis": "completed_date",
+    "start": "2025-10-12",
+    "end": "2026-10-11",
+    "category": "parking",
+    "region_code": null,
+    "agency_key": null,
+    "manager_key": null,
+    "bbox": null,
+    "law": null
+   },
+   "cold": [
+    {
+     "server_ms": 1761.2,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    },
+    {
+     "server_ms": 1876.3,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    },
+    {
+     "server_ms": 1902.8,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    }
+   ],
+   "cold_fetch_ms": [
+    1840.055,
+    1854.606
+   ],
+   "warm": [
+    {
+     "server_ms": 1891.0,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    },
+    {
+     "server_ms": 1986.8,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    },
+    {
+     "server_ms": 2007.5,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    },
+    {
+     "server_ms": 1941.2,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    },
+    {
+     "server_ms": 1889.9,
+     "shared_hit": 62375,
+     "shared_read": 0,
+     "temp_read": 3322,
+     "temp_written": 3322,
+     "db_temp_files": 2,
+     "db_temp_bytes": 27210796
+    }
+   ],
+   "warm_fetch_ms": [
+    1929.749,
+    1922.483,
+    2083.269
+   ],
+   "payload_bytes": 1054110,
+   "summary": {
+    "cold_server": {
+     "n": 3,
+     "median": 1876.3,
+     "max": 1902.8,
+     "min": 1761.2
+    },
+    "cold_fetch": {
+     "n": 2,
+     "median": 1847.3,
+     "max": 1854.6,
+     "min": 1840.1
+    },
+    "warm_server": {
+     "n": 5,
+     "median": 1941.2,
+     "max": 2007.5,
+     "min": 1889.9
+    },
+    "warm_fetch": {
+     "n": 3,
+     "median": 1929.7,
+     "max": 2083.3,
+     "min": 1922.5
+    },
+    "temp_written_max": 3322,
+    "db_temp_bytes_max": 27210796
+   }
+  }
+ }
+}

@@ -1,0 +1,306 @@
+{
+ "statistics_12m": {
+  "payload_bytes": 84901337,
+  "cold": [
+   {
+    "server_ms": 2463.4,
+    "shared_hit": 34964,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 2453.0,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   }
+  ],
+  "warm": [
+   {
+    "server_ms": 2439.0,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 2422.5,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 2393.1,
+    "shared_hit": 34909,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   }
+  ],
+  "warm_fetch_ms": [
+   2575.61,
+   2547.426
+  ],
+  "summary": {
+   "cold_server": {
+    "n": 2,
+    "median": 2458.2,
+    "max": 2463.4,
+    "min": 2453.0
+   },
+   "warm_server": {
+    "n": 3,
+    "median": 2422.5,
+    "max": 2439.0,
+    "min": 2393.1
+   },
+   "warm_fetch": {
+    "n": 2,
+    "median": 2561.5,
+    "max": 2575.6,
+    "min": 2547.4
+   }
+  }
+ },
+ "statistics_all": {
+  "payload_bytes": 129835249,
+  "cold": [
+   {
+    "server_ms": 3907.2,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 16138,
+    "temp_written": 16138,
+    "db_temp_files": 2,
+    "db_temp_bytes": 132201932
+   },
+   {
+    "server_ms": 3886.0,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 16138,
+    "temp_written": 16138,
+    "db_temp_files": 2,
+    "db_temp_bytes": 132201932
+   }
+  ],
+  "warm": [
+   {
+    "server_ms": 4090.1,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 16138,
+    "temp_written": 16138,
+    "db_temp_files": 2,
+    "db_temp_bytes": 132201932
+   },
+   {
+    "server_ms": 3975.7,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 16138,
+    "temp_written": 16138,
+    "db_temp_files": 2,
+    "db_temp_bytes": 132201932
+   },
+   {
+    "server_ms": 4049.2,
+    "shared_hit": 34869,
+    "shared_read": 0,
+    "temp_read": 16138,
+    "temp_written": 16138,
+    "db_temp_files": 2,
+    "db_temp_bytes": 132201932
+   }
+  ],
+  "warm_fetch_ms": [
+   4408.927,
+   4298.377
+  ],
+  "summary": {
+   "cold_server": {
+    "n": 2,
+    "median": 3896.6,
+    "max": 3907.2,
+    "min": 3886.0
+   },
+   "warm_server": {
+    "n": 3,
+    "median": 4049.2,
+    "max": 4090.1,
+    "min": 3975.7
+   },
+   "warm_fetch": {
+    "n": 2,
+    "median": 4353.7,
+    "max": 4408.9,
+    "min": 4298.4
+   }
+  }
+ },
+ "rollup_laws_12m": {
+  "payload_bytes": 9156,
+  "cold": [
+   {
+    "server_ms": 956.9,
+    "shared_hit": 35069,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 1080.0,
+    "shared_hit": 34839,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   }
+  ],
+  "warm": [
+   {
+    "server_ms": 1029.5,
+    "shared_hit": 34839,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 1013.0,
+    "shared_hit": 34839,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 1062.0,
+    "shared_hit": 34845,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   }
+  ],
+  "warm_fetch_ms": [
+   1028.124,
+   994.089
+  ],
+  "summary": {
+   "cold_server": {
+    "n": 2,
+    "median": 1018.5,
+    "max": 1080.0,
+    "min": 956.9
+   },
+   "warm_server": {
+    "n": 3,
+    "median": 1029.5,
+    "max": 1062.0,
+    "min": 1013.0
+   },
+   "warm_fetch": {
+    "n": 2,
+    "median": 1011.1,
+    "max": 1028.1,
+    "min": 994.1
+   }
+  }
+ },
+ "rankings_default": {
+  "payload_bytes": 5585,
+  "cold": [
+   {
+    "server_ms": 858.7,
+    "shared_hit": 34547,
+    "shared_read": 1,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 884.9,
+    "shared_hit": 34312,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   }
+  ],
+  "warm": [
+   {
+    "server_ms": 881.5,
+    "shared_hit": 34312,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 880.5,
+    "shared_hit": 34312,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   },
+   {
+    "server_ms": 906.8,
+    "shared_hit": 34312,
+    "shared_read": 0,
+    "temp_read": 0,
+    "temp_written": 0,
+    "db_temp_files": 0,
+    "db_temp_bytes": 0
+   }
+  ],
+  "warm_fetch_ms": [
+   870.682,
+   872.956
+  ],
+  "summary": {
+   "cold_server": {
+    "n": 2,
+    "median": 871.8,
+    "max": 884.9,
+    "min": 858.7
+   },
+   "warm_server": {
+    "n": 3,
+    "median": 881.5,
+    "max": 906.8,
+    "min": 880.5
+   },
+   "warm_fetch": {
+    "n": 2,
+    "median": 871.8,
+    "max": 873.0,
+    "min": 870.7
+   }
+  }
+ }
+}

@@ -1,0 +1,803 @@
+{
+ "v1|x1": {
+  "encoding": "v1",
+  "concurrency": 1,
+  "latencies_ms": [
+   9901.82,
+   9899.656
+  ],
+  "summary": {
+   "n": 2,
+   "median": 9900.7,
+   "max": 9901.8,
+   "min": 9899.7
+  },
+  "wall_s": 30.1,
+  "host_used_idle_mb": 2895,
+  "host_used_peak_mb": 2906,
+  "db_cpu_peak_pct": 104.23,
+  "samples": [
+   {
+    "t": 1791731686.2509181,
+    "host_used_mb": 2875,
+    "host_cache_mb": 3552,
+    "db_cpu_pct": 103.8,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731688.2542171,
+    "host_used_mb": 2885,
+    "host_cache_mb": 3552,
+    "db_cpu_pct": 100.84,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731690.260135,
+    "host_used_mb": 2878,
+    "host_cache_mb": 3554,
+    "db_cpu_pct": 100.77,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731692.2617617,
+    "host_used_mb": 2876,
+    "host_cache_mb": 3559,
+    "db_cpu_pct": 100.25,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731694.266713,
+    "host_used_mb": 2860,
+    "host_cache_mb": 3559,
+    "db_cpu_pct": 100.21,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731696.2702923,
+    "host_used_mb": 2900,
+    "host_cache_mb": 3552,
+    "db_cpu_pct": 104.23,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731698.2739174,
+    "host_used_mb": 2901,
+    "host_cache_mb": 3552,
+    "db_cpu_pct": 100.59,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731700.279423,
+    "host_used_mb": 2899,
+    "host_cache_mb": 3555,
+    "db_cpu_pct": 100.27,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731702.28601,
+    "host_used_mb": 2905,
+    "host_cache_mb": 3559,
+    "db_cpu_pct": 100.51,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731704.288472,
+    "host_used_mb": 2894,
+    "host_cache_mb": 3559,
+    "db_cpu_pct": 100.84,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731706.2922843,
+    "host_used_mb": 2906,
+    "host_cache_mb": 3552,
+    "db_cpu_pct": 103.71,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731708.298531,
+    "host_used_mb": 2893,
+    "host_cache_mb": 3552,
+    "db_cpu_pct": 100.84,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731710.3041885,
+    "host_used_mb": 2903,
+    "host_cache_mb": 3555,
+    "db_cpu_pct": 100.68,
+    "db_mem": "1.003GiB"
+   },
+   {
+    "t": 1791731712.3114889,
+    "host_used_mb": 2898,
+    "host_cache_mb": 3559,
+    "db_cpu_pct": 100.87,
+    "db_mem": "1.004GiB"
+   },
+   {
+    "t": 1791731714.3175046,
+    "host_used_mb": 2901,
+    "host_cache_mb": 3559,
+    "db_cpu_pct": 0.06,
+    "db_mem": "1024MiB"
+   }
+  ]
+ },
+ "v1|x2": {
+  "encoding": "v1",
+  "concurrency": 2,
+  "latencies_ms": [
+   10147.734,
+   9901.278,
+   11249.755,
+   10933.929
+  ],
+  "summary": {
+   "n": 4,
+   "median": 10540.8,
+   "max": 11249.8,
+   "min": 9901.3
+  },
+  "wall_s": 34.0,
+  "host_used_idle_mb": 2935,
+  "host_used_peak_mb": 3195,
+  "db_cpu_peak_pct": 204.13,
+  "samples": [
+   {
+    "t": 1791731724.3424037,
+    "host_used_mb": 2926,
+    "host_cache_mb": 3784,
+    "db_cpu_pct": 200.04,
+    "db_mem": "1.075GiB"
+   },
+   {
+    "t": 1791731726.3466697,
+    "host_used_mb": 2939,
+    "host_cache_mb": 3819,
+    "db_cpu_pct": 202.9,
+    "db_mem": "1.094GiB"
+   },
+   {
+    "t": 1791731728.3520808,
+    "host_used_mb": 2964,
+    "host_cache_mb": 3925,
+    "db_cpu_pct": 199.61,
+    "db_mem": "1.099GiB"
+   },
+   {
+    "t": 1791731730.354546,
+    "host_used_mb": 2944,
+    "host_cache_mb": 3974,
+    "db_cpu_pct": 200.46,
+    "db_mem": "1.109GiB"
+   },
+   {
+    "t": 1791731732.3590994,
+    "host_used_mb": 2971,
+    "host_cache_mb": 4028,
+    "db_cpu_pct": 199.99,
+    "db_mem": "1.078GiB"
+   },
+   {
+    "t": 1791731734.3659322,
+    "host_used_mb": 3195,
+    "host_cache_mb": 3590,
+    "db_cpu_pct": 199.85,
+    "db_mem": "1.089GiB"
+   },
+   {
+    "t": 1791731736.3729062,
+    "host_used_mb": 2958,
+    "host_cache_mb": 3819,
+    "db_cpu_pct": 204.13,
+    "db_mem": "1.099GiB"
+   },
+   {
+    "t": 1791731738.375263,
+    "host_used_mb": 2964,
+    "host_cache_mb": 3852,
+    "db_cpu_pct": 199.08,
+    "db_mem": "1.105GiB"
+   },
+   {
+    "t": 1791731740.3797657,
+    "host_used_mb": 2972,
+    "host_cache_mb": 3943,
+    "db_cpu_pct": 199.01,
+    "db_mem": "1.118GiB"
+   },
+   {
+    "t": 1791731742.3833594,
+    "host_used_mb": 2981,
+    "host_cache_mb": 3992,
+    "db_cpu_pct": 199.11,
+    "db_mem": "1.14GiB"
+   },
+   {
+    "t": 1791731744.3885741,
+    "host_used_mb": 3013,
+    "host_cache_mb": 4036,
+    "db_cpu_pct": 199.03,
+    "db_mem": "1.083GiB"
+   },
+   {
+    "t": 1791731746.3939779,
+    "host_used_mb": 3051,
+    "host_cache_mb": 3743,
+    "db_cpu_pct": 202.45,
+    "db_mem": "1.093GiB"
+   },
+   {
+    "t": 1791731748.3965986,
+    "host_used_mb": 2987,
+    "host_cache_mb": 3821,
+    "db_cpu_pct": 199.34,
+    "db_mem": "1.104GiB"
+   },
+   {
+    "t": 1791731750.4054263,
+    "host_used_mb": 2980,
+    "host_cache_mb": 3922,
+    "db_cpu_pct": 199.92,
+    "db_mem": "1.106GiB"
+   },
+   {
+    "t": 1791731752.4073014,
+    "host_used_mb": 2995,
+    "host_cache_mb": 3970,
+    "db_cpu_pct": 100.26,
+    "db_mem": "1.116GiB"
+   },
+   {
+    "t": 1791731754.4101622,
+    "host_used_mb": 3019,
+    "host_cache_mb": 3919,
+    "db_cpu_pct": 74.7,
+    "db_mem": "1.069GiB"
+   }
+  ]
+ },
+ "v1|x4": {
+  "encoding": "v1",
+  "concurrency": 4,
+  "latencies_ms": [
+   11315.675,
+   11946.726,
+   15823.107,
+   13525.854,
+   15822.491,
+   12734.194,
+   15407.036,
+   12845.975
+  ],
+  "summary": {
+   "n": 8,
+   "median": 13185.9,
+   "max": 15823.1,
+   "min": 11315.7
+  },
+  "wall_s": 43.8,
+  "host_used_idle_mb": 3258,
+  "host_used_peak_mb": 3479,
+  "db_cpu_peak_pct": 394.57,
+  "samples": [
+   {
+    "t": 1791731766.441367,
+    "host_used_mb": 3187,
+    "host_cache_mb": 4111,
+    "db_cpu_pct": 366.69,
+    "db_mem": "1.22GiB"
+   },
+   {
+    "t": 1791731768.4493227,
+    "host_used_mb": 3162,
+    "host_cache_mb": 4354,
+    "db_cpu_pct": 386.63,
+    "db_mem": "1.266GiB"
+   },
+   {
+    "t": 1791731770.458335,
+    "host_used_mb": 3155,
+    "host_cache_mb": 4506,
+    "db_cpu_pct": 394.57,
+    "db_mem": "1.292GiB"
+   },
+   {
+    "t": 1791731772.4592102,
+    "host_used_mb": 3150,
+    "host_cache_mb": 4683,
+    "db_cpu_pct": 357.33,
+    "db_mem": "1.301GiB"
+   },
+   {
+    "t": 1791731774.4633987,
+    "host_used_mb": 3167,
+    "host_cache_mb": 4791,
+    "db_cpu_pct": 380.85,
+    "db_mem": "1.325GiB"
+   },
+   {
+    "t": 1791731776.4694812,
+    "host_used_mb": 3213,
+    "host_cache_mb": 4902,
+    "db_cpu_pct": 357.47,
+    "db_mem": "1.346GiB"
+   },
+   {
+    "t": 1791731778.47745,
+    "host_used_mb": 3479,
+    "host_cache_mb": 4470,
+    "db_cpu_pct": 390.74,
+    "db_mem": "1.282GiB"
+   },
+   {
+    "t": 1791731780.4824033,
+    "host_used_mb": 3448,
+    "host_cache_mb": 3921,
+    "db_cpu_pct": 393.92,
+    "db_mem": "1.301GiB"
+   },
+   {
+    "t": 1791731782.4878516,
+    "host_used_mb": 3283,
+    "host_cache_mb": 4355,
+    "db_cpu_pct": 367.78,
+    "db_mem": "1.32GiB"
+   },
+   {
+    "t": 1791731784.4903882,
+    "host_used_mb": 3310,
+    "host_cache_mb": 4436,
+    "db_cpu_pct": 379.48,
+    "db_mem": "1.334GiB"
+   },
+   {
+    "t": 1791731786.495713,
+    "host_used_mb": 3287,
+    "host_cache_mb": 4662,
+    "db_cpu_pct": 378.89,
+    "db_mem": "1.338GiB"
+   },
+   {
+    "t": 1791731788.5034404,
+    "host_used_mb": 3268,
+    "host_cache_mb": 4761,
+    "db_cpu_pct": 378.04,
+    "db_mem": "1.35GiB"
+   },
+   {
+    "t": 1791731790.5109286,
+    "host_used_mb": 3245,
+    "host_cache_mb": 4830,
+    "db_cpu_pct": 385.97,
+    "db_mem": "1.401GiB"
+   },
+   {
+    "t": 1791731792.52992,
+    "host_used_mb": 3271,
+    "host_cache_mb": 4945,
+    "db_cpu_pct": 204.77,
+    "db_mem": "1.386GiB"
+   },
+   {
+    "t": 1791731794.5301328,
+    "host_used_mb": 3410,
+    "host_cache_mb": 4541,
+    "db_cpu_pct": 377.84,
+    "db_mem": "1.292GiB"
+   },
+   {
+    "t": 1791731796.5368788,
+    "host_used_mb": 3267,
+    "host_cache_mb": 4111,
+    "db_cpu_pct": 387.09,
+    "db_mem": "1.305GiB"
+   },
+   {
+    "t": 1791731798.5406008,
+    "host_used_mb": 3210,
+    "host_cache_mb": 4363,
+    "db_cpu_pct": 369.09,
+    "db_mem": "1.325GiB"
+   },
+   {
+    "t": 1791731800.545471,
+    "host_used_mb": 3212,
+    "host_cache_mb": 4634,
+    "db_cpu_pct": 300.9,
+    "db_mem": "1.326GiB"
+   },
+   {
+    "t": 1791731802.5512493,
+    "host_used_mb": 3267,
+    "host_cache_mb": 4661,
+    "db_cpu_pct": 156.0,
+    "db_mem": "1.348GiB"
+   },
+   {
+    "t": 1791731804.5539398,
+    "host_used_mb": 3257,
+    "host_cache_mb": 4754,
+    "db_cpu_pct": 295.65,
+    "db_mem": "1.388GiB"
+   },
+   {
+    "t": 1791731806.561658,
+    "host_used_mb": 3332,
+    "host_cache_mb": 4846,
+    "db_cpu_pct": 98.98,
+    "db_mem": "1.273GiB"
+   }
+  ]
+ },
+ "v2|x1": {
+  "encoding": "v2",
+  "concurrency": 1,
+  "latencies_ms": [
+   8866.716,
+   8648.184
+  ],
+  "summary": {
+   "n": 2,
+   "median": 8757.5,
+   "max": 8866.7,
+   "min": 8648.2
+  },
+  "wall_s": 26.8,
+  "host_used_idle_mb": 3821,
+  "host_used_peak_mb": 3660,
+  "db_cpu_peak_pct": 104.58,
+  "samples": [
+   {
+    "t": 1791731818.586031,
+    "host_used_mb": 3520,
+    "host_cache_mb": 3702,
+    "db_cpu_pct": 100.77,
+    "db_mem": "1.313GiB"
+   },
+   {
+    "t": 1791731820.5917933,
+    "host_used_mb": 3541,
+    "host_cache_mb": 3703,
+    "db_cpu_pct": 100.84,
+    "db_mem": "1.35GiB"
+   },
+   {
+    "t": 1791731822.5962842,
+    "host_used_mb": 3444,
+    "host_cache_mb": 3828,
+    "db_cpu_pct": 104.58,
+    "db_mem": "1.436GiB"
+   },
+   {
+    "t": 1791731824.6145375,
+    "host_used_mb": 3541,
+    "host_cache_mb": 3830,
+    "db_cpu_pct": 100.38,
+    "db_mem": "1.428GiB"
+   },
+   {
+    "t": 1791731826.61028,
+    "host_used_mb": 3545,
+    "host_cache_mb": 3570,
+    "db_cpu_pct": 100.71,
+    "db_mem": "1.435GiB"
+   },
+   {
+    "t": 1791731828.613926,
+    "host_used_mb": 3507,
+    "host_cache_mb": 3702,
+    "db_cpu_pct": 100.79,
+    "db_mem": "1.439GiB"
+   },
+   {
+    "t": 1791731830.619263,
+    "host_used_mb": 3459,
+    "host_cache_mb": 3826,
+    "db_cpu_pct": 100.71,
+    "db_mem": "1.439GiB"
+   },
+   {
+    "t": 1791731832.6252296,
+    "host_used_mb": 3455,
+    "host_cache_mb": 3830,
+    "db_cpu_pct": 100.93,
+    "db_mem": "1.43GiB"
+   },
+   {
+    "t": 1791731834.629415,
+    "host_used_mb": 3660,
+    "host_cache_mb": 3458,
+    "db_cpu_pct": 100.7,
+    "db_mem": "1.437GiB"
+   },
+   {
+    "t": 1791731836.6321726,
+    "host_used_mb": 3599,
+    "host_cache_mb": 3702,
+    "db_cpu_pct": 100.46,
+    "db_mem": "1.437GiB"
+   },
+   {
+    "t": 1791731838.6371894,
+    "host_used_mb": 3559,
+    "host_cache_mb": 3702,
+    "db_cpu_pct": 100.68,
+    "db_mem": "1.441GiB"
+   },
+   {
+    "t": 1791731840.6406257,
+    "host_used_mb": 3549,
+    "host_cache_mb": 3828,
+    "db_cpu_pct": 100.72,
+    "db_mem": "1.475GiB"
+   },
+   {
+    "t": 1791731842.645714,
+    "host_used_mb": 3586,
+    "host_cache_mb": 3851,
+    "db_cpu_pct": 3.43,
+    "db_mem": "1.432GiB"
+   }
+  ]
+ },
+ "v2|x2": {
+  "encoding": "v2",
+  "concurrency": 2,
+  "latencies_ms": [
+   9090.482,
+   9009.545,
+   9157.918,
+   9182.094
+  ],
+  "summary": {
+   "n": 4,
+   "median": 9124.2,
+   "max": 9182.1,
+   "min": 9009.5
+  },
+  "wall_s": 27.6,
+  "host_used_idle_mb": 3727,
+  "host_used_peak_mb": 3730,
+  "db_cpu_peak_pct": 203.78,
+  "samples": [
+   {
+    "t": 1791731852.6684175,
+    "host_used_mb": 3489,
+    "host_cache_mb": 3934,
+    "db_cpu_pct": 203.1,
+    "db_mem": "1.474GiB"
+   },
+   {
+    "t": 1791731854.6733358,
+    "host_used_mb": 3482,
+    "host_cache_mb": 3947,
+    "db_cpu_pct": 200.12,
+    "db_mem": "1.511GiB"
+   },
+   {
+    "t": 1791731856.681608,
+    "host_used_mb": 3471,
+    "host_cache_mb": 4198,
+    "db_cpu_pct": 200.52,
+    "db_mem": "1.603GiB"
+   },
+   {
+    "t": 1791731858.6860917,
+    "host_used_mb": 3557,
+    "host_cache_mb": 4202,
+    "db_cpu_pct": 198.82,
+    "db_mem": "1.587GiB"
+   },
+   {
+    "t": 1791731860.6903217,
+    "host_used_mb": 3730,
+    "host_cache_mb": 3684,
+    "db_cpu_pct": 199.54,
+    "db_mem": "1.595GiB"
+   },
+   {
+    "t": 1791731862.696181,
+    "host_used_mb": 3580,
+    "host_cache_mb": 3947,
+    "db_cpu_pct": 202.79,
+    "db_mem": "1.602GiB"
+   },
+   {
+    "t": 1791731864.6996863,
+    "host_used_mb": 3518,
+    "host_cache_mb": 4195,
+    "db_cpu_pct": 200.06,
+    "db_mem": "1.602GiB"
+   },
+   {
+    "t": 1791731866.7052639,
+    "host_used_mb": 3512,
+    "host_cache_mb": 4202,
+    "db_cpu_pct": 199.83,
+    "db_mem": "1.69GiB"
+   },
+   {
+    "t": 1791731868.7090766,
+    "host_used_mb": 3591,
+    "host_cache_mb": 4245,
+    "db_cpu_pct": 199.16,
+    "db_mem": "1.594GiB"
+   },
+   {
+    "t": 1791731870.7165697,
+    "host_used_mb": 3478,
+    "host_cache_mb": 3934,
+    "db_cpu_pct": 199.48,
+    "db_mem": "1.595GiB"
+   },
+   {
+    "t": 1791731872.7285228,
+    "host_used_mb": 3475,
+    "host_cache_mb": 3948,
+    "db_cpu_pct": 203.78,
+    "db_mem": "1.602GiB"
+   },
+   {
+    "t": 1791731874.7343671,
+    "host_used_mb": 3478,
+    "host_cache_mb": 4197,
+    "db_cpu_pct": 200.74,
+    "db_mem": "1.602GiB"
+   },
+   {
+    "t": 1791731876.7365856,
+    "host_used_mb": 3515,
+    "host_cache_mb": 4202,
+    "db_cpu_pct": 61.68,
+    "db_mem": "1.592GiB"
+   }
+  ]
+ },
+ "v2|x4": {
+  "encoding": "v2",
+  "concurrency": 4,
+  "latencies_ms": [
+   9813.322,
+   12086.238,
+   10323.164,
+   10328.181,
+   9332.995,
+   13626.166,
+   10612.858,
+   11173.567
+  ],
+  "summary": {
+   "n": 8,
+   "median": 10470.5,
+   "max": 13626.2,
+   "min": 9333.0
+  },
+  "wall_s": 34.2,
+  "host_used_idle_mb": 3789,
+  "host_used_peak_mb": 4241,
+  "db_cpu_peak_pct": 395.86,
+  "samples": [
+   {
+    "t": 1791731888.7692285,
+    "host_used_mb": 3552,
+    "host_cache_mb": 4243,
+    "db_cpu_pct": 395.86,
+    "db_mem": "1.68GiB"
+   },
+   {
+    "t": 1791731890.77136,
+    "host_used_mb": 3573,
+    "host_cache_mb": 4439,
+    "db_cpu_pct": 363.87,
+    "db_mem": "1.687GiB"
+   },
+   {
+    "t": 1791731892.7761567,
+    "host_used_mb": 3599,
+    "host_cache_mb": 4688,
+    "db_cpu_pct": 376.39,
+    "db_mem": "1.728GiB"
+   },
+   {
+    "t": 1791731894.782029,
+    "host_used_mb": 3629,
+    "host_cache_mb": 4943,
+    "db_cpu_pct": 350.92,
+    "db_mem": "1.775GiB"
+   },
+   {
+    "t": 1791731896.7863026,
+    "host_used_mb": 3864,
+    "host_cache_mb": 4615,
+    "db_cpu_pct": 390.32,
+    "db_mem": "1.834GiB"
+   },
+   {
+    "t": 1791731898.7935433,
+    "host_used_mb": 4083,
+    "host_cache_mb": 4353,
+    "db_cpu_pct": 390.18,
+    "db_mem": "1.803GiB"
+   },
+   {
+    "t": 1791731900.7986848,
+    "host_used_mb": 3866,
+    "host_cache_mb": 4451,
+    "db_cpu_pct": 369.28,
+    "db_mem": "1.813GiB"
+   },
+   {
+    "t": 1791731902.802876,
+    "host_used_mb": 3809,
+    "host_cache_mb": 4767,
+    "db_cpu_pct": 383.73,
+    "db_mem": "1.82GiB"
+   },
+   {
+    "t": 1791731904.8063858,
+    "host_used_mb": 3770,
+    "host_cache_mb": 4946,
+    "db_cpu_pct": 369.22,
+    "db_mem": "1.831GiB"
+   },
+   {
+    "t": 1791731906.810318,
+    "host_used_mb": 3995,
+    "host_cache_mb": 4242,
+    "db_cpu_pct": 167.45,
+    "db_mem": "1.831GiB"
+   },
+   {
+    "t": 1791731908.821464,
+    "host_used_mb": 3968,
+    "host_cache_mb": 4185,
+    "db_cpu_pct": 393.47,
+    "db_mem": "1.805GiB"
+   },
+   {
+    "t": 1791731910.827079,
+    "host_used_mb": 3739,
+    "host_cache_mb": 4338,
+    "db_cpu_pct": 359.63,
+    "db_mem": "1.808GiB"
+   },
+   {
+    "t": 1791731912.8391068,
+    "host_used_mb": 3754,
+    "host_cache_mb": 4439,
+    "db_cpu_pct": 385.4,
+    "db_mem": "1.82GiB"
+   },
+   {
+    "t": 1791731914.8379266,
+    "host_used_mb": 3749,
+    "host_cache_mb": 4868,
+    "db_cpu_pct": 379.14,
+    "db_mem": "1.822GiB"
+   },
+   {
+    "t": 1791731916.845181,
+    "host_used_mb": 3749,
+    "host_cache_mb": 4944,
+    "db_cpu_pct": 276.96,
+    "db_mem": "1.802GiB"
+   },
+   {
+    "t": 1791731918.8474276,
+    "host_used_mb": 4022,
+    "host_cache_mb": 4208,
+    "db_cpu_pct": 139.38,
+    "db_mem": "1.855GiB"
+   },
+   {
+    "t": 1791731920.856033,
+    "host_used_mb": 4241,
+    "host_cache_mb": 3501,
+    "db_cpu_pct": 0.62,
+    "db_mem": "1.78GiB"
+   }
+  ]
+ }
+}

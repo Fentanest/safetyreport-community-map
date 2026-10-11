@@ -1,0 +1,81 @@
+{
+ "viewer_public_fact_count": 771,
+ "cases": {
+  "v1|all|all": {
+   "payload_bytes": 10529238,
+   "runs": [
+    {
+     "server_ms": 10958.0,
+     "shared_hit": 45019,
+     "shared_read": 0,
+     "temp_read": 120370,
+     "temp_written": 74917,
+     "db_temp_files": 29,
+     "db_temp_bytes": 579008211
+    },
+    {
+     "server_ms": 10699.6,
+     "shared_hit": 45019,
+     "shared_read": 0,
+     "temp_read": 120370,
+     "temp_written": 74917,
+     "db_temp_files": 29,
+     "db_temp_bytes": 579008211
+    },
+    {
+     "server_ms": 10164.5,
+     "shared_hit": 45019,
+     "shared_read": 0,
+     "temp_read": 120370,
+     "temp_written": 74917,
+     "db_temp_files": 29,
+     "db_temp_bytes": 579008211
+    }
+   ],
+   "summary": {
+    "n": 3,
+    "median": 10699.6,
+    "max": 10958.0,
+    "min": 10164.5
+   }
+  },
+  "v2|all|all": {
+   "payload_bytes": 7721054,
+   "runs": [
+    {
+     "server_ms": 8112.3,
+     "shared_hit": 45019,
+     "shared_read": 0,
+     "temp_read": 120577,
+     "temp_written": 47929,
+     "db_temp_files": 11,
+     "db_temp_bytes": 391523006
+    },
+    {
+     "server_ms": 7938.7,
+     "shared_hit": 45019,
+     "shared_read": 0,
+     "temp_read": 120577,
+     "temp_written": 47929,
+     "db_temp_files": 11,
+     "db_temp_bytes": 391523006
+    },
+    {
+     "server_ms": 8340.7,
+     "shared_hit": 45019,
+     "shared_read": 0,
+     "temp_read": 120577,
+     "temp_written": 47929,
+     "db_temp_files": 11,
+     "db_temp_bytes": 391523006
+    }
+   ],
+   "summary": {
+    "n": 3,
+    "median": 8112.3,
+    "max": 8340.7,
+    "min": 7938.7
+   }
+  }
+ }
+}

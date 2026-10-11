@@ -1,0 +1,23 @@
+effective_cache_size|16384|8kB|configuration file
+effective_io_concurrency|1||default
+hash_mem_multiplier|2||default
+jit|on||default
+maintenance_work_mem|65536|kB|default
+max_connections|100||default
+max_parallel_workers_per_gather|2||default
+random_page_cost|4||default
+shared_buffers|16384|8kB|configuration file
+statement_timeout|0|ms|default
+temp_buffers|1024|8kB|default
+work_mem|4096|kB|default
+role|anon|statement_timeout=3s|
+role|authenticated|statement_timeout=8s|
+role|authenticator|session_preload_libraries=supautils, safeupdate;statement_timeout=8s;lock_timeout=8s|
+role|service_role|statement_timeout=30s|
+function|internal_analytics_read_snapshot(jsonb,boolean,text,jsonb,uuid,uuid)|search_path=""|
+function|internal_analytics_rollup(jsonb,text,jsonb)|search_path="";work_mem=32MB;statement_timeout=20s;extra_float_digits=3|
+function|internal_user_rankings(uuid,uuid,jsonb)|search_path="";work_mem=32MB;statement_timeout=20s|
+function|private.analytics_cohort_payload(text,date,date,boolean,text,text,text,text,double precision[],boolean)|search_path="";enable_nestloop=off|
+function|private.analytics_screen_aggregate_v2(jsonb,uuid,jsonb)|search_path="";enable_nestloop=off;enable_sort=off;work_mem=16MB|
+function|private.analytics_screen_aggregate(jsonb,uuid,jsonb)|search_path="";enable_nestloop=off;enable_sort=off|
+version|PostgreSQL 17.6 on x86_64-pc-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit||
