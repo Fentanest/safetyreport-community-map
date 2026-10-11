@@ -44,7 +44,8 @@ export function mapStatus(statusRaw: string | null): Status {
 export interface Observation {
   address: string | null; agency_name: string | null;
   amount: { confirmed_won: number | null; kind: 'fine' | 'penalty' | 'combined' | 'unknown'; penalty_points: number | null };
-  category: 'traffic' | 'parking' | 'other'; completed_date: string | null;
+  /** 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json. */
+  category: 'traffic' | 'parking' | 'safety' | 'living' | 'other'; completed_date: string | null;
   disposition: 'fine' | 'warning' | 'penalty' | 'none' | 'unknown';
   location: { lat: string | null; lng: string | null; source: 'geocode' | 'none' };
   manager_name: string | null; report_date: string | null; status: Status; status_raw: string | null; vehicle_raw: string | null;

@@ -114,7 +114,8 @@ export function isObservation(p: unknown): p is Observation {
     nstr(p.status_raw, 40) &&
     isObj(a) && exactKeys(a, ['confirmed_won', 'kind', 'penalty_points']) && nint(a.confirmed_won, 100000000) &&
     ['fine', 'penalty', 'combined', 'unknown'].includes(a.kind as string) && nint(a.penalty_points, 1000) &&
-    ['traffic', 'parking', 'other'].includes(p.category as string) &&
+    // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json.
+    ['traffic', 'parking', 'safety', 'living', 'other'].includes(p.category as string) &&
     (p.completed_date === null || (typeof p.completed_date === 'string' && DAY.test(p.completed_date))) &&
     (p.report_date === null || (typeof p.report_date === 'string' && DAY.test(p.report_date))) &&
     ['fine', 'warning', 'penalty', 'none', 'unknown'].includes(p.disposition as string) &&

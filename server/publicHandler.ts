@@ -139,7 +139,8 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   // `state` bounds are no longer used to refuse a period.
   void state;
   const category = params.get('category') || 'all';
-  if (!['all', 'traffic', 'parking', 'other'].includes(category)) throw new QueryError('INVALID_QUERY', 400);
+  // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 옛 공유 링크의 category=other도 그대로 통과한다.
+  if (!['all', 'traffic', 'parking', 'safety', 'living', 'other'].includes(category)) throw new QueryError('INVALID_QUERY', 400);
   const optional = (name: string) => {
     const value = params.get(name);
     if (value !== null && !key.test(value)) throw new QueryError('INVALID_QUERY', 400);

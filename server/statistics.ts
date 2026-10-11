@@ -37,6 +37,8 @@ const OUTCOME: Record<string, { key: string; label: string }> = {
   accepted: { key: 'accepted', label: '수용' }, partial: { key: 'partial', label: '일부 수용' }, rejected: { key: 'rejected', label: '불수용' },
 };
 const DISPOSITION: Record<string, string> = { fine: '과태료', warning: '경고·계도', penalty: '범칙금', none: '처분 없음', unknown: '미확인' };
+// 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json.
+const CATEGORY_LABEL: Record<string, string> = { traffic: '교통위반', parking: '주정차', safety: '안전신고', living: '생활불편', other: '기타' };
 const AMOUNT_BINS: Array<{ key: string; label: string; min: number; max: number | null }> = [
   { key: 'a0', label: '4만원 미만', min: 0, max: 39999 }, { key: 'a1', label: '4만원', min: 40000, max: 40000 },
   { key: 'a2', label: '4만원 초과~5만원', min: 40001, max: 50000 }, { key: 'a3', label: '5만원 초과~8만원', min: 50001, max: 80000 },
@@ -91,8 +93,9 @@ const DIMS: DimImpl[] = [
     description: '위반법규(조 단위)',
     member: (f) => { const k = lawKey(f.violation_law); return k ? { key: k, label: k } : { key: LAW_NONE, label: '법규 미상' }; } },
   { id: 'category', label: '신고 분류', group: '법규·분류', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
-    description: '교통위반 / 주정차 / 기타', natural: ['traffic', 'parking', 'other'],
-    member: (f) => ({ key: f.category, label: f.category === 'traffic' ? '교통위반' : f.category === 'parking' ? '주정차' : '기타' }) },
+    // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json.
+    description: '교통위반 / 주정차 / 안전신고 / 생활불편 / 기타', natural: ['traffic', 'parking', 'safety', 'living', 'other'],
+    member: (f) => ({ key: f.category, label: CATEGORY_LABEL[f.category] ?? '기타' }) },
   { id: 'outcome', label: '처리 결과', group: '처리 결과', roles: ['row', 'column', 'filter'], order: 'natural', searchable: false,
     description: '수용 / 일부 수용 / 불수용 / 미분류', natural: ['accepted', 'partial', 'rejected', 'unknown'],
     member: (f) => OUTCOME[f.status] ?? { key: 'unknown', label: '미분류' } },
