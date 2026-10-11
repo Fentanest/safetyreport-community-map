@@ -103,6 +103,12 @@ const ELIGIBLE = new Set(['accepted', 'partial', 'rejected', 'completed_unknown'
 
 export function insertFacts(facts: Fact[]): void {
   if (!facts.length) return;
+  sql(factsSql(facts));
+}
+
+/** The insert statement of insertFacts, for scripts that must run it inside their own transaction. */
+export function factsSql(facts: Fact[]): string {
+  if (!facts.length) return '';
   const values = facts.map((f) => {
     const status = f.status ?? 'accepted';
     const located = f.lat !== undefined && f.lat !== null;
@@ -116,11 +122,11 @@ export function insertFacts(facts: Fact[]): void {
       ${lit(f.managerKey ?? null)}, ${lit(f.managerName ?? null)}, ${lit(f.law ?? null)}, ${lit(f.rating ?? null)}, ${lit(f.number ?? null)},
       ${lit(f.answerAt ?? '2026-09-01T00:00:00Z')}, ${lit(f.firstAt ?? f.answerAt ?? '2026-09-01T00:00:00Z')})`;
   }).join(',\n');
-  sql(`insert into private.community_report_facts (contributor_id, dataset_key, source_report_key, source_report_id, latest_receipt_id,
+  return `insert into private.community_report_facts (contributor_id, dataset_key, source_report_key, source_report_id, latest_receipt_id,
     consent_grant_id, writer_epoch, source_revision, payload_sha256, public_state, category, status, disposition, amount_kind,
     amount_confirmed_won, penalty_points, vehicle_raw, report_date, completed_date, address, lat, lng, lat_text, lng_text, coord_source,
     agency_key, agency_name, agency_current_name, manager_key, manager_name, violation_law, rating, report_number,
-    answer_accepted_at, first_accepted_at) values ${values};`);
+    answer_accepted_at, first_accepted_at) values ${values};`;
 }
 
 export function serviceClient(keys: StackKeys): SupabaseClient {
