@@ -24,12 +24,14 @@
 ## 4. 필요한 운영 입력(값은 문서에 적지 않음)
 | 저장소 | 이름 | 종류 |
 |---|---|---|
-| safetyreport | `COMMUNITY_SUPABASE_URL`, `COMMUNITY_SUPABASE_PUBLISHABLE_KEY` | GitHub Actions Variables |
+| safetyreport | `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_PUBLISHABLE_KEY` | GitHub Actions Variables |
 | safetyreport-mobile | 같은 2개 | Variables |
-| community-map | `PUBLIC_ANALYTICS_URL`, `KAKAO_MAP_JS_KEY`(기존) | Variables |
+| community-map | `LOCAL_PUBLIC_ANALYTICS_URL`, `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_PUBLISHABLE_KEY`, `KAKAO_MAP_JS_KEY`(기존) | Variables |
 | community-auth | `SAFEAUTH_PUBLIC_SUPABASE_URL`, `SAFEAUTH_PUBLIC_PUBLISHABLE_KEY`, `SAFEAUTH_PUBLIC_PRIVACY_POLICY_URL`, `SAFEAUTH_PUBLIC_OPERATOR_CONTACT`(기존) | Variables |
 | Supabase 함수 secret | `AUTH_RELAY_HASH_PEPPER`, `AUTH_RELAY_ENCRYPTION_KEY`(기존), `ANALYTICS_RATE_SALT`(기존), `AUTH_JWT_ISSUER`, `COMMUNITY_ALLOWED_ORIGINS` | Supabase secrets |
 | Supabase Auth | Kakao provider client id/secret, Redirect URLs(`https://safeauth.worklazy.net/callback.html`, `com.fentanest.mysafetyreport://auth/callback`) | 대시보드 |
+
+환경변수 이름은 그대로다. PC의 `COMMUNITY_SUPABASE_*`, 지도의 `PUBLIC_ANALYTICS_URL`·`VITE_PUBLIC_ANALYTICS_URL`·`VITE_SUPABASE_*`로 매핑한다.
 
 ## 5. 운영 점검 기록 (2026-09-27, 읽기 전용) · 전체×내 신고 비교 포함 절차
 - 프로젝트 `nxdcxccixoswvqgjeprh`(ap-northeast-2). 원격 migration 이력 없음. `public`/`private` 스키마 덤프(스키마만): 플랫폼 기본값과
@@ -43,7 +45,7 @@
 - secrets 추가: `ANALYTICS_RATE_SALT`(무작위 생성), `AUTH_JWT_ISSUER=https://nxdcxccixoswvqgjeprh.supabase.co/auth/v1`,
   `MY_ANALYTICS_ALLOWED_ORIGINS=https://safemap.worklazy.net`. `COMMUNITY_ALLOWED_ORIGINS`는 코드 기본값(safemap, safeauth).
 - 함수 배포는 합성 디렉터리에서 5개(`public-analytics`, `my-analytics`, `community-ingest`, `community-account`, `community-auth-relay`).
-- Pages: `MAP_SUPABASE_URL`, `MAP_SUPABASE_PUBLISHABLE_KEY`(공개 publishable) 저장소 변수. snapshot export는 `ready=true` 전에는 거부하므로
+- Pages: `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_PUBLISHABLE_KEY`(공개 publishable) 저장소 변수. snapshot export는 `ready=true` 전에는 거부하므로
   지도 Pages 공개는 §1의 6→7단계(실제 카카오 테스트 계정 업로드 후 `ready=true`) 뒤에 실행한다.
 
 ## 6. 운영 반영 기록 (2026-09-27, 사용자 승인)

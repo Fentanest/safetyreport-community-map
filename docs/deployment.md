@@ -4,11 +4,13 @@
 ## 환경값
 | 값 | 위치 | 성격 |
 |---|---|---|
-| VITE_KAKAO_MAP_JS_KEY | repo variable 또는 CI frontend env | 공개 JS key. secrets에 저장해도 번들에서는 공개 |
-| VITE_PUBLIC_ANALYTICS_URL | variable / frontend | 사용자 JWT가 필요한 통계 Edge API base |
+| VITE_KAKAO_MAP_JS_KEY | frontend env (`vars.KAKAO_MAP_JS_KEY`에서 전달) | 공개 JS key. secrets에 저장해도 번들에서는 공개 |
+| VITE_PUBLIC_ANALYTICS_URL | frontend env (`vars.LOCAL_PUBLIC_ANALYTICS_URL`에서 전달) | 사용자 JWT가 필요한 통계 Edge API base |
 | VITE_DATA_MODE | variable | live 또는 명시 demo |
 | VITE_BASE_PATH | variable | `/` 기본 (공개 주소 `https://safemap.worklazy.net/`) |
-| PUBLIC_ANALYTICS_URL | CI variable | Pages 빌드의 API base. snapshot exporter는 공유자 전용 동안 쓰지 않음. 비밀키 불필요 |
+| LOCAL_PUBLIC_ANALYTICS_URL | GitHub Actions Variable | `PUBLIC_ANALYTICS_URL`·`VITE_PUBLIC_ANALYTICS_URL`로 전달하는 Pages 빌드의 API base. snapshot exporter는 공유자 전용 동안 쓰지 않음. 비밀키 불필요 |
+| LOCAL_SUPABASE_URL | GitHub Actions Variable | 빌드 env `VITE_SUPABASE_URL`로 전달하는 공개 Supabase origin |
+| LOCAL_SUPABASE_PUBLISHABLE_KEY | GitHub Actions Variable | 빌드 env `VITE_SUPABASE_PUBLISHABLE_KEY`로 전달하는 공개 키 |
 | SUPABASE_EXPORT_DATABASE_URL | 선택적 후속 direct exporter 전용 | 현재 스크립트는 사용하지 않음. 사용 시 specific safe views SELECT 전용 DSN/TLS 필요 |
 | ANALYTICS_RATE_SALT | Supabase Edge Function secret | 1분 rate bucket용 salt(공유자 전용이면 사용자별, 공개면 IP별). 프런트/CI에 넣지 않음 |
 | ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | 공유자 전용일 때 `public-analytics` Origin allowlist. 없으면 `MY_ANALYTICS_ALLOWED_ORIGINS` |
@@ -75,7 +77,7 @@ Supabase Auth의 Site URL과 정확한 redirect allowlist 항목은 모두
 1. 운영 DB에 `supabase/migrations/202609270100_my_analytics.sql` 적용(읽기 전용 STABLE RPC 1개, service_role만 실행). 수집·동의·writer 스키마 변경 없음.
 2. `supabase functions deploy my-analytics`(verify_jwt=true), secret `MY_ANALYTICS_ALLOWED_ORIGINS`.
 3. Supabase Auth: Kakao provider 리다이렉트 허용에 `https://safemap.worklazy.net/**` 추가(지도 페이지로 돌아오는 PKCE).
-4. Pages 변수 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` 설정 후 `VITE_DATA_MODE=live npm run build && npm run scan`.
+4. Pages 저장소 Variables `LOCAL_SUPABASE_URL`, `LOCAL_SUPABASE_PUBLISHABLE_KEY`를 환경변수 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`로 전달한 뒤 `VITE_DATA_MODE=live npm run build && npm run scan`.
 5. smoke(공유자 전용): 비로그인 → 로그인 안내 화면·API 401 → 공유 신고가 있는 계정으로 로그인 → 지도 → 비교 켜기 → 전체 열 = 지도 KPI → 로그아웃 → 앱 수동 업로드가 계속 ACK되는지. 로컬 증거 스크립트 `scripts/integration/access_gate_e2e.mjs`.
 6. 되돌리기: 개인 비교만 끄려면 `MY_ANALYTICS_ENABLED=false`. 지도 오류 때는 직전 인증 전용 Edge 배포로 되돌리고 익명 공개 버전으로는 되돌리지 않는다. RPC drop은 선택.
 로컬 합성 스택 검증 결과는 `docs/integration/community-ingest/evidence/2026-09-27-personal-compare/`. 운영 적용·실카카오는 BLOCKED.

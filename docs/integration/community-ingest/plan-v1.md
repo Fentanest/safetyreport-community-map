@@ -259,7 +259,7 @@ WAL, `synchronous=FULL`, 일반 영속 테이블(TEMP 금지).
 | COMMUNITY_ONBOARDING_POLICY_VERSION | `2026-09-26.1` 상수 + 중앙 status 대조 | 같음 | contracts | policy 행 seed |
 | COMMUNITY_REQUIRED_CRAWL_VERSION | `source-rebuild-2026-09-26.1` | 같음 | contracts | — |
 
-- 공식 빌드 주입: PC — `scripts/build/build_exe.py` 와 `Dockerfile` 이 `community_public.json`(allowlist 4키 + 설정 버전) 생성 리소스를 포함하고 `settings` 가 우선순위 env > config.ini > 번들 기본값으로 읽는다. CI 는 `${{ vars.COMMUNITY_SUPABASE_URL }}` 등 Variables → 생성 스크립트 → 산출물 검사(자리표시자·`sb_secret_`·service_role JWT·Kakao secret 패턴이면 실패). mobile — `build_android_*.sh`·`build-apk.yml` 이 `--dart-define-from-file=build/community_public.json`(allowlist 생성) 사용, release 에서 비었거나 자리표시자면 빌드 실패. map/auth — 기존 Vite 이름 유지, 매핑표 문서화, 산출물 스캔.
+- 공식 빌드 주입: PC — `scripts/build/build_exe.py` 와 `Dockerfile` 이 `community_public.json`(allowlist 4키 + 설정 버전) 생성 리소스를 포함하고 `settings` 가 우선순위 env > config.ini > 번들 기본값으로 읽는다. CI 는 `${{ vars.LOCAL_SUPABASE_URL }}` 등 Variables → 생성 스크립트 → 산출물 검사(자리표시자·`sb_secret_`·service_role JWT·Kakao secret 패턴이면 실패). mobile — `build_android_*.sh`·`build-apk.yml` 이 `--dart-define-from-file=build/community_public.json`(allowlist 생성) 사용, release 에서 비었거나 자리표시자면 빌드 실패. map/auth — 기존 Vite 이름 유지, 매핑표 문서화, 산출물 스캔.
 - `env-and-secret-matrix.md` 에 운영자 표(어느 repo 의 Variables/Secrets 에 어떤 이름) — 값은 적지 않는다.
 - 이번 작업은 실제 운영 값을 넣지 않는다(모름·승인 경계). 로컬은 로컬 스택 값, 릴리즈 검사는 자리표시자로 실패하는지 테스트.
 

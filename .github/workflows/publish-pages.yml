@@ -22,10 +22,10 @@ jobs:
           cache: npm
       - name: Require configured public endpoints
         env:
-          PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
+          PUBLIC_ANALYTICS_URL: ${{ vars.LOCAL_PUBLIC_ANALYTICS_URL }}
           VITE_KAKAO_MAP_JS_KEY: ${{ vars.KAKAO_MAP_JS_KEY }}
-          MAP_SUPABASE_URL: ${{ vars.MAP_SUPABASE_URL }}
-          MAP_SUPABASE_PUBLISHABLE_KEY: ${{ vars.MAP_SUPABASE_PUBLISHABLE_KEY }}
+          MAP_SUPABASE_URL: ${{ vars.LOCAL_SUPABASE_URL }}
+          MAP_SUPABASE_PUBLISHABLE_KEY: ${{ vars.LOCAL_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           test -n "$PUBLIC_ANALYTICS_URL"
           test -n "$VITE_KAKAO_MAP_JS_KEY"
@@ -33,7 +33,7 @@ jobs:
           test -n "$MAP_SUPABASE_PUBLISHABLE_KEY"
       - name: Refuse deployment while anonymous analytics is public
         env:
-          PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
+          PUBLIC_ANALYTICS_URL: ${{ vars.LOCAL_PUBLIC_ANALYTICS_URL }}
         run: |
           status=$(curl --silent --show-error --max-time 20 --output /tmp/cm-anonymous-meta.json --write-out '%{http_code}' \
             --header 'Origin: https://safemap.worklazy.net' \
@@ -52,11 +52,11 @@ jobs:
         env:
           VITE_DATA_MODE: live
           VITE_BASE_PATH: /
-          VITE_PUBLIC_ANALYTICS_URL: ${{ vars.PUBLIC_ANALYTICS_URL }}
+          VITE_PUBLIC_ANALYTICS_URL: ${{ vars.LOCAL_PUBLIC_ANALYTICS_URL }}
           VITE_KAKAO_MAP_JS_KEY: ${{ vars.KAKAO_MAP_JS_KEY }}
           # Required map login. Public configuration only.
-          VITE_SUPABASE_URL: ${{ vars.MAP_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.MAP_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.LOCAL_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.LOCAL_SUPABASE_PUBLISHABLE_KEY }}
       - run: npm run scan
       - name: No data files in the Pages artifact (contributor-only)
         run: test ! -e dist/data
