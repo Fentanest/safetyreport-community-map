@@ -1,0 +1,14 @@
+[
+  {
+    "phase": "before",
+    "raw": 419680,
+    "gzip": 15185,
+    "analytics": 310382
+  },
+  {
+    "phase": "after",
+    "raw": 109302,
+    "gzip": 4307,
+    "analytics": 4
+  }
+]

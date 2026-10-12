@@ -4,7 +4,7 @@ import { ScreenCoordinator, type ScreenPanel, type ScreenPacket } from './screen
 import { COHORT_POLICY_VERSION, type DashboardData, type PlaceDetail, type PublicEntity, type PublicLaw, type PublicMeta, type PublicPoint, type Scope } from '../domain/public';
 import { DEFAULT_SORT, type SortSpec } from '../domain/tableSort';
 import {
-  entitiesResponseSchema, entitySchema, errorResponseSchema, lawsResponseSchema, metaSchema, dashboardResponseSchema, placeDetailResponseSchema,
+  dashboardAnalyticsResponseSchema, entitiesResponseSchema, entitySchema, errorResponseSchema, lawsResponseSchema, metaSchema, dashboardResponseSchema, placeDetailResponseSchema,
   placesResponseSchema, type AccessErrorDetails,
 } from './schema';
 import { mapAuth } from '../hooks/usePersonal';
@@ -92,8 +92,10 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
   if (!token) throw new PublicApiError('카카오 로그인이 필요합니다.', 401, null, 'auth_required');
   const send = async (token: string | null): Promise<Response> => {
     try {
-      return await fetch(url, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
-        headers: { Accept: path === '@screen' ? 'application/json; screen-cache=stale-v2' : 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+      // Screen responses themselves are private/no-store. Request no-store also bypasses Chrome's
+      // separate preflight cache; default lets OPTIONS reuse Max-Age without caching the JSON.
+      return await fetch(url, { signal, credentials: 'omit', cache: path === '@screen' ? 'default' : 'no-store', referrerPolicy: 'no-referrer',
+        headers: { Accept: path === '@screen' ? 'application/json; screen-cache=stale-v2; screen-detail=deferred-v1' : 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
     } catch (e) {
       // A genuine network failure (offline, DNS, CORS…), never a client-side abort: that is a breaker event.
       if (!signal.aborted) sharedRetryCooldown.recordFailure({ status: null });
@@ -262,13 +264,17 @@ export async function loadMeta(signal?: AbortSignal): Promise<PublicMeta> {
   return meta;
 }
 
-/** One dashboard snapshot for `scope` checked against `meta.dataset_version` (409 when the data changed).
+/** Atomic dashboard snapshot and metadata in one authenticated round trip.
  *  @param initialPanels panels this FIRST (or scope-changing) request should already bundle — e.g. personal
  *  comparison for an eligible signed-in viewer — so the screen never needs a second full RPC right after. */
-export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?: AbortSignal, initialPanels?: ScreenPanel[]): Promise<DashboardData> {
+export async function loadScreen(scope: Scope, signal?: AbortSignal, initialPanels?: ScreenPanel[]): Promise<DashboardData> {
   if (import.meta.env.VITE_DATA_MODE === 'demo') return loadDashboard(scope, signal);
-  void meta; // bootstrap bounds are a hint; this response carries the actual snapshot metadata.
   return screenCoordinator.open(scope, signal, initialPanels);
+}
+
+export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?: AbortSignal, initialPanels?: ScreenPanel[]): Promise<DashboardData> {
+  void meta; // Compatibility for callers of the former metadata-first adapter.
+  return loadScreen(scope, signal, initialPanels);
 }
 
 function dashboardData(meta: PublicMeta, result: z.infer<typeof dashboardResponseSchema>): DashboardData {
@@ -294,17 +300,22 @@ async function readScreen(scope: Scope, panels: ScreenPanel[], signal: AbortSign
   const packet = screenSchema.parse(await read('@screen', scopeParams(scope, undefined, { panels: JSON.stringify(panels) }), signal));
   if (packet.meta.dataset_version !== packet.dashboard.dataset_version || packet.meta.sample !== packet.dashboard.sample ||
     !sameScope(packet.dashboard.scope, scope) || packet.panels.length !== panels.length) throw new PublicApiError('화면 응답이 일치하지 않습니다.', 503);
+  if (packet.meta.capabilities.daily_report_dates?.status !== 'supported') {
+    throw new PublicApiError('통계가 아직 준비되지 않았습니다. 잠시 후 다시 확인해 주세요.', 503);
+  }
   const ids = new Set<string>();
   for (const result of packet.panels) {
     const spec = panels.find(p => p.id === result.id);
     if (!spec || ids.has(result.id)) throw new PublicApiError('화면 응답이 일치하지 않습니다.', 503);
     ids.add(result.id);
     if (result.status !== 200) { errorResponseSchema.parse(result.body); continue; }
-    const schema = spec.path === 'entity-prefix' ? entityPrefixSchema : spec.path === 'compare' ? personalCompareSchema : spec.path === 'entities' ? entitiesResponseSchema :
+    const schema = spec.path === 'dashboard-analytics' ? dashboardAnalyticsResponseSchema : spec.path === 'entity-prefix' ? entityPrefixSchema : spec.path === 'compare' ? personalCompareSchema : spec.path === 'entities' ? entitiesResponseSchema :
       spec.path === 'laws' ? lawsResponseSchema : spec.path === 'places' ? placesResponseSchema : placeDetailResponseSchema;
     const body = schema.parse(result.body);
     if (body.dataset_version !== packet.meta.dataset_version || !sameScope(body.scope, scope)) throw new PublicApiError('화면 응답이 일치하지 않습니다.', 503);
   }
+  const charts = packet.panels.find(p => panels.find(spec => spec.id === p.id)?.path === 'dashboard-analytics' && p.status === 200);
+  if (charts) packet.dashboard.analytics = dashboardAnalyticsResponseSchema.parse(charts.body).analytics;
   return { data: dashboardData(packet.meta, packet.dashboard), panels: packet.panels };
 }
 export const screenCoordinator = new ScreenCoordinator(readScreen);
@@ -338,7 +349,7 @@ export async function loadDashboard(scope: Scope, signal?: AbortSignal): Promise
     return managersMode() ? { ...data, agencies: data.agencies.slice(0, 100), managers: data.managers.slice(0, 100),
       agency_total: data.agencies.length, manager_total: data.managers.length } : data;
   }
-  return loadDashboardWith(await loadMeta(signal), scope, signal);
+  return loadScreen(scope, signal);
 }
 
 /** R05/R07: one address place under the current scope (by place key, never a coordinate bbox). */

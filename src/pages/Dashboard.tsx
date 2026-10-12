@@ -41,7 +41,8 @@ import ManagerCompare from '../components/ManagerCompare';
 import AccountMenu from '../components/AccountMenu';
 import ViewControls from '../components/ViewControls';
 import AppliedFilterChips, { type AppliedChip } from '../components/AppliedFilterChips';
-import { DurationCard, HeatmapCard, RatingCard, ScatterCard, VehicleDaysCard, mineEntityKeys } from '../components/AnalyticsCharts';
+import { mineEntityKeys } from '../components/mineEntityKeys';
+import { useDashboardCharts } from '../hooks/useDashboardCharts';
 import { useMapAuth, usePersonalCompare, type PersonalState } from '../hooks/usePersonal';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useAnalyticsMeta } from '../hooks/useAnalyticsMeta';
@@ -59,6 +60,11 @@ import GlobalQueryStatus from '../components/GlobalQueryStatus';
 // Keep this small route module eager; it still mounts/fetches only on the ranking screen.
 // Statistics remains split because its larger module measured faster on direct entry.
 const StatisticsPage = lazy(() => import('./StatisticsPage'));
+const DurationCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.DurationCard })));
+const HeatmapCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.HeatmapCard })));
+const RatingCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.RatingCard })));
+const ScatterCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.ScatterCard })));
+const VehicleDaysCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.VehicleDaysCard })));
 
 
 
@@ -205,6 +211,7 @@ export default function Dashboard() {
   const statisticsMeta = useAnalyticsMeta(sessionKey, screen === 'statistics', dash.meta);
   const shown = dash.displayed;
   const data = shown?.data ?? null;
+  const charts = useDashboardCharts(data, moreCharts, sessionKey, screen === 'dashboard');
   const shownScope = shown?.scope ?? null;
   const version = shown?.version ?? null;
   const bundledPlace = shownScope && version ? screenCoordinator.peek(shownScope, version, 'detail') as import('../domain/public').PlaceDetail | null : null;
@@ -1010,7 +1017,10 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
-                {moreCharts && (
+                {moreCharts && charts.loading && <p role="status">그래프를 불러오는 중입니다.</p>}
+                {moreCharts && charts.error && <div role="alert">{charts.error} <button type="button" onClick={charts.retry}>다시 시도</button></div>}
+                {moreCharts && !charts.loading && !charts.error && (
+                  <Suspense fallback={<p role="status">그래프를 불러오는 중입니다.</p>}>
                   <div className="area-charts" id="more-charts-body">
                     <DurationCard all={analytics?.duration ?? null} mine={showMine ? compareData?.analytics?.duration ?? null : null} theme={resolvedTheme} />
                     <HeatmapCard data={analytics?.heatmap ?? null} theme={resolvedTheme} onPick={pickCell} />
@@ -1021,6 +1031,7 @@ export default function Dashboard() {
                     <RatingCard all={analytics?.rating ?? null} mine={showMine ? compareData?.analytics?.rating ?? null : null} theme={resolvedTheme}
                       mineState={mineChartState} />
                   </div>
+                  </Suspense>
                 )}
               </section>
               <DataGuide data={data} />

@@ -234,3 +234,18 @@ UUID는 이 전용 API의 표시 예외이고 다른 사용자 원문 조회 자
 ## 2026-10-12 · bounded screen cache v2 (로컬 후보)
 
 기존 screen-v1 묶음/공개 fence를 유지한다. 새 웹은 Accept의 `screen-cache=stale-v2`로 opt-in한다. 새 Edge/DB만 공개 집계를 180초 미만 재사용하고 `meta.snapshot_at`(ISO timestamp), compare `snapshots:{public_at,personal_at,comparable}`를 추가한다. 혼합 버전에서도 diff 및 지역/기관/담당자 차이를 계산한다(0분모·결측 null 유지). `comparable`은 정보만 제공하고 비교 차단에 쓰지 않는다. 비중은 100% 초과를 허용하며 UI가 해당 셀에 `최근 업로드 반영 차이`를 표시한다. 양측 시각을 병기하고 같은 시각은 하나만 표시한다. shared는 null(미확정, UI 문구 생략)이다. compare.all=dashboard 불변식은 유지하나 mine⊆all은 혼합 snapshot에 요구하지 않는다. 구 웹은 기존 exact 응답을 받는다. [상세](implementation/screen-result-cache-20261012/STALE-REPORT.md).
+
+## 2026-10-12 · 느린 회선 첫 화면 (로컬 후보)
+
+대시보드는 선행 `/meta` 없이 `/my-analytics/screen`의 meta+dashboard를 한 번에 읽는다. 별도 맞춤 통계 직접 진입의 meta 조회는 유지한다.
+`Accept: application/json; screen-cache=stale-v2; screen-detail=deferred-v1`을 보낸 클라이언트에는 dashboard.analytics를 null로 보내고,
+접힌 추가 그래프를 펼칠 때 `panels`에 `{id:"charts",path:"dashboard-analytics",params:{}}`를 넣는다. 그 panel body는
+`{dataset_version,scope,analytics}`이며 해당 응답의 dashboard와 같은 snapshot이다. 클라이언트가 기존 strict analytics schema 및
+scope/version을 검증한 뒤 **전체 화면을 함께 교체**한다. 그래프 대기·실패·명시 재시도를 구분한다. 해당 Accept 옵션이 없는 구 웹에는
+기존 전체 dashboard.analytics가 그대로 온다. meta의 capability 검사, 409 1회 재시도, 요청 취소·세대·계정 초기화는 유지한다.
+
+screen OPTIONS에 `Access-Control-Max-Age: 600`을 추가했다. Chromium에서 요청 `cache:no-store`는 preflight 캐시도 우회하므로
+screen만 요청 cache mode를 default로 바꾼다. **JSON 응답은 성공·실패 모두 `Cache-Control: private, no-store, max-age=0`**이며
+사용자 자료를 HTTP/디스크 캐시에 저장하지 않는다. 같은 URL의 preflight만 재사용된다(기간·panels 등 URL이 달라지면 첫 OPTIONS는 필요).
+Origin allowlist·Bearer·매 요청 자격검사·사용자 횟수 제한은 그대로다. screen 오류 429/5xx의 Retry-After를 본문과 노출 헤더에도 싣는다.
+DB schema/RPC 수정은 없다. 합성 수치·브라우저 검수·배포 파일은 [보고서](implementation/fewer-trips-20261012/REPORT.md)를 따른다.

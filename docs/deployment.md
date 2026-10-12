@@ -213,3 +213,12 @@ RPC/Edge/Pages 계약은 불변이며 Edge·Pages 재배포는 필요 없다. �
 ## 2026-10-12 · 연속 업로드 캐시 후속 (로컬 후보, 배포하지 않음)
 
 신규 `202610121400_screen_cache_stale.sql` → my-analytics Edge(server 신규 모듈 포함) → Pages 순서다. 이전 migration은 수정하지 않는다. 구 Edge/exact RPC가 rollback 경로다. [Opus rollback 검증 SQL·절차·부하 계산·미검증 범위](implementation/screen-result-cache-20261012/STALE-REPORT.md)를 먼저 확인한다.
+
+## 2026-10-12 · 느린 회선 왕복·응답 축소 (미배포)
+
+`astra/fewer-trips` 후보는 `my-analytics` Edge의 `server/screenHandler.ts`와 프런트/정적 자산 재배포가 필요하다.
+이번 추가 변경에 운영 DB migration·public-analytics·ingest 배포는 없다. Edge → 정적 웹 순서를 권장한다. 구 클라이언트는 전체 응답을 유지한다.
+`public/_headers`가 dist/_headers로 복사되어 Workers assets의 해시 `/assets/*`에 1년 immutable을 부여한다.
+HTML·SPA는 Workers 기본 `public, max-age=0, must-revalidate`를 유지한다. GitHub Pages의 HTTP 헤더 설정 파일로 간주하지 않는다.
+현재 Workers 배포 워크플로에서 dist 전체를 사용한다. 로컬 Wrangler 및 느린 회선 결과·한계는
+[보고서](implementation/fewer-trips-20261012/REPORT.md). 커밋·push·운영 배포·운영 DB 쓰기는 수행하지 않았다.

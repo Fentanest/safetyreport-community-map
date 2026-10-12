@@ -1,0 +1,41 @@
+{
+  "checks": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "comparison": true,
+      "charts": true,
+      "entityTable": true,
+      "overflow": false,
+      "apiRequests": 0
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "comparison": true,
+      "charts": true,
+      "entityTable": true,
+      "overflow": false,
+      "apiRequests": 0
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "comparison": true,
+      "charts": true,
+      "entityTable": true,
+      "overflow": false,
+      "apiRequests": 0
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "comparison": true,
+      "charts": true,
+      "entityTable": true,
+      "overflow": false,
+      "apiRequests": 0
+    }
+  ],
+  "errors": []
+}

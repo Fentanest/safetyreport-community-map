@@ -1,0 +1,281 @@
+{
+  "browser": "154.0.8037.92",
+  "mode": "actual builds, synthetic handler payloads; no real auth/SDK/DB/Cloudflare; ads excluded",
+  "latencyMs": 1500,
+  "bytesPerSecond": 51200,
+  "rows": [
+    {
+      "run": 1,
+      "phase": "before",
+      "cache": "cold",
+      "firstKpiMs": 15798,
+      "calls": [
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 433393
+    },
+    {
+      "run": 1,
+      "phase": "before",
+      "cache": "warm",
+      "firstKpiMs": 8532,
+      "calls": [
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 2100
+    },
+    {
+      "run": 1,
+      "phase": "after",
+      "cache": "cold",
+      "firstKpiMs": 13938,
+      "calls": [
+        {
+          "phase": "after",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "after",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 429437
+    },
+    {
+      "run": 1,
+      "phase": "after",
+      "cache": "warm",
+      "firstKpiMs": 3430,
+      "calls": [
+        {
+          "phase": "after",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 0
+    },
+    {
+      "run": 2,
+      "phase": "before",
+      "cache": "cold",
+      "firstKpiMs": 15950,
+      "calls": [
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 433393
+    },
+    {
+      "run": 2,
+      "phase": "before",
+      "cache": "warm",
+      "firstKpiMs": 8507,
+      "calls": [
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 2100
+    },
+    {
+      "run": 2,
+      "phase": "after",
+      "cache": "cold",
+      "firstKpiMs": 13890,
+      "calls": [
+        {
+          "phase": "after",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "after",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 429437
+    },
+    {
+      "run": 2,
+      "phase": "after",
+      "cache": "warm",
+      "firstKpiMs": 3414,
+      "calls": [
+        {
+          "phase": "after",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 0
+    },
+    {
+      "run": 3,
+      "phase": "before",
+      "cache": "cold",
+      "firstKpiMs": 16001,
+      "calls": [
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 433393
+    },
+    {
+      "run": 3,
+      "phase": "before",
+      "cache": "warm",
+      "firstKpiMs": 8533,
+      "calls": [
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/public-analytics/meta"
+        },
+        {
+          "phase": "before",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "before",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 2100
+    },
+    {
+      "run": 3,
+      "phase": "after",
+      "cache": "cold",
+      "firstKpiMs": 13942,
+      "calls": [
+        {
+          "phase": "after",
+          "method": "OPTIONS",
+          "path": "/functions/v1/my-analytics/screen"
+        },
+        {
+          "phase": "after",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 429437
+    },
+    {
+      "run": 3,
+      "phase": "after",
+      "cache": "warm",
+      "firstKpiMs": 3414,
+      "calls": [
+        {
+          "phase": "after",
+          "method": "GET",
+          "path": "/functions/v1/my-analytics/screen"
+        }
+      ],
+      "staticTransferBytes": 0
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+
+ RUN  v5.0.1 /home/better0101/projects/worktree/map-trips
+
+
+ Test Files  3 passed (3)
+      Tests  26 passed (26)
+   Start at  20:08:35
+   Duration  3.27s (tests 76%, transform 15%, import 9%)
+

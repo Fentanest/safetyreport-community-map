@@ -29,9 +29,11 @@ describe('statistics client while the map is contributor-only', () => {
     const { loadDashboard } = await import('../../src/data/client');
     await expect(loadDashboard(scope)).rejects.toMatchObject({ code: 'contributor_required', status: 403 });
     const [url, init] = fetchMock.mock.calls[0];
-    expect(String(url)).toBe('https://p.supabase.co/functions/v1/public-analytics/meta');
+    expect(new URL(String(url)).pathname).toBe('/functions/v1/my-analytics/screen');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(init.headers.Authorization).toBe('Bearer token-1');
     expect(init.credentials).toBe('omit');
+    expect(init.cache).toBe('default');
   });
   it('without a session refuses to call even a mistakenly public analytics API', async () => {
     auth.current = fakeAuth(null);

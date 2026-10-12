@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { Scope } from '../domain/public';
-import { loadDashboardWith, loadMeta, screenCoordinator } from '../data/client';
+import { loadDashboardWith, loadScreen, loadMeta, screenCoordinator } from '../data/client';
 import type { ScreenPanel } from '../data/screenCoordinator';
 import { RefreshController, type RefreshState, type RequestSource } from '../data/refreshController';
 
@@ -26,6 +26,7 @@ export function useDashboardData(scope: Scope, source: RequestSource, sessionKey
   const panelsRef = useRef(initialPanels);
   panelsRef.current = initialPanels;
   const controller = useMemo(() => new RefreshController({
+    fetchScreen: (s, signal) => loadScreen(s, signal, panelsRef.current),
     fetchMeta: (signal) => loadMeta(signal),
     fetchDashboard: (meta, s, signal) => loadDashboardWith(meta, s, signal, panelsRef.current),
     now: () => Date.now(),
