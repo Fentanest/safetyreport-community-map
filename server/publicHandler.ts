@@ -4,7 +4,7 @@ import {
 } from './aggregate.ts';
 import { placeKey as placeKeyOfFact, placeRows, placesInView, placeSummary, representativeOf } from './places.ts';
 import { codeForLegacyKey } from './regions.ts';
-import { aggregateStatistics, parseFilters, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from './statistics.ts';
+import { aggregateStatistics, parseFilters, parseRowPage, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from './statistics.ts';
 import { authenticate, mapViewerEligibility, ViewerAuthError, type ViewerAuthDeps } from './viewerAuth.ts';
 import {
   COHORT_POLICY_VERSION, DEFAULT_DATE_BASIS, isDateBasis, isLawParam, LAW_NONE, lawKey, parseBbox,
@@ -84,8 +84,9 @@ const allowed = new Set([
   'date_basis', 'start', 'end', 'category', 'region_code', 'agency_key', 'manager_key', 'bbox', 'law',
   'consistency', 'expected_version', 'kind', 'page', 'page_size', 'q', 'sort', 'sort_value', 'dir', 'agency_type', 'view_bbox', 'entity_limit',
 ]);
-/** 맞춤 통계 parameters (S05–S08): the declarative spec / candidate search; never part of the scope */
-export const STATS_ONLY = ['spec', 'kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key'];
+/** 맞춤 통계 parameters (S05–S08): the declarative spec / candidate search; never part of the scope.
+ *  `row_cursor`/`sort_metric`/`sort_dir` are D23 row paging (2026-10-12), `statistics/query` only. */
+export const STATS_ONLY = ['spec', 'kind', 'q', 'cursor', 'limit', 'filters', 'keys', 'basis', 'place_key', 'row_cursor', 'sort_metric', 'sort_dir'];
 // list-only parameters: never part of the statistics scope
 const ENTITY_ONLY = ['kind', 'page', 'page_size', 'q', 'sort', 'sort_value', 'dir', 'agency_type'];
 const LAW_LIST_ONLY = ['page', 'page_size', 'q', 'sort', 'sort_value', 'dir'];
@@ -238,9 +239,14 @@ async function statisticsRoute(route: string, url: URL, state: AnalyticsState, r
     const spec = parseSpec(url.searchParams.get('spec'));
     if (spec.population !== 'all') throw new QueryError('INVALID_QUERY', 400);
     scope = unifyBasis(scope, scopeBasisGiven, spec.date_basis);
+    // D23 (2026-10-12): StatsQueryError from a bad row_cursor/sort_metric/sort_dir is caught by the same outer
+    // handler as every other statistics error below (INVALID_QUERY → 400, RESULT_TOO_LARGE → 422 with its message).
+    const rowPage = parseRowPage(url.searchParams, spec);
     const facts = await read();
-    return aggregateStatistics({ facts, scope, spec, datasetVersion: state.dataset_version, dataWindow: basisWindow(scope.date_basis, windowOptions(state)) });
+    return aggregateStatistics({ facts, scope, spec, datasetVersion: state.dataset_version, dataWindow: basisWindow(scope.date_basis, windowOptions(state)), rowPage });
   }
+  // D23 row paging params belong only to statistics/query
+  for (const n of ['row_cursor', 'sort_metric', 'sort_dir']) if (url.searchParams.has(n)) throw new QueryError('INVALID_QUERY', 400);
   if (url.searchParams.has('spec')) throw new QueryError('INVALID_QUERY', 400);
   const q = url.searchParams.get('q') ?? '';
   if (q.length > 80) throw new QueryError('INVALID_QUERY', 400);

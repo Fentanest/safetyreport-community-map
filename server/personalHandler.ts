@@ -4,7 +4,7 @@
 // all/mine over one selection → private, non-cacheable response. No admin-key fallback, no ids/tokens in logs.
 
 import { aggregateCompare } from './compare.ts';
-import { aggregateStatistics, parseSpec, StatsQueryError } from './statistics.ts';
+import { aggregateStatistics, parseRowPage, parseSpec, StatsQueryError } from './statistics.ts';
 import type { PrivateFact } from './aggregate.ts';
 import { parseScope, QueryError, unifyBasis, type AnalyticsState } from './publicHandler.ts';
 import { todayKst } from './aggregate.ts';
@@ -98,12 +98,19 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       const stats = /\/my-analytics\/statistics\/?$/.test(url.pathname);
       if (!stats && !/\/my-analytics\/compare\/?$/.test(url.pathname)) fail('not_found');
       let spec: ReturnType<typeof parseSpec> | null = null;
+      // D23 row paging (2026-10-12): row_cursor/sort_metric/sort_dir, statistics only (never the scope, never compare).
+      let rowPage: ReturnType<typeof parseRowPage> | undefined;
       const scopeParams = new URLSearchParams(url.searchParams);
       if (stats) {
         spec = parseSpec(url.searchParams.get('spec'));
         if (spec.population === 'all') fail('INVALID_QUERY');
+        rowPage = parseRowPage(url.searchParams, spec);
         scopeParams.delete('spec');
-      } else if (url.searchParams.has('spec')) fail('INVALID_QUERY');
+        for (const n of ['row_cursor', 'sort_metric', 'sort_dir']) scopeParams.delete(n);
+      } else {
+        if (url.searchParams.has('spec')) fail('INVALID_QUERY');
+        for (const n of ['row_cursor', 'sort_metric', 'sort_dir']) if (url.searchParams.has(n)) fail('INVALID_QUERY');
+      }
 
       const { uid, session } = await authenticate(request, deps);
 
@@ -138,7 +145,7 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
         // the viewer id comes only from the verified JWT (uid); a user id in the request is never read
         const window = state.basis_bounds?.[scope.date_basis];
         const result = aggregateStatistics({ facts, scope, spec, datasetVersion: state.dataset_version, viewerId: uid,
-          dataWindow: window ? { min: window.min, max: window.max } : { min: state.data_min, max: state.data_max } });
+          dataWindow: window ? { min: window.min, max: window.max } : { min: state.data_min, max: state.data_max }, rowPage });
         deps.log?.({ event: 'my_analytics_statistics', outcome: 'ok', request_id: rid });
         return respond(200, result);
       }

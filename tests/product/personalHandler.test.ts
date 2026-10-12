@@ -172,6 +172,49 @@ describe('my-analytics response boundary', () => {
   });
 });
 
+describe('my-analytics/statistics D23 row paging (2026-10-12)', () => {
+  const pagingFacts = Array.from({ length: 5 }, (_, i) => ({
+    ...demoFacts()[0], fact_identity: `page-${i}`, contributor_id: DEMO_VIEWER_ID, is_representative: true,
+    agency_key: `a1:page${i}`, agency_name: `페이징기관${i}`, manager_key: `m1:page${i}`, manager_name: '이름',
+    report_date: '2026-03-01', completed_date: '2026-03-05',
+  }));
+  const specOf = (patch: Record<string, unknown> = {}) => JSON.stringify({ version: 1, date_basis: 'completed_date',
+    population: 'mine', rows: ['agency'], columns: [], metrics: ['completed_count'], filters: [], place_key: null, ...patch });
+  const statsReq = (extra: Record<string, string> = {}) => req(`/functions/v1/my-analytics/statistics?${new URLSearchParams({
+    start: '2025-09-25', end: '2026-09-24', category: 'all', expected_version: 'v-live-1', spec: specOf(), ...extra })}`);
+
+  it('row_cursor opts into paging; without it the response stays legacy (no row_page)', async () => {
+    const { handle } = setup({}, { facts: pagingFacts });
+    const paged = await handle(statsReq({ row_cursor: '0' }));
+    expect(paged.status, JSON.stringify(await paged.clone().json())).toBe(200);
+    const pagedBody = await paged.json();
+    expect(pagedBody.row_page).toMatchObject({ offset: 0, total: 5, has_more: false });
+    expect(pagedBody.row_members).toHaveLength(5);
+    const legacy = await handle(statsReq());
+    expect((await legacy.json()).row_page).toBeUndefined();
+  });
+
+  it('sort_metric/sort_dir reorder the page; a metric outside spec.metrics is refused', async () => {
+    const { handle } = setup({}, { facts: pagingFacts });
+    const asc = await handle(statsReq({ row_cursor: '0', sort_metric: 'completed_count', sort_dir: 'asc' }));
+    expect(asc.status).toBe(200);
+    const bad = await handle(statsReq({ row_cursor: '0', sort_metric: 'accept_rate' }));
+    expect(bad.status).toBe(400);
+  });
+
+  it('D23 params are refused on the dashboard comparison route (statistics only)', async () => {
+    const { handle } = setup({}, { facts: pagingFacts });
+    const r = await handle(req(`/functions/v1/my-analytics/compare?${QS}&row_cursor=0`));
+    expect(r.status).toBe(400);
+  });
+
+  it('population "all" on my-analytics is still refused even with row_cursor', async () => {
+    const { handle } = setup({}, { facts: pagingFacts });
+    const r = await handle(statsReq({ spec: specOf({ population: 'all' }), row_cursor: '0' }));
+    expect(r.status).toBe(400);
+  });
+});
+
 describe('shared map API stays personal-free after authentication', () => {
   const repo = {
     getState: async () => state,
