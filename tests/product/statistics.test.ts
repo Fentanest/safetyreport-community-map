@@ -3,7 +3,7 @@ import type { PrivateFact } from '../../server/aggregate';
 import { aggregateStatistics, parseRowPage, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from '../../server/statistics';
 import { createPublicHandler, type AnalyticsRepository } from '../../server/publicHandler';
 import type { Scope } from '../../src/domain/public';
-import { STAT_OTHER_KEY, type RowPageRequest, type StatisticsSpec } from '../../src/domain/statistics';
+import { STAT_OTHER_KEY, STAT_PAGE_CELLS, type RowPageRequest, type StatisticsSpec } from '../../src/domain/statistics';
 import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
 
 /** S05–S08 맞춤 통계 (synthetic facts only). */
@@ -267,26 +267,31 @@ describe('D23 행 쪽(row paging, 2026-10-12): 그 외로 묶지 않고 쪽 단�
     f({ agency_key: `a1:${i}`, agency_name: `기관${i}`, violation_law: `LAW${k % LAWS}` }))).flat();
   const wideSpec: Partial<StatisticsSpec> = { rows: ['agency'], columns: ['law'], metrics: ['completed_count'] };
 
-  it('첫 쪽: 전체 열·행/열/전체 합계는 그대로, 칸은 첫 쪽 행만 — floor(5000/80)=62', () => {
+  it('첫 쪽: 전체 열·행/열/전체 합계는 그대로, 칸은 첫 쪽 행만 — floor(STAT_PAGE_CELLS 2500/80)=31', () => {
     const r = run(wide, wideSpec, undefined, { cursor: 0 });
     expect(r.truncated).toBeUndefined(); // D22 fold는 쪽 요청에서 절대 돌지 않는다
     expect(r.col_members).toHaveLength(LAWS); // 열은 절대 쪽으로 나누지 않는다
     expect(r.col_totals).toHaveLength(LAWS);
-    expect(r.row_page).toEqual({ offset: 0, limit: 62, total: AGENCIES, has_more: true });
-    expect(r.row_members).toHaveLength(62);
-    // 기본 순서(건수 많은 순)는 그대로 — 동률이 없으므로 agency 0(100건)부터 agency 61(39건)까지
-    expect(r.row_members.map((m) => m.key[0])).toEqual(Array.from({ length: 62 }, (_, i) => `a1:${i}`));
+    expect(r.row_page).toEqual({ offset: 0, limit: 31, total: AGENCIES, has_more: true });
+    expect(r.row_members).toHaveLength(31);
+    // 기본 순서(건수 많은 순)는 그대로 — 동률이 없으므로 agency 0(100건)부터 agency 30(70건)까지
+    expect(r.row_members.map((m) => m.key[0])).toEqual(Array.from({ length: 31 }, (_, i) => `a1:${i}`));
     expect(r.row_totals.find((t) => t.key[0] === 'a1:0')!.values.completed_count.value).toBe(100);
     expect(r.col_totals.reduce((a, t) => a + (t.values.completed_count.value ?? 0), 0)).toBe(wide.length);
     expect(r.grand_totals[0].values.completed_count.value).toBe(wide.length);
   });
 
   it('다음 쪽: 이어지는 행만, 겹치거나 빠지는 행 없이 전체를 덮고 칸 합도 전체와 같다', () => {
-    const p1 = run(wide, wideSpec, undefined, { cursor: 0 });
-    const p2 = run(wide, wideSpec, undefined, { cursor: p1.row_page!.offset + p1.row_page!.limit });
-    expect(p2.row_page).toEqual({ offset: 62, limit: 62, total: AGENCIES, has_more: false });
-    expect(p2.row_members).toHaveLength(38); // 100 - 62
-    const seen = [...p1.row_members, ...p2.row_members].map((m) => m.key[0]);
+    const pages = [run(wide, wideSpec, undefined, { cursor: 0 })];
+    while (pages.at(-1)!.row_page!.has_more) {
+      const last = pages.at(-1)!.row_page!;
+      pages.push(run(wide, wideSpec, undefined, { cursor: last.offset + last.limit }));
+    }
+    const [p1, p2] = pages;
+    expect(p2.row_page).toEqual({ offset: 31, limit: 31, total: AGENCIES, has_more: true });
+    expect(pages.map((p) => p.row_members.length)).toEqual([31, 31, 31, 7]); // 100 = 31×3 + 7
+    expect(pages.at(-1)!.row_page!.has_more).toBe(false);
+    const seen = pages.flatMap((p) => p.row_members).map((m) => m.key[0]);
     expect(new Set(seen).size).toBe(AGENCIES); // 중복 없음
     expect(seen.slice().sort()).toEqual(Array.from({ length: AGENCIES }, (_, i) => `a1:${i}`).sort()); // 빠짐 없음
     // 같은 스냅숏의 모든 쪽은 같은 열 머리·열 합계·전체 합계를 돌려준다
@@ -294,13 +299,13 @@ describe('D23 행 쪽(row paging, 2026-10-12): 그 외로 묶지 않고 쪽 단�
     expect(p2.col_totals).toEqual(p1.col_totals);
     expect(p2.grand_totals).toEqual(p1.grand_totals);
     // 쪽 합 = 전체(칸 값의 합)
-    const sum = [...p1.cells, ...p2.cells].reduce((a, c) => a + (c.values.completed_count.value ?? 0), 0);
+    const sum = pages.flatMap((p) => p.cells).reduce((a, c) => a + (c.values.completed_count.value ?? 0), 0);
     expect(sum).toBe(wide.length);
   });
 
   it('행 수를 넘겨 요청하면 빈 쪽(행 0개)을 돌려준다(오류 아님)', () => {
     const r = run(wide, wideSpec, undefined, { cursor: AGENCIES + 10 });
-    expect(r.row_page).toEqual({ offset: AGENCIES, limit: 62, total: AGENCIES, has_more: false });
+    expect(r.row_page).toEqual({ offset: AGENCIES, limit: 31, total: AGENCIES, has_more: false });
     expect(r.row_members).toHaveLength(0);
     expect(r.cells).toHaveLength(0);
   });
@@ -308,7 +313,7 @@ describe('D23 행 쪽(row paging, 2026-10-12): 그 외로 묶지 않고 쪽 단�
   it('서버 정렬: sort_metric·sort_dir로 전체 행을 다시 정렬한 뒤 쪽을 나눈다(null은 항상 마지막)', () => {
     const asc = run(wide, wideSpec, undefined, { cursor: 0, sortMetric: 'completed_count', sortDir: 'asc' });
     expect(asc.row_members[0].key).toEqual(['a1:99']); // 가장 적은 건수(1건)부터
-    expect(asc.row_members.at(-1)!.key).toEqual(['a1:38']); // 62번째로 적은 건수(62건) = agency 38
+    expect(asc.row_members.at(-1)!.key).toEqual(['a1:69']); // 31번째로 적은 건수(31건) = agency 69
     const desc = run(wide, wideSpec, undefined, { cursor: 0, sortMetric: 'completed_count', sortDir: 'desc' });
     expect(desc.row_members[0].key).toEqual(['a1:0']); // 기본 순서(건수 많은 순)와 같다
   });
@@ -317,10 +322,10 @@ describe('D23 행 쪽(row paging, 2026-10-12): 그 외로 묶지 않고 쪽 단�
     expect(() => run(wide, wideSpec, undefined, { cursor: 0, sortMetric: 'accept_rate' })).toThrow(StatsQueryError);
   });
 
-  it('비교(×2): 칸 예산이 반으로 줄어 쪽 크기도 절반 — floor(5000/(80*2))=31', () => {
+  it('비교(×2): 칸 예산이 반으로 줄어 쪽 크기도 절반 — floor(2500/(80*2))=15', () => {
     const mineFacts = wide.map((x) => ({ ...x, contributor_id: 'u-page' }));
     const r = run(mineFacts, { ...wideSpec, population: 'compare' }, 'u-page', { cursor: 0 });
-    expect(r.row_page).toEqual({ offset: 0, limit: 31, total: AGENCIES, has_more: true });
+    expect(r.row_page).toEqual({ offset: 0, limit: 15, total: AGENCIES, has_more: true });
   });
 
   it('열이 너무 많아 한 행도 담지 못하면(극단) 거절한다 — 열 쪽 나눔은 하지 않고 줄이라고 안내', () => {
@@ -334,7 +339,7 @@ describe('D23 행 쪽(row paging, 2026-10-12): 그 외로 묶지 않고 쪽 단�
     expect(r.row_page!.offset).toBe(0);
     expect(r.row_page!.has_more).toBe(false);
     expect(r.row_page!.total).toBe(r.row_members.length);
-    expect(r.row_page!.limit).toBe(Math.max(1, Math.floor(5000 / r.col_members.length)));
+    expect(r.row_page!.limit).toBe(Math.max(1, Math.floor(STAT_PAGE_CELLS / r.col_members.length)));
     expect(r.truncated).toBeUndefined();
   });
 

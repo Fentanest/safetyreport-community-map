@@ -10,7 +10,7 @@
 import type { Scope } from '../src/domain/public.ts';
 import { COHORT_POLICY_VERSION, LAW_NONE, lawKey } from '../src/domain/public.ts';
 import {
-  STAT_LIMITS, STAT_OTHER_KEY, type DimensionDef, type MetricDef, type RowPageRequest, type StatCandidate, type StatCandidatesPage,
+  STAT_LIMITS, STAT_OTHER_KEY, STAT_PAGE_CELLS, type DimensionDef, type MetricDef, type RowPageRequest, type StatCandidate, type StatCandidatesPage,
   type StatCatalog, type StatCell, type StatisticsResult, type StatisticsSpec, type StatTotal, type StatValue, type StatsFilter,
 } from '../src/domain/statistics.ts';
 import {
@@ -426,7 +426,7 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
         `열이 ${colMembers.length.toLocaleString('ko-KR')}개${mult === 2 ? '(전체와 내 신고 비교라 ×2)' : ''}라 한 행도 한 번에 만들 수 있는 크기` +
         `(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. 열 항목이나 비교 대상을 줄여 주세요.`);
     }
-    const pageSize = Math.max(1, Math.floor(STAT_LIMITS.cells / perRowCost));
+    const pageSize = Math.max(1, Math.floor(STAT_PAGE_CELLS / perRowCost));
     const total = rowMembers.length;
     const offset = clamp(0, total, cursor);
     rowMembers = rowMembers.slice(offset, offset + pageSize);

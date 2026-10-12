@@ -51,6 +51,10 @@ export interface StatisticsSpec {
 
 export const STAT_LIMITS = { rows: 3, columns: 2, metrics: 6, filters: 8, members: 50, cells: 5000, specChars: 6000 } as const;
 
+/** D23 쪽 크기(2026-10-12, Opus): 한 쪽에 담는 칸 수. 느린 회선(Cloudflare 시애틀 경유)에서 첫 쪽을 빨리 보이도록
+ *  표 전체 한도(STAT_LIMITS.cells)의 절반으로 둔다. 한 행이 STAT_LIMITS.cells 를 넘는 경우의 거절 기준은 그대로. */
+export const STAT_PAGE_CELLS = 2500;
+
 /** D22 top-N 자르기(2026-10-12): 날짜가 아닌 행/열 축이 칸 예산을 넘으면, 건수 상위 멤버만 남기고 나머지를 하나의
  *  '그 외' 멤버로 묶는다. 이 멤버의 key/label 모든 자리는 이 상수로 채운다(실제 데이터 값과 절대 겹치지 않음). */
 export const STAT_OTHER_KEY = '__other__';
