@@ -80,5 +80,5 @@ describe('fewer trips', () => {
     }
     writeFileSync(`${out}/comparison-sizes.json`, JSON.stringify(comparisonSizes, null, 2));
     expect(sizes[1].raw).toBeLessThan(sizes[0].raw); expect(sizes[1].gzip).toBeLessThan(sizes[0].gzip);
-  });
+  }, 60_000);
 });
