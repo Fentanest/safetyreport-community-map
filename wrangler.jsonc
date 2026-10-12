@@ -7,6 +7,8 @@
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   "preview_urls": false,
+  // 2단계: 운영 도메인. 같은 이름의 기존 DNS 레코드(GitHub Pages 로 가던 CNAME)를 지운 뒤에만 붙는다.
+  "routes": [{ "pattern": "safemap.worklazy.net", "custom_domain": true }],
   "assets": {
     "directory": "./dist",
     // SPA: 없는 경로는 index.html 로(새로고침·깊은 링크).
