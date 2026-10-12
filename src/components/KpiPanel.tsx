@@ -93,8 +93,8 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
       mine: mine && `내 ${fmtPercent(mine.fine_rate)} (${fmtPp(diff?.fine_rate_pp)})` });
     const d = o.processing_duration;
     hero.push({ id: 'duration', label: '답변까지', value: d?.count ? fmtDays(d.median_days) : '—',
-      sub: d ? `중앙값 · 계산 ${fmtInt(d.count)}건` : '자료 없음',
-      mine: mine && (mine.duration.count ? `내 ${fmtDays(mine.duration.median_days)}` : '내 계산 불가') });
+      sub: d ? `중앙값 · 평균 ${fmtDays(d.mean_days)} · 계산 ${fmtInt(d.count)}건` : '자료 없음',
+      mine: mine && (mine.duration.count ? `내 중앙값 ${fmtDays(mine.duration.median_days)} · 평균 ${fmtDays(mine.duration.mean_days)}` : '내 계산 불가') });
     minor.push({ id: 'warning', label: '계도', value: W == null ? '—' : `${fmtInt(W)}건 · ${fmtPercent(pct(W, C))}`, sub: W == null ? '제공 안 됨' : '' });
     minor.push({ id: 'amount', label: '확인 과태료 금액', value: fmtFineAmount(o.fine_amount), sub: o.fine_amount ? `확인 ${fmtInt(o.fine_amount.confirmed_count)}건` : '제공 안 됨' });
     minor.push({ id: 'rating', label: '평균 별점', value: fmtRating(o.rating), sub: o.rating ? `평가 ${fmtInt(o.rating.count)}건` : '제공 안 됨' });
