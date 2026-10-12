@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-12 — 번호판 정규화(세 레포 공통, 읽을 때만)
+
+- 실데이터 약 6.2만 건 중 238건(미인식·끝 군더더기·설명 문구 붙음·보이지 않는 문자·번호판 아닌 값·자리수·자모 오류)이
+  차량 통계에서 빠지던 문제를 `server/plate.ts`의 `parsePlate`/`maskPlate`가 읽을 때 정규화해 고쳤다. **`vehicle_raw`
+  원문은 바꾸지 않는다** — 이미 저장된 사실에도 즉시 적용되어 차량 통계·랭킹이 바로 개선된다. 응답 계약은 그대로다.
+- 새 공통 함수 `normalizePlate`(서버 `services/plate_normalize.py`·모바일 `plate_normalize.dart`와 같은 규칙: NFKC·
+  공백/제로폭 문자/하이픈 제거 → 지역 접두+본문 패턴 검색 → 경계 규칙으로 군더더기 판정 → 후보 정확히 1개만 인정)을
+  추가하고, 세 레포 공유 벡터(`tests/fixtures/plate_normalize_vectors.json`, 바이트 동일)로 검증한다.
+- `parsePlate`(공개 마스킹 경로)는 기존처럼 일반형 본문(숫자 2~3+한글+숫자4)만 받는다 — 이륜형은 길이가 들쭉날쭉해
+  기존 2/4/6번째 문자 마스킹 위치 규칙이 안전하지 않아(0자리 선행숫자 이륜형은 5자뿐) 이번에는 포함하지 않았다. 실데이터
+  238건 중 이륜 사례는 없었다. 이륜 공개 표시가 필요하면 마스킹 규칙 자체를 모양별로 다시 정의해야 한다(후속 과제).
+- 영향 범위: `vehicleRows`(차량 랭킹)·`vehicle_distinct`(통계)·`vehicleDayDistribution`(A04)·`maskPlate`(개인 차량 목록
+  마스킹) — 모두 `parsePlate`/`maskPlate` 를 그대로 호출하므로 재구현 없이 함께 좋아진다. 배포 필요: `public-analytics`·
+  `my-analytics` Edge 함수(둘 다 `server/plate.ts`를 거치는 `publicHandler`/`screenHandler`/`personalHandler` 경유).
+  `community-ingest`는 원문을 그대로 저장만 해 이 변경과 무관하다.
+- 검증: `npx vitest run` 886 통과·195 건너뜀(신규 52건 포함, 실패 0), `npx tsc -p . --noEmit` 통과, `npx vite build` 통과,
+  `deno check` 세 Edge 함수 모두 통과. git 커밋만 했고 push·배포·버전 변경은 하지 않았다(배포는 별도 승인 필요).
+
 ## 2026-10-12 — 남은 사전 계산 후보 브랜치 통합
 
 - 사용자 지시에 따라 perf/ingest-precompute의 사전 계산 decoder·선택형 SQL·재현 도구와 당시 검증 기록을 통합했다.
