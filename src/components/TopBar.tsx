@@ -2,6 +2,7 @@ import familyMark from '../../design/assets/family-mark.png';
 import { dataMode } from '../data/client';
 import type { ThemeMode } from '../state/filters';
 import Icon from './icons';
+import InstallButton from './InstallButton';
 import type { ReactNode } from 'react';
 
 interface Props {
@@ -49,6 +50,7 @@ export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp
           </span>
         )}
         {account}
+        <InstallButton briefing={briefing} />
         <button
           className="icon-btn theme-btn"
           type="button"

@@ -1,3 +1,8 @@
 # Only Vite fingerprinted assets: HTML and SPA routes retain Workers revalidation defaults.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Install-only service worker (public/sw.js): must always be revalidated so a new deploy's worker (and its
+# app-shell-asset cache cleanup) is picked up promptly instead of being served stale from any CDN/browser cache.
+/sw.js
+  Cache-Control: no-cache
