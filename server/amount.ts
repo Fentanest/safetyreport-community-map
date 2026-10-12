@@ -14,6 +14,7 @@
  * Nothing is estimated from violation type, legal ranges or typical amounts; missing is never 0.
  * Sums are exact integers of won (≤ 100,000,000 per fact, ≤ 100,000 facts per query → < 2^53).
  */
+import type { FineEstimateSummary } from '../src/domain/public.ts';
 import type { PrivateFact } from './aggregate.ts';
 
 export type AmountClass = 'confirmed' | 'undisclosed' | 'unconfirmed' | 'conflict' | 'penalty' | 'combined' | 'none';
@@ -94,4 +95,17 @@ export function fineAmountSummary(done: readonly PrivateFact[], basis: FineAmoun
 export function fineAmountBrief(done: readonly PrivateFact[]): FineAmountBrief {
   const s = fineAmountSummary(done);
   return { fine_count: s.fine_count, confirmed_count: s.confirmed_count, sum_won: s.sum_won, mean_won: s.mean_won };
+}
+
+/** App estimates only; same selected completion cohort and disclosure as answered amounts. */
+export function fineEstimateSummary(done: readonly PrivateFact[]): FineEstimateSummary {
+  let count = 0, sum = 0;
+  for (const fact of done) {
+    const won = fact.fine_estimate_won;
+    if (fact.amount_public === true && fact.amount_stated !== true &&
+        fact.disposition === 'fine' && fact.amount_confirmed_won == null && Number.isSafeInteger(won) && won! >= 1 && won! <= 100000000) {
+      count++; sum += won!;
+    }
+  }
+  return { count, sum_won: count ? sum : null, mean_won: count ? sum / count : null };
 }

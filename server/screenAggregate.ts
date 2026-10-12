@@ -1,6 +1,6 @@
 /** Service-only sufficient statistics. No fact identities, account IDs or raw observations.
  * SQL owns elections, exact counts, quantiles and bounded heatmap rows/cells.
- * This module assembles the unchanged public DTOs and handles other locale sorting/paging.
+ * This module assembles the public DTOs and handles other locale sorting/paging.
  */
 import { basisWindow, growth, mapNodes, monthSpine, previousWindow, todayKst } from './aggregate.ts';
 import { agencyTypeOf } from './agencyType.ts';
@@ -19,6 +19,7 @@ interface Stat {
   places: number; missing: number; answer_missing: number;
   duration: [number, number | null, number | null, number | null, number | null, number | null, number, number, number];
   amount: [number, number | null, number | null, number, number, number, number, number, number];
+  estimate?: [number, number | null];
   rating: [number, number | null]; histogram: number[]; ratings: number[][];
 }
 interface ScreenHeatmap {
@@ -32,6 +33,7 @@ interface ScreenHeatmap {
   total_laws: number;
 }
 export interface ScreenAggregate {
+  estimate_version?: 1;
   encoding: 'screen-aggregate-v1' | 'screen-aggregate-v2' | 'screen-precompute-v1'; stats: Stat[];
   heat?: ScreenHeatmap;
   anchors: [string, string, number, number, string, string | null][];
@@ -49,6 +51,7 @@ const outcomes = (s: Stat) => ({ accepted:s.a,partial:s.p,rejected:s.r,result_kn
 const rating = (s: Stat) => ({ count:s.rating[0],mean:s.rating[0] ? s.rating[1]!/s.rating[0] : null });
 const briefDuration = (s: Stat) => ({ count:s.duration[0],median_days:s.duration[2],mean_days:s.duration[0] ? s.duration[1]!/s.duration[0] : null });
 const briefAmount = (s: Stat) => ({ fine_count:s.f,confirmed_count:s.amount[0],sum_won:s.amount[1],mean_won:s.amount[0] ? s.amount[1]!/s.amount[0] : null });
+const estimate = (s: Stat) => s.estimate === undefined ? undefined : ({ count:s.estimate[0],sum_won:s.estimate[1],mean_won:s.estimate[0] ? s.estimate[1]!/s.estimate[0] : null });
 const duration = (s: Stat,basis: DateBasis) => ({ basis,...briefDuration(s),p90_days:s.duration[3],min_days:s.duration[4],max_days:s.duration[5],
   excluded:{no_report_date:s.duration[6],reversed:s.duration[7],no_answer_date:s.duration[8]} });
 const amount = (s: Stat,basis: DateBasis) => ({ basis,...briefAmount(s),median_won:s.amount[2],zero_count:s.amount[3],unconfirmed_count:s.amount[4],
@@ -94,7 +97,7 @@ export class ScreenAggregates {
     }
   }
   private list(kind: string,side='all',period=0,focus='') { return this.rows.get(JSON.stringify([side,period,kind,focus])) ?? []; }
-  private stat(kind='summary',side='all',period=0,focus='',key='') { return this.keyed.get(JSON.stringify([side,period,kind,focus,key])) ?? empty; }
+  private stat(kind='summary',side='all',period=0,focus='',key='') { return this.keyed.get(JSON.stringify([side,period,kind,focus,key])) ?? (this.data.estimate_version === 1 ? { ...empty, estimate: [0, null] as [number, number | null] } : empty); }
   private common() { return { schema_version:2,dataset_version:this.state.dataset_version,sample:false,scope:this.scope,cohort_policy_version:COHORT_POLICY_VERSION }; }
   private window(fallback=true) {
     const w=basisWindow(this.scope.date_basis,{basisBounds:this.state.basis_bounds,dataMin:this.state.data_min,asOf:this.state.data_max || this.scope.end});
@@ -114,7 +117,7 @@ export class ScreenAggregates {
         delta_percent:null,delta_reason:!covered?null:priorD?null:D?'new':'no_baseline'},
       fine_count:metric(s.f,p.f,0,s.c),point_count:metric(s.places,p.places,0,s.n),
       contributor_count:metric(this.full(0,focus)[3],this.full(1,focus)[3],0,this.full(0,focus)[2]),outcomes:outcomes(s),
-      processing_duration:{...duration(s,basis),answer_date_missing:s.duration[8]},fine_amount:amount(s,basis),rating:rating(s),warning_count:s.w,cohort:diagnostics(s,basis) };
+      processing_duration:{...duration(s,basis),answer_date_missing:s.duration[8]},fine_amount:amount(s,basis),fine_estimate:estimate(s),rating:rating(s),warning_count:s.w,cohort:diagnostics(s,basis) };
   }
   entities(kind: 'agency'|'manager',focus=''): PublicEntity[] {
     const rows=this.list(kind,'all',0,focus).map(s=>({key:s.k,agency_key:s.label[0],manager_key:kind==='manager'?s.label[2]:null,
@@ -266,6 +269,7 @@ function summary(s:Stat) {
     // '내' 계도 값이 운영(화면 집계 SQL) 경로에서만 비어 보이던 원인.
     warning_count:s.w,point_count:s.places,accept_rate:pct(s.a,o.result_known),partial_rate:pct(s.p,o.result_known),
     reject_rate:pct(s.r,o.result_known),fine_rate:pct(s.f,s.c),duration:{count:d.count,mean_days:d.mean_days,median_days:d.median_days,p90_days:d.p90_days},
+    fine_estimate:estimate(s),
     fine_amount:{fine_count:a.fine_count,confirmed_count:a.confirmed_count,sum_won:a.sum_won,mean_won:a.mean_won,median_won:a.median_won,unconfirmed_count:a.unconfirmed_count,undisclosed_count:a.undisclosed_count,partial:a.partial},rating:rating(s)};
 }
 function side(s:Stat,entity=false) {

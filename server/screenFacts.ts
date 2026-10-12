@@ -36,6 +36,7 @@ export const SCREEN_FACT_COLUMNS = [
   'amount_stated',
   'violation_law',
   'rating',
+  'fine_estimate_won',
 ] as const satisfies readonly (keyof PrivateFact)[];
 
 /** Accept the old SQL response during SQL → Edge deployment/rollback. Unknown encodings fail closed. */
@@ -44,9 +45,9 @@ export function decodeScreenFacts(value: unknown): PrivateFact[] | null {
   if (!value || typeof value !== 'object') return null;
   const packet = value as { encoding?: unknown; columns?: unknown; rows?: unknown };
   if (packet.encoding !== 'columns-v1' || !Array.isArray(packet.columns) ||
-    packet.columns.length !== SCREEN_FACT_COLUMNS.length ||
+    ![SCREEN_FACT_COLUMNS.length, SCREEN_FACT_COLUMNS.length - 1].includes(packet.columns.length) ||
     packet.columns.some((key, i) => key !== SCREEN_FACT_COLUMNS[i]) || !Array.isArray(packet.rows) ||
-    packet.rows.some(row => !Array.isArray(row) || row.length !== SCREEN_FACT_COLUMNS.length)) return null;
+    packet.rows.some(row => !Array.isArray(row) || row.length !== (packet.columns as unknown[]).length)) return null;
   // A fixed object shape avoids per-row entry arrays and V8 dictionary-mode objects.
   return packet.rows.map(row => ({
     fact_identity: row[0],
@@ -83,5 +84,6 @@ export function decodeScreenFacts(value: unknown): PrivateFact[] | null {
     amount_stated: row[31],
     violation_law: row[32],
     rating: row[33],
+    ...(row.length > 34 ? { fine_estimate_won: row[34] } : {}),
   }));
 }

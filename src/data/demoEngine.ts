@@ -137,12 +137,12 @@ export function demoFacts(): PrivateFact[] {
   const facts: PrivateFact[] = [];
   // Answered fine amounts use their own generator so the rest of the synthetic set stays unchanged.
   const amountRand = mulberry32(20260928);
-  const amountOf = (disposition: Disposition): Pick<PrivateFact, 'amount_kind' | 'amount_confirmed_won' | 'amount_public' | 'amount_stated'> => {
+  const amountOf = (disposition: Disposition): Pick<PrivateFact, 'amount_kind' | 'amount_confirmed_won' | 'amount_public' | 'amount_stated' | 'fine_estimate_won'> => {
     const r = amountRand();
     if (disposition !== 'fine') return r < 0.04
       ? { amount_kind: 'penalty', amount_confirmed_won: null, amount_public: true, amount_stated: true }
       : { amount_kind: 'unknown', amount_confirmed_won: null, amount_public: true, amount_stated: false };
-    if (r < 0.1) return { amount_kind: 'fine', amount_confirmed_won: null, amount_public: true, amount_stated: false }; // 금액이 안 적힌 답변
+    if (r < 0.1) return { fine_estimate_won: 40000, amount_kind: 'fine', amount_confirmed_won: null, amount_public: true, amount_stated: false }; // 금액이 안 적힌 답변
     if (r < 0.18) return { amount_kind: 'fine', amount_confirmed_won: null, amount_public: false, amount_stated: true }; // 금액 공개에 동의하지 않은 자료
     const won = r < 0.2 ? 0 : [40000, 40000, 50000, 50000, 60000, 80000, 100000][Math.floor(amountRand() * 7)];
     return { amount_kind: 'fine', amount_confirmed_won: won, amount_public: true, amount_stated: true };

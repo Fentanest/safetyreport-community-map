@@ -36,6 +36,22 @@ const post = (body: unknown, token: string | null = jwt(claims), path = '/functi
     headers: { 'content-type': 'application/json', apikey: 'sb_publishable_x', ...(token ? { authorization: `Bearer ${token}` } : {}) } });
 
 describe('community-ingest handler', () => {
+  it('accepts old/new estimate payloads and forwards only validated derived columns', async () => {
+    const estimate = { won: 40000, rule: 'parking', rule_version: '2026-10-11.4' };
+    for (const p of [payload, { ...payload, amount: { ...payload.amount, confirmed_won: null }, fine_estimate: estimate }]) {
+      const { handler, calls } = setup();
+      const res = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', p)])));
+      expect(res.status).toBe(200);
+      const sent = calls.find(c => c.name === 'internal_community_ingest')!.args.p_events as { derived: Record<string,unknown> }[];
+      expect(sent[0].derived.fine_estimate_won).toBe(p.fine_estimate?.won ?? null);
+    }
+    for (const fine_estimate of [null, { ...estimate, won: 0 }, { ...estimate, rule: 'invalid' }, { ...estimate, photo_time: 'private' }]) {
+      const { handler, calls } = setup();
+      const res = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f', 'R1', { ...payload, fine_estimate })])));
+      expect(res.status).toBe(422);
+      expect(calls.some(c => c.name === 'internal_community_ingest')).toBe(false);
+    }
+  });
   it('keeps the private report number out of ACK and structured logs', async () => {
     const { handler, calls, logs } = setup(() => ({ results: [] }));
     const ev = await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f');

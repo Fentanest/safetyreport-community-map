@@ -15,7 +15,10 @@ beforeEach(()=>vi.clearAllMocks());
 describe('refactor: captured original and independent small oracle',()=>{
  it('preserves every response field for both dates, every global sort/direction, page 2 and search/type filtering',async()=>{
   const run=handler();
-  for(const previous of golden.results){const r=await run(request(previous.path));expect(r.status,previous.path).toBe(previous.status);expect(await r.json(),previous.path).toEqual(previous.body);}
+  for(const previous of golden.results){const r=await run(request(previous.path));expect(r.status,previous.path).toBe(previous.status);const body=await r.json();
+   // The historical oracle predates the additive estimate summary. Preserve every original field.
+   if(body.overview){expect(body.overview.fine_estimate).toEqual({count:0,sum_won:null,mean_won:null});delete body.overview.fine_estimate;}
+   expect(body,previous.path).toEqual(previous.body);}
  });
  it('manual oracle: N=7 C=7 K=6 F=5; zero amounts, missing and reversed days have their own denominators',async()=>{
   const r=await handler()(request('dashboard?'+q));const data=await r.json();

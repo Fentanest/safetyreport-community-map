@@ -5,7 +5,7 @@
 // No admin-key fallback, no IP-header trust, no logging of bodies, tokens, ids or payloads.
 
 import {
-  canonicalJson, deriveFact, type EventType, mapStatus, nonFinalRejection, type Observation, sha256Hex, sourceReportKey,
+  FINE_ESTIMATE_RULES, canonicalJson, deriveFact, type EventType, mapStatus, nonFinalRejection, type Observation, sha256Hex, sourceReportKey,
   validateEventType, validateObservationValues,
 } from './observation.ts';
 
@@ -103,7 +103,17 @@ const OBSERVATION_V3_KEYS = [...OBSERVATION_V2_KEYS, 'source_agency_code'] as co
 const OBSERVATION_V4_KEYS = [...OBSERVATION_V3_KEYS, 'rating'] as const;
 
 export function isObservation(p: unknown): p is Observation {
-  if (!isObj(p) || !(exactKeys(p, OBSERVATION_V1_KEYS) || exactKeys(p, OBSERVATION_V2_KEYS) || exactKeys(p, OBSERVATION_V3_KEYS) || exactKeys(p, OBSERVATION_V4_KEYS))) return false;
+  if (!isObj(p)) return false;
+  const hasEstimate = Object.hasOwn(p, 'fine_estimate');
+  if (![OBSERVATION_V1_KEYS, OBSERVATION_V2_KEYS, OBSERVATION_V3_KEYS, OBSERVATION_V4_KEYS]
+    .some(keys => exactKeys(p, hasEstimate ? [...keys, 'fine_estimate'] : keys))) return false;
+  if (hasEstimate) {
+    const e = p.fine_estimate;
+    if (!isObj(e) || !exactKeys(e, ['won', 'rule', 'rule_version']) || !Number.isSafeInteger(e.won) ||
+      (e.won as number) < 1 || (e.won as number) > 100000000 ||
+      !FINE_ESTIMATE_RULES.includes(e.rule as typeof FINE_ESTIMATE_RULES[number]) ||
+      typeof e.rule_version !== 'string' || e.rule_version.length < 1 || [...e.rule_version].length > 40) return false;
+  }
   if (Object.hasOwn(p, 'rating') && !(p.rating === null || (Number.isInteger(p.rating) && (p.rating as number) >= 1 && (p.rating as number) <= 5))) return false;
   // v2: null or 1..60 code points (empty string and non-strings are schema_invalid like any other field)
   if (Object.hasOwn(p, 'violation_law') && !nstr(p.violation_law, 60)) return false;

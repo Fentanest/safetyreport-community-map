@@ -140,3 +140,22 @@ writer 전환·재설치 뒤 첫 비적격 관측도 이벤트 없음이 된다.
   `agency_current_name` = 승계면 현행명, 아니면 원문 기관명(원문 `agency_name` 은 그대로 저장 — 원문·현행 분리);
   `manager_key = "m1:" + sha256(agency_key + "|" + NFC(manager_name))[:24]`(agency_key 기준이므로 같은 기관의 같은 담당자는 개명 전후 한 키로 묶임).
   키 없는 구버전 갱신(v1/v2, payload에 `source_agency_code` 키 없음)은 기관명이 기존 fact와 같으면 저장된 기관코드뿐 아니라 기관 키·현행명·담당자 키도 보존한다(코드 없는 derived의 기관명 해시로 덮으면 승계 기관 통계가 갈라짐 — REVIEW4). 기관명이 다르면 코드 NULL·새 derived 키(새 기관 답변에 옛 코드·옛 키 부착 금지). 키가 있으면(명시적 null 포함) 그대로 쓴다.
+
+## 2026-10-12 선택 확장 · 추정 과태료
+
+기존 protocol/contract 이름을 유지한다. `fine_estimate`는 선택 필드이며 없던 앱도 그대로 수용한다.
+있으면 `{ "won": 40000, "rule": "parking", "rule_version": "2026-10-11.4" }` 형태다.
+`won`은 정수 1..100000000, `rule`은 bus_lane / parking / hydrant / school_zone / ev_charging /
+disabled_parking / fire_lane / waste / overnight_truck, `rule_version`은 문자열 ≤40자다. 그 외 키와 null 객체는 금지한다.
+
+앱의 기존 로컬 통계가 과태료 처분·금액 미상으로 세고 로컬 추정 함수가 값을 돌려줄 때만 키를 넣는다.
+입력은 로컬 통계와 같은 category, entry_value, 신고명, 위반법규, 차량번호, 사진 첫/끝 촬영 시각,
+발생 시각을 쓴다. 사진 시각·발생 시각 등 원본은 보내지 않고 금액·규칙·버전만 보낸다.
+대상이 아니면 키 자체를 생략하여 기존 payload/hash를 유지한다. PARSER_VERSION만 올리고 envelope 이름은 유지한다.
+PC는 pc-parser-6, 모바일은 대응 버전이며 로컬 추정 RULE_VERSION은 2026-10-11.4다.
+
+서버는 추정 금액·규칙·버전을 private fact에 저장하며 규칙으로 재계산하지 않는다.
+확정 금액과 합치지 않고 disposition=fine·확정 금액 없음·amounts_public 동의인 완료 cohort만 별도로 합산한다.
+새 내용에서 키가 사라지면 저장 추정도 NULL로 지워 오래된 추정을 유지하지 않는다.
+앱 업데이트 후 동의·계정 문맥이 유효한 기존 로컬 자료에서 hash가 바뀐 신고만 기존 capture/journal/outbox로
+한 번 재전송한다(규칙 버전별 완료 표시). 초기화 크롤링은 요구하지 않는다. 이 저장소에서 앱은 수정하지 않는다.

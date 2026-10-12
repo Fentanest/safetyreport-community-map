@@ -74,3 +74,7 @@ export const fmtFineAmount = (a: { fine_count: number; confirmed_count: number; 
   if (a.confirmed_count === 0) return '확인된 금액 없음';
   return fmtWon(a.sum_won);
 };
+
+export const FINE_ESTIMATE_HELP = '답변에 금액이 없는 과태료를 법정 최저 기준으로 계산한 값';
+export const fmtFineEstimate = (s: import('../domain/public').FineEstimateSummary | undefined): string =>
+  s === undefined ? '제공 안 됨' : s.count === 0 ? '추정 자료 없음' : `${fmtWon(s.sum_won)} · ${fmtInt(s.count)}건`;

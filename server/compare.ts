@@ -8,7 +8,7 @@ import { durationDistribution, ratingDistribution } from './analyticsDistributio
 import { regionName } from './regions.ts';
 import { COHORT_POLICY_VERSION, type BasisBounds, type Scope } from '../src/domain/public.ts';
 import { durationSummary } from './duration.ts';
-import { fineAmountSummary } from './amount.ts';
+import { fineAmountSummary, fineEstimateSummary } from './amount.ts';
 import type {
   CompareDiff, CompareEntityRow, CompareMonth, CompareRegionRow, CompareSide, CompareSummary,
   MyPoint, PersonalCompare, ViewerState,
@@ -37,6 +37,7 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     duration: (({ count, mean_days, median_days, p90_days }) => ({ count, mean_days, median_days, p90_days }))(durationSummary(done)),
     fine_amount: (({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }) =>
       ({ fine_count, confirmed_count, sum_won, mean_won, median_won, unconfirmed_count, undisclosed_count, partial }))(fineAmountSummary(done)),
+    fine_estimate: fineEstimateSummary(done),
     rating: ratingSummary(done),
   };
 }

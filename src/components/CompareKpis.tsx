@@ -3,7 +3,7 @@ import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
 import type { AuthSnapshot } from '../auth/mapAuth';
-import { acceptRate, fmtDays, fmtDaysDiff, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtRating, fmtShare, fmtWon, fmtWonDiff, partialRate } from './format';
+import { FINE_ESTIMATE_HELP, fmtFineEstimate, acceptRate, fmtDays, fmtDaysDiff, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtRating, fmtShare, fmtWon, fmtWonDiff, partialRate } from './format';
 
 interface Props {
   overview: Overview;
@@ -83,6 +83,10 @@ function rows(o: Overview): Row[] {
       mine: m => fmtFineAmount(m.fine_amount), mineNote: m => amountNote(m.fine_amount),
       diff: x => fmtShare(x.diff.fine_amount_sum_share), diffKind: 'share',
       diffNote: x => x.diff.fine_amount_mean_won_diff == null ? null : `평균 ${fmtWonDiff(x.diff.fine_amount_mean_won_diff)}` },
+    { id: 'estimate', label: '추정 과태료(법정 최저 기준)', basis: FINE_ESTIMATE_HELP,
+      all: fmtFineEstimate(o.fine_estimate), allNote: o.fine_estimate?.count ? `평균 ${fmtWon(o.fine_estimate.mean_won)}` : null,
+      mine: m => fmtFineEstimate(m.fine_estimate), mineNote: m => m.fine_estimate?.count ? `평균 ${fmtWon(m.fine_estimate.mean_won)}` : null,
+      diff: () => '—', diffKind: 'none' },
     { id: 'rating', label: '답변 만족도 별점', basis: '1~5점',
       all: fmtRating(o.rating), allNote: null,
       mine: m => fmtRating(m.rating), mineNote: () => null,

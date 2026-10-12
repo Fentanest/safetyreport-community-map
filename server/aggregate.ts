@@ -7,7 +7,7 @@ import { COHORT_POLICY_VERSION, LAW_NONE, lawKey } from '../src/domain/public.ts
 import { computeSameNames } from '../src/domain/managerNames.ts';
 import { maskPlate, parsePlate } from './plate.ts';
 import { answerDateMissing, durationBrief, durationSummary } from './duration.ts';
-import { fineAmountBrief, fineAmountSummary } from './amount.ts';
+import { fineAmountBrief, fineAmountSummary, fineEstimateSummary } from './amount.ts';
 import { regionMatches, regionName, resolveRegion, type RegionRef } from './regions.ts';
 import { agencyTypeOf } from './agencyType.ts';
 import { distinctPlaces, placeKey, placeRows } from './places.ts';
@@ -45,6 +45,8 @@ export interface PrivateFact {
   amount_confirmed_won?: number | null;
   /** the fact's consent policy publishes answered amounts (private.community_policy_disclosures) */
   amount_public?: boolean;
+  /** App-computed estimate, consent-masked by the private RPC. */
+  fine_estimate_won?: number | null;
   /** the answer stated an amount (existence only) */
   amount_stated?: boolean;
   /** 위반법규 (observation-v2), only when the fact's consent policy publishes it; null/absent = 법규 미상 */
@@ -610,6 +612,7 @@ export function overviewOf({ sel, full, comparisonCovered }: OverviewInput): Ove
     outcomes: result,
     processing_duration: { ...durationSummary(done, basis), answer_date_missing: answerDateMissing(cohort) },
     fine_amount: fineAmountSummary(done, basis),
+    fine_estimate: fineEstimateSummary(done),
     rating: ratingSummary(done),
     warning_count: done.filter(fact => fact.disposition === 'warning').length,
     cohort: sel.diagnostics,

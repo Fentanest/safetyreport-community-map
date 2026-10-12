@@ -198,7 +198,10 @@ export interface FineAmountBrief {
 /** Numeric response satisfaction only. Count is the denominator of mean; no free-text reason. */
 export interface RatingBrief { count: number; mean: number | null }
 
+export interface FineEstimateSummary { count: number; sum_won: number | null; mean_won: number | null }
+
 export interface Overview {
+  fine_estimate?: FineEstimateSummary;
   report_count: CountMetric;
   completed_count: CountMetric;
   accepted_including_partial: RateMetric;

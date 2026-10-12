@@ -3,7 +3,7 @@ import type { CountMetric, DateBasis, Overview } from '../domain/public';
 import { DATE_BASIS_LABEL } from '../domain/public';
 import type { CompareSummary } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
-import { acceptRate, fmtDate, fmtDays, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtRating, partialRate } from './format';
+import { FINE_ESTIMATE_HELP, fmtFineEstimate, acceptRate, fmtDate, fmtDays, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtRating, partialRate } from './format';
 
 /** U02: what the strip describes. The strip itself never moves; only its focus and numbers change. */
 export interface KpiFocus {
@@ -110,6 +110,8 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
       mine: mine && myWarning != null ? `내 ${fmtInt(myWarning)}건 · ${fmtPercent(pct(myWarning, mine.completed_count))}` : null });
     minor.push({ id: 'amount', label: '확인 과태료 금액', value: fmtFineAmount(o.fine_amount), sub: o.fine_amount ? `확인 ${fmtInt(o.fine_amount.confirmed_count)}건` : '제공 안 됨',
       mine: mine && `내 ${fmtFineAmount(mine.fine_amount)}` });
+    minor.push({ id: 'estimate', label: '추정 과태료(법정 최저 기준)', value: fmtFineEstimate(o.fine_estimate), sub: '',
+      mine: mine && `내 ${fmtFineEstimate(mine.fine_estimate)}` });
     minor.push({ id: 'rating', label: '평균 별점', value: fmtRating(o.rating), sub: o.rating ? `평가 ${fmtInt(o.rating.count)}건` : '제공 안 됨',
       mine: mine && `내 ${fmtRating(mine.rating)}` });
     minor.push({ id: 'places', label: '장소', value: `${fmtInt(o.point_count.value)}곳`, sub: '', mine: mine && `내 ${fmtInt(mine.point_count)}곳` });
@@ -169,7 +171,7 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
           <dl className="kpi-minor">
             {minor.map((k) => (
               <div key={k.id} data-kpi={k.id}>
-                <dt>{k.label}</dt>
+                <dt title={k.id === 'estimate' ? FINE_ESTIMATE_HELP : undefined}>{k.label}</dt>
                 <dd>
                   <b className="cm-number">{k.value}</b>
                   {[k.sub, k.delta].filter(Boolean).length > 0 && <small> {[k.sub, k.delta].filter(Boolean).join(' · ')}</small>}

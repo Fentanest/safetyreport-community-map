@@ -9,7 +9,7 @@ import type { Scope } from '../domain/public';
 import type { PersonalCompare } from '../domain/personal';
 import type { MapAuth } from '../auth/mapAuth';
 import { COHORT_POLICY_VERSION } from '../domain/public';
-import { durationDistributionSchema, ratingDistributionSchema, scopeSchema } from './schema';
+import { fineEstimateSchema, durationDistributionSchema, ratingDistributionSchema, scopeSchema } from './schema';
 import { parseRetryAfterHeader, sharedRetryCooldown } from './retryCooldown';
 const cohortDiagnostics = z.strictObject({ date_basis: z.enum(['report_date', 'completed_date']), selected_date_missing: z.number().int().nonnegative(), other_date_missing: z.number().int().nonnegative() });
 
@@ -23,6 +23,7 @@ const won = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const rating = z.strictObject({ count, mean: z.number().min(1).max(5).nullable() }).optional();
 
 const summarySchema = z.strictObject({
+  fine_estimate: fineEstimateSchema.optional(),
   report_count: count, completed_count: count, accepted: count, partial: count, rejected: count,
   result_known: count, result_unknown: count, fine_count: count,
   // 구버전 Edge 응답(필드 없음)은 undefined로 남는다 — 화면은 '내' 값 줄을 생략한다(never 0).
@@ -222,6 +223,8 @@ export function consistentWithPublic(c: PersonalCompare, overview: import('../do
     (overview.outcomes?.result_known ?? null) === c.all.result_known &&
     overview.fine_count.value === c.all.fine_count &&
     overview.point_count.value === c.all.point_count &&
+    (!overview.fine_estimate || (overview.fine_estimate.count === c.all.fine_estimate?.count &&
+      overview.fine_estimate.sum_won === c.all.fine_estimate?.sum_won)) &&
     (!overview.fine_amount || (overview.fine_amount.confirmed_count === c.all.fine_amount.confirmed_count &&
       overview.fine_amount.sum_won === c.all.fine_amount.sum_won));
 }

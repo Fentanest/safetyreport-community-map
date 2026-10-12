@@ -64,6 +64,8 @@ main { width: 100%; max-width: 1760px; margin-inline: auto; }
 .kpi-minor > div { display: inline-flex; gap: 6px; align-items: baseline; }
 .kpi-minor dt { color: var(--muted); }
 .kpi-minor dd { margin: 0; }
+.kpi-minor > [data-kpi="estimate"] { flex-wrap: wrap; max-width: 100%; }
+.kpi-minor > [data-kpi="estimate"] dd { min-width: 0; overflow-wrap: anywhere; }
 .kpi-minor dd b { font-weight: 650; }
 .kpi-minor dd small { color: var(--muted); font-size: 12px; }
 .kpi-minor dd small.mine-col { color: var(--link); }
@@ -162,6 +164,7 @@ body.briefing .more-charts, body.briefing .app-tabs { display: none; }
   .kpi-outcome-values .kpi-value { font-size: 20px; line-height: 26px; }
   .kpi-strip-head { padding: 0 12px; }
   .kpi-minor { padding: 0 12px; gap: 2px 14px; }
+  .kpi-minor > [data-kpi="estimate"] dt { flex-basis: 100%; }
   .kpi-minor-end { margin-left: 0; flex-basis: 100%; }
   .map-card .map-canvas { height: 380px; }
   .analysis-body .chart-host { height: 260px; }

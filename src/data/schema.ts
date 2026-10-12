@@ -39,6 +39,11 @@ export const metaSchema = z.strictObject({
 const cohortPolicy = z.literal(COHORT_POLICY_VERSION);
 const cohortDiagnostics = z.strictObject({ date_basis: basis, selected_date_missing: count, other_date_missing: count });
 
+export const fineEstimateSchema = z.strictObject({
+  count: z.number().int().min(0), sum_won: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER).nullable(),
+  mean_won: z.number().min(1).max(100000000).nullable(),
+});
+
 const countMetric = z.strictObject({
   value: nullableCount, basis, denominator: nullableCount, eligible: count, missing: count,
   previous: nullableCount, delta: z.number().int().nullable(), delta_percent: z.number().nullable(),
@@ -79,7 +84,7 @@ const rating = z.strictObject({ count, mean: z.number().min(1).max(5).nullable()
 export const overviewSchema = z.strictObject({
   report_count: countMetric, completed_count: countMetric, accepted_including_partial: rateMetric,
   fine_count: countMetric, point_count: countMetric, contributor_count: countMetric, outcomes: outcomes.nullable(),
-  processing_duration: durationSummary, fine_amount: fineSummary, rating,
+  processing_duration: durationSummary, fine_amount: fineSummary, fine_estimate: fineEstimateSchema.optional(), rating,
   warning_count: nullableCount.optional(), cohort: cohortDiagnostics.nullable().optional(),
 });
 

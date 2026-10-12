@@ -78,3 +78,11 @@
 - 사용자 명시 요청으로 refactor branch→main fast-forward/push, 운영DB8 migrations·지도Edge5개 확인/갱신·Pages run37170626259 성공.
 - 실제 운영SQL44동등성/metadata10/익명5/CORS3/자산5/실사이트8화면 PASS; 초기단일DO timeout과 재실행을 보존. 운영로그인후UI와RUM은 NOT_RUN.
 - 새 secret/Auth 설정·다른repo 변경 없음. 사용자 지시문 untracked 보존, 원격force/reset/clean없음. [현재 운영 보고](map-performance-release-20261004/REPORT.md).
+
+## 2026-10-12 추정 과태료 (로컬 worktree 전용)
+
+- 사용자 `astra-fine-estimate-server-brief.md`/정본 계약에 따른 구현. base 96ff0d0, `astra/fine-estimate`.
+- 현재 작업자 single writer로 계약·SQL·server·UI·tests·문서 변경. Muse 실행은 호스트 로그 쓰기 제한으로 실패,
+  동시 writer 없음. UI 소유도 현재 작업자로 순차 유지. 모델/variant 확인·독립 브라우저 승인은 BLOCKED.
+- 기존 migration 불변, 신규 nullable 열/함수 migration 2개. 커밋·push·배포·운영 SQL 금지 준수.
+- 실행 증거와 11개 환경 오류, DB/브라우저 미검증, 적용 순서는 [보고서](fine-estimate-20261012/REPORT.md)에 기록.

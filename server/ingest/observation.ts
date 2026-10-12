@@ -41,7 +41,11 @@ export function mapStatus(statusRaw: string | null): Status {
   return (statusRaw !== null && STATUS_MAP[statusRaw]) || 'other';
 }
 
+export const FINE_ESTIMATE_RULES = ["bus_lane", "parking", "hydrant", "school_zone", "ev_charging", "disabled_parking", "fire_lane", "waste", "overnight_truck"] as const;
+export interface FineEstimate { won: number; rule: typeof FINE_ESTIMATE_RULES[number]; rule_version: string }
+
 export interface Observation {
+  fine_estimate?: FineEstimate;
   address: string | null; agency_name: string | null;
   amount: { confirmed_won: number | null; kind: 'fine' | 'penalty' | 'combined' | 'unknown'; penalty_points: number | null };
   /** 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other. 코드표: contracts/report-categories.json. */
@@ -173,6 +177,7 @@ export function regionCode(address: string | null): string | null {
 }
 
 export interface DerivedFact {
+  fine_estimate_won: number | null; fine_estimate_rule: string | null; fine_estimate_rule_version: string | null;
   public_state: 'completed' | 'not_completed'; report_date: string | null; completed_date: string | null;
   category: string; status: Status; disposition: string; amount_kind: string; amount_confirmed_won: number | null;
   penalty_points: number | null; vehicle_raw: string | null; lat: number | null; lng: number | null;
@@ -219,6 +224,9 @@ export async function deriveFact(p: Observation): Promise<DerivedFact> {
     violation_law: p.violation_law ?? null, source_agency_code: p.source_agency_code ?? null,
     agency_registry_version: agencySnap.registryVersion,
     rating: p.rating ?? null,
+    fine_estimate_won: p.fine_estimate?.won ?? null,
+    fine_estimate_rule: p.fine_estimate?.rule ?? null,
+    fine_estimate_rule_version: p.fine_estimate?.rule_version ?? null,
   };
 }
 
