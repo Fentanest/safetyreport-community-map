@@ -86,3 +86,19 @@
   동시 writer 없음. UI 소유도 현재 작업자로 순차 유지. 모델/variant 확인·독립 브라우저 승인은 BLOCKED.
 - 기존 migration 불변, 신규 nullable 열/함수 migration 2개. 커밋·push·배포·운영 SQL 금지 준수.
 - 실행 증거와 11개 환경 오류, DB/브라우저 미검증, 적용 순서는 [보고서](fine-estimate-20261012/REPORT.md)에 기록.
+
+## 2026-10-13 릴리스 재검수 map 2차 수정
+
+- request_mode=implementation / cm-2026-09-24. 사용자 fix2 브리프에 따라 기존 미커밋 1차 수정을 보존한다.
+- 현재 작업자가 `src/pages/StatisticsPage.tsx`, 해당 브라우저 회귀 스크립트와 보고서의 single writer다. 동시 UI writer 없음.
+- Muse는 `opencode models`와 `mcp list`가 홈 로그 파일 접근에서 실패하여 모델/variant 확인·독립 검수 BLOCKED.
+- 커밋·push·버전 변경·운영 적용 없이 재조회 실패 시 기존 그래프 보존을 수정한다.
+  결과 및 재현 증거: [2차 보고서](release-fix2-20261013/REPORT.md).
+
+## 2026-10-13 릴리스 재검수 map 3차 수정
+
+- request_mode=implementation / cm-2026-09-24. 사용자 fix3 브리프의 map 잔존 P2만 수정하며 1·2차 미커밋 변경을 보존한다.
+- 현재 작업자가 StatisticsPage.tsx·브라우저 회귀 스크립트·보고서의 single writer. 동시 UI writer 없음.
+- Muse models/mcp list는 홈 로그 접근 오류로 모델 확인·독립 검수 BLOCKED. 로컬 Chromium 검증은 별도 기록한다.
+- 실행 실패 상태 전환에도 이전 조건의 중단된 그래프 수집을 재개한다. 커밋·push·버전 변경·운영 적용 없음.
+- 결과 및 두 경계 조건의 수정 전/후 증거: [3차 보고서](release-fix3-20261013/REPORT.md).

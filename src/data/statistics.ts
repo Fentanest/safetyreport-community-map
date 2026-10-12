@@ -68,6 +68,7 @@ export async function loadCatalog(signal?: AbortSignal): Promise<StatCatalog> {
 /**
  * D23 row paging (2026-10-12): `page` always opts into the paged contract — `row_cursor` is sent on every request
  * (even the first, cursor 0), so row_members/row_totals/cells cover only that page's rows (columns stay whole).
+ * `version=null` starts a fresh latest query; subsequent pages MUST use the first response dataset_version.
  * `page.sortMetric` (optional) re-sorts the full row list server-side before paging (column-header click); omitted
  * = the default server order (date/natural/count), same as an unpaged request.
  */
@@ -77,14 +78,20 @@ export async function loadStatistics(scope: Scope, spec: StatisticsSpec, version
     const { demoStatistics } = await import('./demoEngine');
     raw = demoStatistics(scope, spec, page);
   } else {
-    const extra: Record<string, string> = { spec: JSON.stringify(spec), consistency: 'latest', row_cursor: String(page.cursor) };
+    const extra: Record<string, string> = { spec: JSON.stringify(spec), row_cursor: String(page.cursor) };
+    if (version === null) extra.consistency = 'latest';
     if (page.sortMetric) { extra.sort_metric = page.sortMetric; extra.sort_dir = page.sortDir ?? 'desc'; }
     const params = scopeParams(scope, version ?? undefined, extra);
-    raw = spec.population === 'all' ? await read('statistics/query', params, signal) : await readPersonal(params, signal);
+    try {
+      raw = spec.population === 'all' ? await read('statistics/query', params, signal) : await readPersonal(params, signal);
+    } catch (e) {
+      if (e instanceof PublicApiError && e.status === 409) throw changed();
+      throw e;
+    }
   }
   const result = statisticsResultSchema.parse(requirePolicy(raw)) as StatisticsResult;
   // the answer must be for exactly this request (a late or mismatched answer is never shown as this one)
-  if (!sameScope(result.scope, scope) || JSON.stringify(result.spec) !== JSON.stringify(spec)) throw changed();
+  if ((version !== null && result.dataset_version !== version) || !sameScope(result.scope, scope) || JSON.stringify(result.spec) !== JSON.stringify(spec)) throw changed();
   // Defensive fallback (deploy skew only): a server that does not yet page rows returns the legacy shape (no
   // row_page) — treat the rows it DID return as one complete page rather than let callers dereference `undefined`.
   return result.row_page ? result

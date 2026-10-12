@@ -1,0 +1,21 @@
+{
+  "head": "7858c13",
+  "vitest": {
+    "passed": 1017,
+    "skipped": 195,
+    "failed": 0,
+    "exit": 0
+  },
+  "tsc_exit": 0,
+  "vite_exit": 0,
+  "deno_exit": 0,
+  "dist_scan": "PASS",
+  "sql_vectors": 52,
+  "sql_fallback_tests": 54,
+  "browser_passed": 3,
+  "browser_unexpected_console_errors": 0,
+  "intentional_http_409": 1,
+  "production": "NOT_RUN",
+  "muse": "BLOCKED: home log EROFS",
+  "commit_push_deploy": "NOT_RUN"
+}

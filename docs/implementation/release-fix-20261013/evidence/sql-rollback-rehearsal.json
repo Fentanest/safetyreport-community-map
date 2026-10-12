@@ -1,0 +1,1 @@
+{"passed":true,"engine":"PostgreSQL WASM; synthetic cache/projection dependencies","verification":"verify.sql full rollback rehearsal","afterRollback":[{"rolled_back":null,"revision":0}]}

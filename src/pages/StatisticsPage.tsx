@@ -9,7 +9,7 @@ import {
   CHART_LABEL, DEFAULT_CHART, PRESETS, RunGate, baseSpec, chartAvailability, filterOf, normalizeRecipe, planChart, readSaved, readSession, saveRecipe, setFilter, writeSession,
   type ChartSettings, type SavedRecipe, type StatsRecipe,
 } from '../state/statistics';
-import { emptyPages, mergePages, missingOffsets, pageCount, type StatsPages } from '../state/statsPaging';
+import { emptyPages, firstPageRequest, mergePages, missingOffsets, pageCount, type StatsPages } from '../state/statsPaging';
 import PivotTable, { type RowSort } from '../components/stats/PivotTable';
 import PivotChart from '../components/stats/PivotChart';
 import ChartTypePicker from '../components/stats/ChartTypePicker';
@@ -30,10 +30,10 @@ type Run = { status: 'idle' } | { status: 'loading'; recipe: StatsRecipe } | { s
 /** D23 (2026-10-12): collecting every row page of the APPLIED result into one merged StatisticsResult, for the
  *  chart view and Excel export (both need the whole table; the table view itself only ever needs one page). */
 type Collect = { status: 'idle' } | { status: 'collecting'; done: number; total: number }
-  | { status: 'ready'; result: StatisticsResult } | { status: 'error'; message: string };
+  | { status: 'ready'; result: StatisticsResult } | { status: 'error'; message: string; changed?: boolean };
 /** D23: a single page fetch (page turn or a server-sort column click) — separate from the big `run`/skeleton
  *  state above so turning a page never blanks the table that is already on screen. */
-type PageTurn = { status: 'idle' } | { status: 'loading' } | { status: 'error'; message: string; offset: number };
+type PageTurn = { status: 'idle' } | { status: 'loading' } | { status: 'error'; message: string; offset: number; changed?: boolean };
 
 const recipeKey = (r: StatsRecipe) => JSON.stringify({ scope: r.scope, spec: r.spec });
 
@@ -94,14 +94,14 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   const [collect, setCollect] = useState<Collect>({ status: 'idle' });
   const [pageTurn, setPageTurn] = useState<PageTurn>({ status: 'idle' });
   const pageTurnAbort = useRef<AbortController | null>(null);
-  const collectCancelled = useRef(false);
+  const collectGeneration = useRef(0);
   // synchronous re-entrancy guard (React StrictMode double-invokes effects in dev before `collect` state has
   // flushed — this ref, not the async `collect` state, is what actually stops a second collection from starting)
   const collecting = useRef(false);
   // a click on 엑셀 다운로드 while the merge is not ready yet starts it and remembers to export once it lands
   const pendingExportRef = useRef(false);
+  // Requested sort survives a suspended run; displayed sort commits with its successful result.
   const sortRef = useRef(sort);
-  sortRef.current = sort;
   // F03: series hidden in the chart legend (stable series keys; presentation only)
   const [hidden, setHidden] = useState<string[]>(restored.current?.hidden ?? []);
   const [includeHidden, setIncludeHidden] = useState(false);
@@ -165,11 +165,20 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   }, []);
   // D23 (2026-10-12): `pageReq` is always page 0 of the CURRENT sort by default (a fresh (re)run of the recipe —
   // handoff/share/restore/retry/button-click); the one exception (column-header sort) passes its own explicit
-  // page 0 + the new sort. Either way this is a brand-new query result: `pages`/`collect` are reset to hold only
-  // what this fetch returns — never a page turn (that is `turnPage` below, which never goes through the gate).
+  // page 0 + the new sort. On success, `pages`/`collect` are replaced together with the applied result;
+  // until then a completed chart stays visible, including when this fetch fails.
+  // This is never a page turn (that is `turnPage` below, which never goes through the gate).
   const execute = useCallback((input: StatsRecipe, pageReq?: RowPageRequest) => {
     const recipe = normalizeRecipe(input);
-    const effectivePageReq: RowPageRequest = pageReq ?? { cursor: 0, sortMetric: sortRef.current.metric, sortDir: sortRef.current.dir };
+    // A new query invalidates any outstanding collector before changing its sort/recipe.
+    collectGeneration.current += 1;
+    collecting.current = false;
+    pendingExportRef.current = false;
+    // Cancel unfinished collection without discarding the chart belonging to the still-applied result.
+    setCollect((previous) => previous.status === 'ready' ? previous : { status: 'idle' });
+    const effectivePageReq = firstPageRequest(recipe.spec, pageReq ?? { cursor: 0, sortMetric: sortRef.current.metric, sortDir: sortRef.current.dir });
+    const nextSort = { metric: effectivePageReq.sortMetric ?? null, dir: effectivePageReq.sortDir ?? 'desc' };
+    sortRef.current = nextSort;
     // D23: a page turn in flight belongs to the OLD applied recipe/sort — cancel it immediately so its late
     // answer can never land on top of whatever THIS call produces (same reasoning as the collection-cancel below).
     pageTurnAbort.current?.abort();
@@ -211,7 +220,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     abort.current = ac;
     runGate.onCancel(my, () => ac.abort()); // client-side cancel of this run; its late answer is ignored below
     setRun({ status: 'loading', recipe });
-    loadStatistics(recipe.scope, recipe.spec, version, effectivePageReq, ac.signal)
+    loadStatistics(recipe.scope, recipe.spec, null, effectivePageReq, ac.signal)
       .then((r) => {
         if (!runGate.isCurrent(my) || !activeRef.current || document.hidden) return;
         runGate.settle(my);
@@ -223,12 +232,13 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         // Stop (at its next await boundary) any collection loop still running for the PREVIOUS recipe/sort — its
         // closure still points at the old `applied`/`pages`, so left alone it would keep fetching stale pages and
         // could overwrite this brand-new cache with them.
-        collectCancelled.current = true;
+        collectGeneration.current += 1;
         collecting.current = false;
         setPages(new Map([[r.row_page!.offset, r]]));
         setCollect(r.row_page && !r.row_page.has_more ? { status: 'ready', result: r } : { status: 'idle' });
         setPageTurn({ status: 'idle' });
         setResult(r);
+        setSort(nextSort);
         setApplied(recipe);
         setRun({ status: 'idle' });
         if (recipe.origin === '공유 링크') { dropShareParam(); onSharedDoneRef.current?.(); }
@@ -242,11 +252,11 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
         if (e instanceof PublicApiError && e.status === 409) changedRef.current?.();
         setRun({ status: 'error', recipe, code, message: e instanceof Error ? e.message : '통계를 만들지 못했습니다.' });
       });
-  }, [version, clearCooldownWait, runGate]);
+  }, [clearCooldownWait, runGate]);
   // D23 취소(그래프/엑셀을 위해 전체 쪽을 모으던 중 벗어남): 진행 중 수집을 멈추고 '대기' 상태로 되돌린다. 이미
   // 받아 캐시에 쌓인 쪽은 버리지 않는다(표로 돌아가면 그대로 다시 쓴다).
   const cancelCollect = useCallback(() => {
-    collectCancelled.current = true;
+    collectGeneration.current += 1;
     collecting.current = false;
     pendingExportRef.current = false;
     setCollect({ status: 'idle' });
@@ -255,44 +265,48 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   // 순차로(한 번에 몰아 보내지 않음) 받아 하나로 합친다. 같은 스냅숏(버전) 고정 — 중간에 바뀌면(409) 멈추고
   // onDatasetChanged로 알린다(기존 버전-변경 처리와 같은 신호).
   const startCollect = useCallback(() => {
-    if (!applied || !result?.row_page || collecting.current) return;
+    if (!applied || !result?.row_page || collecting.current || runRef.current) return;
     const base = result.row_page;
     const already = new Set(pages.keys());
     const want = missingOffsets(base.total, base.limit, already);
-    if (want.length === 0) { setCollect({ status: 'ready', result: mergePages(pages) }); return; }
+    const finish = (completePages: StatsPages) => {
+      try { setCollect({ status: 'ready', result: mergePages(completePages) }); }
+      catch (e) { setCollect({ status: 'error', message: e instanceof Error ? e.message : '전체 자료를 합치지 못했습니다.' }); }
+    };
+    if (want.length === 0) { finish(pages); return; }
     collecting.current = true;
-    collectCancelled.current = false;
+    const generation = ++collectGeneration.current;
     const total = pageCount(base.total, base.limit);
     setCollect({ status: 'collecting', done: total - want.length, total });
     (async () => {
       let acc = pages;
       for (const offset of want) {
-        if (collectCancelled.current) return;
+        if (generation !== collectGeneration.current) return;
         try {
           // eslint-disable-next-line no-await-in-loop -- sequential by design: a slow link must never see every page fired at once
-          const r = await loadStatistics(applied.scope, applied.spec, version, { cursor: offset, sortMetric: sortRef.current.metric, sortDir: sortRef.current.dir });
-          if (collectCancelled.current) return;
+          const r = await loadStatistics(applied.scope, applied.spec, result.dataset_version, { cursor: offset, sortMetric: sort.metric, sortDir: sort.dir });
+          if (generation !== collectGeneration.current) return;
           acc = new Map(acc).set(r.row_page!.offset, r);
           // functional update: a concurrent turnPage() may have added a page this loop's own `acc` snapshot
           // does not know about — merge onto the LATEST state instead of overwriting it with `acc` directly.
           setPages((prev) => new Map(prev).set(r.row_page!.offset, r));
           setCollect({ status: 'collecting', done: total - missingOffsets(base.total, base.limit, new Set(acc.keys())).length, total });
         } catch (e) {
-          if (collectCancelled.current) return;
+          if (generation !== collectGeneration.current) return;
           collecting.current = false;
           if (e instanceof PublicApiError && e.status === 409) changedRef.current?.();
-          setCollect({ status: 'error', message: e instanceof Error ? e.message : '전체 자료를 받지 못했습니다.' });
+          setCollect({ status: 'error', changed: e instanceof PublicApiError && e.status === 409, message: e instanceof Error ? e.message : '전체 자료를 받지 못했습니다.' });
           return;
         }
       }
+      if (generation !== collectGeneration.current) return;
       collecting.current = false;
-      if (collectCancelled.current) return;
-      setCollect({ status: 'ready', result: mergePages(acc) });
+      finish(acc);
       // the pending-export effect (below, same render cycle as every other render) fires once `collect` lands
       // here — never from inside this closure, so it always uses the LATEST chart/sort/hidden settings, not
       // whatever was current when this collection started.
     })();
-  }, [applied, result, pages, version]);
+  }, [applied, result, pages, sort]);
   // D23 쪽 넘김(표의 '이전'/'다음'): 이미 받은 쪽은 즉시 보여주고(캐시), 아니면 그 쪽만 받는다. RunGate/쿨다운
   // 대기 같은 무거운 보호는 의도적으로 쓰지 않는다 — 버튼 자체가 전송 중에는 비활성화되어 겹쳐 누를 수 없다.
   const turnPage = useCallback((offset: number) => {
@@ -306,7 +320,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     const ac = new AbortController();
     pageTurnAbort.current = ac;
     setPageTurn({ status: 'loading' });
-    loadStatistics(applied.scope, applied.spec, version, { cursor: clamped, sortMetric: sort.metric, sortDir: sort.dir }, ac.signal)
+    loadStatistics(applied.scope, applied.spec, result.dataset_version, { cursor: clamped, sortMetric: sort.metric, sortDir: sort.dir }, ac.signal)
       .then((r) => {
         if (ac.signal.aborted) return;
         setPages((prev) => new Map(prev).set(r.row_page!.offset, r));
@@ -316,13 +330,12 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
       .catch((e: unknown) => {
         if (ac.signal.aborted) return;
         if (e instanceof PublicApiError && e.status === 409) changedRef.current?.();
-        setPageTurn({ status: 'error', offset: clamped, message: e instanceof Error ? e.message : '쪽을 가져오지 못했습니다.' });
+        setPageTurn({ status: 'error', offset: clamped, changed: e instanceof PublicApiError && e.status === 409, message: e instanceof Error ? e.message : '쪽을 가져오지 못했습니다.' });
       });
-  }, [applied, result, pages, version, sort]);
+  }, [applied, result, pages, sort]);
   // D23 서버 정렬(표 열 머리 클릭): 전체 행을 그 지표로 다시 정렬한 뒤 0쪽부터 새로 받는다 — RunGate를 그대로
   // 타므로(겹치는 실행 취소·공용 차단기 대기) 일반 조회와 같은 보호를 받는다.
   const changeSort = useCallback((newSort: RowSort) => {
-    setSort(newSort);
     if (applied) execute(applied, { cursor: 0, sortMetric: newSort.metric, sortDir: newSort.dir });
   }, [applied, execute]);
   // unmount cancels the client wait; a remount (React StrictMode, or a page that comes back) resumes the same run.
@@ -368,9 +381,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
     if (!handoff || handoff.id === lastHandoff.current) return;
     lastHandoff.current = handoff.id;
     setDraft(handoff.recipe);
-    setSort({ metric: null, dir: 'desc' });
-    // D23: the sort reset above is passed explicitly (never read back from `sort` state inside execute) — state
-    // updates are async, so `sortRef.current` could still be the OLD sort for one more render at this point.
+    // The handoff starts with the default sort, committed together with its first successful result.
     // Active-guarded via execute: a handoff while hidden/inactive suspends into runRef.
     execute(handoff.recipe, { cursor: 0, sortMetric: null, sortDir: 'desc' });
   }, [handoff, active, execute]);
@@ -420,9 +431,11 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
   // D23 (2026-10-12): the chart view and Excel export both need the whole table, never just the page on screen —
   // they share one "collect every row page" step (startCollect/cancelCollect above). The table itself never waits
   // on this: it only ever needs the one page already in `result`.
+  // A failed replacement clears runRef without changing the applied result/cache or idle collection state.
+  // Observe the run transition too, so cancelled collection resumes from that cache after the failure.
   useEffect(() => {
-    if (view === 'chart' && collect.status === 'idle') startCollect();
-  }, [view, collect.status, startCollect]);
+    if (view === 'chart' && collect.status === 'idle' && run.status !== 'loading') startCollect();
+  }, [view, collect.status, run.status, startCollect]);
   // a click on 엑셀 다운로드 that arrived before the merge was ready (captureExport below) sets this; firing the
   // export HERE (not inside startCollect's own closure) means it always uses the chart/sort/hidden settings that
   // are current the moment the merge actually lands, never whatever was current when collection started.
@@ -768,7 +781,7 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           {!result && running && <div className="skeleton stats-skeleton" role="status" aria-label="통계를 만드는 중" />}
           {result && catalog && view === 'table' && (
             <PivotTable result={result} catalog={catalog} sort={sort} onSort={changeSort} onPick={(row, col) => setPick({ row, col })}
-              onPageOffset={turnPage} pageBusy={pageTurn.status === 'loading'} />
+              onPageOffset={turnPage} pageBusy={running || pageTurn.status === 'loading'} />
           )}
           {/* D23 (2026-10-12): 그래프는 표 한 쪽만으로 그릴 수 없어(전체를 봐야 함) 모든 쪽을 모으는 동안 기다린다 —
               느린 회선에서는 몇 번의 왕복이 걸릴 수 있으므로 진행과 취소를 보인다. */}
@@ -785,14 +798,14 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
           {result && view === 'chart' && collect.status === 'error' && (
             <div className="banner error" role="alert">
               <span className="grow">그래프를 그리기 위한 전체 자료를 받지 못했습니다: {collect.message}</span>
-              <button type="button" className="ghost-btn" onClick={startCollect}>다시 시도</button>
+              <button type="button" className="ghost-btn" onClick={() => collect.changed && applied ? execute(applied) : startCollect()}>{collect.changed ? '통계 다시 만들기' : '다시 시도'}</button>
               <button type="button" className="ghost-btn" onClick={() => setView('table')}>표 보기</button>
             </div>
           )}
           {pageTurn.status === 'error' && (
             <div className="banner warn" role="alert">
               <span className="grow">{pageTurn.message}</span>
-              <button type="button" className="ghost-btn" onClick={() => turnPage(pageTurn.offset)}>다시 시도</button>
+              <button type="button" className="ghost-btn" onClick={() => pageTurn.changed && applied ? execute(applied) : turnPage(pageTurn.offset)}>{pageTurn.changed ? '통계 다시 만들기' : '다시 시도'}</button>
             </div>
           )}
           {result && result.population_count.all === 0 && result.population_count.mine !== null && result.population_count.mine === 0 && <p className="cm-muted">이 조건에 맞는 답변 신고가 없습니다.</p>}

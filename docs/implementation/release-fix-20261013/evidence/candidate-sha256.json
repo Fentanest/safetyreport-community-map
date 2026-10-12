@@ -1,0 +1,11 @@
+{
+  "server/statistics.ts": "d2a4e6f47c7c5a6cb241608419961c3f179084c31619b3ec59ef49c2cfbf217e",
+  "src/data/statistics.ts": "584bddf35e8a27019ba6955507f8f0772fc2506b5082e937a71bd4ba84a26fbe",
+  "src/pages/StatisticsPage.tsx": "2fd97a5cc1a5564ee5229f0c491574f166d176442ca62071ef0d29072f14d60d",
+  "src/state/statsPaging.ts": "7b0a01d987c9c63de76104f29dd89574a5c4efc15247243fe93b215252a47093",
+  "supabase/migrations/202610130100_screen_plate_normalization.sql": "c4b2d62ffaa5cba9d7b5b5032603a113df3c7239978de6ca7844102512f266a1",
+  "tests/product/releaseMapRegression.test.ts": "6f5316eb90860c5d8e58225a4ddf11c0cddc1cdb22643299747ecf139ed73ad1",
+  "tests/product/screenPlateSql.test.ts": "b2947419b17d107a5fdbe5de6300a8ad69cbc5ef996ce7f23f618fabe89a0f22",
+  "tests/sql/verify-screen-plate.mjs": "df1021a2533f93370a6568fc51ab1a41dd655e49540f97c8881315305a1bce9f",
+  "scripts/browser/verify_release_map_20261013.mjs": "d9b8fa5cd03ae12b629c497e53826866cc132d75dc1da5e815a5eae525bc109e"
+}

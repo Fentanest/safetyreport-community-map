@@ -4,7 +4,14 @@
  * knows how to combine what already came back. One cache belongs to exactly one (recipe, sort) pair — a new
  * query or a changed sort starts a fresh, empty cache (a stale page is never reused across either).
  */
-import type { StatisticsResult } from '../domain/statistics';
+import type { RowPageRequest, StatisticsSpec, StatisticsResult } from '../domain/statistics';
+
+/** A new recipe always starts at page zero; a removed sort metric cannot reach the server. */
+export function firstPageRequest(spec: StatisticsSpec, requested: RowPageRequest): RowPageRequest {
+  return requested.sortMetric && spec.metrics.includes(requested.sortMetric)
+    ? { ...requested, cursor: 0 }
+    : { cursor: 0, sortMetric: null, sortDir: 'desc' };
+}
 
 /** one query's fetched pages, keyed by each page's own `row_page.offset` (every page of one query shares the
  *  same server-computed `limit`, so offsets line up: 0, limit, 2×limit, …). */
@@ -40,6 +47,9 @@ export function allPagesCollected(pages: StatsPages): boolean {
 export function mergePages(pages: StatsPages): StatisticsResult {
   const base = pages.get(0);
   if (!base?.row_page) throw new Error('mergePages: no page at offset 0');
+  for (const page of pages.values()) {
+    if (page.dataset_version !== base.dataset_version) throw new Error('자료 버전이 달라졌습니다. 통계를 다시 만들어 주세요.');
+  }
   const missing = missingOffsets(base.row_page.total, base.row_page.limit, new Set(pages.keys()));
   if (missing.length) throw new Error(`mergePages: missing offsets ${missing.join(',')}`);
   const ordered = [...pages.entries()].sort(([a], [b]) => a - b).map(([, r]) => r);

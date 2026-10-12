@@ -266,3 +266,7 @@ screen만 요청 cache mode를 default로 바꾼다. **JSON 응답은 성공·�
 사용자 자료를 HTTP/디스크 캐시에 저장하지 않는다. 같은 URL의 preflight만 재사용된다(기간·panels 등 URL이 달라지면 첫 OPTIONS는 필요).
 Origin allowlist·Bearer·매 요청 자격검사·사용자 횟수 제한은 그대로다. screen 오류 429/5xx의 Retry-After를 본문과 노출 헤더에도 싣는다.
 DB schema/RPC 수정은 없다. 합성 수치·브라우저 검수·배포 파일은 [보고서](implementation/fewer-trips-20261012/REPORT.md)를 따른다.
+
+### 2026-10-13 맞춤 통계 행 페이지 일관성
+
+`statistics/query`의 새 실행/정렬은 첫 쪽만 `consistency=latest`를 사용한다. 후속 표 페이지와 그래프·엑셀 전체 수집은 **첫 응답의 dataset_version**을 `expected_version`으로 보내고 `consistency`는 생략한다. 전체/all·개인/mine·비교/compare 모두 같은 규칙이다. 클라이언트도 응답 버전과 병합할 모든 페이지의 버전을 비교하며, 409일 때 이전 쪽과 섞지 않고 ‘통계 다시 만들기’로 최신 첫 쪽부터 재시작한다. 대시보드의 별도 버전을 후속 쪽에 사용하지 않는다. 새 설정에서 빠진 정렬 지표는 기본 정렬로 초기화한다. 빈 교차표도 유한한 양의 `row_page.limit`을 반환한다. [회귀·배포 인계](implementation/release-fix-20261013/REPORT.md).

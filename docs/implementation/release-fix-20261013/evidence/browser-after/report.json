@@ -1,0 +1,217 @@
+{
+  "browser": "154.0.8037.92",
+  "data": "synthetic facts / real handlers / MOCK Kakao",
+  "checks": [
+    {
+      "name": "P1-collection-pins-version",
+      "pass": true
+    },
+    {
+      "name": "P1-version-change-stops-page-turn",
+      "pass": true
+    },
+    {
+      "name": "P2-removed-sort-metric",
+      "pass": true
+    }
+  ],
+  "requests": [
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "0",
+        "consistency": "latest",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "1",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "2",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "3",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "4",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "5",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "6",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "7",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "8",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "9",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "0",
+        "consistency": "latest",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "expected_version": "e2e-synthetic-1",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "1",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 409
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"fine_rate\",\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "0",
+        "consistency": "latest",
+        "sort_metric": "fine_rate",
+        "sort_dir": "desc"
+      },
+      "status": 200
+    },
+    {
+      "params": {
+        "date_basis": "completed_date",
+        "start": "2025-10-01",
+        "end": "2026-09-30",
+        "category": "all",
+        "spec": "{\"version\":1,\"date_basis\":\"completed_date\",\"population\":\"all\",\"rows\":[\"agency\"],\"columns\":[\"law\"],\"metrics\":[\"completed_count\"],\"filters\":[],\"place_key\":null}",
+        "row_cursor": "0",
+        "consistency": "latest"
+      },
+      "status": 200
+    }
+  ],
+  "errors": [
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ]
+}
