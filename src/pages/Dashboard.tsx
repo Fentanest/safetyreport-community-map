@@ -1,5 +1,5 @@
 import { initialTheme, resolveTheme } from '../lib/theme';
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DATE_BASIS_LABEL, LAW_NONE, type DashboardData, type DateBasis, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
 import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, screenCoordinator, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
 import type { RequestSource } from '../data/refreshController';
@@ -185,8 +185,13 @@ export default function Dashboard() {
   const placeDetail: PlaceDetailState = bundledPlace?.place.key === selection
     ? { status: 'ready', detail: bundledPlace } : requestedPlaceDetail;
 
-  // theme
-  useEffect(() => {
+  // theme — F-theme-sync: must commit the DOM attribute (and therefore the CSS variables every chart reads at
+  // rebuild time) before any descendant's useEChart effect runs. useEffect fires child-before-parent within the
+  // same commit, so a plain effect here would let charts rebuild against the *previous* theme's tokens one toggle
+  // behind (e.g. the 처리기간×처리결과 scatter's '내 신고' ring is stroked in the stale theme's text color, which is
+  // the opposite theme's near-black/near-white — invisible against the now-current background). useLayoutEffect
+  // flushes for the whole tree before any passive effect, so it keeps the attribute (and chart) in sync.
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolveTheme(theme);
     try { localStorage.setItem('cm-theme', theme); } catch { /* ignore */ }
   }, [theme]);
