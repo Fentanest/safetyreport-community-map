@@ -10,7 +10,7 @@
 import type { Scope } from '../src/domain/public.ts';
 import { COHORT_POLICY_VERSION, LAW_NONE, lawKey } from '../src/domain/public.ts';
 import {
-  STAT_LIMITS, type DimensionDef, type MetricDef, type StatCandidate, type StatCandidatesPage, type StatCatalog,
+  STAT_LIMITS, STAT_OTHER_KEY, type DimensionDef, type MetricDef, type StatCandidate, type StatCandidatesPage, type StatCatalog,
   type StatCell, type StatisticsResult, type StatisticsSpec, type StatTotal, type StatValue, type StatsFilter,
 } from '../src/domain/statistics.ts';
 import {
@@ -285,6 +285,29 @@ export interface StatsInput {
   dataWindow?: { min: string | null; max: string | null };
 }
 
+type MemberRow = { key: string[]; label: string[]; n: number };
+const keyOf = (k: readonly string[]) => JSON.stringify(k);
+
+/**
+ * D22 top-N (2026-10-12): keeps the top `shown - 1` members of a non-date axis by their own answered count
+ * (never by the display sort order, which may be natural/label order) and folds the rest into one STAT_OTHER_KEY
+ * member — display order of the KEPT members stays the caller's original order (count/date/natural), the folded
+ * one is appended last. The caller recomputes that member's cell/total values from the folded raw facts (an
+ * "effective key" grouping), never by summing the already-dropped members' own values.
+ */
+function foldTopN(members: readonly MemberRow[], shown: number, dimsLen: number): { list: MemberRow[]; otherKeys: Set<string> } {
+  const keepCount = Math.max(0, shown - 1);
+  const ranked = [...members].sort((a, b) => b.n - a.n || a.label.join('\u0000').localeCompare(b.label.join('\u0000'), 'ko') || (keyOf(a.key) < keyOf(b.key) ? -1 : 1));
+  const keepKeys = new Set(ranked.slice(0, keepCount).map((m) => keyOf(m.key)));
+  const kept = members.filter((m) => keepKeys.has(keyOf(m.key)));
+  const folded = members.filter((m) => !keepKeys.has(keyOf(m.key)));
+  const otherLabel = `그 외 ${folded.length.toLocaleString('ko-KR')}개`;
+  const other: MemberRow = { key: Array.from({ length: dimsLen }, () => STAT_OTHER_KEY), label: Array.from({ length: dimsLen }, () => otherLabel),
+    n: folded.reduce((a, m) => a + m.n, 0) };
+  return { list: [...kept, other], otherKeys: new Set(folded.map((m) => keyOf(m.key))) };
+}
+const clamp = (lo: number, hi: number, v: number) => Math.max(lo, Math.min(hi, v));
+
 export function sides(input: StatsInput) {
   const { facts, spec } = input;
   if (input.scope.date_basis !== undefined && input.scope.date_basis !== spec.date_basis) {
@@ -359,13 +382,57 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
     }
     return [...map.values()].sort(order);
   };
-  const rowMembers = spec.rows.length ? collect(rowDims) : [{ key: [], label: [], n: 0 }];
-  const colMembers = spec.columns.length ? collect(colDims) : [{ key: [], label: [], n: 0 }];
-  const cellsBudget = rowMembers.length * colMembers.length * (spec.population === 'compare' ? 2 : 1);
-  if (cellsBudget > STAT_LIMITS.cells) {
-    throw new StatsQueryError('RESULT_TOO_LARGE',
-      `표가 ${cellsBudget.toLocaleString('ko-KR')}칸이 되어 한 번에 만들 수 있는 크기(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. 비교 대상을 고르거나, 기간 또는 행·열 항목을 줄여 주세요.`);
+  let rowMembers = spec.rows.length ? collect(rowDims) : [{ key: [], label: [], n: 0 }];
+  let colMembers = spec.columns.length ? collect(colDims) : [{ key: [], label: [], n: 0 }];
+  const mult = spec.population === 'compare' ? 2 : 1;
+  const originalBudget = rowMembers.length * colMembers.length * mult;
+  const tooLarge = (): never => { throw new StatsQueryError('RESULT_TOO_LARGE',
+    `표가 ${originalBudget.toLocaleString('ko-KR')}칸이 되어 한 번에 만들 수 있는 크기(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. ` +
+    '날짜 항목(월·주 등)은 기간 전체를 보여주기 위해 자동으로 줄이지 않으므로, 기간을 줄여 주세요.'); };
+  // D22 top-N (2026-10-12): a non-date row/column axis beyond the budget keeps its top members by answered count
+  // and folds the rest into one '그 외' member (never cut: a calendar spine axis, or members an explicit filter
+  // already picked — those axes are already ≤ `members` large). Only an all-date-axes overflow still errors.
+  const rowIsDateAxis = dateAxes.some((a) => a.role === 'row');
+  const colIsDateAxis = dateAxes.some((a) => a.role === 'column');
+  const rowTrimmable = spec.rows.length > 0 && !rowIsDateAxis;
+  const colTrimmable = spec.columns.length > 0 && !colIsDateAxis;
+  let rowOtherKeys: Set<string> | null = null, colOtherKeys: Set<string> | null = null;
+  const truncated: NonNullable<StatisticsResult['truncated']> = [];
+  if (originalBudget > STAT_LIMITS.cells) {
+    if (!rowTrimmable && !colTrimmable) tooLarge();
+    const fullR = rowMembers.length, fullC = colMembers.length;
+    let shownR = fullR, shownC = fullC;
+    if (rowTrimmable && colTrimmable) {
+      // 두 축 모두 비날짜면 큰 쪽부터 줄인다 (작은 쪽은 먼저 손대지 않는다)
+      const rowBigger = fullR >= fullC;
+      const bigFull = rowBigger ? fullR : fullC, smallFull = rowBigger ? fullC : fullR;
+      let shownBig = clamp(1, bigFull, Math.floor(STAT_LIMITS.cells / (smallFull * mult)));
+      let shownSmall = smallFull;
+      if (shownBig * smallFull * mult > STAT_LIMITS.cells) { shownSmall = clamp(1, smallFull, Math.floor(STAT_LIMITS.cells / mult)); shownBig = 1; }
+      if (rowBigger) { shownR = shownBig; shownC = shownSmall; } else { shownC = shownBig; shownR = shownSmall; }
+    } else if (rowTrimmable) {
+      shownR = clamp(1, fullR, Math.floor(STAT_LIMITS.cells / (fullC * mult)));
+      if (shownR * fullC * mult > STAT_LIMITS.cells) tooLarge(); // the (protected) column axis alone is already too large
+    } else {
+      shownC = clamp(1, fullC, Math.floor(STAT_LIMITS.cells / (fullR * mult)));
+      if (fullR * shownC * mult > STAT_LIMITS.cells) tooLarge(); // the (protected) row axis alone is already too large
+    }
+    if (shownR < fullR) {
+      const t = foldTopN(rowMembers, shownR, rowDims.length);
+      rowMembers = t.list; rowOtherKeys = t.otherKeys;
+      truncated.push({ role: 'row', dimensions: spec.rows, total_members: fullR, shown_members: rowMembers.length - 1, other_count: t.otherKeys.size });
+    }
+    if (shownC < fullC) {
+      const t = foldTopN(colMembers, shownC, colDims.length);
+      colMembers = t.list; colOtherKeys = t.otherKeys;
+      truncated.push({ role: 'column', dimensions: spec.columns, total_members: fullC, shown_members: colMembers.length - 1, other_count: t.otherKeys.size });
+    }
+    if (rowMembers.length * colMembers.length * mult > STAT_LIMITS.cells) tooLarge(); // defensive: unreachable given the sizing above
   }
+  const otherRowKey = rowDims.length ? keyOf(Array.from({ length: rowDims.length }, () => STAT_OTHER_KEY)) : null;
+  const otherColKey = colDims.length ? keyOf(Array.from({ length: colDims.length }, () => STAT_OTHER_KEY)) : null;
+  const rowKeyEff = (raw: string) => (rowOtherKeys?.has(raw) ? otherRowKey! : raw);
+  const colKeyEff = (raw: string) => (colOtherKeys?.has(raw) ? otherColKey! : raw);
   const compute = (facts: readonly PrivateFact[]) =>
     Object.fromEntries(spec.metrics.map((id) => [id, METRIC.get(id)!.compute(facts)])) as Record<string, StatValue>;
 
@@ -376,7 +443,7 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
     const groups = new Map<string, PrivateFact[]>();
     const byRow = new Map<string, PrivateFact[]>(), byCol = new Map<string, PrivateFact[]>();
     for (const f of facts) {
-      const r = JSON.stringify(tuple(f, rowDims).map((x) => x.key)), c = JSON.stringify(tuple(f, colDims).map((x) => x.key));
+      const r = rowKeyEff(JSON.stringify(tuple(f, rowDims).map((x) => x.key))), c = colKeyEff(JSON.stringify(tuple(f, colDims).map((x) => x.key)));
       (groups.get(`${r}\u0000${c}`) ?? groups.set(`${r}\u0000${c}`, []).get(`${r}\u0000${c}`)!).push(f);
       (byRow.get(r) ?? byRow.set(r, []).get(r)!).push(f);
       (byCol.get(c) ?? byCol.set(c, []).get(c)!).push(f);
@@ -443,6 +510,7 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
     date_axes: dateAxes,
     cohort_policy_version: COHORT_POLICY_VERSION,
     filter_members: filterMembers,
+    ...(truncated.length ? { truncated } : {}),
     complete: true,
   };
 }

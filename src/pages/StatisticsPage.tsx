@@ -585,6 +585,16 @@ export default function StatisticsPage({ active, handoff, fallbackScope, version
               <span className="grow">비교 대상 {result.filter_members.filter((m) => m.status === 'unconfirmed').length}개는 이 기간에 확인할 수 없어 결과에서 뺐습니다.</span>
             </div>
           )}
+          {/* D22 (2026-10-12): a non-date row/column axis was cut to the budget — top members by answered count
+              shown, the rest folded into one '그 외' member (recomputed from its own raw facts, visually set apart
+              in the table below). The date axis and any explicitly filtered members are never cut. */}
+          {result && result.truncated && result.truncated.length > 0 && (
+            <div className="banner info" role="note">
+              <span className="grow">
+                {result.truncated.map((t) => `${t.dimensions.map(dimLabel).join(' · ')} ${t.total_members.toLocaleString('ko-KR')}개 중 건수 상위 ${t.shown_members.toLocaleString('ko-KR')}개만 표시하고 나머지 ${t.other_count.toLocaleString('ko-KR')}개는 '그 외'로 묶었습니다.`).join(' ')}
+              </span>
+            </div>
+          )}
           {run.status === 'error' && (
             <div className={`banner ${result ? 'warn' : 'error'}`} role="alert">
               <span className="grow">{run.message}{result ? ' · 아래는 이전 조건의 결과입니다.' : ''}</span>

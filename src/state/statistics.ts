@@ -3,7 +3,7 @@
  * recommendation / compatibility, and per-viewer persistence. Pure functions, unit-tested.
  */
 import type { Scope } from '../domain/public';
-import type { MetricDef, StatCatalog, StatisticsResult, StatisticsSpec, StatsFilter } from '../domain/statistics';
+import { STAT_OTHER_KEY, type MetricDef, type StatCatalog, type StatisticsResult, type StatisticsSpec, type StatsFilter } from '../domain/statistics';
 
 export type ChartType = 'bar' | 'hbar' | 'line' | 'stack' | 'stack100' | 'heatmap' | 'scatter' | 'summary';
 export const CHART_LABEL: Record<ChartType | 'auto', string> = {
@@ -290,21 +290,26 @@ export function cellIndex(result: StatisticsResult) {
 }
 
 export type RowSort = { metric: string | null; dir: 'asc' | 'desc' };
+/** D22: the folded '그 외' member of a top-N cut (server/statistics.ts foldTopN) — kept out of the metric sort
+ *  below and always shown last, like a totals row, never mixed in among the real members it summarises. */
+const isOtherMember = (key: readonly string[]) => key[0] === STAT_OTHER_KEY;
 /** the table's row order (display + Excel): by the first population's row total (with columns) or row value;
  *  unknown values last in both directions; otherwise the server order */
 export function sortedRowMembers(result: StatisticsResult, sort: RowSort): StatisticsResult['row_members'] {
-  const list = [...result.row_members];
-  if (!sort.metric) return list;
+  const other = result.row_members.filter((m) => isOtherMember(m.key));
+  const list = result.row_members.filter((m) => !isOtherMember(m.key));
+  if (!sort.metric) return [...list, ...other];
   const side = result.spec.population === 'mine' ? 'mine' : 'all';
   const cell = cellIndex(result);
   const rowTotal = new Map(result.row_totals.map((t) => [`${t.side}|${tupleKey(t.key)}`, t]));
   const val = (key: string[]) => (result.spec.columns.length ? rowTotal.get(`${side}|${tupleKey(key)}`)?.values[sort.metric!]?.value
     : cell(side, key, [])?.values[sort.metric!]?.value) ?? null;
-  return list.sort((a, b) => {
+  list.sort((a, b) => {
     const va = val(a.key), vb = val(b.key);
     if (va === null && vb === null) return 0;
     if (va === null) return 1;
     if (vb === null) return -1;
     return sort.dir === 'desc' ? vb - va : va - vb;
   });
+  return [...list, ...other];
 }

@@ -192,7 +192,14 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 - `GET /public-analytics/statistics/query?<scope>&spec=<JSON>` — `spec = {version:1, date_basis, population:'all', rows[≤3], columns[≤2], metrics[1..6], filters[≤8]{dimension, members[≤50]}, place_key}`.
   registry id만 받는다(SQL·열 이름·알 수 없는 필드는 400). 같은 차원 안은 OR, 차원끼리는 AND. 담당자는 `기관키|담당자키` 복합 키.
   응답: 행·열 member(key+label), 조합이 있는 cell만(없는 조합은 0이 아니라 '해당 없음'), 행/열/전체 합계(원 신고에서 재계산), population_count, excluded.no_report_date,
-  filter_members(선택 대상의 현재 조건 건수, 0 포함), complete:true. 행×열이 5,000칸을 넘으면 잘라 내지 않고 **422 RESULT_TOO_LARGE**(좁히는 방법 안내).
+  filter_members(선택 대상의 현재 조건 건수, 0 포함), complete:true.
+  D22 top-N 자르기(2026-10-12): 행×열이 5,000칸을 넘으면 더 이상 거절하지 않는다. 날짜가 아닌 행/열 축(기관·담당자·법규·지역 등)은 건수 상위
+  멤버만 남기고 나머지를 `key`가 전부 `"__other__"`(`STAT_OTHER_KEY`)인 하나의 '그 외' 멤버로 묶는다(`label`도 전부 `그 외 N개`). 그 멤버의
+  cell·행/열 합계는 접힌 멤버들의 원 신고를 다시 집계한 값(건수 합·비율/평균은 합친 모집단으로 재계산 — 평균의 평균 아님)이고, 자르지 않은 쪽 축의
+  합계와 전체 합계는 자르기 전과 같다. 날짜 축(연·분기·월·일 spine)과 필터로 이미 명시적으로 고른 멤버는 절대 자르지 않는다(필터는 이미 해당 축의
+  후보를 줄여 놓았다). 응답에 선택 필드 `truncated?: [{role:'row'|'column', dimensions: string[], total_members, shown_members, other_count}]`
+  가 추가된다(구 클라이언트 호환, 없으면 자르지 않았다는 뜻). 두 축이 모두 날짜뿐이라 그래도 5,000칸을 넘는 극단적인 경우에만 여전히
+  **422 RESULT_TOO_LARGE**(문구: "기간을 줄여 주세요").
 - `GET /public-analytics/statistics/candidates?<scope>&kind=agency|manager|sido|sgg|law|place&q=&cursor=&limit[≤100]&filters=&basis=&place_key=&keys=` —
   현재 조건의 전체 후보에서 서버 검색·페이지. 자기 차원의 선택은 후보를 좁히지 않는다(facet). `selected`는 이미 고른 key의 현재 건수(0 포함).
 - `GET /my-analytics/statistics?<scope>&spec=` — population `mine`/`compare` 전용. 내 신고는 JWT로 확인한 사용자만(요청의 사용자 id는 받지 않음). 공개 API에 mine/compare를 보내면 400.
