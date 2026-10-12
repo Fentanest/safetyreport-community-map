@@ -27,6 +27,8 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
     result_known: o.result_known, result_unknown: o.result_unknown,
     fine_count: fine, point_count: points,
+    // S01과 같은 정의(server/aggregate.ts overviewOf): 완료일 cohort의 계도(경고) 처분 건수.
+    warning_count: done.filter(fact => fact.disposition === 'warning').length,
     // 수용률 = 수용 ÷ 결과 확인(D), 일부수용률 = 일부 수용 ÷ D — 따로 보여 준다(2026-09-27 사용자 결정).
     accept_rate: pct(o.accepted, o.result_known),
     partial_rate: pct(o.partial, o.result_known),
@@ -68,6 +70,7 @@ function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): C
     report_count: reported.length, completed_count: done.length, result_known: o.result_known,
     accepted: o.accepted, partial: o.partial, rejected: o.rejected,
     fine_count: done.filter(fact => fact.disposition === 'fine').length,
+    warning_count: done.filter(fact => fact.disposition === 'warning').length,
     accept_rate: pct(o.accepted, o.result_known),
     partial_rate: pct(o.partial, o.result_known),
     duration_count: dur.count,

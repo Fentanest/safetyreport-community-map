@@ -31,7 +31,10 @@ try {
       const result = await host.evaluate((el) => {
         const chart = el.__chart, option = chart.getOption();
         const luminance = (color) => {
-          const rgb = color.startsWith('#') ? color.slice(1).match(/../g).map((v) => parseInt(v, 16)) : color.match(/[\d.]+/g).slice(0, 3).map(Number);
+          // --surface is authored as the 3-digit shorthand (#fff) in src/styles/app.css; expand it first
+          // or slice(1).match(/../g) silently drops the third channel and reports white as near-black.
+          const hex = color.startsWith('#') && color.length === 4 ? `#${[...color.slice(1)].map((c) => c + c).join('')}` : color;
+          const rgb = hex.startsWith('#') ? hex.slice(1).match(/../g).map((v) => parseInt(v, 16)) : hex.match(/[\d.]+/g).slice(0, 3).map(Number);
           return rgb.map((v) => v / 255).map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
             .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
         };

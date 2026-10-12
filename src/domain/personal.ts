@@ -22,6 +22,9 @@ export interface CompareSummary {
   result_known: number;
   result_unknown: number;
   fine_count: number;
+  /** 계도(경고) 처분 건수, completion basis — server/domain/public.ts Overview.warning_count(S01)와 같은 정의.
+   *  undefined = older server (hidden, never shown as 0; src/data/personal.ts summarySchema도 선택 필드). */
+  warning_count?: number;
   /** distinct located report points (신고일 기준) */
   point_count: number;
   /** 수용률 A/D×100, null when D = 0 */
@@ -83,6 +86,8 @@ export interface CompareSide {
   partial: number;
   rejected: number;
   fine_count: number;
+  /** 계도(경고) 처분 건수, completion basis — CompareSummary.warning_count와 같은 정의. undefined = older server. */
+  warning_count?: number;
   accept_rate: number | null;
   partial_rate: number | null;
   duration_count: number;

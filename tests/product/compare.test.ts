@@ -145,6 +145,54 @@ describe('수용률 and 일부수용률 are separate', () => {
   });
 });
 
+describe('계도(경고) 건수 — 공개 Overview.warning_count(S01)와 같은 정의, CompareSummary.warning_count (2026-10-12)', () => {
+  it('all/mine summary warning_count matches the public overview (disposition=warning, completion cohort) for every scope', () => {
+    for (const [, scope] of scopes) {
+      const pub = dash(facts, scope);
+      const cmp = aggregateCompare(facts, scope, DEMO_VIEWER_ID, opts);
+      expect(cmp.all.warning_count).toBe(pub.overview.warning_count);
+      const onlyMine = dash(facts.filter(f => f.contributor_id === DEMO_VIEWER_ID), scope).overview;
+      expect(cmp.mine.warning_count).toBe(onlyMine.warning_count);
+    }
+  });
+
+  it('region rows (sido + unknown level) partition the same total as the summary', () => {
+    const cmp = aggregateCompare(facts, DEMO_SCOPE, DEMO_VIEWER_ID, opts);
+    const top = cmp.regions.filter(r => r.level !== 'sgg');
+    expect(top.reduce((n, r) => n + (r.all.warning_count ?? 0), 0)).toBe(cmp.all.warning_count);
+    expect(top.reduce((n, r) => n + (r.mine.warning_count ?? 0), 0)).toBe(cmp.mine.warning_count);
+  });
+
+  it('agency rows report their own disposition=warning count, keyed the same as server/aggregate.ts entityRowsOnly', () => {
+    const cmp = aggregateCompare(facts, DEMO_SCOPE, DEMO_VIEWER_ID, opts);
+    const scoped = selectScope(facts, DEMO_SCOPE);
+    expect(cmp.agencies.length).toBeGreaterThan(0);
+    for (const row of cmp.agencies) {
+      const rowsAll = scoped.done.filter(f => (f.agency_key || 'agency-unknown') === row.key);
+      expect(row.all.warning_count).toBe(rowsAll.filter(f => f.disposition === 'warning').length);
+      const rowsMine = scoped.done.filter(f => f.contributor_id === DEMO_VIEWER_ID && (f.agency_key || 'agency-unknown') === row.key);
+      expect(row.mine.warning_count).toBe(rowsMine.filter(f => f.disposition === 'warning').length);
+    }
+  });
+
+  it('accepts an older Edge response without warning_count (undefined, never shown as 0 — schema backward compat)', () => {
+    const cmp: Record<string, any> = JSON.parse(JSON.stringify(aggregateCompare(facts, DEMO_SCOPE, DEMO_VIEWER_ID, opts)));
+    expect(cmp.all.warning_count).toBeGreaterThanOrEqual(0);
+    delete cmp.all.warning_count;
+    delete cmp.mine.warning_count;
+    for (const row of [...cmp.regions, ...cmp.agencies, ...cmp.managers]) {
+      delete row.all.warning_count;
+      delete row.mine.warning_count;
+    }
+    const parsed = personalCompareSchema.safeParse(cmp);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.all.warning_count).toBeUndefined();
+      expect(parsed.data.mine.warning_count).toBeUndefined();
+    }
+  });
+});
+
 describe('rows share the public keys and totals', () => {
   const cmp = aggregateCompare(facts, DEMO_SCOPE, DEMO_VIEWER_ID, opts);
   const pub = dash(facts, DEMO_SCOPE);

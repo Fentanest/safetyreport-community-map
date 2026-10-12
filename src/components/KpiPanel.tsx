@@ -95,10 +95,12 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
     hero.push({ id: 'duration', label: '답변까지', value: d?.count ? fmtDays(d.median_days) : '—',
       sub: d ? `중앙값 · 평균 ${fmtDays(d.mean_days)} · 계산 ${fmtInt(d.count)}건` : '자료 없음',
       mine: mine && (mine.duration.count ? `내 중앙값 ${fmtDays(mine.duration.median_days)} · 평균 ${fmtDays(mine.duration.mean_days)}` : '내 계산 불가') });
-    // U-mine-minor: 계도(warning)는 개인 비교 응답(CompareSummary)에 warning_count가 아직 없어 '내 신고' 값을 병기할 수
-    // 없다(서버·계약 추가 필요 — docs/personal-comparison.md 및 보고 참고). 과태료 금액·평균 별점은 mine.fine_amount/
-    // mine.rating이 이미 있으므로 다른 줄과 같은 'mine-col' 표기로 병기한다.
-    minor.push({ id: 'warning', label: '계도', value: W == null ? '—' : `${fmtInt(W)}건 · ${fmtPercent(pct(W, C))}`, sub: W == null ? '제공 안 됨' : '' });
+    // U-mine-minor: 계도(warning)는 server/compare.ts summarize()가 공개 Overview.warning_count(S01)와 같은 정의로
+    // CompareSummary.warning_count를 채운다. 과태료 금액·평균 별점과 같은 'mine-col' 표기로 병기한다.
+    // 구버전 Edge(필드 없음)는 mine.warning_count가 undefined이므로 내 값 줄을 생략한다(화면이 깨지지 않게).
+    const myWarning = mine?.warning_count;
+    minor.push({ id: 'warning', label: '계도', value: W == null ? '—' : `${fmtInt(W)}건 · ${fmtPercent(pct(W, C))}`, sub: W == null ? '제공 안 됨' : '',
+      mine: mine && myWarning != null ? `내 ${fmtInt(myWarning)}건 · ${fmtPercent(pct(myWarning, mine.completed_count))}` : null });
     minor.push({ id: 'amount', label: '확인 과태료 금액', value: fmtFineAmount(o.fine_amount), sub: o.fine_amount ? `확인 ${fmtInt(o.fine_amount.confirmed_count)}건` : '제공 안 됨',
       mine: mine && `내 ${fmtFineAmount(mine.fine_amount)}` });
     minor.push({ id: 'rating', label: '평균 별점', value: fmtRating(o.rating), sub: o.rating ? `평가 ${fmtInt(o.rating.count)}건` : '제공 안 됨',

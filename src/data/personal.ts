@@ -24,7 +24,9 @@ const rating = z.strictObject({ count, mean: z.number().min(1).max(5).nullable()
 
 const summarySchema = z.strictObject({
   report_count: count, completed_count: count, accepted: count, partial: count, rejected: count,
-  result_known: count, result_unknown: count, fine_count: count, point_count: count,
+  result_known: count, result_unknown: count, fine_count: count,
+  // 구버전 Edge 응답(필드 없음)은 undefined로 남는다 — 화면은 '내' 값 줄을 생략한다(never 0).
+  warning_count: count.optional(), point_count: count,
   accept_rate: rate, partial_rate: rate, reject_rate: rate, fine_rate: rate,
   duration: z.strictObject({ count, mean_days: days, median_days: days, p90_days: days }),
   fine_amount: z.strictObject({
@@ -35,7 +37,7 @@ const summarySchema = z.strictObject({
 });
 const sideSchema = z.strictObject({
   report_count: count, completed_count: count, result_known: count, accepted: count, partial: count,
-  rejected: count, fine_count: count, accept_rate: rate, partial_rate: rate,
+  rejected: count, fine_count: count, warning_count: count.optional(), accept_rate: rate, partial_rate: rate,
   duration_count: count, duration_median_days: days,
   fine_amount_confirmed_count: count, fine_amount_sum_won: won.nullable(),
   rating,

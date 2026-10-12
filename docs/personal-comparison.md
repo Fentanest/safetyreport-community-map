@@ -47,7 +47,8 @@ KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가�
 - 클라이언트는 공개 dashboard의 `dataset_version`을 `expected_version`으로 보내고, 응답의 version·scope가 화면과 다르면 버린다.
 
 ### 3.2 응답(`src/domain/personal.ts`, strict zod `src/data/personal.ts`)
-`viewer{contributor, has_public_facts}`(id 없음), `all`/`mine` 요약(2026-09-27부터 `duration`, `fine_amount` 포함), `diff`,
+`viewer{contributor, has_public_facts}`(id 없음), `all`/`mine` 요약(2026-09-27부터 `duration`, `fine_amount` 포함,
+2026-10-12부터 `warning_count` 포함 — 선택 필드, 구버전 Edge는 없으면 KPI 하단 줄의 내 값을 생략), `diff`,
 `regions[]`(공개 행과 같은 시도·시군구·미확인 단계, 공식 코드 — docs/region-boundaries.md),
 `agencies[]`/`managers[]`(내가 처리결과를 받은 곳만, 최대 50), `monthly[]`, `my_points[]`(내 신고가 있는 정확 지점, `shared`).
 
@@ -60,6 +61,7 @@ KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가�
 | 일부수용률 | P/D ×100 (수용률과 따로 표시, 2026-09-27 사용자 결정) | 〃 | **내 − 전체 (%p)** |
 | 불수용 비율 | J/D ×100 | 〃 | 내 − 전체 (%p) |
 | 과태료 처분 | 건수, 비율=과태료/C | 〃 | 건수는 내 비중, 비율은 %p |
+| 계도(경고) 처분 | 건수, 비율=계도/C — 공개 Overview.warning_count(S01, `server/aggregate.ts`)와 같은 정의(`disposition='warning'`, 완료일 cohort) | 〃 | 건수는 내 비중, 비율은 %p (`CompareSummary.warning_count`, 2026-10-12부터, 선택 필드 — 구버전 Edge는 없으면 내 값 줄을 생략) |
 | 답변까지 걸린 기간 | 중앙값(평균·p90·n), 답변일 cohort | 〃 | **내 − 전체 (일)** |
 | 답변에 적힌 과태료 금액 | 확인된 금액 합계(평균·확인 건수), 동의 정책이 공개를 허용한 금액만 | 〃 | 합계는 내 비중(%), 평균은 내 − 전체(원) |
 | 신고 지점 | 신고일 기준 고유 정확 지점 | 〃 | 내 비중 (%) |

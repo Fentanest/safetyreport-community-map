@@ -17,12 +17,18 @@ vi.mock('../../src/lib/charts', () => ({
 import { HeatmapCard } from '../../src/components/AnalyticsCharts';
 
 const themes = {
-  light: { text: '#0f172a', surface: '#ffffff' },
+  // light.surface is the real 3-digit shorthand (src/styles/app.css --surface: #fff), not #ffffff —
+  // this is the exact token a real browser returns from getComputedStyle, and the case the luminance() helper above must expand.
+  light: { text: '#0f172a', surface: '#fff' },
   dark: { text: '#f3f3f4', surface: '#131314' },
 };
 // Independent WCAG calculation against both hex tokens and ECharts' rendered rgb fills.
+// 2026-10-12: the real --surface token is the 3-digit shorthand (#fff, src/styles/app.css) — expand it
+// first, or slice(1).match(/../g) silently drops the third channel and reports white as near-black
+// (a real browser check then failed a genuinely ≥15:1 pair as 4.46:1 — see scripts/browser/verify_map_ux_final.mjs).
 function luminance(color: string) {
-  const rgb = color.startsWith('#') ? color.slice(1).match(/../g)!.map((v) => parseInt(v, 16)) : color.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+  const hex = color.startsWith('#') && color.length === 4 ? `#${[...color.slice(1)].map((c) => c + c).join('')}` : color;
+  const rgb = hex.startsWith('#') ? hex.slice(1).match(/../g)!.map((v) => parseInt(v, 16)) : hex.match(/[\d.]+/g)!.slice(0, 3).map(Number);
   return rgb.map((v) => v / 255).map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
     .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
 }
