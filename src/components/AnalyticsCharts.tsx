@@ -9,7 +9,8 @@ import type {
 import { LAW_NONE } from '../domain/public';
 import type { CompareEntityRow } from '../domain/personal';
 import { baseOption, useEChart } from '../lib/charts';
-import { METRIC_RAMP, METRIC_NULL } from '../lib/kakao';
+import { METRIC_RAMP, METRIC_NULL, rampColor } from '../lib/kakao';
+import { heatmapLabel } from '../lib/heatmapLabels';
 import { LAW_UNKNOWN_LABEL } from '../state/filters';
 import { fmtDays, fmtInt, fmtPercent } from './format';
 import Icon from './icons';
@@ -108,7 +109,7 @@ const lawText = (key: string) => (key === LAW_NONE ? LAW_UNKNOWN_LABEL : key);
 
 export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; theme: string;
   onPick: (row: LawHeatmap['rows'][number], lawKey: string) => void }) {
-  const [metric, setMetric] = useState<CellMetric>('accept');
+  const [metric, setMetric] = useState<CellMetric>('fine');
   const [expanded, setExpanded] = useState(false);
   const [table, setTable] = useState(false);
   // narrow screens get fewer law columns so every cell stays readable (the rest via 더 넓게 보기 / 표)
@@ -121,14 +122,16 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
   const rowName = (r: LawHeatmap['rows'][number]) => (data?.row_kind === 'manager' ? `${r.manager_name ?? '이름 없음'} · ${r.agency_name}` : r.agency_name);
   const { hostRef, error } = useEChart((t) => {
     if (!data || rows.length === 0 || laws.length === 0) return null;
-    const points: Array<{ value: [number, number, number | string, number]; label: { color: string } }> = [];
+    const points: Array<{ value: [number, number, number | string, number]; label: ReturnType<typeof heatmapLabel>;
+      emphasis: { itemStyle: { color: string } } }> = [];
     rows.forEach((r, y) => laws.forEach((l, x) => {
       const c = cellOf.get(`${r.key}\u0000${l.law_key}`);
       if (!c) return; // no reports for this pair: empty cell, never 0%
       const v = value(c);
-      // readable label on the ramp: dark text on light cells, white on dark ones
-      points.push({ value: [x, y, v === null ? '-' : Math.round(v * 10) / 10, c.completed_count],
-        label: { color: v !== null && v >= 70 ? '#ffffff' : '#0b1220' } });
+      const rounded = v === null ? null : Math.round(v * 10) / 10;
+      points.push({ value: [x, y, rounded ?? '-', c.completed_count],
+        label: heatmapLabel(rounded, t),
+        emphasis: { itemStyle: { color: rampColor(rounded === null ? null : rounded / 100) } } });
     }));
     const left = narrow ? 104 : 150;
     return { ...baseOption(t), grid: { left, right: 12, top: 8, bottom: 86 },
@@ -143,8 +146,8 @@ export function HeatmapCard({ data, theme, onPick }: { data: LawHeatmap | null; 
         axisLabel: { color: t.muted, rotate: 35, fontSize: 10, interval: 0 }, axisLine: { lineStyle: { color: t.grid } } },
       yAxis: { type: 'category', data: rows.map((r) => { const n = rowName(r); const max = narrow ? 9 : 16; return n.length > max ? `${n.slice(0, max - 1)}…` : n; }), inverse: true,
         axisLabel: { color: t.text, fontSize: 11 }, axisLine: { lineStyle: { color: t.grid } } },
-      visualMap: { min: 0, max: 100, show: false, inRange: { color: [...METRIC_RAMP] }, outOfRange: { color: METRIC_NULL } },
-      series: [{ type: 'heatmap', data: points, label: { show: true, fontSize: 10, color: t.text,
+      visualMap: { dimension: 2, min: 0, max: 100, show: false, inRange: { color: [...METRIC_RAMP] }, outOfRange: { color: METRIC_NULL } },
+      series: [{ type: 'heatmap', data: points, label: { show: true, fontSize: 12, color: t.text,
         formatter: (p: { data: { value: [number, number, number | string, number] } }) => (p.data.value[2] === '-' ? '–' : `${p.data.value[2]}%`) },
         itemStyle: { borderColor: t.surface, borderWidth: 2 }, emphasis: { itemStyle: { borderColor: t.text, borderWidth: 1 } } }],
     };
