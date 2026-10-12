@@ -4,6 +4,7 @@ import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
 import type { AuthSnapshot } from '../auth/mapAuth';
+import { dotParts } from './dotParts';
 import { FINE_ESTIMATE_HELP, fmtFineEstimate, acceptRate, fmtDays, fmtDaysDiff, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtRating, fmtShare, fmtWon, fmtWonDiff, partialRate } from './format';
 
 interface Props {
@@ -139,10 +140,10 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
           {rows(overview).map((row) => (
             <tr key={row.id}>
               <th scope="row"><span>{row.label}</span><small>{row.basis}</small></th>
-              <td className="num"><b className="cm-number">{row.all}</b>{row.allNote && <small>{row.allNote}</small>}</td>
+              <td className="num"><b className="cm-number">{dotParts(row.all)}</b>{row.allNote && <small>{dotParts(row.allNote)}</small>}</td>
               {showMine && (
                 <td className="num mine-col" aria-busy={personal.status === 'loading' || personal.status === 'waiting'}>
-                  {data ? (<><b className="cm-number">{row.mine(data.mine)}</b>{row.mineNote(data.mine) && <small>{row.mineNote(data.mine)}</small>}</>)
+                  {data ? (<><b className="cm-number">{dotParts(row.mine(data.mine))}</b>{row.mineNote(data.mine) && <small>{dotParts(row.mineNote(data.mine))}</small>}</>)
                     : personal.status === 'loading' || personal.status === 'waiting'
                       ? <span className="mine-skel" role="status" aria-label="내 신고 불러오는 중" />
                       : <span className="cm-muted">—</span>}
@@ -150,9 +151,9 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
               )}
               {showMine && (
                 <td className="num diff-col">
-                  {data ? (<><b className="cm-number">{row.diff(data)}</b>
+                  {data ? (<><b className="cm-number">{dotParts(row.diff(data))}</b>
                     {(row.shareValue?.(data) ?? 0) > 100 && <small>최근 업로드 반영 차이</small>}
-                    {row.diffNote?.(data) && <small>{row.diffNote(data)}</small>}
+                    {row.diffNote?.(data) && <small>{dotParts(row.diffNote(data))}</small>}
                     <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나와 전체의 차이' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나와 전체의 차이') : ''}</small></>)
                     : <span className="cm-muted">—</span>}
                 </td>

@@ -59,9 +59,11 @@ describe('KPI 하단 줄 — 계도에 내 신고 병기 (2026-10-12)', () => {
     const html = renderToStaticMarkup(<KpiPanel {...baseProps} personal={personal} />);
     const row = warningRow(html);
     expect(row).toContain('>계도<');
-    expect(row).toContain('3건 · 50.0%'); // 전체
+    // dotParts (components/dotParts.tsx, U-letter-break fix): each " · "-joined piece is its own unbreakable
+    // <span class="nb">, joined by a plain breakable space — same words, new markup.
+    expect(row).toContain('<span class="nb">3건</span> <span class="nb">· 50.0%</span>'); // 전체
     expect(row).toContain('class="mine-col"');
-    expect(row).toContain('내 1건 · 50.0%'); // 내 신고
+    expect(row).toContain('<span class="nb">· 내 1건</span> <span class="nb">· 50.0%</span>'); // 내 신고
   });
 
   it('비교 꺼짐·장소 포커스에서는 내 값을 보이지 않는다(기존 규칙)', () => {
@@ -77,7 +79,7 @@ describe('KPI 하단 줄 — 계도에 내 신고 병기 (2026-10-12)', () => {
     const personal = { status: 'ready' as const, data: older, error: null, retry: () => {} };
     const html = renderToStaticMarkup(<KpiPanel {...baseProps} personal={personal} />);
     const row = warningRow(html);
-    expect(row).toContain('3건 · 50.0%'); // 전체 값은 그대로
+    expect(row).toContain('<span class="nb">3건</span> <span class="nb">· 50.0%</span>'); // 전체 값은 그대로
     expect(row).not.toContain('mine-col'); // 내 값 줄만 생략, 0건으로 표시되지 않음
     expect(row).not.toContain('0건');
   });

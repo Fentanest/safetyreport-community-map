@@ -34,7 +34,13 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); margin: 0; font-size: 14px; line-height: 1.55; letter-spacing: -0.01em; }
+/* Korean wraps by word (어절), never mid-syllable or mid-token (number+단위, "내 …" 묶음 등): the UA default for
+ * Hangul allows a break between any two characters, same as CJK ideographs, unless word-break: keep-all turns
+ * that off. This is the base rule for the whole app; overflow-wrap: anywhere stays reserved for real exceptions
+ * (long URLs/addresses/ids with no break opportunity at all) because on a flex/grid item it also counts as a
+ * possible break when the browser works out that item's minimum width — applied broadly it was literally why
+ * KPI labels were shrinking down to one character per line. See .cm-panel below. */
+body { font-family: var(--font); background: var(--bg); color: var(--text); margin: 0; font-size: 14px; line-height: 1.55; letter-spacing: -0.01em; word-break: keep-all; }
 button, input, select { font: inherit; color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; }
 .skip-link { position: absolute; left: 12px; top: -48px; z-index: 200; background: var(--brand); color: #fff; padding: 10px 16px; border-radius: 8px; transition: top 160ms; text-decoration: none; }
@@ -75,6 +81,9 @@ main { flex: 1; min-width: 0; padding: var(--page-pad); display: flex; flex-dire
 
 .cm-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); min-width: 0; }
 .cm-number { font-variant-numeric: tabular-nums; letter-spacing: -0.025em; }
+/* an atomic "A · B · C" unit (see components/dotParts.tsx): never breaks inside itself; the line may only break
+ * between units (the normal breakable space dotParts renders between spans). */
+.nb { white-space: nowrap; }
 .cm-muted { color: var(--muted); }
 .cm-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 12px; line-height: 18px; color: var(--text-secondary); background: var(--raised); border: 1px solid var(--border); white-space: nowrap; }
 button.cm-chip { cursor: pointer; }
@@ -297,8 +306,9 @@ body.briefing .briefing-bar { display: flex; }
   /* map top controls wrap instead of clipping: back + apply stay tappable at 390px. */
   .map-top { flex-wrap: wrap; }
   .map-back { max-width: calc(100vw - 220px); }
-  /* compare toggle + view switch take their own full-width rows under the command bar. */
-  .command .view-controls { order: 90; flex-basis: 100%; flex-direction: column; align-items: stretch; border-top: 1px solid var(--border); padding-top: 10px; }
+  /* compare toggle: CommandBar.tsx now renders it in .command-extra, a real row of its own (not a .command-row
+   * flex child riding the scroll) — see layout.css .command-extra for both the base and this width's styling. */
+  .command .view-controls { flex-direction: column; align-items: stretch; }
   /* tall card headers stack instead of squeezing on narrow screens. */
   .map-card .panel-top, .region-list .panel-top, .entities .panel-top, .laws .panel-top, .manager-compare .panel-top { flex-direction: column; align-items: stretch; gap: 8px; }
   .laws .panel-top .cm-chip { align-self: flex-start; }
@@ -319,6 +329,21 @@ body.briefing .briefing-bar { display: flex; }
   .mapmode-grid .map-card .map-canvas { min-height: 420px; }
   .stats-expand { right: 12px; bottom: 12px; }
 }
+/* U-topbar-balance: under ~480px the brand name ("커뮤니티 신고 지도") no longer fits the ID chip + theme + briefing
+ * buttons on one line even after the gap fix above, and shrinking those further would start hurting their own
+ * tap targets/legibility. Word-wrap the name onto two short lines (word-break: keep-all, app.css base rule, keeps
+ * it at the "커뮤니티 / 신고 지도" word boundary) instead of truncating it — the bar grows to fit, and every sticky
+ * offset that reads --topbar-h grows with it, so nothing below it overlaps. */
+@media (max-width: 480px) {
+  :root { --topbar-h: 72px; }
+  .topbar { height: auto; min-height: var(--topbar-h); padding-block: 6px; gap: 6px; }
+  .brand { gap: 8px; }
+  .brand > span { overflow: visible; }
+  .brand b { font-size: 14px; line-height: 1.25; white-space: normal; overflow: visible; text-overflow: clip; }
+  /* give the now two-line name enough room for its longest single word ("커뮤니티") without touching the icon
+   * buttons' 44px minimum tap target: the ID chip (a secondary, already-truncating identifier) gives up some. */
+  .topbar .account-login, .topbar .account-name { max-width: 92px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; scroll-behavior: auto !important; }
 }
@@ -326,7 +351,9 @@ body.briefing .briefing-bar { display: flex; }
 /* ── Personal comparison layout (docs/personal-comparison.md §5–§6). Muse visual implementation. ── */
 /* Cap panel width so nothing pushes the page into horizontal scroll. */
 .compare-layout, .mapmode, .statsmode, .stats-grid, .mapmode-grid { max-width: 100%; }
-.cm-panel { overflow-wrap: anywhere; }
+/* break-word (not anywhere): a safety net for the rare token that still doesn't fit after word-break: keep-all,
+ * without telling flex/grid items they may shrink to one character wide (anywhere does; break-word doesn't). */
+.cm-panel { overflow-wrap: break-word; }
 
 /* both: two columns. 1920 → 1.35/1 (right min 420); 2560 → 1.5/1; 1440 → 1.2/1 (right min 380). */
 .compare-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(420px, 1fr); gap: 16px; align-items: start; }

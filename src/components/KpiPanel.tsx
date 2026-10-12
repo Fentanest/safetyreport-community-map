@@ -4,6 +4,7 @@ import type { CountMetric, DateBasis, Overview } from '../domain/public';
 import { DATE_BASIS_LABEL } from '../domain/public';
 import type { CompareSummary } from '../domain/personal';
 import type { PersonalState } from '../hooks/usePersonal';
+import { dotParts } from './dotParts';
 import { FINE_ESTIMATE_HELP, fmtFineEstimate, acceptRate, fmtDate, fmtDays, fmtFineAmount, fmtInt, fmtPercent, fmtPp, fmtRating, partialRate } from './format';
 
 /** U02: what the strip describes. The strip itself never moves; only its focus and numbers change. */
@@ -123,8 +124,8 @@ export default function KpiPanel({ snapshotAt, focus, overview: o, state, staleF
     <div key={k.id} className="kpi-hero-cell" data-kpi={k.id}>
       <span className="kpi-label">{k.label}</span>
       <b className="kpi-value cm-number">{k.value}</b>
-      <small className="kpi-basis">{[k.sub, k.delta].filter(Boolean).join(' · ')}</small>
-      {showMine && k.mine != null && <small className="kpi-mine mine-col">{k.mine}</small>}
+      <small className="kpi-basis">{dotParts([k.sub, k.delta].filter(Boolean).join(' · '))}</small>
+      {showMine && k.mine != null && <small className="kpi-mine mine-col">{dotParts(k.mine)}</small>}
     </div>
   );
   return (
@@ -160,8 +161,8 @@ export default function KpiPanel({ snapshotAt, focus, overview: o, state, staleF
                   <div key={r.id} data-kpi={r.id}>
                     <span className="kpi-outcome-name"><i className="dot" style={{ background: r.color }} />{r.label}</span>
                     <b className="kpi-value cm-number">{fmtPercent(r.rate)}</b>
-                    <small className="kpi-basis">{fmtInt(r.count)}건</small>
-                    {showMine && r.mine != null && <small className="kpi-mine mine-col">{r.mine}</small>}
+                    <small className="kpi-basis"><span className="nb">{fmtInt(r.count)}건</span></small>
+                    {showMine && r.mine != null && <small className="kpi-mine mine-col">{dotParts(r.mine)}</small>}
                   </div>
                 ))}
               </div>
@@ -178,9 +179,9 @@ export default function KpiPanel({ snapshotAt, focus, overview: o, state, staleF
               <div key={k.id} data-kpi={k.id}>
                 <dt title={k.id === 'estimate' ? FINE_ESTIMATE_HELP : undefined}>{k.label}</dt>
                 <dd>
-                  <b className="cm-number">{k.value}</b>
-                  {[k.sub, k.delta].filter(Boolean).length > 0 && <small> {[k.sub, k.delta].filter(Boolean).join(' · ')}</small>}
-                  {showMine && k.mine != null && <small className="mine-col"> · {k.mine}</small>}
+                  <b className="cm-number">{dotParts(k.value)}</b>
+                  {[k.sub, k.delta].filter(Boolean).length > 0 && <small> {dotParts([k.sub, k.delta].filter(Boolean).join(' · '))}</small>}
+                  {showMine && k.mine != null && <small className="mine-col"> {dotParts(k.mine, { lead: true })}</small>}
                 </dd>
               </div>
             ))}

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Category, DateBasis } from '../domain/public';
 import {
   CATEGORY_LABEL, DATE_BASIS_LABEL, PRESETS, presetRange, todayKst,
@@ -44,9 +44,72 @@ interface Props {
 // 5분류(observation-v5, 2026-10-11): traffic·parking·safety·living·other.
 const CATS: Category[] = ['all', 'traffic', 'parking', 'safety', 'living', 'other'];
 
+/** U-command-scroll: on a phone the condition row (date · 분류 탭 · 지역 · 필터 · 공유/초기화) is wider than the
+ *  screen and scrolls horizontally with no page scroll of its own — but nothing used to say so, so "주정차" could
+ *  look like the last tab. This tracks the row's scroll position and reports which edge still has more content,
+ *  so the caller can show a fade + nudge arrow only where one is actually useful (never both, never neither). */
+function useEdgeScroll<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [state, setState] = useState({ left: false, right: false, overflowing: false });
+  const measure = () => {
+    const el = ref.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setState({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft < max - 4,
+      overflowing: max > 4,
+    });
+  };
+  useEffect(() => {
+    measure();
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    const onScroll = () => measure();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => { ro.disconnect(); el.removeEventListener('scroll', onScroll); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const nudge = (dir: -1 | 1) => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.6), behavior: 'smooth' });
+  };
+  return { ref, ...state, measure, nudge };
+}
+
 export default function CommandBar(p: Props) {
   const [open, setOpen] = useState(false);
   const today = todayKst();
+  const scroller = useEdgeScroll<HTMLDivElement>();
+  const selectedCatRef = useRef<HTMLButtonElement>(null);
+  const [hinted, setHinted] = useState(false);
+
+  // selecting a category/region/filter can push the row wider (e.g. the 필터 count badge appearing) — re-measure,
+  // and always keep the *selected* 분류 tab in view rather than leaving it scrolled off (U-command-scroll §3).
+  useEffect(() => {
+    scroller.measure();
+    selectedCatRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: hinted ? 'smooth' : 'auto' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.category, p.filterCount, p.region]);
+
+  // a one-time, subtle "there's more" peek the first time this row turns out to overflow — not on every mount of
+  // every screen, and never for someone who already knows how (prefers-reduced-motion skips it outright).
+  useEffect(() => {
+    if (hinted || !scroller.overflowing) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setHinted(true); return; }
+    const el = scroller.ref.current;
+    if (!el) return;
+    setHinted(true);
+    const start = el.scrollLeft;
+    el.scrollBy({ left: 22, behavior: 'smooth' });
+    const t = window.setTimeout(() => el.scrollTo({ left: start, behavior: 'smooth' }), 420);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scroller.overflowing]);
+
   // the period button names a quick period when the applied dates are exactly one (최근 12개월 …)
   const preset = PRESETS.find((pr) => {
     const r = presetRange(pr.days, p.minDate, p.maxDate, today);
@@ -54,55 +117,70 @@ export default function CommandBar(p: Props) {
   });
   return (
     <section className="cm-panel command" aria-label="조건" data-sticky-top="">
-      <div className="command-row">
-        <button
-          className="control date-control"
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          title="날짜 기준과 기간을 고릅니다"
-        >
-          <span aria-hidden="true"><Icon name="calendar" /></span>
-          <b className="date-control-label">{preset ? preset.label : `${DATE_BASIS_LABEL[p.basis]} 기준`}</b>
-          <span className="date-control-range">{fmtDate(p.appliedStart)} — {fmtDate(p.appliedEnd)}</span>
-          {preset && <span className="sr-only"> ({DATE_BASIS_LABEL[p.basis]} 기준)</span>}
-          <span aria-hidden="true"><Icon name="chevron" /></span>
-        </button>
-        <div className="segments" role="group" aria-label="신고 분류">
-          {CATS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={p.category === c ? 'selected' : ''}
-              aria-pressed={p.category === c}
-              aria-label={c === 'all' ? '전체 분류' : undefined}
-              onClick={() => p.onCategory(c)}
-            >
-              {CATEGORY_LABEL[c]}
-            </button>
-          ))}
-        </div>
-        {p.onRegion && (
-          <span className={`top-region${p.region ? ' filter-on' : ''}`} aria-label="지역 (바로 적용)">
-            <RegionSelect value={p.region ?? null} onChange={p.onRegion} counts={p.regionCounts} />
-          </span>
+      <div className={`command-scroller${scroller.left ? ' can-left' : ''}${scroller.right ? ' can-right' : ''}`}>
+        {scroller.left && (
+          <button type="button" className="command-nudge left" aria-hidden="true" tabIndex={-1} onClick={() => scroller.nudge(-1)}>
+            <Icon name="arrow" size={16} />
+          </button>
         )}
-        <button className={`control control-extra${p.filterCount > 0 ? ' filter-active' : ''}`} type="button" onClick={p.onOpenDrawer}
-          aria-label={p.filterCount > 0 ? `세부 필터, 적용 중 ${p.filterCount}개` : '세부 필터'}>
-          <Icon name="filter" />
-          <span>필터</span>
-          {p.filterCount > 0 && <span className="filter-count" aria-hidden="true">{p.filterCount}</span>}
-        </button>
-        {p.extra}
-        <div className="command-end">
-          <button className="icon-btn" type="button" onClick={p.onShare} aria-label="링크 복사" title="지금 보는 화면의 링크 복사">
-            <Icon name="share" />
+        <div className="command-row" ref={scroller.ref}>
+          <button
+            className="control date-control"
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            title="날짜 기준과 기간을 고릅니다"
+          >
+            <span aria-hidden="true"><Icon name="calendar" /></span>
+            <b className="date-control-label">{preset ? preset.label : `${DATE_BASIS_LABEL[p.basis]} 기준`}</b>
+            <span className="date-control-range">{fmtDate(p.appliedStart)} — {fmtDate(p.appliedEnd)}</span>
+            {preset && <span className="sr-only"> ({DATE_BASIS_LABEL[p.basis]} 기준)</span>}
+            <span aria-hidden="true"><Icon name="chevron" /></span>
           </button>
-          <button className="icon-btn" type="button" onClick={p.onReset} aria-label="처음 상태로" title="처음 상태로">
-            <Icon name="reset" />
+          <div className="segments" role="group" aria-label="신고 분류">
+            {CATS.map((c) => (
+              <button
+                key={c}
+                ref={p.category === c ? selectedCatRef : undefined}
+                type="button"
+                className={p.category === c ? 'selected' : ''}
+                aria-pressed={p.category === c}
+                aria-label={c === 'all' ? '전체 분류' : undefined}
+                onClick={() => p.onCategory(c)}
+              >
+                {CATEGORY_LABEL[c]}
+              </button>
+            ))}
+          </div>
+          {p.onRegion && (
+            <span className={`top-region${p.region ? ' filter-on' : ''}`} aria-label="지역 (바로 적용)">
+              <RegionSelect value={p.region ?? null} onChange={p.onRegion} counts={p.regionCounts} />
+            </span>
+          )}
+          <button className={`control control-extra${p.filterCount > 0 ? ' filter-active' : ''}`} type="button" onClick={p.onOpenDrawer}
+            aria-label={p.filterCount > 0 ? `세부 필터, 적용 중 ${p.filterCount}개` : '세부 필터'}>
+            <Icon name="filter" />
+            <span>필터</span>
+            {p.filterCount > 0 && <span className="filter-count" aria-hidden="true">{p.filterCount}</span>}
           </button>
+          <div className="command-end">
+            <button className="icon-btn" type="button" onClick={p.onShare} aria-label="링크 복사" title="지금 보는 화면의 링크 복사">
+              <Icon name="share" />
+            </button>
+            <button className="icon-btn" type="button" onClick={p.onReset} aria-label="처음 상태로" title="처음 상태로">
+              <Icon name="reset" />
+            </button>
+          </div>
         </div>
+        {scroller.right && (
+          <button type="button" className="command-nudge right" aria-hidden="true" tabIndex={-1} onClick={() => scroller.nudge(1)}>
+            <Icon name="arrow" size={16} />
+          </button>
+        )}
       </div>
+      {/* U-command-scroll §2: "내 신고와 비교" never rides the scrolling row — a signed-in viewer must see it
+       *  (or the reason it's off) without discovering the row scrolls at all. */}
+      {p.extra && <div className="command-extra">{p.extra}</div>}
       {open && (
         <div className="date-pop" role="group" aria-label="기간 선택">
           <div className="basis-row" role="group" aria-label="날짜 기준 (바로 적용)">

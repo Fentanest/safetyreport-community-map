@@ -26,6 +26,26 @@ main { width: 100%; max-width: 1760px; margin-inline: auto; }
 /* ── condition bar ─────────────────────────────────────────────────────────────────────────── */
 .command { position: sticky; top: var(--topbar-h); z-index: 50; display: block; padding: 8px 12px; min-height: 0; }
 .command-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* U-command-scroll §1: overflow cues for the (mobile-only, see the 700px rule below) horizontally-scrolling
+ * condition row — an edge fade + a nudge arrow, shown only on the side that actually has more to scroll to
+ * (CommandBar.tsx tracks this and toggles .can-left/.can-right; both empty on a desktop width that wraps
+ * instead of scrolling, so none of this ever shows there). */
+.command-scroller { position: relative; min-width: 0; }
+.command-scroller::before, .command-scroller::after {
+  content: ""; position: absolute; top: 0; bottom: 2px; width: 32px; pointer-events: none; z-index: 2; opacity: 0;
+  transition: opacity 160ms;
+}
+.command-scroller::before { left: 0; background: linear-gradient(to right, var(--surface), transparent); }
+.command-scroller::after { right: 0; background: linear-gradient(to left, var(--surface), transparent); }
+.command-scroller.can-left::before { opacity: 1; }
+.command-scroller.can-right::after { opacity: 1; }
+.command-nudge { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; width: 28px; height: 28px; padding: 0;
+  border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow); }
+.command-nudge.left { left: 2px; }
+.command-nudge.left svg { transform: rotate(180deg); }
+.command-nudge.right { right: 2px; }
+.command-nudge:hover { color: var(--text); }
 .command .date-control { gap: 8px; }
 .date-control-label { font-weight: 650; white-space: nowrap; }
 .date-control-range { color: var(--muted); font-size: 13px; white-space: nowrap; }
@@ -34,7 +54,9 @@ main { width: 100%; max-width: 1760px; margin-inline: auto; }
 .command .top-region select { font-size: 14px; min-height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--raised); color: var(--text); padding: 6px 10px; margin-right: 6px; max-width: 200px; }
 .command .top-region.filter-on select:first-of-type { border-color: var(--filter-active-border); }
 .command .control-extra { gap: 6px; }
-.command .view-controls { padding: 0 4px; }
+/* U-command-scroll §2: "내 신고와 비교" sits on its own row under the condition row, at every width — it must
+ * never be something only a sideways scroll reveals. */
+.command-extra { padding: 6px 4px 0; }
 .command .date-pop { margin-top: 8px; padding: 12px 4px 4px; }
 .basis-row { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .basis-row button { border: 0; background: transparent; padding: 8px 14px; min-height: 40px; cursor: pointer; color: var(--text-secondary); }
@@ -60,12 +82,15 @@ main { width: 100%; max-width: 1760px; margin-inline: auto; }
 .kpi-outcome-name { font-size: 12px; color: var(--text-secondary); display: inline-flex; align-items: center; }
 .kpi-outcome-values .kpi-value { font-size: 26px; line-height: 32px; }
 .kpi-outcome-bar { height: 8px; gap: 2px; background: transparent; }
+/* every minor item (계도·확인 과태료 금액·추정 과태료·평균 별점·장소·참여자) shares one rule, so none of them sits
+ * differently from the rest: desktop keeps name:value inline but lets a long item (추정 과태료…) wrap onto its own
+ * second line like any other would if it ran out of room; the narrow breakpoint below stacks every item name-above
+ * -value the same way (U-kpi-minor-stack). min-width: 0 is what actually lets dt/dd shrink and wrap by whole word
+ * (word-break: keep-all, app.css) instead of the flex item refusing to shrink and overflowing the row. */
 .kpi-minor { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 22px; margin: 0; padding: 2px 16px 0; font-size: 13px; }
-.kpi-minor > div { display: inline-flex; gap: 6px; align-items: baseline; }
+.kpi-minor > div { display: inline-flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; min-width: 0; max-width: 100%; }
 .kpi-minor dt { color: var(--muted); }
-.kpi-minor dd { margin: 0; }
-.kpi-minor > [data-kpi="estimate"] { flex-wrap: wrap; max-width: 100%; }
-.kpi-minor > [data-kpi="estimate"] dd { min-width: 0; overflow-wrap: anywhere; }
+.kpi-minor dd { margin: 0; min-width: 0; }
 .kpi-minor dd b { font-weight: 650; }
 .kpi-minor dd small { color: var(--muted); font-size: 12px; }
 .kpi-minor dd small.mine-col { color: var(--link); }
@@ -141,16 +166,21 @@ body.briefing .more-charts, body.briefing .app-tabs { display: none; }
 }
 @media (max-width: 700px) {
   :root { --topbar-h: 56px; }
+  /* U-topbar-balance: this file's own unscoped `.topbar { gap: 16px }` above (desktop) was cascading onto mobile
+   * too, because it loads after app.css's mobile `gap: 8px` — the one thing actually squeezing the brand name
+   * down to "커뮤니…". Restated here, scoped, so mobile gets its gap back. */
+  .topbar { gap: 8px; }
   .app-tabs { display: none; }
   /* one scrolling row of conditions under the top bar */
   .command { padding: 8px; border-radius: 0 0 12px 12px; margin-inline: calc(var(--page-pad) * -1); }
   .command-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .command-row::-webkit-scrollbar { display: none; }
   .command-row > * { flex: none; }
   .command .segments { width: auto; display: inline-flex; }
   .command .segments button { flex: none; padding: 8px 12px; }
   .command-end { width: auto; margin-left: 0; }
-  .command .view-controls { order: 0; flex-basis: auto; flex-direction: row; border-top: 0; padding-top: 0; }
   .command .top-region select { max-width: 150px; }
+  .command-extra { padding: 6px 8px 0; border-top: 1px solid var(--border); margin-top: 2px; }
   /* the period button shows its name only (the range is in the popover and the key-figure heading) */
   .date-control-range { display: none; }
   .command .date-pop { padding: 10px 4px 4px; }
@@ -163,8 +193,10 @@ body.briefing .more-charts, body.briefing .app-tabs { display: none; }
   .kpi-outcome-values { justify-content: space-between; gap: 4px 12px; }
   .kpi-outcome-values .kpi-value { font-size: 20px; line-height: 26px; }
   .kpi-strip-head { padding: 0 12px; }
-  .kpi-minor { padding: 0 12px; gap: 2px 14px; }
-  .kpi-minor > [data-kpi="estimate"] dt { flex-basis: 100%; }
+  /* U-kpi-minor-stack: name above / value below, the same way for every item — no item (추정 과태료 included) gets
+   * a fixed-width name column or a layout of its own on a phone-width screen. */
+  .kpi-minor { padding: 0 12px; gap: 10px 14px; flex-direction: column; align-items: stretch; }
+  .kpi-minor > div { flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; }
   .kpi-minor-end { margin-left: 0; flex-basis: 100%; }
   .map-card .map-canvas { height: 380px; }
   .analysis-body .chart-host { height: 260px; }

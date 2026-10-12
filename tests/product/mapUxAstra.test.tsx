@@ -55,8 +55,10 @@ describe('map UX 3 / 5', () => {
       overview, state: 'ready' as const, personal, showMine: true, unsupported: false, detail: null };
     const html = renderToStaticMarkup(<KpiPanel {...props} />);
     // U-mean-primary (2026-10-12): 큰 값은 평균, 중앙값은 작은 줄에 병기.
-    expect(html).toContain('평균 · 중앙값 2일 · 계산 3건');
-    expect(html).toContain('내 평균 7일 · 중앙값 1일');
+    // dotParts (components/dotParts.tsx, U-letter-break fix): each " · "-joined piece is its own unbreakable
+    // <span class="nb">, joined by a plain breakable space — same words, new markup.
+    expect(html).toContain('<span class="nb">평균</span> <span class="nb">· 중앙값 2일</span> <span class="nb">· 계산 3건</span>');
+    expect(html).toContain('<span class="nb">내 평균 7일</span> <span class="nb">· 중앙값 1일</span>');
     expect(renderToStaticMarkup(<KpiPanel {...props} showMine={false} />)).not.toContain('내 평균');
     expect(renderToStaticMarkup(<KpiPanel {...props} focus={{ ...props.focus, kind: 'place' }} />)).not.toContain('내 평균');
     const card = renderToStaticMarkup(<DurationCard all={{ ...dashboard.analytics!.duration!, median_days: 2, mean_days: 10 }}
