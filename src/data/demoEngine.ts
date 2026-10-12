@@ -10,7 +10,7 @@ import {
 } from '../../server/aggregate';
 import { aggregateCompare } from '../../server/compare';
 import { aggregateStatistics, statisticsCandidates } from '../../server/statistics';
-import type { StatisticsSpec, StatsFilter } from '../domain/statistics';
+import type { RowPageRequest, StatisticsSpec, StatsFilter } from '../domain/statistics';
 import { placeKey, placeRows, placesInView, placeSummary, representativeOf } from '../../server/places';
 import { COHORT_POLICY_VERSION, type BasisBounds, type DashboardData, type PlaceDetail, type PublicEntity, type PublicLaw, type PublicMeta, type PublicPoint, type Scope } from '../domain/public';
 import { compareRows, DEFAULT_SORT } from '../domain/tableSort';
@@ -323,11 +323,12 @@ export function demoPlacesInView(scope: Scope, view: [number, number, number, nu
   return { points, total: inView.length, compacted: points.length < inView.length };
 }
 
-/** 맞춤 통계 over the synthetic facts (demo builds only; the same server aggregator as the live API). */
-export function demoStatistics(scope: Scope, spec: StatisticsSpec) {
+/** 맞춤 통계 over the synthetic facts (demo builds only; the same server aggregator as the live API).
+ *  D23 (2026-10-12): `page` is forwarded as-is — the demo path shares the exact row-paging code the live server uses. */
+export function demoStatistics(scope: Scope, spec: StatisticsSpec, page?: RowPageRequest) {
   const w = demoBasisBounds()[spec.date_basis];
   return aggregateStatistics({ facts: demoFacts(), scope, spec, datasetVersion: demoMeta().dataset_version,
-    viewerId: spec.population === 'all' ? null : DEMO_VIEWER_ID, dataWindow: { min: w.min, max: w.max } });
+    viewerId: spec.population === 'all' ? null : DEMO_VIEWER_ID, dataWindow: { min: w.min, max: w.max }, rowPage: page });
 }
 export function demoCandidates(scope: Scope, q: { kind: string; q: string; cursor: number; limit: number; filters: StatsFilter[];
   basis: StatisticsSpec['date_basis']; placeKey: string | null; keys: string[] }) {

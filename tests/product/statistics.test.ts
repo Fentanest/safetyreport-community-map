@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { PrivateFact } from '../../server/aggregate';
-import { aggregateStatistics, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from '../../server/statistics';
+import { aggregateStatistics, parseRowPage, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from '../../server/statistics';
 import { createPublicHandler, type AnalyticsRepository } from '../../server/publicHandler';
 import type { Scope } from '../../src/domain/public';
-import { STAT_OTHER_KEY, type StatisticsSpec } from '../../src/domain/statistics';
+import { STAT_OTHER_KEY, type RowPageRequest, type StatisticsSpec } from '../../src/domain/statistics';
 import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
 
 /** S05–S08 맞춤 통계 (synthetic facts only). */
@@ -22,8 +22,8 @@ const spec = (patch: Partial<StatisticsSpec> = {}): StatisticsSpec => ({
   version: 1, date_basis: 'completed_date', population: 'all', rows: [], columns: [], metrics: ['completed_count'], filters: [], place_key: null, ...patch,
 });
 // one basis per request: the handler unifies scope and recipe (unifyBasis), so the helper does the same
-const run = (facts: PrivateFact[], s: Partial<StatisticsSpec>, viewerId?: string) =>
-  aggregateStatistics({ facts, scope: { ...scope, date_basis: spec(s).date_basis }, spec: spec(s), datasetVersion: 'v', viewerId });
+const run = (facts: PrivateFact[], s: Partial<StatisticsSpec>, viewerId?: string, rowPage?: RowPageRequest) =>
+  aggregateStatistics({ facts, scope: { ...scope, date_basis: spec(s).date_basis }, spec: spec(s), datasetVersion: 'v', viewerId, rowPage });
 const cell = (r: ReturnType<typeof run>, row: string[], col: string[] = [], side: 'all' | 'mine' = 'all') =>
   r.cells.find((c) => JSON.stringify(c.row) === JSON.stringify(row) && JSON.stringify(c.col) === JSON.stringify(col) && c.side === side);
 
@@ -259,6 +259,110 @@ describe('PV-08/PV-10: populations and the registry', () => {
   });
 });
 
+describe('D23 행 쪽(row paging, 2026-10-12): 그 외로 묶지 않고 쪽 단위로 전부 내보낸다', () => {
+  // 100 agencies (agency i has 100-i facts, strictly decreasing — no count ties) × 80 위반법규 열 = 8,000칸,
+  // 5,000칸 예산을 넘는다. agency 0 혼자 100건이라 0..79 모든 법규가 적어도 한 번은 나와서 열은 전부 보존된다.
+  const AGENCIES = 100, LAWS = 80;
+  const wide = Array.from({ length: AGENCIES }, (_, i) => Array.from({ length: AGENCIES - i }, (_, k) =>
+    f({ agency_key: `a1:${i}`, agency_name: `기관${i}`, violation_law: `LAW${k % LAWS}` }))).flat();
+  const wideSpec: Partial<StatisticsSpec> = { rows: ['agency'], columns: ['law'], metrics: ['completed_count'] };
+
+  it('첫 쪽: 전체 열·행/열/전체 합계는 그대로, 칸은 첫 쪽 행만 — floor(5000/80)=62', () => {
+    const r = run(wide, wideSpec, undefined, { cursor: 0 });
+    expect(r.truncated).toBeUndefined(); // D22 fold는 쪽 요청에서 절대 돌지 않는다
+    expect(r.col_members).toHaveLength(LAWS); // 열은 절대 쪽으로 나누지 않는다
+    expect(r.col_totals).toHaveLength(LAWS);
+    expect(r.row_page).toEqual({ offset: 0, limit: 62, total: AGENCIES, has_more: true });
+    expect(r.row_members).toHaveLength(62);
+    // 기본 순서(건수 많은 순)는 그대로 — 동률이 없으므로 agency 0(100건)부터 agency 61(39건)까지
+    expect(r.row_members.map((m) => m.key[0])).toEqual(Array.from({ length: 62 }, (_, i) => `a1:${i}`));
+    expect(r.row_totals.find((t) => t.key[0] === 'a1:0')!.values.completed_count.value).toBe(100);
+    expect(r.col_totals.reduce((a, t) => a + (t.values.completed_count.value ?? 0), 0)).toBe(wide.length);
+    expect(r.grand_totals[0].values.completed_count.value).toBe(wide.length);
+  });
+
+  it('다음 쪽: 이어지는 행만, 겹치거나 빠지는 행 없이 전체를 덮고 칸 합도 전체와 같다', () => {
+    const p1 = run(wide, wideSpec, undefined, { cursor: 0 });
+    const p2 = run(wide, wideSpec, undefined, { cursor: p1.row_page!.offset + p1.row_page!.limit });
+    expect(p2.row_page).toEqual({ offset: 62, limit: 62, total: AGENCIES, has_more: false });
+    expect(p2.row_members).toHaveLength(38); // 100 - 62
+    const seen = [...p1.row_members, ...p2.row_members].map((m) => m.key[0]);
+    expect(new Set(seen).size).toBe(AGENCIES); // 중복 없음
+    expect(seen.slice().sort()).toEqual(Array.from({ length: AGENCIES }, (_, i) => `a1:${i}`).sort()); // 빠짐 없음
+    // 같은 스냅숏의 모든 쪽은 같은 열 머리·열 합계·전체 합계를 돌려준다
+    expect(p2.col_members).toEqual(p1.col_members);
+    expect(p2.col_totals).toEqual(p1.col_totals);
+    expect(p2.grand_totals).toEqual(p1.grand_totals);
+    // 쪽 합 = 전체(칸 값의 합)
+    const sum = [...p1.cells, ...p2.cells].reduce((a, c) => a + (c.values.completed_count.value ?? 0), 0);
+    expect(sum).toBe(wide.length);
+  });
+
+  it('행 수를 넘겨 요청하면 빈 쪽(행 0개)을 돌려준다(오류 아님)', () => {
+    const r = run(wide, wideSpec, undefined, { cursor: AGENCIES + 10 });
+    expect(r.row_page).toEqual({ offset: AGENCIES, limit: 62, total: AGENCIES, has_more: false });
+    expect(r.row_members).toHaveLength(0);
+    expect(r.cells).toHaveLength(0);
+  });
+
+  it('서버 정렬: sort_metric·sort_dir로 전체 행을 다시 정렬한 뒤 쪽을 나눈다(null은 항상 마지막)', () => {
+    const asc = run(wide, wideSpec, undefined, { cursor: 0, sortMetric: 'completed_count', sortDir: 'asc' });
+    expect(asc.row_members[0].key).toEqual(['a1:99']); // 가장 적은 건수(1건)부터
+    expect(asc.row_members.at(-1)!.key).toEqual(['a1:38']); // 62번째로 적은 건수(62건) = agency 38
+    const desc = run(wide, wideSpec, undefined, { cursor: 0, sortMetric: 'completed_count', sortDir: 'desc' });
+    expect(desc.row_members[0].key).toEqual(['a1:0']); // 기본 순서(건수 많은 순)와 같다
+  });
+
+  it('sort_metric이 spec.metrics에 없으면 거절한다', () => {
+    expect(() => run(wide, wideSpec, undefined, { cursor: 0, sortMetric: 'accept_rate' })).toThrow(StatsQueryError);
+  });
+
+  it('비교(×2): 칸 예산이 반으로 줄어 쪽 크기도 절반 — floor(5000/(80*2))=31', () => {
+    const mineFacts = wide.map((x) => ({ ...x, contributor_id: 'u-page' }));
+    const r = run(mineFacts, { ...wideSpec, population: 'compare' }, 'u-page', { cursor: 0 });
+    expect(r.row_page).toEqual({ offset: 0, limit: 31, total: AGENCIES, has_more: true });
+  });
+
+  it('열이 너무 많아 한 행도 담지 못하면(극단) 거절한다 — 열 쪽 나눔은 하지 않고 줄이라고 안내', () => {
+    const manyLaws = Array.from({ length: 5001 }, (_, j) => f({ agency_key: 'a1:solo', agency_name: '기관', violation_law: `LAW${j}` }));
+    expect(() => run(manyLaws, { rows: ['agency'], columns: ['law'] }, undefined, { cursor: 0 }))
+      .toThrow(/열 항목이나 비교 대상을 줄여/);
+  });
+
+  it('예산 안이면 요청해도 쪽은 하나뿐(행 전부, has_more:false)이고 자르지 않는다', () => {
+    const r = run(G, { rows: ['outcome'], columns: ['disposition'] }, undefined, { cursor: 0 });
+    expect(r.row_page!.offset).toBe(0);
+    expect(r.row_page!.has_more).toBe(false);
+    expect(r.row_page!.total).toBe(r.row_members.length);
+    expect(r.row_page!.limit).toBe(Math.max(1, Math.floor(5000 / r.col_members.length)));
+    expect(r.truncated).toBeUndefined();
+  });
+
+  it('row_cursor 없이 요청하면(구 클라이언트) row_page 없이 기존 top-N 응답 그대로', () => {
+    const r = run(wide, wideSpec); // rowPage 생략
+    expect(r.row_page).toBeUndefined();
+    expect(r.truncated).toBeDefined();
+  });
+
+  describe('parseRowPage (요청 파라미터 검증)', () => {
+    const s = spec({ metrics: ['completed_count', 'accept_rate'] });
+    it('row_cursor 없으면 undefined(페이징 미사용 = 구 클라이언트)', () => {
+      expect(parseRowPage(new URLSearchParams(), s)).toBeUndefined();
+    });
+    it('정상 요청', () => {
+      expect(parseRowPage(new URLSearchParams('row_cursor=10&sort_metric=accept_rate&sort_dir=asc'), s))
+        .toEqual({ cursor: 10, sortMetric: 'accept_rate', sortDir: 'asc' });
+      expect(parseRowPage(new URLSearchParams('row_cursor=0'), s)).toEqual({ cursor: 0, sortMetric: null, sortDir: 'desc' });
+    });
+    it('잘못된 값은 거절(음수·소수·문자, 목록에 없는 지표, 모르는 방향, sort_metric 없이 sort_dir만)', () => {
+      for (const qs of ['row_cursor=-1', 'row_cursor=abc', 'row_cursor=1.5', 'row_cursor=0&sort_metric=no_such_metric',
+        'row_cursor=0&sort_dir=sideways', 'row_cursor=0&sort_dir=asc']) {
+        expect(() => parseRowPage(new URLSearchParams(qs), s)).toThrow(StatsQueryError);
+      }
+    });
+  });
+});
+
 describe('statistics routes', () => {
   const state = { dataset_version: 'v1', ready: true, source_updated_at: null, generated_at: '2026-09-30T00:00:00Z', published_at: null,
     data_min: '2014-10-01', data_max: '2026-09-29', coverage_note: '', dedupe_policy_version: 'x' };
@@ -286,6 +390,25 @@ describe('statistics routes', () => {
     const r = await handler(viewerRequest(q('statistics/candidates', { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all', kind: 'agency', q: '기관', limit: '5' })));
     expect(r.status).toBe(200);
     expect((await r.json()).items[0]).toMatchObject({ key: 'a1:A', count: 20 });
+  });
+  it('D23 row_cursor/sort_metric/sort_dir reach aggregateStatistics end to end; candidates/query without row_cursor stay legacy', async () => {
+    const base_q = { date_basis: 'completed_date' as const, start: '2026-01-01', end: '2026-06-30', category: 'all' };
+    const paged = await handler(viewerRequest(q('statistics/query', { ...base_q, spec: JSON.stringify(spec({ rows: ['agency'], metrics: ['completed_count'] })), row_cursor: '0' })));
+    expect(paged.status).toBe(200);
+    const pagedBody = await paged.json();
+    expect(pagedBody.row_page).toEqual({ offset: 0, limit: expect.any(Number), total: 1, has_more: false });
+    expect(pagedBody.truncated).toBeUndefined();
+    const sorted = await handler(viewerRequest(q('statistics/query', { ...base_q,
+      spec: JSON.stringify(spec({ rows: ['agency'], metrics: ['completed_count'] })), row_cursor: '0', sort_metric: 'completed_count', sort_dir: 'asc' })));
+    expect(sorted.status).toBe(200);
+    const legacy = await handler(viewerRequest(q('statistics/query', { ...base_q, spec: JSON.stringify(spec({ rows: ['agency'], metrics: ['completed_count'] })) })));
+    expect((await legacy.json()).row_page).toBeUndefined();
+    // D23 params belong to statistics/query only
+    const onCandidates = await handler(viewerRequest(q('statistics/candidates', { ...base_q, kind: 'agency', row_cursor: '0' })));
+    expect(onCandidates.status).toBe(400);
+    // sort_dir without sort_metric is refused (same as any other bad spec)
+    const badSortDir = await handler(viewerRequest(q('statistics/query', { ...base_q, spec: JSON.stringify(spec({ rows: ['agency'] })), row_cursor: '0', sort_dir: 'asc' })));
+    expect(badSortDir.status).toBe(400);
   });
 });
 

@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 import { COHORT_POLICY_VERSION, type Scope } from '../domain/public';
-import type { StatCandidatesPage, StatCatalog, StatisticsResult, StatisticsSpec, StatsFilter } from '../domain/statistics';
+import type { RowPageRequest, StatCandidatesPage, StatCatalog, StatisticsResult, StatisticsSpec, StatsFilter } from '../domain/statistics';
 import { PublicApiError, read, requirePolicy, sameScope, scopeParams } from './client';
 import { readPersonalStatistics as readPersonal } from './personal';
 import { scopeSchema } from './schema';
@@ -37,6 +37,8 @@ export const statisticsResultSchema = z.strictObject({
   filter_members: z.array(z.strictObject({ dimension: z.string(), key: z.string(), label: z.string().nullable(), count, status: z.enum(['ok', 'zero', 'unconfirmed']) })).max(400),
   // D22 (선택 필드): row/column 축 top-N 자르기 안내. 옛 서버 응답에는 없다.
   truncated: z.array(z.strictObject({ role: z.enum(['row', 'column']), dimensions: z.array(z.string()), total_members: count, shown_members: count, other_count: count })).max(2).optional(),
+  // D23 (선택 필드, 2026-10-12): row_cursor를 보낸 요청에만 있다 — row_members/row_totals/cells는 이 쪽 행만.
+  row_page: z.strictObject({ offset: count, limit: count, total: count, has_more: z.boolean() }).optional(),
   complete: z.literal(true),
 });
 const candidate = z.strictObject({ key: z.string().max(200), label: z.string().max(300), sub: z.string().max(200).nullable(), count, status: z.enum(['ok', 'zero', 'unconfirmed']).optional() });
@@ -63,19 +65,30 @@ export async function loadCatalog(signal?: AbortSignal): Promise<StatCatalog> {
   return catalogSchema.parse(await read('statistics/catalog', null, signal)) as StatCatalog;
 }
 
-export async function loadStatistics(scope: Scope, spec: StatisticsSpec, version: string | null, signal?: AbortSignal): Promise<StatisticsResult> {
+/**
+ * D23 row paging (2026-10-12): `page` always opts into the paged contract — `row_cursor` is sent on every request
+ * (even the first, cursor 0), so row_members/row_totals/cells cover only that page's rows (columns stay whole).
+ * `page.sortMetric` (optional) re-sorts the full row list server-side before paging (column-header click); omitted
+ * = the default server order (date/natural/count), same as an unpaged request.
+ */
+export async function loadStatistics(scope: Scope, spec: StatisticsSpec, version: string | null, page: RowPageRequest, signal?: AbortSignal): Promise<StatisticsResult> {
   let raw: unknown;
   if (import.meta.env.VITE_DATA_MODE === 'demo') {
     const { demoStatistics } = await import('./demoEngine');
-    raw = demoStatistics(scope, spec);
+    raw = demoStatistics(scope, spec, page);
   } else {
-    const params = scopeParams(scope, version ?? undefined, { spec: JSON.stringify(spec), consistency: 'latest' });
+    const extra: Record<string, string> = { spec: JSON.stringify(spec), consistency: 'latest', row_cursor: String(page.cursor) };
+    if (page.sortMetric) { extra.sort_metric = page.sortMetric; extra.sort_dir = page.sortDir ?? 'desc'; }
+    const params = scopeParams(scope, version ?? undefined, extra);
     raw = spec.population === 'all' ? await read('statistics/query', params, signal) : await readPersonal(params, signal);
   }
   const result = statisticsResultSchema.parse(requirePolicy(raw)) as StatisticsResult;
   // the answer must be for exactly this request (a late or mismatched answer is never shown as this one)
   if (!sameScope(result.scope, scope) || JSON.stringify(result.spec) !== JSON.stringify(spec)) throw changed();
-  return result;
+  // Defensive fallback (deploy skew only): a server that does not yet page rows returns the legacy shape (no
+  // row_page) — treat the rows it DID return as one complete page rather than let callers dereference `undefined`.
+  return result.row_page ? result
+    : { ...result, row_page: { offset: 0, limit: Math.max(1, result.row_members.length), total: result.row_members.length, has_more: false } };
 }
 
 export async function loadCandidates(scope: Scope, q: { kind: string; q: string; cursor: number; limit: number; filters: StatsFilter[];

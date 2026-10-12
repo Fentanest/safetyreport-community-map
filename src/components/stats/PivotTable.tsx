@@ -1,32 +1,32 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { STAT_OTHER_KEY, type MetricDef, type StatCatalog, type StatisticsResult } from '../../domain/statistics';
-import { cellIndex, sortedRowMembers, tupleKey, type RowSort } from '../../state/statistics';
+import { cellIndex, tupleKey, type RowSort } from '../../state/statistics';
 import { fmtStat } from './statFormat';
 
-const PAGE = 50;
 export type { RowSort };
-/** D22: the synthetic '그 외' member a top-N cut folds the rest into (never a real, pickable member). */
+/** D22 LEGACY: the synthetic '그 외' member an unpaged top-N cut folds the rest into (never a real, pickable
+ *  member). A D23 paged response (every live request now sends `row_cursor`) never produces one. */
 const isOther = (key: readonly string[]) => key[0] === STAT_OTHER_KEY;
 
 /**
- * S07 table renderer of a complete StatisticsResult. Rows are member tuples; columns are column members × metrics
- * (× 전체/내 신고 in compare). Totals come from the server (recomputed from raw facts), never summed here.
- * Paging and sorting are local (the result is complete); a missing combination is "—" (해당 신고 없음), not 0.
+ * S07 table renderer of ONE row page of a StatisticsResult (D23 row paging, 2026-10-12) — `result.row_members`/
+ * `row_totals`/`cells` cover only `result.row_page`'s rows; `col_members`/`col_totals`/`grand_totals` are always
+ * complete. Page navigation and the metric sort that decides row order are both server round trips owned by the
+ * caller (`onPageOffset`/`onSort`); this component only renders what it was given. A missing combination is
+ * "—" (해당 신고 없음), not 0. `result.row_page` absent (legacy/unpaged) falls back to showing every row at once.
  */
-export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
+export default function PivotTable({ result, catalog, sort, onSort, onPick, onPageOffset, pageBusy }: {
   result: StatisticsResult;
   catalog: StatCatalog;
   sort: RowSort;
   onSort: (s: RowSort) => void;
   /** a body cell/row header was chosen: offer "이 항목으로 좁히기" */
   onPick?: (row: string[], col: string[] | null) => void;
+  /** D23: fetch the row page starting at this offset (0 = first page); a no-op when `result.row_page` is absent */
+  onPageOffset?: (offset: number) => void;
+  /** D23: a page fetch (page turn or sort change) is in flight — disables the pager without blanking the table */
+  pageBusy?: boolean;
 }) {
-  const [page, setPage] = useState(0);
-  const [pageContext, setPageContext] = useState({ result, metric: sort.metric, dir: sort.dir });
-  if (pageContext.result !== result || pageContext.metric !== sort.metric || pageContext.dir !== sort.dir) {
-    setPageContext({ result, metric: sort.metric, dir: sort.dir });
-    setPage(0);
-  }
   const cell = useMemo(() => cellIndex(result), [result]);
   const metric = (id: string): MetricDef | undefined => catalog.metrics.find((m) => m.id === id);
   const dimLabel = (id: string) => catalog.dimensions.find((d) => d.id === id)?.label ?? id;
@@ -36,9 +36,9 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
   const metrics = result.spec.metrics;
   const rowTotal = useMemo(() => new Map(result.row_totals.map((t) => [`${t.side}|${tupleKey(t.key)}`, t])), [result]);
   const colTotal = useMemo(() => new Map(result.col_totals.map((t) => [`${t.side}|${tupleKey(t.key)}`, t])), [result]);
-  const rows = useMemo(() => sortedRowMembers(result, sort), [result, sort]);
-  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
-  const shown = rows.slice(page * PAGE, page * PAGE + PAGE);
+  // D23: the server already sorted/paged this exact row page — never re-sort or re-slice on the client.
+  const rows = result.row_members;
+  const rp = result.row_page ?? { offset: 0, limit: Math.max(1, rows.length), total: rows.length, has_more: false };
   const hasRows = result.spec.rows.length > 0, hasCols = result.spec.columns.length > 0;
   const valueOf = (side: 'all' | 'mine', row: string[], col: string[], m: string) => {
     if (!hasRows && !hasCols) return result.grand_totals.find((t) => t.side === side)?.values[m];
@@ -79,7 +79,7 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
             </tr>
           </thead>
           <tbody>
-            {(hasRows ? shown : [{ key: [], label: [] as string[] }]).map((r) => (
+            {(hasRows ? rows : [{ key: [], label: [] as string[] }]).map((r) => (
               <tr key={tupleKey(r.key)} className={hasRows && isOther(r.key) ? 'pivot-other' : undefined}>
                 <th scope="row">
                   {hasRows
@@ -123,9 +123,14 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
       </div>
       {hasRows && (
         <div className="pivot-pager">
-          <span className="cm-muted">행 {rows.length.toLocaleString('ko-KR')}개 중 {Math.min(rows.length, page * PAGE + 1)}–{Math.min(rows.length, (page + 1) * PAGE)}</span>
-          <button type="button" className="ghost-btn" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>이전</button>
-          <button type="button" className="ghost-btn" disabled={page >= pages - 1} onClick={() => setPage((p) => p + 1)}>다음</button>
+          {/* D23 (2026-10-12): the position indicator that replaced the old '그 외' banner, merged into the same
+              pager line the table already had — "기관 491곳" style counting, kept generic (개) across dimensions. */}
+          <span className="cm-muted">
+            {result.spec.rows.map(dimLabel).join(' · ')} {rp.total.toLocaleString('ko-KR')}개 중 {rows.length ? `${(rp.offset + 1).toLocaleString('ko-KR')}~${(rp.offset + rows.length).toLocaleString('ko-KR')}번째 표시` : '0개'}
+          </span>
+          <button type="button" className="ghost-btn" disabled={!!pageBusy || rp.offset === 0} onClick={() => onPageOffset?.(Math.max(0, rp.offset - rp.limit))}>이전</button>
+          <button type="button" className="ghost-btn" disabled={!!pageBusy || !rp.has_more} onClick={() => onPageOffset?.(rp.offset + rp.limit)}>다음</button>
+          {pageBusy && <span className="cm-muted" role="status">쪽을 받는 중…</span>}
         </div>
       )}
     </div>

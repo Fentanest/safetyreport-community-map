@@ -193,16 +193,33 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
   registry id만 받는다(SQL·열 이름·알 수 없는 필드는 400). 같은 차원 안은 OR, 차원끼리는 AND. 담당자는 `기관키|담당자키` 복합 키.
   응답: 행·열 member(key+label), 조합이 있는 cell만(없는 조합은 0이 아니라 '해당 없음'), 행/열/전체 합계(원 신고에서 재계산), population_count, excluded.no_report_date,
   filter_members(선택 대상의 현재 조건 건수, 0 포함), complete:true.
-  D22 top-N 자르기(2026-10-12): 행×열이 5,000칸을 넘으면 더 이상 거절하지 않는다. 날짜가 아닌 행/열 축(기관·담당자·법규·지역 등)은 건수 상위
+  D22 top-N 자르기(2026-10-12, **LEGACY** — 요청에 `row_cursor`가 없을 때만. D23 쪽 요청에는 절대 적용하지 않는다): 행×열이
+  5,000칸을 넘으면 더 이상 거절하지 않는다. 날짜가 아닌 행/열 축(기관·담당자·법규·지역 등)은 건수 상위
   멤버만 남기고 나머지를 `key`가 전부 `"__other__"`(`STAT_OTHER_KEY`)인 하나의 '그 외' 멤버로 묶는다(`label`도 전부 `그 외 N개`). 그 멤버의
   cell·행/열 합계는 접힌 멤버들의 원 신고를 다시 집계한 값(건수 합·비율/평균은 합친 모집단으로 재계산 — 평균의 평균 아님)이고, 자르지 않은 쪽 축의
   합계와 전체 합계는 자르기 전과 같다. 날짜 축(연·분기·월·일 spine)과 필터로 이미 명시적으로 고른 멤버는 절대 자르지 않는다(필터는 이미 해당 축의
   후보를 줄여 놓았다). 응답에 선택 필드 `truncated?: [{role:'row'|'column', dimensions: string[], total_members, shown_members, other_count}]`
   가 추가된다(구 클라이언트 호환, 없으면 자르지 않았다는 뜻). 두 축이 모두 날짜뿐이라 그래도 5,000칸을 넘는 극단적인 경우에만 여전히
   **422 RESULT_TOO_LARGE**(문구: "기간을 줄여 주세요").
+  **D23 행 쪽(row paging, 2026-10-12)**: 느린 회선에서 큰 표를 한 번에 안 보내기 위해 '그 외'로 묶는 대신 행 축을 서버가
+  쪽 단위로 잘라 보낸다. `statistics/query`·`my-analytics/statistics` 둘 다 추가 파라미터: `row_cursor`(0 이상 정수, **있으면
+  쪽 요청으로 전환** — 첫 요청도 `row_cursor=0`을 보낸다. 없으면 위 D22 그대로, 하위호환), `sort_metric`(`spec.metrics`에 있는
+  지표 하나, 생략하면 날짜/natural/count 기본 순서), `sort_dir`(`asc`|`desc`, 기본 `desc`, `sort_metric` 없이는 400).
+  쪽 요청의 응답은 `row_members`/`row_totals`/`cells`가 **그 쪽의 행만**이고(열은 항상 전체 — 열 축은 쪽으로 나누지 않는다),
+  선택 필드 `row_page: {offset, limit, total, has_more}`가 추가된다(`offset`/`limit`은 전체 정렬된 행 목록 기준 — 다음 쪽은
+  `row_cursor = offset + limit`; `total`은 자르기 전 전체 행 수; `has_more`가 거짓이면 이 쪽이 마지막). `limit`(쪽 크기)은
+  서버가 `floor(5000 / (열 멤버 수 × (비교면 2)))`로 자동 정하며 요청자는 바꿀 수 없다. `col_members`/`col_totals`/
+  `grand_totals`/`population_count`/`filter_members`는 같은 조건의 모든 쪽에서 완전히 같다(같은 스냅숏). `truncated`와
+  `row_page`는 동시에 오지 않는다(쪽 요청은 절대 '그 외'로 묶지 않는다 — 날짜 축이든 아니든). 열 축 하나가 그 자체로 예산
+  (5,000칸)을 넘어 한 행조차 만들 수 없는 극단적인 경우는 열 쪽 나눔 없이 **422 RESULT_TOO_LARGE**(문구: "열 항목이나 비교
+  대상을 줄여 주세요")로 거절한다. 정렬이 바뀌면(`sort_metric`/`sort_dir`) 전체 행을 그 지표의 자기 행 합계(열 무시, 없는
+  값은 항상 마지막)로 다시 정렬한 뒤 0쪽부터 다시 자른다 — 이미 받은 쪽과 섞어 쓰지 않는다(정렬이 바뀌면 쪽 경계도 바뀐다).
+  데이터 버전이 쪽을 받는 중간에 바뀌면 기존 409 `DATASET_CHANGED`/`expected_version` 규칙 그대로(쪽 사이 일관성은 호출자
+  책임 — 같은 `expected_version`으로 모든 쪽을 요청한다).
 - `GET /public-analytics/statistics/candidates?<scope>&kind=agency|manager|sido|sgg|law|place&q=&cursor=&limit[≤100]&filters=&basis=&place_key=&keys=` —
   현재 조건의 전체 후보에서 서버 검색·페이지. 자기 차원의 선택은 후보를 좁히지 않는다(facet). `selected`는 이미 고른 key의 현재 건수(0 포함).
-- `GET /my-analytics/statistics?<scope>&spec=` — population `mine`/`compare` 전용. 내 신고는 JWT로 확인한 사용자만(요청의 사용자 id는 받지 않음). 공개 API에 mine/compare를 보내면 400.
+  `row_cursor`/`sort_metric`/`sort_dir`(D23)는 `statistics/query` 전용이며 이 경로에 보내면 400.
+- `GET /my-analytics/statistics?<scope>&spec=` — population `mine`/`compare` 전용. 내 신고는 JWT로 확인한 사용자만(요청의 사용자 id는 받지 않음). 공개 API에 mine/compare를 보내면 400. D23 `row_cursor`/`sort_metric`/`sort_dir`도 같이 받는다(`my-analytics/compare`에는 보내면 400).
 - 기존 엔드포인트 추가 필드(선택, 구 클라이언트 호환): dashboard `agency_total`, `manager_total`, `overview.warning_count`.
 - `my-analytics/compare`도 같은 방식의 추가 필드(선택, 구 Edge 호환): `all`/`mine` 요약의 `warning_count`(2026-10-12,
   `overview.warning_count`와 같은 정의) — docs/personal-comparison.md §3.2·§4. 지역/기관/담당자 행(`CompareSide`)에도

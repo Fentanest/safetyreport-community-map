@@ -10,8 +10,8 @@
 import type { Scope } from '../src/domain/public.ts';
 import { COHORT_POLICY_VERSION, LAW_NONE, lawKey } from '../src/domain/public.ts';
 import {
-  STAT_LIMITS, STAT_OTHER_KEY, type DimensionDef, type MetricDef, type StatCandidate, type StatCandidatesPage, type StatCatalog,
-  type StatCell, type StatisticsResult, type StatisticsSpec, type StatTotal, type StatValue, type StatsFilter,
+  STAT_LIMITS, STAT_OTHER_KEY, type DimensionDef, type MetricDef, type RowPageRequest, type StatCandidate, type StatCandidatesPage,
+  type StatCatalog, type StatCell, type StatisticsResult, type StatisticsSpec, type StatTotal, type StatValue, type StatsFilter,
 } from '../src/domain/statistics.ts';
 import {
   cohortDateOf, inDateRange, isCompleted, kstDate, monthKeys, outcomes, ownRepresentatives, regionKeys, representatives, scopeFacts,
@@ -283,6 +283,8 @@ export interface StatsInput {
   viewerId?: string | null;
   /** data window of the selected basis: spine units outside it are no_data, never 0 */
   dataWindow?: { min: string | null; max: string | null };
+  /** D23 row paging (2026-10-12): present = page the row axis instead of the legacy D22 top-N fold (never both). */
+  rowPage?: RowPageRequest;
 }
 
 type MemberRow = { key: string[]; label: string[]; n: number };
@@ -385,49 +387,94 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
   let rowMembers = spec.rows.length ? collect(rowDims) : [{ key: [], label: [], n: 0 }];
   let colMembers = spec.columns.length ? collect(colDims) : [{ key: [], label: [], n: 0 }];
   const mult = spec.population === 'compare' ? 2 : 1;
-  const originalBudget = rowMembers.length * colMembers.length * mult;
-  const tooLarge = (): never => { throw new StatsQueryError('RESULT_TOO_LARGE',
-    `표가 ${originalBudget.toLocaleString('ko-KR')}칸이 되어 한 번에 만들 수 있는 크기(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. ` +
-    '날짜 항목(월·주 등)은 기간 전체를 보여주기 위해 자동으로 줄이지 않으므로, 기간을 줄여 주세요.'); };
-  // D22 top-N (2026-10-12): a non-date row/column axis beyond the budget keeps its top members by answered count
-  // and folds the rest into one '그 외' member (never cut: a calendar spine axis, or members an explicit filter
-  // already picked — those axes are already ≤ `members` large). Only an all-date-axes overflow still errors.
-  const rowIsDateAxis = dateAxes.some((a) => a.role === 'row');
-  const colIsDateAxis = dateAxes.some((a) => a.role === 'column');
-  const rowTrimmable = spec.rows.length > 0 && !rowIsDateAxis;
-  const colTrimmable = spec.columns.length > 0 && !colIsDateAxis;
   let rowOtherKeys: Set<string> | null = null, colOtherKeys: Set<string> | null = null;
   const truncated: NonNullable<StatisticsResult['truncated']> = [];
-  if (originalBudget > STAT_LIMITS.cells) {
-    if (!rowTrimmable && !colTrimmable) tooLarge();
-    const fullR = rowMembers.length, fullC = colMembers.length;
-    let shownR = fullR, shownC = fullC;
-    if (rowTrimmable && colTrimmable) {
-      // 두 축 모두 비날짜면 큰 쪽부터 줄인다 (작은 쪽은 먼저 손대지 않는다)
-      const rowBigger = fullR >= fullC;
-      const bigFull = rowBigger ? fullR : fullC, smallFull = rowBigger ? fullC : fullR;
-      let shownBig = clamp(1, bigFull, Math.floor(STAT_LIMITS.cells / (smallFull * mult)));
-      let shownSmall = smallFull;
-      if (shownBig * smallFull * mult > STAT_LIMITS.cells) { shownSmall = clamp(1, smallFull, Math.floor(STAT_LIMITS.cells / mult)); shownBig = 1; }
-      if (rowBigger) { shownR = shownBig; shownC = shownSmall; } else { shownC = shownBig; shownR = shownSmall; }
-    } else if (rowTrimmable) {
-      shownR = clamp(1, fullR, Math.floor(STAT_LIMITS.cells / (fullC * mult)));
-      if (shownR * fullC * mult > STAT_LIMITS.cells) tooLarge(); // the (protected) column axis alone is already too large
-    } else {
-      shownC = clamp(1, fullC, Math.floor(STAT_LIMITS.cells / (fullR * mult)));
-      if (fullR * shownC * mult > STAT_LIMITS.cells) tooLarge(); // the (protected) row axis alone is already too large
+  let rowPageInfo: StatisticsResult['row_page'];
+  if (input.rowPage) {
+    // D23 row paging (2026-10-12): the row axis is paged instead of folded (never both; `truncated` stays empty
+    // on this branch). The column axis is always returned whole — the per-request budget now applies to ONE row
+    // (colMembers.length × mult), never to the row×col grid, so paging never needs to fold or drop any member.
+    const { cursor, sortMetric, sortDir } = input.rowPage;
+    if (!Number.isInteger(cursor) || cursor < 0) throw new StatsQueryError('INVALID_QUERY', 'row_cursor');
+    if (sortMetric != null && !spec.metrics.includes(sortMetric)) throw new StatsQueryError('INVALID_QUERY', 'sort_metric not in spec.metrics');
+    if (sortMetric != null) {
+      // row order by the metric's OWN total (ignoring columns, exactly like the retired client-side sort) —
+      // computed once over every row member (O(facts)), independent of the column count being paged.
+      const sortFacts = (spec.population === 'mine' ? filtered.mine : filtered.all) ?? [];
+      const byRowSort = new Map<string, PrivateFact[]>();
+      for (const f of sortFacts) {
+        const k = JSON.stringify(tuple(f, rowDims).map((x) => x.key));
+        (byRowSort.get(k) ?? byRowSort.set(k, []).get(k)!).push(f);
+      }
+      const metricImpl = METRIC.get(sortMetric)!;
+      const valueOf = (rm: { key: string[] }) => { const g = byRowSort.get(JSON.stringify(rm.key)); return g ? metricImpl.compute(g).value : null; };
+      const dir = sortDir === 'asc' ? 1 : -1;
+      rowMembers = [...rowMembers].sort((a, b) => {
+        const va = valueOf(a), vb = valueOf(b);
+        if (va === null && vb === null) return 0;
+        if (va === null) return 1;
+        if (vb === null) return -1;
+        return dir === 1 ? va - vb : vb - va;
+      });
     }
-    if (shownR < fullR) {
-      const t = foldTopN(rowMembers, shownR, rowDims.length);
-      rowMembers = t.list; rowOtherKeys = t.otherKeys;
-      truncated.push({ role: 'row', dimensions: spec.rows, total_members: fullR, shown_members: rowMembers.length - 1, other_count: t.otherKeys.size });
+    // extreme case (user judgment call, 2026-10-12): a column axis so wide that even ONE row's cells would not
+    // fit the budget. Rather than also paging columns (a second, nested pager the table/export would need to
+    // juggle), this is refused like the legacy all-date-axes overflow — narrow the columns or comparison first.
+    const perRowCost = colMembers.length * mult;
+    if (perRowCost > STAT_LIMITS.cells) {
+      throw new StatsQueryError('RESULT_TOO_LARGE',
+        `열이 ${colMembers.length.toLocaleString('ko-KR')}개${mult === 2 ? '(전체와 내 신고 비교라 ×2)' : ''}라 한 행도 한 번에 만들 수 있는 크기` +
+        `(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. 열 항목이나 비교 대상을 줄여 주세요.`);
     }
-    if (shownC < fullC) {
-      const t = foldTopN(colMembers, shownC, colDims.length);
-      colMembers = t.list; colOtherKeys = t.otherKeys;
-      truncated.push({ role: 'column', dimensions: spec.columns, total_members: fullC, shown_members: colMembers.length - 1, other_count: t.otherKeys.size });
+    const pageSize = Math.max(1, Math.floor(STAT_LIMITS.cells / perRowCost));
+    const total = rowMembers.length;
+    const offset = clamp(0, total, cursor);
+    rowMembers = rowMembers.slice(offset, offset + pageSize);
+    rowPageInfo = { offset, limit: pageSize, total, has_more: offset + rowMembers.length < total };
+  } else {
+    const originalBudget = rowMembers.length * colMembers.length * mult;
+    const tooLarge = (): never => { throw new StatsQueryError('RESULT_TOO_LARGE',
+      `표가 ${originalBudget.toLocaleString('ko-KR')}칸이 되어 한 번에 만들 수 있는 크기(${STAT_LIMITS.cells.toLocaleString('ko-KR')}칸)를 넘습니다. ` +
+      '날짜 항목(월·주 등)은 기간 전체를 보여주기 위해 자동으로 줄이지 않으므로, 기간을 줄여 주세요.'); };
+    // D22 top-N (2026-10-12, LEGACY — no `row_cursor` in the request): a non-date row/column axis beyond the
+    // budget keeps its top members by answered count and folds the rest into one '그 외' member (never cut: a
+    // calendar spine axis, or members an explicit filter already picked — those axes are already ≤ `members`
+    // large). Only an all-date-axes overflow still errors. A D23 paged request never reaches this branch.
+    const rowIsDateAxis = dateAxes.some((a) => a.role === 'row');
+    const colIsDateAxis = dateAxes.some((a) => a.role === 'column');
+    const rowTrimmable = spec.rows.length > 0 && !rowIsDateAxis;
+    const colTrimmable = spec.columns.length > 0 && !colIsDateAxis;
+    if (originalBudget > STAT_LIMITS.cells) {
+      if (!rowTrimmable && !colTrimmable) tooLarge();
+      const fullR = rowMembers.length, fullC = colMembers.length;
+      let shownR = fullR, shownC = fullC;
+      if (rowTrimmable && colTrimmable) {
+        // 두 축 모두 비날짜면 큰 쪽부터 줄인다 (작은 쪽은 먼저 손대지 않는다)
+        const rowBigger = fullR >= fullC;
+        const bigFull = rowBigger ? fullR : fullC, smallFull = rowBigger ? fullC : fullR;
+        let shownBig = clamp(1, bigFull, Math.floor(STAT_LIMITS.cells / (smallFull * mult)));
+        let shownSmall = smallFull;
+        if (shownBig * smallFull * mult > STAT_LIMITS.cells) { shownSmall = clamp(1, smallFull, Math.floor(STAT_LIMITS.cells / mult)); shownBig = 1; }
+        if (rowBigger) { shownR = shownBig; shownC = shownSmall; } else { shownC = shownBig; shownR = shownSmall; }
+      } else if (rowTrimmable) {
+        shownR = clamp(1, fullR, Math.floor(STAT_LIMITS.cells / (fullC * mult)));
+        if (shownR * fullC * mult > STAT_LIMITS.cells) tooLarge(); // the (protected) column axis alone is already too large
+      } else {
+        shownC = clamp(1, fullC, Math.floor(STAT_LIMITS.cells / (fullR * mult)));
+        if (fullR * shownC * mult > STAT_LIMITS.cells) tooLarge(); // the (protected) row axis alone is already too large
+      }
+      if (shownR < fullR) {
+        const t = foldTopN(rowMembers, shownR, rowDims.length);
+        rowMembers = t.list; rowOtherKeys = t.otherKeys;
+        truncated.push({ role: 'row', dimensions: spec.rows, total_members: fullR, shown_members: rowMembers.length - 1, other_count: t.otherKeys.size });
+      }
+      if (shownC < fullC) {
+        const t = foldTopN(colMembers, shownC, colDims.length);
+        colMembers = t.list; colOtherKeys = t.otherKeys;
+        truncated.push({ role: 'column', dimensions: spec.columns, total_members: fullC, shown_members: colMembers.length - 1, other_count: t.otherKeys.size });
+      }
+      if (rowMembers.length * colMembers.length * mult > STAT_LIMITS.cells) tooLarge(); // defensive: unreachable given the sizing above
     }
-    if (rowMembers.length * colMembers.length * mult > STAT_LIMITS.cells) tooLarge(); // defensive: unreachable given the sizing above
   }
   const otherRowKey = rowDims.length ? keyOf(Array.from({ length: rowDims.length }, () => STAT_OTHER_KEY)) : null;
   const otherColKey = colDims.length ? keyOf(Array.from({ length: colDims.length }, () => STAT_OTHER_KEY)) : null;
@@ -511,8 +558,28 @@ export function aggregateStatistics(input: StatsInput): StatisticsResult {
     cohort_policy_version: COHORT_POLICY_VERSION,
     filter_members: filterMembers,
     ...(truncated.length ? { truncated } : {}),
+    ...(rowPageInfo ? { row_page: rowPageInfo } : {}),
     complete: true,
   };
+}
+
+/**
+ * D23 row paging (2026-10-12): `row_cursor`/`sort_metric`/`sort_dir` request params → {@link StatsInput.rowPage}.
+ * `row_cursor` absent = no paging (the legacy D22 response); present (even "0") opts into paging. `sort_metric`
+ * must be one of `spec.metrics` (the only metrics this response can sort by); `sort_dir` requires `sort_metric`.
+ */
+export function parseRowPage(params: URLSearchParams, spec: StatisticsSpec): RowPageRequest | undefined {
+  const bad = (why: string): never => { throw new StatsQueryError('INVALID_QUERY', why); };
+  const cursorRaw = params.get('row_cursor');
+  if (cursorRaw === null) return undefined;
+  if (!/^\d{1,9}$/.test(cursorRaw)) bad('row_cursor');
+  const cursor = Number(cursorRaw);
+  const sortMetric = params.get('sort_metric');
+  const sortDir = params.get('sort_dir');
+  if (sortMetric !== null && !spec.metrics.includes(sortMetric)) bad('sort_metric not in spec.metrics');
+  if (sortDir !== null && sortDir !== 'asc' && sortDir !== 'desc') bad('sort_dir');
+  if (sortDir !== null && sortMetric === null) bad('sort_dir without sort_metric');
+  return { cursor, sortMetric, sortDir: (sortDir as 'asc' | 'desc' | null) ?? 'desc' };
 }
 
 const relaxScope = (s: Scope): Scope => ({ ...s, category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null });

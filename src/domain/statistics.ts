@@ -96,6 +96,8 @@ export interface StatisticsResult {
   filter_members: Array<{ dimension: string; key: string; label: string | null; count: number; status: MemberStatus }>;
   /**
    * D22 (2026-10-12, 선택 필드 — 구 클라이언트 호환): a row and/or column axis was cut to fit `limits.cells`.
+   * Only present on a LEGACY (unpaged) request — one that sent no `row_cursor` (D23 below). A paged request
+   * never folds: it pages the row axis instead, so `truncated` and `row_page` are never both set.
    * Only a non-date axis is ever cut (a calendar spine axis, or members an explicit filter already picked, are
    * never shortened); `total_members` is the full count BEFORE cutting, `shown_members` the real members kept
    * (건수 상위), `other_count` = total_members - shown_members, folded into the single STAT_OTHER_KEY member of
@@ -103,7 +105,26 @@ export interface StatisticsResult {
    * Absent/empty = nothing was cut (also true when the request already fit inside the budget).
    */
   truncated?: Array<{ role: 'row' | 'column'; dimensions: string[]; total_members: number; shown_members: number; other_count: number }>;
+  /**
+   * D23 row paging (2026-10-12, 선택 필드 — 구 클라이언트 호환): present only when the request sent `row_cursor`
+   * (opt-in). `row_members`/`row_totals`/`cells` then cover ONLY this page's rows, crossed with the FULL column
+   * axis (`col_members`/`col_totals` are always complete, never paged) — never folded into a '그 외' member.
+   * `offset`/`limit` describe the slice of the full, sorted row list this page is; `total` is the full row count
+   * BEFORE paging; `has_more` = there is at least one more row past this page. The row order (and so which rows
+   * land on which page) is the request's `sort_metric`/`sort_dir` when given, else the same default order as an
+   * unpaged response (date/natural/count). Absent = a legacy (unpaged, possibly `truncated`) response.
+   */
+  row_page?: { offset: number; limit: number; total: number; has_more: boolean };
   complete: true;
+}
+
+/** D23 row paging request (server/statistics.ts `aggregateStatistics` input, client `src/data/statistics.ts`). */
+export interface RowPageRequest {
+  /** index into the full sorted row list to start this page at (clamped server-side to [0, total]) */
+  cursor: number;
+  /** must be one of spec.metrics when given; omitted = the default server order (date/natural/count) */
+  sortMetric?: string | null;
+  sortDir?: 'asc' | 'desc';
 }
 
 /** C05 availability of a selected key under the viewer's current permission:
