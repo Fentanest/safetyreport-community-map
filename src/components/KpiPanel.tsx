@@ -93,8 +93,8 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
       mine: mine && `내 ${fmtPercent(mine.fine_rate)} (${fmtPp(diff?.fine_rate_pp)})` });
     const d = o.processing_duration;
     hero.push({ id: 'duration', label: '답변까지', value: d?.count ? fmtDays(d.median_days) : '—',
-      sub: d ? `중앙값 · 계산 ${fmtInt(d.count)}건` : '자료 없음',
-      mine: mine && (mine.duration.count ? `내 ${fmtDays(mine.duration.median_days)}` : '내 계산 불가') });
+      sub: d ? `중앙값 · 평균 ${fmtDays(d.mean_days)} · 계산 ${fmtInt(d.count)}건` : '자료 없음',
+      mine: mine && (mine.duration.count ? `내 중앙값 ${fmtDays(mine.duration.median_days)} · 평균 ${fmtDays(mine.duration.mean_days)}` : '내 계산 불가') });
     // U-mine-minor: 계도(warning)는 개인 비교 응답(CompareSummary)에 warning_count가 아직 없어 '내 신고' 값을 병기할 수
     // 없다(서버·계약 추가 필요 — docs/personal-comparison.md 및 보고 참고). 과태료 금액·평균 별점은 mine.fine_amount/
     // mine.rating이 이미 있으므로 다른 줄과 같은 'mine-col' 표기로 병기한다.
