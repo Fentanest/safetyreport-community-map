@@ -51,6 +51,10 @@ export interface StatisticsSpec {
 
 export const STAT_LIMITS = { rows: 3, columns: 2, metrics: 6, filters: 8, members: 50, cells: 5000, specChars: 6000 } as const;
 
+/** D22 top-N 자르기(2026-10-12): 날짜가 아닌 행/열 축이 칸 예산을 넘으면, 건수 상위 멤버만 남기고 나머지를 하나의
+ *  '그 외' 멤버로 묶는다. 이 멤버의 key/label 모든 자리는 이 상수로 채운다(실제 데이터 값과 절대 겹치지 않음). */
+export const STAT_OTHER_KEY = '__other__';
+
 export interface StatMember { key: string; label: string }
 export interface StatValue { value: number | null; numerator: number | null; denominator: number | null; reason: 'zero_denominator' | 'no_data' | null }
 export interface StatCell {
@@ -90,6 +94,15 @@ export interface StatisticsResult {
   cohort_policy_version?: string;
   /** count of every selected filter member under the other conditions (0 = "현재 조건 0건", kept as a chip) */
   filter_members: Array<{ dimension: string; key: string; label: string | null; count: number; status: MemberStatus }>;
+  /**
+   * D22 (2026-10-12, 선택 필드 — 구 클라이언트 호환): a row and/or column axis was cut to fit `limits.cells`.
+   * Only a non-date axis is ever cut (a calendar spine axis, or members an explicit filter already picked, are
+   * never shortened); `total_members` is the full count BEFORE cutting, `shown_members` the real members kept
+   * (건수 상위), `other_count` = total_members - shown_members, folded into the single STAT_OTHER_KEY member of
+   * row_members/col_members whose values are recomputed from the folded raw facts (never summed from cells).
+   * Absent/empty = nothing was cut (also true when the request already fit inside the budget).
+   */
+  truncated?: Array<{ role: 'row' | 'column'; dimensions: string[]; total_members: number; shown_members: number; other_count: number }>;
   complete: true;
 }
 

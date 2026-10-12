@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import type { MetricDef, StatCatalog, StatisticsResult } from '../../domain/statistics';
+import { STAT_OTHER_KEY, type MetricDef, type StatCatalog, type StatisticsResult } from '../../domain/statistics';
 import { cellIndex, sortedRowMembers, tupleKey, type RowSort } from '../../state/statistics';
 import { fmtStat } from './statFormat';
 
 const PAGE = 50;
 export type { RowSort };
+/** D22: the synthetic '그 외' member a top-N cut folds the rest into (never a real, pickable member). */
+const isOther = (key: readonly string[]) => key[0] === STAT_OTHER_KEY;
 
 /**
  * S07 table renderer of a complete StatisticsResult. Rows are member tuples; columns are column members × metrics
@@ -54,7 +56,7 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
             <tr>
               <th scope="col" className="pivot-corner">{hasRows ? result.spec.rows.map(dimLabel).join(' · ') : '전체'}</th>
               {colHead.map((c) => metrics.map((m) => sides.map((s) => (
-                <th key={`${tupleKey(c.key)}-${m}-${s}`} scope="col" className={s === 'mine' ? 'mine-col' : undefined}
+                <th key={`${tupleKey(c.key)}-${m}-${s}`} scope="col" className={[s === 'mine' ? 'mine-col' : '', isOther(c.key) ? 'pivot-other' : ''].filter(Boolean).join(' ') || undefined}
                   aria-sort={!hasCols && sort.metric === m && s === (result.spec.population === 'mine' ? 'mine' : 'all') ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}>
                   {hasCols && <span className="pivot-col-member">{c.label.join(' · ')}</span>}
                   <button type="button" className="pivot-sort"
@@ -78,15 +80,17 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
           </thead>
           <tbody>
             {(hasRows ? shown : [{ key: [], label: [] as string[] }]).map((r) => (
-              <tr key={tupleKey(r.key)}>
+              <tr key={tupleKey(r.key)} className={hasRows && isOther(r.key) ? 'pivot-other' : undefined}>
                 <th scope="row">
-                  {hasRows ? (onPick ? <button type="button" className="link-btn pivot-row" onClick={() => onPick(r.key, null)}>{r.label.join(' · ')}</button> : r.label.join(' · ')) : '합계'}
+                  {hasRows
+                    ? (onPick && !isOther(r.key) ? <button type="button" className="link-btn pivot-row" onClick={() => onPick(r.key, null)}>{r.label.join(' · ')}</button> : r.label.join(' · '))
+                    : '합계'}
                 </th>
                 {colHead.map((c) => metrics.map((m) => sides.map((s) => {
                   const v = valueOf(s, r.key, c.key, m);
-                  return <td key={`${tupleKey(c.key)}-${m}-${s}`} className={`num${s === 'mine' ? ' mine-col' : ''}`}
+                  return <td key={`${tupleKey(c.key)}-${m}-${s}`} className={`num${s === 'mine' ? ' mine-col' : ''}${hasCols && isOther(c.key) ? ' pivot-other' : ''}`}
                     title={v ? undefined : '이 조합의 답변 신고가 없습니다'}>
-                    {onPick && hasRows && hasCols && v
+                    {onPick && hasRows && hasCols && v && !isOther(r.key) && !isOther(c.key)
                       ? <button type="button" className="link-btn pivot-cell" onClick={() => onPick(r.key, c.key)}
                           aria-label={`${r.label.join(' · ')} · ${c.label.join(' · ')} · ${metric(m)?.label ?? m}${sideWord(s)} ${fmtStat(v, metric(m))}, 이 항목으로 좁히기`}>
                           {fmtStat(v, metric(m))}
@@ -105,7 +109,7 @@ export default function PivotTable({ result, catalog, sort, onSort, onPick }: {
               <tr>
                 <th scope="row">합계</th>
                 {colHead.map((c) => metrics.map((m) => sides.map((s) => (
-                  <td key={`${tupleKey(c.key)}-${m}-${s}`} className="num pivot-total">
+                  <td key={`${tupleKey(c.key)}-${m}-${s}`} className={`num pivot-total${hasCols && isOther(c.key) ? ' pivot-other' : ''}`}>
                     {fmtStat(hasCols ? colTotal.get(`${s}|${tupleKey(c.key)}`)?.values[m] : result.grand_totals.find((t) => t.side === s)?.values[m], metric(m))}
                   </td>
                 ))))}

@@ -132,6 +132,10 @@ html { scroll-padding-top: var(--scroll-top-inset, calc(var(--topbar-h) + 12px))
 .pivot-table .mine-col { color: var(--text-secondary); }
 .pivot-cell { font: inherit; font-variant-numeric: inherit; }
 .pivot-row { text-align: left; white-space: normal; }
+/* D22 top-N (2026-10-12): the folded '그 외' row/column — visually set apart from real members */
+.pivot-table tr.pivot-other > th, .pivot-table tr.pivot-other > td,
+.pivot-table th.pivot-other, .pivot-table td.pivot-other { font-style: italic; color: var(--muted); background: var(--hover); }
+.pivot-table tr.pivot-other > th { border-left: 3px solid var(--border); }
 .pivot-pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 0 16px; }
 .pivot-chart { padding: 0 8px; }
 

@@ -35,6 +35,8 @@ export const statisticsResultSchema = z.strictObject({
   date_axes: z.array(z.strictObject({ dimension: z.string(), role: z.enum(['row', 'column']), mode: z.enum(['spine', 'explicit', 'other_date']) })).max(5).optional(),
   cohort_policy_version: z.literal(COHORT_POLICY_VERSION),
   filter_members: z.array(z.strictObject({ dimension: z.string(), key: z.string(), label: z.string().nullable(), count, status: z.enum(['ok', 'zero', 'unconfirmed']) })).max(400),
+  // D22 (선택 필드): row/column 축 top-N 자르기 안내. 옛 서버 응답에는 없다.
+  truncated: z.array(z.strictObject({ role: z.enum(['row', 'column']), dimensions: z.array(z.string()), total_members: count, shown_members: count, other_count: count })).max(2).optional(),
   complete: z.literal(true),
 });
 const candidate = z.strictObject({ key: z.string().max(200), label: z.string().max(300), sub: z.string().max(200).nullable(), count, status: z.enum(['ok', 'zero', 'unconfirmed']).optional() });
