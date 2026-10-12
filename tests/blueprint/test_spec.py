@@ -24,8 +24,11 @@ class MaskingTests(unittest.TestCase):
         self.assertNotIn('서울12가3456',dumped);self.assertNotIn('12가3456',dumped)
         self.assertEqual([x['masked_plate'] for x in r['items']],['서울1*가*4*6','부산1*가*4*6'])
     def test_unrecognized_is_not_raw(self):
-        for raw in ['외교123456','1가2','<script>12가3456</script>','서울'*40,42]:
+        for raw in ['외교123456','1가2','12가3456/34나5678','서울'*40,42]:
             self.assertEqual(mask_plate(raw),'번호 확인 불가')
+
+    def test_surrounding_punctuation_is_masked_without_raw(self):
+        self.assertEqual(mask_plate('<script>12가3456</script>'), '1*가*4*6')
 
 class MetricTests(unittest.TestCase):
     def test_rates(self):

@@ -28,18 +28,35 @@ def checked_count(value: Any) -> int:
 
 
 def parse_plate(raw: Any) -> tuple[str, str] | None:
-    """Return private canonical identity and prefix-free display body; fail closed."""
+    """공유 규칙의 실행 명세: 지역 필수 이륜형과 후보 경계를 함께 검증한다."""
     if not isinstance(raw, str) or len(raw) > 64:
         return None
-    text = re.sub(r'[\s-]', '', unicodedata.normalize('NFKC', raw))
-    region = ''
-    for prefix in sorted(REGIONS, key=len, reverse=True):
-        if text.startswith(prefix):
-            region, text = REGIONS[prefix], text[len(prefix):]
-            break
-    if not BODY_RE.fullmatch(text):
-        return None
-    return region + text, text
+    text = re.sub(r'[\s-]', '', ''.join(c for c in unicodedata.normalize('NFKC', raw)
+                                      if unicodedata.category(c) != 'Cf'))
+    regions = '|'.join(sorted(REGIONS, key=len, reverse=True))
+    tokens = re.compile(
+        rf'({regions})?([0-9]{{2,3}}[가-힣][0-9]{{4}}|[0-9]?[가-힣][0-9]{{4,5}}|[가-힣]{{2,5}}[0-9]{{4}})')
+    seen = {}
+    for m in tokens.finditer(text):
+        if (m.start() and re.match(r'[0-9ᄀ-ᇿㄱ-ㆎ가-힣]', text[m.start()-1])) or (
+            m.end() < len(text) and re.match(r'[0-9ᄀ-ᇿㄱ-ㆎ가-힣]', text[m.end()])):
+            continue
+        region, body = REGIONS.get(m[1], ''), m[2]
+        if re.fullmatch(r'[가-힣]{2,5}[0-9]{4}', body):
+            if not region:
+                continue
+            city = body[:-5]
+            if len(city) > 1 and city[-1] in '시군구':
+                city = city[:-1]
+            if len(city) > 1 and city[-1] in '시군구':
+                continue
+            if len(city) > 3:
+                continue
+            if REGIONS.get(region + city[0]) == region:
+                continue
+            body = city + body[-5:]
+        seen[region + body] = body
+    return next(iter(seen.items())) if len(seen) == 1 else None
 
 
 def mask_plate(raw: Any) -> str:
@@ -48,11 +65,12 @@ def mask_plate(raw: Any) -> str:
         return '번호 확인 불가'
     canonical, body = parsed
     region = canonical[:len(canonical) - len(body)]
-    chars = list(body)
-    for index in (1, 3, 5):
-        chars[index] = '*'
-    # The short region stays visible and is skipped when counting positions.
-    return region + ''.join(chars)
+    head, tail = body[:-4], body[-4:]
+    if BODY_RE.fullmatch(body):
+        head = head[0] + '*' + head[2:]
+    else:
+        head = re.sub(r'[0-9]$', '*', head)
+    return region + head + '*' + tail[1] + '*' + tail[3]
 
 
 def percent(numerator: int, denominator: int) -> float | None:

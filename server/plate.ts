@@ -1,4 +1,4 @@
-/** Private server-side plate parsing. Never import this module into browser code. */
+/** 비공개 서버 번호판 처리. 브라우저 코드에서 가져오지 않는다. */
 
 // ── 세 레포(safetyreport, safetyreport-mobile, safetyreport-community-map) 공통 번호판 정규화 ──
 //
@@ -9,7 +9,7 @@
 //   - safetyreport-mobile:         test/fixtures/plate_normalize_vectors.json
 //   - safetyreport-community-map:  tests/fixtures/plate_normalize_vectors.json (이 파일이 구현)
 //
-// ## 규칙 (경계 규칙 포함, 2026-10-12 사용자·Opus 결정)
+// ## 규칙 (경계 규칙 포함, 2026-10-13 이륜 확장 포함)
 // 1. NFKC 정규화 → 공백 전부(스페이스·탭·NBSP·전각공백 등) · 유니코드 서식 문자(Unicode category Cf —
 //    제로폭 공백/조인터, LRM/RLM, bidi 제어, BOM 등, 실제로 섞여 있어도 보이지 않으므로 통째로 제거) ·
 //    하이픈(`-`, NFKC 가 전각 하이픈도 반각으로 접어 주므로 이 한 글자만 지우면 된다) 제거.
@@ -29,11 +29,11 @@
 //    (미인식·날짜·숫자만·자모 섞임·자리수 오류 등) 또는 2개 이상(서로 다른 후보)이면 null — 추측하지
 //    않는다. 입력이 64자를 넘으면(업로드 payload 상한과 같음) null.
 //
-// `parsePlate`/`maskPlate` 의 공개 표시 경로는 `normalizePlate` 가 찾은 토큰 중 **일반형 본문만** 받는다
-// (이륜형은 길이가 들쭉날쭉해 기존 2/4/6번째 문자 마스킹 위치 규칙이 안전하지 않다 — 0자리 선행숫자
-// 이륜형은 5자뿐이라 6번째 문자가 없다). 이륜 공개 표시를 지원하려면 마스킹 규칙 자체를 모양별로
-// 다시 정의해야 하므로 별도 결정이 필요하다(2026-10-12 작업 보고에 남김). `normalizePlate` 는 통계용
-// 식별(vehicle_distinct 등)과 세 레포 공유 벡터 검증에 쓰고, 공개 랭킹·마스킹은 `parsePlate` 그대로 쓴다.
+// 2026-10-13: 지역 필수 이륜형 = 지역 + 시군구(1~3자, 별도 시/군/구 접미 허용) + 글자 + 숫자4.
+// 숫자 앞 마지막 글자를 용도 글자로 고정하며 시군구 끝 접미 한 글자를 제거한다(1자 지명 보존).
+// 접미가 중복되거나 약칭과 지명이 다시 지역 정식명으로 읽혀 정규형이 모호하면 제외한다.
+// parsePlate도 이륜형을 허용한다. 이륜은 지역·시군구·글자·선행 숫자를 보존하고,
+// 글자 뒤 선택 숫자와 끝 4자리의 첫째·셋째를 가린다: 경기군포다*6*1, 1오**3*7.
 
 const regions: Record<string, string> = {
   서울특별시: '서울', 부산광역시: '부산', 대구광역시: '대구', 인천광역시: '인천',
@@ -45,11 +45,11 @@ const regions: Record<string, string> = {
 for (const short of Object.values(regions)) regions[short] = short;
 const regionAlt = Object.keys(regions).sort((a, b) => b.length - a.length).join('|');
 
-// 일반형 — 기존 bodyPattern 과 같다. 공개 표시(마스킹)는 이 모양만 받는다.
+// 일반형 — 기존 bodyPattern 과 같다.
 const bodyPattern = /^[0-9]{2,3}[가-힣][0-9]{4}$/u;
 // 이륜형(완화된 형태) — PC fine_estimate._MOTORCYCLE_RE/모바일 _motorcycleRe 와 같다.
 const motoBody = '[0-9]{0,1}[가-힣][0-9]{0,1}[0-9]{4}';
-const tokenRe = new RegExp(`(${regionAlt})?([0-9]{2,3}[가-힣][0-9]{4}|${motoBody})`, 'gu');
+const tokenRe = new RegExp(`(${regionAlt})?([0-9]{2,3}[가-힣][0-9]{4}|${motoBody}|[가-힣]{2,5}[0-9]{4})`, 'gu');
 // 토큰 경계: 숫자 또는 한글(음절/낱자모)이 바로 붙어 있으면 경계가 불분명하다.
 const adjacentRe = /[0-9ᄀ-ᇿㄱ-ㆎ가-힣]/u;
 const formatCharRe = /\p{Cf}/gu;
@@ -64,7 +64,7 @@ function findPlateToken(raw: unknown): { region: string; body: string } | null {
 
   const seen = new Map<string, { region: string; body: string }>();
   for (const match of text.matchAll(tokenRe)) {
-    const body = match[2];
+    let body = match[2];
     if (!body) continue;
     const start = match.index ?? 0;
     const end = start + match[0].length;
@@ -72,6 +72,15 @@ function findPlateToken(raw: unknown): { region: string; body: string } | null {
     if (end < text.length && adjacentRe.test(text[end])) continue;
     const rawRegion = match[1] ?? '';
     const region = regions[rawRegion] ?? rawRegion;
+    if (/^[가-힣]{2,5}[0-9]{4}$/u.test(body)) {
+      if (!region) continue;
+      let city = body.slice(0, -5);
+      if (city.length > 1) city = city.replace(/[시군구]$/u, '');
+      if (city.length > 1 && /[시군구]$/u.test(city)) continue;
+      if (city.length < 1 || city.length > 3) continue;
+      if (regions[region + city[0]] === region) continue;
+      body = city + body.slice(-5);
+    }
     seen.set(region + body, { region, body });
   }
   if (seen.size !== 1) return null;
@@ -96,22 +105,26 @@ export interface ParsedPlate {
 /** Short regional prefixes that may appear in a public masked plate. */
 export const PUBLIC_REGION_PREFIXES: readonly string[] = [...new Set(Object.values(regions))];
 
-/** 통계·랭킹·마스킹·개인 차량 목록이 쓰는 공개 경로 — 안전하게 마스킹 가능한 일반형 본문만 받는다. */
+/** 통계·랭킹·마스킹·개인 차량 목록이 쓰는 공개 경로 — 일반형·이륜형을 함께 받는다. */
 export function parsePlate(raw: unknown): ParsedPlate | null {
   const found = findPlateToken(raw);
-  if (!found || !bodyPattern.test(found.body)) return null;
+  if (!found) return null;
   return { canonical: found.region + found.body, region: found.region, body: found.body };
 }
 
-/**
- * Public display: the short region stays visible (경기도 → 경기) and is skipped when
- * counting; the 1-based 2nd/4th/6th characters of the remaining number become '*'.
- * 경기76자3623 → 경기7*자*6*3, 12가3456 → 1*가*4*6.
+/** 공개 표시: 일반형 앞 숫자 둘째와 끝 4자리 첫째·셋째를 가린다.
+ * 이륜형은 글자 뒤 선택 숫자도 가린다. 지역·시군구·용도 글자는 보존한다.
  */
 export function maskPlate(raw: unknown): string {
   const parsed = parsePlate(raw);
   if (!parsed) return '번호 확인 불가';
-  const letters = Array.from(parsed.body);
-  for (const position of [1, 3, 5]) letters[position] = '*';
-  return parsed.region + letters.join('');
+  if (!bodyPattern.test(parsed.body)) {
+    // 끝 4자리는 정확히 두 자리만 공개하며 중간 선택 숫자는 모두 가린다.
+    const tail = parsed.body.slice(-4);
+    const head = parsed.body.slice(0, -4).replace(/[0-9]$/u, '*');
+    return parsed.region + head + '*' + tail[1] + '*' + tail[3];
+  }
+  const head = parsed.body.slice(0, -4);
+  const tail = parsed.body.slice(-4);
+  return parsed.region + head[0] + '*' + head.slice(2) + '*' + tail[1] + '*' + tail[3];
 }

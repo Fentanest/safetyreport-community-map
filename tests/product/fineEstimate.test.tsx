@@ -52,6 +52,13 @@ describe('fine estimate ingest extension', () => {
     {...estimate,extra:'raw photo time'}])('rejects invalid values %j', value => {
     expect(isObservation({...payload,fine_estimate:value})).toBe(false);
   });
+  it('이륜 교정 규칙 버전은 별도 허용 목록 변경 없이 수집한다', async () => {
+    const corrected = {won:40000,rule:'bus_lane',rule_version:'2026-10-13.1'};
+    expect(isObservation({...payload,fine_estimate:corrected})).toBe(true);
+    expect(await deriveFact({...payload,fine_estimate:corrected})).toMatchObject({
+      fine_estimate_won:40000,fine_estimate_rule:'bus_lane',fine_estimate_rule_version:'2026-10-13.1',
+    });
+  });
   it('accepts bounds and all rule IDs', () => {
     for (const rule of ['bus_lane','parking','hydrant','school_zone','ev_charging','disabled_parking','fire_lane','waste','overnight_truck']) {
       expect(isObservation({...payload,fine_estimate:{...estimate,won:1,rule,rule_version:'가'.repeat(40)}})).toBe(true);

@@ -72,6 +72,11 @@ describe('PV: exact pivot values', () => {
     expect(r.grand_totals[0].values.vehicle_distinct.value).toBe(2);
     expect(r.grand_totals[0].values.duration_median.value).toBe(9); // durations 9, 5, 37 → median 9
   });
+  it('이륜 표기 변형도 고유 차량 통계에서 같은 차량으로 센다', () => {
+    const r = run([f({vehicle_raw:'경기군포다2671'}), f({vehicle_raw:'경기도군포시다2671'}),
+      f({vehicle_raw:'서울강남다0025'}), f({vehicle_raw:'여수사6361'})], {metrics:['vehicle_distinct']});
+    expect(r.grand_totals[0].values.vehicle_distinct.value).toBe(2);
+  });
   it('PV-06/PV-07 undisclosed rating/amount is never 0; a single report is kept', () => {
     const r = run([f({ rating: null, disposition: 'fine', amount_kind: 'fine', amount_public: false, amount_stated: true, amount_confirmed_won: null })],
       { metrics: ['rating_mean', 'amount_sum', 'completed_count'] });

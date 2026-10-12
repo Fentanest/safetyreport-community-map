@@ -194,6 +194,17 @@ describe('A03 entity scatter', () => {
 });
 
 describe('A04 distinct report days per vehicle', () => {
+  it('이륜 지역 표기 변형을 묶고 서로 다른 신고일만 센다', () => {
+    const d = vehicleDayDistribution([
+      f({vehicle_raw:'경기군포다2671',report_date:'2026-09-02'}),
+      f({vehicle_raw:'경기도군포시다2671',report_date:'2026-09-03'}),
+      f({vehicle_raw:'서울강남다0025',report_date:'2026-09-03'}),
+    ]);
+    expect(d.vehicle_count).toBe(2);
+    expect(d.repeat_vehicle_count).toBe(1);
+    expect(d.excluded.no_plate).toBe(0);
+    expect(JSON.stringify(d)).not.toContain('2671');
+  });
   it('five same-day reports are 1 day; a next-day report makes 2 days; no plate text leaves', () => {
     const plate = '서울12가3456';
     const sameDay = Array.from({ length: 5 }, () => f({ vehicle_raw: plate, report_date: '2026-09-02' }));

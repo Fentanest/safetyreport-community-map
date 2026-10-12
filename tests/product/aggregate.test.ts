@@ -132,6 +132,18 @@ describe('identity, scope and public projection', () => {
     expect(JSON.stringify(data)).not.toContain('서울12가3456');
     expect(JSON.stringify(data)).not.toContain('private-user');
   });
+  it('이륜 표기 변형은 정규형으로 합산하고 공개 응답에는 가림만 남는다', () => {
+    const data = aggregate([fact(1, {vehicle_raw:'경기군포다2671'}),
+      fact(2, {vehicle_raw:'경기도 군포시 다 2671'}),
+      fact(3, {vehicle_raw:'서울강남다0025'})]);
+    expect(data.vehicle_identifiable_reports).toBe(3);
+    expect(data.vehicles.map(v => [v.masked_plate,v.report_count])).toEqual([
+      ['경기군포다*6*1',2],['서울강남다*0*5',1],
+    ]);
+    expect(data.vehicles.every(v => vehicleSchema.safeParse(v).success)).toBe(true);
+    expect(JSON.stringify(data)).not.toContain('경기군포다2671');
+  });
+
   it('keeps the region in the label and never merges vehicles whose labels collide', () => {
     const data = aggregate([
       fact(1, { vehicle_raw: '경기76자3623' }),

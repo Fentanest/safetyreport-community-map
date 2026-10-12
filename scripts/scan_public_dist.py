@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse, gzip, json, re
 from pathlib import Path
 
-PLATE = re.compile(r'(?:서울|부산|대구|인천|광주|대전|울산|경기|강원|충북|충남|전북|전남|경북|경남|제주|세종)?[0-9]{2,3}[가-힣][0-9]{4}')
+# 이륜 원번호도 공개 빌드에 있으면 실패시킨다(지역·시군구가 없어도 끝 4~5자리 포함).
+PLATE = re.compile(r'[0-9]*[가-힣][0-9]{4,5}')
 FORBIDDEN = re.compile(r'sb_secret_[A-Za-z0-9_-]+|CM_SECRET_CANARY_NOT_PUBLIC|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_EXPORT_DATABASE_URL|KAKAO_REST_API_KEY|vehicle_canonical|raw_vehicle',re.I)
 # Data files must never carry a session field. Script bundles legitimately contain the identifier
 # `refresh_token` (the lazily loaded Supabase Auth client of the optional map login), so for scripts

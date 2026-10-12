@@ -136,8 +136,8 @@ export const lawSchema = z.strictObject({
 
 export const vehicleSchema = z.strictObject({
   rank: z.number().int().min(1).max(5), rank_item_id: z.string().regex(/^r[1-5]$/),
-  // Optional short region (kept visible), then the masked number: 경기7*자*6*3, 1*가*4*6.
-  masked_plate: z.string().regex(/^(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)?[0-9]\*[0-9가-힣]\*[0-9]\*[0-9]{1,2}$/),
+  // 일반형·이륜형 모두 끝 4자리는 두 자리만 공개한다. 시군구는 지역 접두가 필수다.
+  masked_plate: z.string().regex(/^(?:(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)?(?:[0-9]\*[0-9]?[가-힣]|[0-9]?[가-힣]\*?)|(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[가-힣]{2,4})\*[0-9]\*[0-9]$/),
   report_count: z.number().int().positive(), percentage: z.number().min(0).max(100).nullable(),
 });
 

@@ -104,7 +104,7 @@ export function demoDashboard(scope: Scope, state: 'overview' | 'one' | 'empty' 
       { rank: 1, rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 1, percentage: 100 },
     ] : [
       { rank: 1, rank_item_id: 'r1', masked_plate: '서울1*가*4*6', report_count: 3, percentage: 33.3333333333 },
-      { rank: 2, rank_item_id: 'r2', masked_plate: '경기1*3*4*67', report_count: 2, percentage: 22.2222222222 },
+      { rank: 2, rank_item_id: 'r2', masked_plate: '경기1*3가*5*7', report_count: 2, percentage: 22.2222222222 },
       { rank: 3, rank_item_id: 'r3', masked_plate: '2*다*6*8', report_count: 1, percentage: 11.1111111111 },
       { rank: 4, rank_item_id: 'r4', masked_plate: '서울1*가*4*6', report_count: 1, percentage: 11.1111111111 },
     ],
