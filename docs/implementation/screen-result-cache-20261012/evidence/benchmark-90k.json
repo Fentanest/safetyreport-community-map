@@ -1,0 +1,186 @@
+{
+  "synthetic": true,
+  "size": 90000,
+  "iterations": 2,
+  "postgres": "local 17 (same version family; not production hardware/data)",
+  "rows": [
+    {
+      "window": "year",
+      "phase": "baseline",
+      "iteration": 0,
+      "ms": 3248.252,
+      "bytes": 2215697,
+      "cache": null
+    },
+    {
+      "window": "year",
+      "phase": "cold",
+      "iteration": 0,
+      "ms": 3337.43,
+      "bytes": 2215951,
+      "cache": {
+        "public_hit": false,
+        "personal_hit": false,
+        "state_hit": false
+      }
+    },
+    {
+      "window": "year",
+      "phase": "hit",
+      "iteration": 0,
+      "ms": 17.913,
+      "bytes": 2215948,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": true,
+        "state_hit": true
+      }
+    },
+    {
+      "window": "year",
+      "phase": "public-hit",
+      "iteration": 0,
+      "ms": 1743.22,
+      "bytes": 2215949,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": false,
+        "state_hit": true
+      }
+    },
+    {
+      "window": "year",
+      "phase": "baseline",
+      "iteration": 1,
+      "ms": 3169.172,
+      "bytes": 2215697,
+      "cache": null
+    },
+    {
+      "window": "year",
+      "phase": "cold",
+      "iteration": 1,
+      "ms": 3142.312,
+      "bytes": 2215951,
+      "cache": {
+        "public_hit": false,
+        "personal_hit": false,
+        "state_hit": false
+      }
+    },
+    {
+      "window": "year",
+      "phase": "hit",
+      "iteration": 1,
+      "ms": 15.854,
+      "bytes": 2215948,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": true,
+        "state_hit": true
+      }
+    },
+    {
+      "window": "year",
+      "phase": "public-hit",
+      "iteration": 1,
+      "ms": 1701.572,
+      "bytes": 2215949,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": false,
+        "state_hit": true
+      }
+    },
+    {
+      "window": "all",
+      "phase": "baseline",
+      "iteration": 0,
+      "ms": 5886.825,
+      "bytes": 2481333,
+      "cache": null
+    },
+    {
+      "window": "all",
+      "phase": "cold",
+      "iteration": 0,
+      "ms": 6188.29,
+      "bytes": 2481560,
+      "cache": {
+        "public_hit": false,
+        "personal_hit": false,
+        "state_hit": false
+      }
+    },
+    {
+      "window": "all",
+      "phase": "hit",
+      "iteration": 0,
+      "ms": 17.651,
+      "bytes": 2481557,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": true,
+        "state_hit": true
+      }
+    },
+    {
+      "window": "all",
+      "phase": "public-hit",
+      "iteration": 0,
+      "ms": 3401.973,
+      "bytes": 2481558,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": false,
+        "state_hit": true
+      }
+    },
+    {
+      "window": "all",
+      "phase": "baseline",
+      "iteration": 1,
+      "ms": 6102.807,
+      "bytes": 2481333,
+      "cache": null
+    },
+    {
+      "window": "all",
+      "phase": "cold",
+      "iteration": 1,
+      "ms": 5993.002,
+      "bytes": 2481560,
+      "cache": {
+        "public_hit": false,
+        "personal_hit": false,
+        "state_hit": false
+      }
+    },
+    {
+      "window": "all",
+      "phase": "hit",
+      "iteration": 1,
+      "ms": 20.206,
+      "bytes": 2481557,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": true,
+        "state_hit": true
+      }
+    },
+    {
+      "window": "all",
+      "phase": "public-hit",
+      "iteration": 1,
+      "ms": 3128.981,
+      "bytes": 2481558,
+      "cache": {
+        "public_hit": true,
+        "personal_hit": false,
+        "state_hit": true
+      }
+    }
+  ],
+  "candidate_base": "1125e516d3b8834ffb3bd7c4fdf475a7f0d68473",
+  "migration_sha256": "ad08627e362a935b420f8c360c7998d5ab89684b039b312908a1447ae043cd99"
+}

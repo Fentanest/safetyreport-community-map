@@ -212,3 +212,14 @@ UUID는 이 전용 API의 표시 예외이고 다른 사용자 원문 조회 자
 세 `theme` 모두 `period=all|range|month`를 지원한다. 월별 신고자·과태료·불운자는 같은 `month`와
 `date_basis/category/min_reports`를 보내 같은 모집단을 사용한다. `theme=unlucky&period=all`은 누적 불운자다.
 월 전용 불운자 제한 해제에는 map migration `202610030200`과 갱신된 Edge 계약이 필요하다.
+
+## 2026-10-12 · 화면 결과 캐시 후보 (운영 미적용)
+
+`my-analytics/screen`은 `internal_analytics_screen_cached`의 한 STABLE 읽기 스냅샷에서 매 요청 자격을 검사하고,
+자료 버전·범위·집계에 필요한 패널·DTO/encoding 버전으로 공개/개인 집계를 재사용한다. 개인 키에는 검증된 UUID와
+사용자 자료 버전(전역 revision + 해당 사용자의 manifest generations)이 추가된다. `shared` 장소 플래그도 개인 부분이다.
+공개 캐시는 사용자 독립 집계만 담는다. 브라우저 응답은 기존 `screen-v1`, `private, no-store`를 유지하며 내부 캐시 정보는 내보내지 않는다.
+이전 dataset_version을 허용하지 않으므로 화면의 기존 source/generated/published 시각 의미는 바뀌지 않는다.
+`public-analytics`의 metadata는 `internal_analytics_cached_state`를 사용하지만 인증·동의·10건 gate는 그대로다.
+기존 기타 public rollup/facts, 개인 compare/statistics 단독 경로는 이 캐시의 범위가 아니다.
+설계·제한·운영 검증 SQL은 [캐시 보고서](implementation/screen-result-cache-20261012/REPORT.md)에 있다.

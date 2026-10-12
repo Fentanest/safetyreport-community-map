@@ -1,0 +1,35 @@
+{
+  "vitest": {
+    "passed": 805,
+    "skipped": 188,
+    "passed_files": 67,
+    "command": "npx vitest run --configLoader runner"
+  },
+  "postgres_integration": {
+    "passed": 7,
+    "command": "SCREEN_CACHE_STACK=1 npx vitest run --configLoader runner tests/integration/screen-result-cache.test.ts",
+    "transaction": "local BEGIN/ROLLBACK"
+  },
+  "typescript": "PASS: npx tsc -p . --noEmit",
+  "vite": "PASS: npx vite build --configLoader runner --outDir /tmp/cm-cache-dist; existing chunk warnings",
+  "deno": "PASS: DENO_DIR=/tmp/cm-cache-deno deno check supabase/functions/my-analytics/index.ts supabase/functions/public-analytics/index.ts",
+  "public_dist_scan": {
+    "checked_directory": "/tmp/cm-cache-dist",
+    "passed": true,
+    "issues": []
+  },
+  "rollback_preserved": {
+    "local_cache_table_absent": true,
+    "local_pg_cron_still_uninstalled": true
+  },
+  "production_access": false,
+  "committed": false,
+  "pushed": false,
+  "deployed": false,
+  "not_run": [
+    "Production latency / p95",
+    "Production pg_cron installation/job execution",
+    "Independent Muse review",
+    "Live Kakao integration"
+  ]
+}
