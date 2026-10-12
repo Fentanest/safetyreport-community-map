@@ -1,0 +1,15 @@
+// Cloudflare Workers — 정적 자산만(Worker 스크립트 없음). 2026-10-12 GitHub Pages → Workers 이전.
+// 스크립트가 없으므로 모든 요청이 정적 자산 요청(무료·무제한)이고 Workers 일일 요청 한도를 쓰지 않는다.
+// 배포는 .github/workflows/publish-pages.yml 의 deploy-cloudflare 작업이 검증된 빌드 산출물(dist)로 한다 —
+// Cloudflare 쪽 Git 자동 빌드(Workers Builds)는 쓰지 않는다(빌드 변수·배포 안전장치가 GitHub 워크플로에 있음).
+{
+  "name": "safetyreport-community-map",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    // SPA: 없는 경로는 index.html 로(새로고침·깊은 링크).
+    "not_found_handling": "single-page-application"
+  }
+}

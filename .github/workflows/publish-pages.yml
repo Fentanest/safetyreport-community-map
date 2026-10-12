@@ -81,3 +81,35 @@ jobs:
       - name: Deploy validated public artifact
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  # 2026-10-12 Cloudflare Workers(정적 자산 전용) 이전 1단계: 같은 검증 산출물을 workers.dev 에도 올린다.
+  # 토큰은 environment 'cloudflare' 비밀값 — 이 작업만 받고, 외부 패키지를 실행하는 build 작업은 받지 않는다.
+  deploy-cloudflare:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    environment:
+      name: cloudflare
+      url: https://safetyreport-community-map.better0101.workers.dev
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/pages
+      - name: Unpack validated artifact
+        run: |
+          rm -rf dist && mkdir dist
+          tar -xf "${{ runner.temp }}/pages/artifact.tar" -C dist
+          test -f dist/index.html
+          test ! -e dist/data
+      - name: Deploy static assets to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.149.0 deploy
