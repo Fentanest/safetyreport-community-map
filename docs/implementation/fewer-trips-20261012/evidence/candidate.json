@@ -1,0 +1,29 @@
+{
+  "base_commit": "32437a88d3e2595a5864f8d03fffd9e5474a8a2a",
+  "branch": "astra/fewer-trips",
+  "committed": false,
+  "owner": "single writer in map-trips; Muse blocked before dispatch",
+  "sha256": {
+    "docs/deployment.md": "283ed6862e6ddda5e656d86bda360280e2713804b7f04b35643cf7cbd2d00877",
+    "docs/implementation/fewer-trips-20261012/REPORT.md": "6e5ea4eb169f18b56716767a8ed8722196be80ddba04720ac11e60138168159f",
+    "docs/product-decisions.md": "16fe0f8a41ba581f8539dbf67d3dfbbcb24eacbf33253bc87c03b2d25603df02",
+    "docs/public-api-contract.md": "cc4bb5464708ed4089ad375ab9619f82398ede19d3183af6210cbe1a0a167ca6",
+    "public/_headers": "d801c4a056aef5ca813eb0aca015d092a57c5a4c37a7a712329d0c6ea8c9bb2a",
+    "scripts/browser/measure_fewer_trips.mjs": "36a3c70a9b682d398f388a0d1505997cceee0e815afa025a41d2ea24231869ca",
+    "scripts/browser/verify_fewer_trips.mjs": "caf5a818c7144d94ccbb29adf9f80abed21b97ad9c5e01d0720dc49b5fed776e",
+    "scripts/browser/verify_fewer_trips_demo.mjs": "204372ab534f8e60b8f9b2345bd88b1adeb47920749052a6ca8de37883495c08",
+    "scripts/browser/verify_fewer_trips_headers.mjs": "4d215a8262669419cab936fcc0566e37bed176135b7bde02ce971b123f4fcc5e",
+    "server/screenHandler.ts": "c08f214c035a503e88f5a7adec4aa3918e723f8b099088ce88372bd8a8a440c8",
+    "src/components/AnalyticsCharts.tsx": "094fb66e23c1a4397892d3f2c991f0b86f44cbc5f7fc0925dded7f45a95155d1",
+    "src/components/mineEntityKeys.ts": "e2be0171637d3ec198cbb9a7e9c72fd5ea8bcdc6e618f37aac58d197aafd05d6",
+    "src/data/client.ts": "8977f6483569ec02aba1f03e9b04512d2d1170613472a41dad6002c49059cddd",
+    "src/data/refreshController.ts": "b6c92eae804008b85ea3d8b59be1a85bcdf1e82b52ce6f39ebca96122ca5b682",
+    "src/data/schema.ts": "6989677fcdc17002481b1edc65755ad9b91d27ae4b4c3b1092afc10b8670e6d2",
+    "src/data/screenCoordinator.ts": "c069aca5ddf83f14cadc0a7d311ffdbd4b552111d2989808c8ec9b495feda527",
+    "src/hooks/useDashboardCharts.ts": "a63b65e8c19fa4ae252921c9a0f52a08b0312c8c5422a7307df5dcd819f8be6e",
+    "src/hooks/useDashboardData.ts": "b07d40133015e98e0d81ef31bedc8f12731dab3248b61b24ccd9bc6d23cd35be",
+    "src/pages/Dashboard.tsx": "f5f33fc1ebeda583613f54bdbadb89aebd077836f0e429c238eee9108456aabd",
+    "tests/product/accessClient.test.ts": "77d8a81128ce57d358badec16408a9524b6c71e72cd53db05e4eda9074b9d11c",
+    "tests/product/fewerTrips.test.ts": "a09f75a4082f88f242683ae180ce0a836769fa29189146aab7f7e835309d6319"
+  }
+}

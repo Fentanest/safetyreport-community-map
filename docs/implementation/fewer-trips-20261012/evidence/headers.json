@@ -1,0 +1,49 @@
+{
+  "static": [
+    {
+      "path": "/",
+      "status": 200,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "etag": true
+    },
+    {
+      "path": "/index.html",
+      "status": 200,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "etag": true
+    },
+    {
+      "path": "/deep/link",
+      "status": 200,
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "etag": true
+    },
+    {
+      "path": "/assets/index-xQfbTimg.js",
+      "status": 200,
+      "cacheControl": "public, max-age=31536000, immutable",
+      "etag": true
+    }
+  ],
+  "cors": [
+    {
+      "requestCache": "no-store",
+      "responseCache": "private, no-store, max-age=0",
+      "network": [
+        "OPTIONS",
+        "GET",
+        "OPTIONS",
+        "GET"
+      ]
+    },
+    {
+      "requestCache": "default",
+      "responseCache": "private, no-store, max-age=0",
+      "network": [
+        "OPTIONS",
+        "GET",
+        "GET"
+      ]
+    }
+  ]
+}

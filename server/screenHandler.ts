@@ -16,13 +16,18 @@ export function createScreenHandler(deps: PersonalDeps) {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store, max-age=0',
       Pragma: 'no-cache', Vary: 'Origin, Authorization, Accept', 'X-Content-Type-Options': 'nosniff',
-      ...(origin && deps.allowedOrigins.includes(origin) ? { 'Access-Control-Allow-Origin': origin } : {}),
+      ...(origin && deps.allowedOrigins.includes(origin) ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Expose-Headers': 'Retry-After' } : {}),
     };
     const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
-    const error = (code: string, status: number) => reply({ error: { code, message: '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.' } }, status);
+    const error = (code: string, status: number) => {
+      const retry = status === 429 ? 60 : status >= 500 ? 30 : null;
+      if (retry !== null) headers['Retry-After'] = String(retry);
+      return reply({ error: { code, message: '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
+        ...(retry !== null ? { retry_after_seconds: retry } : {}) } }, status);
+    };
     if (origin && !deps.allowedOrigins.includes(origin)) return error('origin_forbidden', 403);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...headers,
-      'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'authorization, apikey, accept' } });
+      'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'authorization, apikey, accept', 'Access-Control-Max-Age': '600' } });
     if (request.method !== 'GET') return error('METHOD_NOT_ALLOWED', 405);
     try {
       if (!deps.enabled) return error('AGGREGATE_NOT_READY', 503);
@@ -37,7 +42,7 @@ export function createScreenHandler(deps: PersonalDeps) {
       ]));
       if (!Array.isArray(panels) || panels.length > 8 || new Set(panels.map(p => p?.id)).size !== panels.length || panels.some(p =>
         !p || Object.keys(p).some(k => !['id', 'path', 'params'].includes(k)) || !/^[a-z-]{1,24}$/.test(p.id) ||
-        !['entities', 'entity-prefix', 'laws', 'places', 'compare'].includes(p.path) && !/^places\/pl1:[0-9a-f]{16}$/.test(p.path) ||
+        !['entities', 'entity-prefix', 'laws', 'places', 'compare', 'dashboard-analytics'].includes(p.path) && !/^places\/pl1:[0-9a-f]{16}$/.test(p.path) ||
         !p.params || typeof p.params !== 'object' || Array.isArray(p.params) || Object.entries(p.params).some(([k, v]) =>
           !['kind', 'page', 'page_size', 'q', 'sort', 'sort_value', 'dir', 'agency_type', 'view_bbox', 'entity_limit', 'through_page'].includes(k) || typeof v !== 'string'))) {
         throw new QueryError('INVALID_QUERY', 400);
@@ -81,9 +86,14 @@ export function createScreenHandler(deps: PersonalDeps) {
       const dashboard = await read('dashboard');
       if (!dashboard.ok) return dashboard;
       const meta = await read('meta');
+      const dashboardBody = await dashboard.json();
       const results = [];
       for (const p of panels) {
-        if (p.path === 'entity-prefix') {
+        if (p.path === 'dashboard-analytics') {
+          if (Object.keys(p.params).length) throw new QueryError('INVALID_QUERY', 400);
+          results.push({ id: p.id, status: 200, body: { dataset_version: dashboardBody.dataset_version,
+            scope: dashboardBody.scope, analytics: dashboardBody.analytics ?? null } });
+        } else if (p.path === 'entity-prefix') {
           const count = Number(p.params.through_page), kind = p.params.kind;
           if (!Number.isInteger(count) || count < 1 || count > 1000 || !['agency', 'manager'].includes(kind) ||
             Object.keys(p.params).some(k => !['kind', 'q', 'through_page'].includes(k)) || (p.params.q?.length ?? 0) > 160) throw new QueryError('INVALID_QUERY', 400);
@@ -105,7 +115,9 @@ export function createScreenHandler(deps: PersonalDeps) {
           results.push({ id: p.id, status: result.status, body: await result.json() });
         }
       }
-      return reply({ schema_version: 'screen-v1', meta: { ...await meta.json(), ...(source.snapshots?.public_at ? { snapshot_at: source.snapshots.public_at } : {}) }, dashboard: await dashboard.json(), panels: results });
+      // Negotiated projection only: legacy clients still receive the complete dashboard.
+      if (request.headers.get('accept')?.includes('screen-detail=deferred-v1')) dashboardBody.analytics = null;
+      return reply({ schema_version: 'screen-v1', meta: { ...await meta.json(), ...(source.snapshots?.public_at ? { snapshot_at: source.snapshots.public_at } : {}) }, dashboard: dashboardBody, panels: results });
     } catch (e) {
       if (e instanceof QueryError) return error(e.code, e.status);
       if (e instanceof ViewerAuthError) return error(e.code, e.code === 'kakao_required' ? 403 : e.code === 'service_unavailable' ? 503 : 401);

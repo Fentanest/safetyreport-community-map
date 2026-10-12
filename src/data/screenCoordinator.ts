@@ -33,6 +33,8 @@ export class ScreenCoordinator {
     return result?.status === 200 ? result.body : null;
   }
   drop(id: string) { this.requests.delete(id); this.settled?.requests.delete(id); }
+  /** Explicit retry must not reuse a cached panel error. */
+  invalidate(id: string) { this.frameKeys.delete(id); this.settled?.keys.delete(id); }
   active() { return this.scope !== null; }
   matches(scope: Scope) { return this.scope !== null && scopeKey(this.scope) === scopeKey(scope); }
   async open(scope: Scope, signal?: AbortSignal, initialPanels?: ScreenPanel[]): Promise<DashboardData> {

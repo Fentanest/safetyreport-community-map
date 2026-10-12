@@ -1,0 +1,78 @@
+{
+  "mode": "synthetic local real handlers / fake auth / mock Kakao",
+  "browser": "154.0.8037.92",
+  "checks": [
+    {
+      "width": 390,
+      "theme": "dark",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "closeChangeScopeReopen": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "theme": "dark",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "width": 2560,
+      "theme": "dark",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "theme": "light",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "width": 2560,
+      "theme": "light",
+      "firstScreenRequests": 1,
+      "metaRequests": 0,
+      "deferredCharts": true,
+      "overflow": false
+    },
+    {
+      "chartErrorAndExplicitRetry": true
+    }
+  ],
+  "console": [],
+  "status": "PASS"
+}

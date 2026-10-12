@@ -262,3 +262,8 @@ export const errorResponseSchema = z.strictObject({
 });
 
 export type AccessErrorDetails = z.infer<typeof accessErrorDetailsSchema>;
+
+/** Deferred charts are fenced to the replacement screen, never mixed into an older dashboard. */
+export const dashboardAnalyticsResponseSchema = z.strictObject({
+  dataset_version: z.string().min(1), scope: scopeSchema, analytics: analyticsSchema.nullable(),
+});

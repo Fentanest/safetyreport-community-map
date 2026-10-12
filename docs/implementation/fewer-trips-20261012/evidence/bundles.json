@@ -1,0 +1,18 @@
+[
+  {
+    "phase": "before",
+    "entry": "/assets/index-DNuZm7UJ.js",
+    "bytes": 675113,
+    "gzip": 199860,
+    "sha256": "75e1d2b5d212e759200ca91df2e0605684ce955e48e887dcb5747e688e691319",
+    "gzip_method": "Python gzip.compress default level 9; entry only"
+  },
+  {
+    "phase": "after",
+    "entry": "/assets/index-BbqT66yO.js",
+    "bytes": 648298,
+    "gzip": 191814,
+    "sha256": "6d27ffbc2210f14fb3841d82c8049fcf8085bae539b2bc5d12ee9af3afecdb46",
+    "gzip_method": "Python gzip.compress default level 9; entry only"
+  }
+]

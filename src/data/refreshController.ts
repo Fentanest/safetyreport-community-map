@@ -11,7 +11,7 @@
  *     interval and limited by a per-minute request budget (the server allows 60 requests/min per viewer);
  *   - the same scope as the one displayed or in flight never starts a second request;
  *   - every start increments a generation and aborts the previous request; an older response never lands;
- *   - metadata (dataset version) is read once per session and re-read only after a 409, retried once;
+ *   - atomic screens carry metadata; legacy adapters read meta first; either path retries a 409 once;
  *   - 429 pauses every request until Retry-After, then runs only the latest requested scope;
  *   - network/5xx get one delayed retry, then a visible error (the displayed snapshot stays);
  *   - access errors (401/403 access codes) clear everything — the caller shows the access gate.
@@ -54,6 +54,8 @@ export interface RefreshState {
 }
 
 export interface RefreshDeps {
+  /** Atomic screen transport supplies its own metadata; legacy adapters retain meta → dashboard. */
+  fetchScreen?(scope: Scope, signal: AbortSignal): Promise<DashboardData>;
   fetchMeta(signal: AbortSignal): Promise<PublicMeta>;
   fetchDashboard(meta: PublicMeta, scope: Scope, signal: AbortSignal): Promise<DashboardData>;
   now(): number;
@@ -245,7 +247,7 @@ export class RefreshController {
 
   private async run(scope: Scope, ac: AbortController, gen: number, metaRetried: boolean): Promise<void> {
     try {
-      if (!this.meta) {
+      if (!this.deps.fetchScreen && !this.meta) {
         const fetched = await this.deps.fetchMeta(ac.signal);
         // C01: an answer for a request started before a reset/newer start is dropped before it is cached
         if (ac.signal.aborted || gen !== this.state.generation) return;
@@ -253,7 +255,9 @@ export class RefreshController {
         this.set({ meta: this.meta });
       }
       const meta = this.meta;
-      const data = await this.deps.fetchDashboard(meta, scope, ac.signal);
+      const data = this.deps.fetchScreen
+        ? await this.deps.fetchScreen(scope, ac.signal)
+        : await this.deps.fetchDashboard(meta!, scope, ac.signal);
       if (ac.signal.aborted || gen !== this.state.generation) return;
       this.inflight = null;
       this.meta = data.meta;
@@ -273,7 +277,7 @@ export class RefreshController {
         return;
       }
       if (err.status === 409 && !metaRetried) {
-        this.meta = null; // dataset changed: read the metadata once more and retry this latest scope once
+        this.meta = null; // dataset changed: obtain a fresh atomic screen (or legacy metadata) once
         return this.run(scope, ac, gen, true);
       }
       this.inflight = null;
