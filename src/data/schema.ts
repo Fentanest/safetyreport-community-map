@@ -57,7 +57,9 @@ const durationBrief = z.strictObject({
 }).nullable().optional();
 const durationSummary = z.strictObject({
   basis, count,
-  mean_days: z.number().min(0).nullable(), median_days: z.number().min(0).nullable(), p90_days: z.number().min(0).nullable(),
+  // U-mean-primary (2026-10-12): optional — an older server omits the key entirely (never just null), and
+  // KpiPanel/CompareKpis fall back to the pre-existing median-as-hero display.
+  mean_days: z.number().min(0).nullable().optional(), median_days: z.number().min(0).nullable(), p90_days: z.number().min(0).nullable(),
   min_days: z.number().min(0).nullable(), max_days: z.number().min(0).nullable(),
   excluded: z.strictObject({ no_report_date: count, reversed: count, no_answer_date: count.optional() }), answer_date_missing: count,
 }).nullable().optional();

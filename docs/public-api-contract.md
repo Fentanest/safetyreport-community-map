@@ -198,7 +198,10 @@ result/disposition 조건은 아직 구현되지 않아 `INVALID_QUERY`를 돌�
 - `GET /my-analytics/statistics?<scope>&spec=` — population `mine`/`compare` 전용. 내 신고는 JWT로 확인한 사용자만(요청의 사용자 id는 받지 않음). 공개 API에 mine/compare를 보내면 400.
 - 기존 엔드포인트 추가 필드(선택, 구 클라이언트 호환): dashboard `agency_total`, `manager_total`, `overview.warning_count`.
 - `my-analytics/compare`도 같은 방식의 추가 필드(선택, 구 Edge 호환): `all`/`mine` 요약의 `warning_count`(2026-10-12,
-  `overview.warning_count`와 같은 정의) — docs/personal-comparison.md §3.2·§4.
+  `overview.warning_count`와 같은 정의) — docs/personal-comparison.md §3.2·§4. 지역/기관/담당자 행(`CompareSide`)에도
+  `warning_count`, `duration_mean_days`(답변까지 평균, 2026-10-12)가 같은 방식으로 추가됐다.
+- 답변까지 기간 요약(`overview.processing_duration`, `CompareSummary.duration`)의 `mean_days`도 선택 필드다(2026-10-12,
+  구 서버 호환) — 화면은 평균을 큰 값으로 쓰고, 없으면 중앙값을 큰 값으로 쓰던 예전 표기로 대체한다.
 
 ## 2026-10-03 user-rankings-v1
 

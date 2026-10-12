@@ -153,7 +153,8 @@ export interface DurationSummary {
   /** the cohort basis (which date selected the reports); days are always answer date − report date */
   basis: DateBasis;
   count: number;
-  mean_days: number | null;
+  /** undefined = older server (U-mean-primary, 2026-10-12): KpiPanel/CompareKpis fall back to showing median as the big value, like before this field existed. */
+  mean_days?: number | null;
   median_days: number | null;
   p90_days: number | null;
   min_days: number | null;

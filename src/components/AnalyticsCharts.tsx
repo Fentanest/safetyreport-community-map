@@ -84,8 +84,8 @@ export function DurationCard({ all, mine, theme }: { all: DurationDistribution |
         {!mine && <Seg label="값" value={mode} onChange={setMode} options={[['count', '건수'], ['share', '비중']]} />}
         <TableToggle table={table} onToggle={() => setTable((v) => !v)} />
       </>}
-      caption={all && <>전체 중앙값 {fmtDays(all.median_days)} · 평균 {fmtDays(all.mean_days)} · 90%는 {fmtDays(all.p90_days)} 이내
-        {mine && <><br /><span className="mine-col">내 신고 중앙값 {fmtDays(mine.median_days)} · 평균 {fmtDays(mine.mean_days)} · 계산 {fmtInt(mine.valid_count)}건</span></>}</>}>
+      caption={all && <>전체 평균 {fmtDays(all.mean_days)} · 중앙값 {fmtDays(all.median_days)} · 90%는 {fmtDays(all.p90_days)} 이내
+        {mine && <><br /><span className="mine-col">내 신고 평균 {fmtDays(mine.mean_days)} · 중앙값 {fmtDays(mine.median_days)} · 계산 {fmtInt(mine.valid_count)}건</span></>}</>}>
       {!all ? <Unsupported what="기간 분포" /> : all.valid_count === 0 ? <div className="empty-state">기간을 계산할 수 있는 답변이 없습니다.</div> : null}
       <div ref={hostRef} className="chart-host" hidden={table || !all || all.valid_count === 0 || !!error} role="img"
         aria-label={all ? `기간 구간별 건수 ${all.buckets.map((b) => `${b.label} ${b.count}건`).join(', ')}` : '자료 없음'} />

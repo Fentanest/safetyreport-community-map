@@ -92,9 +92,16 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
     hero.push({ id: 'fine', label: '과태료', value: fmtPercent(pct(o.fine_count.value, C)), sub: `${fmtInt(o.fine_count.value)}건 ÷ 답변 ${fmtInt(C)}건`,
       mine: mine && `내 ${fmtPercent(mine.fine_rate)} (${fmtPp(diff?.fine_rate_pp)})` });
     const d = o.processing_duration;
-    hero.push({ id: 'duration', label: '답변까지', value: d?.count ? fmtDays(d.median_days) : '—',
-      sub: d ? `중앙값 · 평균 ${fmtDays(d.mean_days)} · 계산 ${fmtInt(d.count)}건` : '자료 없음',
-      mine: mine && (mine.duration.count ? `내 중앙값 ${fmtDays(mine.duration.median_days)} · 평균 ${fmtDays(mine.duration.mean_days)}` : '내 계산 불가') });
+    // U-mean-primary (2026-10-12): 큰 값은 평균, 작은 줄에 중앙값을 병기(평균 우선). mean_days가 없는 구버전 응답(필드
+    // 자체가 undefined — count=0이라 null인 경우와는 다름)에서는 기존처럼 중앙값을 큰 값으로 쓴다.
+    const allMeanKnown = d?.mean_days !== undefined;
+    const mineMeanKnown = mine?.duration.mean_days !== undefined;
+    hero.push({ id: 'duration', label: '답변까지',
+      value: d?.count ? fmtDays(allMeanKnown ? d.mean_days : d.median_days) : '—',
+      sub: !d ? '자료 없음' : allMeanKnown ? `평균 · 중앙값 ${fmtDays(d.median_days)} · 계산 ${fmtInt(d.count)}건` : `중앙값 · 계산 ${fmtInt(d.count)}건`,
+      mine: mine && (mine.duration.count
+        ? mineMeanKnown ? `내 평균 ${fmtDays(mine.duration.mean_days)} · 중앙값 ${fmtDays(mine.duration.median_days)}` : `내 ${fmtDays(mine.duration.median_days)}`
+        : '내 계산 불가') });
     // U-mine-minor: 계도(warning)는 server/compare.ts summarize()가 공개 Overview.warning_count(S01)와 같은 정의로
     // CompareSummary.warning_count를 채운다. 과태료 금액·평균 별점과 같은 'mine-col' 표기로 병기한다.
     // 구버전 Edge(필드 없음)는 mine.warning_count가 undefined이므로 내 값 줄을 생략한다(화면이 깨지지 않게).

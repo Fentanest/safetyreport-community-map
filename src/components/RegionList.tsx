@@ -62,7 +62,7 @@ export default function RegionList(p: Props) {
           onClick={() => p.onPickRegion(p.activeRegion === r.region_code ? (r.region_code ? parentOf(r.region_code) : null) : r.region_code)}>
           <span className="region-name">{name}{p.activeRegion === r.region_code && <span className="region-active-tag">보는 중</span>}</span>
           <span className="region-nums">
-            <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(allRate)}</b> · 일부수용률 <b className="cm-number">{fmtPercent(partialRate(r.outcomes))}</b> · 별점 <b className="cm-number">{fmtRating(r.rating)}</b>{r.duration && r.duration.count > 0 && <> · 답변까지 <b className="cm-number">{fmtDays(r.duration.median_days)}</b></>}</span>
+            <span>전체 <b className="cm-number">{fmtInt(r.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(allRate)}</b> · 일부수용률 <b className="cm-number">{fmtPercent(partialRate(r.outcomes))}</b> · 별점 <b className="cm-number">{fmtRating(r.rating)}</b>{r.duration && r.duration.count > 0 && <> · 답변까지 평균 <b className="cm-number">{fmtDays(r.duration.mean_days)}</b> (중앙값 {fmtDays(r.duration.median_days)})</>}</span>
             {showMine && (
               mine && (mine.mine.report_count > 0 || mine.mine.completed_count > 0) ? (
                 <span className="mine-col">내 신고 <b className="cm-number">{fmtInt(mine.mine.report_count)}</b>건 · 수용률 <b className="cm-number">{fmtPercent(mine.mine.accept_rate)}</b> ({fmtPp(mine.accept_rate_pp)}) · 일부수용률 <b className="cm-number">{fmtPercent(mine.mine.partial_rate)}</b> ({fmtPp(mine.partial_rate_pp)}) · 별점 <b className="cm-number">{fmtRating(mine.mine.rating)}</b></span>

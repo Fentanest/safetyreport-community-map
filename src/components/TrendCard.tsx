@@ -204,7 +204,7 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
       {table && view === 'count' && (
         <div className="trend-table">
           <table>
-            <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 확인</th><th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료</th><th scope="col">과태료 금액</th><th scope="col">평균 별점 · 건수</th><th scope="col">답변까지(중앙값)</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
+            <thead><tr><th scope="col">월</th><th scope="col">신고</th><th scope="col">답변 확인</th><th scope="col">수용률</th><th scope="col">일부수용률</th><th scope="col">불수용률</th><th scope="col">과태료</th><th scope="col">과태료 금액</th><th scope="col">평균 별점 · 건수</th><th scope="col">답변까지(평균·중앙값)</th>{mine && <th scope="col">내 신고</th>}{mine && <th scope="col">내 답변</th>}<th scope="col">비고</th></tr></thead>
             <tbody>
               {monthly.map((m) => (
                 <tr key={m.month}>
@@ -217,7 +217,7 @@ export default function TrendCard({ monthly, basis = 'completed_date', theme, mi
                   <td>{fmtInt(m.fine_count)}</td>
                   <td>{m.fine_amount ? fmtFineAmount(m.fine_amount) : '—'}</td>
                   <td>{fmtRating(m.rating)}</td>
-                  <td>{m.duration && m.duration.count > 0 ? fmtDays(m.duration.median_days) : '—'}</td>
+                  <td>{m.duration && m.duration.count > 0 ? `${fmtDays(m.duration.mean_days)} · 중앙값 ${fmtDays(m.duration.median_days)}` : '—'}</td>
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_report_count ?? null)}</td>}
                   {mine && <td>{fmtInt(mineByMonth.get(m.month)?.mine_completed_count ?? null)}</td>}
                   <td>{monthNote(m)}</td>

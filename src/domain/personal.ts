@@ -35,8 +35,9 @@ export interface CompareSummary {
   reject_rate: number | null;
   /** fine/C×100, null when C = 0 */
   fine_rate: number | null;
-  /** 답변까지 걸린 기간(일), answer-date cohort. Averages may exceed the all side — no subset rule. */
-  duration: { count: number; mean_days: number | null; median_days: number | null; p90_days: number | null };
+  /** 답변까지 걸린 기간(일), answer-date cohort. Averages may exceed the all side — no subset rule.
+   *  mean_days undefined = older server (U-mean-primary, 2026-10-12): the UI shows median as the big value, like before. */
+  duration: { count: number; mean_days?: number | null; median_days: number | null; p90_days: number | null };
   /** 답변에 적힌 과태료 금액 (원), completion cohort; only amounts the consent policy publishes are summed. */
   fine_amount: CompareFineAmount;
 }
@@ -92,6 +93,8 @@ export interface CompareSide {
   partial_rate: number | null;
   duration_count: number;
   duration_median_days: number | null;
+  /** 2026-10-12: 평균 우선 표시(U-mean-primary). undefined = older server (median-only display). */
+  duration_mean_days?: number | null;
   fine_amount_confirmed_count: number;
   fine_amount_sum_won: number | null;
 }

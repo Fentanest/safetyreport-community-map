@@ -28,7 +28,9 @@ const summarySchema = z.strictObject({
   // 구버전 Edge 응답(필드 없음)은 undefined로 남는다 — 화면은 '내' 값 줄을 생략한다(never 0).
   warning_count: count.optional(), point_count: count,
   accept_rate: rate, partial_rate: rate, reject_rate: rate, fine_rate: rate,
-  duration: z.strictObject({ count, mean_days: days, median_days: days, p90_days: days }),
+  // U-mean-primary (2026-10-12): mean_days는 선택 필드 — 구버전 응답(필드 없음)에서는 KpiPanel이 중앙값을 큰 값으로 쓰는
+  // 예전 표기로 되돌린다(화면이 깨지지 않게).
+  duration: z.strictObject({ count, mean_days: days.optional(), median_days: days, p90_days: days }),
   fine_amount: z.strictObject({
     fine_count: count, confirmed_count: count, sum_won: won.nullable(), mean_won: z.number().min(0).nullable(),
     median_won: z.number().min(0).nullable(), unconfirmed_count: count, undisclosed_count: count, partial: z.boolean(),
@@ -38,7 +40,7 @@ const summarySchema = z.strictObject({
 const sideSchema = z.strictObject({
   report_count: count, completed_count: count, result_known: count, accepted: count, partial: count,
   rejected: count, fine_count: count, warning_count: count.optional(), accept_rate: rate, partial_rate: rate,
-  duration_count: count, duration_median_days: days,
+  duration_count: count, duration_median_days: days, duration_mean_days: days.optional(),
   fine_amount_confirmed_count: count, fine_amount_sum_won: won.nullable(),
   rating,
 });

@@ -260,12 +260,18 @@ function regionSort(a:{level:'sido'|'sgg'|'unknown';report_count:number;complete
 }
 function summary(s:Stat) {
   const o=outcomes(s),d=duration(s,'completed_date'),a=amount(s,'completed_date');
-  return {report_count:s.n,completed_count:s.c,...o,fine_count:s.f,point_count:s.places,accept_rate:pct(s.a,o.result_known),partial_rate:pct(s.p,o.result_known),
+  return {report_count:s.n,completed_count:s.c,...o,fine_count:s.f,
+    // U-mine-minor (2026-10-12): s.w는 SQL stats CTE가 'all'·'mine' 양쪽에 이미 채우는 계도 건수(screen_server_aggregate.sql
+    // disposition='warning'). overview()(위)는 이미 읽고 있었지만 compare()의 all/mine 요약은 빠져 있었다 — KPI 하단 줄의
+    // '내' 계도 값이 운영(화면 집계 SQL) 경로에서만 비어 보이던 원인.
+    warning_count:s.w,point_count:s.places,accept_rate:pct(s.a,o.result_known),partial_rate:pct(s.p,o.result_known),
     reject_rate:pct(s.r,o.result_known),fine_rate:pct(s.f,s.c),duration:{count:d.count,mean_days:d.mean_days,median_days:d.median_days,p90_days:d.p90_days},
     fine_amount:{fine_count:a.fine_count,confirmed_count:a.confirmed_count,sum_won:a.sum_won,mean_won:a.mean_won,median_won:a.median_won,unconfirmed_count:a.unconfirmed_count,undisclosed_count:a.undisclosed_count,partial:a.partial},rating:rating(s)};
 }
 function side(s:Stat,entity=false) {
   const o=outcomes(s);return {report_count:entity?0:s.n,completed_count:s.c,result_known:o.result_known,accepted:s.a,partial:s.p,rejected:s.r,fine_count:s.f,
-    accept_rate:pct(s.a,o.result_known),partial_rate:pct(s.p,o.result_known),duration_count:s.duration[0],duration_median_days:s.duration[2],
+    // same fix as summary() above, for the region/agency/manager/month 'mine' vs 'all' side rows.
+    warning_count:s.w,accept_rate:pct(s.a,o.result_known),partial_rate:pct(s.p,o.result_known),duration_count:s.duration[0],duration_median_days:s.duration[2],
+    duration_mean_days:s.duration[0]?s.duration[1]!/s.duration[0]:null,
     fine_amount_confirmed_count:s.amount[0],fine_amount_sum_won:s.amount[1],rating:rating(s)};
 }

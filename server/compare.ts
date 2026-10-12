@@ -41,7 +41,9 @@ export function summarize(reported: readonly PrivateFact[], done: readonly Priva
   };
 }
 
-const minus = (a: number | null, b: number | null) => (a === null || b === null ? null : a - b);
+// a/b accept undefined too: CompareSummary.duration.mean_days is typed optional for defensive client parsing
+// of an older response (this server always computes it, so it is never actually undefined here).
+const minus = (a: number | null | undefined, b: number | null | undefined) => (a == null || b == null ? null : a - b);
 
 export function diffOf(all: CompareSummary, mine: CompareSummary): CompareDiff {
   return {
@@ -75,6 +77,7 @@ function side(reported: readonly PrivateFact[], done: readonly PrivateFact[]): C
     partial_rate: pct(o.partial, o.result_known),
     duration_count: dur.count,
     duration_median_days: dur.median_days,
+    duration_mean_days: dur.mean_days,
     fine_amount_confirmed_count: amount.confirmed_count,
     fine_amount_sum_won: amount.sum_won,
     rating: ratingSummary(done),

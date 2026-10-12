@@ -55,9 +55,11 @@ export const ENTITY_COLUMNS: Col[] = [
   { id: 'fine', label: '과태료', sort: { column: 'fine' }, num: true, defaultOn: true, title: '건수와 비율(과태료 ÷ 답변)',
     cell: (e) => <>{e.fine_count == null ? '—' : fmtInt(e.fine_count)}<small>{share(e.fine_count, e.completed_count)}</small></>,
     mineCell: (m) => <>{fmtInt(m.fine_count)}건 · {share(m.fine_count, m.completed_count)}</> },
-  { id: 'duration', label: '답변까지', sort: { column: 'duration' }, num: true, defaultOn: true, title: '신고한 날부터 답변 받은 날까지, 중앙값',
-    cell: (e) => (e.duration && e.duration.count > 0 ? fmtDays(e.duration.median_days) : '—'),
-    mineCell: (m) => m.duration_count > 0 ? fmtDays(m.duration_median_days) : '—' },
+  // U-mean-primary (2026-10-12): 평균을 우선 표시하고 중앙값은 작은 글씨로 병기.
+  { id: 'duration', label: '답변까지', sort: { column: 'duration' }, num: true, defaultOn: true, title: '신고한 날부터 답변 받은 날까지, 평균 · 중앙값',
+    cell: (e) => (e.duration && e.duration.count > 0
+      ? <>{fmtDays(e.duration.mean_days)}<small>중앙값 {fmtDays(e.duration.median_days)}</small></> : '—'),
+    mineCell: (m) => m.duration_count > 0 ? <>{fmtDays(m.duration_mean_days)} · 중앙값 {fmtDays(m.duration_median_days)}</> : '—' },
   { id: 'accepted', label: '수용', sort: { column: 'accepted' }, num: true, defaultOn: false,
     cell: (e) => <>{fmtInt(e.outcomes.accepted)}<small>{share(e.outcomes.accepted, e.outcomes.result_known)}</small></> },
   { id: 'partial', label: '일부 수용', sort: { column: 'partial' }, num: true, defaultOn: false,

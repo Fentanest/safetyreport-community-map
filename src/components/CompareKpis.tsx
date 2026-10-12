@@ -40,6 +40,8 @@ function rows(o: Overview): Row[] {
   const out = o.outcomes;
   const d = out?.result_known ?? 0;
   const c = o.completed_count.value ?? 0;
+  // U-mean-primary (2026-10-12): mean_days 필드 자체가 없는 구버전 응답에서는 이 행 전체를 중앙값 중심으로 되돌린다.
+  const durationMeanKnown = o.processing_duration?.mean_days !== undefined;
   return [
     { id: 'report', label: '신고', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준`, all: fmtInt(o.report_count.value), allNote: null,
       mine: m => fmtInt(m.report_count), mineNote: () => null, diff: x => fmtShare(x.diff.report_share), diffKind: 'share' },
@@ -64,13 +66,18 @@ function rows(o: Overview): Row[] {
       all: fmtPercent(pct(o.fine_count.value ?? 0, c)), allNote: `${fmtInt(o.fine_count.value)}건`,
       mine: m => fmtPercent(m.fine_rate), mineNote: m => `${fmtInt(m.fine_count)}건`,
       diff: x => fmtPp(x.diff.fine_rate_pp), diffKind: 'pp' },
-    { id: 'duration', label: '답변까지 걸린 기간', basis: '중앙값 · 신고한 날부터 답변 받은 날까지',
-      all: o.processing_duration ? (o.processing_duration.count ? fmtDays(o.processing_duration.median_days) : '계산할 신고 없음') : '—',
+    { id: 'duration', label: '답변까지 걸린 기간', basis: durationMeanKnown ? '평균 · 신고한 날부터 답변 받은 날까지' : '중앙값 · 신고한 날부터 답변 받은 날까지',
+      all: o.processing_duration ? (o.processing_duration.count ? fmtDays(durationMeanKnown ? o.processing_duration.mean_days : o.processing_duration.median_days) : '계산할 신고 없음') : '—',
       allNote: o.processing_duration && o.processing_duration.count
-        ? `평균 ${fmtDays(o.processing_duration.mean_days)} · 90%는 ${fmtDays(o.processing_duration.p90_days)} 이내 · ${fmtInt(o.processing_duration.count)}건` : null,
-      mine: m => (m.duration.count ? fmtDays(m.duration.median_days) : '계산할 신고 없음'),
-      mineNote: m => (m.duration.count ? `평균 ${fmtDays(m.duration.mean_days)} · ${fmtInt(m.duration.count)}건` : null),
-      diff: x => fmtDaysDiff(x.diff.duration_median_days_diff), diffKind: 'days' },
+        ? (durationMeanKnown ? `중앙값 ${fmtDays(o.processing_duration.median_days)} · 90%는 ${fmtDays(o.processing_duration.p90_days)} 이내 · ${fmtInt(o.processing_duration.count)}건`
+          : `90%는 ${fmtDays(o.processing_duration.p90_days)} 이내 · ${fmtInt(o.processing_duration.count)}건`) : null,
+      mine: m => (m.duration.count ? fmtDays(m.duration.mean_days !== undefined ? m.duration.mean_days : m.duration.median_days) : '계산할 신고 없음'),
+      mineNote: m => (m.duration.count
+        ? (m.duration.mean_days !== undefined ? `중앙값 ${fmtDays(m.duration.median_days)} · ${fmtInt(m.duration.count)}건` : `${fmtInt(m.duration.count)}건`)
+        : null),
+      diff: x => fmtDaysDiff(x.diff.duration_mean_days_diff ?? x.diff.duration_median_days_diff), diffKind: 'days',
+      diffNote: x => x.diff.duration_mean_days_diff == null || x.diff.duration_median_days_diff == null ? null
+        : `중앙값 차이 ${fmtDaysDiff(x.diff.duration_median_days_diff)}` },
     { id: 'amount', label: '답변에 적힌 과태료 금액', basis: '합계',
       all: fmtFineAmount(o.fine_amount), allNote: amountNote(o.fine_amount),
       mine: m => fmtFineAmount(m.fine_amount), mineNote: m => amountNote(m.fine_amount),

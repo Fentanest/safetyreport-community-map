@@ -17,7 +17,7 @@ const comparison = personalCompareSchema.parse(aggregateCompare(demoFacts(), DEM
 const entity = dashboard.agencies[0];
 const side: CompareSide = {
   report_count: 10, completed_count: 10, result_known: 4, accepted: 2, partial: 1, rejected: 1,
-  fine_count: 2, accept_rate: 50, partial_rate: 25, duration_count: 2, duration_median_days: 0,
+  fine_count: 2, accept_rate: 50, partial_rate: 25, duration_count: 2, duration_median_days: 0, duration_mean_days: 0,
   fine_amount_confirmed_count: 0, fine_amount_sum_won: null,
 };
 const row = (mine: CompareSide): CompareEntityRow => ({
@@ -35,7 +35,7 @@ const cells = (html: string) => [...html.matchAll(/<small class="entity-mine"[^>
 describe('map UX 3 / 5', () => {
   it('puts five own values in the existing columns, using each metric denominator and retaining valid zero days', () => {
     const html = table(new Map([[entity.key, row(side)]]));
-    expect(cells(html)).toEqual(['내 10', '내 50.0%', '내 25.0%', '내 2건 · 20.0%', '내 0일']);
+    expect(cells(html)).toEqual(['내 10', '내 50.0%', '내 25.0%', '내 2건 · 20.0%', '내 0일 · 중앙값 0일']);
     expect(html.match(/<th scope="col"/g)).toHaveLength(6);
     expect(html).not.toContain('>내 답변<');
     expect(html).not.toContain('>내 수용률<');
@@ -54,13 +54,14 @@ describe('map UX 3 / 5', () => {
     const props = { focus: { kind: 'nation' as const, label: '전국', basis: DEMO_SCOPE.date_basis, start: DEMO_SCOPE.start, end: DEMO_SCOPE.end },
       overview, state: 'ready' as const, personal, showMine: true, unsupported: false, detail: null };
     const html = renderToStaticMarkup(<KpiPanel {...props} />);
-    expect(html).toContain('중앙값 · 평균 10일 · 계산 3건');
-    expect(html).toContain('내 중앙값 1일 · 평균 7일');
-    expect(renderToStaticMarkup(<KpiPanel {...props} showMine={false} />)).not.toContain('내 중앙값');
-    expect(renderToStaticMarkup(<KpiPanel {...props} focus={{ ...props.focus, kind: 'place' }} />)).not.toContain('내 중앙값');
+    // U-mean-primary (2026-10-12): 큰 값은 평균, 중앙값은 작은 줄에 병기.
+    expect(html).toContain('평균 · 중앙값 2일 · 계산 3건');
+    expect(html).toContain('내 평균 7일 · 중앙값 1일');
+    expect(renderToStaticMarkup(<KpiPanel {...props} showMine={false} />)).not.toContain('내 평균');
+    expect(renderToStaticMarkup(<KpiPanel {...props} focus={{ ...props.focus, kind: 'place' }} />)).not.toContain('내 평균');
     const card = renderToStaticMarkup(<DurationCard all={{ ...dashboard.analytics!.duration!, median_days: 2, mean_days: 10 }}
       mine={{ ...comparison.analytics!.duration, median_days: 1, mean_days: 7 }} theme="light" />);
-    expect(card).toContain('전체 중앙값 2일 · 평균 10일');
-    expect(card).toContain('내 신고 중앙값 1일 · 평균 7일');
+    expect(card).toContain('전체 평균 10일 · 중앙값 2일');
+    expect(card).toContain('내 신고 평균 7일 · 중앙값 1일');
   });
 });
