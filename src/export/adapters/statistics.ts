@@ -105,6 +105,10 @@ export function statisticsSnapshot(input: StatisticsExportInput): ExportSnapshot
   const notes = [
     '합계는 칸을 더한 값이 아니라 해당 신고 전체로 다시 계산한 값입니다.',
     '비율은 같은 줄의 ‘해당 건수 ÷ 기준 건수’ 수식입니다.',
+    // D22 (2026-10-12): same top-N cut as the web table — the note goes into the file too (never a silently
+    // shortened table), and the 그 외 row/column's own values are already recomputed from its raw facts above.
+    ...(result.truncated ?? []).map((t) =>
+      `${t.dimensions.map(dimLabel).join(' · ')} ${t.total_members.toLocaleString('ko-KR')}개 중 건수 상위 ${t.shown_members.toLocaleString('ko-KR')}개만 담고, 나머지 ${t.other_count.toLocaleString('ko-KR')}개는 '그 외'로 묶었습니다.`),
   ];
 
   // ── charts (the same plan and the same series as the web chart) ──────────────────────────────────────────

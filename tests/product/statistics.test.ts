@@ -3,7 +3,7 @@ import type { PrivateFact } from '../../server/aggregate';
 import { aggregateStatistics, parseSpec, statisticsCandidates, statisticsCatalog, StatsQueryError } from '../../server/statistics';
 import { createPublicHandler, type AnalyticsRepository } from '../../server/publicHandler';
 import type { Scope } from '../../src/domain/public';
-import type { StatisticsSpec } from '../../src/domain/statistics';
+import { STAT_OTHER_KEY, type StatisticsSpec } from '../../src/domain/statistics';
 import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
 
 /** S05–S08 맞춤 통계 (synthetic facts only). */
@@ -161,9 +161,101 @@ describe('PV-08/PV-10: populations and the registry', () => {
       'x'.repeat(7000),
     ]) expect(() => parseSpec(raw)).toThrow(StatsQueryError);
   });
-  it('PV-14 over-budget grids are refused with a readable message (never truncated)', () => {
-    const many = Array.from({ length: 80 }, (_, i) => f({ agency_key: `a1:${i}`, agency_name: `기관${i}`, completed_date: `2026-0${1 + (i % 6)}-${String(1 + (i % 28)).padStart(2, '0')}` }));
-    expect(() => run(many, { rows: ['agency'], columns: ['completed_day'] })).toThrow(/한 번에 만들 수 있는 크기/);
+  it('PV-14 an over-budget non-date × date grid is built, never refused: top rows by count + 그 외', () => {
+    // 30 agencies, agency i has (30-i) facts, so ranking by count is unambiguous — all on one day, so the budget
+    // comes entirely from the 181-day completed_day spine (never cut) crossed with the 30 agencies.
+    const many = Array.from({ length: 30 }, (_, i) => Array.from({ length: 30 - i }, () => f({ agency_key: `a1:${i}`, agency_name: `기관${i}`, completed_date: '2026-03-15' }))).flat();
+    const r = run(many, { rows: ['agency'], columns: ['completed_day'] });
+    expect(r.col_members).toHaveLength(181); // the date spine is never cut
+    expect(r.truncated).toEqual([{ role: 'row', dimensions: ['agency'], total_members: 30, shown_members: 26, other_count: 4 }]);
+    expect(r.row_members).toHaveLength(27); // 26 kept + 1 '그 외'
+    const other = r.row_members.at(-1)!;
+    expect(other.key).toEqual([STAT_OTHER_KEY]);
+    expect(other.label[0]).toBe('그 외 4개');
+    // kept = the 26 highest-count agencies (i = 0..25, n = 30..5); folded = i = 26..29 (n = 4,3,2,1)
+    expect(r.row_members.filter((m) => m.key[0] !== STAT_OTHER_KEY).map((m) => m.key[0]).sort())
+      .toEqual(Array.from({ length: 26 }, (_, i) => `a1:${i}`).sort());
+    expect(r.row_totals.find((t) => t.key[0] === STAT_OTHER_KEY)!.values.completed_count.value).toBe(4 + 3 + 2 + 1);
+    expect(r.row_totals.find((t) => t.key[0] === 'a1:0')!.values.completed_count.value).toBe(30); // a kept row's total is unchanged
+    expect(r.grand_totals[0].values.completed_count.value).toBe(many.length); // grand total never changes
+  });
+  it('비날짜×비날짜: both axes non-date — the LARGER one (manager, 300) is cut first; the smaller (agency, 20) already fits and stays whole', () => {
+    const AGENCIES = 20, MANAGERS = 300;
+    const facts = Array.from({ length: MANAGERS }, (_, m) => f({
+      agency_key: `a1:ag${m % AGENCIES}`, agency_name: `기관${m % AGENCIES}`, manager_key: `mgr${m}`, manager_name: `매니저${m}`, completed_date: '2026-03-15',
+    }));
+    const r = run(facts, { rows: ['agency'], columns: ['manager'] });
+    expect(r.row_members).toHaveLength(AGENCIES); // not cut
+    expect(r.col_members).toHaveLength(250); // 249 kept + 1 그 외 (floor(5000 / 20) = 250)
+    expect(r.col_members.at(-1)!.key).toEqual([STAT_OTHER_KEY]);
+    expect(r.truncated).toEqual([{ role: 'column', dimensions: ['manager'], total_members: MANAGERS, shown_members: 249, other_count: 51 }]);
+    expect(r.grand_totals[0].values.completed_count.value).toBe(facts.length);
+  });
+  it('비교(×2): 전체 혼자는 예산 안이지만, 전체와 내 신고 비교는 칸이 두 배라 자른다', () => {
+    const compareScope: Scope = { date_basis: 'completed_date', start: '2019-01-01', end: '2025-12-31', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+    const facts = Array.from({ length: 59 }, (_, i) => f({ agency_key: `a1:cmp${i}`, agency_name: `비교기관${i}`, contributor_id: 'u-compare', completed_date: '2022-06-15' }));
+    const base = (population: StatisticsSpec['population']) => aggregateStatistics({ facts, scope: compareScope,
+      spec: spec({ rows: ['agency'], columns: ['completed_month'], population }), datasetVersion: 'v', viewerId: population === 'all' ? undefined : 'u-compare' });
+    const whole = base('all');
+    expect(whole.col_members).toHaveLength(84); // 7년 × 12개월, 날짜 축은 자르지 않음
+    expect(whole.truncated).toBeUndefined(); // 59 × 84 × 1 = 4,956 ≤ 5,000
+    const cmp = base('compare');
+    expect(cmp.truncated).toEqual([{ role: 'row', dimensions: ['agency'], total_members: 59, shown_members: 28, other_count: 31 }]); // × 2라서 59 × 84 × 2 = 9,912 > 5,000
+  });
+  it('비교 대상으로 직접 고른 멤버는 자르지 않는다(필터가 이미 전체 후보를 줄였으므로 그 외도 생기지 않는다)', () => {
+    const many = Array.from({ length: 30 }, (_, i) => Array.from({ length: 30 - i }, () => f({ agency_key: `a1:${i}`, agency_name: `기관${i}`, completed_date: '2026-03-15' }))).flat();
+    const chosen = ['a1:0', 'a1:15', 'a1:29'];
+    const r = run(many, { rows: ['agency'], columns: ['completed_day'], filters: [{ dimension: 'agency', members: chosen }] });
+    expect(r.truncated).toBeUndefined();
+    expect(r.row_members.map((m) => m.key[0]).sort()).toEqual([...chosen].sort());
+    expect(r.row_members.some((m) => m.key[0] === STAT_OTHER_KEY)).toBe(false);
+  });
+  it("'그 외' 값은 접힌 기관들의 원 신고를 다시 집계한 값이다(건수·비율·금액·기간 — 평균의 평균이 아님, 행 합계·전체 합계는 자르기 전과 같음)", () => {
+    const quarterScope: Scope = { date_basis: 'completed_date', start: '2016-01-01', end: '2025-12-31', category: 'all', region_code: null, agency_key: null, manager_key: null, bbox: null, law: null };
+    const filler = Array.from({ length: 124 }, (_, i) => Array.from({ length: 10 }, () =>
+      f({ agency_key: `a1:filler${i}`, agency_name: `필러${i}`, completed_date: '2020-06-15', report_date: '2020-06-01' }))).flat();
+    const dated = (reportDate: string, completedDate: string, patch: Partial<PrivateFact>) => f({ report_date: reportDate, completed_date: completedDate, ...patch });
+    const x = [dated('2020-01-01', '2020-01-06', { agency_key: 'a1:x', agency_name: '포커스X', status: 'accepted', disposition: 'fine',
+      amount_kind: 'fine', amount_confirmed_won: 40000, amount_public: true, amount_stated: true })];
+    const y = [
+      dated('2020-01-01', '2020-01-11', { agency_key: 'a1:y', agency_name: '포커스Y', status: 'accepted', disposition: 'fine',
+        amount_kind: 'fine', amount_confirmed_won: 50000, amount_public: true, amount_stated: true }),
+      dated('2020-01-01', '2020-01-11', { agency_key: 'a1:y', agency_name: '포커스Y', status: 'rejected', disposition: 'none' }),
+    ];
+    const z = Array.from({ length: 3 }, () => dated('2020-01-01', '2020-01-21', { agency_key: 'a1:z', agency_name: '포커스Z', status: 'rejected', disposition: 'none' }));
+    const w = [
+      dated('2020-01-01', '2020-01-16', { agency_key: 'a1:w', agency_name: '포커스W', status: 'accepted', disposition: 'fine',
+        amount_kind: 'fine', amount_confirmed_won: 60000, amount_public: true, amount_stated: true }),
+      dated('2020-01-01', '2020-01-16', { agency_key: 'a1:w', agency_name: '포커스W', status: 'accepted', disposition: 'fine',
+        amount_kind: 'fine', amount_confirmed_won: 70000, amount_public: true, amount_stated: true }),
+    ];
+    const facts = [...filler, ...x, ...y, ...z, ...w]; // folded counts 1,2,3,2 — all strictly below filler's 10, so exactly these 4 fold
+    const r = aggregateStatistics({ facts, scope: quarterScope, spec: spec({ rows: ['agency'], columns: ['completed_quarter'],
+      metrics: ['completed_count', 'accept_rate', 'amount_sum', 'amount_mean', 'amount_median', 'duration_mean', 'duration_median'] }), datasetVersion: 'v' });
+    expect(r.col_members).toHaveLength(40); // 10년 × 4분기, 날짜 축은 자르지 않음
+    expect(r.truncated).toEqual([{ role: 'row', dimensions: ['agency'], total_members: 128, shown_members: 124, other_count: 4 }]);
+    const other = r.row_totals.find((t) => t.key[0] === STAT_OTHER_KEY)!.values;
+    expect(other.completed_count.value).toBe(8); // 1(X) + 2(Y) + 3(Z) + 2(W), never an average of the 4 folded agencies
+    // accepted 4 of known 8 (X:1, Y:1, W:2) → 50%; a naive average of each agency's OWN rate (100,50,0,100) would be 62.5%
+    expect(other.accept_rate.value).toBeCloseTo(50, 6);
+    expect(other.amount_sum).toMatchObject({ value: 220000, numerator: null, denominator: 4 }); // 40000+50000+60000+70000, only the 4 confirmed fines
+    expect(other.amount_mean.value).toBeCloseTo(55000, 6);
+    expect(other.amount_median.value).toBe(55000);
+    expect(other.duration_mean.value).toBeCloseTo(115 / 8, 6); // 5,10,10,15,15,20,20,20
+    expect(other.duration_median.value).toBe(15);
+    expect(r.row_totals.find((t) => t.key[0] === 'a1:filler0')!.values.completed_count.value).toBe(10); // a kept row's total is unchanged
+    expect(r.grand_totals[0].values.completed_count.value).toBe(facts.length); // grand total is unchanged
+  });
+  it('날짜 축 두 개만으로도 예산을 넘으면 자르지 않고 분명히 거절한다(기간을 줄여 주세요)', () => {
+    const long: Scope = { ...scope, start: '2014-09-30', end: '2026-09-29' };
+    const facts = [f({ completed_date: '2015-01-02' }), f({ completed_date: '2026-09-01' })];
+    expect(() => aggregateStatistics({ facts, scope: long, spec: spec({ rows: ['completed_day'], columns: ['completed_month'] }), datasetVersion: 'v' }))
+      .toThrow(/기간을 줄여 주세요/);
+  });
+  it('예산 안에서는 전과 똑같다(자르지 않음)', () => {
+    const r = run(G, { rows: ['outcome'], columns: ['disposition'], metrics: ['completed_count'] });
+    expect(r.truncated).toBeUndefined();
+    expect(r.row_members.some((m) => m.key[0] === STAT_OTHER_KEY)).toBe(false);
   });
 });
 
