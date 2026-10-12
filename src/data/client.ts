@@ -262,11 +262,13 @@ export async function loadMeta(signal?: AbortSignal): Promise<PublicMeta> {
   return meta;
 }
 
-/** One dashboard snapshot for `scope` checked against `meta.dataset_version` (409 when the data changed). */
-export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
+/** One dashboard snapshot for `scope` checked against `meta.dataset_version` (409 when the data changed).
+ *  @param initialPanels panels this FIRST (or scope-changing) request should already bundle — e.g. personal
+ *  comparison for an eligible signed-in viewer — so the screen never needs a second full RPC right after. */
+export async function loadDashboardWith(meta: PublicMeta, scope: Scope, signal?: AbortSignal, initialPanels?: ScreenPanel[]): Promise<DashboardData> {
   if (import.meta.env.VITE_DATA_MODE === 'demo') return loadDashboard(scope, signal);
   void meta; // bootstrap bounds are a hint; this response carries the actual snapshot metadata.
-  return screenCoordinator.open(scope, signal);
+  return screenCoordinator.open(scope, signal, initialPanels);
 }
 
 function dashboardData(meta: PublicMeta, result: z.infer<typeof dashboardResponseSchema>): DashboardData {

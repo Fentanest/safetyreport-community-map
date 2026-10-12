@@ -3,6 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { DATE_BASIS_LABEL, LAW_NONE, type DashboardData, type DateBasis, type PublicEntity, type PublicPoint, type Scope } from '../domain/public';
 import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, screenCoordinator, loadPlace, loadPlacesInView, sameScope, type AccessCode } from '../data/client';
 import type { RequestSource } from '../data/refreshController';
+import type { ScreenPanel } from '../data/screenCoordinator';
 import AccessGate from '../components/AccessGate';
 import {
   CATEGORY_LABEL, basisFromSearch, baseScope, draftFromScope, fixtureFromSearch, lawLabel, lawOptions, regionCounts, regionLabel, scopeFromDraft,
@@ -46,7 +47,7 @@ import { useAnalyticsMeta } from '../hooks/useAnalyticsMeta';
 import { consistentWithPublic } from '../data/personal';
 import { hasLayoutParam, readComparePref, readInterest, screenFromSearch, toggleInterest, writeComparePref, writeInterest } from '../state/view';
 import { markPoints } from '../state/pointMarks';
-import { demoViewerFromSearch, sessionKeyOf } from '../auth/mapAuth';
+import { demoViewerFromSearch, sessionKeyOf, type AuthStatus } from '../auth/mapAuth';
 import { SHARE_PARAM } from '../state/share';
 import { CLUSTER_LEVEL } from '../lib/kakao';
 import type { CompareEntityRow } from '../domain/personal';
@@ -67,6 +68,20 @@ export function isEmptyResult(data: DashboardData | null): boolean {
   return data.overview.report_count.value === 0 &&
     data.overview.completed_count.value === 0 &&
     data.points.length === 0;
+}
+
+/** U-perf-first-screen (2026-10-12): panels the FIRST screen request should already carry, decided WITHOUT the
+ *  dashboard data itself — personal comparison needs only auth + the saved toggle, never dataset_version (the
+ *  server checks every bundled panel against that SAME response's own dataset_version, never a client-remembered
+ *  one). A scope that turns out unsupported, or a viewer the server still refuses (no consent / under 10건), just
+ *  answers the bundled compare panel with an error in that SAME response — never a second full screen RPC.
+ *  Anything decidable only from the loaded data (scope-unsupported) still gates DISPLAY through
+ *  compareActive/showMine exactly as before; this only decides what rides the wire the first time. */
+export function firstScreenPanels(opts: {
+  screen: Screen; compareOn: boolean; compareDisabledReason: string | null; briefingHidden: boolean; authStatus: AuthStatus;
+}): ScreenPanel[] {
+  return opts.screen === 'dashboard' && opts.compareOn && !opts.compareDisabledReason && !opts.briefingHidden && opts.authStatus === 'signed_in'
+    ? [{ id: 'compare', path: 'compare', params: {} }] : [];
 }
 
 /** Viewport bbox for the statistics scope: rounded (≈10 m) so sub-pixel moves never create a new request.
@@ -172,10 +187,20 @@ export default function Dashboard() {
     setScopeState(next);
   }, []);
 
+  // ── personal comparison readiness, hoisted ahead of the data fetch (U-perf-first-screen 2026-10-12): none of
+  // this needs the dashboard's own data, so the FIRST screen request below can already decide whether to bundle
+  // the compare panel instead of discovering it wants compare only after that first request lands. ─────────────
+  const compareDisabledReason = auth.status === 'unconfigured' ? (auth.message ?? '지금은 로그인 기능을 쓸 수 없습니다.') : null;
+  const briefingHidden = briefing && compareOn && !briefingShowMine;
+  const initialPanels = useMemo<ScreenPanel[]>(
+    () => firstScreenPanels({ screen, compareOn, compareDisabledReason, briefingHidden, authStatus: auth.status }),
+    [screen, compareOn, compareDisabledReason, briefingHidden, auth.status],
+  );
+
   // ── data (R04): the last successful snapshot stays on screen while a new one loads ─────────────────────
   // C01: account boundary by the auth user id (a shared nickname is never the same account)
   const sessionKey = sessionKeyOf(auth, fixture);
-  const dash = useDashboardData(scope, sourceRef.current, sessionKey, screen === 'dashboard');
+  const dash = useDashboardData(scope, sourceRef.current, sessionKey, screen === 'dashboard', initialPanels);
   const statisticsMeta = useAnalyticsMeta(sessionKey, screen === 'statistics', dash.meta);
   const shown = dash.displayed;
   const data = shown?.data ?? null;
@@ -533,9 +558,8 @@ export default function Dashboard() {
 
   const resolvedTheme: 'dark' | 'light' = resolveTheme(theme);
 
-  // ── personal comparison: same DISPLAYED scope/version as the public numbers ───────────────────────────
-  const compareDisabledReason = auth.status === 'unconfigured' ? (auth.message ?? '지금은 로그인 기능을 쓸 수 없습니다.') : null;
-  const briefingHidden = briefing && compareOn && !briefingShowMine;
+  // ── personal comparison: same DISPLAYED scope/version as the public numbers (compareDisabledReason/
+  // briefingHidden are hoisted above, next to initialPanels) ──────────────────────────────────────────────
   const compareActive = screen === 'dashboard' && compareOn && !compareDisabledReason && !briefingHidden && !!data && !unsupported;
   const requestedPersonal = usePersonalCompare(shownScope ?? scope, version, compareActive);
   const bundledPersonal = compareActive && shownScope && version

@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { Scope } from '../domain/public';
 import { loadDashboardWith, loadMeta, screenCoordinator } from '../data/client';
+import type { ScreenPanel } from '../data/screenCoordinator';
 import { RefreshController, type RefreshState, type RequestSource } from '../data/refreshController';
 
 export interface DashboardDataApi extends RefreshState {
@@ -14,11 +15,19 @@ export interface DashboardDataApi extends RefreshState {
   retry: () => void;
 }
 
-/** @param sessionKey identity of the viewer session (+ demo fixture); null while auth is still settling */
-export function useDashboardData(scope: Scope, source: RequestSource, sessionKey: string | null, enabled = true): DashboardDataApi {
+/**
+ * @param sessionKey identity of the viewer session (+ demo fixture); null while auth is still settling
+ * @param initialPanels U-perf-first-screen (2026-10-12): panels a FIRST/scope-changing request should already
+ *   carry (e.g. personal comparison for an eligible signed-in viewer), decided by the caller without this
+ *   hook's own data. Read fresh at request time (a ref, not a dep) — it never itself restarts a request.
+ */
+export function useDashboardData(scope: Scope, source: RequestSource, sessionKey: string | null, enabled = true,
+  initialPanels: ScreenPanel[] = []): DashboardDataApi {
+  const panelsRef = useRef(initialPanels);
+  panelsRef.current = initialPanels;
   const controller = useMemo(() => new RefreshController({
     fetchMeta: (signal) => loadMeta(signal),
-    fetchDashboard: (meta, s, signal) => loadDashboardWith(meta, s, signal),
+    fetchDashboard: (meta, s, signal) => loadDashboardWith(meta, s, signal, panelsRef.current),
     now: () => Date.now(),
     setTimer: (fn, ms) => window.setTimeout(fn, ms),
     clearTimer: (id) => window.clearTimeout(id as number),

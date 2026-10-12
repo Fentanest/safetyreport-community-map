@@ -49,11 +49,12 @@ try {
     await page.locator('.kpi-minor').screenshot({ path: `${out}/item4-kpi-minor-${label}.png` });
     checks.push({ item: 4, label, warningMine });
 
-    // ── item 3: 답변까지 기간, 상단 KPI 중앙값 박스에 평균값 병기 ────────────────────────────────
+    // ── item 3: 답변까지 기간, 상단 KPI 평균값이 먼저(큰 값), 중앙값은 작은 줄에 병기 ────────────────
+    // U-mean-primary (2026-10-12): 평균 우선 표시로 바뀌어 순서가 평균 → 중앙값이다.
     const durationHero = page.locator('[data-kpi="duration"]');
     const heroText = await durationHero.innerText();
-    assert.match(heroText, /중앙값.*평균/s);
-    assert.match(await durationHero.locator('.kpi-mine').innerText(), /내 중앙값.*평균/s);
+    assert.match(heroText, /평균.*중앙값/s);
+    assert.match(await durationHero.locator('.kpi-mine').innerText(), /내 평균.*중앙값/s);
     await page.locator('.kpi-hero').screenshot({ path: `${out}/item3-kpi-hero-${label}.png` });
 
     // ── item 5: 기관·담당자 표, 내 값이 같은 열 파란색, 390에서 표가 깨지지 않음 ──────────────────
@@ -71,10 +72,10 @@ try {
     // 더 보는 그래프를 펼쳐야 처리기간 분포·기관×위반법규·산점도가 나온다.
     await page.getByRole('region', { name: '더 보는 그래프' }).getByRole('button', { name: '펼치기', exact: true }).click();
 
-    // item 3 (계속): 처리기간 분포 카드에도 평균값 병기
+    // item 3 (계속): 처리기간 분포 카드도 평균 우선 표시(U-mean-primary)
     const durationCard = page.getByRole('article', { name: '답변까지 걸린 기간의 분포', exact: true });
     await durationCard.locator('.chart-caption .mine-col').waitFor();
-    assert.match(await durationCard.locator('.chart-caption').innerText(), /전체 중앙값.*평균.*내 신고 중앙값.*평균/s);
+    assert.match(await durationCard.locator('.chart-caption').innerText(), /전체 평균.*중앙값.*내 신고 평균.*중앙값/s);
     await durationCard.screenshot({ path: `${out}/item3-duration-card-${label}.png` });
     checks.push({ item: 3, label, hero: heroText });
 

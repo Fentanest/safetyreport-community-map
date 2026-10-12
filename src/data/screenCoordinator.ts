@@ -35,12 +35,16 @@ export class ScreenCoordinator {
   drop(id: string) { this.requests.delete(id); this.settled?.requests.delete(id); }
   active() { return this.scope !== null; }
   matches(scope: Scope) { return this.scope !== null && scopeKey(this.scope) === scopeKey(scope); }
-  async open(scope: Scope, signal?: AbortSignal): Promise<DashboardData> {
+  async open(scope: Scope, signal?: AbortSignal, initialPanels?: ScreenPanel[]): Promise<DashboardData> {
     if (!this.matches(scope)) {
       // A → B → A may cancel B while the controller keeps displaying A. Preserve only the
       // last complete safe frame for that cancellation; account reset still forgets it.
       const settled = this.settled;
       this.reset(); this.settled = settled; this.scope = scope;
+      // U-perf-first-screen (2026-10-12): panels the caller already knows this screen needs (e.g. personal
+      // comparison for an eligible signed-in viewer) ride this SAME first request — never a second full
+      // screen RPC right after. A later panel() for the same id/params reuses this frame (see panel() below).
+      for (const panel of initialPanels ?? []) this.requests.set(panel.id, panel);
     }
     const job = this.fetch(signal);
     this.pending = job;
