@@ -37,8 +37,8 @@ describe('map UX 3 / 5', () => {
     const html = table(new Map([[entity.key, row(side)]]));
     expect(cells(html)).toEqual(['내 10', '내 50.0%', '내 25.0%', '내 2건 · 20.0%', '내 0일 · 중앙값 0일']);
     expect(html.match(/<th scope="col"/g)).toHaveLength(6);
-    expect(html).not.toContain('>내 답변<');
-    expect(html).not.toContain('>내 수용률<');
+    expect(html).not.toContain('>내\u00A0답변<');
+    expect(html).not.toContain('>내\u00A0수용률<');
   });
   it('distinguishes no comparison row, actual zero counts, and undefined rates/duration', () => {
     expect(cells(table(new Map()))).toEqual(Array(5).fill('내 자료 없음'));
@@ -57,8 +57,8 @@ describe('map UX 3 / 5', () => {
     // U-mean-primary (2026-10-12): 큰 값은 평균, 중앙값은 작은 줄에 병기.
     // dotParts (components/dotParts.tsx, U-letter-break fix): each " · "-joined piece is its own unbreakable
     // <span class="nb">, joined by a plain breakable space — same words, new markup.
-    expect(html).toContain('<span class="nb">평균</span> <span class="nb">· 중앙값 2일</span> <span class="nb">· 계산 3건</span>');
-    expect(html).toContain('<span class="nb">내 평균 7일</span> <span class="nb">· 중앙값 1일</span>');
+    expect(html).toContain('<span class="dp">평균</span> <span class="dp">·\u00A0중앙값 2일</span> <span class="dp">·\u00A0계산 3건</span>');
+    expect(html).toContain('<span class="dp">내\u00A0평균 7일</span> <span class="dp">·\u00A0중앙값 1일</span>');
     expect(renderToStaticMarkup(<KpiPanel {...props} showMine={false} />)).not.toContain('내 평균');
     expect(renderToStaticMarkup(<KpiPanel {...props} focus={{ ...props.focus, kind: 'place' }} />)).not.toContain('내 평균');
     const card = renderToStaticMarkup(<DurationCard all={{ ...dashboard.analytics!.duration!, median_days: 2, mean_days: 10 }}

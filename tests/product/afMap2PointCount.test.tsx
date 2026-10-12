@@ -60,7 +60,7 @@ describe('AF-MAP2 point_count meaning and completion-only range', () => {
     expect(kpi).toContain('답변일 기준');
     expect(kpi).toContain('신고 장소');
     // dotParts (components/dotParts.tsx, U-letter-break fix) wraps each cell value in an unbreakable <span class="nb">.
-    expect(kpi).toMatch(/<b class="cm-number"><span class="nb">1<\/span><\/b>/);
+    expect(kpi).toMatch(/<b class="cm-number"><span class="dp">1<\/span><\/b>/);
     expect(kpi).not.toContain('내 신고');
     const reportMap = renderToStaticMarkup(
       <MapPanel points={data.points} selectedKey={null} onSelect={() => {}} metric="reports"

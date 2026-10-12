@@ -36,20 +36,20 @@ describe('dotParts (components/dotParts.tsx)', () => {
   const html = (node: ReturnType<typeof dotParts>) => renderToStaticMarkup(<>{node}</>);
 
   it('wraps a single value (no " · ") in one unbreakable span, unchanged content', () => {
-    expect(html(dotParts('829,610,000원'))).toBe('<span class="nb">829,610,000원</span>');
+    expect(html(dotParts('829,610,000원'))).toBe('<span class="dp">829,610,000원</span>');
   });
 
   it('splits "A · B · C" into one nowrap span per piece, joined by a plain breakable space — ' +
     'the line may only break between pieces, never inside "6일" or "60,297건"', () => {
     expect(html(dotParts('평균 · 중앙값 6일 · 계산 60,297건'))).toBe(
-      '<span class="nb">평균</span> <span class="nb">· 중앙값 6일</span> <span class="nb">· 계산 60,297건</span>',
+      '<span class="dp">평균</span> <span class="dp">·\u00A0중앙값 6일</span> <span class="dp">·\u00A0계산 60,297건</span>',
     );
   });
 
   it('lead: true treats the whole string as already introduced by its own " · " (KpiPanel\'s minor-row mine cell, ' +
     'which sits after the all/sub value on the same line) — the "·" stays glued to what follows it, never stranded', () => {
     expect(html(dotParts('내 평균 38.2일 · 중앙값 38일', { lead: true }))).toBe(
-      '<span class="nb">· 내 평균 38.2일</span> <span class="nb">· 중앙값 38일</span>',
+      '<span class="dp">·\u00A0내\u00A0평균 38.2일</span> <span class="dp">·\u00A0중앙값 38일</span>',
     );
   });
 

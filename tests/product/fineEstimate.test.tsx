@@ -115,8 +115,8 @@ it('renders estimates, own counts, average, guide and absent states without call
   // dotParts (components/dotParts.tsx, U-letter-break fix) renders each " · "-joined piece as its own unbreakable
   // <span class="nb">, joined by a plain breakable space — same words, new markup (never a mid-number-and-unit break).
   expect(html).toContain('추정 과태료(법정 최저 기준)');
-  expect(html).toContain('<span class="nb">120,000원</span> <span class="nb">· 2건</span>');
-  expect(html).toContain('<span class="nb">· 내 40,000원</span> <span class="nb">· 1건</span>');
+  expect(html).toContain('<span class="dp">120,000원</span> <span class="dp">·\u00A02건</span>');
+  expect(html).toContain('<span class="dp">·\u00A0내\u00A040,000원</span> <span class="dp">·\u00A01건</span>');
   expect(renderToStaticMarkup(<KpiPanel {...props} overview={{...dash.overview,fine_estimate:undefined}}/>)).toContain('제공 안 됨');
   expect(renderToStaticMarkup(<KpiPanel {...props} overview={{...dash.overview,fine_estimate:{count:0,sum_won:null,mean_won:null}}}/>)).toContain('추정 자료 없음');
   const detail = renderToStaticMarkup(<CompareKpis overview={dash.overview} personal={personal} compareOn auth={{status:'signed_in'} as never} onSignIn={()=>{}} unsupported={false}/>);

@@ -14,9 +14,13 @@ export function dotParts(text: string | null | undefined, opts?: { lead?: boolea
   const lead = opts?.lead ?? false;
   const parts = text.split(' · ');
   const out: ReactNode[] = [];
+  // 2026-10-12 Opus: 단위 전체를 nowrap 으로 묶으면 좁은 KPI 카드에서 "내 31.3% (+3.1%p)" 가 한 덩어리로 넘쳐 잘렸다.
+  // 어절 안 끊김은 전역 word-break: keep-all 이 막으므로, 단위 안에서도 공백에서는 줄을 바꿀 수 있게 하고
+  // "·" 와 머리말 "내" 만 다음 어절에 붙인다(NBSP).
+  const glue = (s: string) => s.replace(/^내 /u, '내\u00A0');
   parts.forEach((part, i) => {
     if (i > 0) out.push(' ');
-    out.push(<span className="nb" key={i}>{i > 0 || lead ? `· ${part}` : part}</span>);
+    out.push(<span className="dp" key={i}>{i > 0 || lead ? `·\u00A0${glue(part)}` : glue(part)}</span>);
   });
   return out;
 }

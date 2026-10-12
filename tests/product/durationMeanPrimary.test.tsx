@@ -62,9 +62,9 @@ describe('KpiPanel 답변까지 — mean is the hero value, median is the second
     expect(cell).toContain('8.5일'); // hero value = mean (8.5), not the median (8)
     // dotParts (components/dotParts.tsx, U-letter-break fix) renders each " · "-joined piece as its own
     // unbreakable <span class="nb">, joined by a plain breakable space — same words, new markup.
-    expect(cell).toContain('<span class="nb">평균</span> <span class="nb">· 중앙값 8일</span> <span class="nb">· 계산 4건</span>');
+    expect(cell).toContain('<span class="dp">평균</span> <span class="dp">·\u00A0중앙값 8일</span> <span class="dp">·\u00A0계산 4건</span>');
     expect(cell).toContain('class="kpi-mine mine-col"');
-    expect(cell).toContain('<span class="nb">내 평균 9일</span> <span class="nb">· 중앙값 9일</span>');
+    expect(cell).toContain('<span class="dp">내\u00A0평균 9일</span> <span class="dp">·\u00A0중앙값 9일</span>');
   });
 
   it('falls back to the pre-existing median-as-hero display when mean_days is absent entirely (older server)', () => {
@@ -79,9 +79,9 @@ describe('KpiPanel 답변까지 — mean is the hero value, median is the second
     const html = renderToStaticMarkup(<KpiPanel {...baseProps} overview={older} personal={personal} />);
     const cell = durationHero(html);
     expect(cell).toContain('8일'); // hero value falls back to median (8), same number here but via the old path
-    expect(cell).toContain('<span class="nb">중앙값</span> <span class="nb">· 계산 4건</span>');
+    expect(cell).toContain('<span class="dp">중앙값</span> <span class="dp">·\u00A0계산 4건</span>');
     expect(cell).not.toContain('평균');
-    expect(cell).toContain('내 9일'); // old mine format: just the median, no "평균"
+    expect(cell).toContain('내\u00A09일'); // old mine format: just the median, no "평균"
     expect(cell).not.toContain('내 평균');
   });
 });
@@ -93,9 +93,9 @@ describe('CompareKpis 답변까지 걸린 기간 행 — same mean-primary swap,
     const html = renderToStaticMarkup(<CompareKpis overview={pub.overview} personal={personal} compareOn auth={auth as any} onSignIn={() => {}} unsupported={false} />);
     const row = html.match(/<tr>[\s\S]*?답변까지 걸린 기간[\s\S]*?<\/tr>/)?.[0] ?? '';
     expect(row).toContain('평균 · 신고한 날부터 답변 받은 날까지');
-    expect(row).toContain('<b class="cm-number"><span class="nb">8.5일</span></b>'); // all hero = mean (8.5), not median (8)
+    expect(row).toContain('<b class="cm-number"><span class="dp">8.5일</span></b>'); // all hero = mean (8.5), not median (8)
     expect(row).toContain('중앙값 8일'); // allNote keeps median
-    expect(row).toContain('<b class="cm-number"><span class="nb">9일</span></b>'); // mine hero = mean
+    expect(row).toContain('<b class="cm-number"><span class="dp">9일</span></b>'); // mine hero = mean
     expect(row).toContain('중앙값 차이'); // diffNote keeps the median diff alongside the (now primary) mean diff
   });
 });
