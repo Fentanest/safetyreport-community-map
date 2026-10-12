@@ -1,4 +1,4 @@
-import type { CohortDiagnostics, DurationDistribution, OutcomeCounts, RatingDistribution, Scope } from './public.ts';
+import type { CohortDiagnostics, DurationDistribution, FineEstimateSummary, OutcomeCounts, RatingDistribution, Scope } from './public.ts';
 
 /**
  * Personal comparison (my-analytics) DTO. Returned only to the verified signed-in user, never
@@ -10,7 +10,7 @@ import type { CohortDiagnostics, DurationDistribution, OutcomeCounts, RatingDist
 
 /** Counts and rates of one side (all or mine) for the current scope. */
 export interface CompareSummary {
-  fine_estimate?: import('./public').FineEstimateSummary;
+  fine_estimate?: FineEstimateSummary;
   rating?: { count: number; mean: number | null };
   /** 신고일 기준 */
   report_count: number;
