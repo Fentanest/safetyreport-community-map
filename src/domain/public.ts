@@ -81,6 +81,8 @@ export interface Capability {
 }
 
 export interface PublicMeta {
+  /** Actual public aggregate MVCC snapshot, not upload time. */
+  snapshot_at?: string;
   schema_version: 2;
   dataset_version: string;
   sample: boolean;

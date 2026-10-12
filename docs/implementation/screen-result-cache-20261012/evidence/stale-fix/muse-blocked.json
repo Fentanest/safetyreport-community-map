@@ -1,0 +1,13 @@
+{
+  "status": "MODEL_UNVERIFIED / UI_REVIEW_BLOCKED",
+  "models": {
+    "code": 1,
+    "stdout": "",
+    "stderr": "\u001b[91m\u001b[1mError: \u001b[0mUnexpected error\n\nUnknown: FileSystem.open (/home/better0101/.local/share/opencode/log/opencode.log)\n"
+  },
+  "mcp": {
+    "code": 1,
+    "stdout": "",
+    "stderr": "\u001b[91m\u001b[1mError: \u001b[0mUnexpected error\n\nUnknown: FileSystem.open (/home/better0101/.local/share/opencode/log/opencode.log)\n"
+  }
+}

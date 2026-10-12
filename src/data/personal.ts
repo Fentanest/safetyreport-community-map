@@ -16,7 +16,8 @@ const cohortDiagnostics = z.strictObject({ date_basis: z.enum(['report_date', 'c
 const count = z.number().int().nonnegative();
 const rate = z.number().min(0).max(100).nullable();
 const pp = z.number().min(-100).max(100).nullable();
-const share = z.number().min(0).max(100).nullable();
+// Independent snapshot denominators may temporarily make a share exceed 100%.
+const share = z.number().nonnegative().nullable();
 const days = z.number().min(0).nullable();
 const dayDiff = z.number().nullable();
 const won = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
@@ -52,6 +53,7 @@ const entitySchema = z.strictObject({
 });
 
 export const personalCompareSchema = z.strictObject({
+  snapshots: z.strictObject({ public_at: z.iso.datetime({ offset: true }), personal_at: z.iso.datetime({ offset: true }), comparable: z.boolean() }).optional(),
   schema_version: z.literal(2), dataset_version: z.string().min(1), scope: scopeSchema,
   viewer: z.strictObject({
     contributor: z.enum(['active', 'none', 'suspended', 'revoked']), has_public_facts: z.boolean(),
@@ -81,7 +83,7 @@ export const personalCompareSchema = z.strictObject({
   })).max(2400), // one row per calendar month of the period (the whole history is allowed; 80 cut periods over 6.6 years)
   my_points: z.array(z.strictObject({
     key: z.string().max(160), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
-    region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean(),
+    region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean().nullable(),
   })).max(1000),
   analytics: z.strictObject({ duration: durationDistributionSchema, rating: ratingDistributionSchema }).optional(),
   // EX-09: required — an older (dual-set) server's comparison is refused, never shown under the new labels

@@ -1,3 +1,4 @@
+import { snapshotBasis } from './snapshotTime';
 import { DATE_BASIS_LABEL } from '../domain/public';
 import type { Overview } from '../domain/public';
 import type { CompareSummary, PersonalCompare } from '../domain/personal';
@@ -23,6 +24,7 @@ interface Row {
   mine: (m: CompareSummary) => string;
   mineNote: (m: CompareSummary) => string | null;
   diff: (c: PersonalCompare) => string;
+  shareValue?: (c: PersonalCompare) => number | null | undefined;
   diffKind: 'share' | 'pp' | 'days' | 'won' | 'none';
   /** optional second line under the difference */
   diffNote?: (c: PersonalCompare) => string | null;
@@ -44,11 +46,11 @@ function rows(o: Overview): Row[] {
   const durationMeanKnown = o.processing_duration?.mean_days !== undefined;
   return [
     { id: 'report', label: '신고', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준`, all: fmtInt(o.report_count.value), allNote: null,
-      mine: m => fmtInt(m.report_count), mineNote: () => null, diff: x => fmtShare(x.diff.report_share), diffKind: 'share' },
+      mine: m => fmtInt(m.report_count), mineNote: () => null, diff: x => fmtShare(x.diff.report_share), shareValue: x => x.diff.report_share, diffKind: 'share' },
     { id: 'completed', label: '답변 완료', basis: `${DATE_BASIS_LABEL[o.report_count.basis]} 기준`, all: fmtInt(o.completed_count.value),
       allNote: out ? `미분류 제외 ${fmtInt(d)}건` : null,
       mine: m => fmtInt(m.completed_count), mineNote: m => `미분류 제외 ${fmtInt(m.result_known)}건`,
-      diff: x => fmtShare(x.diff.completed_share), diffKind: 'share' },
+      diff: x => fmtShare(x.diff.completed_share), shareValue: x => x.diff.completed_share, diffKind: 'share' },
     { id: 'accept', label: '수용률', basis: '수용 ÷ (수용+일부수용+불수용)',
       all: fmtPercent(acceptRate(out)),
       allNote: out ? `${fmtInt(out.accepted)} / ${fmtInt(d)}건` : null,
@@ -81,7 +83,7 @@ function rows(o: Overview): Row[] {
     { id: 'amount', label: '답변에 적힌 과태료 금액', basis: '합계',
       all: fmtFineAmount(o.fine_amount), allNote: amountNote(o.fine_amount),
       mine: m => fmtFineAmount(m.fine_amount), mineNote: m => amountNote(m.fine_amount),
-      diff: x => fmtShare(x.diff.fine_amount_sum_share), diffKind: 'share',
+      diff: x => fmtShare(x.diff.fine_amount_sum_share), shareValue: x => x.diff.fine_amount_sum_share, diffKind: 'share',
       diffNote: x => x.diff.fine_amount_mean_won_diff == null ? null : `평균 ${fmtWonDiff(x.diff.fine_amount_mean_won_diff)}` },
     { id: 'estimate', label: '추정 과태료(법정 최저 기준)', basis: FINE_ESTIMATE_HELP,
       all: fmtFineEstimate(o.fine_estimate), allNote: o.fine_estimate?.count ? `평균 ${fmtWon(o.fine_estimate.mean_won)}` : null,
@@ -92,7 +94,7 @@ function rows(o: Overview): Row[] {
       mine: m => fmtRating(m.rating), mineNote: () => null,
       diff: () => '—', diffKind: 'none' },
     { id: 'points', label: '신고 장소', basis: '', all: fmtInt(o.point_count.value), allNote: null,
-      mine: m => fmtInt(m.point_count), mineNote: () => null, diff: x => fmtShare(x.diff.point_share), diffKind: 'share' },
+      mine: m => fmtInt(m.point_count), mineNote: () => null, diff: x => fmtShare(x.diff.point_share), shareValue: x => x.diff.point_share, diffKind: 'share' },
     { id: 'contributors', label: '참여한 사람', basis: '', all: fmtInt(o.contributor_count.value), allNote: null,
       mine: () => '—', mineNote: () => null, diff: () => '—', diffKind: 'none' },
   ];
@@ -117,9 +119,13 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
       <div className="panel-top">
         <div>
           <h2>{showMine ? '전체와 내 신고 비교' : '주요 통계'}</h2>
+          {showMine && data?.snapshots && <span className="subtitle" title={`${data.snapshots.public_at} · ${data.snapshots.personal_at}`}>
+            {snapshotBasis(data.snapshots.public_at, data.snapshots.personal_at)}
+          </span>}
           {unsupported && <span className="subtitle">이 조건의 통계는 아직 없습니다</span>}
         </div>
       </div>
+      <div className="compare-table-scroll" role="region" aria-label="통계 비교표" tabIndex={0}>
       <table className="compare-table">
         <thead>
           <tr>
@@ -145,6 +151,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
               {showMine && (
                 <td className="num diff-col">
                   {data ? (<><b className="cm-number">{row.diff(data)}</b>
+                    {(row.shareValue?.(data) ?? 0) > 100 && <small>최근 업로드 반영 차이</small>}
                     {row.diffNote?.(data) && <small>{row.diffNote(data)}</small>}
                     <small>{row.diffKind === 'share' ? '전체 중 내 신고' : row.diffKind === 'days' ? '나와 전체의 차이' : row.diffKind === 'pp' ? (data.diff.rate_reason === 'no_mine' ? '내 결과가 아직 없음' : data.diff.rate_reason === 'no_all' ? '결과가 아직 없음' : '나와 전체의 차이') : ''}</small></>)
                     : <span className="cm-muted">—</span>}
@@ -154,6 +161,7 @@ export default function CompareKpis({ overview, personal, compareOn, auth, onSig
           ))}
         </tbody>
       </table>
+      </div>
       {message && (
         <div className="compare-note" role={personal.status === 'error' ? 'alert' : 'note'}>
           <span>{message}{personal.error?.retryAfter ? ` (${personal.error.retryAfter}초 후)` : ''}</span>

@@ -5,7 +5,8 @@ import type { CohortDiagnostics, DurationDistribution, FineEstimateSummary, Outc
  * mixed into the public API, the static snapshot or any shared cache (docs/personal-comparison.md).
  *
  * `all` and `mine` come from ONE fact selection (same scope, same public population, same
- * dataset_version): mine is the subset of all whose contributor is the verified user.
+ * dataset_version) in the legacy path. Bounded screen snapshots may differ; snapshots.comparable=false
+ * is informational: comparisons remain available with both timestamps and no clamping.
  */
 
 /** Counts and rates of one side (all or mine) for the current scope. */
@@ -152,7 +153,7 @@ export interface MyPoint {
   mine_report_count: number;
   mine_completed_count: number;
   /** true when another contributor also recorded this point in the scope (함께 기록한 지점) */
-  shared: boolean;
+  shared: boolean | null;
 }
 
 /** No account ids, emails or tokens: only what the viewer needs to understand an empty result. */
@@ -164,6 +165,7 @@ export interface ViewerState {
 }
 
 export interface PersonalCompare {
+  snapshots?: { public_at: string; personal_at: string; comparable: boolean };
   schema_version: 2;
   dataset_version: string;
   scope: Scope;

@@ -1,3 +1,4 @@
+import { snapshotBasis } from './snapshotTime';
 import { useState, type ReactNode } from 'react';
 import type { CountMetric, DateBasis, Overview } from '../domain/public';
 import { DATE_BASIS_LABEL } from '../domain/public';
@@ -16,6 +17,7 @@ export interface KpiFocus {
 }
 
 interface Props {
+  snapshotAt?: string;
   focus: KpiFocus;
   /** the overview of `focus` (one snapshot: title, numbers and denominators change together) */
   overview: Overview | null;
@@ -47,7 +49,7 @@ function deltaText(metric: CountMetric, kind: 'count' | 'rate'): string {
 
 const FOCUS_WORD: Record<KpiFocus['kind'], string> = { nation: '전국', region: '지역', bbox: '지도 범위', place: '선택한 주소' };
 
-export default function KpiPanel({ focus, overview: o, state, staleFocus, errorText, personal, showMine, placeMine, unsupported, detail }: Props) {
+export default function KpiPanel({ snapshotAt, focus, overview: o, state, staleFocus, errorText, personal, showMine, placeMine, unsupported, detail }: Props) {
   const [open, setOpen] = useState(false);
 
   const placeFocus = focus.kind === 'place';
@@ -134,6 +136,9 @@ export default function KpiPanel({ focus, overview: o, state, staleFocus, errorT
           <b className="kpi-focus-label">{focus.label}</b>
         </span>
         <span className="kpi-period">{basisWord} 기준 · {fmtDate(focus.start)} — {fmtDate(focus.end)}</span>
+        {snapshotAt && <span className="kpi-period" title={[snapshotAt, showMine ? personal.data?.snapshots?.personal_at : null].filter(Boolean).join(' · ')}>
+          {snapshotBasis(snapshotAt, showMine && personal.status === 'ready' ? personal.data?.snapshots?.personal_at : undefined)}
+        </span>}
         {state === 'loading' && (
           <span className="kpi-status" role="status">
             {placeFocus ? '주소 정보를 불러오는 중' : '새 조건으로 불러오는 중'}{o && staleFocus ? ` · 아래 숫자는 이전 대상(${staleFocus})의 값` : ''}

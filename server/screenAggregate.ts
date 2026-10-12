@@ -6,6 +6,7 @@ import { basisWindow, growth, mapNodes, monthSpine, previousWindow, todayKst } f
 import { agencyTypeOf } from './agencyType.ts';
 import { placesInView } from './places.ts';
 import { regionName } from './regions.ts';
+import type { PersonalCompare } from '../src/domain/personal.ts';
 import { diffOf } from './compare.ts';
 import { computeSameNames } from '../src/domain/managerNames.ts';
 import { compareRows } from '../src/domain/tableSort.ts';
@@ -43,8 +44,8 @@ export interface ScreenAggregate {
 }
 
 /** Cache packets stay service-only. Personal counters (including shared-place flags) never
- * enter the shared entry. Merge only parts returned by the same authenticated SQL snapshot. */
-export function joinScreenCache(publicPart: ScreenAggregate, personalPart?: Pick<ScreenAggregate, 'stats' | 'anchors' | 'full'> | null): ScreenAggregate {
+ * enter the shared entry. v2 may reuse independently dated parts; public full counters must win. */
+export function joinScreenCache(publicPart: ScreenAggregate, personalPart?: Pick<ScreenAggregate, 'stats' | 'anchors' | 'full'> | null, independent = false): ScreenAggregate {
   if (publicPart?.encoding !== 'screen-aggregate-v2' || !Array.isArray(publicPart.stats) ||
     !Array.isArray(publicPart.anchors) || !Array.isArray(publicPart.full) ||
     publicPart.stats.some(s => s.side !== 'all') || publicPart.anchors.some(a => a[0] === 'mine') ||
@@ -55,7 +56,7 @@ export function joinScreenCache(publicPart: ScreenAggregate, personalPart?: Pick
     throw new Error('invalid personal cache part');
   }
   return { ...publicPart, stats: [...publicPart.stats, ...personalPart.stats],
-    anchors: [...publicPart.anchors, ...personalPart.anchors], full: personalPart.full };
+    anchors: [...publicPart.anchors, ...personalPart.anchors], full: independent ? [...personalPart.full.filter(f => f[1] !== '' && !publicPart.full.some(p => p[0] === f[0] && p[1] === f[1])), ...publicPart.full] : personalPart.full };
 }
 const empty: Stat = { side: 'all', period: 0, kind: '', k: '', focus: '', ord: 0, label: [null,'기관 정보 없음',null,null],
   n:0,c:0,a:0,p:0,r:0,f:0,w:0,penalty:0,places:0,missing:0,answer_missing:0,
@@ -79,7 +80,7 @@ const distribution = (s: Stat,basis: DateBasis) => ({ basis,bucket_width_days:7,
   mean_days:briefDuration(s).mean_days,p90_days:s.duration[3] });
 const ratingDistribution = (s: Stat,basis: DateBasis) => ({ basis,
   rows:s.ratings.map((counts,i)=>{ const n=counts.reduce((a,b)=>a+b,0);return {
-    status:['all','accepted','partial','rejected','fine','unknown'][i],counts,rating_count:n,mean:n?counts.reduce((a,b,j)=>a+b*(j+1),0)/n:null }; }),
+    status:(['all','accepted','partial','rejected','fine','unknown'] as const)[i],counts:counts as [number,number,number,number,number],rating_count:n,mean:n?counts.reduce((a,b,j)=>a+b*(j+1),0)/n:null }; }),
   unrated:s.c-s.rating[0] });
 
 export class ScreenAggregates {
@@ -246,7 +247,7 @@ export class ScreenAggregates {
     }
     throw new Error('unsupported screen route');
   }
-  compare(viewer:ViewerCheck) {
+  compare(viewer:ViewerCheck): PersonalCompare {
     const allStat=this.stat(),mineStat=this.stat('summary','mine'),basis=this.scope.date_basis;
     const all=summary(allStat),mine=summary(mineStat);
     const regions=new Map<string,Stat>();for(const s of [...this.list('region'),...this.list('region','mine')])if(!regions.has(s.k))regions.set(s.k,s);
@@ -260,10 +261,10 @@ export class ScreenAggregates {
         all:a,mine:m,accept_rate_pp:minus(m.accept_rate,a.accept_rate),partial_rate_pp:minus(m.partial_rate,a.partial_rate),duration_median_days_diff:minus(m.duration_median_days,a.duration_median_days)};
     }).sort((a,b)=>b.mine.completed_count-a.mine.completed_count||b.all.completed_count-a.all.completed_count||a.agency_name.localeCompare(b.agency_name,'ko')||a.key.localeCompare(b.key)).slice(0,50);
     const monthly=monthSpine(this.scope,this.window(false),todayKst()).map(({month,no_data})=>{
-      if(no_data)return {month,all_report_count:null,mine_report_count:null,all_completed_count:null,mine_completed_count:null,all_accept_rate:null,mine_accept_rate:null,
+      if(no_data && this.stat('month','mine',0,'',month)===empty)return {month,all_report_count:null,mine_report_count:null,all_completed_count:null,mine_completed_count:null,all_accept_rate:null,mine_accept_rate:null,
         all_duration_median_days:null,mine_duration_median_days:null,mine_outcomes:null,mine_fine_count:null};
       const a=this.stat('month','all',0,'',month),m=this.stat('month','mine',0,'',month);
-      return {month,all_report_count:a.n,mine_report_count:m.n,all_completed_count:a.c,mine_completed_count:m.c,all_accept_rate:pct(a.a,a.a+a.p+a.r),mine_accept_rate:pct(m.a,m.a+m.p+m.r),
+      return {month,all_report_count:no_data?null:a.n,mine_report_count:m.n,all_completed_count:no_data?null:a.c,mine_completed_count:m.c,all_accept_rate:pct(a.a,a.a+a.p+a.r),mine_accept_rate:pct(m.a,m.a+m.p+m.r),
         all_duration_median_days:a.duration[2],mine_duration_median_days:m.duration[2],all_rating:rating(a),mine_rating:rating(m),mine_outcomes:outcomes(m),mine_fine_count:m.f};
     });
     const my_points=this.list('place','mine').flatMap(s=>{const a=this.anchor('all',s.k)??this.anchor('mine',s.k);return a?[{key:s.k,lat:a[2],lng:a[3],region_code:a[5],

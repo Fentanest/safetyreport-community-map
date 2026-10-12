@@ -48,3 +48,5 @@ P0 실패는 출시 차단. 검증 불가면 BLOCKED/NOT_RUN, 합격으로 바�
 
 테스트 계층: unit(stat/privacy) → schema → API integration(read permissions, consistency) → E2E →
 Muse 실제 시각검수. screenshot baseline 생성 자체는 기존 정답과의 비교가 아니다.
+
+2026-10-12 bounded screen-v2 예외: CMP01의 mine⊆all/같은 snapshot은 혼합 snapshot에는 적용하지 않는다. compare.all=공개 overview 및 공개 scope/version fence는 유지한다. 혼합 시점의 차이·비중 계산, 정확한 양측 시각(동일 시각 1회), mine>all 원값 보존과 100% 초과 비중 주석을 검사한다. 0분모·결측 null은 유지한다. 기존 독립 compare/statistics에는 예외가 없다. [검증과 BLOCKED 범위](implementation/screen-result-cache-20261012/STALE-REPORT.md).

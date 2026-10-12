@@ -164,3 +164,7 @@ Command 56: 기간 · 분류 · 지역 칩 · 상세필터 · [내 데이터 함
 - Supabase Auth: Kakao provider에 `https://safemap.worklazy.net/**` 리다이렉트 허용 추가, Pages 빌드 변수 `VITE_SUPABASE_URL`,
   `VITE_SUPABASE_PUBLISHABLE_KEY`(공개 키) — 운영 인증 미검증.
 - 실제 카카오 로그인·실데이터의 내 통계 대조, 실 Kakao 지도 위 링 표시 — 키·운영 세션 없음.
+
+## 2026-10-12 · 화면 캐시 시점 분리 예외 (사용자 승인 범위)
+
+`my-analytics/screen` stale-v2 opt-in에 한해 전체와 개인 snapshot 시각이 다를 수 있다. 공개 fence 및 compare.all=overview 검사는 유지한다. 개인 건수를 전체 이하로 자르지 않으며, 서로 다른 원천 dataset_version이어도 모든 측간 차이/비중을 각 측의 실제 수치로 계산한다(0분모·결측 null 유지). `snapshots.comparable`은 정보만 제공한다. KPI와 상세 비교에 전체/내 신고 기준 시각을 함께 표시하고, 같은 시각이면 하나만 표시한다. 100% 초과 비중을 자르지 않으며 해당 셀에 `최근 업로드 반영 차이` 주석을 붙인다. 각 측 내부 비율·분모·월별·분포는 유지한다. `my_points.shared=null`은 타인 참여 여부 미확정이며 해당 문구를 생략한다. 독립 compare/statistics 경로는 기존 동일 snapshot 계약이다. [호출자 감사·UI 문구·검증](implementation/screen-result-cache-20261012/STALE-REPORT.md).

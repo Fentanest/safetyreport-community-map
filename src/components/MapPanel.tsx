@@ -103,7 +103,7 @@ export function toKakaoInputs(points: readonly PublicPoint[], m: MapMetric, sele
     const parts = metricParts(pt, m);
     const mark = marks?.get(pt.key);
     return { key: pt.key, lat: pt.lat, lng: pt.lng, label: pointTitle(pt, m), ...parts, selected: pt.key === selectedKey,
-      mine: mark?.mine, shared: mark?.shared, interest: mark?.interest };
+      mine: mark?.mine, shared: mark?.shared ?? undefined, interest: mark?.interest };
   });
 }
 

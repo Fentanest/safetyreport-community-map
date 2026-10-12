@@ -109,7 +109,7 @@ export default function PlaceDetailsPanel(p: Props) {
         </div>
       </header>
       {p.mark?.mine && (
-        <p className="mine-note" role="note">이 주소에 내 신고 {fmtInt(p.mark.mineCount)}건 · {p.mark.shared ? '다른 사람과 함께 신고한 곳' : '나만 신고한 곳'}</p>
+        <p className="mine-note" role="note">이 주소에 내 신고 {fmtInt(p.mark.mineCount)}건{p.mark.shared === null ? '' : p.mark.shared ? ' · 다른 사람과 함께 신고한 곳' : ' · 나만 신고한 곳'}</p>
       )}
 
       <section className="place-section" aria-label="처리 결과">

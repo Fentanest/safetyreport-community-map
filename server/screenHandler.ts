@@ -6,6 +6,7 @@ import { aggregateCompare } from './compare.ts';
 import { todayKst, entityRows, selectScope, representatives } from './aggregate.ts';
 import { decodeScreenFacts } from './screenFacts.ts';
 import { joinScreenCache, ScreenAggregates, type ScreenAggregate } from './screenAggregate.ts';
+import { applySnapshotComparison, type ScreenSnapshots } from './screenSnapshots.ts';
 import type { PersonalDeps } from './personalHandler.ts';
 
 /** One authenticated SQL snapshot, with independently reusable public and personal results. */
@@ -14,7 +15,7 @@ export function createScreenHandler(deps: PersonalDeps) {
     const origin = request.headers.get('origin');
     const headers: Record<string, string> = {
       'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store, max-age=0',
-      Pragma: 'no-cache', Vary: 'Origin, Authorization', 'X-Content-Type-Options': 'nosniff',
+      Pragma: 'no-cache', Vary: 'Origin, Authorization, Accept', 'X-Content-Type-Options': 'nosniff',
       ...(origin && deps.allowedOrigins.includes(origin) ? { 'Access-Control-Allow-Origin': origin } : {}),
     };
     const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
@@ -46,13 +47,23 @@ export function createScreenHandler(deps: PersonalDeps) {
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: bucket, p_limit: 60 }) !== true) {
         headers['Retry-After'] = '60'; return error('RATE_LIMITED', 429);
       }
-      const source = await deps.rpc('internal_analytics_screen_cached', { p_scope: scope, p_panels: panels,
-        p_user: viewer.uid, p_session: viewer.session }) as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown;
-          aggregate?: ScreenAggregate; cache_encoding?: string; public_aggregate?: ScreenAggregate | null;
+      const args = { p_scope: scope, p_panels: panels, p_user: viewer.uid, p_session: viewer.session };
+      let raw: unknown;
+      if (request.headers.get('accept')?.includes('screen-cache=stale-v2')) {
+        try { raw = await deps.rpc('internal_analytics_screen_stale', args); }
+        catch (e) {
+          // Only an absent new RPC falls back. Timeout, permission and data errors stay errors.
+          if (!(e instanceof Error) || !/^rpc (PGRST202|42883)$/.test(e.message)) throw e;
+          raw = await deps.rpc('internal_analytics_screen_cached', args);
+        }
+      } else raw = await deps.rpc('internal_analytics_screen_cached', args);
+      const source = raw as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown;
+          snapshots?: ScreenSnapshots; aggregate?: ScreenAggregate; cache_encoding?: string; public_aggregate?: ScreenAggregate | null;
           personal_aggregate?: Pick<ScreenAggregate, 'stats' | 'anchors' | 'full'> | null };
-      if (source?.cache_encoding !== undefined && source.cache_encoding !== 'screen-cache-v1') throw new Error('invalid cache encoding');
+      if (source?.cache_encoding !== undefined && !['screen-cache-v1', 'screen-cache-v2'].includes(source.cache_encoding)) throw new Error('invalid cache encoding');
+      if (source?.cache_encoding === 'screen-cache-v2' && source.public_aggregate && (!source.snapshots || !Number.isFinite(Date.parse(source.snapshots.public_at)) || typeof source.snapshots.comparable !== 'boolean')) throw new Error('missing snapshot metadata');
       if (source?.public_aggregate && panels.some(p => p.path === 'compare') && !source.personal_aggregate) throw new Error('missing personal part');
-      const data = source?.public_aggregate ? joinScreenCache(source.public_aggregate, source.personal_aggregate) : source?.aggregate;
+      const data = source?.public_aggregate ? joinScreenCache(source.public_aggregate, source.personal_aggregate, source.cache_encoding === 'screen-cache-v2') : source?.aggregate;
       const aggregate = data ? new ScreenAggregates(data, scope, source.state) : null;
       const facts = aggregate ? [] : decodeScreenFacts(source?.facts);
       if (!source?.state || !source.viewer || !facts) return error('AGGREGATE_NOT_READY', 503);
@@ -84,7 +95,7 @@ export function createScreenHandler(deps: PersonalDeps) {
             scope, cohort_policy_version: COHORT_POLICY_VERSION, sample: false, items: rows.slice(0, count * 100),
             sort: DEFAULT_SORT, total_rows: rows.length, page: 1, page_size: count * 100 } });
         } else if (p.path === 'compare') {
-          results.push({ id: p.id, status: 200, body: aggregate ? aggregate.compare(source.viewer) : aggregateCompare(facts, scope, viewer.uid, {
+          results.push({ id: p.id, status: 200, body: aggregate ? applySnapshotComparison(aggregate.compare(source.viewer), source.snapshots) : aggregateCompare(facts, scope, viewer.uid, {
             datasetVersion: source.state.dataset_version, asOf: source.state.data_max || scope.end,
             dataMin: source.state.data_min, basisBounds: source.state.basis_bounds ?? null, today: todayKst(),
             viewer: { contributor: source.viewer.contributor, has_public_facts: source.viewer.has_public_facts },
@@ -94,7 +105,7 @@ export function createScreenHandler(deps: PersonalDeps) {
           results.push({ id: p.id, status: result.status, body: await result.json() });
         }
       }
-      return reply({ schema_version: 'screen-v1', meta: await meta.json(), dashboard: await dashboard.json(), panels: results });
+      return reply({ schema_version: 'screen-v1', meta: { ...await meta.json(), ...(source.snapshots?.public_at ? { snapshot_at: source.snapshots.public_at } : {}) }, dashboard: await dashboard.json(), panels: results });
     } catch (e) {
       if (e instanceof QueryError) return error(e.code, e.status);
       if (e instanceof ViewerAuthError) return error(e.code, e.code === 'kakao_required' ? 403 : e.code === 'service_unavailable' ? 503 : 401);

@@ -44,7 +44,7 @@ export default function TopBar({ theme, onTheme, briefing, onBriefing, dataStamp
       <div className="topbar-status">{status}</div>
       <div className="header-end">
         {dataStamp && (
-          <span className="data-stamp" title="이 날짜까지 공유된 신고를 반영했습니다">
+          <span className="data-stamp" title="표시 중인 전체 통계의 기준 시각입니다">
             {dataStamp} 기준
           </span>
         )}

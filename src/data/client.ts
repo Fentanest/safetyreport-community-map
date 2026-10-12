@@ -93,7 +93,7 @@ async function readWithinDeadline(path: string, params: URLSearchParams | null, 
   const send = async (token: string | null): Promise<Response> => {
     try {
       return await fetch(url, { signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
-        headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+        headers: { Accept: path === '@screen' ? 'application/json; screen-cache=stale-v2' : 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
     } catch (e) {
       // A genuine network failure (offline, DNS, CORS…), never a client-side abort: that is a breaker event.
       if (!signal.aborted) sharedRetryCooldown.recordFailure({ status: null });

@@ -25,6 +25,7 @@ const capability = z.strictObject({
 
 export const metaSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string().min(1), sample: z.boolean(),
+  snapshot_at: z.iso.datetime({ offset: true }).optional(),
   source_updated_at: z.string().nullable(), generated_at: z.string().nullable(), published_at: z.string().nullable(),
   data_min: date.nullable(), data_max: date.nullable(), coverage_note: z.string(),
   dedupe_policy_version: z.string(), capabilities: z.record(z.string(), capability),

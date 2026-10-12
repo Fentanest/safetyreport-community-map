@@ -209,3 +209,7 @@ RPC/Edge/Pages 계약은 불변이며 Edge·Pages 재배포는 필요 없다. �
 `my-analytics`, `public-analytics` Edge 순서로 준비한다. 기존 폐기된 `202610061200_ingest_precompute.sql`을 다시 적용하지 않는다.
 이번 변경에 Pages·ingest·앱 배포는 필요 없다. 운영 롤백 트랜잭션 검증, 파일 목록, cron/성능/정리 확인 및
 되돌리기는 [캐시 보고서](implementation/screen-result-cache-20261012/REPORT.md)를 따른다.
+
+## 2026-10-12 · 연속 업로드 캐시 후속 (로컬 후보, 배포하지 않음)
+
+신규 `202610121400_screen_cache_stale.sql` → my-analytics Edge(server 신규 모듈 포함) → Pages 순서다. 이전 migration은 수정하지 않는다. 구 Edge/exact RPC가 rollback 경로다. [Opus rollback 검증 SQL·절차·부하 계산·미검증 범위](implementation/screen-result-cache-20261012/STALE-REPORT.md)를 먼저 확인한다.

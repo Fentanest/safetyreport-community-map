@@ -1,3 +1,5 @@
+> 2026-10-12 후속: 운영 연속 업로드 대응은 [STALE-REPORT.md](STALE-REPORT.md)가 정본입니다. 아래는 이전 exact-version 설계·당시 검증 기록입니다.
+
 # 화면 결과 캐시 + 기본 범위 사전 계산 (2026-10-12)
 
 로컬 구현 후보다. 기준 HEAD `1125e516d3b8834ffb3bd7c4fdf475a7f0d68473`, 브랜치 `astra/perf-cache`.

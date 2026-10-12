@@ -1,0 +1,8 @@
+{
+  "status": "MODEL_UNVERIFIED / UI_REVIEW_BLOCKED",
+  "opencode": "1.18.31",
+  "models_exit": 1,
+  "mcp_exit": 1,
+  "reason": "OpenCode cannot open host log path under this workspace-only filesystem policy. No model/variant verified; no Muse review dispatched; no host setting or permissions changed.",
+  "ui_writer": "root only; no parallel file writer; local Playwright evidence is independent and not Muse approval"
+}

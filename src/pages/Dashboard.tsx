@@ -34,6 +34,7 @@ import LawTable from '../components/LawTable';
 import DataGuide from '../components/DataGuide';
 import { fmtDate } from '../components/format';
 import CompareKpis from '../components/CompareKpis';
+import { snapshotTime } from '../components/snapshotTime';
 import KpiPanel, { type KpiFocus } from '../components/KpiPanel';
 import RegionList from '../components/RegionList';
 import ManagerCompare from '../components/ManagerCompare';
@@ -723,7 +724,7 @@ export default function Dashboard() {
     );
   }
 
-  const stamp = data?.meta.data_max ? fmtDate(data.meta.data_max) : fmtDate(baseScope(dataMode).end);
+  const stamp = data?.meta.snapshot_at ? snapshotTime(data.meta.snapshot_at) : data?.meta.data_max ? fmtDate(data.meta.data_max) : fmtDate(baseScope(dataMode).end);
   // D12: the latest data day of the basis is told apart from today (never "this month in progress" for old data)
   const today = data?.meta.today_kst ?? null;
   const freshness = dataMax && today && dataMax < today && scope.end > dataMax ? ` · 최근 자료 ${fmtDate(dataMax)}` : '';
@@ -851,6 +852,7 @@ export default function Dashboard() {
                   applied region / map range / nation. U04: one responsive layout — the map host is never re-parented. */}
               <div id="mapsection" className="dash-stack">
               <KpiPanel
+                snapshotAt={data.meta.snapshot_at}
                 focus={kpiFocus}
                 overview={kpiOverview}
                 state={kpiState}

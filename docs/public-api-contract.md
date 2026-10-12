@@ -223,3 +223,7 @@ UUID는 이 전용 API의 표시 예외이고 다른 사용자 원문 조회 자
 `public-analytics`의 metadata는 `internal_analytics_cached_state`를 사용하지만 인증·동의·10건 gate는 그대로다.
 기존 기타 public rollup/facts, 개인 compare/statistics 단독 경로는 이 캐시의 범위가 아니다.
 설계·제한·운영 검증 SQL은 [캐시 보고서](implementation/screen-result-cache-20261012/REPORT.md)에 있다.
+
+## 2026-10-12 · bounded screen cache v2 (로컬 후보)
+
+기존 screen-v1 묶음/공개 fence를 유지한다. 새 웹은 Accept의 `screen-cache=stale-v2`로 opt-in한다. 새 Edge/DB만 공개 집계를 180초 미만 재사용하고 `meta.snapshot_at`(ISO timestamp), compare `snapshots:{public_at,personal_at,comparable}`를 추가한다. 혼합 버전에서도 diff 및 지역/기관/담당자 차이를 계산한다(0분모·결측 null 유지). `comparable`은 정보만 제공하고 비교 차단에 쓰지 않는다. 비중은 100% 초과를 허용하며 UI가 해당 셀에 `최근 업로드 반영 차이`를 표시한다. 양측 시각을 병기하고 같은 시각은 하나만 표시한다. shared는 null(미확정, UI 문구 생략)이다. compare.all=dashboard 불변식은 유지하나 mine⊆all은 혼합 snapshot에 요구하지 않는다. 구 웹은 기존 exact 응답을 받는다. [상세](implementation/screen-result-cache-20261012/STALE-REPORT.md).

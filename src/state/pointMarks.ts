@@ -5,7 +5,7 @@ export interface PointMark {
   /** contains at least one of my reports/completions in the current scope */
   mine: boolean;
   /** contains one of my points that another contributor also recorded (함께 기록한 지점) */
-  shared: boolean;
+  shared: boolean | null;
   /** my own report count at this node (exact point or sum inside an aggregate node) */
   mineCount: number;
   interest: boolean;
@@ -26,12 +26,13 @@ export function markPoints(points: readonly PublicPoint[], myPoints: readonly My
   const interestSet = new Set(interest);
   const marks = new Map<string, PointMark>();
   for (const point of points) {
-    let mine = false, shared = false, mineCount = 0;
+    let mine = false, mineCount = 0;
+    let shared: boolean | null = false;
     if (point.aggregate && point.bbox) {
       for (const own of myPoints ?? []) {
         if (!inside(point.bbox, own)) continue;
         mine = true;
-        shared ||= own.shared;
+        shared = shared === true || own.shared === true ? true : shared === null || own.shared === null ? null : false;
         mineCount += own.mine_report_count;
       }
     } else {
