@@ -5,10 +5,10 @@ import { createPublicHandler, parseScope, QueryError, type AnalyticsState, type 
 import { aggregateCompare } from './compare.ts';
 import { todayKst, entityRows, selectScope, representatives } from './aggregate.ts';
 import { decodeScreenFacts } from './screenFacts.ts';
-import { ScreenAggregates, type ScreenAggregate } from './screenAggregate.ts';
+import { joinScreenCache, ScreenAggregates, type ScreenAggregate } from './screenAggregate.ts';
 import type { PersonalDeps } from './personalHandler.ts';
 
-/** A bounded screen, including personal comparison, is read once. No stored snapshot or retry race. */
+/** One authenticated SQL snapshot, with independently reusable public and personal results. */
 export function createScreenHandler(deps: PersonalDeps) {
   return async (request: Request): Promise<Response> => {
     const origin = request.headers.get('origin');
@@ -46,11 +46,14 @@ export function createScreenHandler(deps: PersonalDeps) {
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: bucket, p_limit: 60 }) !== true) {
         headers['Retry-After'] = '60'; return error('RATE_LIMITED', 429);
       }
-      const source = await deps.rpc('internal_analytics_read_snapshot', { p_scope: scope, p_previous: true,
-        // v2 (202610061000): on the self-hosted x86 host (2026-10-11, 89k facts) 10-23% faster SQL and 18-25% smaller than v1
-        // with identical public packets (docs/implementation/selfhost-perf-20261011). The old aarch64 cloud host preferred v1.
-        p_user: viewer.uid, p_session: viewer.session, p_options: { fact_encoding: 'columns-v1', screen_encoding: 'screen-aggregate-v2', panels } }) as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown; aggregate?: ScreenAggregate };
-      const aggregate = source?.aggregate ? new ScreenAggregates(source.aggregate, scope, source.state) : null;
+      const source = await deps.rpc('internal_analytics_screen_cached', { p_scope: scope, p_panels: panels,
+        p_user: viewer.uid, p_session: viewer.session }) as { state: AnalyticsState; viewer: ViewerCheck; facts: unknown;
+          aggregate?: ScreenAggregate; cache_encoding?: string; public_aggregate?: ScreenAggregate | null;
+          personal_aggregate?: Pick<ScreenAggregate, 'stats' | 'anchors' | 'full'> | null };
+      if (source?.cache_encoding !== undefined && source.cache_encoding !== 'screen-cache-v1') throw new Error('invalid cache encoding');
+      if (source?.public_aggregate && panels.some(p => p.path === 'compare') && !source.personal_aggregate) throw new Error('missing personal part');
+      const data = source?.public_aggregate ? joinScreenCache(source.public_aggregate, source.personal_aggregate) : source?.aggregate;
+      const aggregate = data ? new ScreenAggregates(data, scope, source.state) : null;
       const facts = aggregate ? [] : decodeScreenFacts(source?.facts);
       if (!source?.state || !source.viewer || !facts) return error('AGGREGATE_NOT_READY', 503);
       // Existing gates and query validators guard both SQL aggregates and the legacy immutable fact source.

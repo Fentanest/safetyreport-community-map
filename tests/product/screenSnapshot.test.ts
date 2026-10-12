@@ -32,7 +32,7 @@ describe('one screen from one source snapshot', () => {
     const response = await handler(req()); expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toContain('private, no-store');
     const body = await response.json();
-    expect(calls).toEqual(['internal_community_ingest_rate_limit', 'internal_analytics_read_snapshot']);
+    expect(calls).toEqual(['internal_community_ingest_rate_limit', 'internal_analytics_screen_cached']);
     dashboardResponseSchema.parse(body.dashboard);
     const personal = personalCompareSchema.parse(body.panels[0].body);
     expect(personal.all.report_count).toBe(body.dashboard.overview.report_count.value);
@@ -46,7 +46,7 @@ describe('one screen from one source snapshot', () => {
     const run = (payload: unknown) => createScreenHandler({ enabled: true, allowedOrigins: [], jwtIssuer: null,
       getUser: async () => ({ id: DEMO_VIEWER_ID, isAnonymous: false }), rpc: async (name, args) => {
         if (name.endsWith('rate_limit')) return true;
-        expect(args.p_options).toEqual({ fact_encoding: 'columns-v1', screen_encoding: 'screen-aggregate-v2', panels });
+        expect(args.p_panels).toEqual(panels);
         return { state, viewer, facts: payload };
       } })(req());
     const before = await run(facts), after = await run(compact);
@@ -72,6 +72,20 @@ describe('one screen from one source snapshot', () => {
           {state,viewer,facts:demoFacts(),aggregate:{encoding:'screen-precompute-v1',stats:[row],anchors:[],full:[],vehicles:{}}}});
       const response=await handler(req());expect(response.status).toBe(503);
       expect(await response.json()).toMatchObject({error:{code:'AGGREGATE_NOT_READY'}});
+    }
+  });
+  it('rejects unknown cache versions, shared personal rows, and missing requested comparison parts', async () => {
+    const publicPart = { encoding: 'screen-aggregate-v2', stats: [], anchors: [], full: [], vehicles: {}, source_min: null };
+    for (const source of [
+      { cache_encoding: 'future', public_aggregate: publicPart },
+      { cache_encoding: 'screen-cache-v1', public_aggregate: publicPart },
+      { cache_encoding: 'screen-cache-v1', public_aggregate: { ...publicPart, stats: [{ side: 'mine' }] }, personal_aggregate: { stats: [], anchors: [], full: [] } },
+      { cache_encoding: 'screen-cache-v1', public_aggregate: { ...publicPart, full: [[0, '', 10, 1, true]] }, personal_aggregate: { stats: [], anchors: [], full: [] } },
+    ]) {
+      const handler = createScreenHandler({ enabled: true, allowedOrigins: [], jwtIssuer: null,
+        getUser: async () => ({ id: DEMO_VIEWER_ID, isAnonymous: false }),
+        rpc: async name => name.endsWith('rate_limit') ? true : { state, viewer, facts: [], ...source } });
+      expect((await handler(req())).status).toBe(503);
     }
   });
   it('expands a table/chart prefix within one snapshot, including rows beyond the first page', async () => {

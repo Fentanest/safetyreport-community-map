@@ -41,6 +41,22 @@ export interface ScreenAggregate {
   vehicles: { identifiable: number; top: [string, number][]; days: number[]; excluded: [number, number] };
   source_min: string | null;
 }
+
+/** Cache packets stay service-only. Personal counters (including shared-place flags) never
+ * enter the shared entry. Merge only parts returned by the same authenticated SQL snapshot. */
+export function joinScreenCache(publicPart: ScreenAggregate, personalPart?: Pick<ScreenAggregate, 'stats' | 'anchors' | 'full'> | null): ScreenAggregate {
+  if (publicPart?.encoding !== 'screen-aggregate-v2' || !Array.isArray(publicPart.stats) ||
+    !Array.isArray(publicPart.anchors) || !Array.isArray(publicPart.full) ||
+    publicPart.stats.some(s => s.side !== 'all') || publicPart.anchors.some(a => a[0] === 'mine') ||
+    publicPart.full.some(f => f[4] !== false)) throw new Error('invalid shared cache part');
+  if (!personalPart) return publicPart;
+  if (!Array.isArray(personalPart.stats) || !Array.isArray(personalPart.anchors) || !Array.isArray(personalPart.full) ||
+    personalPart.stats.some(s => s.side !== 'mine') || personalPart.anchors.some(a => a[0] !== 'mine')) {
+    throw new Error('invalid personal cache part');
+  }
+  return { ...publicPart, stats: [...publicPart.stats, ...personalPart.stats],
+    anchors: [...publicPart.anchors, ...personalPart.anchors], full: personalPart.full };
+}
 const empty: Stat = { side: 'all', period: 0, kind: '', k: '', focus: '', ord: 0, label: [null,'기관 정보 없음',null,null],
   n:0,c:0,a:0,p:0,r:0,f:0,w:0,penalty:0,places:0,missing:0,answer_missing:0,
   duration:[0,null,null,null,null,null,0,0,0],amount:[0,null,null,0,0,0,0,0,0],rating:[0,null],

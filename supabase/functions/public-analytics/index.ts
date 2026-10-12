@@ -38,7 +38,7 @@ const handle = createPublicHandler({
   },
   async getState(): Promise<AnalyticsState> {
     // single-date-v1 state: the old state plus the 전체 기간 of each date basis
-    const value = await rpc('internal_analytics_cohort_state');
+    const value = await rpc('internal_analytics_cached_state');
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('analytics state unavailable');
     return value as AnalyticsState;
   },

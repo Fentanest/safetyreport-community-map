@@ -1,0 +1,14 @@
+{
+  "synthetic": true,
+  "isolated_container": "cm-perf2-cache-test",
+  "checks": [
+    "four simultaneous cold requests, two accounts: common equality + personal isolation + subsequent hit",
+    {
+      "nonblocking_slot_seconds": 0.3462864590110257
+    },
+    "concurrent fact commit: one MVCC snapshot, old computation not saved, next call gets new version"
+  ],
+  "status": "PASS",
+  "candidate_base": "1125e516d3b8834ffb3bd7c4fdf475a7f0d68473",
+  "migration_sha256": "ad08627e362a935b420f8c360c7998d5ab89684b039b312908a1447ae043cd99"
+}

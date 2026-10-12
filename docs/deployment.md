@@ -201,3 +201,11 @@ RPC/Edge/Pages 계약은 불변이며 Edge·Pages 재배포는 필요 없다. �
 `other`로 분류된 안전신고·생활불편)는 수집 앱이 재크롤링(`source-rebuild-2026-10-11.1`)으로 다시 올릴 때만 새 분류로 바뀐다 — 이
 마이그레이션 자체는 기존 행의 `category` 값을 고치지 않는다. 운영 적용·Edge/Pages 배포는 이번 작업에서 하지 않았다(로컬 커밋만,
 `npx vitest run`/`npx tsc -b`/`npm run build`로 검증).
+
+## 2026-10-12 · 화면 결과 캐시 후보 (운영 미적용)
+
+`202610121201`까지 적용된 DB에서 신규 `202610121300_screen_result_cache.sql` →
+`202610121301_screen_cache_cron.sql`(pg_cron available/preloaded 확인 후) →
+`my-analytics`, `public-analytics` Edge 순서로 준비한다. 기존 폐기된 `202610061200_ingest_precompute.sql`을 다시 적용하지 않는다.
+이번 변경에 Pages·ingest·앱 배포는 필요 없다. 운영 롤백 트랜잭션 검증, 파일 목록, cron/성능/정리 확인 및
+되돌리기는 [캐시 보고서](implementation/screen-result-cache-20261012/REPORT.md)를 따른다.
