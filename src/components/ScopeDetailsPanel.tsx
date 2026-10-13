@@ -5,8 +5,8 @@ import { loadEntityPrefix } from '../data/client';
 import { useReportActivity } from '../data/queryActivity';
 import { acceptRate, fmtDate, fmtInt, fmtPercent } from './format';
 import { entityLabel } from './entityMetrics';
-import { sameNameIndex } from '../domain/managerNames';
 import EntityMetricRow from './EntityMetricRow';
+import ManagerEntityTable, { ManagerTableFootnote } from './ManagerEntityTable';
 import PanelStatus from './PanelStatus';
 
 /** breadcrumb of an applied region: 전국 › 시도 › 시군구 (official codes; same-name regions are never merged) */
@@ -88,8 +88,8 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
   useEffect(() => {
     if (kind === 'manager' && !q) onRows?.(rows, all ?? rows.length, { state, pageSize: PAGE, load: loadMore });
   }, [rows, all, state]); // eslint-disable-line react-hooks/exhaustive-deps
-  const same = sameNameIndex(rows);
   const noun = kind === 'agency' ? '기관' : '담당자';
+  const visible = rows.slice(0, shown);
   return (
     <>
       <div className="scope-entity-tools">
@@ -103,13 +103,17 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
       {rows.length === 0 && state === 'idle' && (
         <p className="cm-muted place-empty">{q ? `‘${q}’에 맞는 ${noun}가 없습니다.` : `이 범위의 답변에 ${noun} 정보가 없습니다.`}</p>
       )}
-      <ul className="place-entities">
-        {rows.slice(0, shown).map((e) => (
-          <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, kind === 'manager' ? same.get(e) : null)} same={kind === 'manager' ? same.get(e) : null}
-            active={kind === 'agency' ? activeAgency === e.agency_key && !activeManager : activeManager === e.manager_key && activeAgency === e.agency_key}
-            onPick={onPick} />
-        ))}
-      </ul>
+      {kind === 'manager' ? (
+        <ManagerEntityTable rows={visible} activeAgency={activeAgency} activeManager={activeManager} onPick={onPick} />
+      ) : (
+        <ul className="place-entities">
+          {visible.map((e) => (
+            <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, null)} same={null}
+              active={activeAgency === e.agency_key && !activeManager}
+              onPick={onPick} />
+          ))}
+        </ul>
+      )}
       <div className="place-more">
         <span className="cm-muted">표시 {fmtInt(Math.min(shown, rows.length))} / {all === undefined ? `많은 순 ${fmtInt(rows.length)}개 (전체 수는 알 수 없음)` : `전체 ${fmtInt(all)}`}</span>
         {rows.length > shown && <button type="button" className="mini-btn" onClick={() => setShown((n) => n + 10)}>더 보기</button>}
@@ -119,6 +123,7 @@ function ScopeEntities({ kind, first, total, scope, version, onPick, activeAgenc
           </button>
         )}
       </div>
+      {kind === 'manager' && rows.length > 0 && <ManagerTableFootnote />}
     </>
   );
 }

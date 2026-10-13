@@ -331,6 +331,20 @@ body.briefing .applied-bar, body.briefing .area-tables { display: none; }
 .link-btn { background: none; border: 0; padding: 0; color: var(--brand-ink); cursor: pointer; font: inherit; text-decoration: underline; }
 .link-btn:disabled { color: var(--muted); cursor: default; }
 
+/* ---- 2026-10-13 지도 폭 축소 + 담당자 한 행 표: EntityList(PlaceDetailsPanel)/ScopeEntities(ScopeDetailsPanel)의
+ * 담당자 목록은 EntityMetricRow 카드 대신 이 표(ManagerEntityTable, entity-table 공통 primitives 재사용: 얇은 행
+ * 구분선·숫자 오른쪽 정렬·tabular-nums는 app.css .entity-table 규칙 그대로)를 쓴다. 옆 패널 폭이 좁아져(~640–700px,
+ * layout.css .dash-grid) 8개 열이 뷰포트 폭과 무관하게 넘칠 수 있으므로, 이름 열은 항상(좁은 화면 전용 미디어쿼리와
+ * 무관하게) 고정한다 ---- */
+.manager-table-scroll { max-height: 360px; }
+.manager-entity-table th:first-child, .manager-entity-table td:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; min-width: 132px; max-width: 48vw; }
+.manager-entity-table tr.active td:first-child { background: linear-gradient(var(--hover), var(--hover)), var(--surface); }
+.manager-entity-table thead th:first-child { background: var(--raised); z-index: 3; }
+.manager-entity-table td:first-child .table-pick { display: block; }
+.manager-entity-table small { color: var(--muted); font-size: 12px; display: block; }
+.manager-table-note { font-size: 12px; color: var(--muted); padding: 8px 2px 0; margin: 0; line-height: 1.5; }
+.manager-table-note b { color: var(--text); font-weight: 600; }
+
 .legend-null i.legend-empty { background: transparent; border: 1px solid var(--border); }
 .legend-null i.legend-out { background: #CBD5E1; border: 1px dashed var(--muted); }
 .mine-row td { color: var(--muted); }
