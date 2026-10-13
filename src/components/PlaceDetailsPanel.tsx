@@ -46,7 +46,8 @@ function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: 
   return (
     <>
       {kind === 'manager' ? (
-        <ManagerEntityTable rows={visible} activeAgency={activeAgency} activeManager={activeManager} onPick={onPick} />
+        // 2026-10-13 P3: 동명이인 인덱스는 전체 rows로 고정, 화면에는 그중 visible만("더 보기" 전후로 라벨이 안 바뀜)
+        <ManagerEntityTable rows={rows} visible={visible} activeAgency={activeAgency} activeManager={activeManager} onPick={onPick} />
       ) : (
         <ul className="place-entities">
           {visible.map((e) => (

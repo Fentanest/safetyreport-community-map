@@ -66,23 +66,26 @@ function placeHtml(point: PublicPoint): string {
 }
 
 describe('official coordinate updates in the map UI', () => {
+  // R1 FIX (2026-10-13): the default 신고 pin ('reports') now carries the 수용률 colour too, so its list label
+  // reads '신고 수 2건 · 수용률 50.0% (1/2건)' (base: accepted 1/result_known 2) instead of the old bare count.
+  // The selection assertions below are unchanged in intent — only the label text grew the rate suffix.
   it('same key + new coordinate: accessible list keeps the selection', () => {
     const before = mapHtml([base], 'v1:37.56653513,126.977969231');
     expect(before).toContain('서울특별시 중구 공식 지점');
-    expect(before).toContain('aria-pressed="true" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 선택"');
+    expect(before).toContain('aria-pressed="true" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 · 수용률 50.0% (1/2건) 선택"');
 
     const after = mapHtml([movedSameKey], movedSameKey.key);
     expect(after).toContain('서울특별시 중구 공식 지점');
     // Selection is keyed by point key, so the moved marker stays selected.
-    expect(after).toContain('aria-pressed="true" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 선택"');
+    expect(after).toContain('aria-pressed="true" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 · 수용률 50.0% (1/2건) 선택"');
   });
 
   it('supplement under a new point key: new point lists without a stale highlight', () => {
     const html = mapHtml([movedNewKey], null);
     expect(html).toContain('서울특별시 중구 공식 지점');
-    expect(html).toContain('aria-pressed="false" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 선택"');
+    expect(html).toContain('aria-pressed="false" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 · 수용률 50.0% (1/2건) 선택"');
     // Selecting the new key highlights the moved marker.
-    expect(mapHtml([movedNewKey], movedNewKey.key)).toContain('aria-pressed="true" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 선택"');
+    expect(mapHtml([movedNewKey], movedNewKey.key)).toContain('aria-pressed="true" aria-label="서울특별시 중구 공식 지점 · 신고 수 2건 · 수용률 50.0% (1/2건) 선택"');
   });
 
   it('place panel shows the full address with 주소 복사 and no coordinate UI (R07)', () => {

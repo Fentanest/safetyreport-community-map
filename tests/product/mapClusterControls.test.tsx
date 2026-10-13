@@ -43,7 +43,11 @@ const toInputs = (pts: PublicPoint[], metric: MapMetric): KakaoPointInput[] => t
 const sum = (xs: number[]): number => xs.reduce((a, b) => a + b, 0);
 
 describe('client grid clustering (sum bubbles, exact positions)', () => {
-  it('clusters far-zoom bubbles by SUM of report counts, never node count or 0', () => {
+  // R1 FIX (2026-10-13): 'reports' now carries the DEFAULT 수용률-coloured pin (kind 'density'), so `num`/`den`
+  // are the colour's accepted/result_known pair, not the report count any more. The pin/bubble NUMBER and SIZE
+  // are `weight`/`count` (= report_count, unchanged) — this test now asserts on those, keeping its original
+  // purpose (cluster bubble number = Σreport_count, never the node count or 0) instead of the colour numerator.
+  it('clusters far-zoom bubbles by SUM of report counts (bubble number/size), never node count or 0', () => {
     const inputs = toInputs(liveLikePoints(), 'reports');
     expect(inputs).toHaveLength(312); // completion-only nodes are not drawn in the report metric
     const groups = clusterPoints(inputs, 13);
@@ -51,12 +55,12 @@ describe('client grid clustering (sum bubbles, exact positions)', () => {
     expect(clusters.length).toBeGreaterThan(0);
     expect(groups.length).toBeLessThan(inputs.length);
     for (const g of groups) {
-      if (g.kind === 'single') { expect(g.point.num).toBeGreaterThan(0); continue; }
+      if (g.kind === 'single') { expect(g.point.weight).toBeGreaterThan(0); continue; }
       expect(g.members.length).toBeGreaterThanOrEqual(2);
-      expect(g.num).toBe(sum(g.members.map((m) => m.num)));
+      expect(g.count).toBe(sum(g.members.map((m) => m.weight)));
       expect(g.places).toBe(g.members.length);
     }
-    expect(sum(groups.map((g) => (g.kind === 'single' ? g.point.num : g.num)))).toBe(sum(inputs.map((p) => p.num)));
+    expect(sum(groups.map((g) => (g.kind === 'single' ? g.point.weight : g.count)))).toBe(sum(inputs.map((p) => p.weight)));
   });
 
   it('splits into exact markers when zoomed in, leaving sources untouched', () => {
@@ -145,7 +149,10 @@ describe('MapPanel markup (R01/R02/R03)', () => {
   const pts = liveLikePoints();
   it('has exactly the four metric buttons, no place-filter tabs and no manual viewport button', () => {
     const html = renderToStaticMarkup(<MapPanel {...base} points={pts} metric="reports" />);
-    for (const label of ['신고 수', '수용률', '불수용률', '과태료']) expect(html).toContain(`>${label}</button>`);
+    // R1 FIX (2026-10-13): the default pin button is now labelled '신고 수·수용률' (it carries the 수용률 colour
+    // too) and the short-lived separate '밀집도' button is gone — back to exactly four buttons.
+    for (const label of ['신고 수·수용률', '수용률', '불수용률', '과태료']) expect(html).toContain(`>${label}</button>`);
+    expect(html).not.toContain('>밀집도</button>');
     expect(html).not.toContain('일부수용률');
     for (const gone of ['내 신고가 있는 곳', '함께 신고한 곳', '관심 지역', '보이는 지역만 보기', 'point-filter', 'map-apply']) {
       expect(html).not.toContain(gone);

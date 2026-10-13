@@ -36,9 +36,11 @@ interface Props {
   onBlankClick?: () => void;
 }
 
-/** R7: rate metrics draw the regions (choropleth) and NO pins; 신고 수/밀집도(R1) draw address pins. */
+/** R7: rate metrics (수용률·불수용률·과태료) draw the regions (choropleth) and NO pins; everything else — 신고 수
+ *  (수용률 핀, R1 기본) and any unknown/legacy metric id — draws address pins (R1 fix: safe fallback to points). */
 export type RenderMode = 'points' | 'regions';
-export const renderModeOf = (m: MapMetric): RenderMode => (m === 'reports' || m === 'density' ? 'points' : 'regions');
+const REGION_METRIC_IDS: ReadonlySet<MapMetric> = new Set<MapMetric>(['acceptance', 'rejection', 'fine']);
+export const renderModeOf = (m: MapMetric): RenderMode => (REGION_METRIC_IDS.has(m) ? 'regions' : 'points');
 /** Kakao level > SGG_ZOOM → 시도; ≤ SGG_ZOOM → 시군구. Independent of the region filter (R7). */
 export const boundaryLevelFor = (zoom: number): BoundaryLevel => (zoom <= SGG_ZOOM ? 'sgg' : 'sido');
 
@@ -112,8 +114,9 @@ export function toKakaoInputs(points: readonly PublicPoint[], m: MapMetric, sele
 
 const LEVEL_LABEL: Record<BoundaryLevel, string> = { sido: '시도', sgg: '시군구' };
 
-/** R1: pin fill = 수용률 (fixed red→orange→green scale) · pin size/number = 신고 건수. A separate branch from the
- *  generic legend below (its 0%/100% blue ramp and count/rate wording are for the other four metrics only). */
+/** R1: the DEFAULT 신고 pin's legend — fill = 수용률 (fixed red→orange→green scale) · size/number = 신고 건수.
+ *  A separate branch from the generic legend below (its 0%/100% blue ramp and count/rate wording are for the
+ *  region-choropleth metrics only). */
 function DensityLegend() {
   const gradient = `linear-gradient(90deg, ${ACCEPTANCE_RAMP.join(', ')})`;
   return (
@@ -130,7 +133,9 @@ function DensityLegend() {
 }
 
 function Legend({ metric, level, statsBbox, filtered }: { metric: MapMetric; level: BoundaryLevel; statsBbox: boolean; filtered: boolean }) {
-  if (metric === 'density') return <DensityLegend />;
+  // points mode (신고 수, the default pin) always carries the 수용률 colour legend; an unknown/legacy metric id
+  // resolves to 'reports' (renderModeOf below) so it gets the same legend, never the stale generic one.
+  if (renderModeOf(metric) === 'points') return <DensityLegend />;
   const def = metricDef(metric);
   const gradient = `linear-gradient(90deg, ${METRIC_RAMP.join(', ')})`;
   const regions = renderModeOf(metric) === 'regions';

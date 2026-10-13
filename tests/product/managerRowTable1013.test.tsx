@@ -118,12 +118,71 @@ describe('ManagerEntityTable: 동명이인은 이름만으로 합치지 않고 �
   });
 });
 
-describe('ManagerTableFootnote: 표 아래 지표별 분모 설명', () => {
-  it('답변·분류·과태료·계도의 분모를 설명한다', () => {
-    const html = renderToStaticMarkup(<ManagerTableFootnote />);
+describe('ManagerEntityTable P3 회귀(Astra 2026-10-13): 동명이인 라벨이 "더 보기" 전후로 안 바뀐다', () => {
+  // same_name 서버 메타데이터가 없는(구서버/정적 스냅샷 fallback) 6행: 1번째·6번째가 같은 이름+같은 기관
+  // (computeSameNames의 "같은 기관" 분기 → "…(시험기관 1번)" 서수 라벨까지 나온다, managerNames.ts 참고)
+  const AG = '시험기관';
+  const six = [
+    row('시험:1', '김동명', AG), row('기타1:2', '박서준', '기타기관1'), row('기타2:3', '이서윤', '기타기관2'),
+    row('기타3:4', '최하은', '기타기관3'), row('기타4:5', '정민호', '기타기관4'), row('시험:6', '김동명', AG),
+  ];
+  const firstLabel = (html: string) => html.match(/<span class="table-name">([^<]+)<\/span>/)![1];
+
+  it('5행만 보여도(짝인 6번째가 아직 안 보임) rows 전체 기준으로 동명이인 라벨이 이미 붙는다', () => {
+    const html5 = renderToStaticMarkup(
+      <ManagerEntityTable rows={six} visible={six.slice(0, 5)} activeAgency={null} activeManager={null} onPick={() => {}} />,
+    );
+    expect(firstLabel(html5)).toBe('김동명 (시험기관 1번)');
+  });
+
+  it('5행 → 6행("더 보기") 전후로 1번째 행 라벨이 완전히 같다(핵심 회귀 — 예전에는 "김동명" → "김동명 (시험기관 1번)"로 바뀌었다)', () => {
+    const html5 = renderToStaticMarkup(
+      <ManagerEntityTable rows={six} visible={six.slice(0, 5)} activeAgency={null} activeManager={null} onPick={() => {}} />,
+    );
+    const html6 = renderToStaticMarkup(
+      <ManagerEntityTable rows={six} visible={six.slice(0, 6)} activeAgency={null} activeManager={null} onPick={() => {}} />,
+    );
+    expect(firstLabel(html6)).toBe(firstLabel(html5));
+  });
+
+  it('대조: rows 자체를 visible만큼만 넘기면(예전 버그 패턴) 짝을 모르니 평범한 이름 — 그래서 호출부는 반드시 전체 rows를 넘겨야 한다', () => {
+    const buggyPattern = renderToStaticMarkup(
+      <ManagerEntityTable rows={six.slice(0, 5)} activeAgency={null} activeManager={null} onPick={() => {}} />,
+    );
+    expect(firstLabel(buggyPattern)).toBe('김동명'); // 비교 기준 — 지금 호출부(PlaceDetailsPanel/ScopeDetailsPanel)는 이렇게 안 부른다
+  });
+
+  it('visible을 생략하면 rows 전체를 그대로 그린다(기존 단일 rows 호출과 호환)', () => {
+    const html = renderToStaticMarkup(<ManagerEntityTable rows={six.slice(0, 2)} activeAgency={null} activeManager={null} onPick={() => {}} />);
+    expect((html.match(/<tbody>([\s\S]*)<\/tbody>/)![1].match(/<tr/g) ?? []).length).toBe(2);
+  });
+});
+
+describe('ManagerTableFootnote: 표 아래 지표별 분모 설명 — 실제 cell 표현과 정확히 일치(2026-10-13 P3 수정)', () => {
+  const html = renderToStaticMarkup(<ManagerTableFootnote />);
+  it('답변·분류 정의', () => {
     expect(html).toContain('답변완료');
     expect(html).toContain('분류');
-    expect(html).toMatch(/과태료|계도/);
+  });
+  it('수용률 등(비율 전용 칸): 분류가 0건이면 계산 불가 → —', () => {
+    expect(html).toMatch(/분류가 0건이면 비율을 계산할 수 없어/);
+  });
+  it('과태료·계도: 답변이 있으면 0건도 실제 값(0.0%)', () => {
+    expect(html).toMatch(/답변이 있으면 건수가 0건이어도 실제 값\(0\.0%\)/);
+  });
+  it('과태료·계도: 답변이 0건이면(계산 불가) 건수만 보이고 비율은 —', () => {
+    expect(html).toMatch(/답변이 0건이면\s*계산할 수 없어 건수만 보이고 비율은/);
+  });
+  it('과태료·계도: 서버 미제공이면 건수 칸까지 — 하나(계산 불가와 다르게 보임을 명시)', () => {
+    expect(html).toMatch(/미제공.*건수 칸까지 포함해.*하나만/);
+  });
+  it('실제 fmtCountRate/fmtPercent 동작과 각주 문구가 모순되지 않는다(회귀 가드)', () => {
+    // 계산 불가(과태료·계도): 건수 0 + 분모 0 → "0건 · —" — 각주가 말하는 그대로
+    expect(fmtCountRate(0, null)).toBe('0건 · —');
+    // 미제공: 건수 자체가 없음 → "—" 하나 — 각주가 말하는 "건수 칸까지 —"와 일치(건수 표시가 아예 없음)
+    expect(fmtCountRate(null, null)).toBe('—');
+    // 수용률 등: 분류 0이면 fmtPercent(null) === '—' (건수 칸이 없는 칸이라 "—" 하나뿐)
+    expect(fmtPercent(null)).toBe('—');
   });
 });
 

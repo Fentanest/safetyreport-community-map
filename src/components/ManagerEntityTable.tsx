@@ -15,14 +15,24 @@ import { fmtCountRate, fmtInt, fmtPercent } from './format';
  * 담당자 선택·active 하이라이트는 호출부(EntityList/ScopeEntities)가 쥔 activeAgency/activeManager를 그대로 받는다 —
  * 더 보기/검색/로딩/오류/빈 상태는 호출부가 감싼 채 유지하고, 이 컴포넌트는 "보이는 rows"만 그린다(부분 목록을
  * 전체 정렬처럼 보이지 않도록 정렬·총건수 안내는 호출부 몫).
+ *
+ * 2026-10-13 P3 수정(Astra 검수): 동명이인 인덱스(sameNameIndex)는 반드시 **지금까지 받은 전체 목록**(`rows`)으로
+ * 만들고, 화면에는 그 전체 목록 중 "더 보기"로 드러난 부분(`visible`)만 그린다. 예전에는 이미 잘라낸 visible을
+ * sameNameIndex에 그대로 넣어서, same_name 서버 메타데이터가 없는 행(구서버/정적 스냅샷 fallback)의 라벨이
+ * "더 보기" 전후로 달라졌다(짝이 되는 동명이인이 아직 안 보이는 구간에서는 계산에서 빠졌다가, 보이는 순간 이름이
+ * 바뀜). rows와 visible을 분리해 인덱스는 항상 rows 전체 기준으로 고정한다.
  */
-export default function ManagerEntityTable({ rows, activeAgency, activeManager, onPick }: {
+export default function ManagerEntityTable({ rows, visible, activeAgency, activeManager, onPick }: {
+  /** 동명이인 인덱스 계산에 쓰는, 지금까지 로드된 전체 담당자 목록(화면에 아직 안 보이는 행도 포함) */
   rows: PublicEntity[];
+  /** 실제로 그릴 행 — rows의 부분집합(rows.slice(0, shown)). 생략하면 rows 전체를 그린다. */
+  visible?: PublicEntity[];
   activeAgency: string | null;
   activeManager: string | null;
   onPick: (kind: 'manager', e: PublicEntity) => void;
 }) {
   const same = sameNameIndex(rows);
+  const shown = visible ?? rows;
   return (
     <div className="table-scroll manager-table-scroll">
       <table className="entity-table manager-entity-table">
@@ -39,7 +49,7 @@ export default function ManagerEntityTable({ rows, activeAgency, activeManager, 
           </tr>
         </thead>
         <tbody>
-          {rows.map((e) => {
+          {shown.map((e) => {
             const sn = same.get(e);
             const label = managerLabel(e, sn);
             const m = entityRates(e);
@@ -72,12 +82,22 @@ export default function ManagerEntityTable({ rows, activeAgency, activeManager, 
 }
 
 /** 표 아래 분모 설명(간결). rows.length가 전체 목록 중 "보이는" 수만큼임을 호출부가 이미 안내하므로, 여기서는 지표
- *  정의만 짧게. 미제공(—)·계산 불가(건수만)·실제 0건(건수+0.0%)을 다시 한 번 구분해 둔다. */
+ *  정의만 짧게. 2026-10-13 P3 수정(Astra 검수): 실제 cell 표현과 정확히 맞춘다 — 두 칸 그룹의 "계산 불가"가
+ *  다르게 보인다는 점이 핵심이다.
+ *  - 수용률·일부수용률·불수용률(fmtPercent만): 분류(K)=0이면 계산 불가 → <b>—</b> 하나뿐(건수 없음). K>0이면
+ *    0건이어도 0.0%(실제 값). 이 세 칸에는 "미제공" 상태가 없다 — 서버가 분류 자체를 안 주는 경우가 없다.
+ *  - 과태료·계도(fmtCountRate, format.ts): 서버가 건수 자체를 안 주면(미제공) 건수 없이 <b>—</b> 하나만.
+ *    건수는 있는데 답변(분모)이 0건이면(계산 불가) 건수는 보이고 비율만 <b>—</b>(예: "0건 · —"). 답변이 있으면
+ *    0건이어도 "0건 · 0.0%"(실제 값). 즉 미제공과 계산 불가는 과태료·계도 칸에서 서로 다르게 보인다
+ *    (미제공은 건수조차 없이 — 하나, 계산 불가는 건수 뒤에 —가 붙는다). */
 export function ManagerTableFootnote() {
   return (
     <p className="cm-muted manager-table-note">
-      답변 = 답변완료 건수 · 분류 = 수용·일부수용·불수용으로 결과가 나온 건수(미분류 제외) · 수용률·일부수용률·불수용률 = 각 건수 ÷ 분류 ·
-      과태료·계도 = 처분 건수와 ÷ 답변. 서버가 건수를 안 주면 <b>—</b>, 분류·답변이 0건이라 비율을 계산할 수 없으면 건수만, 실제 0건이면 0.0%로 보입니다.
+      답변 = 답변완료 건수 · 분류 = 수용·일부수용·불수용으로 결과가 나온 건수(미분류 제외) ·
+      수용률·일부수용률·불수용률 = 각 건수 ÷ 분류(분류가 0건이면 비율을 계산할 수 없어 <b>—</b>로 보입니다) ·
+      과태료·계도 = 처분 건수와 ÷ 답변. 답변이 있으면 건수가 0건이어도 실제 값(0.0%)으로, 답변이 0건이면
+      계산할 수 없어 건수만 보이고 비율은 <b>—</b>로 보입니다. 서버가 과태료·계도 건수 자체를 주지 않으면(미제공)
+      건수 칸까지 포함해 <b>—</b> 하나만 보입니다.
     </p>
   );
 }
