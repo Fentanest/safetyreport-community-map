@@ -896,6 +896,7 @@ export default function Dashboard() {
                     unplaced={data.map_unplaced ?? null}
                     marks={showMine ? marks : undefined}
                     regions={data.regions}
+                    overviewOutcomes={data.overview.outcomes}
                     activeRegion={scope.region_code}
                     onPickRegion={pickRegion}
                     refreshing={dash.isRefreshing}

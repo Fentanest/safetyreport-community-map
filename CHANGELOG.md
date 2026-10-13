@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-10-13 · 지도: 수용률·불수용률 지역 지도 색 대비 개선 (R2, 사용자 신고)
+
+- 사용자 신고: "수용률·불수용률 지역 지도가 지역별 격차가 커도 육안으로 구분이 안 간다"(실제 값이 55~70%처럼 좁게
+  몰리면 고정 0..1 파란 램프(`METRIC_RAMP`)가 거의 같은 색 한 가지로만 보임). 대상은 지역(choropleth) 모드의
+  수용률·불수용률 두 지표뿐이다 — 과태료 지역 지도와 기본 '신고 수·수용률' 핀(R1)은 전혀 바꾸지 않았다.
+- 색: 현재 범위(같은 기간·분류·필터) 전체의 기준값(Σaccepted 또는 Σrejected ÷ Σresult_known) 대비 지역 편차(%p)를
+  고정 7구간 **발산형** 색으로 칠한다 — 기준값은 이미 화면 KPI로 계산된 `overview.outcomes`를 그대로 재사용하고
+  새 전체 재조회나 DB 변경은 없다. 구간: ≤−15 / −15~−7 / −7~−3 / −3~+3(중립) / +3~+7 / +7~+15 / ≥+15%p.
+  수용률은 raw 편차 그대로, 불수용률은 부호를 뒤집어 버킷에 넣는다(의미상 "좋음"이 항상 초록 쪽으로 통일).
+  기준값을 못 구하면(현재 범위 전체가 분류된 답변 0건) 기존 고정 0..1 램프로 그대로 폴백한다. 계산 불가(분모 0)
+  지역은 발산형 모드에서도 기존 규칙 그대로 회색 점선이다(0%처럼 색칠하지 않음).
+- 팔레트(`DIVERGING_RAMP`, `src/lib/kakao.ts`): ColorBrewer RdYlGn-7의 빨강/주황/연살구/진한초록 4색 +
+  ColorBrewer BrBG-7의 연청록/청록 2색을 섞었다 — 순수 RdYlGn의 초록 쪽이 적록색맹에게 빨강과 가장 헷갈리는
+  색이라, "좋음" 쪽 중간 단계를 초록 대신 청록(파랑기가 섞여 빨강과 더 뚜렷이 구분됨)으로 바꾸고 가장 극단만
+  진한 초록으로 되돌렸다. 중립은 회색이 아니라 연베이지(`#eee8d5`)로 "자료 없음" 회색과 구분된다. 7단계 모두
+  명도 차이가 커서(진함→연함→진함) 흑백/저시력 대비 모드에서도 구분된다.
+- 범례: "{시도/시군구}별 {지표} · 평균 XX.X% 대비" 머리글 + 7개 색 칩과 ±%p 구간 라벨, 계산 불가/자료 없음 표식은
+  기존 그대로. 지역 hover 카드와 목록에도 "평균 대비 +4.2%p"(raw, 지표 고유 부호) 를 덧붙였다(기존 값 표기 유지).
+- 바뀐 파일: `src/lib/kakao.ts`(DIVERGING_RAMP·버킷·색 계산, `BoundaryStyle.ramp` 추가), `src/components/MapPanel.tsx`
+  (`regionBoundaryWeights`/`baselinePercent`/`regionDeltaNote` 순수 함수, DivergingLegend), `src/pages/Dashboard.tsx`
+  (`overviewOutcomes={data.overview.outcomes}` 전달). `tests/product/mapRegionDiverging.test.tsx` 신규(20건).
+- 검증: `tsc -p . --noEmit` 통과, `vitest run` 1,180개 통과(기존 1,160개 전부 유지 + 신규 20개)·195개 건너뜀,
+  `vite build` 통과. 데모 데이터로 실제 Chrome(Playwright) 1920·390px, 테마 토글 전후로 지역 수용률·불수용률
+  장소 목록에서 "평균 대비 ±X.X%p"가 실제 집계값(예: 인천 수용률 −32.8%p, 불수용률 +22.7%p)으로 표시됨을 확인
+  (`/home/better0101/projects/worktree/map-region-shots/region-{acceptance,rejection}-{1920,390}-{light,dark}.png`).
+  실 Kakao SDK 키가 없어 지도 캔버스 위 실제 색칠(폴리곤 fillColor)·범례 pill의 실 브라우저 렌더는 미확인(BLOCKED,
+  이전 R1 보고와 동일 사유) — 대신 단위 시험으로 `rampColor`/`shapeOptions`가 받는 정확한 색·버킷 값을 고정했다.
+
 ## 2026-10-13 · 최종 검수(Astra) 후속 수정
 
 - 지도 핀(요구 1, P2): 별도 '밀집도' 버튼을 없애고 기본 신고 핀 자체를 색=수용률(고정 0% 빨강→50% 주황→100% 초록, 계산 불가 회색)·

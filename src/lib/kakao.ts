@@ -26,6 +26,10 @@ export interface BoundaryStyle {
   mode?: 'points' | 'regions';
   /** codes outside the applied region filter: drawn as 'out of range' (grey, dashed), never as 0% */
   outOfScope?: Set<string>;
+  /** R2 (2026-10-13): colour ramp for `weight`; omitted = METRIC_RAMP (the usual fixed sequential blue scale).
+   *  The 수용률/불수용률 region choropleth passes DIVERGING_RAMP here (and only there) when it has a baseline
+   *  to diverge from; every other metric/fallback case omits this and keeps the original ramp untouched. */
+  ramp?: readonly string[];
 }
 
 /**
@@ -95,6 +99,61 @@ export function rampColor(t: number | null, ramp: readonly string[] = METRIC_RAM
 /** R1 수용률 colour: same fixed scale regardless of position/zoom/filter (never derives from on-screen min/max). */
 export function acceptanceColor(scalar: number | null): string { return rampColor(scalar, ACCEPTANCE_RAMP); }
 const inkFor = (t: number | null) => (t !== null && t >= 0.7 ? '#FFFFFF' : '#0B1220');
+
+/**
+ * R2 (2026-10-13, user report): the 수용률/불수용률 지역(choropleth) fill used METRIC_RAMP, a plain 0..1 SEQUENTIAL
+ * scale — when every region's real rate clusters in a narrow band (e.g. 55~70%), the whole map reads as one
+ * shade of blue and regions become visually indistinguishable. Fixed by a DIVERGING 7-bucket scale around the
+ * CURRENT SCOPE's own baseline rate (Σaccepted/Σresult_known of the same period/category/filters — the caller
+ * reuses the existing overview KPI value, never a new query): a region's deviation from that baseline in
+ * percentage points buckets into 7 fixed bins, each a fixed colour, so differences near the baseline are still
+ * visible instead of being compressed into one middle shade.
+ *
+ * Palette: NOT ColorBrewer RdYlGn as-is (its green half is a pure green that is the single hardest colour pair
+ * for red-green colour blindness to tell apart from the red half, even with ColorBrewer's own hue adjustment).
+ * Picked instead: the red/orange/light-apricot half from RdYlGn-7 (['#d73027','#fc8d59','#fee08b'], well-tested,
+ * unchanged) paired with the TEAL half of ColorBrewer's BrBG-7 (['#c7eae5','#5ab4ac']) for the light/mid "good"
+ * steps — teal reads as clearly non-red for red-green CVD because it carries a blue component red never has —
+ * and the single most-extreme "best" step returns to RdYlGn's dark green (`#1a9850`) so the full red→green story
+ * still reads for non-CVD viewers at a glance. The centre step is a warm neutral beige (`#eee8d5`, visible
+ * against both the light Kakao basemap and a dark theme panel), not plain grey, so "근처"(neutral) doesn't look
+ * like "자료 없음"(grey `METRIC_NULL`). Every step also has a distinct LIGHTNESS (dark→light→dark), so the scale
+ * still reads in grayscale/low-vision contrast modes, not just by hue:
+ *   ≤-15        -15~-7      -7~-3       -3~+3(중립)   +3~+7       +7~+15      ≥+15
+ *   #d73027      #fc8d59     #fee08b     #eee8d5       #c7eae5     #5ab4ac     #1a9850
+ *   진한 빨강     주황         연살구       연베이지(중립)  연청록       청록        진한 초록
+ */
+export const DIVERGING_RAMP = ['#d73027', '#fc8d59', '#fee08b', '#eee8d5', '#c7eae5', '#5ab4ac', '#1a9850'] as const;
+/** Fixed %p deviation bucket edges (requirement): ≤-15 / -15~-7 / -7~-3 / -3~+3(중립) / +3~+7 / +7~+15 / ≥+15.
+ *  `goodnessDeltaPoints` is ALREADY oriented so positive = "better" (see `divergingGoodness`); the boundary at
+ *  each edge belongs to the MORE NEGATIVE (more extreme-on-the-left) bucket, so e.g. exactly -7 is bucket 1
+ *  (-15~-7), not bucket 2. */
+export const DIVERGING_BUCKET_EDGES = [-15, -7, -3, 3, 7, 15] as const;
+export function divergingBucket(goodnessDeltaPoints: number): number {
+  const e = DIVERGING_BUCKET_EDGES;
+  if (goodnessDeltaPoints <= e[0]) return 0;
+  if (goodnessDeltaPoints <= e[1]) return 1;
+  if (goodnessDeltaPoints <= e[2]) return 2;
+  if (goodnessDeltaPoints < e[3]) return 3;
+  if (goodnessDeltaPoints < e[4]) return 4;
+  if (goodnessDeltaPoints < e[5]) return 5;
+  return 6;
+}
+/** 0..1 scalar that lands EXACTLY on a DIVERGING_RAMP stop (no blending) when fed through `rampColor`, since
+ *  rampColor(i/(len-1)) reproduces ramp[i] exactly. */
+export function divergingScalar(goodnessDeltaPoints: number): number {
+  return divergingBucket(goodnessDeltaPoints) / (DIVERGING_RAMP.length - 1);
+}
+/** Deviation oriented so positive ALWAYS means "better", regardless of metric direction: 수용률 is better when
+ *  higher (raw deviation unchanged); 불수용률 is better when LOWER (raw deviation negated) — so bucket/colour
+ *  never need their own per-metric branch, only this one sign flip. `rawDeltaPoints` = region% − baseline%. */
+export function divergingGoodness(metric: 'acceptance' | 'rejection', rawDeltaPoints: number): number {
+  return metric === 'rejection' ? -rawDeltaPoints : rawDeltaPoints;
+}
+/** Region fill colour for the diverging scale; null (계산 불가, 분모 0) stays the same grey as every other metric. */
+export function divergingColor(goodnessDeltaPoints: number | null): string {
+  return goodnessDeltaPoints === null ? METRIC_NULL : rampColor(divergingScalar(goodnessDeltaPoints), DIVERGING_RAMP);
+}
 
 /**
  * R1 밀집도 size steps (initial draft from the requirement, tuned against real on-map overlap/legibility):
@@ -573,7 +632,9 @@ export async function createKakaoMap(
       strokeColor: selected ? '#D97706' : out ? '#64748B' : '#1D4ED8',
       strokeOpacity: selected || hover ? 0.95 : out ? 0.5 : 0.7,
       strokeStyle: out ? 'shortdash' : 'solid',
-      fillColor: out ? '#CBD5E1' : has ? rampColor(w) : '#2563EB',
+      // R2: a custom ramp (DIVERGING_RAMP for 수용률/불수용률 with a baseline) replaces METRIC_RAMP when given;
+      // `w` keeps the same 0..1 shape either way (rampColor lands exactly on a bucket stop, no blending).
+      fillColor: out ? '#CBD5E1' : has ? rampColor(w, boundaryStyle.ramp) : '#2563EB',
       fillOpacity: fillOpacity + (hover ? 0.12 : 0),
     };
   };

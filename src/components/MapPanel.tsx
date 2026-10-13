@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { MapUnplaced, PublicPoint, PublicRegion } from '../domain/public';
-import { createKakaoMap, kakaoKey, METRIC_NULL, METRIC_RAMP, ACCEPTANCE_RAMP, colorScalar, type KakaoHandle, type KakaoPointInput } from '../lib/kakao';
+import type { MapUnplaced, OutcomeCounts, PublicPoint, PublicRegion } from '../domain/public';
+import {
+  createKakaoMap, kakaoKey, METRIC_NULL, METRIC_RAMP, ACCEPTANCE_RAMP, DIVERGING_RAMP, colorScalar,
+  divergingGoodness, divergingScalar, type KakaoHandle, type KakaoPointInput,
+} from '../lib/kakao';
 import { intersects, loadBoundaries, loadBoundaryMeta, type BoundaryFeature, type BoundaryLevel, type BoundaryMeta } from '../lib/boundaries';
 import { regionLabel } from '../data/regions';
 import type { PointMark } from '../state/pointMarks';
@@ -26,6 +29,10 @@ interface Props {
   /** personal display marks keyed by place key (display only; no filter) */
   marks?: Map<string, PointMark>;
   regions?: PublicRegion[] | null;
+  /** R2 (2026-10-13): current-scope baseline for the 수용률/불수용률 region choropleth's diverging colour —
+   *  the SAME outcomes already computed for the overview KPI (reused, never a new query). Omitted/null/no
+   *  result_known → the choropleth falls back to the original fixed 0..1 ramp for those two metrics too. */
+  overviewOutcomes?: OutcomeCounts | null;
   activeRegion?: string | null;
   onPickRegion?: (code: string | null) => void;
   /** a refresh is running for another scope; the map stays mounted and shows a small badge */
@@ -50,6 +57,44 @@ export function outOfScopeCodes(features: readonly BoundaryFeature[], level: Bou
   const inside = (f: BoundaryFeature) => (level === 'sido' ? f.code === active.slice(0, 2)
     : active.length === 2 ? f.sido === active : f.code === active);
   return new Set(features.filter((f) => !inside(f)).map((f) => f.code));
+}
+
+/** R2: the current-scope baseline % (Σnum/Σden) for 수용률/불수용률's diverging colour — 이미 overview KPI로
+ *  계산된 값(`outcomes`)을 그대로 쓴다(새 전체 재조회 없음). 다른 지표거나 분류된 답변이 0건이면 null(폴백). */
+export function baselinePercent(m: MapMetric, outcomes: OutcomeCounts | null | undefined): number | null {
+  if (m !== 'acceptance' && m !== 'rejection') return null;
+  if (!outcomes || outcomes.result_known <= 0) return null;
+  return ((m === 'acceptance' ? outcomes.accepted : outcomes.rejected) / outcomes.result_known) * 100;
+}
+
+export interface RegionWeights { weight: Map<string, number | null>; ramp?: readonly string[] }
+/**
+ * R2 (2026-10-13): region choropleth fill — pure (no DOM/Kakao SDK) so the bucket boundaries, the opposite
+ * acceptance/rejection direction, the baseline fallback and the "계산 불가 stays grey" rule are all directly
+ * testable. 수용률/불수용률 with a computable baseline use the 7-bucket DIVERGING_RAMP (region deviates from
+ * the CURRENT SCOPE's own baseline %, in percentage points); every other metric, or acceptance/rejection
+ * without a baseline (`baselinePct === null`, e.g. the overview itself has 0 분류된 답변), falls straight back
+ * to the original colorScalar + default ramp (ramp omitted → METRIC_RAMP in kakao.ts) — unchanged behaviour.
+ */
+export function regionBoundaryWeights(codes: readonly string[], rowByCode: ReadonlyMap<string, PublicRegion>,
+  m: MapMetric, baselinePct: number | null): RegionWeights {
+  const parts = codes.map((code) => { const row = rowByCode.get(code); return row ? metricParts(row, m) : null; });
+  const max = Math.max(1, ...parts.map((x) => (x && x.kind === 'count' ? x.num : 0)));
+  const diverging = (m === 'acceptance' || m === 'rejection') && baselinePct !== null;
+  const weight = new Map<string, number | null>();
+  codes.forEach((code, i) => {
+    const x = parts[i];
+    if (!x || x.weight <= 0) return;
+    if (diverging) {
+      if (x.den <= 0) { weight.set(code, null); return; } // 계산 불가(분모 0) — 회색 그대로, 기존 규칙과 동일
+      const regionPct = (x.num / x.den) * 100;
+      const raw = regionPct - (baselinePct as number);
+      weight.set(code, divergingScalar(divergingGoodness(m as 'acceptance' | 'rejection', raw)));
+      return;
+    }
+    weight.set(code, colorScalar(x.kind, x.num, x.den, max));
+  });
+  return { weight, ramp: diverging ? DIVERGING_RAMP : undefined };
 }
 
 const BOUNDARY_KEY = 'cm-boundaries';
@@ -99,6 +144,18 @@ export function pointTitle(p: PublicPoint, m: MapMetric): string {
   return `${placeName(p)} · ${def.legend} ${metricText(parts, m)}${sample}`;
 }
 
+/** R2 (2026-10-13): ' · 평균 대비 +4.2%p' — RAW deviation in the metric's OWN terms (never the colour's
+ *  good/bad-flipped value, so a reader never has to mentally un-flip 불수용률's sign). '' when not applicable:
+ *  not 수용률/불수용률, no baseline, or this row's own rate isn't computable (den=0, same as 계산 불가 colouring). */
+export function regionDeltaNote(row: PublicRegion | undefined, m: MapMetric, baselinePct: number | null): string {
+  if (!row || baselinePct === null || (m !== 'acceptance' && m !== 'rejection')) return '';
+  const parts = metricParts(row, m);
+  if (parts.kind !== 'rate' || parts.den <= 0) return '';
+  const raw = (parts.num / parts.den) * 100 - baselinePct;
+  const sign = raw > 0 ? '+' : ''; // toFixed already prints '-' for negatives
+  return ` · 평균 대비 ${sign}${raw.toFixed(1)}%p`;
+}
+
 export function toKakaoInputs(points: readonly PublicPoint[], m: MapMetric, selectedKey: string | null,
   marks?: Map<string, PointMark>): KakaoPointInput[] {
   return visiblePoints(points, m).map((pt) => {
@@ -132,10 +189,40 @@ function DensityLegend() {
   );
 }
 
-function Legend({ metric, level, statsBbox, filtered }: { metric: MapMetric; level: BoundaryLevel; statsBbox: boolean; filtered: boolean }) {
+/** R2: raw(관측-기준) %p 경계 라벨, bucket 0(빨강)→6(초록) 순서. 수용률은 이 순서 그대로가 자기 자신의 raw %p
+ *  구간과 일치한다(bucket==raw 방향). 불수용률은 bucket이 '좋음' 방향으로 뒤집혀 있어, bucket 색이 뜻하는 raw
+ *  불수용률 편차 구간은 이 배열을 뒤집은 값과 같다(아래 DivergingLegend에서 처리). */
+const DIVERGING_BUCKET_LABELS = ['-15%p 이하', '-15~-7%p', '-7~-3%p', '±3%p 이내', '+3~+7%p', '+7~+15%p', '+15%p 이상'];
+
+/** R2: 수용률/불수용률 지역 지도 전용 범례 — 7단계 발산형 색 칩 + 기준값(현재 범위 평균) + ±%p 구간 라벨.
+ *  기준값을 계산할 수 없을 때(Legend에서 baselinePct===null로 걸러짐)는 호출되지 않고, 대신 아래 generic 범례
+ *  (기존 고정 0..1 램프)로 그대로 폴백한다. */
+function DivergingLegend({ metric, level, baselinePct }: { metric: 'acceptance' | 'rejection'; level: BoundaryLevel; baselinePct: number }) {
+  const def = metricDef(metric);
+  // bucket 색 순서는 항상 '나쁨→좋음'(빨강→초록); 불수용률은 raw %p 방향이 반대라 라벨만 뒤집는다(색은 안 바뀜).
+  const labels = metric === 'rejection' ? [...DIVERGING_BUCKET_LABELS].reverse() : DIVERGING_BUCKET_LABELS;
+  return (
+    <span className="legend-title map-legend"
+      title={`${LEVEL_LABEL[level]}별 ${def.legend} — 현재 범위 평균 ${baselinePct.toFixed(1)}% 대비 편차(%p), 고정 7구간 발산형 색`}
+      aria-label={`범례: ${LEVEL_LABEL[level]}별 ${def.legend}, 현재 범위 평균 ${baselinePct.toFixed(1)}% 대비`}>
+      <b>{LEVEL_LABEL[level]}별 {def.legend} · 평균 {baselinePct.toFixed(1)}% 대비</b>
+      {DIVERGING_RAMP.map((color, i) => (
+        <span className="legend-null" key={color}><i style={{ background: color, border: 'none' }} aria-hidden="true" />{labels[i]}</span>
+      ))}
+      <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(기준 신고 0건)</span>
+      <span className="legend-null"><i className="legend-empty" aria-hidden="true" />자료 없음</span>
+    </span>
+  );
+}
+
+function Legend({ metric, level, statsBbox, filtered, baselinePct }: { metric: MapMetric; level: BoundaryLevel; statsBbox: boolean; filtered: boolean; baselinePct: number | null }) {
   // points mode (신고 수, the default pin) always carries the 수용률 colour legend; an unknown/legacy metric id
   // resolves to 'reports' (renderModeOf below) so it gets the same legend, never the stale generic one.
   if (renderModeOf(metric) === 'points') return <DensityLegend />;
+  // R2: 수용률/불수용률 + 기준값 계산 가능 → 발산형 범례. 기준값 없음(폴백)이거나 과태료면 아래 generic 범례 그대로.
+  if ((metric === 'acceptance' || metric === 'rejection') && baselinePct !== null) {
+    return <DivergingLegend metric={metric} level={level} baselinePct={baselinePct} />;
+  }
   const def = metricDef(metric);
   const gradient = `linear-gradient(90deg, ${METRIC_RAMP.join(', ')})`;
   const regions = renderModeOf(metric) === 'regions';
@@ -192,6 +279,10 @@ export default function MapPanel(p: Props) {
   };
   const def = metricDef(p.metric);
   const renderMode = renderModeOf(p.metric);
+  // R2 (2026-10-13): 수용률/불수용률 지역 지도의 발산형 색 기준값 — 현재 범위(같은 기간·분류·필터) 전체의
+  // Σaccepted(또는 Σrejected)/Σresult_known, 이미 overview KPI로 계산된 값을 그대로 재사용한다(새 전체 재조회
+  // 없음). 기준값을 못 구하면(overview 자체가 0건 등) null → 색·범례 모두 기존 고정 램프로 폴백한다.
+  const baselinePct = useMemo(() => baselinePercent(p.metric, p.overviewOutcomes), [p.metric, p.overviewOutcomes]);
   // points mode only: in regions mode there is no place list, marker or cluster at all
   const shownPoints = useMemo(() => (renderMode === 'points' ? visiblePoints(p.points, p.metric) : []), [p.points, p.metric, renderMode]);
   // U01/D02: every place of the ONE cohort is drawn — nothing is hidden because of its other date (the old
@@ -283,17 +374,11 @@ export default function MapPanel(p: Props) {
     if (!h || sdkState !== 'ready') return;
     if (!boundaryShown || !shown) { h.setBoundaries(null, { selected: null, weight: new Map() }); return; }
     // fill = the ACTIVE metric: region rows are Σnumerator/Σdenominator from raw facts on the server (a 시도 is
-    // never an average of its 시군구); rates on the fixed 0..1 scale, counts relative to the largest shown region
-    const parts = shown.map((f) => { const row = rowByCode.get(f.code); return row ? metricParts(row, p.metric) : null; });
-    const max = Math.max(1, ...parts.map((x) => (x && x.kind === 'count' ? x.num : 0)));
-    const weight = new Map<string, number | null>();
-    shown.forEach((f, i) => {
-      const x = parts[i];
-      if (!x || x.weight <= 0) return;
-      weight.set(f.code, colorScalar(x.kind, x.num, x.den, max));
-    });
-    h.setBoundaries(shown, { selected: activeCode, weight, mode: renderMode, outOfScope: outOfScopeCodes(shown, level, activeCode) });
-  }, [boundaryShown, shown, rowByCode, activeCode, sdkState, p.metric, renderMode, level]);
+    // never an average of its 시군구); rates on the fixed 0..1 scale (or R2 diverging scale), counts relative
+    // to the largest shown region — see regionBoundaryWeights above for the actual rule.
+    const { weight, ramp } = regionBoundaryWeights(shown.map((f) => f.code), rowByCode, p.metric, baselinePct);
+    h.setBoundaries(shown, { selected: activeCode, weight, mode: renderMode, outOfScope: outOfScopeCodes(shown, level, activeCode), ramp });
+  }, [boundaryShown, shown, rowByCode, activeCode, sdkState, p.metric, renderMode, level, baselinePct]);
 
   // Move the map to a newly chosen region (from the list, the filter or a boundary click). Programmatic move.
   const fittedRef = useRef<string | null>(null);
@@ -399,7 +484,7 @@ export default function MapPanel(p: Props) {
                 <ul className="point-list" aria-label={`시도별 ${def.legend}`}>
                   {(p.regions ?? []).filter((r) => r.level === 'sido').map((r) => (
                     <li key={r.region_code}><button type="button" onClick={() => p.onPickRegion?.(r.region_code)}>
-                      <b>{r.name}</b><small>{def.legend} {metricText(metricParts(r, p.metric), p.metric)}</small>
+                      <b>{r.name}</b><small>{def.legend} {metricText(metricParts(r, p.metric), p.metric)}{regionDeltaNote(r, p.metric, baselinePct)}</small>
                     </button></li>
                   ))}
                 </ul>
@@ -411,7 +496,7 @@ export default function MapPanel(p: Props) {
           <span className="map-hover" role="status">
             <b>{regionLabel(hover)}</b>
             <span>{hoverOut ? '적용한 지역 조건 밖' : hoverRow
-              ? `${def.legend} ${metricText(metricParts(hoverRow, p.metric), p.metric)}${p.metric !== 'reports' ? ` · 답변 ${fmtInt(hoverRow.completed_count)}건 · 신고 ${fmtInt(hoverRow.report_count)}건` : ''}`
+              ? `${def.legend} ${metricText(metricParts(hoverRow, p.metric), p.metric)}${p.metric !== 'reports' ? ` · 답변 ${fmtInt(hoverRow.completed_count)}건 · 신고 ${fmtInt(hoverRow.report_count)}건` : ''}${regionDeltaNote(hoverRow, p.metric, baselinePct)}`
               : '이 조건의 자료 없음'}</span>
             {p.statsBbox && <small>지도 범위 안 신고만</small>}
             <small>{activeCode === hover ? '누르면 한 단계 위 지역으로' : '누르면 이 지역만 보기'}</small>
@@ -439,7 +524,7 @@ export default function MapPanel(p: Props) {
         )}
         {sdkState !== 'error' && (
           <div className="map-bottom">
-            <Legend metric={p.metric} level={level} statsBbox={!!p.statsBbox} filtered={!!activeCode} />
+            <Legend metric={p.metric} level={level} statsBbox={!!p.statsBbox} filtered={!!activeCode} baselinePct={baselinePct} />
           </div>
         )}
       </div>
