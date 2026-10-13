@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MapUnplaced, PublicPoint, PublicRegion } from '../domain/public';
-import { createKakaoMap, kakaoKey, METRIC_NULL, METRIC_RAMP, colorScalar, type KakaoHandle, type KakaoPointInput } from '../lib/kakao';
+import { createKakaoMap, kakaoKey, METRIC_NULL, METRIC_RAMP, ACCEPTANCE_RAMP, colorScalar, type KakaoHandle, type KakaoPointInput } from '../lib/kakao';
 import { intersects, loadBoundaries, loadBoundaryMeta, type BoundaryFeature, type BoundaryLevel, type BoundaryMeta } from '../lib/boundaries';
 import { regionLabel } from '../data/regions';
 import type { PointMark } from '../state/pointMarks';
@@ -36,9 +36,9 @@ interface Props {
   onBlankClick?: () => void;
 }
 
-/** R7: rate metrics draw the regions (choropleth) and NO pins; 신고 수 draws address pins. */
+/** R7: rate metrics draw the regions (choropleth) and NO pins; 신고 수/밀집도(R1) draw address pins. */
 export type RenderMode = 'points' | 'regions';
-export const renderModeOf = (m: MapMetric): RenderMode => (m === 'reports' ? 'points' : 'regions');
+export const renderModeOf = (m: MapMetric): RenderMode => (m === 'reports' || m === 'density' ? 'points' : 'regions');
 /** Kakao level > SGG_ZOOM → 시도; ≤ SGG_ZOOM → 시군구. Independent of the region filter (R7). */
 export const boundaryLevelFor = (zoom: number): BoundaryLevel => (zoom <= SGG_ZOOM ? 'sgg' : 'sido');
 
@@ -102,14 +102,35 @@ export function toKakaoInputs(points: readonly PublicPoint[], m: MapMetric, sele
   return visiblePoints(points, m).map((pt) => {
     const parts = metricParts(pt, m);
     const mark = marks?.get(pt.key);
-    return { key: pt.key, lat: pt.lat, lng: pt.lng, label: pointTitle(pt, m), ...parts, selected: pt.key === selectedKey,
+    // R1 묶음 보존: a server-compacted node's own point_count travels with it so a further client-side
+    // re-bundle (far zoom) still reports the real distinct-address count, never the lower node count.
+    const places = pt.aggregate ? (pt.point_count ?? 1) : 1;
+    return { key: pt.key, lat: pt.lat, lng: pt.lng, label: pointTitle(pt, m), ...parts, places, selected: pt.key === selectedKey,
       mine: mark?.mine, shared: mark?.shared ?? undefined, interest: mark?.interest };
   });
 }
 
 const LEVEL_LABEL: Record<BoundaryLevel, string> = { sido: '시도', sgg: '시군구' };
 
+/** R1: pin fill = 수용률 (fixed red→orange→green scale) · pin size/number = 신고 건수. A separate branch from the
+ *  generic legend below (its 0%/100% blue ramp and count/rate wording are for the other four metrics only). */
+function DensityLegend() {
+  const gradient = `linear-gradient(90deg, ${ACCEPTANCE_RAMP.join(', ')})`;
+  return (
+    <span className="legend-title map-legend"
+      title="핀 색 = 수용률(수용 ÷ 수용+일부수용+불수용, 고정 빨강→주황→초록) · 핀 크기·숫자 = 신고 건수(1~9/10~29/30~99/100~299/300건 이상 단계)"
+      aria-label="범례: 색은 수용률, 크기와 숫자는 신고 건수">
+      <b>색: 수용률 · 크기·숫자: 신고 건수</b>
+      <span className="cm-muted">0%</span>
+      <i className="gradient-scale" style={{ background: gradient }} aria-hidden="true" />
+      <span className="cm-muted">100%</span>
+      <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(분류된 답변 0건)</span>
+    </span>
+  );
+}
+
 function Legend({ metric, level, statsBbox, filtered }: { metric: MapMetric; level: BoundaryLevel; statsBbox: boolean; filtered: boolean }) {
+  if (metric === 'density') return <DensityLegend />;
   const def = metricDef(metric);
   const gradient = `linear-gradient(90deg, ${METRIC_RAMP.join(', ')})`;
   const regions = renderModeOf(metric) === 'regions';
