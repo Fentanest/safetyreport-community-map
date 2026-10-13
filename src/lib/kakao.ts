@@ -40,45 +40,129 @@ export interface KakaoPointInput {
   lat: number;
   lng: number;
   label: string;
-  kind: 'count' | 'rate';
+  kind: 'count' | 'rate' | 'density';
   num: number;
   den: number;
   weight: number;
   selected: boolean;
+  /** R1 묶음 보존: real distinct addresses this ONE input stands for. A server-compacted node
+   *  (PublicPoint.aggregate) carries its own point_count here; an exact-address node is 1.
+   *  undefined = 1 (older callers / raw test fixtures that predate this field). */
+  places?: number;
   /** personal display marks (docs/personal-comparison.md §5.3); display only */
   mine?: boolean;
   shared?: boolean;
   interest?: boolean;
 }
 
-/** Text drawn on a pin/cluster: a count, or a whole percent for a rate, or '–' without a denominator. */
-export function pinText(kind: 'count' | 'rate', num: number, den: number): string {
+/** Text drawn on a pin/cluster: a count, or a whole percent for a rate, or '–' without a denominator.
+ *  'density' (R1) always shows `weight` (report_count), never the rate % — the pin number stays a count. */
+export function pinText(kind: 'count' | 'rate' | 'density', num: number, den: number, weight = 0): string {
   if (kind === 'count') return num > 9999 ? '9999+' : String(num);
+  if (kind === 'density') return weight > 9999 ? '9999+' : String(weight);
   if (den <= 0) return '–';
   return `${Math.round((num / den) * 100)}%`;
 }
 
-/** Colour scalar (0..1) or null (no denominator). Counts use a log scale against `maxCount`. */
-export function colorScalar(kind: 'count' | 'rate', num: number, den: number, maxCount: number): number | null {
-  if (kind === 'rate') return den > 0 ? Math.max(0, Math.min(1, num / den)) : null;
-  if (num <= 0) return 0;
-  return Math.max(0, Math.min(1, Math.log1p(num) / Math.log1p(Math.max(1, maxCount))));
+/** Colour scalar (0..1) or null (no denominator). Counts use a log scale against `maxCount`; both rate kinds
+ *  ('rate' and R1 'density') use num/den directly and ignore `maxCount` (a fixed 0..1 scale, never rescaled
+ *  by what else is on screen). */
+export function colorScalar(kind: 'count' | 'rate' | 'density', num: number, den: number, maxCount: number): number | null {
+  if (kind === 'count') {
+    if (num <= 0) return 0;
+    return Math.max(0, Math.min(1, Math.log1p(num) / Math.log1p(Math.max(1, maxCount))));
+  }
+  return den > 0 ? Math.max(0, Math.min(1, num / den)) : null;
 }
 
 /** Fixed sequential ramp (light → deep blue); the same stops as the CSS legend (--metric-0 … --metric-4). */
 export const METRIC_RAMP = ['#e0f2fe', '#7dd3fc', '#38bdf8', '#2563eb', '#1e3a8a'] as const;
 export const METRIC_NULL = '#9ca3af';
-export function rampColor(t: number | null): string {
+/** R1 수용률 fixed scale: 0% 빨강 → 50% 주황 → 100% 초록. Independent of METRIC_RAMP (that one stays the
+ *  과태료/신고량 blue ramp used by the other metrics and the region choropleth) — never derived from it, so a
+ *  future change to one can never silently recolour the other (R1: "과태료율 계산식을 수용률이라는 이름으로 복사하지 마"). */
+export const ACCEPTANCE_RAMP = ['#dc2626', '#f59e0b', '#16a34a'] as const;
+export function rampColor(t: number | null, ramp: readonly string[] = METRIC_RAMP): string {
   if (t === null) return METRIC_NULL;
-  const x = Math.max(0, Math.min(1, t)) * (METRIC_RAMP.length - 1);
-  const i = Math.min(METRIC_RAMP.length - 2, Math.floor(x));
+  const x = Math.max(0, Math.min(1, t)) * (ramp.length - 1);
+  const i = Math.min(ramp.length - 2, Math.floor(x));
   const f = x - i;
-  const a = METRIC_RAMP[i], b = METRIC_RAMP[i + 1];
+  const a = ramp[i], b = ramp[i + 1];
   const ch = (h: string, k: number) => parseInt(h.slice(1 + k * 2, 3 + k * 2), 16);
   const mix = [0, 1, 2].map(k => Math.round(ch(a, k) + (ch(b, k) - ch(a, k)) * f));
   return `#${mix.map(v => v.toString(16).padStart(2, '0')).join('')}`;
 }
+/** R1 수용률 colour: same fixed scale regardless of position/zoom/filter (never derives from on-screen min/max). */
+export function acceptanceColor(scalar: number | null): string { return rampColor(scalar, ACCEPTANCE_RAMP); }
 const inkFor = (t: number | null) => (t !== null && t >= 0.7 ? '#FFFFFF' : '#0B1220');
+
+/**
+ * R1 밀집도 size steps (initial draft from the requirement, tuned against real on-map overlap/legibility):
+ * report_count 1–9 / 10–29 / 30–99 / 100–299 / 300+ → circle diameter 32 / 38 / 44 / 50 / 56px.
+ * A bounded step scale (not a free log scale) so a 10,000-report outlier never swallows the map.
+ */
+export const DENSITY_STEPS: ReadonlyArray<{ max: number; diameter: number }> = [
+  { max: 9, diameter: 32 },
+  { max: 29, diameter: 38 },
+  { max: 99, diameter: 44 },
+  { max: 299, diameter: 50 },
+  { max: Infinity, diameter: 56 },
+];
+export function densityDiameter(count: number): number {
+  const step = DENSITY_STEPS.find((s) => count <= s.max);
+  return step ? step.diameter : DENSITY_STEPS[DENSITY_STEPS.length - 1].diameter;
+}
+function densityFontSize(diameter: number, textLen: number): number {
+  return Math.max(10, Math.round(diameter * (textLen >= 4 ? 0.3 : 0.34)));
+}
+
+/** R1 density pin: fill = acceptanceColor(scalar) on the fixed 수용률 scale; size = densityDiameter(report_count);
+ *  text = report_count (never the rate %, R1 "핀 숫자를 수용률 %로 바꾸지 마"). Grey + dashed ring = 계산 불가
+ *  (no classified answer yet) — visually distinct from the red used for a real 0%. */
+export function densityPinSvg(text: string, selected: boolean, scalar: number | null, diameter: number, colors: MarkColors,
+  mark?: { mine?: boolean; shared?: boolean; interest?: boolean }): string {
+  const r = diameter / 2;
+  const pad = selected ? 11 : 4;
+  const size = diameter + pad * 2;
+  const c = size / 2;
+  const fill = acceptanceColor(scalar);
+  const { mineInk, cyan, partial } = colors;
+  const ring = selected ? '#0B1220' : 'rgba(11,18,32,0.55)';
+  const fontSize = densityFontSize(diameter, text.length);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
+    + (mark?.shared ? `<circle cx="${c}" cy="${c}" r="${r + 3}" fill="none" stroke="${cyan}" stroke-width="1.5" stroke-dasharray="3 2"/>` : '')
+    + (selected
+      ? `<circle cx="${c}" cy="${c}" r="${r + 7}" fill="none" stroke="#F8FAFC" stroke-width="3.5"/>`
+      + `<circle cx="${c}" cy="${c}" r="${r + 4}" fill="none" stroke="#D97706" stroke-width="3"/>`
+      : '')
+    + `<circle cx="${c}" cy="${c}" r="${r}" fill="${fill}" fill-opacity="0.95" stroke="${mark?.mine ? mineInk : ring}" stroke-width="${selected ? 3 : mark?.mine ? 2.5 : 1.25}"${scalar === null ? ' stroke-dasharray="3 2"' : ''}/>`
+    + (mark?.interest ? `<text x="${c + r - 4}" y="${c - r + 8}" font-size="10" fill="${partial}">★</text>` : '')
+    + `<text x="${c}" y="${c + fontSize * 0.36}" text-anchor="middle" font-size="${fontSize}" font-weight="700" fill="${inkFor(scalar)}" font-family="system-ui">${text}</text></svg>`;
+}
+/** Pixel size of the square SVG from densityPinSvg (for kakao.maps.Size) and the anchor offset (kakao.maps.Point)
+ *  that keeps the SAME real-world anchor point as the unselected pin (circle centre + r + 4px gap below it),
+ *  so selecting a density pin never jumps its drawn position (same intent as SELECTED_SIZE for the count/rate pins). */
+export function densityPinGeometry(diameter: number, selected: boolean): { size: number; anchorY: number } {
+  const r = diameter / 2;
+  const pad = selected ? 11 : 4;
+  const size = diameter + pad * 2;
+  return { size, anchorY: size / 2 + r + 4 };
+}
+
+/** R1 density cluster bubble: same fixed colour scale and step-sized circle as a single density pin, with the
+ *  double ring that marks every cluster bubble (so an aggregate never reads as one address). */
+export function densityClusterSvg(text: string, hasSelected: boolean, scalar: number | null, diameter: number): string {
+  const r = diameter / 2;
+  const size = diameter + 10;
+  const c = size / 2;
+  const fill = acceptanceColor(scalar);
+  const fontSize = densityFontSize(diameter, text.length);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">`
+    + `<circle cx="${c}" cy="${c}" r="${r}" fill="${fill}" fill-opacity="0.96" stroke="#F8FAFC" stroke-width="${hasSelected ? 4 : 3}"/>`
+    + `<circle cx="${c}" cy="${c}" r="${Math.max(0, r - 5)}" fill="none" stroke="rgba(11,18,32,0.4)" stroke-width="1" stroke-dasharray="3 2"/>`
+    + `<text x="${c}" y="${c + fontSize * 0.36}" text-anchor="middle" font-size="${fontSize}" font-weight="800" fill="${inkFor(scalar)}" font-family="system-ui">${text}</text></svg>`;
+}
+export function densityClusterSize(diameter: number): number { return diameter + 10; }
 
 /**
  * Client-side grid clustering (pure; unit-tested without the SDK).
@@ -105,7 +189,9 @@ export function clusterCellDeg(level: number): number {
 export type ClusterGroup =
   | { kind: 'single'; point: KakaoPointInput }
   /** num/den are the SUMS of the members' numerators/denominators (a rate is Σnum/Σden, never a mean of rates);
-   *  weight is the summed display weight; places = number of member places */
+   *  weight is the summed display weight; places = Σ member.places (R1 묶음: a member that is itself a SERVER
+   *  compacted node — PublicPoint.aggregate with its own point_count — contributes that many real addresses,
+   *  not 1, so a client re-bundle of server-compacted nodes never under-counts "서로 다른 주소 N곳") */
   | { kind: 'cluster'; members: KakaoPointInput[]; lat: number; lng: number; count: number; num: number; den: number; places: number };
 
 export function clusterPoints(points: readonly KakaoPointInput[], level: number): ClusterGroup[] {
@@ -130,14 +216,16 @@ export function clusterPoints(points: readonly KakaoPointInput[], level: number)
     let count = 0;
     let num = 0;
     let den = 0;
+    let places = 0;
     for (const m of members) {
       lat += m.lat;
       lng += m.lng;
       count += m.weight;
       num += m.num;
       den += m.den;
+      places += m.places ?? 1;
     }
-    out.push({ kind: 'cluster', members, lat: lat / members.length, lng: lng / members.length, count, num, den, places: members.length });
+    out.push({ kind: 'cluster', members, lat: lat / members.length, lng: lng / members.length, count, num, den, places });
   }
   return out;
 }
@@ -364,13 +452,22 @@ export async function createKakaoMap(
       if (g.kind === 'single') {
         const p = g.point;
         const pos = new kakao.LatLng(p.lat, p.lng);
-        const text = pinText(p.kind, p.num, p.den);
+        const text = pinText(p.kind, p.num, p.den, p.weight);
         const scalar = colorScalar(p.kind, p.num, p.den, maxCount);
-        // the selected pin keeps the same anchor point (circle centre 20 px above the coordinate, like every pin)
-        const img = p.selected
-          ? new kakao.MarkerImage(svgUrl(selectedMarkerSvg(text, scalar, colors, p)), new kakao.Size(SELECTED_SIZE.w, SELECTED_SIZE.h),
-            kakao.Point ? { offset: new kakao.Point(SELECTED_SIZE.cx, SELECTED_SIZE.cy + 20) } : undefined)
-          : new kakao.MarkerImage(svgUrl(markerSvg(text, false, scalar, colors, p)), new kakao.Size(40, 40));
+        let img: unknown;
+        if (p.kind === 'density') {
+          // R1: fixed 수용률 colour + report_count size step, independent of the count/rate pin path below.
+          const diameter = densityDiameter(p.weight);
+          const { size, anchorY } = densityPinGeometry(diameter, p.selected);
+          img = new kakao.MarkerImage(svgUrl(densityPinSvg(text, p.selected, scalar, diameter, colors, p)), new kakao.Size(size, size),
+            kakao.Point ? { offset: new kakao.Point(size / 2, anchorY) } : undefined);
+        } else {
+          // the selected pin keeps the same anchor point (circle centre 20 px above the coordinate, like every pin)
+          img = p.selected
+            ? new kakao.MarkerImage(svgUrl(selectedMarkerSvg(text, scalar, colors, p)), new kakao.Size(SELECTED_SIZE.w, SELECTED_SIZE.h),
+              kakao.Point ? { offset: new kakao.Point(SELECTED_SIZE.cx, SELECTED_SIZE.cy + 20) } : undefined)
+            : new kakao.MarkerImage(svgUrl(markerSvg(text, false, scalar, colors, p)), new kakao.Size(40, 40));
+        }
         // clickable: a marker click does not also fire the map's click (Kakao's documented option)
         const marker = new kakao.Marker({ position: pos, image: img, title: p.selected ? `${p.label} (선택됨)` : p.label,
           clickable: true, zIndex: p.selected ? 10 : 1 });
@@ -382,12 +479,15 @@ export async function createKakaoMap(
       // Cluster bubble: counts are SUMS; a rate is Σnumerator/Σdenominator of the member places (F01).
       // Position is the member mean, display-only; member positions stay as they are.
       const kind = g.members[0].kind;
-      const text = pinText(kind, g.num, g.den);
+      const text = pinText(kind, g.num, g.den, g.count);
       const pos = new kakao.LatLng(g.lat, g.lng);
-      const img = new kakao.MarkerImage(
-        svgUrl(clusterSvg(text, g.members.some((m) => m.selected), colorScalar(kind, g.num, g.den, maxCount))),
-        new kakao.Size(52, 52),
-      );
+      const img = kind === 'density'
+        ? new kakao.MarkerImage(svgUrl(densityClusterSvg(text, g.members.some((m) => m.selected), colorScalar(kind, g.num, g.den, maxCount), densityDiameter(g.count))),
+          new kakao.Size(densityClusterSize(densityDiameter(g.count)), densityClusterSize(densityDiameter(g.count))))
+        : new kakao.MarkerImage(
+          svgUrl(clusterSvg(text, g.members.some((m) => m.selected), colorScalar(kind, g.num, g.den, maxCount))),
+          new kakao.Size(52, 52),
+        );
       const marker = new kakao.Marker({
         position: pos,
         image: img,
