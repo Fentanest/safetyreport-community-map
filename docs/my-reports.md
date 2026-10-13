@@ -1,42 +1,89 @@
 # 확장 본인 완료 신고 조회 API
 
-상태: 로컬 구현. 운영 DB 적용과 Edge 배포는 별도 작업이다. 공개 지도 API·10건 열람 기준을 변경하지 않는다.
+정본은 [my-reports-v1](../contracts/my-reports/README.md)과 같은 폴더의 `types.ts`·JSON Schema다.
+2026-10-13 차량 최소 길이 변경은 로컬 후보이며 운영 DB·Edge에는 적용하지 않았다.
 
 ## 계약
 
-`POST /functions/v1/my-reports/{summary|search|numbers}`. 요청은 `Authorization: Bearer <Supabase access token>`, `apikey: <publishable key>`, `Content-Type: application/json`을 사용한다. 응답은 항상 `Cache-Control: private, no-store`와 `Vary: Origin, Authorization`을 붙인다. CORS는 `MY_REPORTS_ALLOWED_ORIGINS`에 명시된 확장 origin만 허용한다. CORS는 인증을 대신하지 않는다.
+`POST /functions/v1/my-reports/{summary|search|numbers}`. Supabase 사용자 Bearer 토큰과 publishable apikey를 쓴다.
+응답은 `Cache-Control: private, no-store, max-age=0`, `Vary: Origin, Authorization`이다.
+CORS는 설정된 확장 origin만 허용하며 인증을 대신하지 않는다.
 
-- `summary`: `{ "offset": 0, "limit": 20 }`. 자기 완료 신고 전체 집계와 Asia/Seoul 오늘+직전 2일에 답변된 첫 페이지를 반환한다.
-- `search`: `{ "kind": "vehicle"|"address", "query": "…", "offset": 0, "limit": 20, "expected_version": "…" }`. 차량은 NFC·모든 공백 제거 후 Unicode 코드포인트 6~64자 부분 일치다. 주소는 연속 공백을 한 칸으로 정리해 같은 주소를 조회한다.
-- `numbers`: search와 같은 조건. 번호복사에 필요한 `report_number`만 페이지당 최대 50개 반환한다. 번호 없는 완료 신고는 `missing_numbers`로 알린다.
+- `search`: `{ "kind": "vehicle", "query": "5902", "page_size": 20, "managers_page_size": 10 }`.
+  차량은 NFC·모든 공백 제거 후 Unicode **4~64 코드포인트**의 문자 그대로 부분 일치(`strpos > 0`)다.
+  숫자만인 `5902`, 공백을 포함한 ` 5 9 0 2 `도 같다. 3자 이하는 `400 QUERY_LENGTH`다.
+  주소는 NFC·trim·연속 공백 축소 후 5~200 코드포인트이며 기존 동일 주소 규칙을 유지한다.
+- `numbers`: 같은 kind/query와 `page_size`(기본 200, 최대 500). 실제 신고번호를 중복 제거해 반환한다.
+  전체 복사 가능 번호는 최대 10,000개이며 초과 시 `422 NUMBERS_LIMIT_EXCEEDED`다. 번호 없는 신고는
+  `without_number`에 포함하고 가짜 번호나 source ID로 대체하지 않는다.
+- `summary`: `{ "page_size": 20 }`. 본인 전체 및 KST 오늘+직전 2일 완료 신고를 집계한다.
 
-응답 공통 구조: `{ version, total, missing_numbers, summary, managers, manager_total, managers_truncated, items, next_offset }`. `summary`는 검색 결과 **전체**의 상태·처분·확정 과태료 합계이며 `items`는 한 페이지다. 담당자 집계도 전체 검색 결과를 기준으로 계산하며, 표시 행은 건수 상위 100명까지 제한하고 초과 여부를 밝힌다. `version`은 소유자 범위에서 선출한 신고 집합에 묶이며 다음 페이지에 `expected_version`을 넣는다. 변동 시 HTTP 409로 처음부터 다시 조회한다. `next_offset=null`이면 끝이다. 페이지 크기는 1~50, offset은 0~5000이다.
+신고/담당자 페이지는 각각 최대 50행이다. 전체 일치 신고 건수를 임의로 자르지 않는다.
+후속 페이지는 `next_cursor`를 `cursor`로 보낸다. 커서는 사용자·검색·경로·페이지 크기·자료 버전에 묶인
+서명값이며 유효기간은 15분이다. 자료 변경은 `409 DATASET_CHANGED`, 만료는 `409 CURSOR_EXPIRED`다.
+이전 offset 기반 초안 RPC는 `202610020100_my_reports.sql`에서 폐기됐다.
 
-행 DTO에는 실제 신고번호, 원천 상세 ID, 원본 차량번호, 신고·완료일, 분류, 처리 결과, 처분, 확정금액, 벌점, 주소·좌표, 기관·담당자, 법규, 숫자 별점만 있다. 제목·본문·답변 원문·첨부·사유·업로드 payload는 없다. `source_report_id`는 `report_number`와 다르며 실제 상세 링크를 만드는 값이다.
+## 권한과 변경 범위
 
-## 권한과 데이터 선택
+Edge는 `auth.getUser(token)` 및 JWT UID·role·audience·session을 검증하고 요청의 user_id를 받지 않는다.
+DB는 매 요청에서 실제 Kakao identity·활성 세션·계정 자격을 다시 검사한다. `my_reports_own(p_user)`는
+**contributor_id 본인 조건 → 활성 동의 계보의 완료 4상태 → identity별 대표 관측 → 검색 조건** 순서다.
+`search`와 `numbers` 모두 같은 검증 함수와 본인 집합을 사용한다. 다른 사용자의 같은 차량번호나
+원신고, 본인의 철회 자료·이전 관측 차량번호는 검색 결과에 섞이지 않는다. 지도 10건 열람 gate는 변경하지 않는다.
 
-Edge handler가 `auth.getUser(token)`과 JWT의 UID·role·audience·session을 확인한다. RPC는 `private.community_identity_state`로 실제 Kakao identity 및 활성 세션을 다시 확인한다. 본인 조건을 먼저 적용하고 현재 활성 동의 계보의 완료 신고 4상태만 선택한 후 `source_report_key|report_number` 단위로 관측 중복을 정리한다. 전체 지도 10건 gate나 공개 집계 ready 상태는 본인 읽기에 적용하지 않는다. 새 계정의 빈 결과를 허용하고 writer를 등록하지 않는다.
+새 migration `202610131500_my_reports_vehicle_min4.sql`은 최신 정의인 `202610020100`의
+`private.my_reports_check_query(text,text)`에서 차량 하한만 6→4로 교체한다. `CREATE OR REPLACE`로
+owner·ACL을 보존하며 기존 `IMMUTABLE`, `SECURITY INVOKER`(기본값), 빈 `search_path`를 유지한다.
+세 public RPC는 계속 service_role 전용이다. private helper는 public/anon/authenticated에 허용하지 않는다.
+Edge `server/myReports/handler.ts`의 `validQuery`는 정본 `LIMITS.vehicle_min`을 참조하므로 별도 숫자 상수가 없다.
 
-내부 RPC `public.internal_my_reports`는 `service_role`만 실행할 수 있다. `anon`·`authenticated`·`public`에는 실행 권한이 없다. 행 선택·요약·페이지는 한 SQL 문장 안에서 계산한다. 사용자별 rate bucket, 4KiB 요청 본문·256KiB 응답 상한, owner 인덱스, 5초 statement timeout을 둔다. 토큰·요청 본문·원본 번호를 로그로 남기지 않는다.
+요청 본문 16KiB, 정규화 전 query 256 UTF-16 단위, 응답 256KiB, 기본 사용자당 분당 120회와
+RPC AbortSignal 5초를 그대로 유지한다. 응답 초과는 `RESULT_TOO_LARGE`, 시간 초과는 `QUERY_TIMEOUT`이다.
+5초 AbortSignal이 DB 문장 중단을 보장하지는 않는다. DB 실행 상한은 기존 PostgREST 역할의
+`statement_timeout`에 달려 있으며 이번에 역할 설정을 변경하지 않았다. 토큰·본문·원번호 로깅도 추가하지 않았다.
 
-## 적용 순서와 운영 설정
+## 성능 판단과 운영 확인
 
-1. 기존 community fact/identity/rating 마이그레이션 뒤 `202609300200_my_reports.sql`을 적용한다. 운영 적용 전 현재 DB의 선행 버전을 확인한다.
-2. `MY_REPORTS_ALLOWED_ORIGINS=chrome-extension://<실제 확장 ID>`를 Edge secret으로 설정한다. 스토어 확장 ID와 개발용 unpacked ID는 다를 수 있다. `MY_REPORTS_ENABLED` 기본 true; 일시 중단은 false.
-3. 기존 `SUPABASE_URL`, `SUPABASE_SECRET_KEYS` 또는 `SUPABASE_SERVICE_ROLE_KEY`, `AUTH_JWT_ISSUER`를 서버에서 재사용한다. 비밀키를 확장 빌드에 넣지 않는다.
-4. `supabase functions deploy my-reports` 후 OPTIONS, 인증 실패, A/B 소유자 격리, 0~9건 본인, 번호복사, 직접 RPC 권한을 실제 운영 설정에서 점검한다.
-5. Supabase Auth Redirect URLs에 정확한 `chrome.identity.getRedirectURL('supabase-auth')`를 추가한다. 기존 PC·모바일·지도 URL은 유지한다. Kakao 개발자 콘솔의 Supabase Auth callback은 별도 항목이다.
+4자 검색은 더 많은 차량에 일치할 수 있어 결과 집계·담당자 그룹·정렬·번호 중복 제거 비용이 증가할 수 있다.
+페이지 상한은 전송량을 제한하며 내부 스캔량을 제한하지 않는다. 현재 RPC는 검색 길이와 관계없이 매번 본인
+전체 관측에서 대표 신고와 버전을 계산하고, 메모리 배열에서 정규화 문자열을 비교한다. 전체 일치 수 상한은 없다.
 
-오류 코드: `auth_required`/`session_expired`(401), `kakao_required`/`account_ineligible`/`origin_forbidden`(403), `INVALID_QUERY`(400), `DATASET_CHANGED`(409), `RESULT_TOO_LARGE`(422), `rate_limited`(429), `service_unavailable`(503). `report_number`가 없는 행에는 가짜 번호나 링크를 만들지 않는다.
+[기존 로컬 합성 측정](integration/chromeextension/MEASUREMENTS.md)에서 본인 20,000신고/40,000관측,
+전체 240,000행의 search 첫 페이지 중앙값은 666ms, numbers는 598.1ms였다. **이번 4자 검색 측정이나 운영 수치가 아니다.**
+[저장된 실행 계획](integration/chromeextension/plans/heavy20k.search_vehicle_first.with-owner-index.txt)의
+`Bitmap Index Scan`은 `contributor_id = $1`로 PK/owner 인덱스를 사용하고, 대표 선정 후 `Function Scan on unnest`
+단계에서 `strpos`를 필터로 적용한다. 4자 허용 자체가 테이블 전체 검색으로 바꾸지는 않는다.
+이 구조에서 단순 원본 차량 trigram 인덱스는 배열 필터를 가속하지 못한다. 대표 선정 전에 차량 조건을 밀어 넣으면
+이전 관측을 잘못 찾을 수 있어 이번에 쿼리 순서나 인덱스를 바꾸지 않았다.
 
-## 로컬 확인 기록
+Opus 배포 시 실DB에서 보유량이 큰 계정의 흔한 4자리·기존 긴 검색어를 비교해 search 첫/후속/담당자 페이지와
+numbers에 `EXPLAIN (ANALYZE, BUFFERS)` 및 필요시 nested plan을 수집한다. 일치 행 수, 정렬 spill,
+실행 시간, statement_timeout을 확인한다. 큰 계정에서 지연이 크면 본인 대표행 캐시를 별도 검토한다.
 
-2026-09-30에 Docker의 기존 로컬 통합 DB에서 **롤백하는 트랜잭션** 안에 합성 A/B 계정·신고를 넣어 SQL을 실행했다. 이 로컬 DB는 최신 운영 스키마보다 오래되어 새 컬럼과 인증·동의 fixture 함수를 트랜잭션 안에서만 보완했다. A의 동일 신고 2관측은 1건으로 선출되고 B의 같은 차량·신고는 A의 결과에 섞이지 않았다. RPC 실행 권한은 `anon=false`, `authenticated=false`, `service_role=true`였다. 트랜잭션을 롤백했으며 운영 DB에 적용한 검증이 아니다.
+## 검증과 배포 인계
 
-## 2026-10-03 랭킹과의 관계
+- 계약/Edge 회귀: 3/4 경계, 숫자 4글자, Unicode 공백·NFC, 최대 64, 주소 규칙, 기존 인증·요청/응답 상한.
+- SQL: `PGLITE_MODULE=/tmp/map-sql-test/node_modules/@electric-sql/pglite/dist/index.js node tests/sql/verify-my-reports-vehicle-min4.mjs`.
+  기존 실제 my-reports 함수와 신규 migration을 메모리 PostgreSQL에서 실행한다. 인증/동의 의존 테이블·함수는 합성 fixture다.
+  양 경로 부분 일치, A/B 격리, 철회/이전 관측 제외, 세션 불일치, 페이지/번호 상한 및 함수 속성·ACL 보존을 검사한다.
+  운영 인증·실DB 성능·확장 브라우저 종단 검증을 대신하지 않는다.
+- 전체 `npx vitest run`, `npx tsc -b`, `npx vite build`. 실제 Supabase 스택 통합 시험은 `COMMUNITY_STACK=1` 별도 환경이 필요하다.
+- JSON Schema는 원문 query 형식(1~256)만 정의하며 정규화 길이는 types.ts/README가 정한다. schema와 기존 응답 fixture에
+  6자 하한 상수는 없으므로 변경하지 않았다. 정본 manifest 재생성 후 sync script로 확장 `contracts/my-reports/`만 동기화한다.
+  확장 계약 시험은 manifest에서 해시를 읽으며 별도 고정 my-reports 해시가 없다. `npm run test:contracts` 실행은 Opus 담당이다.
 
-유저 랭킹은 최신 정본 `contracts/my-reports/README.md` §1.3의 **사용자 범위→identity→대표 선정→조건**을 재사용한다.
-신규 set-wise `ranking_representatives`와 `my_reports_own`의 identity 동일성을 실제 DB 통합 테스트로 비교한다.
-랭킹 공개 UUID를 my-reports 입력으로 받지 않는다. 원문/차량/주소 조회는 계속 검증 JWT 본인만 가능하다.
-[랭킹 계약](../contracts/user-rankings/README.md)의 F 건수는 실제 처분 확인 기준이며 기존 확정금액 합산과 별개의 지표다.
+배포 순서(Opus): **DB 신규 migration → 갱신된 계약을 포함한 my-reports Edge → 확장**.
+기존 `202610020100` 적용 여부를 먼저 확인한다. DB와 Edge 모두 갱신돼야 4/5자 요청이 성공한다.
+서버 준비 후 3자 거절·4자 성공·A/B 격리·번호복사를 확인하고 확장 시험/빌드/배포를 진행한다.
+지도 Pages 배포는 이 변경에 필요 없다. 이번 작업에서 커밋·push·배포·운영 SQL 실행은 하지 않는다.
+
+실행 결과(2026-10-13, 이 worktree):
+
+- myReports 계약·Edge 시험만 재실행: 2 파일/33 시험 전부 통과.
+- `npx vitest run`: 79 파일/1,172 시험 통과, 33 파일/195 시험 건너뜀, 1 파일/11 시험 실패.
+  실패는 모두 기존 `tests/product/composeScript.test.ts`의 자식 프로세스 stdout/stderr 검사다.
+  별도 Node `spawnSync`로 단순 `console.log`/`console.error`를 호출해도 출력이 비고 `error.code=EPERM`인
+  환경 제한을 재현했다. 실제 전체 성공으로 보고하지 않으며 코드·전역 권한을 바꾸지 않았다.
+- `npx tsc -b`: 통과. `npx vite build`: 통과(기존 dynamic/static import 중복 및 큰 chunk 경고).
+- PGlite SQL: 통과. 이번에는 Supabase 스택 통합 시험·운영 DB·확장 브라우저 검증을 실행하지 않았다.
+- 계약 sync/`--check`와 두 폴더 `diff -qr`: 통과. 확장 변경은 README.md·types.ts·MANIFEST.sha256 3개뿐이다.

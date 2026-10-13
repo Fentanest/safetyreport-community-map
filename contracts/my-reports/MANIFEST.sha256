@@ -1,4 +1,4 @@
-d2ea2a539fa1c0e607c1ebbd2547c242f749d5c0a151b15ded030c592847e5c9  ./README.md
+d19e9e07b5701b3fbbe15fef858a3e913c31688c50869831a68dc1bf2dc3359a  ./README.md
 515ee64c9c39a3c5db35c8d131228988c9bce2997df64d5298eda2d603b21e72  ./fixtures/error-dataset-changed.json
 8a122955a15309d670ede229d821a2e3a2072d2a38bcf848957731975251012c  ./fixtures/error-invalid-cursor.json
 ad7efe7b8de6a5c3b20b023a8c4a00bd991eeac89d4df32276d682cb688b81c7  ./fixtures/error-numbers-limit-exceeded.json
@@ -15,4 +15,4 @@ c2997525d0d1629342e52a37b7b197d46d240ff7982a0b241c004a9325bc32ad  ./fixtures/sum
 0f7330eb93d4eba801d355dcdf52ab8b759f4dbe0b23598338c8681a2eb924bf  ./fixtures/summary-first-page.json
 a9f42a10451076f8bc0041afdaf6ef09d2a53793a93225b250e6c0d0dea2d4f2  ./fixtures/summary-next-page.json
 42d5b86b806daeaa1768fc77dba3f2e1aec43a2e0436f353ca13116cd41b97ff  ./my-reports-v1.schema.json
-465b021c0106b8c7445342d99801167676f4c3b57d3cd26093b30f4693e70721  ./types.ts
+41e38a0860b19dbc54e9da72910aa7086d7d45b1fe1a28a55a8de1c1cab7c243  ./types.ts

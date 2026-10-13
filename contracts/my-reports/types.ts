@@ -17,7 +17,7 @@ export const LIMITS = {
   /** raw `query` before normalisation (UTF-16 units, cheap pre-check only) */
   query_raw_chars: 256,
   /** vehicle query after NFC + whitespace removal, in Unicode code points */
-  vehicle_min: 6,
+  vehicle_min: 4,
   vehicle_max: 64,
   /** address query after NFC + trim + whitespace collapse, in Unicode code points */
   address_min: 5,
@@ -296,7 +296,7 @@ const CONTROL = /[\u0000-\u001f\u007f-\u009f]/u;
 
 export const codePoints = (s: string): number => [...s].length;
 
-/** Vehicle: NFC, then every whitespace removed. Valid when 6..64 code points and no control character. */
+/** Vehicle: NFC, then every whitespace removed. Valid when 4..64 code points and no control character. */
 export function normalizeVehicle(raw: string): string {
   return raw.normalize('NFC').replace(WHITESPACE, '');
 }

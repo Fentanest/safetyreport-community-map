@@ -116,6 +116,25 @@ describe('my-reports handler', () => {
     expect(calls.filter(([n]) => n.startsWith('internal_my_reports')).length).toBe(1);
   });
 
+  it.each(['search', 'numbers'])('%s enforces the normalised 3/4 boundary before the RPC', async (route) => {
+    const { call, calls } = setup();
+    for (const query of ['590', ' 5\t9\u30000 ', 'x'.repeat(65), `5902\u0007`]) {
+      const r = await call(route, { kind: 'vehicle', query });
+      expect(r.status).toBe(400);
+      expect(r.json.error.code).toBe('QUERY_LENGTH');
+    }
+    expect(calls).toEqual([]);
+    for (const query of ['5902', ' 5\t9\u30000\u00a02 ', '59021', 'x'.repeat(64)]) {
+      const r = await call(route, { kind: 'vehicle', query });
+      expect(r.status).toBe(200);
+      expect(calls.at(-1)).toEqual([`internal_my_reports_${route}`, expect.objectContaining({
+        p_user: UID, p_session: SESSION, p_query: query.replace(/\s/gu, ''),
+      })]);
+    }
+    expect((await call(route, { kind: 'address', query: '1234' })).json.error.code).toBe('QUERY_LENGTH');
+    expect((await call(route, { kind: 'address', query: '12345' })).status).toBe(200);
+  });
+
   it('auth failures map to the contract codes and never reach the data RPCs', async () => {
     const { call, calls } = setup();
     expect((await call('summary', {}, { auth: null })).json.error.code).toBe('AUTH_REQUIRED');

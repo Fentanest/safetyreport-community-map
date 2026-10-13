@@ -75,10 +75,11 @@
 
 | kind | 정규화 | 유효 길이 | 일치 규칙 |
 |---|---|---|---|
-| `vehicle` | NFC → 모든 공백 제거 | 6~64 **코드포인트** | 대표 관측의 `vehicle_raw`에 같은 정규화를 적용한 값이 검색값을 **문자 그대로** 포함 |
+| `vehicle` | NFC → 모든 공백 제거 | 4~64 **코드포인트** | 대표 관측의 `vehicle_raw`에 같은 정규화를 적용한 값이 검색값을 **문자 그대로** 포함 |
 | `address` | NFC → 공백류를 한 칸으로 → 앞뒤 공백 제거 | 5~200 코드포인트 | 양쪽의 **주소 기준형**이 완전히 같음 |
 
 - 공백 = `\t \n \v \f \r`, 스페이스, U+00A0, U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000, U+FEFF.
+- 차량 숫자 4글자(`5902`)와 공백 제거 후 4글자(` 5 9 0 2 `)를 search·numbers 모두 허용한다. 정규화 후 3글자는 거절한다.
 - 제어문자(U+0000–U+001F, U+007F–U+009F)가 남으면 `400 QUERY_LENGTH`. 정규화 전 `query`는 최대 256자.
 - 차량 포함 검사는 SQL `strpos`로 한다. `%`, `_`, `\`는 와일드카드가 아닌 보통 문자다. 대소문자는 구분한다.
   원본 `vehicle_raw`는 바꾸지 않고 `vehicle_number`로 그대로 반환한다.
@@ -218,7 +219,7 @@ contributor UUID·dataset_key·source_report_key·grant/receipt/connection ID·p
 | HTTP | code | retryable | 확장 동작 |
 |---|---|---|---|
 | 400 | `INVALID_REQUEST` | false | 버그. 재시도하지 않는다 |
-| 400 | `QUERY_LENGTH` | false | 입력 길이 안내(차량 6~64자, 주소 5~200자) |
+| 400 | `QUERY_LENGTH` | false | 입력 길이 안내(차량 4~64자, 주소 5~200자) |
 | 400 | `INVALID_CURSOR` | false | 캐시 폐기, 첫 페이지부터 |
 | 401 | `AUTH_REQUIRED` | false | 로그인 화면 |
 | 401 | `SESSION_EXPIRED` | true | refresh 1회 후 1회 재시도. 실패하면 로그인 화면 |

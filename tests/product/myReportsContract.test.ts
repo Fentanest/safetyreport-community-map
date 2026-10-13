@@ -75,17 +75,21 @@ describe('my-reports-v1 contract', () => {
     expect(readme).toContain(OFFICIAL_DETAIL_PREFIX);
   });
 
-  it('vehicle normalisation: NFC, every JS whitespace removed, 6..64 code points, no control characters', () => {
+  it('vehicle normalisation: NFC, every JS whitespace removed, 4..64 code points, no control characters', () => {
     // decomposed Hangul (U+1100 series) composes under NFC; ideographic and no-break spaces are removed
     const decomposed = '12' + String.fromCharCode(0x1100, 0x1161) + '3456';
     expect(normalizeVehicle(decomposed)).toBe('12가3456');
     expect(normalizeVehicle(`\t12${String.fromCharCode(0x3000)}가${String.fromCharCode(0xa0)}34 56\n`)).toBe('12가3456');
-    expect(validQuery('vehicle', '가나다라마')).toBe(false);
-    expect(validQuery('vehicle', '가나다라마바')).toBe(true);
-    // 6 astral characters are 12 UTF-16 units but 6 code points
-    const astral = String.fromCodePoint(0x20000).repeat(6);
-    expect(astral.length).toBe(12);
-    expect(codePoints(astral)).toBe(6);
+    expect(validQuery('vehicle', '가나다')).toBe(false);
+    expect(validQuery('vehicle', '가나다라')).toBe(true);
+    expect(validQuery('vehicle', normalizeVehicle(' 5\t9\u30000\u00a02 '))).toBe(true);
+    expect(normalizeVehicle(' 5\t9\u30000\u00a02 ')).toBe('5902');
+    expect(validQuery('vehicle', normalizeVehicle(' 5 9 0 '))).toBe(false);
+    expect(readme).toContain(`${LIMITS.vehicle_min}~${LIMITS.vehicle_max}`);
+    // 4 astral characters are 8 UTF-16 units but 4 code points
+    const astral = String.fromCodePoint(0x20000).repeat(4);
+    expect(astral.length).toBe(8);
+    expect(codePoints(astral)).toBe(4);
     expect(validQuery('vehicle', astral)).toBe(true);
     expect(validQuery('vehicle', 'a'.repeat(64))).toBe(true);
     expect(validQuery('vehicle', 'a'.repeat(65))).toBe(false);

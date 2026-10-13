@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-13 · my-reports 차량 부분검색 최소 4자
+
+- 정본 차량 query 하한을 6→4 코드포인트로 변경했다. Edge search/numbers가 공유하는 검증에 적용되며,
+  숫자 `5902`와 공백 제거 후 4글자를 허용한다. 최대 64·주소 5~200·인증·본인 자료 범위·페이지/복사 상한은 유지한다.
+- 신규 `202610131500_my_reports_vehicle_min4.sql`은 DB 검증 함수의 차량 하한만 바꾸고 ACL·owner·security·search_path를 보존한다.
+- 계약 바이트 사본을 확장 worktree의 `contracts/my-reports/`에 동기화한다. 계약/Edge 경계 시험과 PGlite SQL 실행 검증을 추가했다.
+- 보안·인덱스/기존 계획 근거·성능 한계·재현 명령·배포 순서는 [내 신고 API](docs/my-reports.md)에 기록했다.
+  운영 미적용이며 DB+Edge 먼저, 확장 나중 순서로 Opus가 배포한다. 커밋·push·배포는 하지 않았다.
+- 실행: tsc·vite build·PGlite·계약 해시 통과. 전체 Vitest 1,172 통과/195 건너뜀/11 실패(기존 composeScript의
+  spawnSync 출력 수집 EPERM 환경 제한; 문서에 재현 기록).
+
 ## 2026-10-13 · 지도: 수용률·불수용률 지역 지도 색 대비 개선 (R2, 사용자 신고)
 
 - 사용자 신고: "수용률·불수용률 지역 지도가 지역별 격차가 커도 육안으로 구분이 안 간다"(실제 값이 55~70%처럼 좁게

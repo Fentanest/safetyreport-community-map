@@ -197,17 +197,23 @@ describe.skipIf(!enabled)('my-reports on real Postgres/GoTrue (in-process handle
     expect(b.json.reports.items.find((x: Json) => x.source_report_id === '9100000001')).toMatchObject({ status: 'rejected', vehicle_number: V_B_ONLY });
   });
 
-  it('literal search: %, _ and \\ are ordinary characters; 6..64 code points after normalisation', async () => {
+  it('literal search: %, _ and \\ are ordinary characters; 4..64 code points after normalisation', async () => {
     expect((await post('search', { kind: 'vehicle', query: V_WILD }, A.token)).json.summary.total).toBe(1);
     expect((await post('search', { kind: 'vehicle', query: '12가%45' }, A.token)).json.summary.total).toBe(1);
     expect((await post('search', { kind: 'vehicle', query: '12_345' }, A.token)).json.summary.total).toBe(0);
     expect((await post('search', { kind: 'vehicle', query: '%%%%%%' }, A.token)).json.summary.total).toBe(0);
-    expect((await post('search', { kind: 'vehicle', query: '가3456' }, A.token)).json.error.code).toBe('QUERY_LENGTH');
-    expect((await post('search', { kind: 'vehicle', query: ' 가 3 4 5 6 ' }, A.token)).json.error.code).toBe('QUERY_LENGTH');
+    expect((await post('search', { kind: 'vehicle', query: '345' }, A.token)).json.error.code).toBe('QUERY_LENGTH');
+    expect((await post('search', { kind: 'vehicle', query: ' 3 4 5 ' }, A.token)).json.error.code).toBe('QUERY_LENGTH');
+    for (const route of ['search', 'numbers']) {
+      const short = await post(route, { kind: 'vehicle', query: ' 3 4 5 6 ' }, A.token);
+      expect(short.status).toBe(200);
+      expect(short.json.query_normalized).toBe('3456');
+      expect(route === 'search' ? short.json.reports.total : short.json.matched_reports).toBe(10);
+    }
     expect((await post('search', { kind: 'vehicle', query: '가'.repeat(64) }, A.token)).status).toBe(200);
     expect((await post('search', { kind: 'vehicle', query: '가'.repeat(65) }, A.token)).json.error.code).toBe('QUERY_LENGTH');
-    // the RPC re-checks: a direct call with a 5-character query is refused in SQL
-    expect(() => sql(`select public.internal_my_reports_numbers('${A.id}', '${A.session}', 'vehicle', '12가34', 0, 10, 10, null)`)).toThrow(/INVALID_QUERY/);
+    // the RPC re-checks: a direct call with a 3-character query is refused in SQL
+    expect(() => sql(`select public.internal_my_reports_numbers('${A.id}', '${A.session}', 'vehicle', '345', 0, 10, 10, null)`)).toThrow(/INVALID_QUERY/);
   });
 
   it('numbers: every page of the same scope, distinct numbers, missing numbers counted, never the source id', async () => {
