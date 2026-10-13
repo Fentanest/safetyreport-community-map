@@ -102,7 +102,10 @@ main { width: 100%; max-width: 1760px; margin-inline: auto; }
 .ad-map { margin-top: 0; }
 
 /* ── map + side panel: one height ──────────────────────────────────────────────────────────── */
-.dash-grid { grid-template-columns: minmax(0, 1fr) clamp(340px, 28vw, 460px); align-items: stretch; }
+/* 2026-10-13 지도 폭 축소: 넓은 화면에서 지도 약 60% / 패널 약 40%를 출발점으로 하고, 1920px에서 패널이 약
+ * 640–700px가 되도록 vw 기준폭을 넓힌다(이전 340–460px보다 넓은 380–700px). 지도 높이(.map-canvas)는 그대로 둔다 —
+ * 폭만 바뀌므로 MapPanel.tsx의 기존 ResizeObserver→relayout() 경로가 지도 인스턴스·선택을 그대로 둔 채 다시 그린다. */
+.dash-grid { grid-template-columns: minmax(0, 1fr) clamp(380px, 34vw, 700px); align-items: stretch; }
 .area-map, .area-side { grid-column: auto; }
 .map-card .map-canvas { height: clamp(460px, 60vh, 640px); }
 /* the panel adds nothing to the row height (contain: size): the row is as tall as the map card, the panel scrolls */

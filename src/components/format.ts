@@ -78,3 +78,9 @@ export const fmtFineAmount = (a: { fine_count: number; confirmed_count: number; 
 export const FINE_ESTIMATE_HELP = '답변에 금액이 없는 과태료를 법정 최저 기준으로 계산한 값';
 export const fmtFineEstimate = (s: import('../domain/public').FineEstimateSummary | undefined): string =>
   s === undefined ? '제공 안 됨' : s.count === 0 ? '추정 자료 없음' : `${fmtWon(s.sum_won)} · ${fmtInt(s.count)}건`;
+
+/** '59건 · 92.2%' (과태료·계도 등 건수+비율 칸, 2026-10-13 담당자 표). Three states never collapsed into one:
+ *  n === null → 서버가 건수 자체를 안 줌(미제공) → '—' 하나만. n이 있고 rate가 null(분모 0) → 계산 불가 → '{n}건 · —'.
+ *  n, rate 모두 있으면(0 포함) 실제 값 → '{n}건 · {rate}%'. */
+export const fmtCountRate = (n: number | null | undefined, rate: number | null | undefined): string =>
+  n == null ? '—' : `${fmtInt(n)}건 · ${fmtPercent(rate)}`;

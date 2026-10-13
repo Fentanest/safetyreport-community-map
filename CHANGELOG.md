@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-13 · 지도 폭 축소 + 담당자 한 행 표 (요구사항 2번)
+
+- 넓은 PC 화면에서 지도·오른쪽 패널 비율을 조정했다(`src/styles/layout.css` `.dash-grid`,
+  `clamp(340px, 28vw, 460px)` → `clamp(380px, 34vw, 700px)`). 1920px에서 실측 패널 폭 653px(목표 640–700px 충족,
+  지도 60.7% · 패널 38.1%), 1366px에서는 464px. 지도 높이(`.map-canvas`)는 그대로 두었다 — 폭만 바뀌므로
+  `MapPanel.tsx`의 기존 `ResizeObserver` → `relayout()` 경로가 지도 인스턴스·선택을 그대로 둔 채 다시 그린다(코드만
+  바꿨고 relayout 호출부는 손대지 않았다). 좁은 화면(≤1100px)에서 지도 위·표 아래로 쌓이는 동작은 기존
+  `@media (max-width: 1100px)` 규칙을 그대로 썼다(변경 없음).
+- 주소별 상세(`PlaceDetailsPanel.tsx`)와 지역/전국 범위 상세(`ScopeDetailsPanel.tsx`)의 담당자 목록을 담당자 1명 =
+  1행인 공통 표(`ManagerEntityTable.tsx`, `.entity-table` 공통 primitives 재사용)로 바꿨다. 기관 목록은 기존
+  `EntityMetricRow` 카드 그대로 유지(이번 범위 밖). 열: 담당자 | 답변 | 분류 | 수용률 | 일부수용률 | 불수용률 |
+  과태료 | 계도 — 계산은 기존 `entityMetrics.entityRates`를 그대로 재사용한다(답변=completed_count,
+  분류=result_known, 수용·일부수용·불수용률=각 건수÷result_known, 과태료·계도=건수와 ÷completed_count). 과태료·계도는
+  새 포매터 `fmtCountRate`로 "59건 · 92.2%" 형식과 미제공(—)·계산 불가(건수만)·실제 0건(0.0%)을 구분한다. 표 아래
+  분모 설명(`ManagerTableFootnote`)을 공통으로 붙였다. 담당자 선택·필터·검색·더 보기·로딩·오류·빈 상태·동명이인
+  구분(기존 `sameNameIndex`/`managerLabel`)은 그대로다. 담당자 이름 열은 가로 스크롤 시 고정(`position: sticky`,
+  `src/styles/redesign.css`)되며, 표 내부만 스크롤되고 페이지 자체는 가로로 넘치지 않는다(390px 실측 확인).
+- 검증: `npx vitest run` 1,126개 통과·195개 조건부 제외(실패 0, 신규 21건 포함), `npx tsc -b` 통과, `npm run build`
+  통과. 데모 빌드(`VITE_DATA_MODE=demo`)를 Playwright(system Chrome, `channel: 'chrome'`)로 1920/1366/390px
+  실행 확인 — 담당자 표 머리글·수치·"N건 · X.X%" 형식·동명이인 라벨·더 보기·기관 카드 불변·390px 가로 스크롤 시
+  이름 열 고정(스크롤 전/후 좌표 동일 실측)·페이지 자체 가로 스크롤 없음(390px `body.scrollWidth === innerWidth`)을
+  모두 확인했다. 커밋·push·배포는 하지 않았다(Opus 검토 후 통합).
+
 ## 2026-10-13 · 지역 이륜 번호판 인식과 공개 가림
 
 - 지역+시군구+용도 글자+숫자4 형식과 시/군/구 접미 표기를 인식한다. 원문은 보존하고 경계 위반·복수 후보는 제외한다.

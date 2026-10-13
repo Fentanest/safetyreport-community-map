@@ -3,8 +3,8 @@ import type { PlaceDetail, PublicEntity, PublicPoint } from '../domain/public';
 import type { PointMark } from '../state/pointMarks';
 import { fmtInt, fmtPercent } from './format';
 import { entityLabel } from './entityMetrics';
-import { sameNameIndex } from '../domain/managerNames';
 import EntityMetricRow from './EntityMetricRow';
+import ManagerEntityTable, { ManagerTableFootnote } from './ManagerEntityTable';
 import PanelStatus from './PanelStatus';
 import { regionTrail } from './ScopeDetailsPanel';
 
@@ -41,17 +41,21 @@ const pct = (a: number, d: number) => (d > 0 ? (a / d) * 100 : null);
 function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: { kind: 'agency' | 'manager'; rows: PublicEntity[]; total: number;
   onPick: Props['onPickEntity']; activeAgency: string | null; activeManager: string | null }) {
   const [shown, setShown] = useState(LIST_STEP);
-  const same = sameNameIndex(rows);
   if (rows.length === 0) return <p className="cm-muted place-empty">이 주소의 답변에 {kind === 'agency' ? '기관' : '담당자'} 정보가 없습니다.</p>;
+  const visible = rows.slice(0, shown);
   return (
     <>
-      <ul className="place-entities">
-        {rows.slice(0, shown).map((e) => (
-          <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, kind === 'manager' ? same.get(e) : null)} same={kind === 'manager' ? same.get(e) : null}
-            active={kind === 'agency' ? activeAgency === e.agency_key && !activeManager : activeManager === e.manager_key && activeAgency === e.agency_key}
-            onPick={onPick} />
-        ))}
-      </ul>
+      {kind === 'manager' ? (
+        <ManagerEntityTable rows={visible} activeAgency={activeAgency} activeManager={activeManager} onPick={onPick} />
+      ) : (
+        <ul className="place-entities">
+          {visible.map((e) => (
+            <EntityMetricRow key={e.key} kind={kind} e={e} label={entityLabel(e, kind, null)} same={null}
+              active={activeAgency === e.agency_key && !activeManager}
+              onPick={onPick} />
+          ))}
+        </ul>
+      )}
       {(rows.length > shown || total > rows.length) && (
         <div className="place-more">
           {rows.length > shown && (
@@ -60,6 +64,7 @@ function EntityList({ kind, rows, total, onPick, activeAgency, activeManager }: 
           {total > rows.length && <span className="cm-muted">많은 순 {fmtInt(rows.length)}개만 불러옴 · 전체 {fmtInt(total)}개</span>}
         </div>
       )}
+      {kind === 'manager' && <ManagerTableFootnote />}
     </>
   );
 }
