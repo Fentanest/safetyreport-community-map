@@ -1,0 +1,12 @@
+{"read_only" : "on", "functions" : [{"schema" : "public", "name" : "internal_analytics_v2_facts", "has_cap" : true}, {"schema" : "public", "name" : "internal_analytics_screen_stale", "has_cap" : false}, {"schema" : "private", "name" : "analytics_cohort_payload", "has_cap" : true}, {"schema" : "private", "name" : "analytics_screen_aggregate", "has_cap" : true}, {"schema" : "private", "name" : "analytics_screen_aggregate_v2", "has_cap" : true}, {"schema" : "private", "name" : "analytics_screen_parts", "has_cap" : true}, {"schema" : "public", "name" : "internal_analytics_screen_cached", "has_cap" : false}]}
+{"eligible_history_rows" : 126452}
+{"name" : "internal_analytics_v2_facts", "guard" : "      select s.* from scoped s where (select n<=100000 from budget)"}
+{"name" : "internal_analytics_v2_facts", "guard" : "    if v_scoped > 100000 or v_count > 100000 then raise exception 'RESULT_TOO_LARGE'; end if;"}
+{"name" : "analytics_cohort_payload", "guard" : "        select s.* from scoped s where (select n <= 100000 from budget)"}
+{"name" : "analytics_cohort_payload", "guard" : "    if v_scoped > 100000 or v_count > 100000 then raise exception 'RESULT_TOO_LARGE'; end if;"}
+{"name" : "analytics_screen_aggregate", "guard" : "        select s.* from scoped s where (select n <= 100000 from budget)"}
+{"name" : "analytics_screen_aggregate", "guard" : "if v_budget>100000 then raise exception 'RESULT_TOO_LARGE';end if;"}
+{"name" : "analytics_screen_aggregate_v2", "guard" : "        select s.* from scoped s where (select n <= 100000 from budget)"}
+{"name" : "analytics_screen_aggregate_v2", "guard" : "if v_budget>100000 then raise exception 'RESULT_TOO_LARGE';end if;"}
+{"name" : "analytics_screen_parts", "guard" : "        select s.* from scoped s where (select n <= 100000 from budget)"}
+{"name" : "analytics_screen_parts", "guard" : "if v_budget>100000 then raise exception 'RESULT_TOO_LARGE';end if;"}

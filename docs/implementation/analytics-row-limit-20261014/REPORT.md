@@ -17,4 +17,25 @@
 운영 SQL·push·배포는 PROJECT_RULES.md의 별도 승인 경계를 따른다.
 
 ## 검증
-진행 중. 로컬 합성 데이터 검사 결과를 아래에 기록한다.
+- `SCREEN_CACHE_STACK=1 npx vitest run tests/integration/analytics-row-limit.test.ts --maxWorkers=1`: **2 passed**, 실제 로컬 PostgreSQL, 모든 변경 rollback.
+- 120,000개 합성 관측 중 적격 고유 신고 **110,846건**. 변경 전 `RESULT_TOO_LARGE`, 변경 후 raw/compact/legacy/screen 모두 **110,846**, Edge **HTTP 200**, cold/warm 일치.
+- 작은 cohort는 두 날짜 기준·3분류에서 전체 split aggregate deep equality. 함수 owner/ACL/SET 옵션 유지 및 migration 재실행 확인.
+- `npx vitest run tests/product/personalHandler.test.ts tests/product/screenSnapshot.test.ts tests/product/publicHandler.test.ts --maxWorkers=1`: **55 passed**. 개인 통계 100,001건과 legacy 오류 안내 포함.
+- `npx tsc -b`, Vite build, 두 Edge `deno check`, dist 공개 경계 scan: **PASS**. 기존 번들 크기·dynamic import 경고 유지.
+- Chrome + 실제 프런트/handler + 위 SQL 집계 export: **390/1440/1920/2560 dark/light PASS**. 110,846건 표시, 정렬·개인 비교·기간 변경, 모든 screen HTTP 200, console error 0, 가로 overflow 없음. desktop/mobile screenshot을 직접 열어 확인했다.
+- 브라우저 인증은 fake, Kakao는 MOCK이다. 운영 사용자 세션의 실제 화면 검증은 미실행.
+- 검사 중 raw RPC의 transaction-local 8초 설정이 뒤의 별도 probe에 남아 발생한 timeout은 각 probe 전 기존 screen 기준 55초로 분리했다. 제품의 timeout 설정은 변경하지 않았다.
+- optional precompute 함수는 현재 운영에 없다. migration은 존재하는 배포에서 같은 입장 조건·예외만 제거한다. precompute 전용 대량 실행은 미실행.
+
+## 운영 원인 확인
+현재 배포 번들은 `supabase.worklazy.net` 셀프호스트를 사용한다. 구 클라우드 Supabase는 현재 지도 운영 검증과 구분했다.
+셀프호스트에서 `BEGIN READ ONLY` 안의 catalog/count SELECT로 현재 `analytics_screen_parts` 등 5개 구현에 10만 건 제한이 남아 있음을 확인했다.
+적격 이력은 **126,452행**(조회 시점 전체 이력이며, 선택 기간의 고유 신고 건수로 표기하지 않는다).
+`production-readonly.jsonl`에 함수별 확인을 기록했다. 운영 데이터·함수·설정을 변경하지 않았다.
+
+## Muse 독립 검수
+- `90cf3c8` 고정 detached worktree, OpenCode 구독 `opencode-go/muse-spark-1.3-contributor`, session `ses_ec562c0a3ffeo7k9I65TQadXJM`.
+- export의 실제 assistant providerID/modelID를 Sol이 확인했다(`muse/provenance.json`). Muse 자체 보고서의 MODEL_UNVERIFIED 표시는 이 별도 검증으로 해소한다.
+- 최초 /tmp 외부 디렉터리 권한 거절 후, fresh 합성 fixture를 검수 worktree 안에 배치하고 같은 세션으로 1회 재시도했다. 권한 변경 없음.
+- **PASS**, 8 viewport/theme 조합, 정렬·개인 비교·기간 변경, screen 12회 모두 200, console error 0, 실제 screenshot 열람.
+- Muse 원문과 요약 증거는 `muse/REPORT.md`, `muse/results.json`에 보존한다. 제품 파일은 수정하지 않았다.

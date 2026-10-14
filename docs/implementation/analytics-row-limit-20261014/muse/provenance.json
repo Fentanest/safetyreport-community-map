@@ -1,0 +1,15 @@
+{
+  "requested": "opencode-go/muse-spark-1.3-contributor",
+  "actual_models": [
+    {
+      "provider": "opencode-go",
+      "model": "muse-spark-1.3-contributor"
+    }
+  ],
+  "session": "ses_ec562c0a3ffeo7k9I65TQadXJM",
+  "source": "opencode export; assistant info providerID/modelID",
+  "variant": "contributor is included in verified model ID; no additional variant requested",
+  "first_attempt": "external_directory /tmp rejected; no review claimed",
+  "recovery": "fresh synthetic inputs copied inside review worktree; same session resumed; no permission change",
+  "review_commit": "90cf3c8"
+}
