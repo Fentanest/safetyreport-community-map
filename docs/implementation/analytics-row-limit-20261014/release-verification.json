@@ -1,0 +1,67 @@
+{
+  "utc": "2026-10-14T13:46:26.356868+00:00",
+  "mode": "production read-only SQL aggregation and unauthenticated HTTP; no browser session",
+  "sql": {
+    "scope": {
+      "end": "2026-10-14",
+      "start": "2025-10-15",
+      "category": "all",
+      "date_basis": "completed_date"
+    },
+    "seconds": 9.739,
+    "report_count": 80389,
+    "completed_count": 80389,
+    "previous_report_count": 27794,
+    "encoding": "screen-aggregate-v2",
+    "result": "success",
+    "remaining_cap_functions": 0
+  },
+  "http": [
+    {
+      "path": "/functions/v1/public-analytics/meta",
+      "status": 401,
+      "code": "UNAUTHORIZED_NO_AUTH_HEADER"
+    },
+    {
+      "path": "/functions/v1/my-analytics/screen",
+      "status": 401,
+      "code": "UNAUTHORIZED_NO_AUTH_HEADER"
+    }
+  ],
+  "functions": {
+    "state": "running",
+    "health": "healthy"
+  },
+  "browser": {
+    "status": "blocked",
+    "reason": "saved browser permission setting blocks safemap.worklazy.net; retry at explicit user request also blocked; not bypassed"
+  },
+  "workflow": {
+    "id": 38574485274,
+    "commit": "fd303a43abb7f97c10a7b12212a235a3093404ee",
+    "status": "success",
+    "url": "https://github.com/Fentanest/safetyreport-community-map/actions/runs/38574485274",
+    "cloudflare_version": "df7ce242-d5d2-4126-a7ef-83caf8d3f9df"
+  },
+  "http_probe_note": "Initial Python urllib probes returned external 403; curl to public API routes (same path as CI) confirmed expected 401. No security settings changed.",
+  "all_period": {
+    "scope": {
+      "date_basis": "completed_date",
+      "start": "2019-04-23",
+      "end": "2026-10-14",
+      "category": "all"
+    },
+    "report_count": 126535,
+    "completed_count": 126535,
+    "seconds": 12.233,
+    "result": "success",
+    "mode": "read-only production SQL, entire date range"
+  },
+  "ci": {
+    "python_tests": 40,
+    "vitest_passed": 1186,
+    "vitest_skipped": 197,
+    "build": "success",
+    "dist_scan": "success"
+  }
+}

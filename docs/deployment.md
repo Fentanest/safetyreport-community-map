@@ -226,3 +226,11 @@ HTML·SPA는 Workers 기본 `public, max-age=0, must-revalidate`를 유지한다
 ## 2026-10-13 릴리스 검수 결함 수정 후보 (운영 미적용)
 
 운영자 rollback 리허설 SQL → 신규 `202610130100_screen_plate_normalization.sql` → `public-analytics`·`my-analytics` Edge → 정적 웹 순서다. 기존 migration/5분류 RPC/원본 fact는 변경하지 않는다. `community-ingest`는 deno check만 수행하며 이번 변경으로 재배포할 필요 없다. SQL 정규화의 공개 마스킹 경계, 검사 결과와 한계, 되돌리기는 [수정 보고서](implementation/release-fix-20261013/REPORT.md)를 따른다. 커밋·push·배포는 이 작업에서 하지 않았다.
+
+## 2026-10-14 통계 10만 건 제한 제거 (운영 적용 완료)
+
+사용자 “적용해. 배포까지 다 해” 승인. DB migration `20261014132612`, public-analytics / my-analytics 파일 5개,
+웹 `fd303a4`를 [workflow 38574485274](https://github.com/Fentanest/safetyreport-community-map/actions/runs/38574485274)로 배포했다.
+운영 전체 기간 126,535건 집계 성공, 기본 최근 12개월 80,389건·이전 비교 27,794건. 고정 건수 제한이나 truncate 없음.
+함수 권한 유지·컨테이너 healthy·익명 API 401 확인. 운영 브라우저는 저장된 접근 차단 설정으로 BLOCKED.
+[검증·백업·복구 기록](implementation/analytics-row-limit-20261014/REPORT.md) 참조.

@@ -13,8 +13,16 @@
 - 출력 페이지 크기와 맞춤 통계 셀 수 제한은 신고 건수 제한과 별개다.
 
 ## 운영 적용
-아직 적용하지 않음. SQL migration과 public-analytics / my-analytics Edge 배포가 필요하다.
-운영 SQL·push·배포는 PROJECT_RULES.md의 별도 승인 경계를 따른다.
+**운영 적용 완료** — 사용자 “적용해. 배포까지 다 해” 승인, 2026-10-14 22:44–22:47 KST.
+- 운영 DB migration `20261014132612` 적용·이력 기록. 함수 5개, owner/ACL/SET 유지, 남은 10만 건 제한 0개.
+- `public-analytics` / `my-analytics`의 변경 파일 5개만 배포. 배포 전 기준 commit과 운영 파일 일치 확인, 원본 바이트·권한 백업, 교체 후 SHA-256 확인. functions 컨테이너 재시작 후 healthy.
+- main `fd303a4` push 및 [Cloudflare 배포 workflow 38574485274](https://github.com/Fentanest/safetyreport-community-map/actions/runs/38574485274) **success**.
+- Cloudflare version `df7ce242-d5d2-4126-a7ef-83caf8d3f9df`, 운영 도메인 `safemap.worklazy.net`.
+- CI: Python 40개·Vitest 1,186개 통과(환경 의존 197개 skipped), live build·dist scan 통과.
+- 운영 read-only 집계: 기본 답변일 `2025-10-15..2026-10-14` **80,389건**, 비교 기간 **27,794건**, 9.739초. 전체 기간 `2019-04-23..2026-10-14` **126,535건**, 12.233초. 업로드가 계속되므로 앞선 126,452행 조사와 조회 시각이 다르다.
+- 외부 API 두 경로의 익명 요청은 정상 401. 브라우저는 저장된 사이트 권한 차단으로 최초 시도와 사용자 요청에 따른 재시도 모두 거절됐다. 우회하지 않았으며 운영 로그인 브라우저 검증은 **BLOCKED**다.
+- 상세 결과 `release-verification.json`. 서버 변경/백업/원본 권한·해시·검증·복구 절차는 Git 제외 `.agent-runtime/analytics-row-limit-release-20261014/` 및 기존 server-changes/journal.jsonl에 보존. 신고 데이터를 되돌리는 작업은 없다.
+
 
 ## 검증
 - `SCREEN_CACHE_STACK=1 npx vitest run tests/integration/analytics-row-limit.test.ts --maxWorkers=1`: **2 passed**, 실제 로컬 PostgreSQL, 모든 변경 rollback.
