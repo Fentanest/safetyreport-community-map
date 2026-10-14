@@ -122,8 +122,10 @@ region과 bbox를 동시에 사용하면 교집합임을 response.scope에 명�
 400 INVALID_QUERY, 409 DATASET_CHANGED, 422 METRIC_UNAVAILABLE, 422 RESULT_TOO_LARGE, 503 AGGREGATE_NOT_READY.
 2026-09-30 장기간(R1): 기간 길이 상한(구 1826일)은 API·집계·SQL RPC 모두에서 없앴다. 2014-09-30..2026-09-29 같은 12년 범위도
 받는다. 역전·실제 없는 날짜만 400이다. 비교 기간(바로 앞 같은 길이)은 자료가 없어도 실패가 아니라 `previous: null`이다.
-대신 한 번에 모으는 후보 신고가 10만 건을 넘으면 잘라 내지 않고 **422 RESULT_TOO_LARGE**(메시지: 기간·지역·분류를 좁혀 달라)로
-거절한다(조용한 truncate 금지). `meta.data_min/data_max`는 운영자가 따로 넣지 않았으면 공개 가능한 신고의 최소·최대
+2026-10-14 사용자 결정: 후보 이력·결과 신고 수의 100,000행 상한을 제거한다.
+전체 기간·전국도 모든 적격 신고를 집계하며 샘플링·조용한 truncate·자동 기간 축소를 하지 않는다.
+구 서버의 RESULT_TOO_LARGE 응답은 호환 처리하되 같은 요청의 재시도로 해결된다고 안내하지 않는다.
+`meta.data_min/data_max`는 운영자가 따로 넣지 않았으면 공개 가능한 신고의 최소·최대
 신고일/완료일로 계산한다(‘전체 기간’ 빠른 선택의 근거). 클라이언트 오류 문구에는 `(코드, HTTP 상태)`를 붙인다.
 `places/:place_key`는 `entity_limit`(1..1000, 기본 100)을 받는다. 기관·담당자 행을 그 수까지 보내고 총수는 `*_total`로 따로 준다.
 dashboard `regions[]`는 최대 400행(시도+시군구 전부).

@@ -191,3 +191,15 @@ describe('complete-screen browser coordinator', () => {
     expect((await second).body).toEqual({ q: 'second' }); expect(calls).toBe(3);
   });
 });
+
+it('does not suggest retrying an old server row cap', async () => {
+  const handler = createScreenHandler({ enabled: true, allowedOrigins: [], jwtIssuer: null,
+    getUser: async () => ({ id: DEMO_VIEWER_ID, isAnonymous: false }),
+    rpc: async name => { if (name.endsWith('rate_limit')) return true; throw new Error('RESULT_TOO_LARGE'); } });
+  const response = await handler(req());
+  expect(response.status).toBe(422);
+  expect(response.headers.get('retry-after')).toBeNull();
+  const body = await response.json();
+  expect(body.error.message).toContain('서버 업데이트');
+  expect(body.error.message).not.toContain('잠시 뒤');
+});

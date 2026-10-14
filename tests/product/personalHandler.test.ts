@@ -131,6 +131,20 @@ describe('my-analytics response boundary', () => {
     expect(text).not.toContain(SESSION);
   });
 
+  it('accepts more than 100000 observations without truncating the cohort', async () => {
+    const template = demoFacts().find(f => f.contributor_id === DEMO_VIEWER_ID)!;
+    const facts = Array.from({ length: 100001 }, (_, i) => ({ ...template,
+      fact_identity: `large-${i}`, report_identity: `large-${i}`, source_report_key: `large-${i}`,
+      report_date: '2026-09-20', completed_date: '2026-09-21', is_representative: true,
+    }));
+    const { handle } = setup({}, { facts });
+    const response = await handle(req());
+    expect(response.status).toBe(200);
+    const result = personalCompareSchema.parse(await body(response));
+    expect(result.all.report_count).toBe(100001);
+    expect(result.mine.report_count).toBe(100001);
+  }, 30000);
+
   it('refuses other origins and never answers with a wildcard CORS origin', async () => {
     const { handle, calls } = setup();
     const res = await handle(req(undefined, { origin: 'https://evil.example' }));

@@ -16,7 +16,7 @@ const db = createClient(supabaseUrl, serverKey, { auth: { persistSession: false,
 
 async function rpc(name: string, args?: Record<string, unknown>): Promise<unknown> {
   const { data, error } = await db.rpc(name, args);
-  // the facts RPC refuses an over-budget scope as a whole; pass that on instead of a generic 503
+  // Preserve error codes from older deployments and custom result-shape limits.
   if (error) throw new Error(/RESULT_TOO_LARGE/.test(error.message ?? '') ? 'RESULT_TOO_LARGE' :
     /DATASET_CHANGED/.test(error.message ?? '') ? 'DATASET_CHANGED' : 'analytics repository unavailable');
   return data;
@@ -53,7 +53,6 @@ const handle = createPublicHandler({
       p_manager_key: scope.manager_key, p_bbox: scope.bbox,
     });
     if (!Array.isArray(value)) throw new Error('analytics source unavailable');
-    if (value.length > 100000) throw new Error('RESULT_TOO_LARGE');
     return value as PrivateFact[];
   },
   async getRollup(scope, kind, options) {

@@ -22,7 +22,9 @@ export function createScreenHandler(deps: PersonalDeps) {
     const error = (code: string, status: number) => {
       const retry = status === 429 ? 60 : status >= 500 ? 30 : null;
       if (retry !== null) headers['Retry-After'] = String(retry);
-      return reply({ error: { code, message: '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
+      return reply({ error: { code, message: code === 'RESULT_TOO_LARGE'
+        ? '통계 서버에 이전 조회 제한이 남아 있습니다. 서버 업데이트가 필요합니다.'
+        : '통계를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.',
         ...(retry !== null ? { retry_after_seconds: retry } : {}) } }, status);
     };
     if (origin && !deps.allowedOrigins.includes(origin)) return error('origin_forbidden', 403);

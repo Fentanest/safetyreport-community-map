@@ -44,7 +44,7 @@ const MESSAGES: Record<string, [number, string]> = {
   BASIS_CONFLICT: [400, '조회 조건의 날짜 기준과 맞춤 통계 구성의 날짜 기준이 다릅니다. 하나로 맞춰 다시 요청해 주세요.'],
   rate_limited: [429, '잠시 후 다시 시도해 주세요.'],
   AGGREGATE_NOT_READY: [503, '통계가 아직 준비되지 않았습니다. 잠시 뒤 다시 확인해 주세요.'],
-  RESULT_TOO_LARGE: [422, '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.'],
+  RESULT_TOO_LARGE: [422, '통계 서버에 이전 조회 제한이 남아 있습니다. 서버 업데이트가 필요합니다.'],
   service_unavailable: [503, '잠시 후 다시 시도해 주세요.'],
 };
 
@@ -139,7 +139,6 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       const expected = url.searchParams.get('expected_version');
       if (url.searchParams.get('consistency') !== 'latest' && expected && expected !== state.dataset_version) fail('DATASET_CHANGED');
       if (!state.ready || !state.generated_at) fail('AGGREGATE_NOT_READY');
-      if (facts.length > 100000) fail('RESULT_TOO_LARGE');
 
       if (spec) {
         // the viewer id comes only from the verified JWT (uid); a user id in the request is never read

@@ -113,7 +113,7 @@ function errorWith(code: string, status: number, headers: Headers, details?: Vie
   const res = json({ error: { code, message: code === 'RATE_LIMITED' ? '잠시 후 다시 시도해 주세요.' :
     code === 'AGGREGATE_NOT_READY' ? '통계가 아직 준비되지 않았습니다. 잠시 뒤 다시 확인해 주세요.' :
       code === 'DATASET_CHANGED' ? '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.' :
-        code === 'RESULT_TOO_LARGE' ? '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.' :
+        code === 'RESULT_TOO_LARGE' ? '통계 서버에 이전 조회 제한이 남아 있습니다. 서버 업데이트가 필요합니다.' :
         ACCESS_MESSAGES[code] ?? '요청을 처리할 수 없습니다.',
     ...(details !== undefined ? { details } : {}), ...(retryAfter ? { retry_after_seconds: retryAfter } : {}) } }, status, headers);
   if (retryAfter) res.headers.set('Retry-After', String(retryAfter));
@@ -133,8 +133,8 @@ export function parseScope(params: URLSearchParams, state: Pick<AnalyticsState, 
   if (basisRaw !== null && !isDateBasis(basisRaw)) throw new QueryError('INVALID_QUERY', 400);
   const dateBasis = basisRaw ?? DEFAULT_DATE_BASIS;
   // No length cap (2026-09-30): the whole shared history must be queryable. The only bounds are a real calendar
-  // range (start ≤ end) and a comparison window that stays on the calendar; the data volume is guarded by the
-  // repository's row budget (RESULT_TOO_LARGE), never by silently shortening the period.
+  // range (start ≤ end) and a comparison window that stays on the calendar.
+  // 2026-10-14: no report-count cap and no silent period narrowing.
   try {
     const previous = previousWindow(start, end);
     if (previous.start < '1900-01-01') throw new Error('range');
