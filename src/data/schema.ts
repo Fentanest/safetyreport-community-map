@@ -134,12 +134,49 @@ export const lawSchema = z.strictObject({
   rating,
 });
 
-export const vehicleSchema = z.strictObject({
+const PLATE_REGIONS = '(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)';
+/** 현재 공개 가림(2026-10-13): 일반형·이륜형 모두 끝 4자리는 둘째·넷째만 공개한다. 시군구는 지역 접두가 필수다.
+ *  `1*가*4*6`, `1*3가*5*7`, `경기군포다*6*1`, `1오**3*7`, `가*2*4`. */
+export const MASKED_PLATE_RE = new RegExp(`^(?:${PLATE_REGIONS}?(?:[0-9]\\*[0-9]?[가-힣]|[0-9]?[가-힣]\\*?)|${PLATE_REGIONS}[가-힣]{2,4})\\*[0-9]\\*[0-9]$`, 'u');
+/** 옛 공개 가림(202610131000 migration 적용 전 DB의 `private.screen_mask_plate`): 3자리 일반형만 새 형식과 다르다.
+ *  `123가4567 → 1*3*4*67`로 용도 글자는 가리지만 끝 4자리 중 첫째·셋째·넷째 세 자리를 공개한다.
+ *  2자리 일반형(`1*가*4*6`)은 옛·새 결과가 같아 위 MASKED_PLATE_RE가 그대로 받는다. 이륜형은 옛 서버가 가림을 만들지 못했다. */
+export const LEGACY_MASKED_PLATE_RE = new RegExp(`^(${PLATE_REGIONS}?)([0-9])\\*([0-9])\\*[0-9]\\*[0-9]([0-9])$`, 'u');
+/** 브라우저가 옛 형식을 줄여 보인 결과(`1*3****7`). 다시 검증해도 같은 값이 되도록 받는다. */
+const REDUCED_LEGACY_PLATE_RE = new RegExp(`^${PLATE_REGIONS}?[0-9]\\*[0-9]\\*{4}[0-9]$`, 'u');
+/** 형식이 맞지 않는 차량 행을 대시보드 전체 실패 대신 이 문구로 보인다. 받은 문자열은 화면에 쓰지 않는다. */
+export const PLATE_HIDDEN_LABEL = '번호 표시 생략';
+
+/**
+ * 옛 3자리 가림은 새 형식이 공개하지 않는 끝 첫째·셋째 숫자를 담고 있다. 화면에는 옛·새 형식이 모두 공개하는
+ * 자리(앞 숫자 첫째·셋째, 끝 넷째)만 남긴다: `1*3*4*67 → 1*3****7`. 운영 DB가 옛 형식과 새 형식을 번갈아 내보내도
+ * 화면에서 합쳐 알 수 있는 자리가 새 형식(`1*3가*5*7`)보다 늘지 않는다. 응답 원문 자체의 노출은 migration 적용으로만 없어진다.
+ */
+export function displayMaskedPlate(masked: string): string | null {
+  if (MASKED_PLATE_RE.test(masked) || REDUCED_LEGACY_PLATE_RE.test(masked)) return masked;
+  const legacy = LEGACY_MASKED_PLATE_RE.exec(masked);
+  if (legacy) return `${legacy[1]}${legacy[2]}*${legacy[3]}****${legacy[4]}`;
+  return null;
+}
+
+const vehicleRowFields = {
   rank: z.number().int().min(1).max(5), rank_item_id: z.string().regex(/^r[1-5]$/),
-  // 일반형·이륜형 모두 끝 4자리는 두 자리만 공개한다. 시군구는 지역 접두가 필수다.
-  masked_plate: z.string().regex(/^(?:(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)?(?:[0-9]\*[0-9]?[가-힣]|[0-9]?[가-힣]\*?)|(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[가-힣]{2,4})\*[0-9]\*[0-9]$/),
   report_count: z.number().int().positive(), percentage: z.number().min(0).max(100).nullable(),
-});
+};
+/** 서버 공개 출력 계약(현재 형식만). 서버 집계·Edge 회귀 시험이 이 스키마로 새 형식을 고정한다. */
+export const vehicleSchema = z.strictObject({ ...vehicleRowFields, masked_plate: z.string().regex(MASKED_PLATE_RE) });
+
+const vehicleRowShape = z.strictObject({ ...vehicleRowFields, masked_plate: z.string() });
+/**
+ * 브라우저가 받는 차량 TOP5 목록. 옛 형식은 위 displayMaskedPlate로 줄여 받고, 가림 형식이 아닌 한 행은 번호만
+ * PLATE_HIDDEN_LABEL로 바꾼다(받은 문자열은 버린다). 행 모양 자체가 다르면(알 수 없는 키·순위 범위 밖 등) 그 행만 뺀다.
+ * 어느 경우에도 대시보드 전체 응답을 실패시키지 않는다.
+ */
+export const vehicleListSchema = z.array(z.unknown()).max(5).transform((rows) => rows.flatMap((row) => {
+  const shape = vehicleRowShape.safeParse(row);
+  if (!shape.success) return [];
+  return [{ ...shape.data, masked_plate: displayMaskedPlate(shape.data.masked_plate) ?? PLATE_HIDDEN_LABEL }];
+}));
 
 // ── A01–A04, A06 (docs/implementation/dashboard-redesign) ──────────────────────────────────────────────
 const pctN = z.number().min(0).max(100).nullable();
@@ -222,7 +259,7 @@ export const vehiclesResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema, cohort_policy_version: cohortPolicy,
   sample: z.boolean(), time_basis: basis,
   total_scope_reports: count, identifiable_reports: count,
-  items: z.array(vehicleSchema).max(5),
+  items: vehicleListSchema,
 });
 export const overviewResponseSchema = z.strictObject({
   schema_version: z.literal(2), dataset_version: z.string(), scope: scopeSchema, cohort_policy_version: cohortPolicy,
@@ -236,7 +273,7 @@ export const dashboardResponseSchema = z.strictObject({
   agency_total: count.optional(), manager_total: count.optional(),
   regions: z.array(regionSchema).max(400).optional(),
   laws: z.array(lawSchema).max(300).optional(),
-  vehicles: z.array(vehicleSchema).max(5), vehicle_total_scope_reports: count,
+  vehicles: vehicleListSchema, vehicle_total_scope_reports: count,
   vehicle_identifiable_reports: count, location_missing: count.optional(),
   analytics: analyticsSchema.nullable().optional(), map_unplaced: unplacedSchema.nullable().optional(),
 });

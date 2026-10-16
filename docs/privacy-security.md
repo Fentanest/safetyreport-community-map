@@ -71,7 +71,13 @@ TS `parsePlate`·`maskPlate`, SQL `screen_plate`·`screen_mask_plate`, 공개 DT
 추가 마이그레이션 `202610131000_motorcycle_plate.sql`은 기존 투영 잠금을 잡고
 `screen_observations.plate/plate_mask`를 해당 행의 `vehicle_raw`로 다시 계산한다.
 원문 facts·수집 이벤트·확정금액·추정금액은 변경하지 않는다. projection 버전과 screen cache epoch를 함께 올린다.
-운영 적용 시 지도 웹의 강화된 DTO·Edge 코드·SQL을 함께 배포한다. 구 SQL/캐시의 3자리 일반형 가림은 새 DTO에서 거절된다.
+운영 적용 시 지도 웹의 강화된 DTO·Edge 코드·SQL을 함께 배포한다.
+전환기 호환(2026-10-16 정정): 10-14 배포 웹은 구 SQL/캐시의 3자리 일반형 가림(`1*3*4*67`)을 거절해 차량 한 줄 때문에
+대시보드 전체가 실패할 수 있었다. 이제 브라우저 DTO(`src/data/schema.ts`의 `vehicleListSchema`)는 옛 형식을 받되
+옛·새 형식이 함께 공개하는 자리만 남겨 `1*3****7`로 보인다(끝 네 자리 중 한 자리). 가림 형식이 아닌 행은 받은 문자열을 버리고
+`번호 표시 생략`으로 보이며, 행 모양이 다르면 그 행만 뺀다. 서버 출력 계약 `vehicleSchema`는 계속 새 형식만 받는다.
+브라우저가 줄여 보여도 **응답 JSON 원문**에는 옛 형식의 세 자리가 남으므로, 실제 노출 해소는 `202610131000` 적용으로만 된다
+(적용 확인 SQL은 [배포 문서](deployment.md)의 "미적용 migration 확인"). 벡터는 `contracts/masking-vectors.json`의 `legacy_output`·`legacy_display`.
 실DB 화면 전체 집계 시간은 배포 담당자 Opus가 전후 동일 조건으로 측정해야 한다.
-로컬 SQL 재현은 `PGLITE_MODULE=/tmp/map-sql-test/node_modules/@electric-sql/pglite/dist/index.js node tests/sql/verify-screen-plate.mjs`이다.
+로컬 SQL 재현은 `npm run test:sql`(PGlite devDependency, `tests/sql/verify-screen-plate.mjs` 포함)이다.
 실행기는 메모리 PostgreSQL만 사용하며 원문을 출력하지 않는다. 선택 환경 변수 `MOTO_UNRECOGNIZED_TSV`로 제공 목록을 읽을 수 있다.

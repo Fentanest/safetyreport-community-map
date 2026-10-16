@@ -1,35 +1,51 @@
 [
   {
     "input": "12가3456",
-    "output": "1*가*4*6"
+    "output": "1*가*4*6",
+    "legacy_output": "1*가*4*6",
+    "legacy_display": "1*가*4*6"
   },
   {
     "input": "123가4567",
-    "output": "1*3가*5*7"
+    "output": "1*3가*5*7",
+    "legacy_output": "1*3*4*67",
+    "legacy_display": "1*3****7"
   },
   {
     "input": "서울12가3456",
-    "output": "서울1*가*4*6"
+    "output": "서울1*가*4*6",
+    "legacy_output": "서울1*가*4*6",
+    "legacy_display": "서울1*가*4*6"
   },
   {
     "input": "부산12가3456",
-    "output": "부산1*가*4*6"
+    "output": "부산1*가*4*6",
+    "legacy_output": "부산1*가*4*6",
+    "legacy_display": "부산1*가*4*6"
   },
   {
     "input": "경기 123가-4567",
-    "output": "경기1*3가*5*7"
+    "output": "경기1*3가*5*7",
+    "legacy_output": "경기1*3*4*67",
+    "legacy_display": "경기1*3****7"
   },
   {
     "input": "경기76자3623",
-    "output": "경기7*자*6*3"
+    "output": "경기7*자*6*3",
+    "legacy_output": "경기7*자*6*3",
+    "legacy_display": "경기7*자*6*3"
   },
   {
     "input": "서울특별시12가3456",
-    "output": "서울1*가*4*6"
+    "output": "서울1*가*4*6",
+    "legacy_output": "서울1*가*4*6",
+    "legacy_display": "서울1*가*4*6"
   },
   {
     "input": "１２가３４５６",
-    "output": "1*가*4*6"
+    "output": "1*가*4*6",
+    "legacy_output": "1*가*4*6",
+    "legacy_display": "1*가*4*6"
   },
   {
     "input": null,
