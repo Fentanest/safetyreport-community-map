@@ -68,8 +68,8 @@ TS `parsePlate`·`maskPlate`, SQL `screen_plate`·`screen_mask_plate`, 공개 DT
 가림 표시가 같아도 정규형이 다른 차량은 합치지 않으며 정규형·해시는 공개하지 않는다.
 기존 SQL 집계와 수집 투영은 공통 함수 교체를 통해 함께 반영된다.
 
-추가 마이그레이션 `202610131000_motorcycle_plate.sql`은 기존 투영 잠금을 잡고
-`screen_observations.plate/plate_mask`를 해당 행의 `vehicle_raw`로 다시 계산한다.
+추가 마이그레이션 `202610131000_motorcycle_plate.sql`은 저장 투영(`screen_observations`·`screen_precompute_lock`)이 있는 배포에서만
+기존 투영 잠금을 잡고 `screen_observations.plate/plate_mask`를 해당 행의 `vehicle_raw`로 다시 계산한다. 없는 배포(운영 기준)는 함수 교체와 캐시 무효화만 한다([배포 문서](deployment.md)).
 원문 facts·수집 이벤트·확정금액·추정금액은 변경하지 않는다. projection 버전과 screen cache epoch를 함께 올린다.
 운영 적용 시 지도 웹의 강화된 DTO·Edge 코드·SQL을 함께 배포한다.
 전환기 호환(2026-10-16 정정): 10-14 배포 웹은 구 SQL/캐시의 3자리 일반형 가림(`1*3*4*67`)을 거절해 차량 한 줄 때문에

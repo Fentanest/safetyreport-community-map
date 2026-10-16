@@ -56,8 +56,15 @@ describe('P2 screen SQL normalization parity (pure fallback)', () => {
       .toEqual(['private.screen_normalize_plate', 'private.screen_plate_strict', 'private.screen_plate', 'private.screen_mask_plate']);
     expect(migration).toContain('select private.community_bump_projection();');
     expect(migration).toContain('update private.screen_cache_epoch set revision=revision+1');
-    expect(migration).toContain('select private.screen_precompute_lock();');
+    // 2026-10-16: 폐기된 저장 투영 객체는 둘 다 있을 때만 잠그고 재계산한다(운영에는 없음). 한쪽만 있으면 중단.
+    expect(migration).toContain("to_regprocedure('private.screen_precompute_lock()')");
+    expect(migration).toContain("to_regclass('private.screen_observations')");
+    expect(migration).toContain("if has_lock<>has_observations then");
+    expect(migration).toContain("if has_lock then execute 'select private.screen_precompute_lock()'; end if;");
+    expect(migration).toContain("if to_regclass('private.screen_observations') is null then return; end if;");
+    expect(migration).not.toMatch(/^select private\.screen_precompute_lock\(\);/m);
     expect(migration).toContain('update private.screen_observations o set plate=p.plate,plate_mask=p.plate_mask');
+    expect(readFileSync('tests/sql/verify-motorcycle-plate-deploy.mjs', 'utf8')).toContain('202610131000_motorcycle_plate.sql');
     expect(migration).not.toMatch(/update\s+private\.community_report_facts/i);
     const verification = readFileSync('tests/sql/verify-screen-plate.mjs', 'utf8');
     expect(verification).toContain('202610131000_motorcycle_plate.sql');

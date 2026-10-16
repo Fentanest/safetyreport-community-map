@@ -254,7 +254,7 @@ select version from supabase_migrations.schema_migrations
 -- 2) 현재 가림 함수 정의와 결과: 새 형식이면 '1*3가*5*7', 옛 형식이면 '1*3*4*67'
 select pg_get_functiondef('private.screen_mask_plate(text)'::regprocedure);
 select private.screen_mask_plate('123가4567') as masked;
--- 3) 202610131000이 전제로 하는 객체(없으면 그 파일은 지금 형태로 실패한다 — 아래 주의)
+-- 3) 저장 투영 객체: 둘 다 null이거나 둘 다 값이어야 한다(한쪽만 있으면 202610131000이 중단 — 아래)
 select to_regclass('private.screen_observations') as screen_observations,
        to_regprocedure('private.screen_precompute_lock()') as screen_precompute_lock,
        to_regclass('private.screen_cache_epoch') as screen_cache_epoch,
@@ -279,12 +279,22 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 `20261014132612`가 이미 기록돼 있어 `supabase db push`는 앞 번호를 순서 밖으로 본다. CLI를 쓰면 `--include-all`이 필요하며,
 수동 `psql -1 -f`로 넣는 경우 기존 절차대로 `schema_migrations`에 번호를 기록한다.
 
-**주의(차단 가능성):** `202610131000`은 첫 줄에서 `private.screen_precompute_lock()`을 부르고 `private.screen_observations`의
-`plate/plate_mask`를 다시 계산한다. 이 두 객체는 폐기된 `202610061200_ingest_precompute.sql`에만 정의돼 있고, 10-14 보고서는
-"optional precompute 함수는 현재 운영에 없다"고 적었다. 3)이 null이면 이 파일은 지금 형태로는 트랜잭션 전체가 실패한다
-(`begin…commit` 한 묶음이라 부분 적용은 없다). 그 경우 `202610061200`을 적용하지 말고, 함수 교체·캐시 무효화만 하고
-저장 투영 재계산은 객체가 있을 때만 하도록 조건을 단 새 migration을 따로 만든다(Opus 결정 필요, 이 작업에서는 만들지 않았다).
-로컬 검증은 `npm run test:sql`(PGlite, 저장 투영 객체를 합성으로 만든 상태)로만 했다.
+**폐기 객체 의존(2026-10-16 수정):** `202610131000`은 원래 `private.screen_precompute_lock()`과 `private.screen_observations`
+(폐기된 `202610061200_ingest_precompute.sql`에만 정의, 10-14 보고서 기준 운영에 없음)를 무조건 사용해, 운영과 같은 DB에서는
+트랜잭션 전체가 실패했다. 운영 미적용이라 같은 파일 안에서 고쳤다(새 migration 없음).
+- 두 객체가 **모두 있으면**: 기존처럼 잠금 → 함수 교체 → 저장 투영(`plate/plate_mask`) 재계산 → 캐시 무효화.
+- **모두 없으면**: 함수 교체와 캐시 무효화(`community_bump_projection()`, `screen_cache_epoch` 증가)만 한다. 화면 집계는 읽을 때 새 함수로 가린다.
+- **한쪽만 있으면**: 알 수 없는 배포로 보고 `screen precompute objects are partial` 오류로 중단한다(한 트랜잭션이라 아무것도 바뀌지 않음).
+  위 3) 확인 SQL에서 두 값이 둘 다 null이거나 둘 다 값이어야 한다.
+- 함수 4개(`screen_normalize_plate`·`screen_plate_strict`·`screen_plate`·`screen_mask_plate`)는 `create or replace`라 owner·기존 ACL을 유지하고,
+  SECURITY INVOKER·`search_path=''`·IMMUTABLE이다. 파일의 grant로 `service_role` 실행 권한이 더해지고 anon/authenticated는 실행할 수 없다.
+- 같은 폐기 객체 의존을 `202610130100`(의존: `community_bump_projection`, `screen_cache_epoch` — 121400 정의, 폐기 객체 아님)·`202610131500`(없음)·
+  `20261014132612`(precompute 함수가 없으면 건너뛰는 조건 이미 있음)에서 확인했고 고칠 것이 없었다.
+
+로컬 검증: `npm run test:sql`의 `tests/sql/verify-motorcycle-plate-deploy.mjs`가 060900·130100 실제 정의로 운영과 같은 사전 상태를 만들고
+(a) 폐기 객체 없음 (b) 있음 두 경우 모두 적용·재적용 성공, 새 가림 결과, owner·ACL·search_path·DEFINER 보존, 캐시 무효화를 확인하고
+(c) 한쪽만 있는 경우 오류·롤백을 확인한다. 수정 전 파일은 (a)에서 `function private.screen_precompute_lock() does not exist`로 실패함을 확인했다.
+운영 PostgreSQL 리허설을 대신하지 않는다.
 
 ## 2026-10-16 · 10만 건 제한 제거 이후 운영 주의 (코드 변경 없음)
 

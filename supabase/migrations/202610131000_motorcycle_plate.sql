@@ -2,8 +2,19 @@
 -- CLI는 샌드박스 밖 telemetry 파일 쓰기로 실행이 차단되어 지정 시각으로 파일을 만든다.
 begin;
 set local lock_timeout='3s';
--- 기존 투영 갱신과 같은 잠금 순서로 새 계산과 저장값 재계산을 직렬화한다.
-select private.screen_precompute_lock();
+-- 저장 투영(폐기된 202610061200_ingest_precompute의 private.screen_observations·screen_precompute_lock)은
+-- 배포마다 있을 수도 없을 수도 있다(2026-10-16 운영 확인 전제). 둘 다 있을 때만 기존 투영 갱신과 같은 잠금
+-- 순서로 직렬화하고 아래에서 저장값을 재계산한다. 둘 다 없으면 함수 교체와 캐시 무효화만 한다.
+-- 한쪽만 있는 상태는 알 수 없는 배포라 조용히 넘어가지 않고 트랜잭션 전체를 중단한다.
+do $precompute_lock$
+declare has_lock boolean:=to_regprocedure('private.screen_precompute_lock()') is not null;
+ has_observations boolean:=to_regclass('private.screen_observations') is not null;
+begin
+ if has_lock<>has_observations then
+  raise exception 'screen precompute objects are partial (lock function %, observations table %)',has_lock,has_observations;
+ end if;
+ if has_lock then execute 'select private.screen_precompute_lock()'; end if;
+end $precompute_lock$;
 
 create or replace function private.screen_normalize_plate(raw text) returns text
 language plpgsql immutable set search_path='' as $$
@@ -113,16 +124,23 @@ grant execute on function private.screen_normalize_plate(text),private.screen_pl
  private.screen_plate(text),private.screen_mask_plate(text) to service_role;
 
 -- 수집 때 계산된 투영만 재계산한다. 원문·확정금액·앱 추정금액은 그대로다.
-with normalized as materialized (
- select contributor_id,dataset_key,source_report_key,private.screen_plate(vehicle_raw) as plate
- from private.screen_observations
-), projected as materialized (
- select *,private.screen_mask_plate(plate) as plate_mask from normalized
-)
-update private.screen_observations o set plate=p.plate,plate_mask=p.plate_mask
- from projected p where o.contributor_id=p.contributor_id and o.dataset_key=p.dataset_key
- and o.source_report_key=p.source_report_key
- and (o.plate is distinct from p.plate or o.plate_mask is distinct from p.plate_mask);
+-- 저장 투영이 없는 배포는 화면 집계가 읽을 때 위 함수로 바로 계산하므로 재계산할 저장값이 없다.
+do $screen_projection$
+begin
+ if to_regclass('private.screen_observations') is null then return; end if;
+ execute $recompute$
+ with normalized as materialized (
+  select contributor_id,dataset_key,source_report_key,private.screen_plate(vehicle_raw) as plate
+  from private.screen_observations
+ ), projected as materialized (
+  select *,private.screen_mask_plate(plate) as plate_mask from normalized
+ )
+ update private.screen_observations o set plate=p.plate,plate_mask=p.plate_mask
+  from projected p where o.contributor_id=p.contributor_id and o.dataset_key=p.dataset_key
+  and o.source_report_key=p.source_report_key
+  and (o.plate is distinct from p.plate or o.plate_mask is distinct from p.plate_mask)
+ $recompute$;
+end $screen_projection$;
 -- 정확 버전 캐시와 최대 180초 재사용 캐시를 모두 즉시 무효화한다.
 select private.community_bump_projection();
 update private.screen_cache_epoch set revision=revision+1 where singleton;
