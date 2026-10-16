@@ -111,7 +111,8 @@ const MESSAGE: Record<PersonalErrorCode, string> = {
   DATASET_CHANGED: '그사이 새 자료가 들어왔습니다. 다시 불러와 주세요.',
   rate_limited: '요청이 많아 잠시 후 다시 시도해 주세요.',
   AGGREGATE_NOT_READY: '통계가 아직 준비되지 않았습니다.',
-  RESULT_TOO_LARGE: '이 조건의 신고가 한 번에 집계할 수 있는 양을 넘었습니다. 기간이나 지역을 좁혀 주세요.',
+  // 10만 건 제한 제거(2026-10-14) 뒤에는 이전 제한이 남은 서버에서만 나온다 — 서버 personalHandler·screenHandler 문구와 같다.
+  RESULT_TOO_LARGE: '통계 서버에 이전 조회 제한이 남아 있습니다. 서버 업데이트가 필요합니다.',
   network: '네트워크 연결을 확인한 뒤 다시 시도해 주세요.',
   invalid_response: '내 신고를 불러오지 못했습니다. 다시 시도해 주세요.',
   service_unavailable: '내 신고를 불러오지 못했습니다.',

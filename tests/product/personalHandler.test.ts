@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createPersonalHandler, type PersonalDeps, type PersonalSource } from '../../server/personalHandler';
 import { createPublicHandler, type AnalyticsState } from '../../server/publicHandler';
 import { demoFacts, DEMO_AS_OF, DEMO_DATA_MIN, DEMO_VIEWER_ID } from '../../src/data/demoEngine';
-import { personalCompareSchema } from '../../src/data/personal';
+import { personalCompareSchema, personalError } from '../../src/data/personal';
 import { fixtureAccess, viewerRequest } from './helpers/mapViewer';
 
 const ORIGIN = 'https://safemap.worklazy.net';
@@ -254,5 +254,22 @@ describe('shared map API stays personal-free after authentication', () => {
     expect(allowed.headers.get('access-control-allow-origin')).toBe(ORIGIN);
     const blocked = await handle(new Request(url, { method: 'OPTIONS', headers: { origin: 'https://evil.example' } }));
     expect(blocked.status).toBe(403);
+  });
+});
+
+describe('RESULT_TOO_LARGE 문구 (10만 건 제한 제거 이후)', () => {
+  it('이전 제한이 남은 서버의 422 문구와 브라우저 비교 패널 문구가 같고, 범위를 좁히라고 안내하지 않는다', async () => {
+    const { handle } = setup({ rpc: async (name) => {
+      if (name === 'internal_community_ingest_rate_limit') return true;
+      throw new Error('RESULT_TOO_LARGE');
+    } });
+    const res = await handle(req());
+    expect(res.status).toBe(422);
+    const server = (await body(res)).error;
+    expect(server.code).toBe('RESULT_TOO_LARGE');
+    const client = personalError('RESULT_TOO_LARGE').message;
+    expect(client).toBe(server.message);
+    expect(client).toContain('서버 업데이트가 필요합니다');
+    expect(client).not.toMatch(/좁혀|줄여/);
   });
 });
