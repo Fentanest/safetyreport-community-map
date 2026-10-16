@@ -115,6 +115,8 @@ main { gap: var(--card-gap); }
 .map-legend .gradient-scale { width: 110px; }
 .legend-null { display: inline-flex; align-items: center; gap: 4px; }
 .legend-null i { width: 10px; height: 10px; border-radius: 50%; border: 1px dashed #334; display: inline-block; }
+.legend-fill { display: inline-flex; align-items: center; gap: 6px; }
+.map-legend .legend-fill .gradient-scale { width: 70px; opacity: 0.75; }
 .map-options { display: flex; gap: 8px 16px; align-items: center; padding: 0 14px 12px; flex-wrap: wrap; }
 .map-option { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--text-secondary); min-height: 36px; }
 .map-option input { width: 18px; height: 18px; }

@@ -7,7 +7,7 @@ import {
 import { intersects, loadBoundaries, loadBoundaryMeta, type BoundaryFeature, type BoundaryLevel, type BoundaryMeta } from '../lib/boundaries';
 import { regionLabel } from '../data/regions';
 import type { PointMark } from '../state/pointMarks';
-import { MAP_METRICS, metricDef, metricParts, metricText, type MapMetric } from './mapMetrics';
+import { MAP_METRICS, metricDef, metricParts, metricText, type MapMetric, type MetricParts } from './mapMetrics';
 import { fmtInt } from './format';
 import Icon from './icons';
 
@@ -69,6 +69,15 @@ export function baselinePercent(m: MapMetric, outcomes: OutcomeCounts | null | u
 
 export interface RegionWeights { weight: Map<string, number | null>; ramp?: readonly string[] }
 /**
+ * 지역 바탕 채움에 쓰는 값. 기본 '신고 수·수용률'(points) 모드에서 핀은 수용률 색을 쓰지만, 행정구역 바탕은
+ * R1 이전과 같은 **신고 건수**(화면에 그린 지역 중 최대 대비 로그 척도, 파란 METRIC_RAMP)다 — 수용률(0..1)을
+ * 파란 램프로 칠하면 "신고가 몰린 곳"으로 읽혀 범례와도 어긋난다(2026-10-16 검수 결함 3). 지역 지표 모드는 그대로다.
+ */
+export function regionFillParts(row: PublicRegion, m: MapMetric): MetricParts {
+  const parts = metricParts(row, m);
+  return parts.kind === 'density' ? { kind: 'count', num: row.report_count, den: 0, weight: row.report_count } : parts;
+}
+/**
  * R2 (2026-10-13): region choropleth fill — pure (no DOM/Kakao SDK) so the bucket boundaries, the opposite
  * acceptance/rejection direction, the baseline fallback and the "계산 불가 stays grey" rule are all directly
  * testable. 수용률/불수용률 with a computable baseline use the 7-bucket DIVERGING_RAMP (region deviates from
@@ -78,7 +87,7 @@ export interface RegionWeights { weight: Map<string, number | null>; ramp?: read
  */
 export function regionBoundaryWeights(codes: readonly string[], rowByCode: ReadonlyMap<string, PublicRegion>,
   m: MapMetric, baselinePct: number | null): RegionWeights {
-  const parts = codes.map((code) => { const row = rowByCode.get(code); return row ? metricParts(row, m) : null; });
+  const parts = codes.map((code) => { const row = rowByCode.get(code); return row ? regionFillParts(row, m) : null; });
   const max = Math.max(1, ...parts.map((x) => (x && x.kind === 'count' ? x.num : 0)));
   const diverging = (m === 'acceptance' || m === 'rejection') && baselinePct !== null;
   const weight = new Map<string, number | null>();
@@ -174,8 +183,9 @@ const LEVEL_LABEL: Record<BoundaryLevel, string> = { sido: '시도', sgg: '시�
 /** R1: the DEFAULT 신고 pin's legend — fill = 수용률 (fixed red→orange→green scale) · size/number = 신고 건수.
  *  A separate branch from the generic legend below (its 0%/100% blue ramp and count/rate wording are for the
  *  region-choropleth metrics only). */
-function DensityLegend() {
+function DensityLegend({ boundaries, level }: { boundaries: boolean; level: BoundaryLevel }) {
   const gradient = `linear-gradient(90deg, ${ACCEPTANCE_RAMP.join(', ')})`;
+  const fill = `linear-gradient(90deg, ${METRIC_RAMP.join(', ')})`;
   return (
     <span className="legend-title map-legend"
       title="핀 색 = 수용률(수용 ÷ 수용+일부수용+불수용, 고정 빨강→주황→초록) · 핀 크기·숫자 = 신고 건수(1~9/10~29/30~99/100~299/300건 이상 단계)"
@@ -185,6 +195,15 @@ function DensityLegend() {
       <i className="gradient-scale" style={{ background: gradient }} aria-hidden="true" />
       <span className="cm-muted">100%</span>
       <span className="legend-null"><i style={{ background: METRIC_NULL }} aria-hidden="true" />계산 불가(분류된 답변 0건)</span>
+      {boundaries && (
+        // 핀 색(수용률)과 다른 축임을 밝힌다: 행정구역 바탕은 신고 건수(regionFillParts).
+        <span className="legend-fill" aria-label={`${LEVEL_LABEL[level]} 바탕색은 신고 건수, 진할수록 많음`}>
+          <b>{LEVEL_LABEL[level]} 바탕: 신고 건수</b>
+          <span className="cm-muted">적음</span>
+          <i className="gradient-scale" style={{ background: fill }} aria-hidden="true" />
+          <span className="cm-muted">많음</span>
+        </span>
+      )}
     </span>
   );
 }
@@ -215,10 +234,10 @@ function DivergingLegend({ metric, level, baselinePct }: { metric: 'acceptance' 
   );
 }
 
-function Legend({ metric, level, statsBbox, filtered, baselinePct }: { metric: MapMetric; level: BoundaryLevel; statsBbox: boolean; filtered: boolean; baselinePct: number | null }) {
+function Legend({ metric, level, statsBbox, filtered, baselinePct, boundaries }: { metric: MapMetric; level: BoundaryLevel; statsBbox: boolean; filtered: boolean; baselinePct: number | null; boundaries: boolean }) {
   // points mode (신고 수, the default pin) always carries the 수용률 colour legend; an unknown/legacy metric id
   // resolves to 'reports' (renderModeOf below) so it gets the same legend, never the stale generic one.
-  if (renderModeOf(metric) === 'points') return <DensityLegend />;
+  if (renderModeOf(metric) === 'points') return <DensityLegend boundaries={boundaries} level={level} />;
   // R2: 수용률/불수용률 + 기준값 계산 가능 → 발산형 범례. 기준값 없음(폴백)이거나 과태료면 아래 generic 범례 그대로.
   if ((metric === 'acceptance' || metric === 'rejection') && baselinePct !== null) {
     return <DivergingLegend metric={metric} level={level} baselinePct={baselinePct} />;
@@ -524,7 +543,8 @@ export default function MapPanel(p: Props) {
         )}
         {sdkState !== 'error' && (
           <div className="map-bottom">
-            <Legend metric={p.metric} level={level} statsBbox={!!p.statsBbox} filtered={!!activeCode} baselinePct={baselinePct} />
+            <Legend metric={p.metric} level={level} statsBbox={!!p.statsBbox} filtered={!!activeCode} baselinePct={baselinePct}
+              boundaries={sdkState === 'ready' && boundaryShown} />
           </div>
         )}
       </div>
