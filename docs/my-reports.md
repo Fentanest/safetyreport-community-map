@@ -63,7 +63,7 @@ numbers에 `EXPLAIN (ANALYZE, BUFFERS)` 및 필요시 nested plan을 수집한�
 ## 검증과 배포 인계
 
 - 계약/Edge 회귀: 3/4 경계, 숫자 4글자, Unicode 공백·NFC, 최대 64, 주소 규칙, 기존 인증·요청/응답 상한.
-- SQL: `PGLITE_MODULE=/tmp/map-sql-test/node_modules/@electric-sql/pglite/dist/index.js node tests/sql/verify-my-reports-vehicle-min4.mjs`.
+- SQL: `npm run test:sql`(PGlite devDependency, `tests/sql/verify-my-reports-vehicle-min4.mjs` 포함).
   기존 실제 my-reports 함수와 신규 migration을 메모리 PostgreSQL에서 실행한다. 인증/동의 의존 테이블·함수는 합성 fixture다.
   양 경로 부분 일치, A/B 격리, 철회/이전 관측 제외, 세션 불일치, 페이지/번호 상한 및 함수 속성·ACL 보존을 검사한다.
   운영 인증·실DB 성능·확장 브라우저 종단 검증을 대신하지 않는다.

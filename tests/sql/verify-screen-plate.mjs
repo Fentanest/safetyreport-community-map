@@ -1,8 +1,11 @@
 // 메모리 전용 PostgreSQL(PGlite)에서 공유 벡터·마이그레이션·63,595행 성능을 검증한다.
-// PGLITE_MODULE=/tmp/map-sql-test/node_modules/@electric-sql/pglite/dist/index.js node tests/sql/verify-screen-plate.mjs
+// 실행: npm run test:sql (devDependency @electric-sql/pglite). 다른 PGlite 빌드를 쓸 때만 PGLITE_MODULE=<경로>로 바꾼다.
 // 선택: MOTO_UNRECOGNIZED_TSV=/비공개/목록.tsv (원문은 출력하거나 저장하지 않는다).
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+// 저장소 기준 상대 경로(supabase/migrations, contracts, tests/fixtures)를 어느 작업 폴더에서 실행해도 같게 읽는다.
+process.chdir(fileURLToPath(new URL('../..', import.meta.url)));
 const { PGlite } = await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
 const db = new PGlite();
 const vectors = JSON.parse(readFileSync('tests/fixtures/plate_normalize_vectors.json','utf8')).cases;
@@ -48,9 +51,20 @@ assert.equal((await db.query('select revision from private.analytics_state')).ro
 assert.equal((await db.query("select has_function_privilege('anon','private.screen_mask_plate(text)','execute') as allowed")).rows[0].allowed,false);
 // 재적용도 원문·투영을 훼손하지 않는다.
 await db.exec(sql);
+// 202610131000 적용 전 운영 DB의 옛 가림(202610060900)이 공유 벡터의 legacy_output을 실제로 만든다.
+// 브라우저는 이 옛 형식을 받아 줄여 보인다(src/data/schema.ts displayMaskedPlate).
+const legacyMask = readFileSync('supabase/migrations/202610060900_screen_server_aggregate.sql','utf8')
+ .match(/create function private\.screen_mask_plate\(t text\)[\s\S]*?end \$\$;/)[0];
+await db.exec(legacyMask.replace('private.screen_mask_plate','before.screen_mask_plate'));
+let legacyChecked=0;
 for (const c of JSON.parse(readFileSync('contracts/masking-vectors.json','utf8'))) {
  assert.equal((await db.query('select private.screen_mask_plate(private.screen_plate($1)) as masked',[c.input])).rows[0].masked,c.output);
+ if (c.legacy_output !== undefined) {
+  assert.equal((await db.query('select before.screen_mask_plate(private.screen_plate($1)) as masked',[c.input])).rows[0].masked,c.legacy_output,c.input+' 옛 가림');
+  legacyChecked++;
+ }
 }
+assert.ok(legacyChecked>=8,'옛 가림 벡터 수');
 console.log(JSON.stringify({검증:'벡터·가림·투영 재계산·원문 보존·캐시·권한',벡터:vectors.length,엔진:(await db.query('select version()')).rows[0].version}));
 // 공개되지 않은 실번호는 로그에 싣지 않고 메모리 테이블 안에서만 사용한다.
 let missed=[];

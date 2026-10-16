@@ -17,6 +17,8 @@ jobs:
       - run: python3 -m unittest discover -s tests/blueprint -v
       - run: python3 -m unittest discover -s tests/product -p 'test_*.py' -v
       - run: npm test
+      # 실제 migration SQL을 메모리 PostgreSQL(PGlite)에서 실행한다. 운영 DB에 접속하지 않는다.
+      - run: npm run test:sql
       - run: npm run build
         env:
           VITE_DATA_MODE: live

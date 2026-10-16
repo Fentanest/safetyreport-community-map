@@ -1,7 +1,10 @@
 // Isolated PostgreSQL execution: actual my-reports SQL, synthetic dependency tables/auth only.
-// PGLITE_MODULE=/tmp/map-sql-test/node_modules/@electric-sql/pglite/dist/index.js node tests/sql/verify-my-reports-vehicle-min4.mjs
+// 실행: npm run test:sql (devDependency @electric-sql/pglite). 다른 PGlite 빌드를 쓸 때만 PGLITE_MODULE=<경로>로 바꾼다.
 import { readFileSync, readdirSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+// 저장소 기준 상대 경로(supabase/migrations, contracts, tests/fixtures)를 어느 작업 폴더에서 실행해도 같게 읽는다.
+process.chdir(fileURLToPath(new URL('../..', import.meta.url)));
 const { PGlite } = await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
 const db = new PGlite();
 const root = 'supabase/migrations/';
