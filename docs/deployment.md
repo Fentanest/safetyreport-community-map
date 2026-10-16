@@ -234,3 +234,69 @@ HTML·SPA는 Workers 기본 `public, max-age=0, must-revalidate`를 유지한다
 운영 전체 기간 126,535건 집계 성공, 기본 최근 12개월 80,389건·이전 비교 27,794건. 고정 건수 제한이나 truncate 없음.
 함수 권한 유지·컨테이너 healthy·익명 API 401 확인. 운영 브라우저는 저장된 접근 차단 설정으로 BLOCKED.
 [검증·백업·복구 기록](implementation/analytics-row-limit-20261014/REPORT.md) 참조.
+
+## 2026-10-16 · 미적용 migration 확인과 적용 순서 (운영자 확인 필요)
+
+배경: 10-14 배포 웹(`fd303a4`)은 차량 가림 새 형식만 받아, `202610131000_motorcycle_plate.sql`이 없는 DB가 내는
+옛 3자리 가림(`1*3*4*67`) 한 줄로 대시보드 전체가 실패할 수 있었다. `fix1016/map` 웹은 옛·새 형식을 모두 받고
+(옛 형식은 `1*3****7`로 줄여 보임) 형식이 맞지 않는 차량 한 행만 생략한다([privacy-security](privacy-security.md)).
+그래도 응답 JSON 원문에는 옛 형식의 끝 세 자리가 남으므로 아래 migration 적용이 실제 해소다.
+운영 적용 기록이 문서에 있는 마지막 단계는 `20261014132612`이고, 그보다 앞 번호인 아래 파일들은 적용 기록이 없다.
+
+### 읽기 전용 확인 SQL (운영 DB, 쓰기 없음)
+
+```sql
+begin read only;
+-- 1) 이력: 없는 번호가 미적용 후보
+select version from supabase_migrations.schema_migrations
+ where version in ('202610121300','202610121301','202610121400','202610130100','202610131000','202610131500','20261014132612')
+ order by version;
+-- 2) 현재 가림 함수 정의와 결과: 새 형식이면 '1*3가*5*7', 옛 형식이면 '1*3*4*67'
+select pg_get_functiondef('private.screen_mask_plate(text)'::regprocedure);
+select private.screen_mask_plate('123가4567') as masked;
+-- 3) 202610131000이 전제로 하는 객체(없으면 그 파일은 지금 형태로 실패한다 — 아래 주의)
+select to_regclass('private.screen_observations') as screen_observations,
+       to_regprocedure('private.screen_precompute_lock()') as screen_precompute_lock,
+       to_regclass('private.screen_cache_epoch') as screen_cache_epoch,
+       to_regprocedure('private.screen_plate_strict(text)') as screen_plate_strict,
+       to_regprocedure('private.community_bump_projection()') as community_bump_projection;
+rollback;
+```
+
+Edge 쪽도 확인한다. 10-14 배포는 public-analytics / my-analytics의 **바뀐 파일 5개만** 교체했으므로, 운영 functions 볼륨의
+`server/plate.ts`가 `de738ac` 이후 내용인지 해시로 대조한다(`git show de738ac:server/plate.ts | sha256sum`과 운영 파일 sha256; 그 뒤 이 파일은 바뀌지 않았다).
+TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일이면 옛 형식을 낸다.
+
+### 적용 순서 (파일 번호 순, 이미 있는 번호는 건너뜀)
+
+1. `202610121300_screen_result_cache.sql` → `202610121301_screen_cache_cron.sql`(pg_cron 확인 후) → `202610121400_screen_cache_stale.sql`.
+   10-14 읽기 전용 조사에서 `internal_analytics_screen_cached`·`internal_analytics_screen_stale` 함수가 운영에 있었으므로 이미 적용됐을 가능성이 높다. 1)의 이력으로 확정한다.
+2. `202610130100_screen_plate_normalization.sql` — `screen_cache_epoch`(121400)와 `community_bump_projection`이 필요하다.
+3. `202610131000_motorcycle_plate.sql` — 새 `screen_mask_plate`. 적용 뒤 2)가 `1*3가*5*7`인지 다시 확인한다.
+4. `202610131500_my_reports_vehicle_min4.sql` — 독립(내 신고 차량 4자 검색). DB+Edge 먼저, 확장 나중([my-reports](my-reports.md)).
+5. 그 다음 Edge(public-analytics / my-analytics, `server/plate.ts` 포함 전체 대조) → 정적 웹.
+
+`20261014132612`가 이미 기록돼 있어 `supabase db push`는 앞 번호를 순서 밖으로 본다. CLI를 쓰면 `--include-all`이 필요하며,
+수동 `psql -1 -f`로 넣는 경우 기존 절차대로 `schema_migrations`에 번호를 기록한다.
+
+**주의(차단 가능성):** `202610131000`은 첫 줄에서 `private.screen_precompute_lock()`을 부르고 `private.screen_observations`의
+`plate/plate_mask`를 다시 계산한다. 이 두 객체는 폐기된 `202610061200_ingest_precompute.sql`에만 정의돼 있고, 10-14 보고서는
+"optional precompute 함수는 현재 운영에 없다"고 적었다. 3)이 null이면 이 파일은 지금 형태로는 트랜잭션 전체가 실패한다
+(`begin…commit` 한 묶음이라 부분 적용은 없다). 그 경우 `202610061200`을 적용하지 말고, 함수 교체·캐시 무효화만 하고
+저장 투영 재계산은 객체가 있을 때만 하도록 조건을 단 새 migration을 따로 만든다(Opus 결정 필요, 이 작업에서는 만들지 않았다).
+로컬 검증은 `npm run test:sql`(PGlite, 저장 투영 객체를 합성으로 만든 상태)로만 했다.
+
+## 2026-10-16 · 10만 건 제한 제거 이후 운영 주의 (코드 변경 없음)
+
+`20261014132612` 이후 통계 후보 행에 고정 상한이 없다. 남은 상한은 `service_role`의 `statement_timeout = 30s`
+(`202610060800`)와 Edge 실행 한도뿐이다.
+
+- 관측(10-14 운영 읽기 전용): 전체 기간 126,535건 집계 **12.233초 / 30초**, 기본 최근 12개월 80,389건 9.739초.
+  `202610060800` 기록 기준 PostgREST가 다시 읽는 facts payload는 **10만 건당 약 20MB**.
+- SQL screen 경로는 DB 안에서 집계하지만, Edge TS 경로(`statistics/query`, `my-analytics` 비교·개인 통계)는
+  facts 전체를 받아 Edge 메모리에 올린 뒤 집계한다. 건수가 늘면 응답 시간과 Edge 메모리가 함께 선형으로 는다.
+- 지켜볼 지표: 전체 기간 screen 집계 시간(20초를 넘으면 경고 수준), `AGGREGATE_NOT_READY`(503)·statement timeout 취소 빈도,
+  Edge functions 컨테이너 메모리 최대치와 재시작, `statistics/query`·`my-analytics` 응답 시간 p95.
+- 다음 조치 후보(미결정): ① Edge TS 경로를 SQL 집계 RPC로 옮겨 facts 전체 전송 제거, ② 월 rollup·screen 캐시 사전 계산 재도입
+  (폐기된 `202610061200`과 별개 설계), ③ Edge TS 경로도 `202610060700_screen_fact_transport.sql`의 압축 열 전송을 쓰는지 점검·통일, ④ 위 지표에 경보를 걸고
+  상한 대신 "기간을 좁히면 빠르다"는 안내만 추가. 건수 제한 재도입은 사용자 결정("10만건제한을 왜 해. 하지마")에 어긋나므로 하지 않는다.
