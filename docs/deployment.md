@@ -276,8 +276,11 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 4. `202610131500_my_reports_vehicle_min4.sql` — 독립(내 신고 차량 4자 검색). DB+Edge 먼저, 확장 나중([my-reports](my-reports.md)).
 5. 그 다음 Edge(public-analytics / my-analytics, `server/plate.ts` 포함 전체 대조) → 정적 웹.
 
-`20261014132612`가 이미 기록돼 있어 `supabase db push`는 앞 번호를 순서 밖으로 본다. CLI를 쓰면 `--include-all`이 필요하며,
-수동 `psql -1 -f`로 넣는 경우 기존 절차대로 `schema_migrations`에 번호를 기록한다.
+`20261014132612`가 이미 기록돼 있어 `supabase db push`는 앞 번호를 순서 밖으로 본다. **`supabase db push --include-all`을 쓰지 않는다.**
+원격 이력에 없는 모든 파일을 넣으므로 폐기된 `202610061200_ingest_precompute.sql`(저장 투영·수집 트리거 설치,
+`internal_analytics_read_snapshot` 이전 정의로 교체)까지 적용된다. 위 1~4의 파일만 하나씩 수동 `psql -1 -f <파일>`(또는 SQL Editor)로 넣고,
+파일마다 성공한 뒤 기존 절차대로 `schema_migrations`에 그 번호를 기록한다. CLI로 확인만 하려면 같은 이력을 가진 검증 DB에서
+`--dry-run`으로 대상 목록에 `202610061200`이 없는지 먼저 본다.
 
 **폐기 객체 의존(2026-10-16 수정):** `202610131000`은 원래 `private.screen_precompute_lock()`과 `private.screen_observations`
 (폐기된 `202610061200_ingest_precompute.sql`에만 정의, 10-14 보고서 기준 운영에 없음)를 무조건 사용해, 운영과 같은 DB에서는
