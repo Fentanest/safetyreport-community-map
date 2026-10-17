@@ -236,7 +236,7 @@ HTML·SPA는 Workers 기본 `public, max-age=0, must-revalidate`를 유지한다
 함수 권한 유지·컨테이너 healthy·익명 API 401 확인. 운영 브라우저는 저장된 접근 차단 설정으로 BLOCKED.
 [검증·백업·복구 기록](implementation/analytics-row-limit-20261014/REPORT.md) 참조.
 
-## 2026-10-16 · 미적용 migration 확인과 적용 순서 (2026-10-17 확인: 이미 적용됨, 이력 행만 누락 — 맨 아래 절)
+## 2026-10-16 · 미적용 migration 확인과 적용 순서 (2026-10-17 확인: 이미 적용됨, 이력 행 기록 완료 — 맨 아래 절)
 
 배경: 10-14 배포 웹(`fd303a4`)은 차량 가림 새 형식만 받아, `202610131000_motorcycle_plate.sql`이 없는 DB가 내는
 옛 3자리 가림(`1*3*4*67`) 한 줄로 대시보드 전체가 실패할 수 있었다. `fix1016/map` 웹은 옛·새 형식을 모두 받고
@@ -331,8 +331,9 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 사용자 승인으로 이미 운영에 적용됐고 백업·롤백이 기록돼 있다. 10-17 운영 읽기 전용 확인(`begin read only`, 서버 DB 컨테이너 psql):
 - `screen_mask_plate('123가4567')` = `1*3가*5*7`(새 형식), `screen_observations`·`screen_precompute_lock()` 둘 다 없음, `screen_cache_epoch`·`screen_plate_strict` 있음, cron `screen-result-cache-v1` active.
 - 6개 파일이 정의하는 함수 24개 중 23개 본문이 저장소 최신 정의와 같다. `analytics_screen_parts`는 `20261014132612`의 10만 건 제한 제거 두 줄만 다르다.
-- **이력 행만 없다**: `schema_migrations`에 6개 번호가 없고 `20261014132612`만 있다. 함수·데이터 변경 없이 이력 6행을 넣는 SQL을 준비했으나,
-  운영 쓰기 명령이 이 세션의 권한 정책에서 거절돼 실행하지 않았다(운영자가 실행하거나 권한을 허용해야 함). `supabase db push --include-all` 금지는 그대로다.
+- **이력 행만 없었다**: `schema_migrations`에 6개 번호가 없고 `20261014132612`만 있었다. 사용자 승인("운영 서버 쓰기 허용할게") 뒤
+  함수·데이터 변경 없이 이력 6행만 한 트랜잭션으로 넣었다(사전 검사: 미기록·새 가림·stale 함수 존재). 결과 `202610121300`~`202610131500`·`20261014132612` 7개 기록.
+  되돌리기 `.agent-runtime/release-20261017/rollback-history.sql`(6행 삭제). `supabase db push --include-all` 금지는 그대로다(폐기 `202610061200`이 여전히 미기록).
 - Edge: 운영 `volumes/functions/*/source` 파일 62개가 main과 SHA-256 일치. 다른 1개는 `my-reports/server/myReports/handler.ts`의 주석 한 줄(601ae23)뿐이라 재배포하지 않았다.
   13개는 community-auth 저장소 소유 함수(community-account·community-auth-relay)라 대조 대상이 아니다. 10-14 이후 이 저장소의 Edge 실행 코드 변경은 없다(`contracts/`는 테스트 전용).
 결과 기록: `.agent-runtime/release-20261017/`(Git 제외), 원격 실행 기록 `server-changes/journal.jsonl`의 `release-20261017-*`.
