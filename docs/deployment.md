@@ -338,7 +338,7 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
   13개는 community-auth 저장소 소유 함수(community-account·community-auth-relay)라 대조 대상이 아니다. 10-14 이후 이 저장소의 Edge 실행 코드 변경은 없다(`contracts/`는 테스트 전용).
 결과 기록: `.agent-runtime/release-20261017/`(Git 제외), 원격 실행 기록 `server-changes/journal.jsonl`의 `release-20261017-*`.
 
-## 2026-10-18 · 화면 쿼리 최적화·알리익스프레스 자동 넘김 (로컬 구현, 운영 미적용)
+## 2026-10-18 · 화면 쿼리 최적화·알리익스프레스 자동 넘김 (운영 적용 완료)
 
 - 쿼리: `202610180100_screen_fact_norm.sql` → `202610180101_screen_fact_norm_backfill.sql`(별도 트랜잭션 backfill, 수십 초) →
   `202610180200_screen_cache_reuse.sql` → `202610180300_personal_source_columns.sql`. Edge `my-analytics`·`public-analytics`는 옛 SQL과도 동작하므로
@@ -347,3 +347,15 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 - 되돌리기·검증·로컬 측정·미검증 범위: [보고서](implementation/screen-query-opt-20261018/REPORT.md), [rollback.sql](implementation/screen-query-opt-20261018/rollback.sql).
 - 광고: Muse `dc01aea`(오른쪽 알리익스프레스 배너 생성기 최신 출력: 자동 넘김 `true`·다크 모서리 수정)를 병합했다(정적 웹 빌드·배포 필요). 브라우저 확인
   `scripts/browser/verify_aliexpress_auto.mjs` 통과(`docs/implementation/ad-banners-2026-10-17/evidence/auto-rotate/`).
+
+### 2026-10-18 운영 적용 결과
+사용자 승인("다 진행 … 푸시나 서버반영 등 필요한거 다 하자"). main `d984fef` push, 실행 기록 `.agent-runtime/release-20261018/`(Git 제외, `journal.jsonl`·원격 `server-changes/journal.jsonl`).
+- 사전 확인(읽기 전용): 신고 138,936건, 고유 주소 27,279·차량 67,658·법규 203·좌표 125,744. 기존 cron은 24시간 1,440회·평균 16.5초·합계 23,709초 CPU였다.
+- DB(17:12 UTC): `202610180100`(0.02초) → `202610180101` backfill(34.1초) → `202610180200` → `202610180300`, 파일마다 한 트랜잭션 + `schema_migrations` 이력 행.
+  적용 전 함수 정의 원문 `functions-before.sql`. 검증: 보조 표 138,936행 = facts, 완전성 판정 true(0.36초), 새 함수·보조 표 API 역할 권한 닫힘
+  (columns RPC만 service_role 실행), 운영 SQL 직접 집계 12개월 7.9초(10-14 9.7초)·전체 기간 10.7초(10-14 12.2초).
+- Edge: `my-analytics/server/personalHandler.ts`·`public-analytics/supabase/functions/public-analytics/index.ts` 교체, `public-analytics/server/screenFacts.ts` 생성
+  (원격 원본 해시가 `f1e129e`와 일치할 때만, 원본은 `edge-before/`), functions 재시작. 익명 확인 auth 200, Edge 4경로 401.
+  (Python urllib 기본 User-Agent는 프록시가 403으로 막아 검사에 별도 UA를 넣었다.)
+- Pages: [workflow 39052868594](https://github.com/Fentanest/safetyreport-community-map/actions/runs/39052868594) 성공(`d984fef`, 알리 배너 반영).
+- 미검증: 운영 로그인 브라우저에서 화면·핀·개인 비교 실제 응답 시간.

@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-18 · 화면 쿼리 최적화 (미배포)
+## 2026-10-18 · 화면 쿼리 최적화 (운영 적용)
 
 - 정규화 결과 저장: `private.screen_fact_norm`(사실 행별 주소·장소 키·번호판·법규·지역, 쓰기 트리거로 유지, 사실과 함께 cascade 삭제).
   화면 집계는 입력·버전이 같은 행만 재사용하고 나머지는 예전처럼 계산한다. 대표 선출은 좁은 열로 하고 표시 열은 선출 뒤 붙인다.
@@ -8,10 +8,10 @@
   공개 적중 시 개인 비교는 내 신고 키·내 장소의 키만 계산.
 - 통계·개인 원천을 columns-v1로 전송(`public-analytics` 요청 옵션, 새 RPC `internal_my_analytics_cohort_columns` + 옛 RPC 되돌림).
 - 로컬 12만 건 합성 측정: 전체 기간 miss 16.1→7.9초, 핀 클릭 15.5→0.6~0.9초, 개인 비교 첫 진입 10.2→1.2초, 자료 변화 없는 180초 뒤 15.3→0.2초,
-  통계 원천 148.8→80.8MB. Edge 응답 동등성·rollback은 `tests/integration/screen-query-opt.test.ts`(7) 통과. 운영 미측정·미적용
-  (`docs/implementation/screen-query-opt-20261018/REPORT.md`).
+  통계 원천 148.8→80.8MB. Edge 응답 동등성·rollback은 `tests/integration/screen-query-opt.test.ts`(7) 통과
+  (`docs/implementation/screen-query-opt-20261018/REPORT.md`). 운영 적용 결과는 `docs/deployment.md` 2026-10-18 절.
 
-## 2026-10-18 · 사이드 알리 배너 생성기 최신 출력으로 교체 (미배포)
+## 2026-10-18 · 사이드 알리 배너 생성기 최신 출력으로 교체 (정적 웹 배포)
 
 - `src/ads/banners.html`의 `side` 섹션만 바꿨다(26개 상품·설정은 그대로, 고친 생성기 출력으로 재생성).
   세로형 자동 넘김이 꺼져 있던 문제(`data-wlpb-auto="false"` → `"true"`, 5초 간격 4개씩)와
