@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-16 · 10-13~15 변경 검토 결함 수정 (미배포)
+
+- 번호판 가림 호환: 10-14 배포 웹이 `202610131000` 적용 전 DB의 옛 가림 형식(`1*3*4*67`)을 거절하고, 차량 한 행만 어긋나도 대시보드 응답 전체가 실패하던 문제를 고쳤다.
+  브라우저 DTO가 옛·새 형식을 모두 받아 두 형식이 함께 공개하는 자리만 보이고, 형식이 다른 행은 그 행만 뺀다. 서버 출력 계약은 새 형식만 유지한다.
+  `contracts/public-vehicles.schema.json`이 전환기 옛 형식도 허용하고, masking-vectors에 `legacy_output`·`legacy_display`를 추가했다.
+- `202610131000_motorcycle_plate.sql`: 운영에 없는 폐기 저장 투영 객체(`screen_precompute_lock()`·`screen_observations`)가 없어도 적용되게 조건부로 고쳤다(둘 다 없으면 함수 교체·캐시 무효화만, 한쪽만 있으면 오류로 중단).
+  운영 미적용 migration이라 같은 파일에서 고쳤다. PGlite로 없음/있음/일부 세 경우와 owner·ACL·search_path·DEFINER 보존을 확인했다.
+- 지도: 기본 신고 수·수용률 모드의 지역 바탕색을 신고 건수(로그 척도)로 되돌리고 범례에 바탕 의미를 적었다.
+- 내 신고: `RESULT_TOO_LARGE` 문구를 서버의 '서버 업데이트 필요' 문구와 맞췄다.
+- 시험·CI: PGlite devDependency와 `npm run test:sql`로 실제 migration SQL을 실행 검증하고 CI에 추가했다. 커밋돼 있던 `vite-5209.pid`를 지우고 `*.pid`를 무시한다.
+- 문서: 미적용 migration 확인 SQL·적용 순서·전제 객체 주의, 10만 건 제한 제거 뒤 운영 관측 지표, 추정 규칙 버전 2026-10-13.2를 기록했다.
+  독립 검수(Astra) 지적으로 `db push --include-all` 안내를 파일별 수동 적용으로 바꿨다(`--include-all`은 폐기 `202610061200`까지 적용함).
+- 검증: Astra 검수 범위의 Vitest 133개·`test:sql` 세 스크립트 통과(검수자 실행). 운영 DB·실제 브라우저 확인과 운영 migration 적용 상태 확인은 하지 않았다. 커밋만 했고 push·배포는 하지 않았다.
+
 ## 2026-10-13 · my-reports 차량 부분검색 최소 4자
 
 - 정본 차량 query 하한을 6→4 코드포인트로 변경했다. Edge search/numbers가 공유하는 검증에 적용되며,
