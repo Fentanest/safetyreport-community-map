@@ -236,7 +236,7 @@ HTML·SPA는 Workers 기본 `public, max-age=0, must-revalidate`를 유지한다
 함수 권한 유지·컨테이너 healthy·익명 API 401 확인. 운영 브라우저는 저장된 접근 차단 설정으로 BLOCKED.
 [검증·백업·복구 기록](implementation/analytics-row-limit-20261014/REPORT.md) 참조.
 
-## 2026-10-16 · 미적용 migration 확인과 적용 순서 (운영자 확인 필요)
+## 2026-10-16 · 미적용 migration 확인과 적용 순서 (2026-10-17 확인: 이미 적용됨, 이력 행만 누락 — 맨 아래 절)
 
 배경: 10-14 배포 웹(`fd303a4`)은 차량 가림 새 형식만 받아, `202610131000_motorcycle_plate.sql`이 없는 DB가 내는
 옛 3자리 가림(`1*3*4*67`) 한 줄로 대시보드 전체가 실패할 수 있었다. `fix1016/map` 웹은 옛·새 형식을 모두 받고
@@ -323,4 +323,16 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 운영 확인: 번들에 GA(`G-44DVBQZ1S8`)·`wlpb-v1-height`·MBC 갈무리 포함, 로그인 전 화면(1440)에서 KBS 갈무리 → 쿠팡(id 1034414) → MBC 갈무리 → 로그인 카드 순서와
 두 이미지 로드를 실제 브라우저로 확인했다. 쿠팡 위젯과 GA 수집 요청은 이 검사 호스트의 네트워크에서 차단(`ERR_CONNECTION_REFUSED`)돼 렌더·수집은 확인하지 못했다.
 대시보드 오른쪽 배너는 공유자 로그인이 필요해 운영에서는 확인하지 못했다(로컬 E2E로 확인).
-**DB migration·Edge는 배포하지 않았다.** 위 '2026-10-16 미적용 migration' 절차는 여전히 운영자 확인이 필요하다(웹은 옛·새 가림 형식 모두 받음).
+**DB migration·Edge는 배포하지 않았다** — 아래 확인 결과 배포할 것이 없었다.
+
+### 2026-10-17 · 운영 DB·Edge 읽기 전용 대조 (10-16 '미적용 migration' 정정)
+10-16 절의 "적용 기록 없음"은 이력 표만 본 판단이었다. 서버 변경 기록(`.agent-runtime/supabase-trial-20261010/server-changes/journal.jsonl`)상
+`202610121300`·`121301`·`121400`(10-12), `202610130100`·`202610131000`(운영 적용본 `20261013-moto.applied.sql`, 10-13), `202610131500`(10-13)은
+사용자 승인으로 이미 운영에 적용됐고 백업·롤백이 기록돼 있다. 10-17 운영 읽기 전용 확인(`begin read only`, 서버 DB 컨테이너 psql):
+- `screen_mask_plate('123가4567')` = `1*3가*5*7`(새 형식), `screen_observations`·`screen_precompute_lock()` 둘 다 없음, `screen_cache_epoch`·`screen_plate_strict` 있음, cron `screen-result-cache-v1` active.
+- 6개 파일이 정의하는 함수 24개 중 23개 본문이 저장소 최신 정의와 같다. `analytics_screen_parts`는 `20261014132612`의 10만 건 제한 제거 두 줄만 다르다.
+- **이력 행만 없다**: `schema_migrations`에 6개 번호가 없고 `20261014132612`만 있다. 함수·데이터 변경 없이 이력 6행을 넣는 SQL을 준비했으나,
+  운영 쓰기 명령이 이 세션의 권한 정책에서 거절돼 실행하지 않았다(운영자가 실행하거나 권한을 허용해야 함). `supabase db push --include-all` 금지는 그대로다.
+- Edge: 운영 `volumes/functions/*/source` 파일 62개가 main과 SHA-256 일치. 다른 1개는 `my-reports/server/myReports/handler.ts`의 주석 한 줄(601ae23)뿐이라 재배포하지 않았다.
+  13개는 community-auth 저장소 소유 함수(community-account·community-auth-relay)라 대조 대상이 아니다. 10-14 이후 이 저장소의 Edge 실행 코드 변경은 없다(`contracts/`는 테스트 전용).
+결과 기록: `.agent-runtime/release-20261017/`(Git 제외), 원격 실행 기록 `server-changes/journal.jsonl`의 `release-20261017-*`.
