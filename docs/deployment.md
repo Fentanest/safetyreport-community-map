@@ -314,3 +314,13 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 - 다음 조치 후보(미결정): ① Edge TS 경로를 SQL 집계 RPC로 옮겨 facts 전체 전송 제거, ② 월 rollup·screen 캐시 사전 계산 재도입
   (폐기된 `202610061200`과 별개 설계), ③ Edge TS 경로도 `202610060700_screen_fact_transport.sql`의 압축 열 전송을 쓰는지 점검·통일, ④ 위 지표에 경보를 걸고
   상한 대신 "기간을 좁히면 빠르다"는 안내만 추가. 건수 제한 재도입은 사용자 결정("10만건제한을 왜 해. 하지마")에 어긋나므로 하지 않는다.
+
+## 2026-10-17 · GA·광고 배너 분리·오른쪽 알리익스프레스 배너·로그인 화면 MBC 갈무리 (정적 웹 배포 완료)
+
+사용자 "다 반영하고 … 푸시 배포 모두 진행" 승인. main `0d4f9d6`(10-16 결함 수정 커밋들 + `bfa1e64` GA + `0d4f9d6` 광고)을 push하고
+[workflow 39040261663](https://github.com/Fentanest/safetyreport-community-map/actions/runs/39040261663)으로 정적 웹만 배포했다.
+배포 전 로컬에서 CI와 같은 검사(blueprint·product 파이썬, Vitest 1209, `test:sql` 3개, live 빌드, dist 스캔)를 통과했다.
+운영 확인: 번들에 GA(`G-44DVBQZ1S8`)·`wlpb-v1-height`·MBC 갈무리 포함, 로그인 전 화면(1440)에서 KBS 갈무리 → 쿠팡(id 1034414) → MBC 갈무리 → 로그인 카드 순서와
+두 이미지 로드를 실제 브라우저로 확인했다. 쿠팡 위젯과 GA 수집 요청은 이 검사 호스트의 네트워크에서 차단(`ERR_CONNECTION_REFUSED`)돼 렌더·수집은 확인하지 못했다.
+대시보드 오른쪽 배너는 공유자 로그인이 필요해 운영에서는 확인하지 못했다(로컬 E2E로 확인).
+**DB migration·Edge는 배포하지 않았다.** 위 '2026-10-16 미적용 migration' 절차는 여전히 운영자 확인이 필요하다(웹은 옛·새 가림 형식 모두 받음).
