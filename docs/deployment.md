@@ -345,5 +345,5 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
   SQL 전후 어느 쪽에 올려도 된다. Pages 변경 없음. 운영 SQL·Edge 적용은 별도 승인 뒤에만 한다.
 - 주의: 이후 `community_report_facts` TRUNCATE는 CASCADE 필요. 트리거를 끈 대량 적재 뒤와 정규화 함수·지역 사전 변경(버전 함수 증가) 뒤에는 `202610180101` 재실행.
 - 되돌리기·검증·로컬 측정·미검증 범위: [보고서](implementation/screen-query-opt-20261018/REPORT.md), [rollback.sql](implementation/screen-query-opt-20261018/rollback.sql).
-- 광고: `src/ads/banners.html`의 알리익스프레스 배너 `data-wlpb-auto="true"`(정적 웹 빌드·배포 필요). 브라우저 확인
+- 광고: Muse `dc01aea`(오른쪽 알리익스프레스 배너 생성기 최신 출력: 자동 넘김 `true`·다크 모서리 수정)를 병합했다(정적 웹 빌드·배포 필요). 브라우저 확인
   `scripts/browser/verify_aliexpress_auto.mjs` 통과(`docs/implementation/ad-banners-2026-10-17/evidence/auto-rotate/`).

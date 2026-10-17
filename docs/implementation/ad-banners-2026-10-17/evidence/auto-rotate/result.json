@@ -1,0 +1,26 @@
+{
+ "configured": "true",
+ "runs": {
+  "true": {
+   "samples": [
+    "VIOFO A229 PRO 전후방 4K+2K HDR 듀얼 블랙박스 (슈퍼",
+    "【글로벌 버전】70mai T800 3채널 HDR 차량용 블랙박스 전방 4",
+    "70mai 4K T800 3채널 블랙박스, 전방 후방 실내 트리플 HDR",
+    "70mai A810S 4K 블랙박스 IMX678 듀얼 HDR 슈퍼커패시터"
+   ],
+   "distinct": 4,
+   "errors": []
+  },
+  "false": {
+   "samples": [
+    "VIOFO A229 PRO 전후방 4K+2K HDR 듀얼 블랙박스 (슈퍼",
+    "VIOFO A229 PRO 전후방 4K+2K HDR 듀얼 블랙박스 (슈퍼",
+    "VIOFO A229 PRO 전후방 4K+2K HDR 듀얼 블랙박스 (슈퍼",
+    "VIOFO A229 PRO 전후방 4K+2K HDR 듀얼 블랙박스 (슈퍼"
+   ],
+   "distinct": 1,
+   "errors": []
+  }
+ },
+ "pass": true
+}
