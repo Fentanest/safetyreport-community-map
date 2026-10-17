@@ -3,6 +3,7 @@ import { createPublicHandler, type AnalyticsState, type FactsOptions, type Viewe
 import type { PrivateFact } from '../../../server/aggregate.ts';
 import type { Scope } from '../../../src/domain/public.ts';
 import { parseRollup } from '../../../server/rollupSchema.ts';
+import { decodeScreenFacts } from '../../../server/screenFacts.ts';
 
 // The database client remains inside the Edge runtime; the service key never enters a VITE variable, response,
 // log, or Pages artifact. Every read requires a verified Kakao contributor; no runtime public-mode switch.
@@ -30,11 +31,15 @@ async function rateBucket(viewerId: string): Promise<string> {
 
 const handle = createPublicHandler({
   async getSnapshot(scope, options, kind, rollupOptions) {
+    // Facts travel as columns-v1: the same 35 fields without repeated keys (about half the bytes).
+    // An older SQL ignores the option and answers with objects, which the decoder also accepts.
     const value = await rpc('internal_analytics_read_snapshot', {
-      p_scope: scope, p_previous: options.previous, p_kind: kind ?? null, p_options: rollupOptions ?? {},
-    }) as { state: AnalyticsState; facts?: PrivateFact[]; rollup?: unknown };
-    if (!value?.state || (kind ? !value.rollup : !Array.isArray(value.facts))) throw new Error('analytics snapshot unavailable');
-    return { state: value.state, facts: value.facts, ...(kind ? { rollup: parseRollup(kind, value.rollup) } : {}) };
+      p_scope: scope, p_previous: options.previous, p_kind: kind ?? null,
+      p_options: kind ? rollupOptions ?? {} : { ...rollupOptions, fact_encoding: 'columns-v1' },
+    }) as { state: AnalyticsState; facts?: unknown; rollup?: unknown };
+    const facts = kind ? undefined : decodeScreenFacts(value?.facts);
+    if (!value?.state || (kind ? !value.rollup : !facts)) throw new Error('analytics snapshot unavailable');
+    return { state: value.state, facts: facts ?? undefined, ...(kind ? { rollup: parseRollup(kind, value.rollup) } : {}) };
   },
   async getState(): Promise<AnalyticsState> {
     // single-date-v1 state: the old state plus the 전체 기간 of each date basis

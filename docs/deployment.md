@@ -337,3 +337,13 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 - Edge: 운영 `volumes/functions/*/source` 파일 62개가 main과 SHA-256 일치. 다른 1개는 `my-reports/server/myReports/handler.ts`의 주석 한 줄(601ae23)뿐이라 재배포하지 않았다.
   13개는 community-auth 저장소 소유 함수(community-account·community-auth-relay)라 대조 대상이 아니다. 10-14 이후 이 저장소의 Edge 실행 코드 변경은 없다(`contracts/`는 테스트 전용).
 결과 기록: `.agent-runtime/release-20261017/`(Git 제외), 원격 실행 기록 `server-changes/journal.jsonl`의 `release-20261017-*`.
+
+## 2026-10-18 · 화면 쿼리 최적화·알리익스프레스 자동 넘김 (로컬 구현, 운영 미적용)
+
+- 쿼리: `202610180100_screen_fact_norm.sql` → `202610180101_screen_fact_norm_backfill.sql`(별도 트랜잭션 backfill, 수십 초) →
+  `202610180200_screen_cache_reuse.sql` → `202610180300_personal_source_columns.sql`. Edge `my-analytics`·`public-analytics`는 옛 SQL과도 동작하므로
+  SQL 전후 어느 쪽에 올려도 된다. Pages 변경 없음. 운영 SQL·Edge 적용은 별도 승인 뒤에만 한다.
+- 주의: 이후 `community_report_facts` TRUNCATE는 CASCADE 필요. 트리거를 끈 대량 적재 뒤와 정규화 함수·지역 사전 변경(버전 함수 증가) 뒤에는 `202610180101` 재실행.
+- 되돌리기·검증·로컬 측정·미검증 범위: [보고서](implementation/screen-query-opt-20261018/REPORT.md), [rollback.sql](implementation/screen-query-opt-20261018/rollback.sql).
+- 광고: `src/ads/banners.html`의 알리익스프레스 배너 `data-wlpb-auto="true"`(정적 웹 빌드·배포 필요). 브라우저 확인
+  `scripts/browser/verify_aliexpress_auto.mjs` 통과(`docs/implementation/ad-banners-2026-10-17/evidence/auto-rotate/`).

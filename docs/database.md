@@ -24,3 +24,6 @@ raw private table·auth schema·mutating RPC는 접근 실패해야 한다. 예�
 vehicle_canonical+report_date+spatial key에 workload 맞춘 인덱스. 대규모 공간 검색은 PostGIS GiST 검토.
 연도별 distinct contributor count를 합산하지 않는다. facts에서 count(distinct) 또는 정확한 membership 기반으로 계산.
 집계의 cutoff/version을 meta에 고정한다. snapshot switch·withdraw concurrent test를 수행한다.
+화면 정규화 보조 표 `private.screen_fact_norm`(2026-10-18, 로컬): 사실 행 PK별 결정적 정규화 결과와 입력값만 둔다. 선출·자격·집계 상태는 저장하지 않는다.
+facts 쓰기 트리거로 유지하고 FK cascade로 사실과 함께 지워지며, 읽는 쪽은 입력·`screen_norm_version()`이 같은 행만 쓴다
+([보고서](implementation/screen-query-opt-20261018/REPORT.md)).

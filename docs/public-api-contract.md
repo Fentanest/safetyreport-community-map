@@ -254,6 +254,10 @@ UUID는 이 전용 API의 표시 예외이고 다른 사용자 원문 조회 자
 
 기존 screen-v1 묶음/공개 fence를 유지한다. 새 웹은 Accept의 `screen-cache=stale-v2`로 opt-in한다. 새 Edge/DB만 공개 집계를 180초 미만 재사용하고 `meta.snapshot_at`(ISO timestamp), compare `snapshots:{public_at,personal_at,comparable}`를 추가한다. 혼합 버전에서도 diff 및 지역/기관/담당자 차이를 계산한다(0분모·결측 null 유지). `comparable`은 정보만 제공하고 비교 차단에 쓰지 않는다. 비중은 100% 초과를 허용하며 UI가 해당 셀에 `최근 업로드 반영 차이`를 표시한다. 양측 시각을 병기하고 같은 시각은 하나만 표시한다. shared는 null(미확정, UI 문구 생략)이다. compare.all=dashboard 불변식은 유지하나 mine⊆all은 혼합 snapshot에 요구하지 않는다. 구 웹은 기존 exact 응답을 받는다. [상세](implementation/screen-result-cache-20261012/STALE-REPORT.md).
 
+2026-10-18 후속(로컬, 운영 미적용): 저장된 공개 집계의 자료 revision이 지금과 같으면 180초가 지나도 다시 계산하지 않고 같은 결과를 지금 시각으로 돌려준다
+(자료가 그대로이므로 `snapshot_at`은 정확하다). 지도 핀 상세는 공개 캐시 키에 들어가지 않는다. 응답 형식·필드는 그대로다.
+[보고서](implementation/screen-query-opt-20261018/REPORT.md).
+
 ## 2026-10-12 · 느린 회선 첫 화면 (로컬 후보)
 
 대시보드는 선행 `/meta` 없이 `/my-analytics/screen`의 meta+dashboard를 한 번에 읽는다. 별도 맞춤 통계 직접 진입의 meta 조회는 유지한다.

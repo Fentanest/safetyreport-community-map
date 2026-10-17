@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-18 · 화면 쿼리 최적화 (미배포)
+
+- 정규화 결과 저장: `private.screen_fact_norm`(사실 행별 주소·장소 키·번호판·법규·지역, 쓰기 트리거로 유지, 사실과 함께 cascade 삭제).
+  화면 집계는 입력·버전이 같은 행만 재사용하고 나머지는 예전처럼 계산한다. 대표 선출은 좁은 열로 하고 표시 열은 선출 뒤 붙인다.
+- 화면 캐시: 자료 revision이 같으면 다시 계산하지 않고 시각만 갱신(매분 cron 헛계산 제거), 지도 핀을 공개 캐시 키에서 빼고 그 장소의 신고 키만 계산해 합침,
+  공개 적중 시 개인 비교는 내 신고 키·내 장소의 키만 계산.
+- 통계·개인 원천을 columns-v1로 전송(`public-analytics` 요청 옵션, 새 RPC `internal_my_analytics_cohort_columns` + 옛 RPC 되돌림).
+- 로컬 12만 건 합성 측정: 전체 기간 miss 16.1→7.9초, 핀 클릭 15.5→0.6~0.9초, 개인 비교 첫 진입 10.2→1.2초, 자료 변화 없는 180초 뒤 15.3→0.2초,
+  통계 원천 148.8→80.8MB. Edge 응답 동등성·rollback은 `tests/integration/screen-query-opt.test.ts`(7) 통과. 운영 미측정·미적용
+  (`docs/implementation/screen-query-opt-20261018/REPORT.md`).
+
 ## 2026-10-17 · 광고 배너 파일 분리·오른쪽 알리익스프레스 배너·로그인 화면 MBC 갈무리 (미배포)
 
 - 광고 배너 코드를 `src/ads/banners.html` 한 파일로 뺐다. 자리(`map`·`gate`·`side`)마다 광고 사이트가 준 iframe 코드를 그대로 붙여 넣으면 배너가 바뀐다

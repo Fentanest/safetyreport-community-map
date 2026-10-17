@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createPersonalHandler, type PersonalDeps, type PersonalSource } from '../../server/personalHandler';
+import { decodeScreenFacts } from '../../server/screenFacts';
 import { createPublicHandler, type AnalyticsState } from '../../server/publicHandler';
 import { demoFacts, DEMO_AS_OF, DEMO_DATA_MIN, DEMO_VIEWER_ID } from '../../src/data/demoEngine';
 import { personalCompareSchema, personalError } from '../../src/data/personal';
@@ -26,7 +27,7 @@ function setup(over: Partial<PersonalDeps> = {}, source: Partial<PersonalSource>
     rpc: async (name, args) => {
       calls.rpc.push([name, args]);
       if (name === 'internal_community_ingest_rate_limit') return true;
-      if (name === 'internal_my_analytics_cohort_source') {
+      if (name === 'internal_my_analytics_cohort_columns') {
         return { state, facts: demoFacts(), ...source,
           viewer: { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true, ...viewer } };
       }
@@ -77,7 +78,7 @@ describe('my-analytics authentication and ownership', () => {
     const res = await handle(req(undefined, { auth: `Bearer ${token(claims)}` }));
     expect(res.status).toBe(status);
     expect((await body(res)).error.code).toBe(code);
-    expect(calls.rpc.filter(([n]) => n === 'internal_my_analytics_cohort_source')).toHaveLength(0);
+    expect(calls.rpc.filter(([n]) => n.startsWith('internal_my_analytics_cohort'))).toHaveLength(0);
   });
 
   it.each([
@@ -97,7 +98,7 @@ describe('my-analytics authentication and ownership', () => {
     expect(spoof.status).toBe(400);
     const res = await handle(req());
     expect(res.status).toBe(200);
-    const [, args] = calls.rpc.find(([n]) => n === 'internal_my_analytics_cohort_source')!;
+    const [, args] = calls.rpc.find(([n]) => n === 'internal_my_analytics_cohort_columns')!;
     expect(args.p_user).toBe(DEMO_VIEWER_ID);
     expect(args.p_session).toBe(SESSION);
     expect(args).toMatchObject({ p_start: '2025-09-25', p_end: '2026-09-24', p_category: 'all', p_region_code: null, p_bbox: null });
@@ -182,7 +183,50 @@ describe('my-analytics response boundary', () => {
   it('computes all/mine from the one RPC snapshot it received (no second read)', async () => {
     const { handle, calls } = setup();
     await handle(req());
-    expect(calls.rpc.map(([n]) => n)).toEqual(['internal_community_ingest_rate_limit', 'internal_my_analytics_cohort_source']);
+    expect(calls.rpc.map(([n]) => n)).toEqual(['internal_community_ingest_rate_limit', 'internal_my_analytics_cohort_columns']);
+  });
+
+  it('reads the columns-v1 source; only an absent new RPC falls back to the object source', async () => {
+    // Demo facts predate the SQL source shape; complete them as the SQL source always is.
+    const facts = demoFacts().map(f => ({ report_identity: f.fact_identity, report_number: null, source_report_key: f.fact_identity,
+      first_accepted_at: '2026-01-01T00:00:00+00:00', identity_report_date: f.report_date, identity_completed_date: f.completed_date,
+      agency_current_name: f.agency_name, is_representative: true, contribution_count: 1, fine_estimate_won: null, ...f }));
+    const columns = ['fact_identity', 'contributor_id', 'report_identity', 'report_number', 'source_report_key', 'first_accepted_at',
+      'snapshot_id', 'snapshot_generation', 'report_date', 'completed_date', 'identity_report_date', 'identity_completed_date', 'category',
+      'status', 'disposition', 'vehicle_raw', 'point_key', 'lat', 'lng', 'address', 'region_code', 'agency_key', 'agency_name',
+      'agency_current_name', 'manager_key', 'manager_name', 'is_representative', 'contribution_count', 'amount_kind', 'amount_confirmed_won',
+      'amount_public', 'amount_stated', 'violation_law', 'rating', 'fine_estimate_won'] as const;
+    const packed = { encoding: 'columns-v1', columns, rows: facts.map(f => columns.map(c => (f as unknown as Record<string, unknown>)[c] ?? null)) };
+    // The legacy RPC answers with the same 35-field objects that columns-v1 decodes to.
+    const objects = decodeScreenFacts(packed)!;
+    const viewer = { user_ok: true, kakao: true, session: true, contributor: 'active', has_public_facts: true };
+    const run = async (columnsRpc: () => unknown) => {
+      const names: string[] = [];
+      const handle = createPersonalHandler({ enabled: true, allowedOrigins: [ORIGIN], jwtIssuer: 'https://p.supabase.co/auth/v1',
+        getUser: async () => ({ id: DEMO_VIEWER_ID, isAnonymous: false }),
+        rpc: async name => {
+          names.push(name);
+          if (name === 'internal_community_ingest_rate_limit') return true;
+          if (name === 'internal_my_analytics_cohort_columns') return columnsRpc();
+          if (name === 'internal_my_analytics_cohort_source') return { state, viewer, facts: objects };
+          throw new Error(`unexpected rpc ${name}`);
+        } });
+      const res = await handle(req());
+      return { status: res.status, body: await body(res), names };
+    };
+    const legacy = await run(() => { throw new Error('rpc PGRST202'); });
+    expect(legacy.status).toBe(200);
+    expect(legacy.names).toEqual(['internal_community_ingest_rate_limit', 'internal_my_analytics_cohort_columns', 'internal_my_analytics_cohort_source']);
+    const compact = await run(() => ({ state, viewer, facts: packed }));
+    expect(compact.status).toBe(200);
+    expect(compact.names).not.toContain('internal_my_analytics_cohort_source');
+    expect(compact.body).toEqual(legacy.body);
+    expect(compact.body.mine.report_count).toBeGreaterThan(0);
+    const timeout = await run(() => { throw new Error('rpc 57014'); });
+    expect(timeout.status).toBe(503);
+    expect(timeout.names).not.toContain('internal_my_analytics_cohort_source');
+    const unknown = await run(() => ({ state, viewer, facts: { encoding: 'columns-v9', columns: [], rows: [] } }));
+    expect(unknown.status).toBe(503);
   });
 });
 

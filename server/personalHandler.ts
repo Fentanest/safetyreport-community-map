@@ -10,6 +10,7 @@ import { parseScope, QueryError, unifyBasis, type AnalyticsState } from './publi
 import { todayKst } from './aggregate.ts';
 import { authenticate, ViewerAuthError, type ViewerAuthDeps, type ViewerUser } from './viewerAuth.ts';
 import type { ViewerState } from '../src/domain/personal.ts';
+import { decodeScreenFacts } from './screenFacts.ts';
 
 export type Rpc = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 export type PersonalUser = ViewerUser;
@@ -123,16 +124,26 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       if (spec) scope = unifyBasis(scope, scopeParams.has('date_basis'), spec.date_basis);
       // single-date-v1 source: the representative is elected BEFORE the date condition, on scope.date_basis;
       // neither the comparison nor 맞춤 통계 needs the previous window (D14)
-      const source = await deps.rpc('internal_my_analytics_cohort_source', {
+      const args = {
         p_user: uid, p_session: session, p_date_basis: scope.date_basis, p_start: scope.start, p_end: scope.end,
         p_with_previous: false, p_category: scope.category,
         // region is filtered on official codes in server/aggregate.ts (same as the public API)
         p_region_code: null, p_agency_key: scope.agency_key, p_manager_key: scope.manager_key,
         p_bbox: scope.bbox,
         // the law (위반법규) is filtered in server/aggregate.ts, like the region
-      }) as PersonalSource | null;
-      if (!source || typeof source !== 'object' || !source.state || !source.viewer || !Array.isArray(source.facts)) fail('service_unavailable');
-      const { state, viewer, facts } = source!;
+      };
+      // columns-v1 source (202610180300): the same facts without repeated keys. Only an absent new RPC
+      // falls back; timeout, permission and data errors stay errors.
+      let raw: unknown;
+      try { raw = await deps.rpc('internal_my_analytics_cohort_columns', args); }
+      catch (e) {
+        if (!(e instanceof Error) || !/^rpc (PGRST202|42883)$/.test(e.message)) throw e;
+        raw = await deps.rpc('internal_my_analytics_cohort_source', args);
+      }
+      const source = raw as (Omit<PersonalSource, 'facts'> & { facts: unknown }) | null;
+      const decoded = source && typeof source === 'object' ? decodeScreenFacts(source.facts) : null;
+      if (!source || typeof source !== 'object' || !source.state || !source.viewer || !decoded) fail('service_unavailable');
+      const { state, viewer } = source!, facts = decoded!;
       if (!viewer.user_ok) fail('account_ineligible');
       if (!viewer.kakao) fail('kakao_required');
       if (!viewer.session) fail('session_expired');
