@@ -18,6 +18,7 @@
 | service_role/secret | 중앙 Supabase 함수 runtime만 | 관리자 성격. CI readonly 대용으로 사용하지 않음 |
 | VITE_SUPABASE_URL | variable / frontend | 지도 웹 로그인용 프로젝트 URL. 공유자 전용 Pages 배포에 필수 |
 | VITE_SUPABASE_PUBLISHABLE_KEY | variable / frontend | 지도 웹 로그인용 공개 publishable(`sb_publishable_…`) 키. 공유자 전용 Pages 배포에 필수. secret/service_role 금지(dist 스캔이 비-anon JWT 차단) |
+| VITE_GA | frontend env (선택) | Google Analytics(`G-44DVBQZ1S8`). 비우면 운영 live 빌드에서만 켜짐, `off`면 끔, `on`이면 dev 검수용으로 켬. 배포 전 GA 속성의 '브라우저 기록 이벤트 기반 페이지 변경'을 꺼야 함(docs/privacy-security.md §Google Analytics) |
 | MY_ANALYTICS_ALLOWED_ORIGINS | Supabase Edge Function secret | `my-analytics` Origin allowlist. 운영 `https://safemap.worklazy.net` |
 | MY_ANALYTICS_ENABLED | Supabase Edge Function secret | `false`면 개인 비교만 503(지도 통계 영향 없음) |
 

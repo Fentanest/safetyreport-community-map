@@ -35,6 +35,18 @@ snapshot IDs, 이메일·전화번호·계정 이름·Google sub·JWT·refresh t
 - 관심 지역·비교 토글은 이 브라우저 localStorage에만(서버 전송 없음). 브리핑 모드는 내 데이터를 기본으로 숨긴다.
 - 지도 로그인은 relay·account API와 별개이며 `signOut({scope:'local'})`만 쓴다. dist 스캔이 relay/account 참조와 비-anon JWT를 차단한다.
 
+## Google Analytics (2026-10-17 사용자 지시)
+- 측정 ID `G-44DVBQZ1S8`, 구현 `src/analytics/googleAnalytics.ts`. 운영 live 빌드에서만 켠다(dev·demo 빌드 제외, `VITE_GA=off`로 끔).
+- 페이지 스크립트(gtag.js)라서 쿠팡 iframe과 달리 이 페이지의 주소·localStorage에 접근할 수 있는 위치에서 돈다. 그래서 보내는 값을 코드에서 줄인다:
+  `send_page_view: false`로 기본 page_view를 끄고, 화면이 바뀔 때마다 `origin + 경로 + ?screen=statistics|rankings`만 page_location으로 보낸다.
+  주소창의 OAuth `code`, 조회 조건(`date_basis`·기간·`region_code`·`agency_key`·`manager_key`·`bbox`·`law`), 공유 레시피 `sr`, 순위 상태 `rk_*`는 보내지 않는다.
+  referrer는 외부 출처(도메인)만 보내고 같은 사이트 주소는 보내지 않는다. user_id·계정·세션·닉네임·신고 데이터는 어떤 이벤트에도 넣지 않는다.
+- **GA 속성 설정 전제**: 관리 → 데이터 스트림 → 향상된 측정 → '브라우저 기록 이벤트 기반 페이지 변경'을 끈다.
+  켜져 있으면 gtag가 화면 전환마다 `page_location` 설정을 무시하고 주소 전체를 담은 page_view를 한 번 더 보낸다(2026-10-17 실제 gtag.js로 재현:
+  `scripts/browser/verify_google_analytics.mjs`). 이 검사가 통과하기 전에는 GA가 들어간 빌드를 배포하지 않는다.
+  2026-10-17 사용자가 설정을 끈 뒤 재검사 통과(page_view는 화면 방문마다 한 번, 주소는 경로+화면 이름뿐).
+- GA는 `_ga` 쿠키로 브라우저를 식별한다. 개인정보 처리방침·쿠키 고지의 필요 여부는 운영 검토 대상이다(이 저장소에서 판단하지 않음).
+
 ## 최소 권한
 Pages에는 public API URL·Kakao JavaScript key만 필요하다. Supabase direct-read adapter를 쓰는 경우 publishable key는
 공개 설정이며 read-only는 key 이름이 아니라 grants/RLS/함수 권한으로 강제한다.

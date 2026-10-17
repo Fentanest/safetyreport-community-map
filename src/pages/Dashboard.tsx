@@ -51,6 +51,7 @@ import { hasLayoutParam, readComparePref, readInterest, screenFromSearch, toggle
 import { markPoints } from '../state/pointMarks';
 import { demoViewerFromSearch, sessionKeyOf, type AuthStatus } from '../auth/mapAuth';
 import { SHARE_PARAM } from '../state/share';
+import { trackScreen } from '../analytics/googleAnalytics';
 import { CLUSTER_LEVEL } from '../lib/kakao';
 import type { CompareEntityRow } from '../domain/personal';
 import { ActivityContext, ActivityRegistry, useReportActivity, type QueryActivity } from '../data/queryActivity';
@@ -277,6 +278,9 @@ export default function Dashboard() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => { window.removeEventListener('scroll', onScroll); window.clearTimeout(t); };
   }, []);
+
+  // GA page_view per screen (address reduced to path + screen name: src/analytics/googleAnalytics.ts)
+  useEffect(() => { trackScreen(screen); }, [screen]);
 
   // back/forward: conditions, chips and list selections follow the URL
   useEffect(() => {

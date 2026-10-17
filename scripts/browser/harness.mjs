@@ -34,7 +34,7 @@ export async function api(path, body) {
   return res.json();
 }
 
-export async function openPage(browser, { width = 1440, height = 900, theme = 'dark', signedIn = true, search = '', mockSdk = true, locale = 'ko-KR', uid = E2E_UID, deviceScaleFactor = 1 } = {}) {
+export async function openPage(browser, { width = 1440, height = 900, theme = 'dark', signedIn = true, search = '', mockSdk = true, locale = 'ko-KR', uid = E2E_UID, deviceScaleFactor = 1, beforeGoto = null } = {}) {
   const context = await browser.newContext({ locale, viewport: { width, height }, colorScheme: theme === 'light' ? 'light' : 'dark', deviceScaleFactor });
   if (mockSdk) await context.route('https://dapi.kakao.com/**', route => route.fulfill({ contentType: 'text/javascript', body: MOCK_SDK }));
   await context.addInitScript(({ session, theme, signedIn }) => {
@@ -60,6 +60,7 @@ export async function openPage(browser, { width = 1440, height = 900, theme = 'd
   page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${e.message}`));
   let documentNavs = 0;
   page.on('framenavigated', (f) => { if (f === page.mainFrame()) documentNavs += 1; });
+  if (beforeGoto) await beforeGoto(context, page);
   await page.goto(`${ORIGIN}/${search}`);
   return { context, page, consoleErrors, navs: () => documentNavs };
 }

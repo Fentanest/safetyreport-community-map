@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-17 · Google Analytics 적용 (미배포)
+
+- 사용자 지시로 GA4(`G-44DVBQZ1S8`) gtag.js를 붙였다(`src/analytics/googleAnalytics.ts`, `main.tsx`에서 설치, 대시보드 화면 전환마다 page_view).
+  붙여 준 기본 스니펫은 주소 전체를 보내므로 그대로 쓰지 않았다: 기본 page_view를 끄고 경로와 화면 이름(`?screen=`)만 보내며,
+  OAuth `code`·조회 조건(`manager_key`·`agency_key`·`bbox` 등)·공유 레시피·순위 상태는 보내지 않는다. referrer는 외부 출처만. dev·demo 빌드에서는 꺼진다.
+- 실제 gtag.js 브라우저 검사(`scripts/browser/verify_google_analytics.mjs`, 수집 요청은 가로채 실제 속성에 보내지 않음)에서
+  현재 GA 속성의 향상된 측정 '브라우저 기록 이벤트 기반 페이지 변경'이 켜져 있어 화면 전환마다 주소 전체가 담긴 page_view가 추가로 나가는 것을 확인했다.
+  이 설정을 끄는 것이 배포 전제다(코드로 끌 수 없음). 설정 변경 뒤 같은 검사를 다시 통과해야 한다.
+  사용자가 같은 날 이 설정을 끈 뒤 재검사 7항목 통과: page_view가 화면 방문마다 한 번(`/`→통계→랭킹→`/`→뒤로가기 랭킹), 모든 수집 주소가 경로+화면 이름뿐,
+  OAuth code·조회 조건·공유 레시피·세션 토큰 카나리 미검출, 콘솔 오류 없음. (검사 스크립트가 묶음 전송의 줄별 `dl`을 URL 공통값으로 덮어 읽던 오류와
+  첫 로드가 가로채기 전에 나가던 순서를 함께 고쳤다. `harness.mjs openPage`에 `beforeGoto` 선택 인자 추가.)
+- 검증: 단위 테스트 `tests/product/googleAnalytics.test.ts`, `tsc -b`. push·배포는 하지 않았다.
+
 ## 2026-10-16 · 10-13~15 변경 검토 결함 수정 (미배포)
 
 - 번호판 가림 호환: 10-14 배포 웹이 `202610131000` 적용 전 DB의 옛 가림 형식(`1*3*4*67`)을 거절하고, 차량 한 행만 어긋나도 대시보드 응답 전체가 실패하던 문제를 고쳤다.
