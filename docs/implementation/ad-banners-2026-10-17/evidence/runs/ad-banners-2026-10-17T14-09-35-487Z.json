@@ -1,0 +1,646 @@
+{
+  "run_id": "ad-banners-2026-10-17T14-09-35-487Z",
+  "suite": "ad-banners",
+  "commit": "d51164f580921f5ae918b18a80029bb525f7a158",
+  "working_tree_dirty": true,
+  "started_at": "2026-10-17T14:09:35.514Z",
+  "only": null,
+  "selftest_wrong": null,
+  "environment": {
+    "browser": "chromium 153.0.8010.12",
+    "coupang": "STUB (ads-partners.coupang.com routed to a local page)",
+    "aliexpress": "real srcdoc, CDN images unrouted",
+    "sdk": "MOCK"
+  },
+  "results": {
+    "AD-RAIL": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920: rail 320px wide, right of the dashboard column, top aligned with it",
+          "actual": [
+            320,
+            true,
+            true
+          ],
+          "expected": [
+            320,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920: srcdoc banner sandboxed without allow-same-origin",
+          "actual": {
+            "sandbox": "allow-scripts allow-popups allow-popups-to-escape-sandbox",
+            "src": null,
+            "title": "알리익스프레스 광고 배너 만들기"
+          },
+          "expected": {
+            "sandbox": "allow-scripts allow-popups allow-popups-to-escape-sandbox",
+            "src": null,
+            "title": "알리익스프레스 광고 배너 만들기"
+          }
+        },
+        {
+          "ok": true,
+          "label": "1920: banner renders 4 products + its '광고' footer; cannot read this site's storage",
+          "actual": {
+            "items": 4,
+            "ad": "광고",
+            "storage": "SecurityError"
+          },
+          "expected": {
+            "items": 4,
+            "ad": "광고",
+            "storage": "SecurityError"
+          }
+        },
+        {
+          "ok": true,
+          "label": "1920: iframe takes the banner's reported content height (no empty area under it)",
+          "actual": 643,
+          "expected": 643
+        },
+        {
+          "ok": true,
+          "label": "1920: stays in view after scrolling 2400px (sticky under the top bar), fits the viewport",
+          "actual": [
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440: rail 320px wide, right of the dashboard column, top aligned with it",
+          "actual": [
+            320,
+            true,
+            true
+          ],
+          "expected": [
+            320,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440: srcdoc banner sandboxed without allow-same-origin",
+          "actual": {
+            "sandbox": "allow-scripts allow-popups allow-popups-to-escape-sandbox",
+            "src": null,
+            "title": "알리익스프레스 광고 배너 만들기"
+          },
+          "expected": {
+            "sandbox": "allow-scripts allow-popups allow-popups-to-escape-sandbox",
+            "src": null,
+            "title": "알리익스프레스 광고 배너 만들기"
+          }
+        },
+        {
+          "ok": true,
+          "label": "1440: banner renders 4 products + its '광고' footer; cannot read this site's storage",
+          "actual": {
+            "items": 4,
+            "ad": "광고",
+            "storage": "SecurityError"
+          },
+          "expected": {
+            "items": 4,
+            "ad": "광고",
+            "storage": "SecurityError"
+          }
+        },
+        {
+          "ok": true,
+          "label": "1440: iframe takes the banner's reported content height (no empty area under it)",
+          "actual": 643,
+          "expected": 643
+        },
+        {
+          "ok": true,
+          "label": "1440: stays in view after scrolling 2400px (sticky under the top bar), fits the viewport",
+          "actual": [
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1366: no rail below 1440px; the column takes the full width",
+          "actual": [
+            false,
+            true
+          ],
+          "expected": [
+            false,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390: no rail below 1440px; the column takes the full width",
+          "actual": [
+            false,
+            true
+          ],
+          "expected": [
+            false,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "AD-MAP": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920: Coupang map banner above the map, centred in the dashboard column, never wider",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1440: Coupang map banner above the map, centred in the dashboard column, never wider",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "AD-GATE": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920: order news capture → Coupang → MBC capture → login card",
+          "actual": [
+            "gate-figure",
+            "ad-slot ad-gate",
+            "gate-figure gate-figure-next",
+            "cm-panel access-card"
+          ],
+          "expected": [
+            "gate-figure",
+            "ad-slot ad-gate",
+            "gate-figure gate-figure-next",
+            "cm-panel access-card"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920: Coupang gate widget from banners.html (id 1034414) loads",
+          "actual": [
+            "1034414",
+            "STUB coupang 1034414"
+          ],
+          "expected": [
+            "1034414",
+            "STUB coupang 1034414"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "1920: caption and source",
+          "actual": {
+            "caption": "더 많은 신고가 필요한 이유",
+            "source": "출처: MBC 뉴스데스크 화면 갈무리",
+            "natural": 1280
+          },
+          "expected": {
+            "caption": "더 많은 신고가 필요한 이유",
+            "source": "출처: MBC 뉴스데스크 화면 갈무리",
+            "natural": 1280
+          }
+        },
+        {
+          "ok": true,
+          "label": "1920: same width as the banner and the card, stacked without overlap",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390: order news capture → Coupang → MBC capture → login card",
+          "actual": [
+            "gate-figure",
+            "ad-slot ad-gate",
+            "gate-figure gate-figure-next",
+            "cm-panel access-card"
+          ],
+          "expected": [
+            "gate-figure",
+            "ad-slot ad-gate",
+            "gate-figure gate-figure-next",
+            "cm-panel access-card"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390: Coupang gate widget from banners.html (id 1034414) loads",
+          "actual": [
+            "1034414",
+            "STUB coupang 1034414"
+          ],
+          "expected": [
+            "1034414",
+            "STUB coupang 1034414"
+          ]
+        },
+        {
+          "ok": true,
+          "label": "390: caption and source",
+          "actual": {
+            "caption": "더 많은 신고가 필요한 이유",
+            "source": "출처: MBC 뉴스데스크 화면 갈무리",
+            "natural": 1280
+          },
+          "expected": {
+            "caption": "더 많은 신고가 필요한 이유",
+            "source": "출처: MBC 뉴스데스크 화면 갈무리",
+            "natural": 1280
+          }
+        },
+        {
+          "ok": true,
+          "label": "390: same width as the banner and the card, stacked without overlap",
+          "actual": [
+            true,
+            true,
+            true
+          ],
+          "expected": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    },
+    "AD-LAYOUT": {
+      "status": "PASS",
+      "checks": [
+        {
+          "ok": true,
+          "label": "1920 light: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "1440 dark: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "1366 light: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "390 dark: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        },
+        {
+          "ok": true,
+          "label": "1920 gate: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "390 gate: no horizontal page overflow",
+          "actual": true,
+          "expected": true
+        },
+        {
+          "ok": true,
+          "label": "no unexpected console/page error",
+          "actual": [],
+          "expected": []
+        }
+      ]
+    }
+  },
+  "steps": {
+    "rail": {
+      "status": "DONE",
+      "ids": [
+        "AD-RAIL",
+        "AD-MAP",
+        "AD-LAYOUT"
+      ],
+      "notes": {
+        "rail-1920": {
+          "rail": {
+            "l": 1496,
+            "t": 84,
+            "r": 1816,
+            "b": 727,
+            "w": 320,
+            "h": 643,
+            "visible": true
+          },
+          "column": {
+            "l": 104,
+            "t": 84,
+            "r": 1476,
+            "b": 2620,
+            "w": 1372,
+            "h": 2536,
+            "visible": true
+          },
+          "map": {
+            "l": 104,
+            "t": 804,
+            "r": 803,
+            "b": 1641,
+            "w": 699,
+            "h": 837,
+            "visible": true
+          },
+          "mapAd": {
+            "l": 275,
+            "t": 511,
+            "r": 1305,
+            "b": 784,
+            "w": 1030,
+            "h": 273,
+            "visible": true
+          }
+        },
+        "rail-1440": {
+          "rail": {
+            "l": 1100,
+            "t": 80,
+            "r": 1420,
+            "b": 723,
+            "w": 320,
+            "h": 643,
+            "visible": true
+          },
+          "column": {
+            "l": 20,
+            "t": 80,
+            "r": 1084,
+            "b": 2697,
+            "w": 1064,
+            "h": 2617,
+            "visible": true
+          },
+          "map": {
+            "l": 20,
+            "t": 856,
+            "r": 578,
+            "b": 1693,
+            "w": 558,
+            "h": 837,
+            "visible": true
+          },
+          "mapAd": {
+            "l": 37,
+            "t": 568,
+            "r": 1067,
+            "b": 840,
+            "w": 1030,
+            "h": 273,
+            "visible": true
+          }
+        },
+        "rail-1366": {
+          "rail": {
+            "l": 0,
+            "t": 0,
+            "r": 0,
+            "b": 0,
+            "w": 0,
+            "h": 0,
+            "visible": false
+          },
+          "column": {
+            "l": 20,
+            "t": 80,
+            "r": 1346,
+            "b": 2584,
+            "w": 1326,
+            "h": 2504,
+            "visible": true
+          },
+          "map": {
+            "l": 20,
+            "t": 784,
+            "r": 866,
+            "b": 1621,
+            "w": 846,
+            "h": 837,
+            "visible": true
+          },
+          "mapAd": {
+            "l": 168,
+            "t": 495,
+            "r": 1198,
+            "b": 768,
+            "w": 1030,
+            "h": 273,
+            "visible": true
+          }
+        },
+        "rail-390": {
+          "rail": {
+            "l": 0,
+            "t": 0,
+            "r": 0,
+            "b": 0,
+            "w": 0,
+            "h": 0,
+            "visible": false
+          },
+          "column": {
+            "l": 16,
+            "t": 74,
+            "r": 374,
+            "b": 4243,
+            "w": 358,
+            "h": 4169,
+            "visible": true
+          },
+          "map": {
+            "l": 16,
+            "t": 1085,
+            "r": 374,
+            "b": 1792,
+            "w": 358,
+            "h": 707,
+            "visible": true
+          },
+          "mapAd": {
+            "l": 16,
+            "t": 943,
+            "r": 374,
+            "b": 1069,
+            "w": 358,
+            "h": 126,
+            "visible": true
+          }
+        }
+      },
+      "ms": 10453
+    },
+    "gate": {
+      "status": "DONE",
+      "ids": [
+        "AD-GATE",
+        "AD-LAYOUT"
+      ],
+      "notes": {
+        "gate-1920": {
+          "order": [
+            "gate-figure",
+            "ad-slot ad-gate",
+            "gate-figure gate-figure-next",
+            "cm-panel access-card"
+          ],
+          "fig": {
+            "caption": "더 많은 신고가 필요한 이유",
+            "source": "출처: MBC 뉴스데스크 화면 갈무리",
+            "natural": 1280
+          },
+          "ad": {
+            "l": 640,
+            "t": 504,
+            "r": 1280,
+            "b": 726,
+            "w": 640,
+            "h": 223,
+            "visible": true
+          },
+          "second": {
+            "l": 640,
+            "t": 774,
+            "r": 1280,
+            "b": 1190,
+            "w": 640,
+            "h": 416,
+            "visible": true
+          },
+          "card": {
+            "l": 640,
+            "t": 1230,
+            "r": 1280,
+            "b": 1537,
+            "w": 640,
+            "h": 306,
+            "visible": true
+          }
+        },
+        "gate-390": {
+          "order": [
+            "gate-figure",
+            "ad-slot ad-gate",
+            "gate-figure gate-figure-next",
+            "cm-panel access-card"
+          ],
+          "fig": {
+            "caption": "더 많은 신고가 필요한 이유",
+            "source": "출처: MBC 뉴스데스크 화면 갈무리",
+            "natural": 1280
+          },
+          "ad": {
+            "l": 0,
+            "t": 334,
+            "r": 390,
+            "b": 495,
+            "w": 390,
+            "h": 161,
+            "visible": true
+          },
+          "second": {
+            "l": 0,
+            "t": 539,
+            "r": 390,
+            "b": 814,
+            "w": 390,
+            "h": 275,
+            "visible": true
+          },
+          "card": {
+            "l": 0,
+            "t": 850,
+            "r": 390,
+            "b": 1240,
+            "w": 390,
+            "h": 390,
+            "visible": true
+          }
+        }
+      },
+      "ms": 2233
+    }
+  },
+  "finished_at": "2026-10-17T14:09:48.202Z",
+  "summary": {
+    "PASS": 4
+  }
+}

@@ -26,7 +26,7 @@ import { TREND_RATE_METRIC_ID } from '../components/trendMetrics';
 import type { MapMetric } from '../components/mapMetrics';
 import PlaceDetailsPanel, { type PlaceDetailState } from '../components/PlaceDetailsPanel';
 import PlaceEntityChart from '../components/PlaceEntityChart';
-import CoupangAd from '../components/CoupangAd';
+import AdBanner from '../components/AdBanner';
 import TrendCard from '../components/TrendCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable from '../components/EntityTable';
@@ -787,6 +787,8 @@ export default function Dashboard() {
         <AppNav variant="bottom" screen={screen} onScreen={goScreen} onAbout={() => goDashboard('guide')} />
         <main id="main" data-screen={screen}>
           <DevelopmentProfiler id="dashboard"><div className="dashboard-screen" hidden={screen !== 'dashboard'}>
+          {/* 2026-10-17: the dashboard column + a sticky ad rail on the right (wide screens only; the map banner stays centred in the column) */}
+          <div className="dashboard-body">
           <h1 className="sr-only">커뮤니티 신고 지도 — 이용자들이 공유한 안전신문고 신고를 지역·기관·기간별로 봅니다</h1>
 
           {briefing && (
@@ -881,7 +883,7 @@ export default function Dashboard() {
                 )}
               />
               {/* 2026-10-04: the advertiser asked for the line above the map; the disclosure sits above the banner. minScale 0.3 keeps it on phones (≥ 309px) */}
-              <CoupangAd id="1034404" width={1030} height={250} minScale={0.3} className="ad-map" />
+              <AdBanner slot="map" minScale={0.3} className="ad-map" />
               <div className={`dash-grid${err && shownScope && JSON.stringify(shownScope) !== JSON.stringify(scope) ? ' stale' : ''}`} data-selected={point ? 'place' : 'none'}>
                 <div className="area-map">
                   <MapPanel
@@ -1042,6 +1044,8 @@ export default function Dashboard() {
               <DataGuide data={data} />
             </>
           )}
+          </div>
+          <div className="ad-rail"><AdBanner slot="side" className="ad-side" /></div>
           </div></DevelopmentProfiler>
           <Suspense fallback={<p role="status">화면을 불러오는 중입니다.</p>}>
           {screen === 'rankings' && <RankingsPage key={`rankings-${sessionKey}`} active />}

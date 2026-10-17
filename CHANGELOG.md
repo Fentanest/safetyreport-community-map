@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-17 · 광고 배너 파일 분리·오른쪽 알리익스프레스 배너·로그인 화면 MBC 갈무리 (미배포)
+
+- 광고 배너 코드를 `src/ads/banners.html` 한 파일로 뺐다. 자리(`map`·`gate`·`side`)마다 광고 사이트가 준 iframe 코드를 그대로 붙여 넣으면 배너가 바뀐다
+  (빌드·배포 필요). `src/ads/banners.ts`가 첫 iframe의 src/srcdoc·크기만 읽고, sandbox·referrer 같은 보안 속성은 코드가 정한다(`docs/privacy-security.md`).
+  `CoupangAd.tsx`는 `AdBanner.tsx`(자리 이름으로 그림)로 바꿨다. 쿠팡 두 배너의 ID·크기·문구는 그대로다.
+- 대시보드: 가로 1440px 이상에서 화면 전체 오른쪽에 320px 자리를 두고 알리익스프레스 세로 배너(worklazy.net 제작 srcdoc)를 sticky로 붙였다.
+  배너가 알려 주는 내용 높이로 iframe 높이를 맞춘다(다크 모드에서 빈 흰 영역 방지). 1440px 미만에서는 자리를 만들지 않는다.
+- 로그인 안내 화면: 쿠팡 배너와 카카오 로그인 카드 사이에 MBC 뉴스데스크 갈무리(`src/assets/gate-doctor-heli.jpg`, 루트 `doctor.png`를 1280px JPEG로 줄임)와
+  캡션 '더 많은 신고가 필요한 이유'·출처를 넣었다.
+- 검증: 단위 테스트 `tests/product/adBanners.test.ts`(전체 Vitest 1209개 통과), `tsc -b`. 로컬 E2E 브라우저 검사 `scripts/browser/verify_ad_banners.mjs`
+  33항목 통과(1920 light·1440 dark에서 레일 위치·sandbox·스크롤 후 고정·높이 맞춤·프레임의 localStorage 차단, 1366·390에서 레일 없음·가로 넘침 없음,
+  로그인 화면 1920·390 순서·캡션·이미지, 콘솔 오류 0). 쿠팡 위젯은 STUB이고 실제 렌더는 확인하지 않았다(`docs/implementation/ad-banners-2026-10-17/evidence`).
+  push·배포는 하지 않았다.
+
 ## 2026-10-17 · Google Analytics 적용 (미배포)
 
 - 사용자 지시로 GA4(`G-44DVBQZ1S8`) gtag.js를 붙였다(`src/analytics/googleAnalytics.ts`, `main.tsx`에서 설치, 대시보드 화면 전환마다 page_view).

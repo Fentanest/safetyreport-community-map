@@ -1,8 +1,9 @@
 import type { AuthSnapshot } from '../auth/mapAuth';
 import type { AccessCode } from '../data/client';
 import { ISSUES_URL } from './DataGuide';
-import CoupangAd from './CoupangAd';
+import AdBanner from './AdBanner';
 import newsQuote from '../assets/gate-news-quote.jpg';
+import doctorHeli from '../assets/gate-doctor-heli.jpg';
 
 interface Props {
   code: AccessCode;
@@ -33,7 +34,16 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
           <small>출처: KBS 뉴스9 화면 갈무리</small>
         </figcaption>
       </figure>
-      <CoupangAd id="1034414" width={640} height={200} className="ad-gate" />
+      <AdBanner slot="gate" className="ad-gate" />
+      {/* 2026-10-17 user decision: second capture between the banner and the login card (no person identifiable beyond the sign-language interpreter of the broadcast, so not pixelated) */}
+      <figure className="gate-figure gate-figure-next">
+        <img src={doctorHeli} width={1280} height={721} loading="lazy"
+          alt="MBC 뉴스데스크 화면. 닥터헬기 못 뜨나. 닥터헬기 예산 출처는 응급의료기금이고, 그중 교통 범칙금·과태료 비중이 80%라는 자막." />
+        <figcaption>
+          <b>더 많은 신고가 필요한 이유</b>
+          <small>출처: MBC 뉴스데스크 화면 갈무리</small>
+        </figcaption>
+      </figure>
       <section className="cm-panel access-card" aria-labelledby="gate-title">
         <div className="overline">나만의 안전신문고 커뮤니티</div>
         <h1 id="gate-title">지금은 신고를 10건 이상 공유한 분만 볼 수 있어요</h1>

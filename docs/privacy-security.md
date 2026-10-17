@@ -35,6 +35,15 @@ snapshot IDs, 이메일·전화번호·계정 이름·Google sub·JWT·refresh t
 - 관심 지역·비교 토글은 이 브라우저 localStorage에만(서버 전송 없음). 브리핑 모드는 내 데이터를 기본으로 숨긴다.
 - 지도 로그인은 relay·account API와 별개이며 `signOut({scope:'local'})`만 쓴다. dist 스캔이 relay/account 참조와 비-anon JWT를 차단한다.
 
+## 광고 배너 (쿠팡 2026-09-30, 알리익스프레스 2026-10-17)
+- 배너 코드는 `src/ads/banners.html` 한 파일에만 둔다(운영자가 광고 사이트의 iframe 코드를 그대로 붙여 넣는 파일). 앱(`src/ads/banners.ts`)은 각 자리의
+  첫 iframe에서 src 또는 srcdoc·크기·제목만 읽고, iframe 밖의 `<script>`는 실행하지 않는다. 그리는 iframe의 보안 속성은 붙여 넣은 코드가 아니라 앱이 정한다.
+- src 위젯(쿠팡)은 https만 받고 `referrerpolicy="strict-origin"`(쿠팡이 준 `unsafe-url` 무시)이라 조회 조건 주소를 보내지 않는다. 광고 코드는 쿠팡 도메인에서 돈다.
+- srcdoc 배너(알리익스프레스)는 항상 `sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"`(allow-same-origin 없음)라 고유 출처가 없어
+  이 페이지의 localStorage(로그인 세션)·DOM에 접근하지 못한다(브라우저 검사에서 프레임 안 localStorage 접근이 SecurityError로 막히는 것 확인).
+  srcdoc 머리에 `<meta name="referrer" content="strict-origin">`를 넣어 상품 이미지·링크 요청에도 출처만 보낸다. 부모와 주고받는 것은 배너 높이 알림(`wlpb-v1-height`) 하나다.
+- 페이지 스크립트형 광고(쿠팡 g.js 등)는 쓰지 않는다. `VITE_ADS=off`이면 모든 배너를 그리지 않는다.
+
 ## Google Analytics (2026-10-17 사용자 지시)
 - 측정 ID `G-44DVBQZ1S8`, 구현 `src/analytics/googleAnalytics.ts`. 운영 live 빌드에서만 켠다(dev·demo 빌드 제외, `VITE_GA=off`로 끔).
 - 페이지 스크립트(gtag.js)라서 쿠팡 iframe과 달리 이 페이지의 주소·localStorage에 접근할 수 있는 위치에서 돈다. 그래서 보내는 값을 코드에서 줄인다:

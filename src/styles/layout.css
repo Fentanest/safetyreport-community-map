@@ -16,6 +16,14 @@
 .app { display: block; }
 main { width: 100%; max-width: 1760px; margin-inline: auto; }
 .dashboard-screen { display: flex; flex-direction: column; gap: var(--card-gap); min-width: 0; }
+.dashboard-body { display: flex; flex-direction: column; gap: var(--card-gap); min-width: 0; }
+/* 2026-10-17: sticky ad rail (components/AdBanner.tsx, slot "side") right of the whole dashboard, only where the column keeps ≥ ~1050px */
+.ad-rail { display: none; }
+@media (min-width: 1440px) {
+  .dashboard-screen:has(> .ad-rail > .ad-slot) { display: grid; grid-template-columns: minmax(0, 1fr) 320px; column-gap: var(--card-gap); align-items: start; }
+  .ad-rail { display: block; position: sticky; top: calc(var(--topbar-h) + var(--card-gap)); }
+  .ad-side iframe { display: block; border: 0; max-height: calc(100vh - var(--topbar-h) - 2 * var(--card-gap)); }
+}
 
 .app-tabs { display: flex; align-self: stretch; gap: 2px; margin-left: 8px; flex: none; }
 .app-tab { border: 0; border-top: 2px solid transparent; border-bottom: 2px solid transparent; background: transparent; color: var(--muted);
@@ -156,6 +164,7 @@ main { width: 100%; max-width: 1760px; margin-inline: auto; }
 .gate-figure figcaption { display: flex; flex-direction: column; gap: 2px; }
 .gate-figure figcaption b { font-size: 16px; line-height: 24px; letter-spacing: -0.02em; }
 .gate-figure figcaption small { font-size: 12px; color: var(--muted); }
+.gate-figure-next { margin-top: 28px; }
 .access-gate .access-card { margin-top: 20px; }
 
 body.briefing .more-charts, body.briefing .app-tabs { display: none; }
