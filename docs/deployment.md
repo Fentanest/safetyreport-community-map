@@ -358,4 +358,6 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
   (원격 원본 해시가 `f1e129e`와 일치할 때만, 원본은 `edge-before/`), functions 재시작. 익명 확인 auth 200, Edge 4경로 401.
   (Python urllib 기본 User-Agent는 프록시가 403으로 막아 검사에 별도 UA를 넣었다.)
 - Pages: [workflow 39052868594](https://github.com/Fentanest/safetyreport-community-map/actions/runs/39052868594) 성공(`d984fef`, 알리 배너 반영).
+- cron(`cron.job_run_details`): 적용 전 17:05~17:12 UTC는 3분 중 2번 24.8~26.3초(나머지 0.6초). 적용 직후 새 키로 한 번(17:13, 19.6초) 계산한 뒤
+  17:14~17:19는 매분 0.61~0.65초 — 자료 변화가 없을 때 재계산하지 않는다(시각만 갱신).
 - 미검증: 운영 로그인 브라우저에서 화면·핀·개인 비교 실제 응답 시간.
