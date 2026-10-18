@@ -371,7 +371,18 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 - 미검증: 로그인 브라우저에서 제물포 테두리 복구(Chrome 확장 미연결, 개인 응답 재현은 세션 자격 증명이 필요해 하지 않음).
 
 
-## 기관 registry 2026-10-18.1 전환·롤백 (준비, 운영 미실행)
+## 기관 registry 2026-10-18.1 전환·롤백 (206 적용함, 2026-10-18)
+
+적용 기록(206 셀프호스트, 사용자 허락 "실운영 서버 아니니까 해도 된다"):
+- 백업 `~/registry-backup-20261018/`: Edge 원본 6파일(교체 전 해시가 `643b148`과 같음 확인), facts 식별·원문·파생 triple CSV 138,941행.
+- Edge: `community-ingest/source`의 `server/ingest/observation.ts`·`shared/agency-region-registry/{manifest.json,data/agency_*.json}` 교체 후 functions 재시작.
+  익명 호출이 함수 본문의 `auth_required`까지 도달(새 번들 로딩 확인). 재시작으로 구 워커 종료.
+- DB: `202610180400` 한 트랜잭션 적용·`schema_migrations` 기록, singleton `2026-10-18.1`.
+- recompute: dry-run scanned 138,941 / changed 11 / codelessInstitutionRefreshed 0 / versionStampOnly 138,930 → apply 동일, skipped 0.
+  사후 대조: 행·식별자 동일, 원문 열 변경 0, 파생 변경 11(평택지방해양수산청 항만물류과 10건 `ag-c1192000`(해양수산부 본부) → `ag-c1192229`,
+  이름 해시 키 1건 → `ag-c5700000` 경기도 여주시), 전 행 `2026-10-18.1`. 공개 화면 캐시는 180초 안에 갱신.
+- 되돌리기: 아래 롤백 절차 + 백업 CSV로 triple 복원.
+
 
 새 스냅샷이 포함된 `community-ingest` Edge 전체 import 번들을 먼저 배포한다.
 구 Edge의 진행 중 요청이 모두 끝났음을 확인한 뒤 singleton migration
