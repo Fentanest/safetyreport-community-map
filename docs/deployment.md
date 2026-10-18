@@ -408,3 +408,11 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
 트리거가 실제 계산 버전을 보존하거나 불일치 쓰기를 거절하게 하는 대안은 이번에
 적용하지 않았다. 새 Edge를 먼저 올리는 혼합 버전 구간과 recompute의 낙관적 잠금·
 버전 기록을 함께 설계하고 SQL 통합 검증해야 하므로 별도 변경이 필요하다.
+
+## 2026-10-18 · 좁은 화면 지도 아래 알리 가로 배너 (정적 웹 배포 완료)
+- 사용자 승인("응 해"). 코드 `56ce8fd`(banners.html `below` 자리, `AdBanner` media 조건). DB·Edge 변경 없음.
+- 배포 전 로컬에서 CI와 같은 검사 통과: blueprint·product 파이썬, Vitest 1225, `test:sql`, live 빌드, dist 스캔.
+- Pages: [workflow 39128677720](https://github.com/Fentanest/safetyreport-community-map/actions/runs/39128677720) 성공.
+- 운영 확인: https://safemap.worklazy.net 번들에 `below` 자리·photo-strip 배너·`(min-width: 1440px)` 조건 포함.
+  대시보드는 공유자 로그인이 필요해 운영 화면에서는 보지 못했다(demo 자료 브라우저 검사 `scripts/browser/verify_aliexpress_below.mjs` 26/26으로 확인).
+- 되돌리기: `56ce8fd`를 revert 후 Pages workflow 재실행.
