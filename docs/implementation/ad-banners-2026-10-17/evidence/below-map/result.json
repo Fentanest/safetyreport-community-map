@@ -1,0 +1,275 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "name": "1366: only the below banner iframe exists",
+   "actual": {
+    "below": 1,
+    "side": 0
+   },
+   "expected": {
+    "below": 1,
+    "side": 0
+   },
+   "pass": true
+  },
+  {
+   "name": "1366: under the map row, above the analysis strip, centred, ≤ 1030px",
+   "actual": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "expected": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "pass": true
+  },
+  {
+   "name": "1366: photo-strip renders products, iframe takes its content height",
+   "actual": [
+    "photo-strip",
+    true,
+    true
+   ],
+   "expected": [
+    "photo-strip",
+    true,
+    true
+   ],
+   "pass": true
+  },
+  {
+   "name": "1366: rotates by itself (first product changes within 6 s)",
+   "actual": true,
+   "expected": true,
+   "pass": true,
+   "detail": {
+    "per": 3,
+    "before": "VIOFO A229 PRO 전후방 4K+2K HDR 듀",
+    "after": "VIOFO 오리지널 GPS 모듈, 자동차 대시 카메라,",
+    "items": 3
+   }
+  },
+  {
+   "name": "1366 light: no horizontal overflow",
+   "actual": true,
+   "expected": true,
+   "pass": true
+  },
+  {
+   "name": "resize 1366→1600: below removed, side rail created",
+   "actual": {
+    "below": 0,
+    "side": 1
+   },
+   "expected": {
+    "below": 0,
+    "side": 1
+   },
+   "pass": true
+  },
+  {
+   "name": "resize 1600→1200: side rail removed, below created",
+   "actual": {
+    "below": 1,
+    "side": 0
+   },
+   "expected": {
+    "below": 1,
+    "side": 0
+   },
+   "pass": true
+  },
+  {
+   "name": "1366: no console/page errors",
+   "actual": [],
+   "expected": [],
+   "pass": true
+  },
+  {
+   "name": "1024: only the below banner iframe exists",
+   "actual": {
+    "below": 1,
+    "side": 0
+   },
+   "expected": {
+    "below": 1,
+    "side": 0
+   },
+   "pass": true
+  },
+  {
+   "name": "1024: under the map row, above the analysis strip, centred, ≤ 1030px",
+   "actual": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "expected": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "pass": true
+  },
+  {
+   "name": "1024: photo-strip renders products, iframe takes its content height",
+   "actual": [
+    "photo-strip",
+    true,
+    true
+   ],
+   "expected": [
+    "photo-strip",
+    true,
+    true
+   ],
+   "pass": true
+  },
+  {
+   "name": "1024: rotates by itself (first product changes within 6 s)",
+   "actual": true,
+   "expected": true,
+   "pass": true,
+   "detail": {
+    "per": 3,
+    "before": "VIOFO A229 PRO 전후방 4K+2K HDR 듀",
+    "after": "VIOFO 오리지널 GPS 모듈, 자동차 대시 카메라,",
+    "items": 3
+   }
+  },
+  {
+   "name": "1024 dark: no horizontal overflow",
+   "actual": true,
+   "expected": true,
+   "pass": true
+  },
+  {
+   "name": "1024: no console/page errors",
+   "actual": [],
+   "expected": [],
+   "pass": true
+  },
+  {
+   "name": "390: only the below banner iframe exists",
+   "actual": {
+    "below": 1,
+    "side": 0
+   },
+   "expected": {
+    "below": 1,
+    "side": 0
+   },
+   "pass": true
+  },
+  {
+   "name": "390: under the map row, above the analysis strip, centred, ≤ 1030px",
+   "actual": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "expected": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "pass": true
+  },
+  {
+   "name": "390: photo-strip renders products, iframe takes its content height",
+   "actual": [
+    "photo-strip",
+    true,
+    true
+   ],
+   "expected": [
+    "photo-strip",
+    true,
+    true
+   ],
+   "pass": true
+  },
+  {
+   "name": "390: rotates by itself (first product changes within 6 s)",
+   "actual": true,
+   "expected": true,
+   "pass": true,
+   "detail": {
+    "per": 1,
+    "before": "VIOFO A229 PRO 전후방 4K+2K HDR 듀",
+    "after": "A119MINI2/A229 Plus/A229 Pro/A",
+    "items": 1
+   }
+  },
+  {
+   "name": "390 dark: no horizontal overflow",
+   "actual": true,
+   "expected": true,
+   "pass": true
+  },
+  {
+   "name": "390: no console/page errors",
+   "actual": [],
+   "expected": [],
+   "pass": true
+  },
+  {
+   "name": "1440: only the side rail iframe exists",
+   "actual": {
+    "below": 0,
+    "side": 1
+   },
+   "expected": {
+    "below": 0,
+    "side": 1
+   },
+   "pass": true
+  },
+  {
+   "name": "1440 light: no horizontal overflow",
+   "actual": true,
+   "expected": true,
+   "pass": true
+  },
+  {
+   "name": "1440: no console/page errors",
+   "actual": [],
+   "expected": [],
+   "pass": true
+  },
+  {
+   "name": "1920: only the side rail iframe exists",
+   "actual": {
+    "below": 0,
+    "side": 1
+   },
+   "expected": {
+    "below": 0,
+    "side": 1
+   },
+   "pass": true
+  },
+  {
+   "name": "1920 dark: no horizontal overflow",
+   "actual": true,
+   "expected": true,
+   "pass": true
+  },
+  {
+   "name": "1920: no console/page errors",
+   "actual": [],
+   "expected": [],
+   "pass": true
+  }
+ ]
+}

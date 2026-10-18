@@ -8,7 +8,7 @@
  */
 import raw from './banners.html?raw';
 
-export type AdSlot = 'map' | 'gate' | 'side';
+export type AdSlot = 'map' | 'gate' | 'side' | 'below';
 
 export interface Banner {
   title: string;
@@ -73,7 +73,7 @@ export function parseBanners(html: string): Partial<Record<AdSlot, Banner>> {
   for (const m of text.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/gi)) {
     const sec = attributes(m[1]);
     const slot = sec['data-ad-slot'] as AdSlot | undefined;
-    if (slot !== 'map' && slot !== 'gate' && slot !== 'side') continue;
+    if (slot !== 'map' && slot !== 'gate' && slot !== 'side' && slot !== 'below') continue;
     const tag = IFRAME.exec(m[2]);
     if (!tag) continue;
     const a = attributes(tag[1]);

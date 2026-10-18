@@ -27,6 +27,7 @@ import type { MapMetric } from '../components/mapMetrics';
 import PlaceDetailsPanel, { type PlaceDetailState } from '../components/PlaceDetailsPanel';
 import PlaceEntityChart from '../components/PlaceEntityChart';
 import AdBanner from '../components/AdBanner';
+import { AD_BANNERS } from '../ads/banners';
 import TrendCard from '../components/TrendCard';
 import VehicleTop5 from '../components/VehicleTop5';
 import EntityTable from '../components/EntityTable';
@@ -66,6 +67,8 @@ const HeatmapCard = lazy(() => import('../components/AnalyticsCharts').then(m =>
 const RatingCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.RatingCard })));
 const ScatterCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.ScatterCard })));
 const VehicleDaysCard = lazy(() => import('../components/AnalyticsCharts').then(m => ({ default: m.VehicleDaysCard })));
+/** where the sticky side ad rail is drawn — keep in step with the .ad-rail rule in styles/layout.css */
+const SIDE_AD_MEDIA = '(min-width: 1440px)';
 
 
 
@@ -965,6 +968,8 @@ export default function Dashboard() {
                     ? () => loadMorePlaceManagers(placeDetail.detail.manager_total) : null}
                 />
               )}
+              {/* 2026-10-18: where the side rail is not drawn (< 1440px) the AliExpress line banner sits under the map instead */}
+              <AdBanner slot="below" media={AD_BANNERS.side ? `not all and ${SIDE_AD_MEDIA}` : undefined} className="ad-below" />
               </div>
               {/* KP-04: the tables and charts below always describe the APPLIED scope (never the selected address) */}
               <p className="scope-strip" role="note">아래 표와 그래프: {scopeLabel(shownScope)}{freshness}</p>
@@ -1045,7 +1050,7 @@ export default function Dashboard() {
             </>
           )}
           </div>
-          <div className="ad-rail"><AdBanner slot="side" className="ad-side" /></div>
+          <div className="ad-rail"><AdBanner slot="side" media={SIDE_AD_MEDIA} className="ad-side" /></div>
           </div></DevelopmentProfiler>
           <Suspense fallback={<p role="status">화면을 불러오는 중입니다.</p>}>
           {screen === 'rankings' && <RankingsPage key={`rankings-${sessionKey}`} active />}

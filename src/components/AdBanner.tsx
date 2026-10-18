@@ -5,18 +5,35 @@
  * - referrer: 출처(도메인)만 보낸다. 주소창의 조회 조건(기간·지역·기관)은 넘기지 않는다.
  * - 고정 폭 위젯은 자리가 좁으면 비율을 유지한 채 줄이고(minScale 미만이면 감춘다) 가로 넘침을 만들지 않는다.
  *   폭이 정해지지 않은 배너(width="100%")는 자리 폭을 그대로 채운다.
+ * - media가 있으면 그 화면 조건에서만 그린다(조건 밖에서는 iframe을 만들지 않아 숨은 배너가 내려받지·돌지 않는다).
  * - 대가성 문구(banners.html의 data-disclosure)를 배너 위에 함께 보인다(2026-10-04 사용자 결정: 문구는 광고 상단). VITE_ADS=off 이면 아무것도 그리지 않는다.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AD_BANNERS, SRCDOC_SANDBOX, adsEnabled, type AdSlot } from '../ads/banners';
 
-export default function AdBanner({ slot, minScale = 0.5, className = '' }: {
+function useMedia(query: string | undefined): boolean {
+  const subscribe = useCallback((onChange: () => void) => {
+    if (!query || typeof window.matchMedia !== 'function') return () => {};
+    const mq = window.matchMedia(query);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [query]);
+  return useSyncExternalStore(subscribe,
+    () => !query || typeof window.matchMedia !== 'function' || window.matchMedia(query).matches,
+    // server render (tests): only a banner without a media condition
+    () => !query);
+}
+
+export default function AdBanner({ slot, minScale = 0.5, className = '', media }: {
   slot: AdSlot;
   /** below this scale a fixed-width banner is hidden instead of shrunk further */
   minScale?: number;
   className?: string;
+  /** CSS media query: the banner is rendered only while it matches */
+  media?: string;
 }) {
-  const ad = AD_BANNERS[slot];
+  const shown = useMedia(media);
+  const ad = shown ? AD_BANNERS[slot] : undefined;
   const width = ad?.width ?? null;
   const boxRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);

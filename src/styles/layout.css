@@ -17,7 +17,8 @@
 main { width: 100%; max-width: 1760px; margin-inline: auto; }
 .dashboard-screen { display: flex; flex-direction: column; gap: var(--card-gap); min-width: 0; }
 .dashboard-body { display: flex; flex-direction: column; gap: var(--card-gap); min-width: 0; }
-/* 2026-10-17: sticky ad rail (components/AdBanner.tsx, slot "side") right of the whole dashboard, only where the column keeps ≥ ~1050px */
+/* 2026-10-17: sticky ad rail (components/AdBanner.tsx, slot "side") right of the whole dashboard, only where the column keeps ≥ ~1050px.
+ * The breakpoint is also SIDE_AD_MEDIA in pages/Dashboard.tsx (narrower screens get the "below" banner under the map). */
 .ad-rail { display: none; }
 @media (min-width: 1440px) {
   .dashboard-screen:has(> .ad-rail > .ad-slot) { display: grid; grid-template-columns: minmax(0, 1fr) 320px; column-gap: var(--card-gap); align-items: start; }

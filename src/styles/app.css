@@ -552,3 +552,5 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 .ad-disclosure { margin: 0; font-size: 11px; line-height: 1.5; color: var(--muted); }
 .ad-gate { width: min(640px, 100%); margin-top: 16px; }
 .ad-map { margin-top: var(--card-gap, 16px); }
+/* the line banner fills the column up to its own 1030px design width, centred */
+.ad-below { max-width: 1030px; }

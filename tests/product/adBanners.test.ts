@@ -19,6 +19,17 @@ describe('src/ads/banners.html — the one file the owner edits', () => {
     expect(side.srcdoc).toContain('3.19&quot; IPS');
     expect(side.srcdoc!.trimEnd().endsWith('</script></body></html>')).toBe(true);
   });
+  it('below is the AliExpress line banner (photo-strip, 3 per page) with the same 26 products as side, 644px tall', () => {
+    const below = AD_BANNERS.below!;
+    const side = AD_BANNERS.side!;
+    expect([below.src, below.width, below.height, below.disclosure]).toEqual([null, null, 644, null]);
+    expect(below.srcdoc).toContain('data-wlpb-design="photo-strip" data-wlpb-count="3"');
+    expect(below.srcdoc).toContain('data-wlpb-auto="true"');
+    const links = (doc: string) => [...doc.matchAll(/href="(https:\/\/s\.click\.aliexpress\.com\/e\/[^"]+)"/g)].map((m) => m[1]);
+    expect(links(below.srcdoc!)).toHaveLength(52);
+    expect(links(below.srcdoc!)).toEqual(links(side.srcdoc!));
+    expect(below.srcdoc!.trimEnd().endsWith('</script></body></html>')).toBe(true);
+  });
 });
 
 describe('parseBanners', () => {
