@@ -28,7 +28,7 @@ const cases = read('vectors/resolve_cases.json').cases;
 
 describe('agency-region-registry vectors (shared)', () => {
   it('registry version matches the snapshot', () => {
-    expect(registryVersion).toBe('2026-09-29.3');
+    expect(registryVersion).toBe('2026-10-18.1');
   });
   for (const c of cases) {
     it(c.name, () => {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-18 · 기관코드 스냅샷 2026-10-18.1 (미배포)
+
+- 공식 기관코드 전체자료 2026-10-18 판으로 `shared/agency-region-registry` 재빌드(PC 정본에서 전파, 세 레포 바이트 동일). 2026-10-01 검찰청→공소청 개편 등 반영.
+  1:1 파생 링크 +146/−17, (구) 역사 노드 32→40, forward 19,822→20,300. 빌더·규칙 변경 없음.
+- migration `202610180100_agency_registry_2026_10_18_1.sql`(singleton 버전만). 배포 순서: migration → Edge 번들(새 스냅샷) → `scripts/recompute-agency-keys.mjs` dry-run → 실행.
+- 테스트 버전 기대값 갱신(`agencyRegistry.test.ts`, `agency-recompute-stack.test.ts`).
+
 ## 2026-10-18 · 개인 비교 기관·담당자·내 핀 상한 상향 (Edge·정적 웹 배포)
 
 - 증상: '내 신고와 비교'에서 처리기간 × 처리결과 산점도의 인천제물포경찰서에 검은 테두리(내 신고 있음)가 사라졌다.
