@@ -375,7 +375,7 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 
 새 스냅샷이 포함된 `community-ingest` Edge 전체 import 번들을 먼저 배포한다.
 구 Edge의 진행 중 요청이 모두 끝났음을 확인한 뒤 singleton migration
-`202610180100_agency_registry_2026_10_18_1.sql`을 적용하고, 같은 스냅샷의
+`202610180400_agency_registry_2026_10_18_1.sql`을 적용하고, 같은 스냅샷의
 `scripts/recompute-agency-keys.mjs`를 dry-run → apply 순서로 실행한다.
 필요하면 수집을 잠시 정지해 구 요청을 drain한다. 현재 DB 트리거는 Edge가 실제
 계산한 버전을 singleton 값으로 덮어쓰므로 **singleton 먼저 → 구 Edge 쓰기**가
