@@ -8,10 +8,9 @@
 // Rules (same as the ingest path, incl. REVIEW4 preservation):
 // - Row WITH source code: take the fresh derivation unconditionally (the code
 //   is authoritative). Content-identical rows are a no-op.
-// - Row WITHOUT code: keep the stored triple, EXCEPT a safe upgrade — stored
-//   a1: key + fresh derivation resolves to an institution for the same name
-//   (unique alias hit) → take the fresh triple. This never regresses an
-//   inst: key back to a1: (the REVIEW4 split bug).
+// - Row WITHOUT code: replace the stored triple only when the original name
+//   uniquely resolves (code_derived) to an institution in this snapshot. This
+//   also migrates old inst: identities. Unknown/ambiguous aliases keep all three.
 // - manager_key always follows the final agency_key with the ingest hash rule.
 // - The DB trigger stamps derived-value updates; version-only updates explicitly
 //   set agency_registry_version. Ordinary writes leave stale rows stale.
@@ -28,7 +27,7 @@
 // without any database.
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
-import { deriveFact } from '../server/ingest/observation.ts';
+import { deriveFact, resolveObservationAgency } from '../server/ingest/observation.ts';
 
 const SNAP = new URL('../shared/agency-region-registry/manifest.json', import.meta.url);
 const CURRENT_VERSION = JSON.parse(readFileSync(SNAP, 'utf8')).registry_version;
@@ -72,12 +71,10 @@ export async function planUpdate(fact) {
   let next = fresh;
   let reason = 'code-present';
   if (!hasCode) {
-    const storedIsNameHash =
-      typeof stored.agency_key === 'string' && stored.agency_key.startsWith('a1:');
-    const freshIsInstitution =
-      typeof fresh.agency_key === 'string' && fresh.agency_key.startsWith('inst:');
-    if (storedIsNameHash && freshIsInstitution) {
-      reason = 'codeless-alias-upgrade';
+    const resolution = resolveObservationAgency(observationOf(fact));
+    if (resolution.code_derived === true && resolution.institution_id !== null) {
+      reason = stored.agency_key?.startsWith('inst:')
+        ? 'codeless-institution-refresh' : 'codeless-alias-upgrade';
     } else {
       next = stored;
       reason = 'codeless-keep';
@@ -112,6 +109,7 @@ async function main() {
   let kept = 0;
   let applied = 0;
   let skipped = 0;
+  let codelessInstitutionRefreshed = 0;
   let cursor = null;
   const examples = [];
   while (true) {
@@ -130,6 +128,7 @@ async function main() {
       const plan = await planUpdate(fact);
       if (plan.changed) {
         changed++;
+        if (plan.reason === 'codeless-institution-refresh') codelessInstitutionRefreshed++;
         if (examples.length < 5) examples.push({
           agencyName: fact.agency_name,
           before: fact.agency_current_name,
@@ -162,8 +161,8 @@ async function main() {
     cursor = data.at(-1);
   }
   console.log(JSON.stringify(dryRun
-    ? { mode: 'dry-run', scanned, changed, versionStampOnly: kept, examples }
-    : { mode: 'apply', scanned, changed, versionStampOnly: kept, applied, skipped, registryVersion: CURRENT_VERSION }));
+    ? { mode: 'dry-run', scanned, changed, codelessInstitutionRefreshed, versionStampOnly: kept, examples }
+    : { mode: 'apply', scanned, changed, codelessInstitutionRefreshed, versionStampOnly: kept, applied, skipped, registryVersion: CURRENT_VERSION }));
 }
 
 const invokedDirectly =

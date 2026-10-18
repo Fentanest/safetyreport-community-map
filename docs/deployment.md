@@ -369,3 +369,31 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
   `docker compose restart functions`. healthy·로그 오류 없음·무인증 my-analytics/screen·compare 401. 다른 함수에는 두 파일이 없다.
 - 되돌리기: 206 `~/edge-backup-20261018-cmplimits/`의 두 파일을 같은 위치로 복사 후 functions 재시작.
 - 미검증: 로그인 브라우저에서 제물포 테두리 복구(Chrome 확장 미연결, 개인 응답 재현은 세션 자격 증명이 필요해 하지 않음).
+
+
+## 기관 registry 2026-10-18.1 전환·롤백 (준비, 운영 미실행)
+
+새 스냅샷이 포함된 `community-ingest` Edge 전체 import 번들을 먼저 배포한다.
+구 Edge의 진행 중 요청이 모두 끝났음을 확인한 뒤 singleton migration
+`202610180100_agency_registry_2026_10_18_1.sql`을 적용하고, 같은 스냅샷의
+`scripts/recompute-agency-keys.mjs`를 dry-run → apply 순서로 실행한다.
+필요하면 수집을 잠시 정지해 구 요청을 drain한다. 현재 DB 트리거는 Edge가 실제
+계산한 버전을 singleton 값으로 덮어쓰므로 **singleton 먼저 → 구 Edge 쓰기**가
+발생하면 옛 키가 새 버전으로 찍혀 stale 재계산에서 영구 누락된다.
+
+적용 전에 원문을 바꾸지 않는 기관·담당자 triple과 registry version의 보호된
+백업을 준비한다. dry-run의 `codelessInstitutionRefreshed`는 코드 없는 기존 inst
+행 중 원문 이름의 유일 별칭(`code_derived`)으로 파생 triple이 바뀌는 행 수다.
+모호하거나 찾지 못한 이름은 기존 triple을 유지한다. 이 수와 changed/stamp-only,
+적용 후 stale 행 수·신고 총수·기관별 통계를 함께 대조한다.
+
+롤백은 이전 Edge 번들 배포·새 버전 요청 종료 확인 → 별도 migration으로 singleton을
+`2026-09-29.3`으로 되돌림 → **이전 스냅샷**을 사용하는 호환 recompute 도구로
+dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생값은 남는다.
+현재 안전한 별칭 갱신 로직은 이전 스냅샷에서도 사용해야 한다(과거 도구는 inst를
+무조건 보존함). 이전 스냅샷에 없는 신규 코드·모호한 코드 없는 행은 자동 역변환을
+보장할 수 없으므로 적용 전 백업과 대조해 복원하고, 원문·신고 수 불변을 검증한다.
+
+트리거가 실제 계산 버전을 보존하거나 불일치 쓰기를 거절하게 하는 대안은 이번에
+적용하지 않았다. 새 Edge를 먼저 올리는 혼합 버전 구간과 recompute의 낙관적 잠금·
+버전 기록을 함께 설계하고 SQL 통합 검증해야 하므로 별도 변경이 필요하다.

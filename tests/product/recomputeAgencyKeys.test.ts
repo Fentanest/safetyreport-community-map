@@ -83,6 +83,36 @@ describe('recompute plan', () => {
     expect(plan.changed).toBe(false);
     expect(plan.reason).toBe('codeless-keep');
   });
+  it('refreshes a codeless old inst key and its manager together on a unique alias', async () => {
+    const fact = {
+      ...base, source_agency_code: null,
+      agency_name: '공소청 부산광역공소청 부산지방공소청',
+      agency_key: 'inst:ag-c1280089', agency_current_name: '옛 표시',
+      manager_key: 'm1:old',
+    };
+    const plan = await planUpdate(fact);
+    expect(plan.reason).toBe('codeless-institution-refresh');
+    expect(plan.changed).toBe(true);
+    expect(plan.next.agency_key).toBe('inst:ag-c1282071');
+    const coded = await planUpdate({...fact, source_agency_code: '1282071'});
+    expect(plan.next).toEqual(coded.next);
+    expect(plan.next.manager_key).not.toBe(fact.manager_key);
+    const second = await planUpdate({...fact, ...plan.next});
+    expect(second.changed).toBe(false);
+    expect(fact.agency_key).toBe('inst:ag-c1280089');
+  });
+  it('keeps all stored values for an ambiguous codeless alias', async () => {
+    const fact = {
+      ...base, source_agency_code: null,
+      agency_name: '대통령비서실 대통령비서실행정심판위원회',
+      agency_key: 'inst:ag-retained', agency_current_name: '저장 표시', manager_key: 'm1:stored',
+    };
+    const plan = await planUpdate(fact);
+    expect(plan.reason).toBe('codeless-keep');
+    expect(plan.changed).toBe(false);
+    expect(plan.next).toEqual({agency_key: fact.agency_key,
+      agency_current_name: fact.agency_current_name, manager_key: fact.manager_key});
+  });
   it('moves a branched code to its (구) row', async () => {
     const plan = await planUpdate({
       ...base,
