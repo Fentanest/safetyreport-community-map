@@ -361,3 +361,11 @@ TS 경로(`server/aggregate.ts`·`statistics.ts`의 `maskPlate`)도 옛 파일�
 - cron(`cron.job_run_details`): 적용 전 17:05~17:12 UTC는 3분 중 2번 24.8~26.3초(나머지 0.6초). 적용 직후 새 키로 한 번(17:13, 19.6초) 계산한 뒤
   17:14~17:19는 매분 0.61~0.65초 — 자료 변화가 없을 때 재계산하지 않는다(시각만 갱신).
 - 미검증: 운영 로그인 브라우저에서 화면·핀·개인 비교 실제 응답 시간.
+
+## 2026-10-18 · 개인 비교 기관·담당자·내 핀 상한 상향 (적용함)
+- 코드 `0408205`(기관 50→1,000, 담당자 50→2,000, `my_points` 1,000→5,000). DB 변경 없음. 순서: Pages → Edge(새 화면은 옛 Edge의 50개 응답도 받는다. 반대 순서면 옛 화면이 새 응답을 검사에서 거부).
+- Pages: [workflow 39099695386](https://github.com/Fentanest/safetyreport-community-map/actions/runs/39099695386) 성공.
+- Edge(206 셀프호스트, 사용자 승인): `volumes/functions/my-analytics/source/server/{compare.ts,screenAggregate.ts}` 교체(원본 해시가 `b855978`과 같을 때만, 교체 후 `0408205`와 같음 확인),
+  `docker compose restart functions`. healthy·로그 오류 없음·무인증 my-analytics/screen·compare 401. 다른 함수에는 두 파일이 없다.
+- 되돌리기: 206 `~/edge-backup-20261018-cmplimits/`의 두 파일을 같은 위치로 복사 후 functions 재시작.
+- 미검증: 로그인 브라우저에서 제물포 테두리 복구(Chrome 확장 미연결, 개인 응답 재현은 세션 자격 증명이 필요해 하지 않음).
