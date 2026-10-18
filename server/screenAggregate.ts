@@ -7,7 +7,7 @@ import { agencyTypeOf } from './agencyType.ts';
 import { placesInView } from './places.ts';
 import { regionName } from './regions.ts';
 import type { PersonalCompare } from '../src/domain/personal.ts';
-import { diffOf } from './compare.ts';
+import { diffOf, MAX_COMPARE_AGENCIES, MAX_COMPARE_MANAGERS, MAX_MY_POINTS } from './compare.ts';
 import { computeSameNames } from '../src/domain/managerNames.ts';
 import { compareRows } from '../src/domain/tableSort.ts';
 import { COHORT_POLICY_VERSION, PLACE_GROUPING_VERSION, type DateBasis, type Scope, type PublicEntity, type PublicPoint } from '../src/domain/public.ts';
@@ -259,7 +259,7 @@ export class ScreenAggregates {
       const full=this.stat(kind,'all',0,'',s.k),first=full===empty?s:full,a=side(full,true),m=side(s,true);
       return {kind,key:s.k,agency_key:first.label[0],manager_key:kind==='manager'?first.label[2]:null,agency_name:first.label[1],manager_name:kind==='manager'?first.label[3]:null,
         all:a,mine:m,accept_rate_pp:minus(m.accept_rate,a.accept_rate),partial_rate_pp:minus(m.partial_rate,a.partial_rate),duration_median_days_diff:minus(m.duration_median_days,a.duration_median_days)};
-    }).sort((a,b)=>b.mine.completed_count-a.mine.completed_count||b.all.completed_count-a.all.completed_count||a.agency_name.localeCompare(b.agency_name,'ko')||a.key.localeCompare(b.key)).slice(0,50);
+    }).sort((a,b)=>b.mine.completed_count-a.mine.completed_count||b.all.completed_count-a.all.completed_count||a.agency_name.localeCompare(b.agency_name,'ko')||a.key.localeCompare(b.key)).slice(0,kind==='agency'?MAX_COMPARE_AGENCIES:MAX_COMPARE_MANAGERS);
     const monthly=monthSpine(this.scope,this.window(false),todayKst()).map(({month,no_data})=>{
       if(no_data && this.stat('month','mine',0,'',month)===empty)return {month,all_report_count:null,mine_report_count:null,all_completed_count:null,mine_completed_count:null,all_accept_rate:null,mine_accept_rate:null,
         all_duration_median_days:null,mine_duration_median_days:null,mine_outcomes:null,mine_fine_count:null};
@@ -268,7 +268,7 @@ export class ScreenAggregates {
         all_duration_median_days:a.duration[2],mine_duration_median_days:m.duration[2],all_rating:rating(a),mine_rating:rating(m),mine_outcomes:outcomes(m),mine_fine_count:m.f};
     });
     const my_points=this.list('place','mine').flatMap(s=>{const a=this.anchor('all',s.k)??this.anchor('mine',s.k);return a?[{key:s.k,lat:a[2],lng:a[3],region_code:a[5],
-      mine_report_count:s.n,mine_completed_count:s.c,shared:this.full(0,s.k)[4]}]:[];}).sort((a,b)=>b.mine_report_count-a.mine_report_count||a.key.localeCompare(b.key)).slice(0,1000);
+      mine_report_count:s.n,mine_completed_count:s.c,shared:this.full(0,s.k)[4]}]:[];}).sort((a,b)=>b.mine_report_count-a.mine_report_count||a.key.localeCompare(b.key)).slice(0,MAX_MY_POINTS);
     return {schema_version:2,dataset_version:this.state.dataset_version,scope:this.scope,viewer:{contributor:viewer.contributor,has_public_facts:viewer.has_public_facts},
       cohort_policy_version:COHORT_POLICY_VERSION,cohort:{all:diagnostics(allStat,basis),mine:diagnostics(mineStat,basis)},all,mine,diff:diffOf(all,mine),regions:regionRows,
       agencies:entities('agency'),managers:entities('manager'),monthly,my_points,

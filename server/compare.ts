@@ -96,9 +96,13 @@ function group<K>(facts: readonly PrivateFact[], keyOf: (fact: PrivateFact) => K
   return map;
 }
 
-export const MAX_COMPARE_ROWS = 50;
+// Every agency/manager/place of the viewer, not a top list: the scatter outline, the public table's "내" line
+// and the map marks look rows up by key, so a cut row reads as "no reports of mine" (2026-10-18: 51st agency lost
+// its outline). Bounds sit about 1.5-2.7x above the largest contributor seen in production (275 / 749 / 3,376).
+export const MAX_COMPARE_AGENCIES = 1000;
+export const MAX_COMPARE_MANAGERS = 2000;
 export const MAX_COMPARE_REGIONS = 300;
-export const MAX_MY_POINTS = 1000;
+export const MAX_MY_POINTS = 5000;
 
 export interface CompareOptions {
   datasetVersion: string;
@@ -177,7 +181,7 @@ export function aggregateCompare(input: readonly PrivateFact[], scope: Scope, vi
         duration_median_days_diff: minus(m.duration_median_days, a.duration_median_days),
       };
     }).sort((x, y) => y.mine.completed_count - x.mine.completed_count || y.all.completed_count - x.all.completed_count ||
-      x.agency_name.localeCompare(y.agency_name, 'ko') || x.key.localeCompare(y.key)).slice(0, MAX_COMPARE_ROWS);
+      x.agency_name.localeCompare(y.agency_name, 'ko') || x.key.localeCompare(y.key)).slice(0, kind === 'agency' ? MAX_COMPARE_AGENCIES : MAX_COMPARE_MANAGERS);
   };
 
   // Monthly: same month coverage rules as the public series (no values outside the data window).

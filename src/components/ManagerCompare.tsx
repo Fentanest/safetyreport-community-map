@@ -15,8 +15,9 @@ export default function ManagerCompare({ personal, onPick }: Props) {
   const data = personal.status === 'ready' ? personal.data : null;
   const [expanded, setExpanded] = useState(false);
   const all = data ? (tab === 'manager' ? data.managers : data.agencies) : [];
-  const SHORT = 5;
-  const rows = expanded ? all : all.slice(0, SHORT);
+  // the response carries every row of mine (scatter outline, public table); this table stays a top list
+  const SHORT = 5, LONG = 50;
+  const rows = all.slice(0, expanded ? LONG : SHORT);
   return (
     <section className="cm-panel manager-compare" aria-label="담당자·기관 비교">
       <div className="panel-top">
@@ -76,7 +77,8 @@ export default function ManagerCompare({ personal, onPick }: Props) {
           {all.length > SHORT && (
             <div className="compare-more">
               <button type="button" className="ghost-btn" aria-expanded={expanded} onClick={() => setExpanded(v => !v)}>
-                {expanded ? '접기' : `전체 ${fmtInt(all.length)}${tab === 'manager' ? '명' : '곳'} 보기`}
+                {expanded ? '접기' : all.length > LONG ? `상위 ${LONG}${tab === 'manager' ? '명' : '곳'} 보기 (전체 ${fmtInt(all.length)})`
+                  : `전체 ${fmtInt(all.length)}${tab === 'manager' ? '명' : '곳'} 보기`}
               </button>
             </div>
           )}

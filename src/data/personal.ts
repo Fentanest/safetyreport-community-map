@@ -69,8 +69,9 @@ export const personalCompareSchema = z.strictObject({
     level: z.enum(['sido', 'sgg', 'unknown']), region_code: z.string().regex(/^\d{2}(\d{3})?$/).nullable(),
     name: z.string().max(40), sido_code: z.string().regex(/^\d{2}$/).nullable(), all: sideSchema, mine: sideSchema, accept_rate_pp: pp, partial_rate_pp: pp, duration_median_days_diff: dayDiff,
   })).max(300),
-  agencies: z.array(entitySchema).max(50),
-  managers: z.array(entitySchema).max(50),
+  // all of the viewer's rows (server/compare.ts MAX_COMPARE_*); the comparison table shows the first 50
+  agencies: z.array(entitySchema).max(1000),
+  managers: z.array(entitySchema).max(2000),
   monthly: z.array(z.strictObject({
     month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
     all_report_count: count.nullable(), mine_report_count: count.nullable(),
@@ -84,7 +85,7 @@ export const personalCompareSchema = z.strictObject({
   my_points: z.array(z.strictObject({
     key: z.string().max(160), lat: z.number().min(32).max(39.5), lng: z.number().min(124).max(132),
     region_code: z.string().regex(/^\d{5}$/).nullable(), mine_report_count: count, mine_completed_count: count, shared: z.boolean().nullable(),
-  })).max(1000),
+  })).max(5000),
   analytics: z.strictObject({ duration: durationDistributionSchema, rating: ratingDistributionSchema }).optional(),
   // EX-09: required — an older (dual-set) server's comparison is refused, never shown under the new labels
   cohort_policy_version: z.literal(COHORT_POLICY_VERSION),

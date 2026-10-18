@@ -50,7 +50,7 @@ KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가�
 `viewer{contributor, has_public_facts}`(id 없음), `all`/`mine` 요약(2026-09-27부터 `duration`, `fine_amount` 포함,
 2026-10-12부터 `warning_count` 포함 — 선택 필드, 구버전 Edge는 없으면 KPI 하단 줄의 내 값을 생략), `diff`,
 `regions[]`(공개 행과 같은 시도·시군구·미확인 단계, 공식 코드 — docs/region-boundaries.md),
-`agencies[]`/`managers[]`(내가 처리결과를 받은 곳만, 최대 50), `monthly[]`, `my_points[]`(내 신고가 있는 정확 지점, `shared`).
+`agencies[]`/`managers[]`(내가 처리결과를 받은 곳 전부, 상한 기관 1,000·담당자 2,000 — 산점도 테두리·공개 표의 "내" 줄이 키로 찾으므로 자르지 않는다. 비교표는 화면에서 상위 50만 보인다), `monthly[]`, `my_points[]`(내 신고가 있는 정확 지점 전부, 상한 5,000, `shared`).
 
 ## 4. 계산 기준
 | 지표 | 전체 | 내 신고 | 차이 열 |
