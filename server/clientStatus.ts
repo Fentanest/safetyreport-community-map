@@ -34,14 +34,15 @@ export function httpsUrl(v: unknown): string | null {
   } catch { return null; }
 }
 
-const version = (v: unknown): string | null => (typeof v === 'string' && v.length >= 1 && v.length <= 40 ? v : null);
+/** 글자 수는 DB char_length / JSON Schema maxLength 와 같게 코드포인트로 센다(UTF-16 단위 아님). */
+const version = (v: unknown): string | null => (typeof v === 'string' && [...v].length >= 1 && [...v].length <= 40 ? v : null);
 
 /** A notice that does not match the schema is dropped (null), so a bad setting never reaches the page. */
 export function parseClientNotice(v: unknown): ClientNotice | null {
   if (!obj(v) || !exactKeys(v, ['level', 'message', 'min_version', 'url', 'deadline'])) return null;
   const { level, message, min_version: min, url, deadline } = v;
   if (typeof level !== 'string' || !LEVEL.has(level)) return null;
-  if (typeof message !== 'string' || !message.trim() || message.length > 1000) return null;
+  if (typeof message !== 'string' || !message.trim() || [...message].length > 1000) return null;
   if (!obj(min) || !exactKeys(min, ['pc', 'mobile']) || !obj(url) || !exactKeys(url, ['pc', 'mobile'])) return null;
   if ((min.pc !== null && version(min.pc) === null) || (min.mobile !== null && version(min.mobile) === null)) return null;
   if (deadline !== null && (typeof deadline !== 'string' || !Number.isFinite(Date.parse(deadline)))) return null;

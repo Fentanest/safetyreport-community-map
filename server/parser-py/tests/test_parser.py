@@ -180,5 +180,77 @@ class TimezoneTests(unittest.TestCase):
 
     def test_parse_key(self):
         import worker
-        from parse_report import registry_version
-        self.assertEqual(worker.parse_key(), f"{worker.PARSER_VERSION}+map{worker.MAP_WORKER_VERSION}+reg{registry_version()}")
+        # registry version is NOT part of the key (recompute-agency-keys.mjs + the finish_raw_parse singleton check cover it)
+        self.assertEqual(worker.parse_key(), f"{worker.PARSER_VERSION}+map{worker.MAP_WORKER_VERSION}")
+        self.assertNotIn('+reg', worker.parse_key())
+
+
+class _Diag:
+    def __init__(self, m): self.message_primary = m
+def _error(name, message=''):
+    exc = type(name, (Exception,), {})(message)
+    exc.diag = _Diag(message)
+    return exc
+class _Row(dict): pass
+class FakeConn:
+    """Records statements; `finish` raises the configured error, everything else succeeds."""
+    broken = False
+    def __init__(self, finish_error=None): self.calls = []; self.finish_error = finish_error
+    def execute(self, sql, params=()):
+        self.calls.append(sql)
+        outer = self
+        class R:
+            def fetchone(self_inner):
+                if 'community_report_raw' in sql:
+                    return {'raw_text': '', 'raw_sha256': 'h', 'supplement': {}, 'supplement_sha256': 's', 'client_observation': None, 'client_parser_version': 'p'}
+                if 'finish_raw_parse' in sql:
+                    if outer.finish_error: raise outer.finish_error
+                    return {'r': 'accepted'}
+                return {'r': 'x'}
+        return R()
+
+class WorkerTransientTests(unittest.TestCase):
+    def setUp(self):
+        import types, worker
+        self.worker = worker
+        jsonmod = types.ModuleType('psycopg.types.json'); jsonmod.Jsonb = lambda x: x
+        for name, mod in (('psycopg', types.ModuleType('psycopg')), ('psycopg.types', types.ModuleType('psycopg.types')), ('psycopg.types.json', jsonmod)):
+            self._saved = getattr(self, '_saved', {}); self._saved[name] = sys.modules.get(name); sys.modules[name] = mod
+        self._parse = worker.parse_report
+        worker.parse_report = lambda row: ({}, {}, {}, None)
+    def tearDown(self):
+        self.worker.parse_report = self._parse
+        for name, mod in self._saved.items():
+            if mod is None: sys.modules.pop(name, None)
+            else: sys.modules[name] = mod
+    def job(self, n=1): return {'contributor_id': 'u', 'dataset_key': 'd', 'source_report_key': 'k' * 64, 'lease_token': 'l', 'attempts': n}
+
+    def test_transient_classes_release_without_attempt(self):
+        for name in ('LockNotAvailable', 'DeadlockDetected', 'SerializationFailure', 'QueryCanceled', 'AdminShutdown', 'OperationalError'):
+            conn = FakeConn(_error(name))
+            self.assertEqual(self.worker.process_job(conn, self.job(), 'pk'), 'released', name)
+            self.assertTrue(any('release_raw_parse_job' in c for c in conn.calls), name)
+            self.assertFalse(any('fail_raw_parse' in c for c in conn.calls), name)
+    def test_other_errors_are_recorded_as_failures(self):
+        conn = FakeConn(_error('DataError'))
+        self.assertEqual(self.worker.process_job(conn, self.job(), 'pk'), 'x')
+        self.assertTrue(any('fail_raw_parse' in c for c in conn.calls))
+
+    def test_registry_mismatch_releases_and_batch_logs_once(self):
+        mismatch = _error('LockNotAvailable', 'registry_version_mismatch')
+        jobs = [self.job() for _ in range(3)]
+        class BatchConn(FakeConn):
+            def execute(self_c, sql, params=()):
+                if 'claim_raw_parse_jobs' in sql:
+                    class R:
+                        def fetchall(_): return jobs
+                    return R()
+                return super().execute(sql, params)
+        conn = BatchConn(mismatch)
+        with self.assertLogs('community_parser', level='WARNING') as logs:
+            self.assertEqual(self.worker.process_batch(conn, 10, 'pk'), 3)
+        mismatches = [m for m in logs.output if 'registry_version_mismatch' in m]
+        self.assertEqual(len(mismatches), 1)
+        self.assertEqual(sum('release_raw_parse_job' in c for c in conn.calls), 3)  # the failing job + the two unstarted
+        self.assertEqual(sum('finish_raw_parse' in c for c in conn.calls), 1)       # nothing else was parsed
+        self.assertFalse(any('fail_raw_parse' in c for c in conn.calls))

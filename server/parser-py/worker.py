@@ -22,13 +22,20 @@ WHERE = 'contributor_id=%s and dataset_key=%s and source_report_key=%s'
 MAP_WORKER_VERSION = '1'
 MAX_ATTEMPTS = 8           # private.fail_raw_parse marks the row dead at this many claims
 LEASE_SECONDS = 300
-TRANSIENT = ('LockNotAvailable', 'DeadlockDetected', 'SerializationFailure')
+# Not the report's fault: lock contention, statement timeout / cancel, server shutdown or restart, lost or refused connection.
+# The lease is released without spending an attempt. (private.finish_raw_parse raises 55P03 = LockNotAvailable with the
+# message REGISTRY_MISMATCH when the worker's agency registry differs from private.community_registry_state.)
+TRANSIENT = ('LockNotAvailable', 'DeadlockDetected', 'SerializationFailure', 'QueryCanceled', 'AdminShutdown', 'CrashShutdown',
+             'CannotConnectNow', 'OperationalError', 'InterfaceError')
+REGISTRY_MISMATCH = 'registry_version_mismatch'
 SESSION_OPTIONS = '-c lock_timeout=5s -c statement_timeout=30s -c idle_in_transaction_session_timeout=60s'
 
 
 def parse_key() -> str:
-    """Stored in parsed_parser_version / fact_parser_version; any change re-queues rows with --reparse."""
-    return f'{PARSER_VERSION}+map{MAP_WORKER_VERSION}+reg{registry_version()}'
+    """Stored in parsed_parser_version / fact_parser_version; any change re-queues rows with --reparse.
+    The agency registry version is deliberately NOT part of it: registry changes are applied to stored facts by
+    scripts/recompute-agency-keys.mjs, and finish_raw_parse refuses a worker whose registry differs from the singleton."""
+    return f'{PARSER_VERSION}+map{MAP_WORKER_VERSION}'
 
 
 def check_timezone() -> None:
@@ -103,8 +110,10 @@ def process_job(conn, job, pkey) -> str:
             raise
         kind = type(exc).__name__
         if kind in TRANSIENT:
+            release(conn, key, lease)  # not the report's fault; do not spend an attempt
+            if REGISTRY_MISMATCH in (getattr(getattr(exc, 'diag', None), 'message_primary', None) or ''):
+                return 'registry_mismatch'  # logged once per batch by process_batch
             LOG.warning('transient_release kind=%s key=%s', kind, _short(key))
-            release(conn, key, lease)  # lock contention is not the report's fault; do not spend an attempt
             return 'released'
         return record_failure(conn, key, lease, row['raw_sha256'], pkey, kind)
 
@@ -125,6 +134,14 @@ def process_batch(conn, limit=50, pkey=None, stop=None) -> int:
             break
         outcome = process_job(conn, job, pkey)
         outcomes[outcome] = outcomes.get(outcome, 0) + 1
+        if outcome == 'registry_mismatch':
+            # Every remaining job would hit the same mismatch: hand them back unparsed and log once.
+            LOG.warning('registry_version_mismatch worker_registry=%s; jobs released without spending attempts '
+                        '(deploy the matching worker image / registry migration, see README)', registry_version())
+            for rest in jobs[i + 1:]:
+                release(conn, tuple(rest[k] for k in KEY), rest['lease_token'])
+            outcomes['released_unstarted'] = len(jobs) - i - 1
+            break
         if outcome in ('retry', 'dead', 'unrecorded'):
             LOG.warning('parse_failed parse_key=%s outcome=%s key=%s', pkey, outcome, _short(tuple(job[k] for k in KEY)))
     LOG.info('batch_complete claimed=%d outcomes=%s parse_key=%s', len(jobs), ','.join(f'{k}:{v}' for k, v in sorted(outcomes.items())), pkey)

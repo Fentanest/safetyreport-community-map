@@ -157,6 +157,45 @@ describe('private raw v2 reception',()=>{
     env.events[0].supplement_sha256=await sha256Hex(canonicalJson(env.events[0].supplement));
     expect((await createIngestHandler(setup().deps)(post(env))).status).toBe(200);
   });
+  it('rejects NUL (literal or JSON-escaped) anywhere in raw.body, client_observation and supplement with 422', async () => {
+    const setBody = async (env: typeof wire.envelope, body: string) => {
+      const e = env.events[0]; e.raw.body = body; e.raw.size = Buffer.byteLength(body); e.raw.sha256 = await sha256Hex(body);
+    };
+    const cases: [string, (env: typeof wire.envelope) => Promise<void> | void, string][] = [
+      ['raw.body escaped value', env => setBody(env, '{"result":{"t":"a\\u0000b"}}'), 'raw_invalid'],
+      ['raw.body escaped key', env => setBody(env, '{"result":{"a\\u0000":"x"}}'), 'raw_invalid'],
+      ['raw.body escaped nested', env => setBody(env, '{"result":{"l":[{"t":["\\u0000"]}]}}'), 'raw_invalid'],
+      ['raw.body literal', env => setBody(env, '{"result":{"t":"a\u0000b"}}'), 'raw_invalid'],
+      ['raw.source', env => { env.events[0].raw.source = 'x\u0000'; }, 'raw_invalid'],
+      ['supplement', async env => { const e = env.events[0]; e.supplement.rating_cause = 'a\u0000b'; e.supplement_sha256 = await sha256Hex(canonicalJson(e.supplement)); }, 'supplement_invalid'],
+      ['client_observation', async env => { const e = env.events[0]; e.client_observation.address = 'a\u0000b'; e.client_observation_sha256 = await sha256Hex(canonicalJson(e.client_observation)); }, 'schema_invalid'],
+    ];
+    for (const [name, mutate, code] of cases) {
+      const env = structuredClone(wire.envelope); await mutate(env);
+      const { deps, calls } = setup(); const r = await createIngestHandler(deps)(post(env));
+      expect(r.status, name).toBe(422); expect((await r.json()).error.code, name).toBe(code);
+      expect(calls.some(c => c.name === 'internal_community_ingest_v2'), name).toBe(false);
+    }
+  });
+  it('drops an optional client_observation with invalid VALUES (raw is kept); hash mismatch still rejects', async () => {
+    const env = structuredClone(wire.envelope); const e = env.events[0];
+    e.client_observation.report_date = '2026-13-45';  // schema-shaped, not a calendar day
+    e.client_observation_sha256 = await sha256Hex(canonicalJson(e.client_observation));
+    const { deps, calls, logs } = setup(); const r = await createIngestHandler(deps)(post(env));
+    expect(r.status).toBe(200);
+    const sent = (calls.find(c => c.name === 'internal_community_ingest_v2')!.args.p_events as Record<string, unknown>[])[0];
+    expect(sent).not.toHaveProperty('client_observation'); expect(sent).not.toHaveProperty('client_observation_sha256');
+    expect(sent.raw).toEqual(e.raw);
+    expect(sent.payload_sha256).toBe(await rawEventFingerprint({ ...e, client_observation: undefined, client_observation_sha256: undefined } as never));
+    expect(JSON.stringify(logs)).toContain('client_observation_dropped'); expect(JSON.stringify(logs)).not.toContain('2026-13-45');
+    // a mismatching hash on the same invalid observation is still an integrity failure
+    const bad = structuredClone(env); bad.events[0].client_observation_sha256 = '0'.repeat(64);
+    const b = await createIngestHandler(setup().deps)(post(bad));
+    expect(b.status).toBe(422); expect((await b.json()).error.code).toBe('client_observation_hash_mismatch');
+    // a valid observation is forwarded untouched
+    const ok = setup(); expect((await createIngestHandler(ok.deps)(post(wire.envelope))).status).toBe(200);
+    expect((ok.calls.find(c => c.name === 'internal_community_ingest_v2')!.args.p_events as Record<string, unknown>[])[0]).toHaveProperty('client_observation');
+  });
   it('v2 status_correction is schema_invalid (event.schema.json enum); reshare/trigger mismatch stays event_type_mismatch',async()=>{
     const env=structuredClone(wire.envelope);env.events[0].event_type='status_correction';
     const r=await createIngestHandler(setup().deps)(post(env));

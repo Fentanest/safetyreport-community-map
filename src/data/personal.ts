@@ -283,10 +283,12 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
 // The map web reads its OWN endpoint `GET /my-analytics/client-status` (same map session token as compare). It never
 // calls the account API (PROJECT_RULES 7). Nothing is shown unless the server sends a notice; there is no built-in
 // version text or link. A failure is silent (guidance never blocks the map) and never feeds the shared breaker.
-const nullableText = (max: number) => z.string().min(1).max(max).nullable();
+// 길이는 DB char_length / JSON Schema maxLength 처럼 코드포인트 기준(이모지 하나 = 1).
+const cpString = (max: number) => z.string().refine((v) => { const n = [...v].length; return n >= 1 && n <= max; });
+const nullableText = (max: number) => cpString(max).nullable();
 export const clientNoticeSchema = z.strictObject({
   level: z.enum(['info', 'warning', 'required']),
-  message: z.string().min(1).max(1000),
+  message: cpString(1000),
   min_version: z.strictObject({ pc: nullableText(40), mobile: nullableText(40) }),
   url: z.strictObject({ pc: z.string().max(2048).nullable(), mobile: z.string().max(2048).nullable() }),
   deadline: z.string().max(64).nullable(),

@@ -17,6 +17,13 @@ export function hasLoneSurrogate(x: unknown): boolean {
   if (x && typeof x === 'object') return Object.entries(x).some(([k, v]) => LONE_SURROGATE.test(k) || hasLoneSurrogate(v));
   return false;
 }
+/** NUL(U+0000). 문자 그대로뿐 아니라 JSON 이스케이프(\\u0000)로 만든 것도 파싱 뒤에는 NUL 이라 jsonb(text)가 거절한다. */
+export function hasNul(x: unknown): boolean {
+  if (typeof x === 'string') return x.includes('\u0000');
+  if (Array.isArray(x)) return x.some(hasNul);
+  if (x && typeof x === 'object') return Object.entries(x).some(([k, v]) => k.includes('\u0000') || hasNul(v));
+  return false;
+}
 /** 문법상 올바른 JSON 텍스트에서 같은 객체 안에 같은 키(이스케이프를 푼 값 기준)가 두 번 나오면 true.
  *  JSON.parse 는 마지막 값을 남기므로 `{"result":{"C_NAME":"x"},"result":{}}` 처럼 검사를 비켜 갈 수 있다. */
 export function hasDuplicateKeys(json: string): boolean {
@@ -59,13 +66,13 @@ export async function validateRaw(e: Record<string, unknown>): Promise<void> {
   if (!object(r) || !exact(r, ['body', 'sha256', 'size', 'fetched_at', 'source']) ||
       typeof r.body !== 'string' || !hex(r.sha256) || !Number.isSafeInteger(r.size) || Number(r.size) < 1 || Number(r.size) > 1048576 ||
       typeof r.fetched_at !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/.test(r.fetched_at) || Number.isNaN(Date.parse(r.fetched_at)) ||
-      typeof r.source !== 'string' || !r.source.length || [...r.source].length > 80 || r.body.includes('\u0000') ||
+      typeof r.source !== 'string' || !r.source.length || [...r.source].length > 80 || r.body.includes('\u0000') || r.source.includes('\u0000') ||
       LONE_SURROGATE.test(r.body) || LONE_SURROGATE.test(r.source)) throw new RawFailure('raw_invalid');
   if (new TextEncoder().encode(r.body).length !== r.size || await sha256Hex(r.body) !== r.sha256) throw new RawFailure('raw_hash_mismatch');
   let parsed: unknown;
   try { parsed = JSON.parse(r.body); } catch { throw new RawFailure('raw_invalid'); }
-  // 중복 키(신고자 키 검사 우회)와 이스케이프로 만든 짝 없는 surrogate("\\ud800")도 형식 오류로 본다.
-  if (!object(parsed) || !object(parsed.result) || hasDuplicateKeys(r.body) || hasLoneSurrogate(parsed)) throw new RawFailure('raw_invalid');
+  // 중복 키(신고자 키 검사 우회)와 이스케이프로 만든 짝 없는 surrogate("\\ud800")·NUL("\\u0000")도 형식 오류로 본다(워커 jsonb 가 영구 실패하므로).
+  if (!object(parsed) || !object(parsed.result) || hasDuplicateKeys(r.body) || hasLoneSurrogate(parsed) || hasNul(parsed)) throw new RawFailure('raw_invalid');
   if (Object.hasOwn(parsed.result, 'C_NO') && String(parsed.result.C_NO) !== e.source_report_id) throw new RawFailure('raw_invalid');
   if (REPORTER_KEYS.some(k => Object.hasOwn(parsed.result as object, k))) throw new RawFailure('raw_reporter_keys_present');
   if (!validSupplement(e.supplement)) throw new RawFailure('supplement_invalid');

@@ -12,9 +12,10 @@ export interface ClientUpdateValue {
 }
 export const ClientUpdateContext = createContext<ClientUpdateValue>({ status: null, refresh: () => {} });
 
-/** Dashboard banner: a notice, the new contract enabled, and this account still on the old consent or an old (v1) app. */
+/** Dashboard banner: a notice, the new contract enabled, and this account still on the old consent or whose MOST RECENT connection is an old (v1) app
+ * (a stale v1 connection left behind after moving to the new app must not keep the banner up). */
 export function dashboardNoticeVisible(s: ClientStatus | null): boolean {
-  return !!s?.notice && s.v2_enabled && (s.consent === 'outdated' || s.v1_connections > 0);
+  return !!s?.notice && s.v2_enabled && (s.consent === 'outdated' || s.last_contract === 'community-ingest-v1');
 }
 
 /**

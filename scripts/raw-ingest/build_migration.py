@@ -24,6 +24,11 @@ block = block.replace('v_conn.dataset_key', 'p_dataset').replace('v_grant.grant_
 block = sub(block, 'elsif (v_epoch, v_rev) > (v_fact.writer_epoch, v_fact.source_revision) then',
     "elsif (v_epoch, v_rev) > (v_fact.writer_epoch, v_fact.source_revision)\n"
     "           or ((v_epoch, v_rev) = (v_fact.writer_epoch, v_fact.source_revision) and p_source = 'raw') then")
+# H: a worker-side derivation change (new parse key, same DTO payload) must reach the fact columns. Only a raw-sourced fact
+# being re-projected by the raw path qualifies; the v1 (dto) path keeps its exact no_change behaviour.
+block = sub(block, 'if v_fact.payload_sha256 = e->>\'payload_sha256\' and v_fact.consent_grant_id = v_target_grant then',
+    "if v_fact.payload_sha256 = e->>'payload_sha256' and v_fact.consent_grant_id = v_target_grant\n"
+    "               and not (p_source = 'raw' and v_fact.fact_source = 'raw' and v_fact.fact_parser_version is distinct from p_parser) then")
 # M3: fact_source/fact_parser_version/raw_sha256 travel inside the ORIGINAL insert/update statements, so v1 executes
 # exactly as many statements (and statement triggers) as before this migration.
 block = sub(block, '                answer_accepted_at)\n            values (',

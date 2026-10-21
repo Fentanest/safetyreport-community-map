@@ -11,7 +11,7 @@ import {
   validateEventType, validateObservationValues,
 } from './observation.ts';
 
-import { RawFailure, hasLoneSurrogate, rawEventFingerprint, validateRaw } from './raw.ts';
+import { RawFailure, hasLoneSurrogate, hasNul, rawEventFingerprint, validateRaw } from './raw.ts';
 
 export type Rpc = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 export interface IngestUser { id: string; isAnonymous: boolean }
@@ -358,14 +358,21 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         if (protocol === 2) {
           if ((raw.event_type === 'reshare') !== (b.trigger === 'reshare')) fail('event_type_mismatch');
           if (Object.hasOwn(raw, 'client_observation')) {
-            // 짝 없는 UTF-16 surrogate 는 jsonb 로 넘기면 Postgres 가 500 으로 거절하므로 여기서 422 로 끊는다.
-            if (!isObservation(raw.client_observation) || hasLoneSurrogate(raw.client_observation)) fail('schema_invalid');
-            const error = validateObservationValues(raw.client_observation as Observation);
-            if (error) fail(error.code, undefined, error.reason);
+            // 구조·짝 없는 surrogate·NUL 은 jsonb 가 거절하거나 계약 위반이므로 여기서 422 로 끊는다.
+            if (!isObservation(raw.client_observation) || hasLoneSurrogate(raw.client_observation) || hasNul(raw.client_observation)) fail('schema_invalid');
           }
+          // 해시 쌍·원문 무결성은 항상 검증한다(불일치는 거절).
           await validateRaw(raw);
-          events.push({ ...raw, source_report_key: await sourceReportKey(raw.source_report_id as string),
-            payload_sha256: await rawEventFingerprint(raw) });
+          let ev = raw;
+          if (Object.hasOwn(raw, 'client_observation') && validateObservationValues(raw.client_observation as Observation)) {
+            // 선택적 비교용 관찰값의 "값" 이 잘못됐다고 원문 보존까지 막지 않는다: 관찰값(과 해시 쌍)만 버리고 저장한다.
+            // 서버 파서가 원문으로 직접 파싱하므로 비교 진단만 빠진다. 값·사유는 기록하지 않는다.
+            const { client_observation: _o, client_observation_sha256: _h, ...rest } = raw;
+            ev = rest;
+            deps.log?.({ event: 'community_ingest', route, outcome: 'client_observation_dropped', request_id: rid });
+          }
+          events.push({ ...ev, source_report_key: await sourceReportKey(raw.source_report_id as string),
+            payload_sha256: await rawEventFingerprint(ev) });
           continue;
         }
         const payload = raw.payload as Observation;

@@ -197,7 +197,7 @@ describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed lo
     expect(parsed.report_content).toContain('PRIVATE_CANARY_BODY');      // 신고내용
     expect(parsed.processing_content).toContain('PRIVATE_CANARY_ANSWER'); // 처리내용
     expect(parsed.rating).toBe(4);
-    expect(parsed.parser_version).toMatch(/^pc-parser-\d+\+map\d+\+reg/);
+    expect(parsed.parser_version).toMatch(/^pc-parser-\d+\+map\d+$/);
     const fact = JSON.parse(sql(`select to_jsonb(f) from private.community_report_facts f where source_report_key='${key}';`));
     expect(fact).toMatchObject({ fact_source: 'raw', raw_sha256: e.raw.sha256, fact_parser_version: parsed.parser_version,
       consent_grant_id: A.grantId, status: 'accepted', public_state: 'completed', rating: 4 });
@@ -286,7 +286,8 @@ describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed lo
 
   it('deterministic interleavings: held ingest blocks finish (superseded), held finish blocks ingest and revoke; no deadlock', async () => {
     const W = await writerFor('E');
-    const derived = await deriveFact(dto());
+    const registry = sql('select version from private.community_registry_state;');
+    const derived = { ...(await deriveFact(dto())), agency_registry_version: registry };
     const finishQuery = (job: Json, e: Json) => `select private.finish_raw_parse('${job.contributor_id}','${job.dataset_key}','${job.source_report_key}',`
       + `'${job.lease_token}','${e.raw.sha256}','${e.supplement_sha256}','it-key',${lit({ status: 'accepted' })}::jsonb,repeat('0',64),`
       + `${lit(derived)}::jsonb,'{}'::jsonb,null);`;
@@ -382,6 +383,25 @@ describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed lo
     for (const role of ['anon', 'authenticated', 'community_parser'])
       expect(sql(`select has_function_privilege('${role}','public.internal_map_client_state(uuid)','EXECUTE');`)).toBe('f');
     expect(sql(`select has_function_privilege('service_role','public.internal_map_client_state(uuid)','EXECUTE');`)).toBe('t');
+  }, 60_000);
+
+  it('finish_raw_parse refuses a worker whose registry differs from the singleton (55P03, no projection); requeue_dead_raw is owner-only', async () => {
+    const W = A;
+    const report = rid();
+    const e = await rawEvent(W, report, { revision: 30 });
+    expect(v2(W, [e]).results[0].status).toBe('stored');
+    const rows = sql(`select to_jsonb(j) from private.claim_raw_parse_jobs(200,300) j;`).split('\n').filter(Boolean).map(l => JSON.parse(l));
+    for (const other of rows.filter(r => r.source_report_key !== e.source_report_key))
+      sql(`select private.release_raw_parse_job('${other.contributor_id}','${other.dataset_key}','${other.source_report_key}','${other.lease_token}');`);
+    const job = rows.find(r => r.source_report_key === e.source_report_key)!;
+    const derived = { ...(await deriveFact(dto())), agency_registry_version: 'not-the-singleton' };
+    expect(() => sql(`select private.finish_raw_parse('${job.contributor_id}','${job.dataset_key}','${job.source_report_key}','${job.lease_token}',`
+      + `'${e.raw.sha256}','${e.supplement_sha256}','it-key',${lit({ status: 'accepted' })}::jsonb,repeat('0',64),${lit(derived)}::jsonb,'{}'::jsonb,null);`)).toThrow(/registry_version_mismatch/);
+    expect(num(`select count(*) from private.community_report_facts where source_report_key='${e.source_report_key}';`)).toBe(0);
+    sql(`select private.release_raw_parse_job('${job.contributor_id}','${job.dataset_key}','${job.source_report_key}','${job.lease_token}');`);
+    for (const role of ['anon', 'authenticated', 'service_role', 'community_parser'])
+      expect(sql(`select has_function_privilege('${role}','private.requeue_dead_raw(timestamptz,text)','EXECUTE');`)).toBe('f');
+    expect(num(`select private.requeue_dead_raw(now(), 'no-such-error');`)).toBe(0);
   }, 60_000);
 
   it('a permanently failing body is retried with backoff, then marked dead and leaves the queue; the fact is kept', async () => {

@@ -43,25 +43,56 @@ Every database call is one autocommit statement (its own short transaction). No 
    It projects only when the lease is still ours and the raw/supplement hashes are unchanged, and always under the
    lineage's currently active grant (policy supersession). Outcomes: `accepted`/`no_change`/`stale_ignored`, `superseded`
    (new bytes arrived: the re-queued row stays), `revoked` (lineage closed: queue row dropped), `lease_lost`, `gone`.
+   If the worker's agency registry version (`derived.agency_registry_version`) differs from
+   `private.community_registry_state`, finish raises SQLSTATE `55P03` with message `registry_version_mismatch` and projects
+   nothing (see Deployment order).
 4. Failure: `private.fail_raw_parse` in its own transaction (its own errors are logged and swallowed). Backoff
    30 s x 2^n up to 1 h; at 8 attempts the raw row becomes `dead` and leaves the queue. Identical bytes stay dead
-   (`no_change` on re-send); new bytes or a new parse key re-queue it. Lock contention (`LockNotAvailable`,
-   `DeadlockDetected`, `SerializationFailure`) releases the lease without spending an attempt.
+   (`no_change` on re-send); new bytes or a new parse key re-queue it. Failures that are not the report's
+   fault - lock contention (`LockNotAvailable`, `DeadlockDetected`, `SerializationFailure`), `QueryCanceled` (statement
+   timeout), `AdminShutdown`/`CrashShutdown`/`CannotConnectNow`, other `OperationalError`/`InterfaceError` and the registry
+   mismatch above - release the lease without spending an attempt. A connection that is already gone cannot release;
+   the lease simply expires after 300 s and is claimed again (that claim counts as one attempt). A job that always hits the
+   statement timeout is therefore retried indefinitely without becoming `dead`; watch for repeating `transient_release kind=QueryCanceled`.
+   `dead` rows are never revived by themselves; after fixing the cause an operator runs, as the DB owner (not the worker
+   role, no API role may execute it):
+   `select private.requeue_dead_raw();` (all), `select private.requeue_dead_raw('2026-10-21T00:00:00Z');` (received since)
+   or `select private.requeue_dead_raw(null, 'ValueError');` (one `parse_error` class). It returns the number of rows moved
+   back to `pending` and queued (priority `reparse`, attempts reset); rows locked by a concurrent ingest/revoke are skipped, run it again.
 
 Session limits: `lock_timeout=5s`, `statement_timeout=30s`, `idle_in_transaction_session_timeout=60s` (set by the worker
 per session and by `alter role community_parser`).
 
 ## Parse key and reparse
 
-`parsed_parser_version` / `fact_parser_version` hold the parse key `"{PARSER_VERSION}+map{MAP_WORKER_VERSION}+reg{registry}"`.
+`parsed_parser_version` / `fact_parser_version` hold the parse key `"{PARSER_VERSION}+map{MAP_WORKER_VERSION}"`.
 
 - PC parser copy changes (`vendor_parser.py`): `PARSER_VERSION` in `community_adapter.py` changes with it.
 - Worker-side code that changes parsed columns, the DTO inputs or the derivation: bump `MAP_WORKER_VERSION` in `worker.py`.
-- Agency registry (`shared/agency-region-registry`) version changes are picked up automatically.
+  Rows are re-parsed. When the DTO payload hash is unchanged but the parse key differs, the raw path still rewrites the
+  fact's derived columns (and `fact_parser_version`) - it is not a `no_change` - and keeps `answer_accepted_at`.
+  A v1 (`dto`) fact never takes this path.
+- The agency registry version (`shared/agency-region-registry`) is **not** part of the parse key. A registry change is applied
+  to stored facts by `scripts/recompute-agency-keys.mjs` (all fact sources); the worker only has to carry the same registry
+  as `private.community_registry_state`, otherwise `finish_raw_parse` refuses (below).
 
 Deploy the new image with `--reparse` (the default CMD). At startup it calls `private.enqueue_raw_reparse` in batches of
 200 until nothing is left; rows are queued with priority `reparse`, after ingest work. Reports whose lock is held at that
-moment are skipped and caught by the next start.
+moment are skipped and caught by the next start. The enqueue uses `FOR KEY SHARE ... SKIP LOCKED`, so it never waits for a
+row that a revoke/withdrawal purge is deleting.
+
+### Deployment order when the agency registry changes
+
+The registry is part of the image (`shared/agency-region-registry`) and of the database singleton
+(`private.community_registry_state`); the two must be switched in this order, there is no automatic pickup:
+
+1. Build and deploy the worker image with the new registry, and make sure no worker with the old registry is still running
+   (SIGTERM and wait until it has drained). Until step 2 the new worker releases every job with `registry_version_mismatch`
+   without spending an attempt and logs one WARNING per batch; nothing is parsed, nothing is lost.
+2. Switch the singleton: apply the registry migration, then run `scripts/recompute-agency-keys.mjs` for the stored facts.
+3. The released jobs are claimed again and project normally. Check the log for `registry_version_mismatch` going quiet.
+
+Never switch the singleton first: the old worker would then be refused on every job (still harmless, but nothing projects).
 
 ## Deployment
 

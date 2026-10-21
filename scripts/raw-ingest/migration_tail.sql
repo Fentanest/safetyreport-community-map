@@ -151,6 +151,12 @@ begin
         return 'superseded';
     end if;
     if v_lease is distinct from p_lease then return 'lease_lost'; end if;
+    -- The derived agency keys were computed with the worker`s registry snapshot. If the authoritative singleton is another
+    -- version (worker image and registry migration out of step), projecting would stamp mismatching keys. 55P03 is
+    -- lock_not_available: the worker treats it as transient and releases the job without spending an attempt.
+    if p_derived->>'agency_registry_version' is distinct from (select s.version from private.community_registry_state s where s.id = 1) then
+        raise exception 'registry_version_mismatch' using errcode = '55P03';
+    end if;
     if coalesce(p_payload->>'status', '') not in ('accepted','partial','rejected','completed_unknown') then
         raise exception 'non_final_not_accepted';
     end if;
@@ -229,7 +235,10 @@ begin
          where r.parsed_parser_version is distinct from p_parser and r.parse_state in ('parsed','failed','dead')
            and not exists (select 1 from private.community_parse_queue q
                             where q.contributor_id = r.contributor_id and q.dataset_key = r.dataset_key and q.source_report_key = r.source_report_key)
-         limit p_limit)
+         limit p_limit
+         -- Never wait on a row that a revoke/withdrawal purge or an ingest is changing: KEY SHARE conflicts only with
+         -- DELETE / key updates, and SKIP LOCKED turns that conflict into "pick it up on the next call".
+         for key share of r skip locked)
     insert into private.community_parse_queue(contributor_id, dataset_key, source_report_key, priority)
     select c.contributor_id, c.dataset_key, c.source_report_key, 'reparse' from candidates c
      where pg_try_advisory_xact_lock(hashtextextended('key:' || c.source_report_key, 913784))
@@ -239,6 +248,31 @@ begin
 end $$;
 revoke all on function private.enqueue_raw_reparse(text,integer) from public,anon,authenticated,service_role;
 grant execute on function private.enqueue_raw_reparse(text,integer) to community_parser;
+
+-- Operations: move `dead` rows back to the queue after the cause is fixed (worker bug, registry/parse-key deployment).
+-- Owner only (psql as the migration owner); NOT executable by the worker role or any API role.
+-- p_since limits to rows RECEIVED at or after that time, p_error to one parse_error (exception class name).
+-- Rows locked by a concurrent ingest/revoke are skipped, so run it again if the count looks short.
+create function private.requeue_dead_raw(p_since timestamptz default null, p_error text default null) returns integer
+language plpgsql volatile security definer set search_path='' as $$
+declare n integer;
+begin
+    with dead as (
+        select r.contributor_id, r.dataset_key, r.source_report_key from private.community_report_raw r
+         where r.parse_state = 'dead' and (p_since is null or r.received_at >= p_since) and (p_error is null or r.parse_error = p_error)
+         for no key update of r skip locked),
+    upd as (
+        update private.community_report_raw r set parse_state = 'pending', parse_error = null
+          from dead d
+         where (r.contributor_id, r.dataset_key, r.source_report_key) = (d.contributor_id, d.dataset_key, d.source_report_key)
+        returning r.contributor_id, r.dataset_key, r.source_report_key)
+    insert into private.community_parse_queue(contributor_id, dataset_key, source_report_key, priority)
+    select u.contributor_id, u.dataset_key, u.source_report_key, 'reparse' from upd u
+    on conflict do nothing;
+    get diagnostics n = row_count;
+    return n;
+end $$;
+revoke all on function private.requeue_dead_raw(timestamptz,text) from public,anon,authenticated,service_role,community_parser;
 
 create function private.purge_revoked_raw() returns trigger language plpgsql security definer set search_path='' as $$
 begin
@@ -342,8 +376,13 @@ begin
         'last_contract', (select c.last_contract from private.community_connections c
                            where c.user_id = p_user and c.status = 'active' and c.last_seen_at is not null
                            order by c.last_seen_at desc, c.connection_id limit 1),
+        -- Decided by the MOST RECENT active connection: an old v1 connection left behind after the user moved to the new app
+        -- must not keep the update banner alive. 0 when the newest connection already speaks v2.
         'v1_connections', (select count(*)::int from private.community_connections c
-                            where c.user_id = p_user and c.status = 'active' and c.last_contract = 'community-ingest-v1'),
+                            where c.user_id = p_user and c.status = 'active' and c.last_contract = 'community-ingest-v1'
+                              and (select l.last_contract from private.community_connections l
+                                    where l.user_id = p_user and l.status = 'active' and l.last_seen_at is not null
+                                    order by l.last_seen_at desc, l.connection_id limit 1) = 'community-ingest-v1'),
         'v2_enabled', coalesce(v_enabled, false),
         'notice', v_notice);
 end $$;

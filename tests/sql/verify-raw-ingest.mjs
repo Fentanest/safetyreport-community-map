@@ -14,6 +14,7 @@ await db.exec(`create schema private;create schema extensions;create schema auth
  create table private.community_policy_current(singleton boolean primary key,version text);
  create table private.community_consent_grants(grant_id uuid primary key,user_id uuid,lineage_id uuid,policy_version text,revoked_at timestamptz,revoke_reason text,consent_text_sha256 text default 'hash');
  create table private.community_connections(connection_id uuid primary key,user_id uuid,dataset_key text,writer_epoch bigint,last_accepted_revision bigint default 0,status text,bound_session_id uuid,source_app text,source_mode text);
+ create table private.community_registry_state(id integer primary key default 1,version text not null);insert into private.community_registry_state(version) values('REG1');
  create table private.community_deletion_fences(contributor_id uuid primary key,fenced_at timestamptz);
  create table private.community_dataset_deletion_fences(contributor_id uuid,dataset_key text,fenced_at timestamptz);
  create table private.community_fact_tombstones(contributor_id uuid,source_report_key text);
@@ -49,7 +50,7 @@ await q("insert into private.community_connections values($1,$2,$3,1,0,'active',
 await q('insert into private.community_official_account_bindings values($1,$2)',[u,dataset]);
 const envelope={connection_id:c,consent_grant_id:g,source_app:'safetyreport',source_mode:'server',trigger:'manual',client_version:'3.5.1',parser_version:'pc-parser-13'};
 const event={event_id:'44444444-4444-4444-8444-444444444444',source_report_key:key,source_report_id:'SYNTHETIC01',report_number:null,source_revision:1,writer_epoch:1,captured_at:'2026-10-21T00:00:00Z',event_type:'completed_observation',payload_sha256:hash,
- payload:{status:'accepted',source_agency_code:null,rating:4},derived:{public_state:'completed',status:'accepted',category:'traffic',disposition:'none',amount_kind:'unknown',report_date:'2026-10-20',completed_date:'2026-10-21',coord_source:'none',rating:4}};
+ payload:{status:'accepted',source_agency_code:null,rating:4},derived:{public_state:'completed',status:'accepted',category:'traffic',disposition:'none',amount_kind:'unknown',report_date:'2026-10-20',completed_date:'2026-10-21',coord_source:'none',rating:4,agency_registry_version:'REG1'}};
 const call=async(name,ev=event,env=envelope)=> (await one(`select public.${name}($1,$2,'fixture-request',$3,$4) as result`,[u,u,env,[ev]])).result;
 const fact=async()=> (await q('select to_jsonb(f)-ARRAY[\'latest_receipt_id\',\'first_accepted_at\',\'answer_accepted_at\',\'updated_at\',\'fact_source\',\'fact_parser_version\',\'raw_sha256\'] as f from private.community_report_facts f')).map(r=>r.f);
 
@@ -108,6 +109,13 @@ assert.equal((await q('select * from private.claim_raw_parse_jobs(10,300)')).len
 const parsed={report_content:'PRIVATE',processing_content:'ANSWER',rating:4,violation_latitude:37.5};
 const finish=(lease,sha=hash,parser='pc-parser-13+map1+regX')=>one('select private.finish_raw_parse($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) as r',[u,dataset,key,lease,sha,hash,parser,event.payload,hash,event.derived,parsed,{}]);
 assert.equal((await finish('99999999-9999-4999-8999-999999999999')).r,'lease_lost');
+// E: a worker whose registry differs from the singleton must not project; 55P03 (lock_not_available) = transient for the worker.
+await assert.rejects(one('select private.finish_raw_parse($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) as r',[u,dataset,key,job.lease_token,hash,hash,'pc-parser-13+map1',event.payload,hash,{...event.derived,agency_registry_version:'REG0'},parsed,{}]),
+ e=>e.code==='55P03'&&/registry_version_mismatch/.test(e.message));
+await assert.rejects(one('select private.finish_raw_parse($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) as r',[u,dataset,key,job.lease_token,hash,hash,'pc-parser-13+map1',event.payload,hash,{...event.derived,agency_registry_version:undefined},parsed,{}]),
+ e=>e.code==='55P03','a derived object without a registry version is also refused');
+assert.equal((await one('select fact_source from private.community_report_facts')).fact_source,'dto','mismatch left the fact untouched');
+assert.equal((await one('select lease_token from private.community_parse_queue')).lease_token,job.lease_token,'the lease is still ours (worker releases it)');
 const firstAnswer=(await one('select answer_accepted_at from private.community_report_facts')).answer_accepted_at;
 assert.equal((await finish(job.lease_token)).r,'no_change');
 assert.equal((await one('select fact_source from private.community_report_facts')).fact_source,'raw');
@@ -122,6 +130,17 @@ const reparsed=await one('select answer_accepted_at,rating,fact_parser_version f
 assert.equal(reparsed.rating,5);assert.equal(reparsed.fact_parser_version,'pc-parser-14+map1+regX');
 assert.deepEqual(reparsed.answer_accepted_at,firstAnswer,'L7: answer_accepted_at unchanged on reparse');
 
+// H: derivation-only change (new parse key, same DTO payload hash) updates the derived fact columns; same key stays no_change.
+const rerun=async(parser,derived)=>{await q("update private.community_report_raw set parse_state='parsed'");await q("select private.enqueue_raw_reparse($1,10)",[parser]);
+ const [j]=await q('select * from private.claim_raw_parse_jobs(10,300)');
+ return (await one('select private.finish_raw_parse($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) as r',[u,dataset,key,j.lease_token,hash,hash,parser,{...event.payload,rating:5},'c'.repeat(64),derived,parsed,null])).r;};
+assert.equal(await rerun('pc-parser-14+map2',{...event.derived,rating:3}),'accepted','H: same payload hash, new parse key -> derived columns updated');
+let h=await one('select rating,fact_parser_version,answer_accepted_at from private.community_report_facts');
+assert.equal(h.rating,3);assert.equal(h.fact_parser_version,'pc-parser-14+map2');assert.deepEqual(h.answer_accepted_at,firstAnswer,'H: not a new answer');
+await q("update private.community_report_raw set parsed_parser_version='old'");
+assert.equal(await rerun('pc-parser-14+map2',{...event.derived,rating:2}),'no_change','H: unchanged parse key keeps no_change (rating untouched)');
+assert.equal((await one('select rating from private.community_report_facts')).rating,3);
+
 // L5: permanent failures become dead after 8 attempts; same bytes stay no_change, new bytes revive.
 await q("update private.community_report_raw set parse_state='parsed'");
 await q("insert into private.community_parse_queue(contributor_id,dataset_key,source_report_key,attempts) values($1,$2,$3,7)",[u,dataset,key]);
@@ -129,6 +148,20 @@ let [bad]=await q('select * from private.claim_raw_parse_jobs(10,300)');
 assert.equal((await one('select private.fail_raw_parse($1,$2,$3,$4,$5,$6,$7) as r',[u,dataset,key,bad.lease_token,hash,'pc-parser-14+map1+regX','ValueError'])).r,'dead');
 assert.equal((await one('select parse_state from private.community_report_raw')).parse_state,'dead');
 assert.equal((await one('select count(*)::int as n from private.community_parse_queue')).n,0);
+// F: requeue_dead_raw moves dead rows back to the queue (filters: error class, received_at); owner only.
+assert.equal((await one("select private.requeue_dead_raw(null,'OtherError') as n")).n,0);
+assert.equal((await one("select private.requeue_dead_raw(now()+interval '1 day',null) as n")).n,0);
+assert.equal((await one("select private.requeue_dead_raw(now()-interval '1 day','ValueError') as n")).n,1);
+assert.deepEqual(await one('select parse_state,parse_error from private.community_report_raw'),{parse_state:'pending',parse_error:null});
+assert.deepEqual(await one('select priority,attempts from private.community_parse_queue'),{priority:'reparse',attempts:0});
+assert.equal((await one('select private.requeue_dead_raw() as n')).n,0,'only dead rows move');
+for(const role of ['anon','authenticated','service_role','community_parser'])
+ assert.equal((await one("select has_function_privilege($1,'private.requeue_dead_raw(timestamptz,text)','EXECUTE') as yes",[role])).yes,false,`requeue_dead_raw not executable by ${role}`);
+await q("update private.community_parse_queue set attempts=7");
+[bad]=await q('select * from private.claim_raw_parse_jobs(10,300)');
+assert.equal((await one('select private.fail_raw_parse($1,$2,$3,$4,$5,$6,$7) as r',[u,dataset,key,bad.lease_token,hash,'pc-parser-14+map1+regX','ValueError'])).r,'dead');
+// G: reparse enqueue never waits on rows another transaction is purging (FOR KEY SHARE ... SKIP LOCKED).
+assert.match((await one("select prosrc from pg_proc where proname='enqueue_raw_reparse'")).prosrc,/for key share of r skip locked/);
 assert.equal((await call('internal_community_ingest_v2',{...raw,event_id:'88888888-8888-4888-8888-888888888888'})).results[0].status,'no_change');
 const raw2={...raw,event_id:'89999999-8888-4888-8888-888888888888',report_number:null,raw:{...raw.raw,sha256:'e'.repeat(64)}};
 await q("update private.community_report_raw set report_number='SPP-1'");
@@ -156,6 +189,13 @@ let state=(await one('select public.internal_map_client_state($1) as s',[u])).s;
 assert.deepEqual(Object.keys(state).sort(),['consent','last_contract','notice','v1_connections','v2_enabled']);
 assert.equal(state.consent,'active');assert.equal(state.v1_connections,2);assert.equal(state.v2_enabled,true);
 assert.ok(!JSON.stringify(state).includes(dataset)&&!JSON.stringify(state).includes(g));
+// C: decided by the most recent active connection. A stale v1 connection must not keep the banner alive.
+await q("update private.community_connections set last_contract='community-ingest-v2',last_seen_at=now()+interval '1 minute' where connection_id=$1",[c2]);
+state=(await one('select public.internal_map_client_state($1) as s',[u])).s;
+assert.equal(state.last_contract,'community-ingest-v2');assert.equal(state.v1_connections,0,'newest connection is v2: stale v1 does not count');
+await q("update private.community_connections set last_contract='community-ingest-v1',last_seen_at=now()+interval '2 minutes' where connection_id=$1",[c2]);
+state=(await one('select public.internal_map_client_state($1) as s',[u])).s;
+assert.equal(state.last_contract,'community-ingest-v1');assert.equal(state.v1_connections,2);
 
 // M5: policy supersession keeps raw and projects under the lineage's active grant on reparse.
 const nextGrant='77777777-7777-4777-8777-777777777777';

@@ -126,6 +126,18 @@ describe('GET /my-analytics/client-status (server)', () => {
     expect(calls.some(([n]) => n === 'internal_analytics_viewer')).toBe(false);
   });
 
+  it('counts message/version length in code points (DB char_length, schema maxLength) on server and web', () => {
+    const ok = notice({ pc: PC, mobile: MOBILE }); ok.message = '😀'.repeat(1000);   // 1000 code points, 2000 UTF-16 units
+    expect(parseClientStatus(rpcState({ notice: ok }))?.notice?.message).toBe(ok.message);
+    expect(acceptClientStatus({ ...rpcState(), notice: ok }).notice?.message).toBe(ok.message);
+    const long = { ...ok, message: '😀'.repeat(1001) };
+    expect(parseClientStatus(rpcState({ notice: long }))?.notice).toBeNull();
+    expect(() => acceptClientStatus({ ...rpcState(), notice: long })).toThrow();
+    const ver = { ...ok, min_version: { pc: '😀'.repeat(40), mobile: null } };
+    expect(parseClientStatus(rpcState({ notice: ver }))?.notice?.min_version.pc).toBe('😀'.repeat(40));
+    expect(acceptClientStatus({ ...rpcState(), notice: ver }).notice?.min_version.pc).toBe('😀'.repeat(40));
+  });
+
   it('decoder keeps nullable last_contract and the schema', () => {
     expect(parseClientStatus(rpcState({ last_contract: null, notice: null }))?.last_contract).toBeNull();
     expect(parseClientStatus({ ...rpcState(), notice: undefined })?.notice).toBeNull();
@@ -141,9 +153,12 @@ describe('update notice rules (client)', () => {
   it('dashboard banner only with a notice, v2 enabled and an outdated consent or a v1 app', () => {
     expect(dashboardNoticeVisible(null)).toBe(false);
     expect(dashboardNoticeVisible(status())).toBe(true);
-    expect(dashboardNoticeVisible(status({ consent: 'active', v1_connections: 1 }))).toBe(true);
-    expect(dashboardNoticeVisible(status({ consent: 'outdated', v1_connections: 0 }))).toBe(true);
-    expect(dashboardNoticeVisible(status({ consent: 'active', v1_connections: 0 }))).toBe(false);
+    expect(dashboardNoticeVisible(status({ consent: 'active', last_contract: 'community-ingest-v1', v1_connections: 1 }))).toBe(true);
+    expect(dashboardNoticeVisible(status({ consent: 'outdated', last_contract: 'community-ingest-v2', v1_connections: 0 }))).toBe(true);
+    expect(dashboardNoticeVisible(status({ consent: 'active', last_contract: 'community-ingest-v2', v1_connections: 0 }))).toBe(false);
+    // a stale v1 connection left behind while the most recent connection speaks v2 must not keep the banner up
+    expect(dashboardNoticeVisible(status({ consent: 'active', last_contract: 'community-ingest-v2', v1_connections: 1 }))).toBe(false);
+    expect(dashboardNoticeVisible(status({ consent: 'active', last_contract: null, v1_connections: 0 }))).toBe(false);
     expect(dashboardNoticeVisible(status({ v2_enabled: false }))).toBe(false);
     expect(dashboardNoticeVisible(status({ notice: null }))).toBe(false);
   });
@@ -209,7 +224,7 @@ describe('AccessGate with the update notice', () => {
   });
   it('upload gate follows the dashboard rule', () => {
     expect(gate(status(), 'upload_required')).toContain('서버가 보낸 안내 문구');
-    expect(gate(status({ consent: 'active', v1_connections: 0 }), 'upload_required')).not.toContain('client-update-notice');
+    expect(gate(status({ consent: 'active', last_contract: 'community-ingest-v2', v1_connections: 0 }), 'upload_required')).not.toContain('client-update-notice');
   });
 });
 
