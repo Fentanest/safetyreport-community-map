@@ -1,7 +1,8 @@
 # 원본 JSON 전송·서버 파싱 — 검수·검증 최종 보고 (2026-10-21)
 
 작성: Claude Opus(검수·수정). 구현: Sol(`gpt-6.1-sol`, 1·2차) → 사용자 지시로 같은 날 이후 Sol 역할은 Claude Sonnet.
-범위: 지도·auth·PC·모바일 네 레포의 `feat/raw-json-ingest` 브랜치(로컬, 미배포). 계획 정본은 [PLAN.md](PLAN.md).
+범위: 지도·auth·PC·모바일 네 레포(작업 브랜치 `feat/raw-json-ingest` 는 main/dev 에 반영 후 삭제). 계획 정본은 [PLAN.md](PLAN.md).
+배포 상황은 [deployment.md](../../deployment.md) 2026-10-21 절.
 
 ## 1. 진행 경과
 1. Sol 1차(P1~P5 전체) → 원본 1회 전송·호출 지점 전환 등 미완료 → Sol 2차(PC·모바일 마무리).

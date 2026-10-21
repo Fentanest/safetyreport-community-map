@@ -416,3 +416,25 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
 - 운영 확인: https://safemap.worklazy.net 번들에 `below` 자리·photo-strip 배너·`(min-width: 1440px)` 조건 포함.
   대시보드는 공유자 로그인이 필요해 운영 화면에서는 보지 못했다(demo 자료 브라우저 검사 `scripts/browser/verify_aliexpress_below.mjs` 26/26으로 확인).
 - 되돌리기: `56ce8fd`를 revert 후 Pages workflow 재실행.
+
+## 2026-10-21 · 원본 JSON 수신(v2)·서버 파싱 워커·카카오 연결 해제 웹훅 (206 적용, 정책 전환 전)
+사용자 승인("버전 확정하고 모두 푸시 빌드 배포 다 하자"). 계획·검수는 [REVIEW-REPORT](implementation/raw-json-ingest-20261021/REVIEW-REPORT.md).
+- 백업 `~/backup-20261021/`(206): DB 전체 `pg_dump -Fc`(적용 전), 교체 전 Edge 함수 3개(`functions-before.tgz`), compose·라우터·`.env` 사본(0600).
+- DB: 지도 `202610210100_raw_json_ingest.sql` → auth `202610210300_kakao_unlink_revoke.sql` 순서로 `psql -v ON_ERROR_STOP=1`, 각각
+  `schema_migrations` 기록, `notify pgrst`. 해시는 `migration-manifest.json`과 일치. `community_ingest_config.v2_enabled=false`(기본),
+  정책은 `2026-09-28.3` 그대로 — v2 는 정책 전환 때 켠다. pg_cron `community-ingest-payload-prune` 등록 확인.
+- Edge: 이번 변경분만 교체 — `community-ingest`(handler·raw·index), `my-analytics`(personalHandler·clientStatus·index),
+  `community-account`(account·index), 새 `community-kakao-unlink`. `my-reports`의 예전 미배포분(Retry-After, `2839a4b`·`601ae23`)은 이번 범위 밖이라 두었다.
+- 라우터 `volumes/functions/main/index.ts`: 206 은 `docker-compose.community-trial.yml`이 `VERIFY_JWT=true`라 카카오 호출이 라우터에서 막힌다.
+  `community-kakao-unlink`를 `community-auth-relay`와 같은 JWT 예외에 넣었다(함수가 `KakaoAK` 대표 어드민 키·앱 ID 를 직접 확인).
+- functions 환경: `.env`의 `KAKAO_ADMIN_KEY`·`KAKAO_APP_ID`(사용자가 직접 입력)를 `docker-compose.yml` functions environment 에 연결.
+  확인: 키 없음·틀린 키 401, 다른 앱 ID 403, 맞는 키+없는 회원번호 200(`unmatched`), 외부 HTTPS 도달.
+  카카오 콘솔 웹훅 URL `https://supabase.worklazy.net/functions/v1/community-kakao-unlink`(POST) 등록은 사용자 몫. 실제 카카오 호출로는 아직 검증하지 않았다.
+- 파서 워커: `~/community-parser/`(지도 `b19e837` git archive, 이미지 `community-parser:map-b19e837`, 네트워크 `supabase_default`).
+  DB 로그인 `community_parser_login`(NOLOGIN 역할 `community_parser` 의 구성원, 역할 timeout 설정), DSN 은 `~/community-parser/.env`(0600)에만 있다.
+  기동 로그 `parse_key=pc-parser-13+map1`, registry `2026-10-18.1` = DB singleton.
+- 레거시 HS256 키 교체(같은 날): 점검 출력에 functions 의 레거시 service_role 키가 찍혀 `JWT_SECRET`과 이를 쓰는 `ANON_KEY`·`SERVICE_ROLE_KEY`,
+  `JWT_KEYS`·`JWT_JWKS`의 HS256 키를 새로 만들었다(사용자가 206에서 스크립트 실행, 값 출력 없음). ES256 키·`sb_publishable_`·`sb_secret_`는 그대로라
+  앱·지도 웹·확장·GitHub 변수 변경 없음. 확인: 옛 service_role·anon 키 401, 새 키·공개 키 정상, 함수 내부 DB 호출 정상, realtime tenant 재생성, 전 컨테이너 healthy.
+- 남은 순서: PC 3.6.0·모바일 2.5.0 출시 → 스토어 반영 확인 → 정책 `2026-10-21.1` 발급(auth policy-drafts 를 새 migration 번호로) + `v2_enabled=true`
+  → 지도 Pages·auth 안내 페이지 배포. 구버전 차단일은 미정.
