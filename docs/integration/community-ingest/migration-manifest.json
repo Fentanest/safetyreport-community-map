@@ -700,6 +700,16 @@
     "202609260100",
     "202610210100"
    ]
+  },
+  {
+   "version": "202610211900",
+   "repo": "auth",
+   "path": "supabase/migrations/202610211900_policy_2026_10_21_1.sql",
+   "sha256": "619e52a26997b0c6ce2c73f7ec9aed29fa0790e121d5fd5410b023ed96abe35a",
+   "depends_on": [
+    "202609281700",
+    "202610210100"
+   ]
   }
  ],
  "functions": [
