@@ -1,0 +1,20 @@
+# Run from the map repository root only after migration, role provisioning, and approval.
+# COMMUNITY_PARSER_DSN: direct PostgreSQL (port 5432), restricted community_parser login, sslmode as required by the host.
+# Never a transaction pooler URL, service_role or a superuser (worker.py refuses to start with those).
+services:
+  community-parser:
+    build:
+      context: ../..
+      dockerfile: server/parser-py/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      COMMUNITY_PARSER_DSN: ${COMMUNITY_PARSER_DSN:?restricted community_parser login required}
+      TZ: Asia/Seoul
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    # SIGTERM: the worker finishes the current job, releases the rest of its leases and exits.
+    stop_signal: SIGTERM
+    stop_grace_period: 30s

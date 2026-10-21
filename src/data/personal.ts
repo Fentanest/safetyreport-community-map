@@ -278,3 +278,68 @@ export async function readPersonalStatistics(params: URLSearchParams, signal?: A
   sharedRetryCooldown.recordSuccess(startGen);
   return res.json();
 }
+
+// ---- App-update guidance (2026-10-21) -------------------------------------------------------------------------
+// The map web reads its OWN endpoint `GET /my-analytics/client-status` (same map session token as compare). It never
+// calls the account API (PROJECT_RULES 7). Nothing is shown unless the server sends a notice; there is no built-in
+// version text or link. A failure is silent (guidance never blocks the map) and never feeds the shared breaker.
+const nullableText = (max: number) => z.string().min(1).max(max).nullable();
+export const clientNoticeSchema = z.strictObject({
+  level: z.enum(['info', 'warning', 'required']),
+  message: z.string().min(1).max(1000),
+  min_version: z.strictObject({ pc: nullableText(40), mobile: nullableText(40) }),
+  url: z.strictObject({ pc: z.string().max(2048).nullable(), mobile: z.string().max(2048).nullable() }),
+  deadline: z.string().max(64).nullable(),
+});
+export const clientStatusSchema = z.strictObject({
+  consent: z.enum(['active', 'outdated', 'none', 'revoked']),
+  last_contract: z.string().max(64).nullable(),
+  v1_connections: z.number().int().nonnegative(),
+  v2_enabled: z.boolean(),
+  notice: clientNoticeSchema.nullable(),
+});
+export type ClientNotice = z.infer<typeof clientNoticeSchema>;
+export type ClientStatus = z.infer<typeof clientStatusSchema>;
+
+/** https link or null — any other scheme (javascript:, http:, data:) is never rendered. */
+export function safeHttpsUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' && !u.username && !u.password ? u.toString() : null;
+  } catch { return null; }
+}
+
+export function acceptClientStatus(raw: unknown): ClientStatus {
+  const s = clientStatusSchema.parse(raw);
+  if (!s.notice || !s.notice.message.trim()) return { ...s, notice: null };
+  return { ...s, notice: { ...s.notice, url: { pc: safeHttpsUrl(s.notice.url.pc), mobile: safeHttpsUrl(s.notice.url.mobile) } } };
+}
+
+export async function loadClientStatus(signal?: AbortSignal): Promise<ClientStatus> {
+  // Literal env check (not `dataMode`) so live builds drop the demo fixture entirely.
+  if (import.meta.env.VITE_DATA_MODE === 'demo') {
+    const { demoClientStatus } = await import('./demoClientStatus');
+    return acceptClientStatus(demoClientStatus(window.location.search));
+  }
+  const base = import.meta.env.VITE_PUBLIC_ANALYTICS_URL?.replace(/\/+$/, '');
+  if (!base) throw personalError('unconfigured');
+  // A dashboard-wide outage is already being waited out: do not add requests, keep the last known guidance.
+  if (sharedRetryCooldown.blockedError()) throw personalError('service_unavailable');
+  const { mapAuth } = await import('../hooks/usePersonal');
+  const auth = mapAuth();
+  await auth.settled();
+  let token = await auth.accessToken();
+  if (!token) throw personalError('session_expired');
+  const key = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)?.trim();
+  const send = (t: string) => fetch(`${base}/my-analytics/client-status`, { signal, credentials: 'omit', cache: 'no-store',
+    referrerPolicy: 'no-referrer', headers: { Accept: 'application/json', Authorization: `Bearer ${t}`, ...(key ? { apikey: key } : {}) } });
+  let res = await send(token);
+  if (res.status === 401) {
+    token = await auth.refreshToken();
+    if (!token) throw personalError('session_expired');
+    res = await send(token);
+  }
+  if (!res.ok) throw personalError(res.status === 429 ? 'rate_limited' : 'service_unavailable');
+  return acceptClientStatus(await res.json());
+}

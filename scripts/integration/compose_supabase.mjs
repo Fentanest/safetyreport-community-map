@@ -183,7 +183,7 @@ function check(manifest) {
     if (!existsSync(file)) { problems.push(`${m.version}: missing file ${m.repo}:${m.path}`); return; }
     const digest = sha256(readFileSync(file));
     if (m.sha256 && m.sha256 !== digest) problems.push(`${m.version}: sha256 mismatch for ${m.repo}:${m.path}`);
-    if (!/^\d{12}$/.test(m.version) || !m.path.includes(m.version)) problems.push(`${m.version}: version/file name mismatch`);
+    if (!/^(?:\d{12}|\d{14})$/.test(m.version) || !m.path.includes(m.version)) problems.push(`${m.version}: version/file name mismatch`);
     if (seen.has(m.version)) {
       const prev = seen.get(m.version);
       problems.push(prev.digest === digest ? `${m.version}: listed twice` : `${m.version}: same version, different content`);

@@ -219,3 +219,17 @@ Edge decoder만 이 배열을 복원하며 브라우저의 `screen-v1` 공개 DT
 다른 payload 필드는 유지한다. 재전송 완료 뒤 동일 버전으로 다시 실행하면 중복 이벤트를 만들지 않는다.
 지도 수집기는 `rule_version`을 길이 제한 문자열로 받으므로 새 버전 허용 목록 변경은 필요하지 않다.
 기존 중앙의 오계산은 각 PC·모바일이 업데이트 후 재전송해야 고쳐진다. SQL은 앱 추정을 임의로 다시 계산하지 않는다.
+
+
+## 원본 JSON v2 로컬 후보 (2026-10-21)
+
+정본은 [구현 계획](implementation/raw-json-ingest-20261021/PLAN.md), 현 상태·미완료 목록은
+[SOL-REPORT](implementation/raw-json-ingest-20261021/SOL-REPORT.md)다. 운영에는 적용하지 않았다.
+`contracts/community-ingest-v2`의 원본 문자열·보조 필드·선택 비교 DTO를 검증해 private raw와 queue에 저장한다.
+워커가 PC 1a67d01의 고정 Python 파서로 해석한 뒤 공용 SQL 투영 함수로 facts를 갱신한다.
+`stored` ACK는 중앙 저장 완료이며 `parse_pending`은 지도 반영 대기다. 파싱 실패 시 이전 fact를 유지한다.
+새 raw/parsed/diffs/queue는 public API·화면 캐시·rollup·CSV의 원천이 아니며 anon/authenticated에 권한이 없다.
+실제 철회는 raw 삭제와 parsed/diffs/queue cascade를 실행한다. 정책 대체(superseded_policy)는 철회와 구분한다.
+v1 원장 payload는 30일 뒤 제거하되 재시도 식별에 필요한 최소 메타·해시·영수증은 유지한다.
+capability·notice·차단일은 같은 private 설정 행을 사용하며 v2 기본값은 꺼짐, 차단일은 미정이다.
+새 계정 status 계약 사본은 [account-api](account-api.md)다. v1 wire 계약 파일은 유지한다.

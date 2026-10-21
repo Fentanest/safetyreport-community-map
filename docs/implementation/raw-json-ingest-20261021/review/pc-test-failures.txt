@@ -1,0 +1,311 @@
+ERROR: test_suspension_survives_local_revoke_outage_and_restart (test_community_offline.OfflinePolicyTests.test_suspension_survives_local_revoke_outage_and_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_community_offline.py", line 297, in test_suspension_survives_local_revoke_outage_and_restart
+    self.assertTrue(ops.consent_revoke()['result']['pending'])
+                    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/services/community_account_ops.py", line 154, in consent_revoke
+    community_reset.begin(grant_id)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/services/community_reset.py", line 44, in begin
+    gate.invalidate('revoke_pending');stop_work()
+                                      ~~~~~~~~~^^
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/services/community_reset.py", line 21, in stop_work
+    community_uploader.stop_background(timeout=0)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'services.community_uploader' has no attribute 'stop_background'
+
+
+=====
+ERROR: test_maybe_start_ignored_while_paused_then_new_real_thread (test_db_optimize_pause.PauseStopsOptimizeTests.test_maybe_start_ignored_while_paused_then_new_real_thread)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 214, in test_maybe_start_ignored_while_paused_then_new_real_thread
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 219, in test_maybe_start_ignored_while_paused_then_new_real_thread
+    thread.join(timeout=10)
+    ^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'join'
+
+
+=====
+ERROR: test_error_releases_crawls_and_reports_error (test_db_optimize_review7.ErrorReleaseTests.test_error_releases_crawls_and_reports_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_review7.py", line 315, in test_error_releases_crawls_and_reports_error
+    self.assertEqual(state["state"], "error")
+                     ~~~~~^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+
+
+=====
+FAIL: test_unknown_transport_result_does_not_change_baseline (test_community_consent_catchup.ConsentCatchupTests.test_unknown_transport_result_does_not_change_baseline)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_community_consent_catchup.py", line 166, in test_unknown_transport_result_does_not_change_baseline
+    self.assertEqual(self.account_row(), before)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'bin[423 chars]92549613.951194, 'dataset_key': 'eb148f7425794[71 chars]01'}} != {'bin[423 chars]92549252.951194, 'dataset_key': 'eb148f7425794[71 chars]01'}}
+Diff is 822 characters long. Set self.maxDiff to None to see it.
+
+
+=====
+FAIL: test_onboarding_consent_flow_and_revoke (test_community_gate.GateAppTests.test_onboarding_consent_flow_and_revoke)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_community_gate.py", line 778, in test_onboarding_consent_flow_and_revoke
+    self.assertEqual(r.status_code, 200, r.text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 200 : 
+
+
+=====
+FAIL: test_change_listener_fires_on_loss (test_community_gate.GateServiceTests.test_change_listener_fires_on_loss)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_community_gate.py", line 566, in test_change_listener_fires_on_loss
+    self.assertEqual(seen[-1], "kakao_required")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'cloud_unavailable' != 'kakao_required'
+- cloud_unavailable
++ kakao_required
+
+
+
+=====
+FAIL: test_remote_revoke_blocks_on_next_poll (test_community_gate.GateServiceTests.test_remote_revoke_blocks_on_next_poll)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_community_gate.py", line 407, in test_remote_revoke_blocks_on_next_poll
+    self.assertEqual((result["state"], result["reasons"]), ("kakao_required", ["session_none"]))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('cloud_unavailable', ['cloud_unavailable']) != ('kakao_required', ['session_none'])
+
+First differing element 0:
+'cloud_unavailable'
+'kakao_required'
+
+- ('cloud_unavailable', ['cloud_unavailable'])
++ ('kakao_required', ['session_none'])
+
+
+=====
+FAIL: test_remote_revoke_soft_resets_and_never_grants_offline_use (test_community_offline.OfflinePolicyTests.test_remote_revoke_soft_resets_and_never_grants_offline_use)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_community_offline.py", line 112, in test_remote_revoke_soft_resets_and_never_grants_offline_use
+    self.assertIsNone(self.service.store.load().get('current'))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'access_token': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiAiMGYxZTJkM2MtNGI1YS00OTY4LTg3NzYtYTViNGMzZDJlMWYwIiwgInNlc3Npb25faWQiOiAiNWI1NjE1N2MtNzI3Ny00MGYxLWE5MDUtNzI5OTVkMGE0ZGRjIiwgInJvbGUiOiAiYXV0aGVudGljYXRlZCIsICJpYXQiOiAxNzkyNTQ5Mjk5fQ.AwD7QJGjAFOjPyvFkp0gIw', 'refresh_token': '5PFrHXl61WXhTtdF', 'expires_at': 1792552899.0, 'user_id': '0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0', 'display_name': '로컬A', 'has_email': False, 'session_id': '5b56157c-7277-40f1-a905-72995d0a4ddc', 'connected_at': '2026-10-21T02:21:39Z', 'kakao_id': '910001'} is not None
+
+
+=====
+FAIL: test_maybe_start_runs_in_background_and_finishes (test_db_optimize.MetaTests.test_maybe_start_runs_in_background_and_finishes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize.py", line 240, in test_maybe_start_runs_in_background_and_finishes
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_migration_events_are_visible_after_startup (test_db_optimize.StatusTests.test_migration_events_are_visible_after_startup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize.py", line 596, in test_migration_events_are_visible_after_startup
+    self.assertFalse(data["active"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+
+=====
+FAIL: test_status_keeps_existing_fields (test_db_optimize.StatusTests.test_status_keeps_existing_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize.py", line 587, in test_status_keeps_existing_fields
+    self.assertFalse(data["active"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+
+=====
+FAIL: test_worker_finally_schedules_timer_instead_of_immediate_round (test_db_optimize_astra_cross.PartialWorkerRespectsBackoffTests.test_worker_finally_schedules_timer_instead_of_immediate_round)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_astra_cross.py", line 57, in test_worker_finally_schedules_timer_instead_of_immediate_round
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_pause_timeout_reruns_to_record_done (test_db_optimize_p2r6.PauseTimeoutRerunTests.test_pause_timeout_reruns_to_record_done)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_p2r6.py", line 117, in test_pause_timeout_reruns_to_record_done
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_finally_then_timeout_restarts (test_db_optimize_pause.LifeRaceTests.test_finally_then_timeout_restarts)
+작업자 finally 판단 직후 시간 초과 → 다시 시작돼야 한다.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 379, in test_finally_then_timeout_restarts
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_stop_between_thread_clear_and_decide_starts_no_second_run (test_db_optimize_pause.LifeRaceTests.test_stop_between_thread_clear_and_decide_starts_no_second_run)
+작업자 _thread=None 직후 stop() → 두 번째 실행 없음.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 464, in test_stop_between_thread_clear_and_decide_starts_no_second_run
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_stop_during_pause_wait_survives_timeout (test_db_optimize_pause.LifeRaceTests.test_stop_during_pause_wait_survives_timeout)
+일시정지 대기 중 stop() 뒤 시간 초과 → 종료 요청 유지·재시작 없음.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 417, in test_stop_during_pause_wait_survives_timeout
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_pause_skips_save_of_inflight_fetch (test_db_optimize_pause.PauseStopsOptimizeTests.test_pause_skips_save_of_inflight_fetch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 121, in test_pause_skips_save_of_inflight_fetch
+    thread = self._start_bg(session_factory=lambda: object(), fetch_fn=fetch)
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 59, in _start_bg
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_pause_stops_running_optimize_after_current_item (test_db_optimize_pause.PauseStopsOptimizeTests.test_pause_stops_running_optimize_after_current_item)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 81, in test_pause_stops_running_optimize_after_current_item
+    thread = self._start_bg(session_factory=_boom, fetch_fn=_boom)
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 59, in _start_bg
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_pause_timeout_clears_stop_and_thread_continues_to_finish (test_db_optimize_pause.PauseStopsOptimizeTests.test_pause_timeout_clears_stop_and_thread_continues_to_finish)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 145, in test_pause_timeout_clears_stop_and_thread_continues_to_finish
+    thread = self._start_bg(session_factory=lambda: object(), fetch_fn=fetch)
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 59, in _start_bg
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_stopped_thread_restarts_when_no_pause (test_db_optimize_pause.PauseStopsOptimizeTests.test_stopped_thread_restarts_when_no_pause)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 176, in test_stopped_thread_restarts_when_no_pause
+    thread = self._start_bg(session_factory=lambda: object(), fetch_fn=fetch)
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_pause.py", line 59, in _start_bg
+    self.assertIsNotNone(thread)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+AssertionError: unexpectedly None
+
+
+=====
+FAIL: test_crawl_success_resumes_holds (test_db_optimize_sec7.GateTests.test_crawl_success_resumes_holds)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_sec7.py", line 475, in test_crawl_success_resumes_holds
+    self.assertTrue(meta.get("done"))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+
+=====
+FAIL: test_partial_state_not_counted_running_quiet_bar (test_db_optimize_solr7_fix.P3PartialStateTests.test_partial_state_not_counted_running_quiet_bar)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_db_optimize_solr7_fix.py", line 145, in test_partial_state_not_counted_running_quiet_bar
+    self.assertFalse(data["active"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+
+=====
+FAIL: test_every_silent_fallback_is_classified (test_fallback_policy.SilentFallbackInventoryTest.test_every_silent_fallback_is_classified)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_fallback_policy.py", line 107, in test_every_silent_fallback_is_classified
+    self.assertEqual(unlisted, {}, "기록 없이 대체하는 새 지점: note_fallback 을 쓰거나 SILENT_ALLOWED 에 분류해 넣는다")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'services/community_raw_backfill.py::_run[192 chars]': 1} != {}
++ {}
+- {'services/community_raw_backfill.py::_run_runtime.heartbeat': 1,
+-  'services/community_raw_backfill_runtime.py::RuntimeBackend.close': 1,
+-  'services/community_reset.py::resume_work': 1,
+-  'services/community_schedule.py::pause_upload_jobs': 1} : 기록 없이 대체하는 새 지점: note_fallback 을 쓰거나 SILENT_ALLOWED 에 분류해 넣는다
+
+
+=====
+FAIL: test_job_fills_what_it_can_and_reports_progress (test_maintenance_service.PhotoBackfillJobTests.test_job_fills_what_it_can_and_reports_progress)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_maintenance_service.py", line 55, in test_job_fills_what_it_can_and_reports_progress
+    self.assertEqual((state["state"], state["total"], state["done"], state["filled"], state["failed"]), ("completed", 3, 3, 2, 1))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('paused', 0, 0, 0, 0) != ('completed', 3, 3, 2, 1)
+
+First differing element 0:
+'paused'
+'completed'
+
+- ('paused', 0, 0, 0, 0)
++ ('completed', 3, 3, 2, 1)
+
+
+=====
+FAIL: test_job_waits_while_crawling (test_maintenance_service.PhotoBackfillJobTests.test_job_waits_while_crawling)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/better0101/projects/raw-json-ingest-ws/pc/tests/test_maintenance_service.py", line 80, in test_job_waits_while_crawling
+    self.assertEqual((state["state"], state["done"]), ("completed", 3))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('paused', 0) != ('completed', 3)
+
+First differing element 0:
+'paused'
+'completed'
+
+- ('paused', 0)
++ ('completed', 3)
+
+----------------------------------------------------------------------
+Ran 1355 tests in 537.235s
+
+FAILED (failures=22, errors=3, skipped=6)
+exit 1

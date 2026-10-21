@@ -15,6 +15,13 @@ const client = createClient(supabaseUrl ?? 'http://invalid.local', serverKey ?? 
 
 Deno.serve(createIngestHandler({
   enabled,
+  // The handler calls this only for v2 requests and the v1 sunset check (never for manifest), after the user rate limit.
+  // A throw makes v2 a retryable 503 and lets v1 continue without a sunset; the error text is never logged.
+  capabilities: async () => {
+    const { data, error } = await client.rpc('internal_community_ingest_capabilities');
+    if (error || !data || !Array.isArray(data.contracts)) throw new Error('capabilities_unavailable');
+    return data;
+  },
   jwtIssuer: Deno.env.get('AUTH_JWT_ISSUER') || null,
   allowedOrigins: (Deno.env.get('COMMUNITY_ALLOWED_ORIGINS') || 'https://safemap.worklazy.net,https://safeauth.worklazy.net')
     .split(',').map(s => s.trim()).filter(Boolean),

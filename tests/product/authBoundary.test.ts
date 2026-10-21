@@ -285,6 +285,18 @@ describe('source boundaries', () => {
     for (const file of files) expect(code(file), file).not.toMatch(/community-auth-relay|community-account|safeauth\.worklazy/);
   });
 
+  // 2026-10-21: app-update guidance comes from the map's own endpoint, never from the account API (PROJECT_RULES 7).
+  it('reads app-update guidance only from my-analytics/client-status, with no built-in versions or links', () => {
+    const personal = code(join(__dirname, '../../src/data/personal.ts'));
+    expect(personal).toContain('${base}/my-analytics/client-status');
+    for (const f of ['hooks/useClientUpdate.ts', 'components/ClientUpdateNotice.tsx']) {
+      const src = code(join(__dirname, '../../src', f));
+      expect(src, f).not.toMatch(/fetch\(|functions\/v1|community-account|VITE_CLIENT_MIN/);
+      expect(src, f).not.toMatch(/\d+\.\d+\.\d+|play\.google\.com|github\.com\/Fentanest\/safetyreport/);
+    }
+    for (const file of files) expect(code(file), file).not.toMatch(/VITE_CLIENT_MIN_/);
+  });
+
   it('never signs out globally or other sessions', () => {
     for (const file of files) expect(code(file), file).not.toMatch(/scope:\s*['"](global|others)['"]/);
   });

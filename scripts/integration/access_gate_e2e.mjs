@@ -5,6 +5,9 @@
 // → upload_required with required/current progress; E with ten distinct reports → the map loads.
 // Every statistics request carries the map session token; a direct unauthenticated API call
 // from the page is refused; the built artifact has no data files.
+// App-update guidance (2026-10-21): the page reads only its own GET /my-analytics/client-status with the map token,
+// never community-account; the notice appears only when the server sends one (no built-in versions or links),
+// and the gate's "다시 확인" re-reads it.
 //
 //   PLAYWRIGHT_CORE=/path/to/playwright-core/index.mjs node scripts/integration/access_gate_e2e.mjs <out-dir> [dist-dir]
 // Preconditions as scripts/integration/live_login_e2e.mjs (stack + mock_kakao + functions serve, live build of the
@@ -44,6 +47,17 @@ page.on('response', (r) => {
     auth: r.request().headers().authorization ? 'bearer' : null, body: r.json().catch(() => null),
   });
 });
+const clientStatus = [];
+const accountCalls = [];
+page.on('request', (r) => { if (/community-account|community-auth-relay|safeauth\.worklazy/.test(r.url())) accountCalls.push(r.url().replace(/\?.*/, '')); });
+page.on('response', (r) => {
+  if (r.url().includes('/my-analytics/client-status')) clientStatus.push({ status: r.status(),
+    auth: r.request().headers().authorization ? 'bearer' : null, body: r.json().catch(() => null) });
+});
+const dashboardRule = (s) => !!s?.notice && s.v2_enabled === true && (s.consent === 'outdated' || s.v1_connections > 0);
+const consentRule = (s) => !!s?.notice && s.consent !== 'active';
+const lastStatus = async () => (clientStatus.length ? await clientStatus.at(-1).body : null);
+const noticeShown = () => page.locator('.client-update-notice').count();
 const statsSummary = () => JSON.stringify(stats.map(({ path, status, auth }) => ({ path, status, auth })));
 
 const gateTitle = () => page.locator('#gate-title').count();
@@ -76,6 +90,22 @@ try {
   stats.length = 0;
   await login('F');
   const text = await page.locator('.access-card').innerText().catch(() => '');
+  const fStatus = await lastStatus();
+  check('client-status was read with the map token and answered 200',
+    clientStatus.length > 0 && clientStatus.every((s) => s.auth === 'bearer') && clientStatus.at(-1).status === 200,
+    JSON.stringify(clientStatus.map(({ status, auth }) => ({ status, auth }))));
+  check('client-status body has exactly the five contract fields',
+    !!fStatus && JSON.stringify(Object.keys(fStatus).sort()) === JSON.stringify(['consent', 'last_contract', 'notice', 'v1_connections', 'v2_enabled']),
+    JSON.stringify(fStatus));
+  check('consent gate shows the update notice only when the server sends one',
+    (await noticeShown()) === (consentRule(fStatus) ? 1 : 0), JSON.stringify(fStatus?.notice ?? null));
+  if (fStatus?.notice && consentRule(fStatus)) check('the gate notice text is the server message', text.includes(fStatus.notice.message));
+  check('no built-in version text on the gate', fStatus?.notice ? true : !/PC 3\.6\.0|모바일 2\.5\.0/.test(text), text.slice(0, 120));
+  check('consent gate names the new consent title', /\[필수\] 신고내용 공유 동의/.test(text));
+  const beforeRetry = clientStatus.length;
+  await page.getByRole('button', { name: '다시 확인' }).click();
+  await page.waitForTimeout(1500);
+  check('"다시 확인" re-reads client-status', clientStatus.length > beforeRetry, `${beforeRetry} → ${clientStatus.length}`);
   check('signed in without a share consent → "not sharing" gate', /동의하지 않았거나/.test(text) && await dashboardShown() === 0, text.slice(0, 80));
   check('that request carried the token and got 403', stats.some((s) => s.status === 403 && s.auth === 'bearer'), statsSummary());
   await page.screenshot({ path: `${out}/02-not-sharing-gate.png`, fullPage: true });
@@ -101,6 +131,14 @@ try {
   stats.length = 0;
   await login('E');
   check('a contributor with ten distinct reports sees the map', await dashboardShown() === 1 && await gateTitle() === 0);
+  const eStatus = await lastStatus();
+  check('dashboard update banner follows the server rule (notice + v2 + outdated consent or v1 app)',
+    (await noticeShown()) === (dashboardRule(eStatus) ? 1 : 0), JSON.stringify(eStatus));
+  if (dashboardRule(eStatus)) {
+    const links = await page.locator('.client-update-notice a').evaluateAll((as) => as.map((a) => ({ href: a.href, target: a.target, rel: a.rel, label: a.getAttribute('aria-label') })));
+    check('banner links are https, open a new tab and say so', links.every((l) => l.href.startsWith('https://') && l.target === '_blank' &&
+      /noopener/.test(l.rel) && /새 탭/.test(l.label ?? '')), JSON.stringify(links));
+  }
   check('every statistics request carried the token and succeeded',
     stats.length > 0 && stats.every((s) => s.auth === 'bearer' && s.status === 200), statsSummary());
   await page.screenshot({ path: `${out}/04-ten-report-map.png` });
@@ -108,6 +146,7 @@ try {
   const direct = await page.evaluate(async (api) => (await fetch(`${api}/public-analytics/meta`, { credentials: 'omit' })).status, API);
   check('a direct call without the token is refused even from the signed-in page', direct === 401, String(direct));
   if (dist) check('the built artifact has no data files', !existsSync(`${dist}/data`));
+  check('the page never called community-account or the relay', accountCalls.length === 0, accountCalls.join(' | '));
   check('no page errors', errors.length === 0, errors.join(' | ').slice(0, 300));
 } catch (e) {
   check('run', false, e instanceof Error ? e.message : String(e));

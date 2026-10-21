@@ -537,6 +537,169 @@
    "depends_on": [
     "202610061000"
    ]
+  },
+  {
+   "version": "202610110100",
+   "repo": "map",
+   "path": "supabase/migrations/202610110100_five_categories.sql",
+   "sha256": "16342688f371ca6376111ef7b44082dff982944b4dba84d5a2a13044ff744783",
+   "depends_on": [
+    "202610061200"
+   ]
+  },
+  {
+   "version": "202610111200",
+   "repo": "map",
+   "path": "supabase/migrations/202610111200_user_rankings_board.sql",
+   "sha256": "01e440d5dc7cf80c7bd0766ad0b2a5b9599adf901c0e73d354b42a8fb34ff2be",
+   "depends_on": [
+    "202610110100"
+   ]
+  },
+  {
+   "version": "202610121200",
+   "repo": "map",
+   "path": "supabase/migrations/202610121200_fine_estimate_columns.sql",
+   "sha256": "de48c362c06451a8d48879a6f58751ec714e6f650d5787da2897e3f9bdd5f5a3",
+   "depends_on": [
+    "202610111200"
+   ]
+  },
+  {
+   "version": "202610121201",
+   "repo": "map",
+   "path": "supabase/migrations/202610121201_fine_estimate_ingest_aggregate.sql",
+   "sha256": "726a29f7bb51f230d9d2679de1746763eede677e1032695b459286ce80cbf977",
+   "depends_on": [
+    "202610121200"
+   ]
+  },
+  {
+   "version": "202610121300",
+   "repo": "map",
+   "path": "supabase/migrations/202610121300_screen_result_cache.sql",
+   "sha256": "ad08627e362a935b420f8c360c7998d5ab89684b039b312908a1447ae043cd99",
+   "depends_on": [
+    "202610121201"
+   ]
+  },
+  {
+   "version": "202610121301",
+   "repo": "map",
+   "path": "supabase/migrations/202610121301_screen_cache_cron.sql",
+   "sha256": "a3b8c539ebc720c27707cf3370992922d6a58b619c81c51074eac7101746a7b6",
+   "depends_on": [
+    "202610121300"
+   ]
+  },
+  {
+   "version": "202610121400",
+   "repo": "map",
+   "path": "supabase/migrations/202610121400_screen_cache_stale.sql",
+   "sha256": "ed75b7d2848a9544903a612de96bfb43db6a20d8af16bcba4b34778585776971",
+   "depends_on": [
+    "202610121301"
+   ]
+  },
+  {
+   "version": "202610130100",
+   "repo": "map",
+   "path": "supabase/migrations/202610130100_screen_plate_normalization.sql",
+   "sha256": "cae382f7c9de53093a98697d5fc7d14ccfe9f9e871899ddea867be77fd76efb3",
+   "depends_on": [
+    "202610121400"
+   ]
+  },
+  {
+   "version": "202610131000",
+   "repo": "map",
+   "path": "supabase/migrations/202610131000_motorcycle_plate.sql",
+   "sha256": "af89e52ec1c5a0ae1ce44bcfe0b4a4a74bf0647d4e6b4d9eb5e7a15357a8edc3",
+   "depends_on": [
+    "202610130100"
+   ]
+  },
+  {
+   "version": "202610131500",
+   "repo": "map",
+   "path": "supabase/migrations/202610131500_my_reports_vehicle_min4.sql",
+   "sha256": "9922361807ff1c5022d97f2290f80cec78f16062f10d7104947a59d124bb298a",
+   "depends_on": [
+    "202610131000"
+   ]
+  },
+  {
+   "version": "20261014132612",
+   "repo": "map",
+   "path": "supabase/migrations/20261014132612_remove_analytics_row_limit.sql",
+   "sha256": "47715e1e2adbab4367929ab46783edfa79e80349fb6d05a335ed27bbd5984ea4",
+   "depends_on": [
+    "202610131500"
+   ]
+  },
+  {
+   "version": "202610180100",
+   "repo": "map",
+   "path": "supabase/migrations/202610180100_screen_fact_norm.sql",
+   "sha256": "55a6f138b62b7972c29d43058b42afb8a004625cda6576cd33f96305c0e4ca62",
+   "depends_on": [
+    "20261014132612"
+   ]
+  },
+  {
+   "version": "202610180101",
+   "repo": "map",
+   "path": "supabase/migrations/202610180101_screen_fact_norm_backfill.sql",
+   "sha256": "955fc32f38fd9f955d2d254b8100a37179add94413c984340223fc8794f9737d",
+   "depends_on": [
+    "202610180100"
+   ]
+  },
+  {
+   "version": "202610180200",
+   "repo": "map",
+   "path": "supabase/migrations/202610180200_screen_cache_reuse.sql",
+   "sha256": "fb6296f67631caaf8538a3afdb68ff325bc64d3c40d300112154ad87eaa41cfc",
+   "depends_on": [
+    "202610180101"
+   ]
+  },
+  {
+   "version": "202610180300",
+   "repo": "map",
+   "path": "supabase/migrations/202610180300_personal_source_columns.sql",
+   "sha256": "4edd5a3254e4e1f78e68453d85f80c8eb86493e604d767218fd97a75e8fbbf7b",
+   "depends_on": [
+    "202610180200"
+   ]
+  },
+  {
+   "version": "202610180400",
+   "repo": "map",
+   "path": "supabase/migrations/202610180400_agency_registry_2026_10_18_1.sql",
+   "sha256": "cc655604458b2ff150126b63e2efb2cca56b81c02550957e0e9ade4c51155e8d",
+   "depends_on": [
+    "202610180300"
+   ]
+  },
+  {
+   "version": "202610210100",
+   "repo": "map",
+   "path": "supabase/migrations/202610210100_raw_json_ingest.sql",
+   "sha256": "04731be2113c4c5ee161c8f3dab9d4c05c63dbd8e2c574875c07df63041a7ad7",
+   "depends_on": [
+    "202610180400"
+   ]
+  },
+  {
+   "version": "202610210300",
+   "repo": "auth",
+   "path": "supabase/migrations/202610210300_kakao_unlink_revoke.sql",
+   "sha256": "d36518d7e4cd70bede519c764d9023ddbb7bfe0036c8dc4b22912c7c4ea7f537",
+   "depends_on": [
+    "202609260100",
+    "202610210100"
+   ]
   }
  ],
  "functions": [
@@ -562,7 +725,8 @@
     "src/domain/tableSort.ts",
     "src/domain/managerNames.ts",
     "server/rollups.ts",
-    "server/rollupSchema.ts"
+    "server/rollupSchema.ts",
+    "server/screenFacts.ts"
    ]
   },
   {
@@ -577,7 +741,8 @@
     "shared/agency-region-registry/data/agency_legacy.json",
     "shared/agency-region-registry/data/agency_links.json",
     "shared/agency-region-registry/manifest.json",
-    "shared/agency-region-registry/resolvers/resolve.ts"
+    "shared/agency-region-registry/resolvers/resolve.ts",
+    "server/ingest/raw.ts"
    ]
   },
   {
@@ -614,7 +779,7 @@
     "server/aggregate.ts",
     "server/amount.ts",
     "server/analyticsDistributions.ts",
-    "server/compare.ts",
+    "server/clientStatus.ts", "server/compare.ts",
     "server/duration.ts",
     "server/personalHandler.ts",
     "server/places.ts",
@@ -632,7 +797,8 @@
     "server/rollups.ts",
     "server/screenHandler.ts",
     "server/screenFacts.ts",
-    "server/screenAggregate.ts"
+    "server/screenAggregate.ts",
+    "server/screenSnapshots.ts"
    ]
   },
   {
@@ -653,7 +819,21 @@
    "shared": [
     "contracts/user-rankings/types.ts",
     "server/rankings/handler.ts",
-    "server/viewerAuth.ts"
+    "server/viewerAuth.ts",
+    "contracts/user-rankings-board/types.ts"
+   ]
+  },
+  {
+   "name": "community-kakao-unlink",
+   "repo": "auth",
+   "verify_jwt": false,
+   "shared": [
+    "server/adapters.ts",
+    "server/config.ts",
+    "server/crypto.ts",
+    "server/kakaoUnlink.ts",
+    "server/protocol.ts",
+    "server/relay.ts"
    ]
   }
  ]

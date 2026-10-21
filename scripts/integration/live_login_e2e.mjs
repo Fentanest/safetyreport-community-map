@@ -37,7 +37,8 @@ const personal = [];
 const failed = [];
 page.on('response', (r) => { if (r.status() >= 400) failed.push(`${r.status()} ${r.url().replace(/\?.*/, '')}`); });
 page.on('response', async (r) => {
-  if (r.url().includes('/my-analytics/')) personal.push({ status: r.status(), headers: r.headers(), body: await r.json().catch(() => null) });
+  // client-status (app-update guidance, 2026-10-21) is not the comparison; access_gate_e2e.mjs checks it.
+  if (r.url().includes('/my-analytics/') && !r.url().includes('/my-analytics/client-status')) personal.push({ status: r.status(), headers: r.headers(), body: await r.json().catch(() => null) });
 });
 
 try {

@@ -5,6 +5,8 @@ import { createPersonalHandler, type PersonalDeps } from '../../../server/person
 // User-only personal comparison (verify_jwt = true in config.toml AND getUser + claims in the handler).
 // The viewer id is taken from the verified user only. The service client runs the service_role-only
 // internal_* RPCs after that check; responses are private/no-store and never written to the public snapshot.
+// Routes: /screen → screenHandler; /compare, /statistics and /client-status (app-update guidance read from
+// internal_map_client_state, 2026-10-21 — the map web never calls community-account) → personalHandler.
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const secretMap = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}') as Record<string, string>;
 const serverKey = secretMap.default || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

@@ -3,11 +3,15 @@
 // strict schema → server hash → value rules / status re-map / event-type rules → derived columns →
 // one RPC transaction that re-checks identity, session, grant, connection and writes facts → per-event ACK.
 // No admin-key fallback, no IP-header trust, no logging of bodies, tokens, ids or payloads.
+// v2 gzip (contracts/community-ingest-v2/README.md): method/size(512KiB wire)/type → JWT → user rate limit →
+// shared capabilities (v2 on?) → bounded inflate (1MiB) → JSON. Nothing is inflated before auth and the v2 check.
 
 import {
   FINE_ESTIMATE_RULES, canonicalJson, deriveFact, type EventType, mapStatus, nonFinalRejection, type Observation, sha256Hex, sourceReportKey,
   validateEventType, validateObservationValues,
 } from './observation.ts';
+
+import { RawFailure, hasLoneSurrogate, rawEventFingerprint, validateRaw } from './raw.ts';
 
 export type Rpc = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 export interface IngestUser { id: string; isAnonymous: boolean }
@@ -17,10 +21,69 @@ export interface IngestDeps {
   jwtIssuer: string | null;
   enabled: boolean;
   allowedOrigins: string[];
+  v2Enabled?: boolean;
+  v1Sunset?: string | null;
+  clientNotice?: Record<string, unknown> | null;
+  /** 공유 수신 설정(private.community_ingest_config). v2 요청과 v1 차단일 확인에만 호출한다. 실패하면 v1 은 차단일 없이
+   *  진행하고(경고 로그), v2 는 503 service_unavailable(재시도 가능)이다. */
+  capabilities?(): Promise<Capabilities>;
   log?(entry: Record<string, string | number>): void;
 }
 
+type Capabilities = { contracts: number[]; v1_sunset?: string | null; client_notice?: Record<string, unknown> | null };
+
+/** identity 본문 상한(v1 과 gzip 없는 v2 공통). v1 은 이 값을 넘으면 인증·JSON 해석 전에 413 이다(v1 의미 유지). */
 const MAX_BODY = 256 * 1024;
+/** `Content-Encoding: gzip` 은 v2 전용이다(v1 은 gzip 을 쓴 적이 없다). 전송 바이트 상한과 압축 해제 후 상한. */
+const MAX_GZIP_WIRE = 512 * 1024;
+const MAX_INFLATED = 1024 * 1024;
+/** 압축 해제기에 한 번에 넣는 입력 조각. deflate 최대 비율(~1032:1)이라 조각 하나의 출력은 약 1MiB 를 넘지 않는다. */
+const INFLATE_SLICE = 1024;
+
+/** gzip 본문을 상한 안에서만 푼다(gzip bomb 방어). 입력을 INFLATE_SLICE 조각으로 넣고 출력 조각마다 누적 크기를 검사해
+ *  max 를 넘는 즉시 해제를 중단한다. 넘으면 null, gzip 형식이 깨졌으면 throw. 전체 입력을 한 번에 넣지 않으므로
+ *  상한 초과 요청이 만드는 메모리는 대략 max + 조각 하나의 출력으로 묶인다. */
+export async function gunzipLimited(input: Uint8Array, max: number, slice = INFLATE_SLICE): Promise<Uint8Array | null> {
+  const stream = new DecompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  const reader = stream.readable.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  let over = false;
+  const drain = (async () => {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      total += value.byteLength;
+      if (total > max) {
+        over = true;
+        try { await reader.cancel(); } catch { /* 이미 닫힘 */ }
+        return;
+      }
+      chunks.push(value);
+    }
+  })();
+  let writeError: unknown = null;
+  try {
+    for (let i = 0; i < input.byteLength && !over; i += slice) await writer.write(input.slice(i, i + slice) as Uint8Array<ArrayBuffer>);
+    if (!over) await writer.close();
+  } catch (e) { writeError = e; }
+  try { await drain; } catch (e) { if (!over) throw e; }
+  if (over) {
+    try { await writer.abort(); } catch { /* 이미 오류·취소됨 */ }
+    chunks.length = 0;
+    return null;
+  }
+  if (writeError) throw writeError;
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) { out.set(c, offset); offset += c.byteLength; }
+  return out;
+}
+
+function parseJson(bytes: Uint8Array): unknown {
+  try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)); } catch { return fail('invalid_request'); }
+}
 
 /** 요청 본문을 최대 max 바이트까지만 읽는다(감사 SOL-10, auth `server/adapters.ts readBodyLimited` 와 같은 규칙).
  *  선언된 Content-Length 가 max 를 넘거나 숫자가 아니면 읽지 않고, 읽는 도중 max 를 넘는 순간 스트림을 취소한다. 넘으면 null. */
@@ -58,13 +121,19 @@ const REPORT_NUMBER = /^SPP-[0-9]{4,6}-[0-9]{6,8}$/;
 const POLICY = /^[0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]{1,3}$/;
 const TRIGGERS = new Set(['realtime', 'manual', 'midnight', 'recovery', 'rebuild', 'reshare']);
 const EVENT_TYPES = new Set(['completed_observation', 'status_correction', 'location_supplement', 'reshare']);
+/** v2 event.schema.json 의 enum 과 같다. v2 의 status_correction 은 다른 스키마 위반과 같이 schema_invalid 다. */
+const EVENT_TYPES_V2 = new Set(['completed_observation', 'location_supplement', 'reshare']);
 
 type Code = 'official_account_mismatch' | 'method_not_allowed' | 'unsupported_media_type' | 'payload_too_large' | 'invalid_request' | 'schema_invalid' |
+  'raw_hash_mismatch' | 'raw_invalid' | 'raw_reporter_keys_present' | 'supplement_invalid' |
+  'supplement_hash_mismatch' | 'client_observation_hash_mismatch' | 'client_upgrade_required' |
   'payload_hash_mismatch' | 'event_type_mismatch' | 'auth_required' | 'kakao_required' | 'session_revoked' |
   'consent_missing' | 'consent_revoked' | 'consent_outdated' | 'consent_grant_unknown' | 'connection_unknown' |
   'connection_revoked' | 'connection_suspended' | 'connection_session_mismatch' | 'connection_mode_mismatch' |
   'writer_superseded' | 'contributor_suspended' | 'rate_limited' | 'busy' | 'server_error' | 'service_unavailable';
 const HTTP: Record<Code, number> = {
+  raw_hash_mismatch: 422, raw_invalid: 422, raw_reporter_keys_present: 422, supplement_invalid: 422,
+  supplement_hash_mismatch: 422, client_observation_hash_mismatch: 422, client_upgrade_required: 426,
   official_account_mismatch: 409,
   method_not_allowed: 405, unsupported_media_type: 415, payload_too_large: 413, invalid_request: 400, schema_invalid: 422,
   payload_hash_mismatch: 422, event_type_mismatch: 422, auth_required: 401, kakao_required: 403, session_revoked: 403,
@@ -158,26 +227,35 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
     const origin = request.headers.get('origin');
     const cors: Record<string, string> = origin && deps.allowedOrigins.includes(origin)
       ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Expose-Headers': 'Retry-After' } : {};
+    let protocol = 1;
     let route = 'ingest';
     try {
       if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST',
-          'Access-Control-Allow-Headers': 'authorization, apikey, content-type', 'Cache-Control': 'no-store' } });
+          'Access-Control-Allow-Headers': 'authorization, apikey, content-type, content-encoding', 'Cache-Control': 'no-store' } });
       }
       if (request.method !== 'POST') fail('method_not_allowed');
       if (!deps.enabled) fail('service_unavailable');
       const path = new URL(request.url).pathname.replace(/\/+$/, '');
       route = path.endsWith('/manifest') ? 'manifest' : (path.endsWith('/community-ingest') ? 'ingest' : fail('invalid_request'));
       if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) fail('unsupported_media_type');
+      // 프로토콜 판정 규칙(contracts/community-ingest-v2/README.md): `Content-Encoding: gzip` 이면 v2 요청이다.
+      // identity 본문은 v1·v2 모두 256KiB 상한이고 넘으면 인증·JSON 해석 전에 413(v1 의미 그대로).
+      const encoding = (request.headers.get('content-encoding') || 'identity').trim().toLowerCase();
+      const gzip = encoding === 'gzip';
+      const wireCap = gzip ? MAX_GZIP_WIRE : MAX_BODY;
       const declared = request.headers.get('content-length');
-      if (declared !== null && declared.trim() !== '' && !(Number(declared) <= MAX_BODY)) fail('payload_too_large');
+      if (declared !== null && declared.trim() !== '' && !(Number(declared) <= wireCap)) fail('payload_too_large');
       const m = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(request.headers.get('authorization') || '');
       if (!m) fail('auth_required');
       const token = m![1];
-      const buf = await readBodyLimited(request, MAX_BODY); // 선언이 없거나 거짓이어도 읽는 도중 상한에서 멈춘다(SOL-10)
-      if (!buf) fail('payload_too_large');
-      let body: unknown;
-      try { body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buf!)); } catch { return fail('invalid_request'); }
+      if (encoding !== 'identity' && !gzip) fail('unsupported_media_type');
+      // v2 가 설정으로 꺼진 배포(공유 설정 없음)와 manifest(v1 전용)에서 gzip 은 다른 미지원 인코딩과 같은 415 이며 본문을 읽지 않는다.
+      if (gzip && (route === 'manifest' || (!deps.capabilities && deps.v2Enabled !== true))) fail('unsupported_media_type');
+      const wire = await readBodyLimited(request, wireCap); // 선언이 없거나 거짓이어도 읽는 도중 상한에서 멈춘다(SOL-10)
+      if (!wire) fail('payload_too_large');
+      // identity 는 v1 순서대로 인증 전에 JSON 을 해석한다. gzip 은 인증·v2 확인 전에는 절대 풀지 않는다.
+      let body: unknown = gzip ? undefined : parseJson(wire!);
 
       let user: IngestUser | null;
       try { user = await deps.getUser(token); } catch { return fail('service_unavailable'); }
@@ -188,14 +266,19 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       if (claims!.is_anonymous === true || user!.isAnonymous) fail('kakao_required');
       const session = typeof claims!.session_id === 'string' && UUID.test(claims!.session_id) ? claims!.session_id : fail('auth_required');
       const uid = user!.id;
-      if (!isObj(body) || body.protocol !== 1) fail('invalid_request');
-      const b = body as Record<string, unknown>;
+      if (!gzip) {
+        if (!isObj(body) || ![1, 2].includes(body.protocol as number)) fail('invalid_request');
+        protocol = Number((body as Record<string, unknown>).protocol);
+      } else {
+        protocol = 2;
+      }
 
       const userBucket = await sha256Hex(`ingest|user|${uid}`);
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: userBucket, p_limit: 60 }) !== true) fail('rate_limited', 60);
 
       if (route === 'manifest') {
-        if (!exactKeys(b, ['protocol', 'connection_id', 'after', 'limit']) || typeof b.connection_id !== 'string' ||
+        const b = body as Record<string, unknown>;
+        if (protocol !== 1 || !exactKeys(b, ['protocol', 'connection_id', 'after', 'limit']) || typeof b.connection_id !== 'string' ||
             !UUID.test(b.connection_id) || !(b.after === null || (typeof b.after === 'string' && HEX64.test(b.after))) ||
             !Number.isSafeInteger(b.limit) || (b.limit as number) < 1 || (b.limit as number) > 5000) fail('invalid_request');
         const r = await deps.rpc('internal_community_manifest', { p_user: uid, p_session: session, p_connection: b.connection_id,
@@ -205,16 +288,45 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         return json(200, { protocol: 1, ...r }, cors);
       }
 
+      // 공유 설정은 사용자 rate limit 뒤에, 필요한 요청(v2 전부·v1 ingest 의 차단일)에서만 읽는다.
+      let capabilities: Capabilities | null = null;
+      if (deps.capabilities) {
+        try {
+          const c = await deps.capabilities();
+          if (!c || !Array.isArray(c.contracts)) throw new Error('capabilities_invalid');
+          capabilities = c;
+        } catch {
+          if (protocol === 2) fail('service_unavailable');
+          // v1 은 차단일이 없는 것처럼 진행한다. 로그에는 결과 코드만 남긴다(오류 본문·키·토큰 없음).
+          deps.log?.({ event: 'community_ingest', route, outcome: 'capabilities_unavailable_v1_continue', request_id: rid });
+        }
+      }
+      const v2On = capabilities ? capabilities.contracts.includes(2) : (!deps.capabilities && deps.v2Enabled === true);
+      // 공유 설정이 v2 를 끈 경우(운영 되돌림 등)는 gzip 이어도 503 재시도: 클라이언트는 다음 status 확인에서 v1 로 돌아간다.
+      if (protocol === 2 && !v2On) fail('service_unavailable');
+      const sunset = capabilities?.v1_sunset ?? deps.v1Sunset;
+      if (protocol === 1 && sunset && Date.now() >= Date.parse(sunset)) fail('client_upgrade_required');
+      if (gzip) {
+        let inflated: Uint8Array | null;
+        try { inflated = await gunzipLimited(wire!, MAX_INFLATED); } catch { return fail('invalid_request'); }
+        if (!inflated) fail('payload_too_large');
+        body = parseJson(inflated!);
+        if (!isObj(body) || ![1, 2].includes(body.protocol as number)) fail('invalid_request');
+        if ((body as Record<string, unknown>).protocol !== 2) fail('unsupported_media_type'); // v1 본문은 gzip 을 쓰지 않는다
+      }
+      const b = body as Record<string, unknown>;
+
       const envKeys = ['protocol', 'contract', 'source_app', 'source_mode', 'connection_id', 'consent_grant_id', 'policy_version',
         'client_version', 'parser_version', 'trigger', 'events'];
-      if (!exactKeys(b, envKeys) || b.contract !== 'community-ingest-v1' ||
+      if (!exactKeys(b, envKeys) || b.contract !== `community-ingest-v${protocol}` ||
           !['safetyreport/server', 'safetyreport-mobile/standalone'].includes(`${b.source_app}/${b.source_mode}`) ||
           typeof b.connection_id !== 'string' || !UUID.test(b.connection_id) ||
           typeof b.consent_grant_id !== 'string' || !UUID.test(b.consent_grant_id) ||
           typeof b.policy_version !== 'string' || !POLICY.test(b.policy_version) ||
           !nstr(b.client_version, 40) || b.client_version === null || !nstr(b.parser_version, 40) || b.parser_version === null ||
-          typeof b.trigger !== 'string' || !TRIGGERS.has(b.trigger) || !Array.isArray(b.events) ||
-          b.events.length < 1 || b.events.length > 20) fail('schema_invalid');
+          typeof b.trigger !== 'string' || !(TRIGGERS.has(b.trigger) || (protocol === 2 && b.trigger === 'raw_backfill')) || !Array.isArray(b.events) ||
+          b.events.length < 1 || b.events.length > 20 ||
+          (protocol === 2 && (hasLoneSurrogate(b.client_version) || hasLoneSurrogate(b.parser_version)))) fail('schema_invalid');
       const connBucket = await sha256Hex(`ingest|conn|${b.connection_id}`);
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: connBucket, p_limit: 60 }) !== true) fail('rate_limited', 60);
 
@@ -225,22 +337,37 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         if (!isObj(item)) fail('schema_invalid');
         const raw = item as Record<string, unknown>;
         const evKeys = ['event_id', 'event_type', 'source_system', 'source_report_id', 'source_revision', 'writer_epoch',
-          'captured_at', 'payload', 'payload_sha256'];
+          'captured_at', ...(protocol === 1 ? ['payload', 'payload_sha256'] : ['raw', 'supplement', 'supplement_sha256'])];
+        if (protocol === 2 && Object.hasOwn(raw, 'client_observation')) evKeys.push('client_observation', 'client_observation_sha256');
         if (!(exactKeys(raw, evKeys) || exactKeys(raw, [...evKeys, 'report_number'])) ||
             typeof raw.event_id !== 'string' || !UUID4.test(raw.event_id) ||
-            seen.has(raw.event_id) || !EVENT_TYPES.has(raw.event_type as string) || raw.source_system !== 'safetyreport' ||
+            seen.has(raw.event_id) || !(protocol === 2 ? EVENT_TYPES_V2 : EVENT_TYPES).has(raw.event_type as string) ||
+            raw.source_system !== 'safetyreport' ||
             typeof raw.source_report_id !== 'string' || !REPORT_ID.test(raw.source_report_id) ||
             !(raw.report_number === undefined || raw.report_number === null ||
               (typeof raw.report_number === 'string' && REPORT_NUMBER.test(raw.report_number))) ||
             !Number.isSafeInteger(raw.source_revision) || (raw.source_revision as number) < 1 ||
             !Number.isSafeInteger(raw.writer_epoch) || (raw.writer_epoch as number) < 1 ||
             typeof raw.captured_at !== 'string' || !INSTANT.test(raw.captured_at) || Number.isNaN(Date.parse(raw.captured_at)) ||
-            typeof raw.payload_sha256 !== 'string' || !HEX64.test(raw.payload_sha256) || !isObservation(raw.payload)) {
+            (protocol === 1 && (typeof raw.payload_sha256 !== 'string' || !HEX64.test(raw.payload_sha256) || !isObservation(raw.payload)))) {
           fail('schema_invalid');
         }
         if (seenReports.has(raw.source_report_id as string)) fail('schema_invalid', undefined, 'duplicate_report_in_request');
         seen.add(raw.event_id as string);
         seenReports.add(raw.source_report_id as string);
+        if (protocol === 2) {
+          if ((raw.event_type === 'reshare') !== (b.trigger === 'reshare')) fail('event_type_mismatch');
+          if (Object.hasOwn(raw, 'client_observation')) {
+            // 짝 없는 UTF-16 surrogate 는 jsonb 로 넘기면 Postgres 가 500 으로 거절하므로 여기서 422 로 끊는다.
+            if (!isObservation(raw.client_observation) || hasLoneSurrogate(raw.client_observation)) fail('schema_invalid');
+            const error = validateObservationValues(raw.client_observation as Observation);
+            if (error) fail(error.code, undefined, error.reason);
+          }
+          await validateRaw(raw);
+          events.push({ ...raw, source_report_key: await sourceReportKey(raw.source_report_id as string),
+            payload_sha256: await rawEventFingerprint(raw) });
+          continue;
+        }
         const payload = raw.payload as Observation;
         const hash = await sha256Hex(canonicalJson(payload));
         if (hash !== raw.payload_sha256) fail('payload_hash_mismatch');
@@ -262,15 +389,15 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
           rejection_code: rejectionCode,
           derived: await deriveFact(payload) });
       }
-      const result = await deps.rpc('internal_community_ingest', { p_user: uid, p_session: session, p_request_id: rid,
+      const result = await deps.rpc(protocol === 2 ? 'internal_community_ingest_v2' : 'internal_community_ingest', { p_user: uid, p_session: session, p_request_id: rid,
         p_envelope: { connection_id: b.connection_id, consent_grant_id: b.consent_grant_id, source_app: b.source_app,
-          source_mode: b.source_mode, trigger: b.trigger }, p_events: events }) as Record<string, unknown>;
+          source_mode: b.source_mode, trigger: b.trigger, contract: b.contract, client_version: b.client_version, parser_version: b.parser_version }, p_events: events }) as Record<string, unknown>;
       if (result && 'error' in result) fail(mapRpcError(String(result.error)));
       deps.log?.({ event: 'community_ingest', route, outcome: 'ok', events: events.length, request_id: rid });
-      return json(200, { protocol: 1, request_id: rid, dataset_version: result.dataset_version ?? null,
+      return json(200, { protocol, ...(protocol === 2 ? { client_notice: capabilities?.client_notice ?? deps.clientNotice ?? null } : {}), request_id: rid, dataset_version: result.dataset_version ?? null,
         results: result.results }, cors);
     } catch (error) {
-      const f = error instanceof Failure ? error
+      const f = error instanceof Failure ? error : error instanceof RawFailure ? new Failure(error.code)
         : new Failure(/40P01|40001|deadlock|could not serialize/i.test(String(error)) ? 'busy' : 'server_error');
       deps.log?.({ event: 'community_ingest', route, outcome: f.code, request_id: rid });
       const retryAfter = f.retryAfter ?? DEFAULT_RETRY_AFTER[f.code];
@@ -282,7 +409,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
 }
 
 function mapRpcError(code: string): Code {
-  const known: Code[] = ['official_account_mismatch', 'kakao_required', 'session_revoked', 'consent_missing', 'consent_revoked', 'consent_outdated',
+  const known: Code[] = ['service_unavailable', 'client_upgrade_required', 'official_account_mismatch', 'kakao_required', 'session_revoked', 'consent_missing', 'consent_revoked', 'consent_outdated',
     'consent_grant_unknown', 'connection_unknown', 'connection_revoked', 'connection_suspended', 'connection_session_mismatch',
     'connection_mode_mismatch', 'writer_superseded', 'contributor_suspended', 'invalid_request'];
   return (known as string[]).includes(code) ? code as Code : 'server_error';

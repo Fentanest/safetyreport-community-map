@@ -1,0 +1,243 @@
+03:00 +915 ~13 -1: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/community_store_test.dart: CommunityStore a v1 file upgrades to v2 keeping every row (PC test_v1_file_upgrades_to_v2_keeping_every_row) [E]
+  SqfliteFfiException(sqlite_error: 1, , SqliteException(1): while executing, duplicate column name: raw_event_json, SQL logic error (code 1)
+    Causing statement: ALTER TABLE source_journal ADD COLUMN raw_event_json TEXT, parameters: }) DatabaseException(SqliteException(1): while executing, duplicate column name: raw_event_json, SQL logic error (code 1)
+    Causing statement: ALTER TABLE source_journal ADD COLUMN raw_event_json TEXT, parameters: ) sql 'ALTER TABLE source_journal ADD COLUMN raw_event_json TEXT' {details: {database: {path: /tmp/community_store_testDDYQZA/community.db, id: 11, readOnly: false, singleInstance: true}}}
+  package:sqflite_common_ffi/src/method_call.dart 126:9  responseToResultOrThrow
+  package:sqflite_common_ffi/src/isolate_io.dart 84:12   SqfliteIsolate.handle
+  
+
+=====
+03:26 +1061 ~13 -3: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/login_gate_security_test.dart: existing account: active remains verified during login [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/community/login_gate_security_test.dart 90:9   main.<fn>
+  
+
+=====
+03:29 +1079 ~13 -4: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/login_gate_security_test.dart: existing account: failure remains verified during login [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/community/login_gate_security_test.dart 90:9   main.<fn>
+  
+
+=====
+03:30 +1080 ~13 -5: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/login_gate_security_test.dart: existing account: cancel remains verified during login [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/community/login_gate_security_test.dart 90:9   main.<fn>
+  
+
+=====
+03:30 +1081 ~13 -6: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/login_gate_security_test.dart: existing account: back remains verified during login [E]
+  Expected: <true>
+    Actual: <false>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/community/login_gate_security_test.dart 90:9   main.<fn>
+  
+
+=====
+03:44 +1215 ~16 -7: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/upload_background_test.dart: headless gate refresh (stale cache in the background) late status after reset cannot restore writer or ok cache [E]
+  Invalid argument (string): Contains invalid characters.: "{\"protocol\":1,\"gate\":{\"kakao\":true},\"policy\":{\"required_version\":\"2026-09-28.1\",\"consent_text_sha256\":\"abc\"},\"consent\":{\"state\":\"active\",\"grant_id\":\"grant-1\",\"policy_version\":\"2026-09-28.1\",\"consent_text_sha256\":\"abc\"},\"contributor\":{\"status\":\"active\"},\"connection\":{\"connection_id\":\"11111111-2222-4333-8444-555555555555\",\"status\":\"active\",\"bound_to_current_session\":true},\"account\":{\"fingerprint\":\"fp1\",\"display_name\":\"테스터\"}}"
+  dart:convert                                       Latin1Codec.encode
+  package:http/src/response.dart 39:49               new Response
+  test/community/upload_background_test.dart 168:27  main.<fn>.<fn>
+  
+
+=====
+03:49 +1229 ~16 -8: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/upload_background_test.dart: headless gate refresh (stale cache in the background) explicit refusal (consent revoked · re-login needed) is recorded and the context is turned off [E]
+  Expected: 'consent_required'
+    Actual: 'kakao_required'
+     Which: is different.
+            Expected: consent_re ...
+              Actual: kakao_requ ...
+                      ^
+             Differ at offset 0
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/community/upload_background_test.dart 363:9    main.<fn>.<fn>
+  
+
+=====
+03:52 +1251 ~16 -9: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/kakao_logout_test.dart: a pass in client or demo mode does not let the real standalone DB in until its owner is checked [E]
+  Expected: true
+    Actual: <false>
+  Client 는 기기 DB 주인을 보지 않는다
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/community/kakao_logout_test.dart 174:5         main.<fn>
+  
+
+=====
+03:55 +1271 ~16 -10: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/gate_state_test.dart: F14: revoke resets login; policy change preserves login and locks consent [E]
+  MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)
+  dart:async                                                           _Completer.completeError
+  package:shared_preferences/src/shared_preferences_legacy.dart 90:19  SharedPreferences.getInstance
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerBinaryCallback
+  package:shared_preferences/src/shared_preferences_legacy.dart 85:13  SharedPreferences.getInstance
+  package:safetyreport/community/soft_reset.dart 226:43                CommunityReset.complete
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/soft_reset.dart 209:5                 CommunityReset.complete
+  package:safetyreport/community/gate/community_gate.dart 397:28       CommunityGate.softReset
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/gate/community_gate.dart 395:21       CommunityGate.softReset
+  package:safetyreport/community/gate/community_gate.dart 929:15       CommunityGate._refresh
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/gate/community_gate.dart 810:11       CommunityGate._refresh
+  package:safetyreport/community/gate/community_gate.dart 761:26       CommunityGate.refreshNow
+  test/community/gate_state_test.dart 105:33                           main.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  test/community/gate_state_test.dart 89:13                            main.<fn>
+  
+
+=====
+03:56 +1278 ~16 -11: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/gate_state_test.dart: client and demo modes do not check the owner (the server or the demo DB is not this account data) [E]
+  MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)
+  dart:async                                                           _Completer.completeError
+  package:shared_preferences/src/shared_preferences_legacy.dart 90:19  SharedPreferences.getInstance
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerBinaryCallback
+  package:shared_preferences/src/shared_preferences_legacy.dart 85:13  SharedPreferences.getInstance
+  package:safetyreport/community/gate/community_gate.dart 1053:47      CommunityGate._refresh
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/gate/community_gate.dart 810:11       CommunityGate._refresh
+  package:safetyreport/community/gate/community_gate.dart 761:26       CommunityGate.refreshNow
+  test/community/gate_state_test.dart 200:26                           main.<fn>
+  
+
+=====
+03:56 +1278 ~16 -12: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/gate_state_test.dart: a confirmed Kakao login re-checks the gate right away; in-progress login steps do not [E]
+  Expected: true
+    Actual: <false>
+  이미 동의한 계정은 바로 통과
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/community/gate_state_test.dart 218:5           main.<fn>
+  
+
+=====
+03:59 +1293 ~16 -13: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/gate_state_test.dart: F16/F17 client: no writer registration, upload context stays off [E]
+  MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)
+  dart:async                                                           _Completer.completeError
+  package:shared_preferences/src/shared_preferences_legacy.dart 90:19  SharedPreferences.getInstance
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerBinaryCallback
+  package:shared_preferences/src/shared_preferences_legacy.dart 85:13  SharedPreferences.getInstance
+  package:safetyreport/community/gate/community_gate.dart 1053:47      CommunityGate._refresh
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/gate/community_gate.dart 810:11       CommunityGate._refresh
+  package:safetyreport/community/gate/community_gate.dart 761:26       CommunityGate.refreshNow
+  test/community/gate_state_test.dart 323:24                           main.<fn>
+  
+
+=====
+04:08 +1360 ~16 -14: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/gate_silent_refresh_test.dart: official dataset change invalidates gate even in the same mode [E]
+  MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)
+  dart:async                                                           _Completer.completeError
+  package:shared_preferences/src/shared_preferences_legacy.dart 90:19  SharedPreferences.getInstance
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerBinaryCallback
+  package:shared_preferences/src/shared_preferences_legacy.dart 85:13  SharedPreferences.getInstance
+  package:safetyreport/community/gate/community_gate.dart 1053:47      CommunityGate._refresh
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/gate/community_gate.dart 810:11       CommunityGate._refresh
+  package:safetyreport/community/gate/community_gate.dart 761:26       CommunityGate.refreshNow
+  test/community/gate_silent_refresh_test.dart 45:13                   main.<fn>
+  
+
+=====
+04:08 +1360 ~16 -15: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/gate_silent_refresh_test.dart: silent refresh with the same result does not notify [E]
+  MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)
+  dart:async                                                           _Completer.completeError
+  package:shared_preferences/src/shared_preferences_legacy.dart 90:19  SharedPreferences.getInstance
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerBinaryCallback
+  package:shared_preferences/src/shared_preferences_legacy.dart 85:13  SharedPreferences.getInstance
+  package:safetyreport/community/gate/community_gate.dart 1053:47      CommunityGate._refresh
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/gate/community_gate.dart 810:11       CommunityGate._refresh
+  package:safetyreport/community/gate/community_gate.dart 761:26       CommunityGate.refreshNow
+  test/community/gate_silent_refresh_test.dart 58:21                   main.<fn>
+  
+
+=====
+04:08 +1360 ~16 -16: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/gate_silent_refresh_test.dart: silent refresh that changes the result still notifies [E]
+  MissingPluginException(No implementation found for method getAll on channel plugins.flutter.io/shared_preferences)
+  dart:async                                                           _Completer.completeError
+  package:shared_preferences/src/shared_preferences_legacy.dart 90:19  SharedPreferences.getInstance
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerBinaryCallback
+  package:shared_preferences/src/shared_preferences_legacy.dart 85:13  SharedPreferences.getInstance
+  package:safetyreport/community/gate/community_gate.dart 1053:47      CommunityGate._refresh
+  ===== asynchronous gap ===========================
+  dart:async                                                           _CustomZone.registerUnaryCallback
+  package:safetyreport/community/gate/community_gate.dart 810:11       CommunityGate._refresh
+  package:safetyreport/community/gate/community_gate.dart 761:26       CommunityGate.refreshNow
+  test/community/gate_silent_refresh_test.dart 71:21                   main.<fn>
+  
+
+=====
+04:10 +1370 ~16 -17: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/official_binding_gate_test.dart: foreground return and five minute poll compare account again [E]
+  Test failed. See exception logs above.
+  The test description was: foreground return and five minute poll compare account again
+  
+
+=====
+04:14 +1407 ~16 -18: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/client_account_notice_test.dart: different accounts show the notice with both names [E]
+  Test failed. See exception logs above.
+  The test description was: different accounts show the notice with both names
+  
+
+=====
+04:15 +1412 ~16 -19: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/client_account_notice_test.dart: the same account shows nothing [E]
+  Test failed. See exception logs above.
+  The test description was: the same account shows nothing
+  
+
+=====
+04:15 +1415 ~16 -20: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/raw_delivery_lifecycle_test.dart: late withdrawal confirmation cannot reset a changed session [E]
+  Expected: <false>
+    Actual: <true>
+  
+  package:matcher                                        expect
+  package:flutter_test/src/widget_tester.dart 473:18     expect
+  test/community/raw_delivery_lifecycle_test.dart 154:5  main.<fn>
+  
+
+=====
+04:22 +1436 ~16 -21: /home/better0101/projects/raw-json-ingest-ws/mobile/test/community/demo_gate_bypass_test.dart: demo skips tokens, account checks, first-pass hooks and polling; live mode resumes all checks [E]
+  Test failed. See exception logs above.
+  The test description was: demo skips tokens, account checks, first-pass hooks and polling; live mode resumes all checks
+  
+
+=====
+05:24 +2040 ~17 -23: /home/better0101/projects/raw-json-ingest-ws/mobile/test/services/db_optimize_review7_test.dart: 1b. 처리 중 closeDb 요청이면 상태를 정리해 isRunning 이 남지 않음 [E]
+  Expected: <1>
+    Actual: <0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/services/db_optimize_review7_test.dart 328:5   main.<fn>
+  

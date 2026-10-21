@@ -102,3 +102,17 @@ TS `parsePlate`·`maskPlate`, SQL `screen_plate`·`screen_mask_plate`, 공개 DT
 실DB 화면 전체 집계 시간은 배포 담당자 Opus가 전후 동일 조건으로 측정해야 한다.
 로컬 SQL 재현은 `npm run test:sql`(PGlite devDependency, `tests/sql/verify-screen-plate.mjs` 포함)이다.
 실행기는 메모리 PostgreSQL만 사용하며 원문을 출력하지 않는다. 선택 환경 변수 `MOTO_UNRECOGNIZED_TSV`로 제공 목록을 읽을 수 있다.
+
+
+## 원본 JSON v2 로컬 후보 (2026-10-21)
+
+정본은 [구현 계획](implementation/raw-json-ingest-20261021/PLAN.md), 현 상태·미완료 목록은
+[SOL-REPORT](implementation/raw-json-ingest-20261021/SOL-REPORT.md)다. 운영에는 적용하지 않았다.
+`contracts/community-ingest-v2`의 원본 문자열·보조 필드·선택 비교 DTO를 검증해 private raw와 queue에 저장한다.
+워커가 PC 1a67d01의 고정 Python 파서로 해석한 뒤 공용 SQL 투영 함수로 facts를 갱신한다.
+`stored` ACK는 중앙 저장 완료이며 `parse_pending`은 지도 반영 대기다. 파싱 실패 시 이전 fact를 유지한다.
+새 raw/parsed/diffs/queue는 public API·화면 캐시·rollup·CSV의 원천이 아니며 anon/authenticated에 권한이 없다.
+실제 철회는 raw 삭제와 parsed/diffs/queue cascade를 실행한다. 정책 대체(superseded_policy)는 철회와 구분한다.
+v1 원장 payload는 30일 뒤 제거하되 재시도 식별에 필요한 최소 메타·해시·영수증은 유지한다.
+capability·notice·차단일은 같은 private 설정 행을 사용하며 v2 기본값은 꺼짐, 차단일은 미정이다.
+새 계정 status 계약 사본은 [account-api](account-api.md)다. v1 wire 계약 파일은 유지한다.

@@ -1,9 +1,11 @@
+import { useContext } from 'react';
 import type { AuthSnapshot } from '../auth/mapAuth';
 import type { AccessCode } from '../data/client';
 import { ISSUES_URL } from './DataGuide';
 import AdBanner from './AdBanner';
 import newsQuote from '../assets/gate-news-quote.jpg';
 import doctorHeli from '../assets/gate-doctor-heli.jpg';
+import ClientUpdateNotice, { ClientUpdateContext } from './ClientUpdateNotice';
 
 interface Props {
   code: AccessCode;
@@ -23,6 +25,9 @@ interface Props {
 export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, progress }: Props) {
   const signedIn = auth.status === 'signed_in';
   const needLogin = !signedIn || code === 'auth_required' || code === 'session_expired';
+  // "다시 확인" also re-reads the server's app-update guidance (client-status), not only the map access.
+  const { refresh } = useContext(ClientUpdateContext);
+  const retry = () => { onRetry(); refresh(); };
   return (
     <main id="main" className="access-gate">
       {/* 2026-10-04 user decision: the news capture opens the page, the login card comes last (the interviewee's face and name are pixelated) */}
@@ -73,6 +78,7 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
           </>
         ) : code === 'upload_required' ? (
           <>
+            <ClientUpdateNotice audience="contributor" />
             <p className="access-lead" role="alert">
               {auth.displayName ? `${auth.displayName} 계정은` : '이 계정은'}{' '}
               {progress?.current != null
@@ -88,22 +94,23 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
               답변 받은 신고가 있는데도 이 화면이 보이면 앱에서 ‘지금 업로드’를 눌러 보세요.
             </p>
             <div className="access-actions">
-              <button className="primary-button" type="button" onClick={onRetry}>다시 확인</button>
+              <button className="primary-button" type="button" onClick={retry}>다시 확인</button>
               <button className="ghost-btn" type="button" onClick={onSignOut}>다른 계정으로 로그인</button>
             </div>
           </>
         ) : (
           <>
+            <ClientUpdateNotice audience="consent" />
             <p className="access-lead" role="alert">
               {auth.displayName ? `${auth.displayName} 계정은` : '이 계정은'} 아직 신고내용 공유에 동의하지 않았거나 동의를 철회한 상태입니다.
             </p>
             <ol className="access-steps">
               <li>나만의 안전신문고 앱(PC·Docker 또는 모바일)에서 같은 카카오 계정으로 로그인합니다.</li>
-              <li>[필수] 신고 결과 공유 동의를 읽고 동의합니다.</li>
+              <li>[필수] 신고내용 공유 동의를 읽고 동의합니다.</li>
               <li>답변 받은 신고가 열 건 이상 지도에 올라가면, 여기로 돌아와 ‘다시 확인’을 누릅니다.</li>
             </ol>
             <div className="access-actions">
-              <button className="primary-button" type="button" onClick={onRetry}>다시 확인</button>
+              <button className="primary-button" type="button" onClick={retry}>다시 확인</button>
               <button className="ghost-btn" type="button" onClick={onSignOut}>다른 계정으로 로그인</button>
             </div>
           </>

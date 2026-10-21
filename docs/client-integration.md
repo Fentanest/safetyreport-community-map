@@ -24,4 +24,21 @@
 ## 중앙
 - `community-ingest`(사용자 전용 Edge): JWT(getUser+claims)·writer 연결·동의 grant·정책 버전을 저장 트랜잭션 안에서 다시 확인하고 이벤트별 durable ACK 를 돌려준다.
 - 공개 지도는 ingest 로 모인 신고별 최신 fact 를 투영한다. 저장 완료(`accepted`)와 지도 반영(`published`)은 ACK 에서 구분된다.
-- 계정 간 같은 신고가 검증되어 이전되면 `transferred` 성공 ACK를, 신고번호·내용이 맞지 않으면 비재시도 거절 ACK를 돌려준다. 신고번호는 공개 API/DTO에 포함하지 않는다.
+- 다른 dataset이 같은 신고 ID 또는 신고번호를 선점한 경우 `report_owned_elsewhere`로 거절한다. 계정 간 이전 성공을 뜻하는 `transferred` ACK는 더 이상 발급하지 않는다. 신고번호는 공개 API/DTO에 포함하지 않는다.
+
+
+## 원본 JSON v2 로컬 후보 (2026-10-21)
+
+정본은 [구현 계획](implementation/raw-json-ingest-20261021/PLAN.md), 현 상태·미완료 목록은
+[SOL-REPORT](implementation/raw-json-ingest-20261021/SOL-REPORT.md)다. 운영에는 적용하지 않았다.
+`contracts/community-ingest-v2`의 원본 문자열·보조 필드·선택 비교 DTO를 검증해 private raw와 queue에 저장한다.
+워커가 PC 1a67d01의 고정 Python 파서로 해석한 뒤 공용 SQL 투영 함수로 facts를 갱신한다.
+`stored` ACK는 중앙 저장 완료이며 `parse_pending`은 지도 반영 대기다. 파싱 실패 시 이전 fact를 유지한다.
+새 raw/parsed/diffs/queue는 public API·화면 캐시·rollup·CSV의 원천이 아니며 anon/authenticated에 권한이 없다.
+실제 철회는 raw 삭제와 parsed/diffs/queue cascade를 실행한다. 정책 대체(superseded_policy)는 철회와 구분한다.
+v1 원장 payload는 30일 뒤 제거하되 재시도 식별에 필요한 최소 메타·해시·영수증은 유지한다.
+capability·notice·차단일은 같은 private 설정 행을 사용하며 v2 기본값은 꺼짐, 차단일은 미정이다.
+새 계정 status 계약 사본은 [account-api](account-api.md)다. v1 wire 계약 파일은 유지한다.
+앱 업데이트 안내: PC·모바일은 account status·v2 ACK 의 `client_notice` 를 쓴다. 지도 웹은 account API 를 부르지 않고
+자기 `GET /my-analytics/client-status`(지도 세션 토큰, `internal_map_client_state`)로 같은 설정의 notice 를 읽는다
+([personal-comparison §client-status](personal-comparison.md#client-status--앱-업데이트-안내-2026-10-21)). 앱 번들에 버전·링크 기본값은 없다.

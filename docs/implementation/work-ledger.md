@@ -102,3 +102,13 @@
 - Muse models/mcp list는 홈 로그 접근 오류로 모델 확인·독립 검수 BLOCKED. 로컬 Chromium 검증은 별도 기록한다.
 - 실행 실패 상태 전환에도 이전 조건의 중단된 그래프 수집을 재개한다. 커밋·push·버전 변경·운영 적용 없음.
 - 결과 및 두 경계 조건의 수정 전/후 증거: [3차 보고서](release-fix3-20261013/REPORT.md).
+
+
+## 2026-10-21 · 원본 JSON 전환 로컬 구현 (Sol)
+
+- 작업서: docs/tasks/sol-raw-json-ingest-full.md. 최신 작업서에 따라 map·pc·mobile·auth 네 격리 worktree의 로컬 변경을 Sol이 순차 소유했다.
+- 원본 계약, DB/Edge/워커, 계정 status·정책 초안, 지도 안내, 두 클라이언트 전송·게이트 후보를 수정했다. 공통 계약은 map에서만 생성해 사본을 복사했다.
+- 개별 agent 또는 Muse를 호출하지 않았다. 이번 작업서는 Claude Opus의 네 레포 통합 검수를 후속으로 지정한다.
+- 커밋·원격 적용·배포·정책 발급·릴리스·실데이터 시험은 하지 않았다. 개인 DB 교환 스키마와 앱 버전은 바꾸지 않았다.
+- **전체 범위 미완료**: raw_backfill A/B/C·ACK 완료 표시·일부 보충 capture 호출·실제 UI 검수 등이 남았다.
+  구현·시험·실패와 검수 위험의 정본은 raw-json-ingest-20261021/SOL-REPORT.md다.

@@ -349,3 +349,103 @@ describe('binding API errors', () => {
     expect(r.status).toBe(200); expect((await r.json()).results).toEqual(results);
   });
 });
+
+// 운영 배포(supabase/functions/community-ingest)는 공유 설정 capabilities 를 주입한다. 위 테스트들은 그것 없이 돌므로
+// v1 의 한도·순서가 운영 설정에서도 그대로인지 여기서 따로 고정한다(리뷰 3·2).
+describe('v1 under the production-like config (capabilities injected)', () => {
+  type Caps = { contracts: number[]; v1_sunset?: string | null };
+  function prod(caps: () => Promise<Caps> = async () => ({ contracts: [1, 2], v1_sunset: null }),
+    rpcResult: (name: string) => unknown = () => ({ results: [] })) {
+    const calls: string[] = [];
+    const logs: Record<string, string | number>[] = [];
+    const handler = createIngestHandler({ enabled: true, jwtIssuer: null, allowedOrigins: [],
+      getUser: async t => { calls.push('getUser'); return t.includes(b64(claims)) ? { id: UID, isAnonymous: false } : null; },
+      capabilities: async () => { calls.push('capabilities'); return caps(); },
+      log: entry => logs.push(entry),
+      rpc: async name => { calls.push(name); return name.endsWith('rate_limit') ? true : rpcResult(name); } });
+    return { handler, calls, logs };
+  }
+  const oversized = (headers: Record<string, string>, text: string) =>
+    new Request('https://p.supabase.co/functions/v1/community-ingest', { method: 'POST', body: text,
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${jwt(claims)}`, ...headers } });
+
+  it('a v1 body of 256–512KiB is 413 payload_too_large before auth and before JSON parsing (as before v2)', async () => {
+    for (const text of ['x'.repeat(300 * 1024), JSON.stringify({ ...(await envelope([])), pad: 'x'.repeat(300 * 1024) })]) {
+      for (const headers of [{}, { 'content-length': String(Buffer.byteLength(text)) }] as Record<string, string>[]) {
+        const { handler, calls } = prod();
+        const res = await handler(oversized(headers, text));
+        expect(res.status).toBe(413);
+        expect((await res.json()).error.code).toBe('payload_too_large');
+        expect(calls).toEqual([]);
+      }
+    }
+    // a lying Content-Length is still cut at 256KiB while streaming
+    const { handler, calls } = prod();
+    const res = await handler(oversized({ 'content-length': '100' }, 'x'.repeat(300 * 1024)));
+    expect(res.status).toBe(413);
+    expect(calls).toEqual([]);
+  });
+
+  it('keeps the v1 order: JSON 400 before auth, user rate limit before capabilities, then conn rate limit and the write', async () => {
+    const { handler, calls } = prod();
+    const bad = await handler(oversized({}, '{"protocol":1,'));
+    expect(bad.status).toBe(400);
+    expect((await bad.json()).error.code).toBe('invalid_request');
+    expect(calls).toEqual([]);
+
+    const ok = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    expect(ok.status).toBe(200);
+    expect(calls).toEqual(['getUser', 'internal_community_ingest_rate_limit', 'capabilities', 'internal_community_ingest_rate_limit',
+      'internal_community_ingest']);
+    // without capabilities (tests above) the sequence is the same minus the capabilities read
+    const plain = setup();
+    await plain.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    expect(plain.calls.map(c => c.name)).toEqual(['internal_community_ingest_rate_limit', 'internal_community_ingest_rate_limit',
+      'internal_community_ingest']);
+    // a user over the limit never reaches the capabilities RPC
+    const limited = createIngestHandler({ enabled: true, jwtIssuer: null, allowedOrigins: [], getUser: async () => ({ id: UID, isAnonymous: false }),
+      capabilities: async () => { throw new Error('must not be called'); }, rpc: async () => false });
+    const r = await limited(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    expect(r.status).toBe(429);
+  });
+
+  it('keeps the v1 limits (events, schema, hash) with capabilities injected', async () => {
+    const { handler, calls } = prod();
+    const e = await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f');
+    for (const body of [await envelope(Array.from({ length: 21 }, () => e)), { ...(await envelope([e])), user_id: UID },
+      await envelope([{ ...e, payload_sha256: 'a'.repeat(64) }])]) {
+      const res = await handler(post(body));
+      expect(res.status).toBe(422);
+      expect(['schema_invalid', 'payload_hash_mismatch']).toContain((await res.json()).error.code);
+    }
+    expect(calls).not.toContain('internal_community_ingest');
+  });
+
+  it('a capabilities RPC failure never turns v1 into 500: it proceeds with no sunset and logs only a code', async () => {
+    const { handler, logs } = prod(async () => { throw new Error('rpc PGRST301 private-detail'); });
+    const res = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    expect(res.status).toBe(200);
+    expect((await res.json()).protocol).toBe(1);
+    expect(logs).toContainEqual(expect.objectContaining({ outcome: 'capabilities_unavailable_v1_continue' }));
+    expect(JSON.stringify(logs)).not.toMatch(/private-detail|PGRST301|Bearer|SPP-/);
+  });
+
+  it('manifest never reads capabilities (even when it is failing)', async () => {
+    const { handler, calls } = prod(async () => { throw new Error('down'); },
+      () => ({ dataset_key: 'd', total: 0, manifest_token: '0', key_prefixes: [], next_after: null }));
+    const res = await handler(post({ protocol: 1, connection_id: '11111111-2222-3333-4444-555555555555', after: null, limit: 10 }, jwt(claims),
+      '/functions/v1/community-ingest/manifest'));
+    expect(res.status).toBe(200);
+    expect(calls).not.toContain('capabilities');
+  });
+
+  it('v1 sunset from capabilities: 426 client_upgrade_required once passed, accepted before', async () => {
+    const past = prod(async () => ({ contracts: [1, 2], v1_sunset: '2000-01-01T00:00:00Z' }));
+    const r = await past.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
+    expect(r.status).toBe(426);
+    expect((await r.json()).error).toMatchObject({ code: 'client_upgrade_required', retryable: false });
+    expect(past.calls).not.toContain('internal_community_ingest');
+    const future = prod(async () => ({ contracts: [1], v1_sunset: '2999-01-01T00:00:00Z' }));
+    expect((await future.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])))).status).toBe(200);
+  });
+});

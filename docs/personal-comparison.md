@@ -17,7 +17,7 @@ KPI·지역 목록·담당자 비교·지도·추이에 개인 비교가 추가�
 |---|---|
 | 지도 열람 | 공유자 전용: 카카오 로그인 + 공유 동의 + 지도에 올라간 본인 고유 신고 10건 이상(2026-09-28 결정으로 1건에서 상향 — 개인 비교의 `has_public_facts`는 1건 기준 그대로). `public-analytics`도 지도 세션 토큰을 받아 `server/viewerAuth.ts`로 검증하며 익명 공개 모드는 없다 |
 | 지도 웹 로그인 | 공유자 전용 동안 지도 열람에 필요. 브라우저에서 Supabase Auth 카카오 OAuth(PKCE), 저장 키 `cm-map-auth-v1`. `src/auth/mapAuth.ts` |
-| relay와 구분 | `safeauth.worklazy.net`·`community-auth-relay`는 PC/Docker 서버 기기 연결 중계, `community-account`는 동의·writer 등록 API다. 지도는 둘 다 호출하지 않는다(테스트로 고정) |
+| relay와 구분 | `safeauth.worklazy.net`·`community-auth-relay`는 PC/Docker 서버 기기 연결 중계, `community-account`는 동의·writer 등록 API다. 지도는 둘 다 호출하지 않는다(예외 없음, 테스트·dist 스캐너로 고정). 2026-10-21 앱 업데이트 안내는 지도 자신의 `my-analytics/client-status`로 읽는다(아래 §client-status) |
 | 소유권 | `my-analytics`가 `getUser(token)` + claims(sub·role·aud·iss·session_id·익명 여부)로 검증한 사용자 id만 쓴다. 요청 파라미터·헤더·로컬 저장값의 id는 받지 않는다 |
 | 로그아웃 | `signOut({ scope: 'local' })`만. 이 브라우저의 지도 세션만 끝난다. `global`/`others`는 앱·서버의 업로드 연결 세션(`bound_session_id`)을 끊으므로 호출 금지(테스트·통합 스택으로 고정) |
 | 수집 정책 | 동의·writer·ingest·업로드 정책·스키마는 바꾸지 않는다. 새 migration은 읽기 전용 RPC 하나다 |
@@ -168,3 +168,25 @@ Command 56: 기간 · 분류 · 지역 칩 · 상세필터 · [내 데이터 함
 ## 2026-10-12 · 화면 캐시 시점 분리 예외 (사용자 승인 범위)
 
 `my-analytics/screen` stale-v2 opt-in에 한해 전체와 개인 snapshot 시각이 다를 수 있다. 공개 fence 및 compare.all=overview 검사는 유지한다. 개인 건수를 전체 이하로 자르지 않으며, 서로 다른 원천 dataset_version이어도 모든 측간 차이/비중을 각 측의 실제 수치로 계산한다(0분모·결측 null 유지). `snapshots.comparable`은 정보만 제공한다. KPI와 상세 비교에 전체/내 신고 기준 시각을 함께 표시하고, 같은 시각이면 하나만 표시한다. 100% 초과 비중을 자르지 않으며 해당 셀에 `최근 업로드 반영 차이` 주석을 붙인다. 각 측 내부 비율·분모·월별·분포는 유지한다. `my_points.shared=null`은 타인 참여 여부 미확정이며 해당 문구를 생략한다. 독립 compare/statistics 경로는 기존 동일 snapshot 계약이다. [호출자 감사·UI 문구·검증](implementation/screen-result-cache-20261012/STALE-REPORT.md).
+
+## client-status — 앱 업데이트 안내 (2026-10-21)
+
+`GET {VITE_PUBLIC_ANALYTICS_URL}/my-analytics/client-status` (쿼리 파라미터 없음, 있으면 400). compare 와 같은 인증
+(`Authorization: Bearer <지도 세션 토큰>`, getUser + claims, 익명 거부), 같은 `MY_ANALYTICS_ALLOWED_ORIGINS`, 같은 rate limiter
+(사용자별 별도 bucket, 분당 30). `public.internal_map_client_state(p_user)`(지도 migration)를 읽어 정확히 다음 다섯 필드만 돌려준다.
+
+```json
+{"consent":"active|outdated|none|revoked","last_contract":"community-ingest-v1|…|null","v1_connections":0,"v2_enabled":false,
+ "notice":null | {"level":"info|warning|required","message":"…","min_version":{"pc":"…|null","mobile":"…|null"},
+                  "url":{"pc":"https://…|null","mobile":"https://…|null"},"deadline":"ISO|null"}}
+```
+- notice 모양은 `contracts/community-ingest-v2/client-notice.schema.json`. 스키마에 맞지 않으면 notice 는 null, https 가 아닌 링크는 null.
+- notice 가 있으면 `internal_analytics_viewer` 로 한 번 더 보고 이용정지·자격 없음·카카오 아님 계정에는 notice 를 null 로 보낸다.
+- RPC 가 없거나(migration 미적용) 결과가 계약과 다르면 503. 화면은 실패를 조용히 무시한다(안내는 지도 접근을 바꾸지 않음).
+- 화면 규칙(`src/components/ClientUpdateNotice.tsx`): 버전·문구·링크를 앱에 넣지 않고 서버 값만 보인다.
+  대시보드 배너 = notice 있음 + `v2_enabled` + (`consent=outdated` 또는 `v1_connections>0`). 업로드 10건 게이트도 같은 규칙.
+  동의 게이트(none/revoked/이용정지/자격 없음) = notice 있음 + consent 가 active 아님(이용정지·자격 없음은 서버가 notice 를 비움).
+  링크가 하나만 있으면 그 링크만, 둘 다 없으면 문구만 보인다. 외부 링크는 새 탭(↗ 표시, aria-label "(새 탭에서 열림)").
+- 갱신: 로그인·계정 변경 때, 게이트의 "다시 확인"(3초 간격 제한), 창 포커스·탭 복귀(1분 간격 제한). 실패하면 마지막 값을 유지한다.
+- 지도 웹은 `community-account` 를 어떤 action 으로도 호출하지 않는다(PROJECT_RULES 7). auth 쪽도 지도 origin CORS 를 열지 않는다.
+- 데모 빌드는 `?client_status=outdated|v1|pc-only|unsafe-link|none|revoked|v2-off|no-notice` 로 화면을 미리 본다(라이브 빌드에는 없음).

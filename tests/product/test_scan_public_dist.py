@@ -47,6 +47,10 @@ class ScanTests(unittest.TestCase):
         self.assertTrue(self.run_scan('a.js', 'fetch(base+"/community-auth-relay/claim")'))
         self.assertTrue(self.run_scan('a.js', 'fetch(base+"/community-account/grant")'))
         self.assertTrue(self.run_scan('a.js', 'location.href="https://safeauth.worklazy.net/"'))
+        # No exception for update guidance (PROJECT_RULES 7): the map reads its own my-analytics/client-status.
+        for endpoint in ('status', 'status/', 'policy', 'consent', 'consent-revoke', 'connections', 'contributions-delete'):
+            self.assertTrue(self.run_scan('a.js', f'fetch(base+"/community-account/{endpoint}")'), endpoint)
+        self.assertEqual(self.run_scan('a.js', 'fetch(base+"/my-analytics/client-status")'), [])
 
     def test_secret_markers_still_fail_in_scripts(self):
         self.assertTrue(self.run_scan('a.js', 'const k="sb_secret_abcdef";'))

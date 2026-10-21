@@ -11,6 +11,7 @@ import { todayKst } from './aggregate.ts';
 import { authenticate, ViewerAuthError, type ViewerAuthDeps, type ViewerUser } from './viewerAuth.ts';
 import type { ViewerState } from '../src/domain/personal.ts';
 import { decodeScreenFacts } from './screenFacts.ts';
+import { parseClientStatus } from './clientStatus.ts';
 
 export type Rpc = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 export type PersonalUser = ViewerUser;
@@ -95,6 +96,26 @@ export function createPersonalHandler(deps: PersonalDeps): (request: Request) =>
       if (request.method !== 'GET') fail('method_not_allowed');
       if (!deps.enabled) fail('service_unavailable');
       const url = new URL(request.url);
+      // client-status (2026-10-21) = the map web's own read of the app-update guidance (server/clientStatus.ts).
+      // Same token checks, origins and rate limiter as compare (own bucket, so focus refreshes never eat the
+      // comparison's budget). The map never calls the account API (PROJECT_RULES 7).
+      if (/\/my-analytics\/client-status\/?$/.test(url.pathname)) {
+        if ([...url.searchParams.keys()].length) fail('INVALID_QUERY');
+        const { uid, session } = await authenticate(request, deps);
+        const bucket = await sha256Hex(`my-analytics|client-status|user|${uid}`);
+        if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: bucket, p_limit: 30 }) !== true) fail('rate_limited');
+        let status = parseClientStatus(await deps.rpc('internal_map_client_state', { p_user: uid }));
+        if (!status) return fail('service_unavailable');
+        if (status.notice) {
+          // Update text only for accounts that can contribute: never for suspended or ineligible (non-Kakao) accounts.
+          const v = await deps.rpc('internal_analytics_viewer', { p_user: uid, p_session: session }) as
+            { user_ok?: unknown; kakao?: unknown; session?: unknown; contributor?: unknown } | null;
+          if (v && v.session === false) fail('session_expired');
+          if (!v || v.user_ok !== true || v.kakao !== true || v.contributor === 'suspended') status = { ...status, notice: null };
+        }
+        deps.log?.({ event: 'my_analytics_client_status', outcome: 'ok', request_id: rid });
+        return respond(200, status);
+      }
       // compare = the dashboard comparison; statistics = 맞춤 통계 with population mine/compare (S05, JWT viewer only)
       const stats = /\/my-analytics\/statistics\/?$/.test(url.pathname);
       if (!stats && !/\/my-analytics\/compare\/?$/.test(url.pathname)) fail('not_found');
