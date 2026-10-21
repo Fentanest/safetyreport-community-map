@@ -436,5 +436,13 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
 - 레거시 HS256 키 교체(같은 날): 점검 출력에 functions 의 레거시 service_role 키가 찍혀 `JWT_SECRET`과 이를 쓰는 `ANON_KEY`·`SERVICE_ROLE_KEY`,
   `JWT_KEYS`·`JWT_JWKS`의 HS256 키를 새로 만들었다(사용자가 206에서 스크립트 실행, 값 출력 없음). ES256 키·`sb_publishable_`·`sb_secret_`는 그대로라
   앱·지도 웹·확장·GitHub 변수 변경 없음. 확인: 옛 service_role·anon 키 401, 새 키·공개 키 정상, 함수 내부 DB 호출 정상, realtime tenant 재생성, 전 컨테이너 healthy.
-- 남은 순서: PC 3.6.0·모바일 2.5.0 출시 → 스토어 반영 확인 → 정책 `2026-10-21.1` 발급(auth policy-drafts 를 새 migration 번호로) + `v2_enabled=true`
-  → 지도 Pages·auth 안내 페이지 배포. 구버전 차단일은 미정.
+- 클라이언트 출시: PC [v3.6.0](https://github.com/Fentanest/safetyreport/releases/tag/v3.6.0)(실행 파일 4종·Docker),
+  모바일 [v2.5.0+179](https://github.com/Fentanest/safetyreport-mobile/releases/tag/v2.5.0)(Play production 업로드, 심사 대기).
+- 정책 전환(사용자 지시 "다 발급하고 다 올려", 스토어 반영을 기다리지 않음): auth `202610211900_policy_2026_10_21_1.sql` 적용·이력 기록 →
+  현재 정책 `2026-10-21.1`(공개 플래그 셋 모두 true), 기존 active grant 98 건은 outdated(재동의 대상, v1 은 계속 수신).
+  `community_ingest_config`: `v2_enabled=true`, `client_notice` = warning·최소 PC 3.6.0/모바일 2.5.0·다운로드 링크·deadline 없음. `v1_sunset` 은 미정이라 null.
+- 카카오 연결 해제 웹훅은 사용자가 정책 전환 전에 콘솔에 등록했다(POST).
+- Pages: auth [workflow 39588117070](https://github.com/Fentanest/safetyreport-community-auth/actions/runs/39588117070)(privacy·help 새 정책 절),
+  지도 [workflow 39588126429](https://github.com/Fentanest/safetyreport-community-map/actions/runs/39588126429)(업데이트 안내 배너). 둘 다 성공, 운영 페이지에서 새 문구·`client-status` 호출 확인.
+- 되돌리기: 정책은 `community_policy_current` 를 `2026-09-28.3` 으로, `v2_enabled=false`·`client_notice=null`(받은 원본은 남는다).
+- 남은 일: 실제 재동의 사용자의 원본 1회 전송·워커 파싱 운영 관찰, 구버전(v1) 차단일 결정.
