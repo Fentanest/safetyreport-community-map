@@ -445,4 +445,7 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
 - Pages: auth [workflow 39588117070](https://github.com/Fentanest/safetyreport-community-auth/actions/runs/39588117070)(privacy·help 새 정책 절),
   지도 [workflow 39588126429](https://github.com/Fentanest/safetyreport-community-map/actions/runs/39588126429)(업데이트 안내 배너). 둘 다 성공, 운영 페이지에서 새 문구·`client-status` 호출 확인.
 - 되돌리기: 정책은 `community_policy_current` 를 `2026-09-28.3` 으로, `v2_enabled=false`·`client_notice=null`(받은 원본은 남는다).
+- PC [v3.6.1](https://github.com/Fentanest/safetyreport/releases/tag/v3.6.1): 재시작 직후 필수 설정 화면이 '확인 중'에 머물러 새 동의문이 안 뜨던 문제 수정.
+  205 개인 서버를 3.6.1 로 갱신(공유 기록 DB 사전 백업 `/docker/safetyreport/data_backup_20261021_pre360/`).
+  릴리스 노트(PC 3.6.0·3.6.1, 모바일 2.5.0)를 사용자 관점으로 다시 쓰고 Play production(빌드 179) '새로운 기능' 문구도 교체했다.
 - 남은 일: 실제 재동의 사용자의 원본 1회 전송·워커 파싱 운영 관찰, 구버전(v1) 차단일 결정.
