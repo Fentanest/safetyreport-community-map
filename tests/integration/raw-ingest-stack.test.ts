@@ -161,7 +161,7 @@ const BAD = /DeadlockDetected|LockNotAvailable|worker_failed|fail_record_failed|
 describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed local stack', () => {
   let A: Writer;
   beforeAll(async () => {
-    keys = JSON.parse(execFileSync('npx', ['supabase', 'status', '-o', 'json', '--workdir', '.integration-stack'], { encoding: 'utf8' }));
+    keys = JSON.parse(execFileSync('npx', ['supabase', 'status', '-o', 'json', '--workdir', process.env.STACK_WORKDIR ?? '.integration-stack'], { encoding: 'utf8' }));
     sql('delete from private.rate_limits; delete from private.community_auth_rate_limits;');
     sql('update private.analytics_state set ready = true, published_at = coalesce(published_at, now()) where singleton;');
     const s = await kakaoSession('C');

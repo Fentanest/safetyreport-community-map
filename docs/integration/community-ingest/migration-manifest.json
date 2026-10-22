@@ -715,7 +715,7 @@
    "version": "202610220100",
    "repo": "auth",
    "path": "supabase/migrations/202610220100_setup_progress_client_seen.sql",
-   "sha256": "89c0442639e89f7f5b135d803f21c57f78fe31bc8fc29e18c27759179439f17f",
+   "sha256": "25658c65f400143914dc44f8670990e2cffe02bab4b2463a59b1c0318e103304",
    "depends_on": [
     "202609260100",
     "202610210300"
@@ -725,7 +725,7 @@
    "version": "202610220200",
    "repo": "map",
    "path": "supabase/migrations/202610220200_backfill_resume_ops.sql",
-   "sha256": "3a9b78269eade27f9b9f1a19638cc16b8be18ab875fad12f5bdf23e59bb93b6a",
+   "sha256": "5ad00e1b9424ea505a213353e97137b199422251480b6c56c377f727535cd766",
    "depends_on": [
     "202610210100",
     "202610220100"

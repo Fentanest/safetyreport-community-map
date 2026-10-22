@@ -11,6 +11,9 @@
   파서 계약 정본 `contracts/parser/`. 파서 워커 코드는 비공개 레포로 옮기고 `server/parser-py/` 는 안내 README 만 남겼다.
 - 문의 링크를 `Fentanest/safetyreport-mobile` 이슈로 바꾸고, 이 레포 이슈 양식은 `config.yml`(빈 이슈 막음·모바일 레포 안내)만 남겼다. 동의문은 그대로.
 - 검증·남은 위험: `docs/implementation/backfill-resume-20261022/A-REPORT.md`.
+- 출시 전 검수 수정(2026-10-22.2, `FIX-S-REPORT.md`): 점검 503 `Retry-After` 최대 1800초, 필수 버전 적용 중이면 구버전 앱용 `client_notice` 를 서버가 맞춤,
+  요구 버전의 `v` 를 저장 때 떼고 진행 보고는 `v` 접두 허용, 버전 조건 공지는 앱 하나만, 지도 웹 업데이트 화면은 앱 기록이 있는 사람만,
+  `ops.audit_list` 키셋 넘김(5인자), 직접 SQL 이력은 접속 역할, 거절 카운터는 응답 뒤 기록, connections 열 추가만 잠금 10초, 링크 경계 벡터 추가.
 
 ## 2026-10-18 · 좁은 화면에서 지도 아래 알리 가로 배너 (정적 웹 배포)
 

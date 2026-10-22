@@ -31,9 +31,11 @@
 | `announcement_expired` | 22023 | 끝나는 시각이 지난 공지는 게시할 수 없음 |
 | `announcement_not_found` | P0002 | 그 id 의 공지 없음 |
 | `invalid_stale_hours` | 22023 | 기준 시간이 1~720 밖 |
+| `invalid_cursor` | 22023 | 이력 다음 쪽 인자(`p_before_at`·`p_before_kind`·`p_before_id`)가 셋 다 있거나 셋 다 null 이 아님, 또는 kind 가 틀림 |
 | `invalid_pseudo_id` / `not_found` / `ambiguous_pseudo_id` | 22023 / P0002 / 21000 | 상세 조회 가명 ID 오류 |
 
 버전 문자열 규칙(모든 함수 공통): `[v]N[.N[.N[.N]]][+build]`, 각 N 1~6자리. 빠진 자리는 0. 그 밖(예 `2.5.1-beta`)은 해석 불가.
+앞뒤 공백은 무시한다. `ops.set_client_requirement` 는 저장할 때 앞의 `v`·`V` 하나와 앞뒤 공백을 뗀다(`v3.6.2` → `3.6.2`, D9). 콘솔도 같은 정규화를 해서 보여 준다.
 벡터: `contracts/community-ingest-v2/version-vectors.json`.
 
 ## 1. 로그인·첫 화면
@@ -59,8 +61,14 @@
 - `client_requirement` 는 저장된 값(적용 시작 전 포함), `client_requirement_in_force` 는 지금 적용 중인지.
 - `rejections_last_hour`: 최근 1시간 업로드 거절 수(503 점검 = `maintenance`, 426 필수 버전 = `client_upgrade_required`).
 
-### `ops.audit_list(p_actor uuid, p_limit integer default 50, p_before timestamptz default null) → jsonb[]`
-최신 순. `p_before` 로 다음 쪽(마지막 항목의 `changed_at`). 한도 1~500.
+### `ops.audit_list(p_actor uuid, p_limit integer default 50, p_before_at timestamptz default null, p_before_kind text default null, p_before_id bigint default null) → jsonb[]`
+인자 5개(`p_actor` 포함, 2026-10-22.2 에 바뀜 — 예전 3인자 `p_before` 는 없다). 한도 1~500.
+- 정렬: `(changed_at desc, kind desc, audit_id desc)`. `kind` 는 `config`·`announcement` 이므로 같은 시각이면 `config` 가 먼저다.
+- 첫 쪽: `p_before_at`·`p_before_kind`·`p_before_id` 모두 null.
+- 다음 쪽(키셋): 이전 쪽 **마지막 항목**의 `changed_at`·`kind`·`audit_id` 를 그대로 넘긴다. 결과는 튜플 `(changed_at, kind, audit_id) < (p_before_at, p_before_kind, p_before_id)` 인 것만.
+  같은 트랜잭션의 변경(같은 `changed_at`)이 쪽 경계에 걸려도 빠지거나 겹치지 않는다.
+- `changed_at` 은 마이크로초까지 그대로 넘긴다(결과 문자열을 다시 timestamptz 로 넘기면 된다. 초 단위로 자르면 같은 초의 항목이 빠진다).
+- 세 값 중 일부만 주면(`p_before_at` 만 등) 예외 `invalid_cursor`(22023). `p_before_kind` 는 `config`·`announcement` 만.
 ```json
 [{"kind":"config","audit_id":17,"changed_at":"…","actor":"ops:운영자 메모","action":"pause_uploads","target":"community_ingest_config",
   "before":{…설정 행 전체…},"after":{…}},
@@ -68,7 +76,8 @@
   "before":{…공지 행…},"after":{…}}]
 ```
 - `action`: `pause_uploads`·`resume_uploads`·`set_client_requirement`·`clear_client_requirement`·`announcement_save`·`announcement_publish`·
-  `announcement_end`·`announcement_delete`, 콘솔 밖 SQL 은 `sql_update`(설정)·`sql_insert`/`sql_update`/`sql_delete`(공지), actor `sql:<DB 역할>`.
+  `announcement_end`·`announcement_delete`, 콘솔 밖 SQL 은 `sql_update`(설정)·`sql_insert`/`sql_update`/`sql_delete`(공지), actor `sql:<DB 역할>`
+  (실제로 로그인한 DB 역할 = `session_user`. 예: `sql:supabase_admin`, `sql:postgres`. 트리거 함수 소유자가 아니다).
 - 화면의 "이전 값 → 새 값"은 `before`·`after` 에서 바뀐 키만 골라 보인다. 설정 행 키: `v2_enabled, raw_policy_version, v1_sunset, client_notice,
   uploads_paused, pause_message, pause_resume_at, paused_at, paused_by, client_requirement`.
 
@@ -105,8 +114,12 @@
 - `p_url_*`: null 또는 https 링크(앱의 업데이트 버튼·지도 웹 안내 링크). 권장: PC `https://github.com/Fentanest/safetyreport/releases/latest`,
   모바일 `https://play.google.com/store/apps/details?id=com.fentanest.mysafetyreport`.
 - `p_message`: null 또는 1~300자 평문(줄바꿈 불가).
+- `p_min_pc`·`p_min_mobile`: 앞뒤 공백과 앞의 `v`·`V` 를 떼고 저장한다(D9). 결과의 `client_requirement.min_version` 에 뗀 값이 보인다.
 - `p_enforce_from`: null = 지금부터. 그 시각 전에는 서버·앱·지도 웹 모두 요구가 없는 것으로 동작한다.
 - 저장 형식(`client_requirement`): `contracts/community-ingest-v2/client-requirement.schema.json`.
+- **구버전 앱 안내(`client_notice`)는 콘솔이 따로 고치지 않아도 된다 (D8)**: 요구가 적용 중이면 서버가 앱에 주는 `client_notice` 를 요구에 맞춰 만든다
+  (저장된 notice 가 없거나 요구보다 낮으면 `level:'required'`, 같은 min_version·url). 저장된 `client_notice` 값 자체는 바뀌지 않는다(`overview.client_notice` 는 저장값).
+  자세한 규칙: CLIENT-RULES 6-4.
 
 ### `ops.clear_client_requirement(p_actor uuid) → jsonb`
 요구를 지운다. 426·지도 웹 안내·새 앱 잠금이 다음 status 확인 때 풀린다.
@@ -120,6 +133,9 @@
 - 키 9개 정확히(`id, title, body, primary_action, snooze_days, starts_at, ends_at, priority, audience`). 없으면 만들고, **게시 전이면** 고친다.
 - DB 가 다시 검사하는 것: 제목 1~40자(제어문자 없음), 본문 1~600자(줄바꿈 LF 만), 링크 허용 목록(`contracts/app-announcements/vectors/links.json`),
   `app_action` 은 `open_mode_switch` 만, 대상(apps·modes·platforms·버전)의 값, `snooze_days` 0~365, `priority` -1000~1000, 끝 > 시작.
+- **대상에 `min_version`·`max_version` 이 하나라도 있으면 `apps` 는 정확히 하나**(`["pc"]` 또는 `["mobile"]`). 두 앱은 버전 번호가 달라서 같은 숫자를 둘에 걸 수 없다(D10).
+  어기면 `invalid_announcement`. 두 앱에 버전 조건을 걸려면 공지를 앱마다 따로 만든다.
+- 링크 검사는 DB 정규식이 기준이다. 콘솔 사전 검사도 같은 벡터(`links.json`, 쿼리·조각·특수문자·한글 경로 경계 포함)로 시험한다.
 - 결과: 저장된 행(`id, title, body, primary_action, snooze_days, starts_at, ends_at, priority, audience, published_at, ended_at, created_at, updated_at`).
 
 ### `ops.announcement_publish(p_actor uuid, p_id text) → jsonb`
@@ -158,10 +174,21 @@
 |---|---|---|
 | `reconsent` 재동의 전 | 활성 동의가 지금 정책이 아님(outdated) | `last_contract_v1`(마지막 업로드가 v1) / `policy_outdated` |
 | `old_app` 구버전 앱 | 가장 최근에 확인된 앱 버전 < 원본 지원 버전(인자), 또는 마지막 업로드 v1 이고 원본 0건 | `version_below_raw` / `v1_only` |
-| `not_tried` 시도 안 됨 | 원본 0건, 진행 보고 없음 | 설정 단계(2-7): `no_record`(기록 없음, 구버전 추정), `before_official_login`, `official_login_failed`(`detail` = 사유 코드), `before_connection`, `connection_registered`, Client 서버 문제 `client_server_unreachable`·`client_server_unconfigured`·`client_server_not_logged_in`·`client_account_mismatch`·`client_server_no_consent`, `client_server_ok` |
+| `not_tried` 시도 안 됨 | 원본 0건, 진행 보고 없음 | 설정 단계(2-7): `no_record`(기록 없음, 구버전 추정), `before_official_login`, `official_login_failed`(`detail` = 사유 코드), `before_connection`, `connection_registered`, Client 서버 문제 `client_server_unreachable`·`client_server_unconfigured`·`client_server_not_logged_in`·`client_account_mismatch`·`client_server_no_consent`, `client_server_ok` (뜻은 아래 표) |
 | `stuck` 멈춤 | 보고 상태 `paused`·`holds`·`waiting_optimize`·`none`, 공식 로그인 수동 필요, 진행 중인데 기준 시간 넘게 보고 없음, 또는 원본은 있는데 보고가 한 번도 없고 연결이 기준 시간 넘게 조용함 | `official_login_required`, `optimize_wait`, `transient_errors`(`detail` = 보고의 reason), `holds`(`detail` = 보류 건수), `not_started`, `report_gap`, `no_progress_report`(이전 버전이라 보고 기능 없음) |
 | `uploading` 업로드 중 | `listing`·`filling`·`uploading` 이고 기준 시간 안에 보고, 또는 보고는 없지만 원본이 있고 연결이 기준 시간 안에 활동 | `reporting` / `no_progress_report` |
 | `done` 완료 | 보고 상태 `done` | `done_latest` / `done_old`(앱 < 최신 출시) / `done_version_unknown`(최신 출시 인자 없음·버전 모름) |
+
+Client 모드 세부 사유(휴대폰이 보낸 설정 단계 `client_server_checked` 의 `client` 6키에서, 위에서부터 처음 맞는 것):
+
+| sub_reason | 조건 | 뜻(콘솔 문구 기준) |
+|---|---|---|
+| `client_server_unreachable` | `server_reachable=false` | 휴대폰이 서버(PC)에 닿지 못함(주소·네트워크·PC 꺼짐) |
+| `client_server_unconfigured` | `server_community_supported=false` | **서버(PC)의 커뮤니티 설정이 안 됨**: PC 가 커뮤니티를 끄거나 설정을 마치지 않음(503 `community_disabled`·`community_unconfigured`), 또는 PC 가 3.0 미만. 휴대폰의 서버 주소 미설정이 아니다(그 경우는 보고 자체가 없다) |
+| `client_server_not_logged_in` | `server_logged_in=false` | PC 가 카카오 로그인 안 됨(온보딩 필요) |
+| `client_account_mismatch` | `account_match=false` | 휴대폰과 PC 의 카카오 계정이 다름 |
+| `client_server_no_consent` | `server_consent_active=false` | PC 의 공유 동의가 active 아님 |
+| `client_server_ok` | 위에 해당 없음 | 서버 쪽 조건은 맞음(아직 업로드 전) |
 
 - 화면 카드: `summary.categories`(분류별 사람 수), `summary.raw_total`·`fact_total`(원본 수 / 지도 행 수 전체), `summary.by_app`(PC·모바일 나눠 보기 —
   사람의 앱은 가장 최근에 확인된 앱).

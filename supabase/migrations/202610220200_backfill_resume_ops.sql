@@ -33,7 +33,11 @@ begin
     if a = b then return 0; end if;
     return case when a < b then -1 else 1 end;
 end $$;
-revoke all on function private.community_version_parts(text), private.community_version_cmp(text, text) from public, anon, authenticated, service_role;
+-- D9: what operators type is stored without a leading `v`/`V` and surrounding spaces (`v3.6.2` -> `3.6.2`); empty -> null.
+create function private.community_version_normalize(p_version text) returns text
+language sql immutable set search_path='' as $$ select nullif(regexp_replace(btrim(p_version), '^[vV]([0-9])', '\1'), '') $$;
+revoke all on function private.community_version_parts(text), private.community_version_cmp(text, text),
+    private.community_version_normalize(text) from public, anon, authenticated, service_role;
 
 -- ── 2-9 maintenance switch and 2-10 required version on the single shared config row ────────────────────────────────
 -- client_requirement = contracts/community-ingest-v2/client-requirement.schema.json:
@@ -86,7 +90,8 @@ $$;
 revoke all on function private.community_uploads_paused(boolean, timestamptz), private.community_requirement_in_force(jsonb)
     from public, anon, authenticated, service_role;
 
--- Audit of every config change (ops functions set the actor; a direct SQL change is recorded with the DB role).
+-- Audit of every config change (ops functions set the actor; a direct SQL change is recorded with the DB role that
+-- logged in: session_user, because the trigger function runs as its owner and current_user would always be that owner).
 create table private.community_ingest_config_audit (
     audit_id bigint generated always as identity primary key,
     changed_at timestamptz not null default now(),
@@ -106,7 +111,7 @@ begin
     return case when v ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then v::uuid end;
 end $$;
 create function private.community_ops_label() returns text language sql stable set search_path='' as $$
-    select coalesce(nullif(current_setting('community_ops.label', true), ''), 'sql:' || current_user)
+    select coalesce(nullif(current_setting('community_ops.label', true), ''), 'sql:' || session_user)
 $$;
 create function private.community_ops_action(p_default text) returns text language sql stable set search_path='' as $$
     select coalesce(nullif(current_setting('community_ops.action', true), ''), p_default)
@@ -127,12 +132,49 @@ revoke all on function private.community_ingest_config_audit_row() from public, 
 create trigger community_ingest_config_audit after update on private.community_ingest_config
 for each row execute function private.community_ingest_config_audit_row();
 
+-- D8: old apps (PC 3.6.0-3.6.1, mobile 2.5.0) do not know client_requirement; they lift their 426 mark whenever the
+-- status client_notice is null or already satisfied, and upload again (426 loop). While a requirement is in force the
+-- apps are therefore given a client_notice that is at least that requirement: when the stored notice is missing, or
+-- its min_version of a platform WITH a requirement is lower / null / unparseable, the answer is
+-- {level: "required", message: requirement message or the default text, min_version: requirement (or the stored value
+-- when that is higher; stored value for a platform without requirement), url: requirement -> stored -> default link,
+-- deadline: null}. Otherwise the stored notice unchanged. The stored config value itself is never rewritten.
+create function private.community_effective_notice(n jsonb, r jsonb) returns jsonb
+language plpgsql stable set search_path='' as $$
+declare k text; v_need boolean := false; v_req text; v_cur text; v_min jsonb := '{}'::jsonb; v_url jsonb := '{}'::jsonb;
+begin
+    if r is null or jsonb_typeof(r) <> 'object' then return n; end if;
+    foreach k in array array['pc','mobile'] loop
+        -- normalized: a `v3.6.2` written by direct SQL reaches old apps as `3.6.2` (their own parsers may not know `v`)
+        v_req := case when jsonb_typeof(r->'min_version'->k) = 'string' then private.community_version_normalize(r->'min_version'->>k) end;
+        v_cur := case when jsonb_typeof(n->'min_version'->k) = 'string' then n->'min_version'->>k end;
+        if v_req is not null and coalesce(private.community_version_cmp(v_cur, v_req) < 0, true) then v_need := true; end if;
+        v_min := v_min || jsonb_build_object(k, case
+            when v_req is null then v_cur
+            when coalesce(private.community_version_cmp(v_cur, v_req) > 0, false) then v_cur
+            else v_req end);
+        v_url := v_url || jsonb_build_object(k, coalesce(
+            case when jsonb_typeof(r->'url'->k) = 'string' then r->'url'->>k end,
+            case when jsonb_typeof(n->'url'->k) = 'string' then n->'url'->>k end,
+            case k when 'pc' then 'https://github.com/Fentanest/safetyreport/releases/latest'
+                   else 'https://play.google.com/store/apps/details?id=com.fentanest.mysafetyreport' end));
+    end loop;
+    if not v_need then return n; end if;
+    return jsonb_build_object('level', 'required',
+        'message', coalesce(case when jsonb_typeof(r->'message') = 'string' then r->>'message' end,
+                            '이 버전은 더 이상 신고를 공유할 수 없습니다. 최신 버전으로 업데이트해 주세요.'),
+        'min_version', v_min, 'url', v_url, 'deadline', null);
+end $$;
+revoke all on function private.community_effective_notice(jsonb, jsonb) from public, anon, authenticated, service_role;
+
 -- Same RPC both Edge functions read (account status + ingest). New keys: paused / pause_message / resume_at (decided
--- here) and client_requirement (only while in force). A missing row reads as v1-only, not paused, no requirement.
+-- here) and client_requirement (only while in force); client_notice follows the requirement (D8, above).
+-- A missing row reads as v1-only, not paused, no requirement.
 create or replace function public.internal_community_ingest_capabilities() returns jsonb
 language sql stable security definer set search_path='' as $$
     select coalesce((select jsonb_build_object('contracts',case when coalesce(v2_enabled,false) then '[1,2]'::jsonb else '[1]'::jsonb end,
-        'raw_policy_version',raw_policy_version,'v1_sunset',v1_sunset,'client_notice',client_notice,
+        'raw_policy_version',raw_policy_version,'v1_sunset',v1_sunset,
+        'client_notice',private.community_effective_notice(client_notice, private.community_requirement_in_force(client_requirement)),
         'paused',private.community_uploads_paused(uploads_paused,pause_resume_at),
         'pause_message',case when private.community_uploads_paused(uploads_paused,pause_resume_at) then pause_message end,
         'resume_at',case when private.community_uploads_paused(uploads_paused,pause_resume_at) then pause_resume_at end,
@@ -144,7 +186,8 @@ $$;
 revoke all on function public.internal_community_ingest_capabilities() from public,anon,authenticated;
 grant execute on function public.internal_community_ingest_capabilities() to service_role;
 
--- Per-minute counters of refused ingest requests (dashboard "최근 1시간 503·426"). One small upsert per refusal.
+-- Per-minute counters of refused ingest requests (dashboard "최근 1시간 503·426"). One small upsert per refusal; the
+-- Edge sends it after answering (not awaited, R3-M3), so it is the one write that happens while uploads are paused.
 create table private.community_ingest_rejections (
     minute timestamptz not null,
     code text not null check (code in ('maintenance','client_upgrade_required')),
@@ -167,7 +210,12 @@ revoke all on function public.internal_community_ingest_note_rejection(text,text
 grant execute on function public.internal_community_ingest_note_rejection(text,text,text) to service_role;
 
 -- ── 2-1 progress reports ──────────────────────────────────────────────────────────────────────────────────────────
+-- R3-M2: an upload in flight holds its connection row (FOR UPDATE), so this ACCESS EXCLUSIVE alter waits for it. Only
+-- this statement waits up to 10 s; on timeout the whole migration rolls back unchanged and is simply run again at a
+-- quiet time (docs/deployment.md). Nullable, no default: metadata only, no table rewrite.
+set local lock_timeout = '10s';
 alter table private.community_connections add column last_progress jsonb, add column last_progress_at timestamptz;
+set local lock_timeout = '3s';
 -- 30 days, at most 200 per connection (trimmed on every write; the daily prune removes older rows).
 create table private.community_progress_history (
     history_id bigint generated always as identity primary key,
@@ -230,8 +278,10 @@ revoke all on function public.internal_community_progress(uuid,uuid,uuid,jsonb) 
 grant execute on function public.internal_community_progress(uuid,uuid,uuid,jsonb) to service_role;
 
 -- ── 2-10 map web version gate + 2-9 banner: the signed-in user`s own state (no identifiers leave) ────────────────────
--- update_gate.blocked: a requirement is in force and NO app of this user was seen in the last 30 days at or above the
--- requirement of its app (a platform without a requirement counts as satisfied). Unknown versions do not satisfy.
+-- update_gate.blocked: a requirement is in force, the user has ANY app record (an upload connection or a version
+-- sighting, any age — D11: a first visitor with no app at all keeps the normal onboarding), and NO app of this user was
+-- seen in the last 30 days at or above the requirement of its app (a platform without a requirement counts as
+-- satisfied). Unknown versions do not satisfy.
 create function private.community_user_meets_requirement(p_user uuid, r jsonb) returns boolean
 language sql stable set search_path='' as $$
     with apps as (
@@ -279,7 +329,9 @@ begin
             'message', case when v_paused then v_cfg.pause_message end,
             'resume_at', case when v_paused then v_cfg.pause_resume_at end),
         'update_gate', case when v_req is null then null else jsonb_build_object(
-            'blocked', not private.community_user_meets_requirement(p_user, v_req),
+            'blocked', (exists (select 1 from private.community_connections c where c.user_id = p_user)
+                        or exists (select 1 from private.community_client_seen s where s.user_id = p_user))
+                       and not private.community_user_meets_requirement(p_user, v_req),
             'min_version', v_req->'min_version', 'url', v_req->'url', 'message', v_req->'message') end);
 end $$;
 revoke all on function public.internal_map_client_state(uuid) from public,anon,authenticated;
@@ -332,6 +384,9 @@ begin
     end loop;
     if jsonb_typeof(a->'min_version') = 'string' and jsonb_typeof(a->'max_version') = 'string'
        and private.community_version_cmp(a->>'min_version', a->>'max_version') > 0 then return false; end if;
+    -- D10: PC and mobile numbers differ (3.6.x vs 2.5.x), so a version condition targets exactly one app.
+    if (jsonb_typeof(a->'min_version') = 'string' or jsonb_typeof(a->'max_version') = 'string')
+       and jsonb_array_length(a->'apps') <> 1 then return false; end if;
     return true;
 end $$;
 revoke all on function private.app_announcement_url_allowed(text), private.app_announcement_action_valid(jsonb),
@@ -492,19 +547,31 @@ create function ops.whoami(p_actor uuid) returns jsonb language sql stable secur
                     jsonb_build_object('admin', false, 'memo', null))
 $$;
 
-create function ops.audit_list(p_actor uuid, p_limit integer default 50, p_before timestamptz default null) returns jsonb
+-- Keyset pages (R4-C4): order (changed_at desc, kind desc, audit_id desc); the next page passes changed_at / kind /
+-- audit_id of the LAST item of the previous page and gets the rows whose tuple is smaller. Rows of one transaction share changed_at, so a
+-- timestamp-only cursor would skip the rest of them at a page boundary.
+create function ops.audit_list(p_actor uuid, p_limit integer default 50, p_before_at timestamptz default null,
+    p_before_kind text default null, p_before_id bigint default null) returns jsonb
 language plpgsql volatile security definer set search_path='' as $$
+declare v_page boolean := p_before_at is not null;
 begin
     perform private.ops_require_admin(p_actor, null);
-    return coalesce((select jsonb_agg(x order by x->>'changed_at' desc, x->>'kind', (x->>'audit_id')::bigint desc) from (
-        select jsonb_build_object('kind', k, 'audit_id', audit_id, 'changed_at', changed_at, 'actor', actor_label, 'action', action,
-                                  'target', target, 'before', before, 'after', after) x
-          from (select 'config' k, audit_id, changed_at, actor_label, action, 'community_ingest_config' target, before, after
-                  from private.community_ingest_config_audit where p_before is null or changed_at < p_before
+    if (p_before_at is null) <> (p_before_kind is null) or (p_before_at is null) <> (p_before_id is null)
+       or (p_before_kind is not null and p_before_kind not in ('config','announcement')) then
+        raise exception 'invalid_cursor' using errcode = '22023';
+    end if;
+    return coalesce((select jsonb_agg(jsonb_build_object('kind', s.k, 'audit_id', s.audit_id, 'changed_at', s.changed_at, 'actor', s.actor_label,
+                                  'action', s.action, 'target', s.target, 'before', s.before, 'after', s.after)
+                     order by s.changed_at desc, s.k desc, s.audit_id desc) from (
+        select u.* from (
+                select 'config'::text k, a.audit_id, a.changed_at, a.actor_label, a.action, 'community_ingest_config'::text target, a.before, a.after
+                  from private.community_ingest_config_audit a
+                 where not v_page or (a.changed_at, 'config'::text, a.audit_id) < (p_before_at, p_before_kind, p_before_id)
                 union all
-                select 'announcement', audit_id, changed_at, actor_label, action, announcement_id, before, after
-                  from private.app_announcements_audit where p_before is null or changed_at < p_before) u
-         order by changed_at desc, audit_id desc
+                select 'announcement'::text, b.audit_id, b.changed_at, b.actor_label, b.action, b.announcement_id, b.before, b.after
+                  from private.app_announcements_audit b
+                 where not v_page or (b.changed_at, 'announcement'::text, b.audit_id) < (p_before_at, p_before_kind, p_before_id)) u
+         order by u.changed_at desc, u.k desc, u.audit_id desc
          limit greatest(1, least(coalesce(p_limit, 50), 500))) s), '[]'::jsonb);
 end $$;
 
@@ -519,7 +586,7 @@ begin
         'rejections_last_hour', jsonb_build_object(
             'maintenance', coalesce((select sum(n) from private.community_ingest_rejections where code = 'maintenance' and minute >= now() - interval '1 hour'), 0),
             'client_upgrade_required', coalesce((select sum(n) from private.community_ingest_rejections where code = 'client_upgrade_required' and minute >= now() - interval '1 hour'), 0)),
-        'recent_changes', ops.audit_list(p_actor, 10, null));
+        'recent_changes', ops.audit_list(p_actor, 10));
 end $$;
 
 create function ops.pause_uploads(p_actor uuid, p_message text, p_resume_at timestamptz) returns jsonb
@@ -549,7 +616,9 @@ create function ops.set_client_requirement(p_actor uuid, p_min_pc text, p_min_mo
 declare r jsonb;
 begin
     perform private.ops_require_admin(p_actor, 'set_client_requirement');
-    r := jsonb_build_object('min_version', jsonb_build_object('pc', nullif(btrim(p_min_pc), ''), 'mobile', nullif(btrim(p_min_mobile), '')),
+    -- D9: `v3.6.2` is stored as `3.6.2` so every reader (auth, Edge, apps, console) sees the same plain number.
+    r := jsonb_build_object('min_version', jsonb_build_object('pc', private.community_version_normalize(p_min_pc),
+                                                              'mobile', private.community_version_normalize(p_min_mobile)),
         'url', jsonb_build_object('pc', nullif(btrim(p_url_pc), ''), 'mobile', nullif(btrim(p_url_mobile), '')),
         'message', nullif(btrim(p_message), ''),
         'enforce_from', case when p_enforce_from is null then null else to_jsonb(p_enforce_from) end);
@@ -572,14 +641,14 @@ end $$;
 -- unknown versions included).
 create function ops.requirement_impact(p_actor uuid, p_min_pc text, p_min_mobile text) returns jsonb
 language plpgsql volatile security definer set search_path='' as $$
-declare r jsonb;
+declare r jsonb; v_pc text := private.community_version_normalize(p_min_pc); v_mobile text := private.community_version_normalize(p_min_mobile);
 begin
     perform private.ops_require_admin(p_actor, null);
-    if (nullif(btrim(p_min_pc), '') is not null and private.community_version_parts(p_min_pc) is null)
-       or (nullif(btrim(p_min_mobile), '') is not null and private.community_version_parts(p_min_mobile) is null) then
+    if (v_pc is not null and private.community_version_parts(v_pc) is null)
+       or (v_mobile is not null and private.community_version_parts(v_mobile) is null) then
         raise exception 'invalid_version' using errcode = '22023';
     end if;
-    r := jsonb_build_object('min_version', jsonb_build_object('pc', nullif(btrim(p_min_pc), ''), 'mobile', nullif(btrim(p_min_mobile), '')));
+    r := jsonb_build_object('min_version', jsonb_build_object('pc', v_pc, 'mobile', v_mobile));
     return (with people as (select distinct g.user_id from private.community_consent_grants g where g.revoked_at is null),
     seen as (
         select s.user_id, s.app, s.platform, s.version from private.community_client_seen s join people using (user_id)
@@ -864,7 +933,7 @@ do $$
 declare f text;
 begin
     foreach f in array array[
-        'ops.whoami(uuid)', 'ops.overview(uuid)', 'ops.audit_list(uuid, integer, timestamptz)',
+        'ops.whoami(uuid)', 'ops.overview(uuid)', 'ops.audit_list(uuid, integer, timestamptz, text, bigint)',
         'ops.pause_uploads(uuid, text, timestamptz)', 'ops.resume_uploads(uuid)',
         'ops.set_client_requirement(uuid, text, text, text, text, text, timestamptz)', 'ops.clear_client_requirement(uuid)',
         'ops.requirement_impact(uuid, text, text)',

@@ -33,7 +33,7 @@ export interface IngestDeps {
   /** 공유 수신 설정(private.community_ingest_config). v2 요청과 v1 차단일 확인에만 호출한다. 실패하면 v1 은 차단일 없이
    *  진행하고(경고 로그), v2 는 503 service_unavailable(재시도 가능)이다. */
   capabilities?(): Promise<Capabilities>;
-  /** 2-9/2-10 거절 수 기록(운영 콘솔 "최근 1시간 503·426"). 실패는 무시한다. */
+  /** 2-9/2-10 거절 수 기록(운영 콘솔 "최근 1시간 503·426"). 핸들러는 기다리지 않는다(응답이 먼저, R3-M3). 실패는 무시한다. */
   noteRejection?(code: 'maintenance' | 'client_upgrade_required', app: 'pc' | 'mobile' | 'unknown', route: Route): Promise<void>;
   log?(entry: Record<string, string | number>): void;
 }
@@ -47,11 +47,14 @@ type Capabilities = { contracts: number[]; v1_sunset?: string | null; client_not
   /** 2-10: 지금 적용 중인 필수 버전(적용 시작 전이면 null). */
   client_requirement?: Requirement | null };
 
-/** 503 maintenance 의 Retry-After: 재개 시각까지 남은 초(최소 1, 최대 7일), 재개 시각이 없으면 600. */
+/** 503 maintenance 의 Retry-After 상한(D7). 구버전 앱(PC 3.6.0~3.6.1, 모바일 2.5.0)은 이 값을 Supabase 전역 쿨다운으로 써서
+ *  status 까지 막으므로, 재개 시각이 더 멀어도 30분을 넘기지 않는다. 새 앱은 본문 `resume_at` 으로 다음 시도를 정한다. */
+export const MAINTENANCE_RETRY_AFTER_MAX = 1800;
+/** 503 maintenance 의 Retry-After: 재개 시각까지 남은 초(최소 1, 최대 1800), 재개 시각이 없으면 600. */
 export function maintenanceRetryAfter(resumeAt: string | null | undefined, now = Date.now()): number {
   const t = typeof resumeAt === 'string' ? Date.parse(resumeAt) : NaN;
   if (!Number.isFinite(t)) return 600;
-  return Math.min(7 * 86400, Math.max(1, Math.ceil((t - now) / 1000)));
+  return Math.min(MAINTENANCE_RETRY_AFTER_MAX, Math.max(1, Math.ceil((t - now) / 1000)));
 }
 
 /** 2-10: envelope 버전이 요구보다 낮으면 그 플랫폼의 요구 버전. 요구 없음·버전 해석 실패는 null(막지 않는다). */
@@ -311,6 +314,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
 
       // 2-9 업로드 일시 중지: 모든 경로(v1·v2·manifest·progress)에서 DB 쓰기(rate limit 포함) 전에 공유 설정을 읽는다.
       // gzip 은 이 판정 뒤에만 푼다. 설정 RPC 가 실패하면 중지가 아닌 것으로 본다(v2 는 아래에서 503 service_unavailable).
+      // 즉 점검 스위치는 설정을 읽을 수 있을 때만 동작한다(설계 결정, CLIENT-RULES 5절·docs/deployment.md).
       let capabilities: Capabilities | null = null;
       if (deps.capabilities) {
         try {
@@ -327,7 +331,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       if (capabilities?.paused === true) {
         const resumeAt = typeof capabilities.resume_at === 'string' && Number.isFinite(Date.parse(capabilities.resume_at))
           ? new Date(Date.parse(capabilities.resume_at)).toISOString() : null;
-        await noteRejection(deps, 'maintenance', bodyApp, route);
+        noteRejection(deps, 'maintenance', bodyApp, route);
         fail('maintenance', maintenanceRetryAfter(resumeAt), undefined, { resume_at: resumeAt,
           pause_message: typeof capabilities.pause_message === 'string' ? capabilities.pause_message : null });
       }
@@ -390,7 +394,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       if (required) {
         const app = appOf(b.source_app);
         const req = capabilities!.client_requirement!;
-        await noteRejection(deps, 'client_upgrade_required', app, route);
+        noteRejection(deps, 'client_upgrade_required', app, route);
         fail('client_upgrade_required', undefined, undefined, { required_version: required,
           update_url: app === 'unknown' ? null : (req.url?.[app] ?? null), update_message: req.message ?? null });
       }
@@ -486,8 +490,10 @@ function appOf(sourceApp: unknown): 'pc' | 'mobile' | 'unknown' {
   return sourceApp === 'safetyreport' ? 'pc' : sourceApp === 'safetyreport-mobile' ? 'mobile' : 'unknown';
 }
 
-async function noteRejection(deps: IngestDeps, code: 'maintenance' | 'client_upgrade_required', app: 'pc' | 'mobile' | 'unknown', route: Route) {
-  try { await deps.noteRejection?.(code, app, route); } catch { /* 진단용 숫자일 뿐: 응답에 영향 없음 */ }
+/** 거절 카운터는 기다리지 않는다(R3-M3): 응답이 먼저 나가고, 점검 중 몰리는 요청이 같은 카운터 행 잠금에 줄 서지 않는다.
+ *  동기 throw·비동기 reject 모두 삼킨다(진단용 숫자일 뿐). */
+function noteRejection(deps: IngestDeps, code: 'maintenance' | 'client_upgrade_required', app: 'pc' | 'mobile' | 'unknown', route: Route): void {
+  try { void Promise.resolve(deps.noteRejection?.(code, app, route)).catch(() => { /* 응답에 영향 없음 */ }); } catch { /* 응답에 영향 없음 */ }
 }
 
 function mapRpcError(code: string): Code {

@@ -26,9 +26,13 @@ Deno.serve(createIngestHandler({
   jwtIssuer: Deno.env.get('AUTH_JWT_ISSUER') || null,
   allowedOrigins: (Deno.env.get('COMMUNITY_ALLOWED_ORIGINS') || 'https://safemap.worklazy.net,https://safeauth.worklazy.net')
     .split(',').map(s => s.trim()).filter(Boolean),
-  // Per-minute refusal counters for the operations console (best-effort; the handler ignores failures).
-  noteRejection: async (code, app, route) => {
-    await client.rpc('internal_community_ingest_note_rejection', { p_code: code, p_app: app, p_route: route });
+  // Per-minute refusal counters for the operations console (best-effort). The handler does not await this (the 503/426
+  // answer goes first, R3-M3); waitUntil keeps the worker alive until the small upsert finishes. Failures are ignored.
+  noteRejection: (code, app, route) => {
+    const p = Promise.resolve(client.rpc('internal_community_ingest_note_rejection', { p_code: code, p_app: app, p_route: route }))
+      .then(() => undefined, () => undefined);
+    try { (globalThis as { EdgeRuntime?: { waitUntil?(p: Promise<unknown>): void } }).EdgeRuntime?.waitUntil?.(p); } catch { /* not in Edge runtime */ }
+    return p;
   },
   rpc: async (name, args) => {
     const { data, error } = await client.rpc(name, args);

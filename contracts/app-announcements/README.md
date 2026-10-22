@@ -19,11 +19,14 @@
 문서 하나 = `announcement.schema.json`. 콘솔은 DB 함수 `ops.announcement_save`(초안만 저장·수정) → `ops.announcement_publish` →
 `ops.announcement_end` 를 부른다(`docs/implementation/backfill-resume-20261022/OPS-DB-API.md`). 게시한 공지는 바꿀 수 없다 —
 내용을 바꾸면 **새 id** 로 올린다(앱의 "보지 않기"가 id 별이라 같은 id 로 바꾸면 이미 숨긴 사람은 바뀐 내용을 못 본다).
+- 대상 `audience` 에 `min_version`·`max_version` 이 하나라도 있으면 `apps` 는 **정확히 하나**다(PC 3.6.x 와 모바일 2.5.x 는 번호가 달라 같은 조건을 둘에 걸 수 없다).
+  DB(`invalid_announcement`)·콘솔이 같은 규칙으로 거부한다. 두 앱에 버전 조건을 걸려면 공지를 앱마다 따로 만든다(2026-10-22.2, D10).
 
 ## 화면 규칙 (앱)
 - 본문은 평문으로만 그린다(HTML·마크다운 해석 금지, 줄바꿈만). 제목 40자, 본문 600자.
 - 버튼: `primary_action`(있으면), "일주일 동안 보지 않기"(`snooze_days` 7) 또는 "N일 동안 보지 않기"(0 이면 버튼 없음), "닫기".
 - `primary_action.url` 은 `vectors/links.json` 허용 목록만 연다. 목록 밖이면 버튼을 숨긴다(서버도 저장·응답 때 거른다).
+  벡터에는 경계 경우(쿼리·조각 `#`·`'`·`(`·`;`·`,`·`|`·한글 경로·대문자 호스트·하이픈 호스트·500자)가 있다. 기준은 서버 DB 정규식이며 PC·모바일·콘솔이 같은 벡터를 돌린다.
 - `primary_action.app_action` 은 `open_mode_switch`(모바일 설정의 모드 변경 흐름)만. 모르는 값이면 버튼을 숨긴다.
 
 ## 구버전

@@ -27,7 +27,8 @@ insert into private.ops_admins(user_id, memo) values ('<auth.users.id>', '운영
 콘솔이 죽었을 때 점검 중지·재개, 필수 버전 해제: `docs/operations/emergency.sql`.
 
 ## 4. 기록
-- 설정 변경: `private.community_ingest_config_audit`(누가·언제·무엇을, 이전 값 → 새 값). 콘솔 함수는 `ops:<메모>`, 직접 SQL 은 `sql:<DB 역할>`.
+- 설정 변경: `private.community_ingest_config_audit`(누가·언제·무엇을, 이전 값 → 새 값). 콘솔 함수는 `ops:<메모>`, 직접 SQL 은 `sql:<DB 역할>`
+  (실제로 접속한 역할 = `session_user`, 예 `sql:supabase_admin`. 이력 트리거 함수의 소유자가 아니다). 콘솔 이력 화면은 `ops.audit_list` 키셋 넘김.
 - 공지 변경: `private.app_announcements_audit`.
 - 업로드 거절 수: `private.community_ingest_rejections`(분 단위, 7일 보관). 진행 보고 기록: `private.community_progress_history`(30일, 연결당 200건).
   하루 한 번 `private.prune_backfill_resume_history()`(pg_cron `community-progress-history-prune`, 03:41 KST)가 정리한다.

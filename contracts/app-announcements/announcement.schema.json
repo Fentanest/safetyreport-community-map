@@ -112,6 +112,7 @@
     },
     "audience": {
       "type": "object",
+      "description": "D10(2026-10-22.2): min_version·max_version 중 하나라도 문자열이면 apps 는 정확히 하나(PC 와 모바일은 버전 번호가 다르다). 서버 DB·콘솔이 같은 규칙으로 거부한다.",
       "additionalProperties": false,
       "required": [
         "apps",
@@ -193,6 +194,37 @@
             "null"
           ],
           "pattern": "^v?[0-9]{1,6}(\\.[0-9]{1,6}){0,3}(\\+[0-9A-Za-z.-]{1,32})?$"
+        }
+      },
+      "if": {
+        "anyOf": [
+          {
+            "properties": {
+              "min_version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "min_version"
+            ]
+          },
+          {
+            "properties": {
+              "max_version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "max_version"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "apps": {
+            "maxItems": 1
+          }
         }
       }
     }

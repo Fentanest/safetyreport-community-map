@@ -146,7 +146,13 @@ describe.skipIf(!enabled)('backfill-resume SQL and Edge on the composed local st
     expect(gate(ok)).toMatchObject({ blocked: false, min_version: { pc: '3.6.2', mobile: '2.5.1' } });
     expect(gate(old).blocked).toBe(true);
     expect(gate(stale).blocked).toBe(true);
-    expect(gate(unknown).blocked).toBe(true);
+    // D11: no app record at all (first visitor) → not blocked, the normal onboarding shows; an unknown version still blocks
+    expect(gate(unknown).blocked).toBe(false);
+    const devBuild = person();
+    seen(devBuild, 'mobile', 'android', 'dev-build', 0);
+    expect(gate(devBuild).blocked).toBe(true);
+    const connOnly = person({ conn: { app: 'mobile' } }); // upload connection without a recorded version
+    expect(gate(connOnly).blocked).toBe(true);
     expect(gate(pcOnly).blocked).toBe(false);
     // a platform without a requirement counts as satisfied
     opsCall(`ops.set_client_requirement('${admin}', '3.6.2', null, null, null, null, null)`);
@@ -394,7 +400,134 @@ describe.skipIf(!enabled)('backfill-resume SQL and Edge on the composed local st
     const retry = Number(ingest.headers.get('retry-after'));
     expect(retry).toBeGreaterThan(1700);
     expect(retry).toBeLessThanOrEqual(1800);
-    expect(Number(sql(`select coalesce(sum(n),0) from private.community_ingest_rejections where code = 'maintenance'`))).toBe(before + 1);
+    // R3-M3: the counter is written after the answer (not awaited) — it still lands shortly after
+    let after = before;
+    for (let i = 0; i < 30 && after < before + 1; i++) {
+      await new Promise(r => setTimeout(r, 100));
+      after = Number(sql(`select coalesce(sum(n),0) from private.community_ingest_rejections where code = 'maintenance'`));
+    }
+    expect(after).toBe(before + 1);
+    // D7: a resume time 3 hours away still answers Retry-After 1800 (resume_at keeps the real time)
+    const far = new Date(Date.now() + 3 * 3600_000).toISOString();
+    opsCall(`ops.pause_uploads('${admin}', null, '${far}')`);
+    const farR = await fetch(`${API}/functions/v1/community-ingest/progress`, { method: 'POST',
+      headers: { apikey: key!, authorization: `Bearer ${s.access_token}`, 'content-type': 'application/json' }, body: JSON.stringify(progressVectors.cases[0].body) });
+    expect(farR.status).toBe(503);
+    expect(farR.headers.get('retry-after')).toBe('1800');
+    const farE = (await farR.json()).error;
+    expect(farE.retry_after_seconds).toBe(1800);
+    expect(Date.parse(farE.resume_at)).toBe(Date.parse(far));
     opsCall(`ops.resume_uploads('${admin}')`);
+  });
+  describe('fix-S regressions (출시 전 검수 2026-10-22.2)', () => {
+    const notice = (n: Json | null) => sql(`update private.community_ingest_config set client_notice = ${n === null ? 'null' : `${lit(n)}::jsonb`} where singleton`);
+    const capsNotice = () => json(`select public.internal_community_ingest_capabilities()::text`).client_notice;
+    const stored = { level: 'warning', message: 'PC 3.6.0 / 모바일 2.5.0 이상으로 업데이트해 주세요.', min_version: { pc: '3.6.0', mobile: '2.5.0' },
+      url: { pc: 'https://github.com/Fentanest/safetyreport/releases/latest', mobile: null }, deadline: null };
+    afterAll(() => { notice(null); sql(`update private.community_ingest_config set client_requirement = null where singleton`); });
+
+    it('D8: while a requirement is in force the apps get a required client_notice at least that version', () => {
+      notice(stored);
+      expect(capsNotice()).toEqual(stored); // no requirement → stored notice unchanged
+      opsCall(`ops.set_client_requirement('${admin}', '3.6.2', '2.5.1', null, 'https://play.google.com/store/apps/details?id=com.fentanest.mysafetyreport', null, null)`);
+      expect(capsNotice()).toEqual({ level: 'required', message: '이 버전은 더 이상 신고를 공유할 수 없습니다. 최신 버전으로 업데이트해 주세요.',
+        min_version: { pc: '3.6.2', mobile: '2.5.1' },
+        url: { pc: 'https://github.com/Fentanest/safetyreport/releases/latest', mobile: 'https://play.google.com/store/apps/details?id=com.fentanest.mysafetyreport' },
+        deadline: null });
+      // stored config is untouched (the console still shows what the operator saved)
+      expect(json(`select client_notice::text from private.community_ingest_config`)).toEqual(stored);
+      // no stored notice: built from the requirement, its message wins, default links fill the gaps
+      notice(null);
+      opsCall(`ops.set_client_requirement('${admin}', '3.6.2', null, null, null, '서버 문구', null)`);
+      expect(capsNotice()).toEqual({ level: 'required', message: '서버 문구', min_version: { pc: '3.6.2', mobile: null },
+        url: { pc: 'https://github.com/Fentanest/safetyreport/releases/latest', mobile: 'https://play.google.com/store/apps/details?id=com.fentanest.mysafetyreport' },
+        deadline: null });
+      // a stored notice that already asks for at least the requirement stays as it is
+      const high = { ...stored, min_version: { pc: '3.6.3', mobile: '2.5.0' } };
+      notice(high);
+      expect(capsNotice()).toEqual(high);
+      // a higher stored value is never lowered (pc 3.6.3 > 3.6.2) while the lower one is raised (mobile)
+      opsCall(`ops.set_client_requirement('${admin}', '3.6.2', '2.5.1', null, null, null, null)`);
+      expect(capsNotice().min_version).toEqual({ pc: '3.6.3', mobile: '2.5.1' });
+      // a platform without a requirement keeps the stored value
+      opsCall(`ops.set_client_requirement('${admin}', null, '2.5.1', null, null, null, null)`);
+      expect(capsNotice().min_version).toEqual({ pc: '3.6.3', mobile: '2.5.1' });
+      // a requirement written by direct SQL with a leading v reaches the old apps as a plain number
+      sql(`update private.community_ingest_config set client_requirement = '{"min_version":{"pc":"v3.6.4","mobile":null},"url":{"pc":null,"mobile":null},"message":null,"enforce_from":null}' where singleton`);
+      expect(capsNotice().min_version).toEqual({ pc: '3.6.4', mobile: '2.5.0' });
+      // before enforce_from: stored notice unchanged
+      opsCall(`ops.set_client_requirement('${admin}', '3.6.2', '2.5.1', null, null, null, now() + interval '1 day')`);
+      expect(capsNotice()).toEqual(high);
+      opsCall(`ops.clear_client_requirement('${admin}')`);
+      notice(null);
+    });
+
+    it('D9: set_client_requirement stores versions without a leading v/V; impact accepts them too', () => {
+      const r = opsCall(`ops.set_client_requirement('${admin}', ' v3.6.2 ', 'V2.5.1', null, null, null, null)`);
+      expect(r.client_requirement.min_version).toEqual({ pc: '3.6.2', mobile: '2.5.1' });
+      expect(json(`select public.internal_community_ingest_capabilities()::text`).client_requirement.min_version).toEqual({ pc: '3.6.2', mobile: '2.5.1' });
+      expect(opsCall(`ops.requirement_impact('${admin}', 'V3.6.2', 'v2.5.1')`)).toHaveProperty('population');
+      expect(sqlError(`select ops.set_client_requirement('${admin}', 'vv3.6.2', null, null, null, null, null)`)).toContain('invalid_requirement');
+      opsCall(`ops.clear_client_requirement('${admin}')`);
+    });
+
+    it('D10: a version condition needs exactly one app', () => {
+      const doc = (audience: Json) => ({ id: `it-d10-${randomBytes(3).toString('hex')}`, title: '합성', body: '본문', primary_action: null, snooze_days: 7,
+        starts_at: null, ends_at: null, priority: 0, audience: { apps: ['pc', 'mobile'], modes: null, platforms: null, min_version: null, max_version: null, ...audience } });
+      expect(sqlError(`select ops.announcement_save('${admin}', ${lit(doc({ max_version: '3.6.1' }))}::jsonb)`)).toContain('invalid_announcement');
+      expect(sqlError(`select ops.announcement_save('${admin}', ${lit(doc({ min_version: '2.5.1' }))}::jsonb)`)).toContain('invalid_announcement');
+      expect(sqlError(`select ops.announcement_save('${admin}', ${lit(doc({}))}::jsonb)`)).toBe('');
+      expect(sqlError(`select ops.announcement_save('${admin}', ${lit(doc({ apps: ['mobile'], max_version: '2.5.1' }))}::jsonb)`)).toBe('');
+      sql(`delete from private.app_announcements where id like 'it-d10-%'`);
+    });
+
+    it('R4-C4: audit_list keyset pages never skip rows of one transaction; cursor must be complete', () => {
+      // 61 config changes and 3 announcement changes in ONE transaction: all share changed_at
+      sql(`begin;
+           ${Array.from({ length: 61 }, (_, i) => `update private.community_ingest_config set pause_message = 'it-${i}' where singleton;`).join('\n')}
+           insert into private.app_announcements(id, title, body, audience) values ('it-c4-a','합성','본문','{"apps":["pc"],"modes":null,"platforms":null,"min_version":null,"max_version":null}');
+           update private.app_announcements set title = '합성2' where id = 'it-c4-a';
+           delete from private.app_announcements where id = 'it-c4-a';
+           update private.community_ingest_config set pause_message = null where singleton;
+           commit;`);
+      const want = json(`select json_agg(k order by changed_at desc, kind desc, audit_id desc)::text from (
+          select 'config:' || audit_id k, changed_at, 'config' kind, audit_id from private.community_ingest_config_audit
+          union all select 'announcement:' || audit_id, changed_at, 'announcement', audit_id from private.app_announcements_audit) u`) as string[];
+      const got: string[] = [];
+      let cursor: Json | null = null, pages = 0;
+      for (;;) {
+        const args = cursor ? `${lit(cursor.changed_at)}::timestamptz, '${cursor.kind}', ${cursor.audit_id}` : 'null, null, null';
+        const page = opsCall(`ops.audit_list('${admin}', 50, ${args})`) as Json[];
+        pages++;
+        got.push(...page.map(x => `${x.kind}:${x.audit_id}`));
+        if (page.length < 50) break;
+        cursor = page[page.length - 1];
+        expect(pages).toBeLessThan(100);
+      }
+      expect(got).toEqual(want); // every row exactly once, in the documented order
+      // same changed_at: config rows come before announcement rows, each by audit_id desc
+      const first = opsCall(`ops.audit_list('${admin}', 500)`) as Json[];
+      const tx = first.filter(x => x.changed_at === first[0].changed_at);
+      expect(tx.length).toBe(62 + 3);
+      expect(tx.slice(0, 62).every(x => x.kind === 'config') && tx.slice(62).every(x => x.kind === 'announcement')).toBe(true);
+      expect(sqlError(`select ops.audit_list('${admin}', 50, now(), null, null)`)).toContain('invalid_cursor');
+      expect(sqlError(`select ops.audit_list('${admin}', 50, now(), 'other', 1)`)).toContain('invalid_cursor');
+      expect(Array.isArray(opsCall(`ops.overview('${admin}')`).recent_changes)).toBe(true);
+    });
+
+    it('R3-L1: a direct SQL change records the role that logged in, not the trigger owner', () => {
+      sql(`update private.community_ingest_config set pause_message = 'it-l1' where singleton`, 'supabase_admin');
+      expect(sql(`select actor_label from private.community_ingest_config_audit order by audit_id desc limit 1`)).toBe('sql:supabase_admin');
+      sql(`update private.community_ingest_config set pause_message = null where singleton`);
+      expect(sql(`select actor_label from private.community_ingest_config_audit order by audit_id desc limit 1`)).toBe('sql:postgres');
+    });
+
+    it('R3-L5: setup progress refuses a revoked session (kakao_required)', () => {
+      const p = person({ grant: null });
+      const report = { client_version: 'v2.5.1', source_app: 'safetyreport-mobile', platform: 'android', mode: 'standalone', stage: 'kakao_ok', reason: null, client: null };
+      sql(`delete from auth.sessions where id = '${p.session}'`);
+      expect(json(`select public.internal_account_setup_progress('${p.user}','${p.session}',${lit(report)}::jsonb)::text`)).toEqual({ error: 'kakao_required' });
+      expect(sql(`select count(*) from private.community_setup_progress where user_id = '${p.user}'`)).toBe('0');
+    });
   });
 });

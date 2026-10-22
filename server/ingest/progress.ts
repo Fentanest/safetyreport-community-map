@@ -7,7 +7,8 @@ export const BACKFILL_STATES = ['waiting_optimize', 'listing', 'filling', 'uploa
 const PLATFORMS = ['windows', 'linux', 'macos', 'docker', 'android', 'ios', 'other'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const CODE = /^[a-z0-9_]{1,40}$/;
-const VERSION_TEXT = /^[0-9][0-9A-Za-z.+_-]{0,39}$/;
+// D9: the contract version rule allows one leading `v` (`[v]N…`), so the report does too.
+const VERSION_TEXT = /^v?[0-9][0-9A-Za-z.+_-]{0,39}$/;
 const PARSER_TEXT = /^[0-9A-Za-z.+_-]{1,40}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/;
 const COUNT_MAX = 10_000_000;

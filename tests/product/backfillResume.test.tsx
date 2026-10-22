@@ -84,9 +84,9 @@ describe('2-9 upload pause: 503 maintenance before any database write', () => {
     expect(r.status).toBe(503);
     const body = await r.json();
     expect(body.error).toMatchObject({ code: 'maintenance', retryable: true, resume_at: resume, pause_message: '서버 점검' });
+    // D7: 90 minutes left, but Retry-After / retry_after_seconds stop at 1800; resume_at still says the real time
     const retry = Number(r.headers.get('retry-after'));
-    expect(retry).toBeGreaterThan(89 * 60);
-    expect(retry).toBeLessThanOrEqual(90 * 60);
+    expect(retry).toBe(1800);
     expect(body.error.retry_after_seconds).toBe(retry);
     // nothing but auth, the settings read and the refusal counter: no rate-limit write, no ledger/connection/queue RPC
     expect(calls).toEqual(['getUser', 'capabilities', 'noteRejection']);
@@ -100,7 +100,8 @@ describe('2-9 upload pause: 503 maintenance before any database write', () => {
     expect((await r.json()).error.resume_at).toBeNull();
     expect(maintenanceRetryAfter(new Date(Date.now() + 1500).toISOString())).toBe(2);
     expect(maintenanceRetryAfter(new Date(Date.now() - 5000).toISOString())).toBe(1);
-    expect(maintenanceRetryAfter(new Date(Date.now() + 30 * 86400_000).toISOString())).toBe(7 * 86400);
+    expect(maintenanceRetryAfter(new Date(Date.now() + 30 * 86400_000).toISOString())).toBe(1800);
+    expect(maintenanceRetryAfter(new Date(Date.now() + 1799_000).toISOString())).toBe(1799);
   });
   it('the server already decided the automatic resume: paused=false lets every route through', async () => {
     const { handler, calls } = setup(caps({ paused: false }));
@@ -118,6 +119,35 @@ describe('2-9 upload pause: 503 maintenance before any database write', () => {
     const deps: IngestDeps = { enabled: true, allowedOrigins: [], jwtIssuer: null, getUser: async () => ({ id: uid, isAnonymous: false }),
       capabilities: async () => caps({ paused: true }), noteRejection: async () => { throw new Error('db down'); }, rpc: async () => true };
     expect((await createIngestHandler(deps)(post(v1Envelope()))).status).toBe(503);
+  });
+});
+
+describe('fix-S regressions (출시 전 검수 2026-10-22.2)', () => {
+  it('D7: resume time 3 hours away → Retry-After 1800 and the real resume_at in the body', async () => {
+    const resumeAt = new Date(Date.now() + 3 * 3600_000).toISOString();
+    const { handler } = setup(caps({ paused: true, resume_at: resumeAt }));
+    const r = await handler(post(v1Envelope()));
+    expect(r.status).toBe(503);
+    expect(r.headers.get('retry-after')).toBe('1800');
+    expect((await r.json()).error).toMatchObject({ retry_after_seconds: 1800, resume_at: resumeAt });
+  });
+  it('R3-M3: the refusal counter is not awaited (a hanging or throwing counter never delays the 503/426)', async () => {
+    let started = 0;
+    const base = { enabled: true, allowedOrigins: [], jwtIssuer: null, getUser: async () => ({ id: uid, isAnonymous: false }), rpc: async () => true };
+    const hanging: IngestDeps = { ...base, capabilities: async () => caps({ paused: true }),
+      noteRejection: () => { started++; return new Promise<void>(() => {}); } };
+    const r = await Promise.race([createIngestHandler(hanging)(post(v1Envelope())),
+      new Promise<'timeout'>(res => setTimeout(() => res('timeout'), 1000))]);
+    expect(r).not.toBe('timeout');
+    expect((r as Response).status).toBe(503);
+    expect(started).toBe(1);
+    const throwing: IngestDeps = { ...base, capabilities: async () => caps({ client_requirement: requirement('3.6.2', null) }),
+      noteRejection: () => { throw new Error('sync'); } };
+    expect((await createIngestHandler(throwing)(post(v1Envelope({ client_version: '3.6.1' })))).status).toBe(426);
+  });
+  it('D9: a progress report with a leading v passes, an upper-case V does not', () => {
+    expect(parseProgress({ ...pcProgress, client_version: 'v3.6.2' })).not.toBeNull();
+    expect(parseProgress({ ...pcProgress, client_version: 'V3.6.2' })).toBeNull();
   });
 });
 

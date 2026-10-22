@@ -3,6 +3,9 @@
 작업 폴더: `backfill-resume-ws/map`(feat/backfill-resume, 기준 478b7aa), `backfill-resume-ws/auth`(feat/backfill-resume, 기준 5c6c2be). 커밋하지 않았다.
 다른 담당이 보는 문서: [CLIENT-RULES.md](CLIENT-RULES.md)(B·C·D·E), [OPS-DB-API.md](OPS-DB-API.md)(F).
 
+> **출시 전 검수 뒤 바뀐 것(2026-10-22.2)**: 이 보고서의 Retry-After(남은 초, 7일 상한 → **1800초 상한**), `client_notice` 수동 갱신 단계(→ **서버가 요구에 맞춰 냄**),
+> `ops.audit_list` 3인자(→ **5인자 키셋**), 직접 SQL 이력 `sql:postgres`(→ **접속 역할**), 지도 웹 판정(→ **앱 기록 있는 사람만**) 등은 [FIX-S-REPORT.md](FIX-S-REPORT.md) 가 정본이다.
+
 ## 1. 바꾼 파일
 
 ### 지도(map)

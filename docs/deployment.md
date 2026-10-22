@@ -455,10 +455,18 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
 작업지시서 `docs/tasks/backfill-resume-20261022.md`, 보고 `docs/implementation/backfill-resume-20261022/A-REPORT.md`. 각 단계는 사용자 승인 뒤.
 
 1. migration: auth `202610220100_setup_progress_client_seen.sql` → 지도 `202610220200_backfill_resume_ops.sql`(지도 쪽이 auth 의 `community_note_client`·
-   `community_setup_progress`·`community_client_seen` 을 쓴다). 적용 직후 `select public.internal_community_ingest_capabilities();` 에
+   `community_setup_progress`·`community_client_seen` 을 쓴다. 반대 순서는 실패하고 전부 롤백된다). 적용 직후 `select public.internal_community_ingest_capabilities();` 에
    `paused:false`·`client_requirement:null` 이 보이는지, pg_cron `community-progress-history-prune` 등록을 확인한다.
+   - **업로드가 한산한 시간에 적용한다.** 지도 migration 의 `alter table private.community_connections`(열 2개 추가, 메타데이터만)는 업로드 중인 연결 행 잠금이
+     풀리기를 **최대 10초** 기다린다(그 문장만 `lock_timeout=10s`, 나머지는 3초). 그 사이 그 표를 쓰는 새 요청도 줄을 선다.
+     `canceling statement due to lock timeout` 으로 실패하면 **전부 롤백되어 아무것도 바뀌지 않으니 잠시 뒤 그대로 다시 실행**한다(데이터 손상 없음).
+     auth migration 은 이 잠금을 쓰지 않는다.
 2. Edge(교체 파일):
    - `community-ingest`: `server/ingest/handler.ts`·`progress.ts`(새)·`version.ts`(새)·`index.ts`. 순서 바뀜: 인증 직후 공유 설정을 읽는다(중지면 503).
+     503 `maintenance` 의 `Retry-After` 는 **최대 1800초**(구버전 앱이 이 값을 전역 쿨다운으로 써서 status 까지 막히지 않게), 본문 `resume_at` 은 실제 재개 시각.
+     거절 카운터(콘솔 "최근 1시간 503·426")는 응답 뒤 기다리지 않고 쓴다. **점검 스위치는 Edge 가 공유 설정을 읽을 수 있을 때만 동작한다** —
+     설정 RPC 가 실패하면 v2 만 503 `service_unavailable`, v1·manifest·진행 보고는 그대로 받는다(설계 결정). DB 를 멈춰야 하는 작업이면 스위치에 더해
+     Edge 로그의 `capabilities_unavailable_v1_continue` 가 없는지 확인한다.
    - `my-analytics`: `server/clientStatus.ts`·`personalHandler.ts`(client-status 에 `upload_pause`·`update_gate`). **지도 웹(Pages)도 바로 이어서 배포**한다 —
      예전 웹은 새 키를 모르는 응답을 버려 업데이트 안내만 사라진다(지도 열람에는 영향 없음).
    - `community-account`(auth `server/account.ts`): setup-progress·버전 헤더·status 의 중지/필수 버전.
@@ -470,7 +478,11 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
 5. 파서 워커: 이제 **파서 레포(`Fentanest/safetyreport-community-parser`) 커밋 기준으로 빌드**한다. 지도 레포 git archive(`server/parser-py`)는 더 쓰지 않는다.
    빌드 인자 `MAP_REF`(기본값: 파서 레포 `deploy/map-ref`)의 지도 커밋에서 `shared/agency-region-registry/`·`contracts/parser/` 를 받아 지도 MANIFEST 해시와
    비교하고, 다르면 빌드가 실패한다. 이미지 태그는 파서 레포 커밋 기준(`community-parser:<파서 커밋>`). 기동 때 DB registry 버전 검사는 그대로.
-6. 운영 콘솔 배포(콘솔 레포, LAN 바인드)·첫 관리자 등록 → `client_notice` 최소 버전을 PC 3.6.2 / 모바일 2.5.1 로 → 콘솔에서 첫 공지 두 개 게시.
+6. 운영 콘솔 배포(콘솔 레포, LAN 바인드)·첫 관리자 등록 → 콘솔에서 첫 공지 두 개 게시. 콘솔은 이 지도 migration 의 `ops.audit_list` **5인자**
+   (`p_before_at`·`p_before_kind`·`p_before_id` 키셋) 버전과 함께 배포한다(옛 3인자 콘솔은 이력 다음 쪽에서 함수 없음 오류).
+7. 필수 버전은 두 앱이 실제로 배포를 마친 뒤에만 건다(Play 100% 출시 확인). `ops.requirement_impact` 로 영향 확인 → `enforce_from` 을 며칠 뒤로 저장 →
+   적용 시각 뒤 콘솔의 "최근 1시간 426"과 지도 웹 차단 수 확인. **`client_notice` 를 따로 올리지 않아도 된다**: 요구가 적용 중이면 서버가 구버전 앱에
+   주는 `client_notice` 를 요구 버전 이상(`level:'required'`)으로 맞춘다(CLIENT-RULES 6-4, 저장값은 그대로). 요구 버전에 `v` 를 붙여도 저장할 때 뗀다.
 
 ### 변경 체크리스트 추가 (2026-10-22부터)
 - 처리기관-지역 목록(`shared/agency-region-registry/`)이나 파서 계약(`contracts/parser/`)을 바꾸는 변경은 **파서 레포 `deploy/map-ref` 를 그 지도 커밋으로 갱신**하고
@@ -481,3 +493,4 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
 ### 한계
 - 이미 배포된 구버전(PC 3.6.1 이하·모바일 2.5.0 이하)에는 앱 잠금·공지·진행 보고가 없다. 구버전에 듣는 것은 업로드 503·426 과 지도 웹 안내뿐이다.
 - 지도 웹의 필수 버전 판정은 `client-status` 가 하고 지도 웹이 따르는 방식이라, 지도 데이터 API 자체는 버전으로 막지 않는다.
+  앱 기록(업로드 연결·버전 기록)이 전혀 없는 첫 방문자는 업데이트 화면 대신 원래 온보딩을 본다.
