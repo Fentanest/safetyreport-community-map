@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-22 · 1회 전송 재개·점검 스위치·필수 버전·앱 공지·운영 콘솔 DB (미배포)
+
+- migration `202610220200_backfill_resume_ops.sql`: 업로드 일시 중지(재개 시각은 읽는 쪽이 판정)·필수 버전 설정과 변경 이력, 진행 보고(`last_progress`,
+  진행 기록 30일·연결당 200건), 업로드 거절 수, 앱 공지 표·공개 읽기 함수, 운영 콘솔용 `ops` 스키마 함수·`ops_admins`·`community_ops` 역할, 대시보드 분류 함수.
+- Edge `community-ingest`: 모든 경로(v1·v2·manifest·새 `/progress`)가 DB 쓰기 전에 공유 설정을 읽어 중지면 503 `maintenance`(+재개 시각, Retry-After),
+  필수 버전 미만 v1·v2 는 426. 새 공개 함수 `app-announcements`(카카오 로그인 없이 공개 키로 읽음, 206 라우터 JWT 예외 필요).
+- 지도 웹: 점검 중 상단 배너(지도 열람 그대로), 필수 버전이 적용 중이고 최근 30일 안에 요구 이상 앱이 없으면 업데이트 안내 화면. 판정은 `my-analytics/client-status`.
+- 계약: `contracts/community-ingest-v2/`(progress·client-requirement 스키마, 버전·진행 보고 벡터, 오류·account-api 갱신), 새 `contracts/app-announcements/`,
+  파서 계약 정본 `contracts/parser/`. 파서 워커 코드는 비공개 레포로 옮기고 `server/parser-py/` 는 안내 README 만 남겼다.
+- 문의 링크를 `Fentanest/safetyreport-mobile` 이슈로 바꾸고, 이 레포 이슈 양식은 `config.yml`(빈 이슈 막음·모바일 레포 안내)만 남겼다. 동의문은 그대로.
+- 검증·남은 위험: `docs/implementation/backfill-resume-20261022/A-REPORT.md`.
+
 ## 2026-10-18 · 좁은 화면에서 지도 아래 알리 가로 배너 (정적 웹 배포)
 
 - 1440px 미만에서는 오른쪽 세로 배너 자리가 없어 알리 배너가 보이지 않던 것을, 같은 화면 폭에서 지도 아래 가로형 배너(`banners.html`의 새 `below` 자리)로 보인다.

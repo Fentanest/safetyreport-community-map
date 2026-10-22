@@ -15,8 +15,9 @@ const client = createClient(supabaseUrl ?? 'http://invalid.local', serverKey ?? 
 
 Deno.serve(createIngestHandler({
   enabled,
-  // The handler calls this only for v2 requests and the v1 sunset check (never for manifest), after the user rate limit.
-  // A throw makes v2 a retryable 503 and lets v1 continue without a sunset; the error text is never logged.
+  // Read once per authenticated request (v1, v2, manifest, progress) BEFORE any database write: upload pause (2-9),
+  // v1 sunset, required version (2-10). A throw makes v2 a retryable 503 and lets v1/manifest/progress continue
+  // (not paused, no sunset, no requirement); the error text is never logged.
   capabilities: async () => {
     const { data, error } = await client.rpc('internal_community_ingest_capabilities');
     if (error || !data || !Array.isArray(data.contracts)) throw new Error('capabilities_unavailable');
@@ -25,6 +26,10 @@ Deno.serve(createIngestHandler({
   jwtIssuer: Deno.env.get('AUTH_JWT_ISSUER') || null,
   allowedOrigins: (Deno.env.get('COMMUNITY_ALLOWED_ORIGINS') || 'https://safemap.worklazy.net,https://safeauth.worklazy.net')
     .split(',').map(s => s.trim()).filter(Boolean),
+  // Per-minute refusal counters for the operations console (best-effort; the handler ignores failures).
+  noteRejection: async (code, app, route) => {
+    await client.rpc('internal_community_ingest_note_rejection', { p_code: code, p_app: app, p_route: route });
+  },
   rpc: async (name, args) => {
     const { data, error } = await client.rpc(name, args);
     if (error) throw new Error(`rpc ${error.code ?? 'failed'}`); // codes only (40P01 → busy); details stay server-side

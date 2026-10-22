@@ -8,6 +8,7 @@ import { useMapAuth } from './hooks/usePersonal';
 import Dashboard from './pages/Dashboard';
 import { ClientUpdateContext } from './components/ClientUpdateNotice';
 import { useClientUpdate } from './hooks/useClientUpdate';
+import UpdateRequired from './components/UpdateRequired';
 
 export default function App() {
   const { auth, signIn, signOut } = useMapAuth();
@@ -31,6 +32,12 @@ export default function App() {
 
   if (dataMode === 'live' && auth.status !== 'signed_in') {
     return <AccessGate code="auth_required" auth={auth} onSignIn={signIn} onSignOut={signOut} onRetry={signIn} />;
+  }
+  // 2-10 (2026-10-22): the server says no app of this account meets the required version → update screen, not the map.
+  // Only an explicit `blocked: true` answer locks; a failed or pending client-status keeps the map open.
+  const gate = clientUpdate.status?.update_gate;
+  if (gate?.blocked) {
+    return <UpdateRequired gate={gate} displayName={auth.displayName ?? null} onRetry={clientUpdate.refresh} onSignOut={signOut} />;
   }
   return <ClientUpdateContext.Provider value={clientUpdate}><Dashboard /></ClientUpdateContext.Provider>;
 }

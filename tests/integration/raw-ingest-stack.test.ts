@@ -3,7 +3,7 @@
 // v2 events are sent to the SQL RPC public.internal_community_ingest_v2 directly (psql), the same call the Edge makes
 // after validation; v1 uses the community-ingest Edge where HTTP behaviour matters, psql where per-statement counts do.
 // Run (stack + mock Kakao as in community-stack.test.ts):
-//   PARSER_PYTHON=<python with psycopg 3> COMMUNITY_STACK=1 npx vitest run tests/integration/raw-ingest-stack.test.ts
+//   PARSER_REPO=<safetyreport-community-parser checkout> PARSER_PYTHON=<python with psycopg 3> COMMUNITY_STACK=1 npx vitest run tests/integration/raw-ingest-stack.test.ts
 // Local stack only: gives the NOLOGIN community_parser role a random password for the test, then removes LOGIN again.
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { execFile, execFileSync } from 'node:child_process';
@@ -12,7 +12,12 @@ import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { canonicalJson, deriveFact, sha256Hex, sourceReportKey } from '../../server/ingest/observation';
 
-const enabled = process.env.COMMUNITY_STACK === '1';
+const stackOn = process.env.COMMUNITY_STACK === '1';
+// 파서 워커 코드는 비공개 레포로 옮겼다(2026-10-22). 워커를 띄우는 이 시험은 PARSER_REPO(그 checkout)가 있어야 돈다.
+const PARSER_REPO = process.env.PARSER_REPO ?? '';
+const WORKER = PARSER_REPO ? `${PARSER_REPO.replace(/\/+$/, '')}/worker.py` : '';
+if (stackOn && !PARSER_REPO) console.warn('SKIP raw-ingest-stack: PARSER_REPO(파서 레포 checkout 경로)가 없어 워커를 띄울 수 없습니다.');
+const enabled = stackOn && !!PARSER_REPO;
 const API = process.env.COMMUNITY_API_URL ?? 'http://127.0.0.1:56321';
 const DB_CONTAINER = process.env.COMMUNITY_DB_CONTAINER ?? 'supabase_db_ci0926-int';
 const DB_PORT = process.env.COMMUNITY_DB_PORT ?? '56322';
@@ -93,7 +98,7 @@ async function writerFor(choice: string): Promise<Writer> {
 }
 
 // ── v2 raw events (synthetic detail from the pinned PC parser vectors; no real report) ──────────────────────────
-const vectors = JSON.parse(readFileSync(new URL('../../server/parser-py/contracts/parser-vectors.json', import.meta.url), 'utf8'));
+const vectors = JSON.parse(readFileSync(new URL('../../contracts/parser/parser-vectors.json', import.meta.url), 'utf8'));
 const BASE = vectors.cases.find((c: Json) => c.name.startsWith('traffic accepted with amount')).detail;
 const observations = JSON.parse(readFileSync(new URL('../../contracts/community-ingest/vectors/observations.json', import.meta.url), 'utf8'));
 const dto = () => structuredClone(observations.cases.find((c: Json) => c.name === 'accepted_fine').expected_payload);
@@ -137,7 +142,7 @@ const v1Query = (w: Writer, events: Json[]) => `select public.internal_community
 let DSN = '';
 const workerEnv = () => ({ ...process.env, COMMUNITY_PARSER_DSN: DSN, TZ: 'Asia/Seoul', PYTHONDONTWRITEBYTECODE: '1' });
 async function worker(args: string[] = ['--once', '--batch', '200']): Promise<string> {
-  const { stderr } = await run(PY, ['server/parser-py/worker.py', ...args], { env: workerEnv(), timeout: 120_000, maxBuffer: 16 << 20 });
+  const { stderr } = await run(PY, [WORKER, ...args], { env: workerEnv(), timeout: 120_000, maxBuffer: 16 << 20 });
   return stderr;
 }
 const userQueue = (w: Writer) => num(`select count(*) from private.community_parse_queue where contributor_id='${w.s.userId}';`);
@@ -364,7 +369,8 @@ describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed lo
 
   it('internal_map_client_state: consent/contract/v1 count/v2 flag/notice, no identifiers, service_role only', async () => {
     const st = JSON.parse(sql(`select public.internal_map_client_state('${A.s.userId}');`));
-    expect(Object.keys(st).sort()).toEqual(['consent', 'last_contract', 'notice', 'v1_connections', 'v2_enabled']);
+    // 2026-10-22: upload_pause (2-9 banner) and update_gate (2-10 required version) joined the map web's own state.
+    expect(Object.keys(st).sort()).toEqual(['consent', 'last_contract', 'notice', 'update_gate', 'upload_pause', 'v1_connections', 'v2_enabled']);
     expect(st).toMatchObject({ consent: 'active', v2_enabled: true, notice: null });
     expect(['community-ingest-v1', 'community-ingest-v2']).toContain(st.last_contract);
     expect(typeof st.v1_connections).toBe('number');
@@ -379,7 +385,8 @@ describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed lo
       update private.community_policy_current set version='2099-01-01.1'; select public.internal_map_client_state('${A.s.userId}')->>'consent'; rollback;`);
     expect(outdated).toBe('outdated');
     expect(JSON.parse(sql(`select public.internal_map_client_state('${randomUUID()}');`))).toEqual(
-      { consent: 'none', last_contract: null, v1_connections: 0, v2_enabled: true, notice: null });
+      { consent: 'none', last_contract: null, v1_connections: 0, v2_enabled: true, notice: null,
+        upload_pause: { paused: false, message: null, resume_at: null }, update_gate: null });
     for (const role of ['anon', 'authenticated', 'community_parser'])
       expect(sql(`select has_function_privilege('${role}','public.internal_map_client_state(uuid)','EXECUTE');`)).toBe('f');
     expect(sql(`select has_function_privilege('service_role','public.internal_map_client_state(uuid)','EXECUTE');`)).toBe('t');
@@ -433,7 +440,7 @@ describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed lo
   }, 120_000);
 
   it('SIGTERM stops a running worker gracefully', async () => {
-    const child = execFile(PY, ['server/parser-py/worker.py', '--pause', '1'], { env: workerEnv() });
+    const child = execFile(PY, [WORKER, '--pause', '1'], { env: workerEnv() });
     let err = '';
     child.stderr!.on('data', d => { err += d; });
     const exited = new Promise<number | null>(resolve => child.on('close', code => resolve(code)));
@@ -447,7 +454,7 @@ describe.skipIf(!enabled)('raw JSON ingest v2 + parser worker on the composed lo
   }, 30_000);
 
   it('worker refuses privileged logins and holds no write grants on private tables', async () => {
-    const out = await run(PY, ['server/parser-py/worker.py', '--once'], {
+    const out = await run(PY, [WORKER, '--once'], {
       env: { ...workerEnv(), COMMUNITY_PARSER_DSN: `postgresql://postgres:postgres@127.0.0.1:${DB_PORT}/postgres?sslmode=disable` },
     }).then(() => 'started', (e: { stderr?: string; message: string }) => e.stderr ?? e.message);
     expect(out).toContain('refusing to start');

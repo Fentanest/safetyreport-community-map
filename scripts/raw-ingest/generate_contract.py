@@ -6,8 +6,16 @@ import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / 'server/parser-py'))
-from community_adapter import build_payload
+import os
+
+# 파서 코드는 비공개 레포(Fentanest/safetyreport-community-parser)로 옮겼다. PARSER_REPO(그 checkout 경로)가 있으면
+# 비교 DTO 를 파서의 build_payload 로 다시 만들고, 없으면 커밋된 vectors/wire.json 의 비교 DTO 를 그대로 쓴다.
+_PARSER_REPO = os.environ.get('PARSER_REPO')
+if _PARSER_REPO:
+    sys.path.insert(0, str(Path(_PARSER_REPO).resolve()))
+    from community_adapter import build_payload
+else:
+    build_payload = None
 
 _args = argparse.ArgumentParser()
 _args.add_argument('--out', type=Path, default=ROOT / 'contracts/community-ingest-v2',
@@ -84,7 +92,11 @@ supplement['list'] = {k: None for k in supp['properties']['list']['properties']}
 raw = {'result': {'C_NO': 'SYNTHETIC01', 'C_NOW': 10, 'C_DATE': '2026-10-20 12:00:00', 'C_A_TITLE': '합성 신고', 'C_A_CONTENTS': '합성 비공개 본문',
     'answers': [{'C_MANAGER_TYPE_NM': '수용', 'C_MANAGE_CONTENTS': '합성 비공개 답변', 'C_DEPT_NAME': '합성기관'}], 'number': 1.0, 'unicode': '한글😀'}}
 raw_body = json.dumps(raw, ensure_ascii=False, separators=(',', ':'))
-observation = build_payload({'processing_status': '수용', 'report_date': '2026-10-20', 'geocode': {}})
+if build_payload is not None:
+    observation = build_payload({'processing_status': '수용', 'report_date': '2026-10-20', 'geocode': {}})
+else:
+    print('NOTE: PARSER_REPO 가 없어 커밋된 vectors/wire.json 의 client_observation 을 그대로 씁니다(파서 재계산 생략).', file=sys.stderr)
+    observation = json.loads((ROOT / 'contracts/community-ingest-v2/vectors/wire.json').read_text())['envelope']['events'][0]['client_observation']
 e = {'event_id': '10000000-0000-4000-8000-000000000001', 'event_type': 'completed_observation', 'source_system': 'safetyreport', 'source_report_id': 'SYNTHETIC01',
     'report_number': None, 'source_revision': 1, 'writer_epoch': 1, 'captured_at': '2026-10-21T00:00:00Z',
     'raw': {'body': raw_body, 'sha256': sha(raw_body), 'size': len(raw_body.encode()), 'fetched_at': '2026-10-21T00:00:00Z', 'source': 'raw_backfill'},

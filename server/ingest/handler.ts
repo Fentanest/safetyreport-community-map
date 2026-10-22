@@ -3,8 +3,12 @@
 // strict schema → server hash → value rules / status re-map / event-type rules → derived columns →
 // one RPC transaction that re-checks identity, session, grant, connection and writes facts → per-event ACK.
 // No admin-key fallback, no IP-header trust, no logging of bodies, tokens, ids or payloads.
-// v2 gzip (contracts/community-ingest-v2/README.md): method/size(512KiB wire)/type → JWT → user rate limit →
-// shared capabilities (v2 on?) → bounded inflate (1MiB) → JSON. Nothing is inflated before auth and the v2 check.
+// v2 gzip (contracts/community-ingest-v2/README.md): method/size(512KiB wire)/type → JWT → shared capabilities (paused?
+// v2 on?) → user rate limit → bounded inflate (1MiB) → JSON. Nothing is inflated before auth and the v2 check.
+// 2026-10-22: the shared capabilities are read right after the JWT on every route (ingest v1/v2, manifest, progress) so a
+// paused upload switch answers 503 maintenance before any database write; the required version (426) is checked right
+// after the envelope is validated, before the connection rate limit and the ingest RPC. /progress (2-1) stores a status
+// report only.
 
 import {
   FINE_ESTIMATE_RULES, canonicalJson, deriveFact, type EventType, mapStatus, nonFinalRejection, type Observation, sha256Hex, sourceReportKey,
@@ -12,6 +16,8 @@ import {
 } from './observation.ts';
 
 import { RawFailure, hasLoneSurrogate, hasNul, rawEventFingerprint, validateRaw } from './raw.ts';
+import { PROGRESS_MAX_BYTES, parseProgress } from './progress.ts';
+import { compareVersions } from './version.ts';
 
 export type Rpc = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 export interface IngestUser { id: string; isAnonymous: boolean }
@@ -27,10 +33,35 @@ export interface IngestDeps {
   /** 공유 수신 설정(private.community_ingest_config). v2 요청과 v1 차단일 확인에만 호출한다. 실패하면 v1 은 차단일 없이
    *  진행하고(경고 로그), v2 는 503 service_unavailable(재시도 가능)이다. */
   capabilities?(): Promise<Capabilities>;
+  /** 2-9/2-10 거절 수 기록(운영 콘솔 "최근 1시간 503·426"). 실패는 무시한다. */
+  noteRejection?(code: 'maintenance' | 'client_upgrade_required', app: 'pc' | 'mobile' | 'unknown', route: Route): Promise<void>;
   log?(entry: Record<string, string | number>): void;
 }
 
-type Capabilities = { contracts: number[]; v1_sunset?: string | null; client_notice?: Record<string, unknown> | null };
+type Route = 'ingest' | 'manifest' | 'progress';
+type Requirement = { min_version: { pc: string | null; mobile: string | null }; url: { pc: string | null; mobile: string | null };
+  message: string | null; enforce_from: string | null };
+type Capabilities = { contracts: number[]; v1_sunset?: string | null; client_notice?: Record<string, unknown> | null;
+  /** 2-9: 이미 "재개 시각 전" 판정이 끝난 값(private.community_uploads_paused). */
+  paused?: boolean; pause_message?: string | null; resume_at?: string | null;
+  /** 2-10: 지금 적용 중인 필수 버전(적용 시작 전이면 null). */
+  client_requirement?: Requirement | null };
+
+/** 503 maintenance 의 Retry-After: 재개 시각까지 남은 초(최소 1, 최대 7일), 재개 시각이 없으면 600. */
+export function maintenanceRetryAfter(resumeAt: string | null | undefined, now = Date.now()): number {
+  const t = typeof resumeAt === 'string' ? Date.parse(resumeAt) : NaN;
+  if (!Number.isFinite(t)) return 600;
+  return Math.min(7 * 86400, Math.max(1, Math.ceil((t - now) / 1000)));
+}
+
+/** 2-10: envelope 버전이 요구보다 낮으면 그 플랫폼의 요구 버전. 요구 없음·버전 해석 실패는 null(막지 않는다). */
+export function requiredVersionFor(req: Requirement | null | undefined, sourceApp: unknown, clientVersion: unknown): string | null {
+  if (!req || typeof req !== 'object' || !req.min_version) return null;
+  const app = sourceApp === 'safetyreport' ? 'pc' : sourceApp === 'safetyreport-mobile' ? 'mobile' : null;
+  const min = app ? req.min_version[app] : null;
+  if (typeof min !== 'string') return null;
+  return compareVersions(clientVersion, min) === -1 ? min : null;
+}
 
 /** identity 본문 상한(v1 과 gzip 없는 v2 공통). v1 은 이 값을 넘으면 인증·JSON 해석 전에 413 이다(v1 의미 유지). */
 const MAX_BODY = 256 * 1024;
@@ -130,7 +161,7 @@ type Code = 'official_account_mismatch' | 'method_not_allowed' | 'unsupported_me
   'payload_hash_mismatch' | 'event_type_mismatch' | 'auth_required' | 'kakao_required' | 'session_revoked' |
   'consent_missing' | 'consent_revoked' | 'consent_outdated' | 'consent_grant_unknown' | 'connection_unknown' |
   'connection_revoked' | 'connection_suspended' | 'connection_session_mismatch' | 'connection_mode_mismatch' |
-  'writer_superseded' | 'contributor_suspended' | 'rate_limited' | 'busy' | 'server_error' | 'service_unavailable';
+  'writer_superseded' | 'contributor_suspended' | 'rate_limited' | 'busy' | 'server_error' | 'service_unavailable' | 'maintenance';
 const HTTP: Record<Code, number> = {
   raw_hash_mismatch: 422, raw_invalid: 422, raw_reporter_keys_present: 422, supplement_invalid: 422,
   supplement_hash_mismatch: 422, client_observation_hash_mismatch: 422, client_upgrade_required: 426,
@@ -140,16 +171,19 @@ const HTTP: Record<Code, number> = {
   consent_missing: 403, consent_revoked: 403, consent_outdated: 403, consent_grant_unknown: 403, connection_unknown: 403,
   connection_revoked: 403, connection_suspended: 403, connection_session_mismatch: 403, connection_mode_mismatch: 403,
   writer_superseded: 403, contributor_suspended: 403, rate_limited: 429, busy: 503, server_error: 500, service_unavailable: 503,
+  maintenance: 503,
 };
-const RETRYABLE = new Set<Code>(['rate_limited', 'busy', 'server_error', 'service_unavailable']);
+const RETRYABLE = new Set<Code>(['rate_limited', 'busy', 'server_error', 'service_unavailable', 'maintenance']);
 /** cloud-retry-brief.md ④: a retryable failure always carries a Retry-After, even when no RPC error gave one
  *  explicitly — a caller (PC/모바일/지도 웹) must never guess how long to back off. */
-const DEFAULT_RETRY_AFTER: Partial<Record<Code, number>> = { busy: 30, service_unavailable: 30, server_error: 10 };
+const DEFAULT_RETRY_AFTER: Partial<Record<Code, number>> = { busy: 30, service_unavailable: 30, server_error: 10, maintenance: 600 };
 
 class Failure extends Error {
-  constructor(readonly code: Code, readonly retryAfter?: number, readonly detail?: string) { super(code); }
+  constructor(readonly code: Code, readonly retryAfter?: number, readonly detail?: string, readonly extra: Record<string, unknown> = {}) { super(code); }
 }
-const fail = (code: Code, retryAfter?: number, detail?: string): never => { throw new Failure(code, retryAfter, detail); };
+const fail = (code: Code, retryAfter?: number, detail?: string, extra?: Record<string, unknown>): never => {
+  throw new Failure(code, retryAfter, detail, extra);
+};
 
 function requestId(): string {
   const b = new Uint8Array(12); crypto.getRandomValues(b);
@@ -228,7 +262,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
     const cors: Record<string, string> = origin && deps.allowedOrigins.includes(origin)
       ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Expose-Headers': 'Retry-After' } : {};
     let protocol = 1;
-    let route = 'ingest';
+    let route: Route = 'ingest';
     try {
       if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST',
@@ -237,13 +271,15 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       if (request.method !== 'POST') fail('method_not_allowed');
       if (!deps.enabled) fail('service_unavailable');
       const path = new URL(request.url).pathname.replace(/\/+$/, '');
-      route = path.endsWith('/manifest') ? 'manifest' : (path.endsWith('/community-ingest') ? 'ingest' : fail('invalid_request'));
+      route = path.endsWith('/manifest') ? 'manifest' : path.endsWith('/progress') ? 'progress'
+        : (path.endsWith('/community-ingest') ? 'ingest' : fail('invalid_request'));
       if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) fail('unsupported_media_type');
       // 프로토콜 판정 규칙(contracts/community-ingest-v2/README.md): `Content-Encoding: gzip` 이면 v2 요청이다.
       // identity 본문은 v1·v2 모두 256KiB 상한이고 넘으면 인증·JSON 해석 전에 413(v1 의미 그대로).
       const encoding = (request.headers.get('content-encoding') || 'identity').trim().toLowerCase();
       const gzip = encoding === 'gzip';
-      const wireCap = gzip ? MAX_GZIP_WIRE : MAX_BODY;
+      // progress(2-1)는 identity 4KiB 까지만 받는다.
+      const wireCap = route === 'progress' ? PROGRESS_MAX_BYTES : gzip ? MAX_GZIP_WIRE : MAX_BODY;
       const declared = request.headers.get('content-length');
       if (declared !== null && declared.trim() !== '' && !(Number(declared) <= wireCap)) fail('payload_too_large');
       const m = /^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(request.headers.get('authorization') || '');
@@ -251,7 +287,7 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       const token = m![1];
       if (encoding !== 'identity' && !gzip) fail('unsupported_media_type');
       // v2 가 설정으로 꺼진 배포(공유 설정 없음)와 manifest(v1 전용)에서 gzip 은 다른 미지원 인코딩과 같은 415 이며 본문을 읽지 않는다.
-      if (gzip && (route === 'manifest' || (!deps.capabilities && deps.v2Enabled !== true))) fail('unsupported_media_type');
+      if (gzip && (route !== 'ingest' || (!deps.capabilities && deps.v2Enabled !== true))) fail('unsupported_media_type');
       const wire = await readBodyLimited(request, wireCap); // 선언이 없거나 거짓이어도 읽는 도중 상한에서 멈춘다(SOL-10)
       if (!wire) fail('payload_too_large');
       // identity 는 v1 순서대로 인증 전에 JSON 을 해석한다. gzip 은 인증·v2 확인 전에는 절대 풀지 않는다.
@@ -273,6 +309,29 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         protocol = 2;
       }
 
+      // 2-9 업로드 일시 중지: 모든 경로(v1·v2·manifest·progress)에서 DB 쓰기(rate limit 포함) 전에 공유 설정을 읽는다.
+      // gzip 은 이 판정 뒤에만 푼다. 설정 RPC 가 실패하면 중지가 아닌 것으로 본다(v2 는 아래에서 503 service_unavailable).
+      let capabilities: Capabilities | null = null;
+      if (deps.capabilities) {
+        try {
+          const c = await deps.capabilities();
+          if (!c || !Array.isArray(c.contracts)) throw new Error('capabilities_invalid');
+          capabilities = c;
+        } catch {
+          if (protocol === 2 && route === 'ingest') fail('service_unavailable');
+          // v1·manifest·progress 는 차단일·중지 없이 진행한다. 로그에는 결과 코드만 남긴다(오류 본문·키·토큰 없음).
+          deps.log?.({ event: 'community_ingest', route, outcome: 'capabilities_unavailable_v1_continue', request_id: rid });
+        }
+      }
+      const bodyApp = isObj(body) ? appOf(body.source_app) : 'unknown';
+      if (capabilities?.paused === true) {
+        const resumeAt = typeof capabilities.resume_at === 'string' && Number.isFinite(Date.parse(capabilities.resume_at))
+          ? new Date(Date.parse(capabilities.resume_at)).toISOString() : null;
+        await noteRejection(deps, 'maintenance', bodyApp, route);
+        fail('maintenance', maintenanceRetryAfter(resumeAt), undefined, { resume_at: resumeAt,
+          pause_message: typeof capabilities.pause_message === 'string' ? capabilities.pause_message : null });
+      }
+
       const userBucket = await sha256Hex(`ingest|user|${uid}`);
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: userBucket, p_limit: 60 }) !== true) fail('rate_limited', 60);
 
@@ -288,19 +347,18 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
         return json(200, { protocol: 1, ...r }, cors);
       }
 
-      // 공유 설정은 사용자 rate limit 뒤에, 필요한 요청(v2 전부·v1 ingest 의 차단일)에서만 읽는다.
-      let capabilities: Capabilities | null = null;
-      if (deps.capabilities) {
-        try {
-          const c = await deps.capabilities();
-          if (!c || !Array.isArray(c.contracts)) throw new Error('capabilities_invalid');
-          capabilities = c;
-        } catch {
-          if (protocol === 2) fail('service_unavailable');
-          // v1 은 차단일이 없는 것처럼 진행한다. 로그에는 결과 코드만 남긴다(오류 본문·키·토큰 없음).
-          deps.log?.({ event: 'community_ingest', route, outcome: 'capabilities_unavailable_v1_continue', request_id: rid });
-        }
+      if (route === 'progress') {
+        // 2-1 진행 보고: 저장만 한다(원장·사실·대기열 변경 없음). outdated 동의도 받고, 필수 버전 426 은 적용하지 않는다.
+        const parsed = parseProgress(body);
+        if (!parsed) fail('schema_invalid');
+        const r = await deps.rpc('internal_community_progress', { p_user: uid, p_session: session, p_connection: parsed!.connectionId,
+          p_report: parsed!.report }) as Record<string, unknown>;
+        if (r && r.error === 'rate_limited') fail('rate_limited', Math.max(1, Math.min(60, Number(r.retry_after) || 60)));
+        if (r && 'error' in r) fail(mapRpcError(String(r.error)));
+        deps.log?.({ event: 'community_ingest', route, outcome: 'ok', request_id: rid });
+        return json(200, { protocol: 1, stored: true, request_id: rid }, cors);
       }
+
       const v2On = capabilities ? capabilities.contracts.includes(2) : (!deps.capabilities && deps.v2Enabled === true);
       // 공유 설정이 v2 를 끈 경우(운영 되돌림 등)는 gzip 이어도 503 재시도: 클라이언트는 다음 status 확인에서 v1 로 돌아간다.
       if (protocol === 2 && !v2On) fail('service_unavailable');
@@ -327,6 +385,15 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
           typeof b.trigger !== 'string' || !(TRIGGERS.has(b.trigger) || (protocol === 2 && b.trigger === 'raw_backfill')) || !Array.isArray(b.events) ||
           b.events.length < 1 || b.events.length > 20 ||
           (protocol === 2 && (hasLoneSurrogate(b.client_version) || hasLoneSurrogate(b.parser_version)))) fail('schema_invalid');
+      // 2-10 필수 버전: envelope 버전이 지금 적용 중인 요구보다 낮으면 426(구버전 포함). 해석 못 하는 버전은 막지 않는다.
+      const required = requiredVersionFor(capabilities?.client_requirement, b.source_app, b.client_version);
+      if (required) {
+        const app = appOf(b.source_app);
+        const req = capabilities!.client_requirement!;
+        await noteRejection(deps, 'client_upgrade_required', app, route);
+        fail('client_upgrade_required', undefined, undefined, { required_version: required,
+          update_url: app === 'unknown' ? null : (req.url?.[app] ?? null), update_message: req.message ?? null });
+      }
       const connBucket = await sha256Hex(`ingest|conn|${b.connection_id}`);
       if (await deps.rpc('internal_community_ingest_rate_limit', { p_bucket: connBucket, p_limit: 60 }) !== true) fail('rate_limited', 60);
 
@@ -410,9 +477,17 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
       const retryAfter = f.retryAfter ?? DEFAULT_RETRY_AFTER[f.code];
       const headers: Record<string, string> = { ...cors, ...(retryAfter ? { 'Retry-After': String(retryAfter) } : {}) };
       return json(HTTP[f.code], { error: { code: f.code, message: MESSAGE[f.code] ?? 'Request failed.', request_id: rid,
-        retryable: RETRYABLE.has(f.code), ...(retryAfter ? { retry_after_seconds: retryAfter } : {}) } }, headers);
+        retryable: RETRYABLE.has(f.code), ...(retryAfter ? { retry_after_seconds: retryAfter } : {}), ...f.extra } }, headers);
     }
   };
+}
+
+function appOf(sourceApp: unknown): 'pc' | 'mobile' | 'unknown' {
+  return sourceApp === 'safetyreport' ? 'pc' : sourceApp === 'safetyreport-mobile' ? 'mobile' : 'unknown';
+}
+
+async function noteRejection(deps: IngestDeps, code: 'maintenance' | 'client_upgrade_required', app: 'pc' | 'mobile' | 'unknown', route: Route) {
+  try { await deps.noteRejection?.(code, app, route); } catch { /* 진단용 숫자일 뿐: 응답에 영향 없음 */ }
 }
 
 function mapRpcError(code: string): Code {
@@ -429,4 +504,6 @@ const MESSAGE: Partial<Record<Code, string>> = {
   writer_superseded: 'Another device took over uploading.', rate_limited: 'Too many requests.',
   payload_hash_mismatch: 'Payload hash does not match the canonical serialization.', schema_invalid: 'Request does not match the contract.',
   busy: 'Service is busy, retry shortly.',
+  maintenance: 'Uploads are paused for server maintenance. They resume automatically.',
+  client_upgrade_required: 'This app version can no longer upload. Please update the app.',
 };

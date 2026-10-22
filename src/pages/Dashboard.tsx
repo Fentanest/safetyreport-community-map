@@ -5,6 +5,7 @@ import { ACCESS_CODES, PublicApiError, dataMode, entitiesAvailable, screenCoordi
 import type { RequestSource } from '../data/refreshController';
 import type { ScreenPanel } from '../data/screenCoordinator';
 import AccessGate from '../components/AccessGate';
+import UploadPauseBanner from '../components/UploadPauseBanner';
 import ClientUpdateNotice from '../components/ClientUpdateNotice';
 import {
   CATEGORY_LABEL, basisFromSearch, baseScope, draftFromScope, fixtureFromSearch, lawLabel, lawOptions, regionCounts, regionLabel, scopeFromDraft,
@@ -790,6 +791,7 @@ export default function Dashboard() {
       <div className="app">
         <AppNav variant="bottom" screen={screen} onScreen={goScreen} onAbout={() => goDashboard('guide')} />
         <main id="main" data-screen={screen}>
+          <UploadPauseBanner />
           <ClientUpdateNotice audience="contributor" />
           <DevelopmentProfiler id="dashboard"><div className="dashboard-screen" hidden={screen !== 'dashboard'}>
           {/* 2026-10-17: the dashboard column + a sticky ad rail on the right (wide screens only; the map banner stays centred in the column) */}

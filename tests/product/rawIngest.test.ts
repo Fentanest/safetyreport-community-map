@@ -83,12 +83,12 @@ describe('private raw v2 reception',()=>{
     expect((await createIngestHandler(on)(gzRequest(gzipSync(Buffer.from('{}')),'/functions/v1/community-ingest/manifest'))).status).toBe(415);
     expect(onCalls).toHaveLength(0);
   });
-  it('gzip when the shared switch says v2 is off: auth → rate limit → capabilities → 503 retryable, never inflated',async()=>{
+  it('gzip when the shared switch says v2 is off: auth → capabilities → rate limit → 503 retryable, never inflated',async()=>{
     const {deps,calls}=setup(false);
     deps.capabilities=async()=>{calls.push({name:'capabilities',args:{}});return {contracts:[1]};};
     const r=await createIngestHandler(deps)(gzRequest(bomb));
     expect(r.status).toBe(503);expect((await r.json()).error).toMatchObject({code:'service_unavailable',retryable:true});
-    expect(calls.map(c=>c.name)).toEqual(['getUser','internal_community_ingest_rate_limit','capabilities']);
+    expect(calls.map(c=>c.name)).toEqual(['getUser','capabilities','internal_community_ingest_rate_limit']);
   });
   it('gzip bomb with v2 on is rejected 413 after auth; nothing is inflated for an unauthenticated caller',async()=>{
     const {deps,calls}=setup(true);
@@ -209,7 +209,7 @@ describe('private raw v2 reception',()=>{
     expect(await rawEventFingerprint({...e,raw:{...e.raw,source:'recovery'}})).not.toBe(sha);
   });
   it('worker derivation equals every v1 observation vector',async()=>{
-    const vectors=JSON.parse(readFileSync('server/parser-py/contracts/derived-v1.json','utf8'));
+    const vectors=JSON.parse(readFileSync('contracts/parser/derived-v1.json','utf8'));
     for(const c of vectors)expect(await deriveFact(c.payload as Observation),c.name).toEqual(c.derived);
   });
   it('public handlers/read models never import or read the raw/parsed stores',()=>{

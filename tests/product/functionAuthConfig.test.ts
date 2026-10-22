@@ -8,13 +8,15 @@ const manifest = JSON.parse(readFileSync(new URL('docs/integration/community-ing
 };
 
 describe('deployed Edge function authentication configuration', () => {
-  it('requires user JWTs for every data and account function; only the pre-login relay and the Kakao unlink webhook (KakaoAK admin key) skip the gateway JWT', () => {
+  it('requires user JWTs for every data and account function; only the pre-login relay, the Kakao unlink webhook (KakaoAK admin key) and the public app announcements skip the gateway JWT', () => {
     const flags = Object.fromEntries(manifest.functions.map(fn => [fn.name, fn.verify_jwt]));
     expect(flags).toEqual({
       'public-analytics': true, 'my-analytics': true, 'community-ingest': true,
       'community-account': true, 'community-auth-relay': false, 'my-reports': true, 'user-rankings': true,
-      'community-kakao-unlink': false,
+      'community-kakao-unlink': false, 'app-announcements': false,
     });
+    // app-announcements (2026-10-22) is public on purpose: no user token, no personal data, read-only RPC.
+    expect(config).toMatch(/\[functions\.app-announcements\]\s+verify_jwt = false/);
     for (const name of ['public-analytics', 'my-analytics', 'community-ingest', 'my-reports', 'user-rankings']) {
       expect(config).toMatch(new RegExp(`\\[functions\\.${name}\\]\\s+verify_jwt = true`));
     }

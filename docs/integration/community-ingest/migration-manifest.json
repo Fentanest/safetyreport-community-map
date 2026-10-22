@@ -710,6 +710,26 @@
     "202609281700",
     "202610210100"
    ]
+  },
+  {
+   "version": "202610220100",
+   "repo": "auth",
+   "path": "supabase/migrations/202610220100_setup_progress_client_seen.sql",
+   "sha256": "89c0442639e89f7f5b135d803f21c57f78fe31bc8fc29e18c27759179439f17f",
+   "depends_on": [
+    "202609260100",
+    "202610210300"
+   ]
+  },
+  {
+   "version": "202610220200",
+   "repo": "map",
+   "path": "supabase/migrations/202610220200_backfill_resume_ops.sql",
+   "sha256": "3a9b78269eade27f9b9f1a19638cc16b8be18ab875fad12f5bdf23e59bb93b6a",
+   "depends_on": [
+    "202610210100",
+    "202610220100"
+   ]
   }
  ],
  "functions": [
@@ -752,7 +772,9 @@
     "shared/agency-region-registry/data/agency_links.json",
     "shared/agency-region-registry/manifest.json",
     "shared/agency-region-registry/resolvers/resolve.ts",
-    "server/ingest/raw.ts"
+    "server/ingest/raw.ts",
+    "server/ingest/progress.ts",
+    "server/ingest/version.ts"
    ]
   },
   {
@@ -789,7 +811,8 @@
     "server/aggregate.ts",
     "server/amount.ts",
     "server/analyticsDistributions.ts",
-    "server/clientStatus.ts", "server/compare.ts",
+    "server/clientStatus.ts",
+    "server/compare.ts",
     "server/duration.ts",
     "server/personalHandler.ts",
     "server/places.ts",
@@ -844,6 +867,15 @@
     "server/kakaoUnlink.ts",
     "server/protocol.ts",
     "server/relay.ts"
+   ]
+  },
+  {
+   "name": "app-announcements",
+   "repo": "map",
+   "verify_jwt": false,
+   "shared": [
+    "server/announcements/handler.ts",
+    "server/ingest/version.ts"
    ]
   }
  ]

@@ -6,6 +6,7 @@ import AdBanner from './AdBanner';
 import newsQuote from '../assets/gate-news-quote.jpg';
 import doctorHeli from '../assets/gate-doctor-heli.jpg';
 import ClientUpdateNotice, { ClientUpdateContext } from './ClientUpdateNotice';
+import UploadPauseBanner from './UploadPauseBanner';
 
 interface Props {
   code: AccessCode;
@@ -78,6 +79,7 @@ export default function AccessGate({ code, auth, onSignIn, onSignOut, onRetry, p
           </>
         ) : code === 'upload_required' ? (
           <>
+            <UploadPauseBanner />
             <ClientUpdateNotice audience="contributor" />
             <p className="access-lead" role="alert">
               {auth.displayName ? `${auth.displayName} 계정은` : '이 계정은'}{' '}

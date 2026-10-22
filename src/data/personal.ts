@@ -293,15 +293,31 @@ export const clientNoticeSchema = z.strictObject({
   url: z.strictObject({ pc: z.string().max(2048).nullable(), mobile: z.string().max(2048).nullable() }),
   deadline: z.string().max(64).nullable(),
 });
+// 2026-10-22: upload pause banner (2-9) and the required-version gate (2-10). Optional so an older server answer still
+// parses (no banner, no gate); the server decides `blocked`, the page only follows it.
+export const uploadPauseSchema = z.strictObject({ paused: z.boolean(), message: z.string().max(1200).nullable(), resume_at: z.string().max(64).nullable() });
+export const updateGateSchema = z.strictObject({
+  blocked: z.boolean(),
+  min_version: z.strictObject({ pc: nullableText(40), mobile: nullableText(40) }),
+  url: z.strictObject({ pc: z.string().max(2048).nullable(), mobile: z.string().max(2048).nullable() }),
+  message: z.string().max(1200).nullable(),
+});
 export const clientStatusSchema = z.strictObject({
   consent: z.enum(['active', 'outdated', 'none', 'revoked']),
   last_contract: z.string().max(64).nullable(),
   v1_connections: z.number().int().nonnegative(),
   v2_enabled: z.boolean(),
   notice: clientNoticeSchema.nullable(),
+  upload_pause: uploadPauseSchema.optional(),
+  update_gate: updateGateSchema.nullable().optional(),
 });
 export type ClientNotice = z.infer<typeof clientNoticeSchema>;
-export type ClientStatus = z.infer<typeof clientStatusSchema>;
+export type UploadPause = z.infer<typeof uploadPauseSchema>;
+export type UpdateGate = z.infer<typeof updateGateSchema>;
+export type ClientStatus = Omit<z.infer<typeof clientStatusSchema>, 'upload_pause' | 'update_gate'> & {
+  upload_pause: UploadPause;
+  update_gate: UpdateGate | null;
+};
 
 /** https link or null — any other scheme (javascript:, http:, data:) is never rendered. */
 export function safeHttpsUrl(value: string | null): string | null {
@@ -313,7 +329,15 @@ export function safeHttpsUrl(value: string | null): string | null {
 }
 
 export function acceptClientStatus(raw: unknown): ClientStatus {
-  const s = clientStatusSchema.parse(raw);
+  const parsed = clientStatusSchema.parse(raw);
+  const pause = parsed.upload_pause?.paused
+    ? { paused: true, message: parsed.upload_pause.message?.trim() ? parsed.upload_pause.message : null,
+        resume_at: parsed.upload_pause.resume_at && Number.isFinite(Date.parse(parsed.upload_pause.resume_at)) ? parsed.upload_pause.resume_at : null }
+    : { paused: false, message: null, resume_at: null };
+  const g = parsed.update_gate ?? null;
+  const gate = g ? { ...g, message: g.message?.trim() ? g.message : null,
+    url: { pc: safeHttpsUrl(g.url.pc), mobile: safeHttpsUrl(g.url.mobile) } } : null;
+  const s: ClientStatus = { ...parsed, upload_pause: pause, update_gate: gate };
   if (!s.notice || !s.notice.message.trim()) return { ...s, notice: null };
   return { ...s, notice: { ...s.notice, url: { pc: safeHttpsUrl(s.notice.url.pc), mobile: safeHttpsUrl(s.notice.url.mobile) } } };
 }

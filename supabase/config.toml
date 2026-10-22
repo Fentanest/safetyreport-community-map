@@ -17,3 +17,8 @@ verify_jwt = true
 # Contributor-gated aggregate ranks; platform JWT + getUser + DB map eligibility on every page.
 [functions.user-rankings]
 verify_jwt = true
+
+# Public app announcements (2026-10-22, contracts/app-announcements): no user token, publishable key only. The handler
+# reads one read-only RPC with the server key; the 206 router needs the same JWT exception as community-auth-relay.
+[functions.app-announcements]
+verify_jwt = false

@@ -449,3 +449,35 @@ dry-run/apply 재실행 순서다. singleton만 되돌리면 facts의 새 파생
   205 개인 서버를 3.6.1 로 갱신(공유 기록 DB 사전 백업 `/docker/safetyreport/data_backup_20261021_pre360/`).
   릴리스 노트(PC 3.6.0·3.6.1, 모바일 2.5.0)를 사용자 관점으로 다시 쓰고 Play production(빌드 179) '새로운 기능' 문구도 교체했다.
 - 남은 일: 실제 재동의 사용자의 원본 1회 전송·워커 파싱 운영 관찰, 구버전(v1) 차단일 결정.
+
+## 2026-10-22 · 1회 전송 재개·점검 스위치·필수 버전·공지·운영 콘솔 (미배포, 적용 순서 제안)
+
+작업지시서 `docs/tasks/backfill-resume-20261022.md`, 보고 `docs/implementation/backfill-resume-20261022/A-REPORT.md`. 각 단계는 사용자 승인 뒤.
+
+1. migration: auth `202610220100_setup_progress_client_seen.sql` → 지도 `202610220200_backfill_resume_ops.sql`(지도 쪽이 auth 의 `community_note_client`·
+   `community_setup_progress`·`community_client_seen` 을 쓴다). 적용 직후 `select public.internal_community_ingest_capabilities();` 에
+   `paused:false`·`client_requirement:null` 이 보이는지, pg_cron `community-progress-history-prune` 등록을 확인한다.
+2. Edge(교체 파일):
+   - `community-ingest`: `server/ingest/handler.ts`·`progress.ts`(새)·`version.ts`(새)·`index.ts`. 순서 바뀜: 인증 직후 공유 설정을 읽는다(중지면 503).
+   - `my-analytics`: `server/clientStatus.ts`·`personalHandler.ts`(client-status 에 `upload_pause`·`update_gate`). **지도 웹(Pages)도 바로 이어서 배포**한다 —
+     예전 웹은 새 키를 모르는 응답을 버려 업데이트 안내만 사라진다(지도 열람에는 영향 없음).
+   - `community-account`(auth `server/account.ts`): setup-progress·버전 헤더·status 의 중지/필수 버전.
+   - 새 `app-announcements`(`server/announcements/handler.ts`·`server/ingest/version.ts`). 206 라우터 `volumes/functions/main/index.ts` 는
+     `VERIFY_JWT=true` 이므로 `community-auth-relay`·`community-kakao-unlink` 와 같은 **JWT 예외 목록에 `app-announcements` 를 넣는다**
+     (공개 키만으로 읽는 공개 함수, 개인정보 없음, `Cache-Control: max-age=300`). 확인: 토큰 없이 `GET …/app-announcements?app=pc&mode=server&platform=windows&version=3.6.2` 200.
+3. 운영 콘솔 DB 준비: `docs/operations/ops-console-db.md`(로그인 역할 켜기, 첫 관리자 한 줄). 비상 SQL: `docs/operations/emergency.sql`.
+4. PC 3.6.2 → 모바일 2.5.1 출시.
+5. 파서 워커: 이제 **파서 레포(`Fentanest/safetyreport-community-parser`) 커밋 기준으로 빌드**한다. 지도 레포 git archive(`server/parser-py`)는 더 쓰지 않는다.
+   빌드 인자 `MAP_REF`(기본값: 파서 레포 `deploy/map-ref`)의 지도 커밋에서 `shared/agency-region-registry/`·`contracts/parser/` 를 받아 지도 MANIFEST 해시와
+   비교하고, 다르면 빌드가 실패한다. 이미지 태그는 파서 레포 커밋 기준(`community-parser:<파서 커밋>`). 기동 때 DB registry 버전 검사는 그대로.
+6. 운영 콘솔 배포(콘솔 레포, LAN 바인드)·첫 관리자 등록 → `client_notice` 최소 버전을 PC 3.6.2 / 모바일 2.5.1 로 → 콘솔에서 첫 공지 두 개 게시.
+
+### 변경 체크리스트 추가 (2026-10-22부터)
+- 처리기관-지역 목록(`shared/agency-region-registry/`)이나 파서 계약(`contracts/parser/`)을 바꾸는 변경은 **파서 레포 `deploy/map-ref` 를 그 지도 커밋으로 갱신**하고
+  파서 이미지를 다시 빌드한다(안 하면 워커가 옛 목록·계약으로 돈다).
+- `contracts/app-announcements/`·`contracts/parser/` 를 바꾸면 `python3 scripts/check_contract_manifests.py --write <폴더>`, v2 계약은 `generate_contract.py`.
+- `v1_sunset` 과 필수 버전(`client_requirement`)을 함께 쓰지 않는다. v1 차단은 필수 버전(PC 3.6.0 / 모바일 2.5.0 이상)으로 한다.
+
+### 한계
+- 이미 배포된 구버전(PC 3.6.1 이하·모바일 2.5.0 이하)에는 앱 잠금·공지·진행 보고가 없다. 구버전에 듣는 것은 업로드 503·426 과 지도 웹 안내뿐이다.
+- 지도 웹의 필수 버전 판정은 `client-status` 가 하고 지도 웹이 따르는 방식이라, 지도 데이터 API 자체는 버전으로 막지 않는다.

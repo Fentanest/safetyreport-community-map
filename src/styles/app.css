@@ -576,3 +576,12 @@ td.mine-col small, th.mine-col small { color: inherit; opacity: 0.85; }
 .ad-map { margin-top: var(--card-gap, 16px); }
 /* the line banner fills the column up to its own 1030px design width, centred */
 .ad-below { max-width: 1030px; }
+
+/* 2026-10-22: server maintenance banner (uploads paused, map stays open) and the required-version screen */
+.upload-pause-banner { border: 1px solid var(--border); border-left: 4px solid var(--partial); border-radius: var(--radius-md);
+  background: var(--raised); color: var(--text); padding: 10px 14px; margin: 0 0 12px; display: grid; gap: 4px; font-size: 14px; line-height: 1.6; }
+.upload-pause-banner p { margin: 0; }
+.upload-pause-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); letter-spacing: 0.02em; }
+.upload-pause-message, .upload-pause-note, .update-required-note { white-space: pre-line; overflow-wrap: anywhere; }
+.upload-pause-note { font-size: 13px; color: var(--muted); }
+.update-required-note { border-left: 3px solid var(--border); padding-left: 10px; }

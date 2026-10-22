@@ -1,0 +1,7 @@
+# 2026-10-22: 문의·버그 제보·공유 신고 삭제 요청은 모바일 레포 이슈로 일원화했다. 이 레포에서는 빈 이슈를 막고 그쪽으로 안내한다.
+# (지도 레포 이슈 기능 자체는 운영자가 GitHub 설정에서 끈다. 동의문에 남은 이 레포 주소로 들어온 사람도 여기서 안내를 본다.)
+blank_issues_enabled: false
+contact_links:
+  - name: 문의·버그 제보·공유 신고 삭제 요청
+    url: https://github.com/Fentanest/safetyreport-mobile/issues/new/choose
+    about: 문의는 safetyreport-mobile 에 남겨 주세요. 누구나 볼 수 있는 게시판이니 카카오 계정·차량번호·신고번호 같은 개인정보는 적지 마세요.

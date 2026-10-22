@@ -1,6 +1,8 @@
 // `GET /my-analytics/client-status` (2026-10-21): the map web's own read of the app-update guidance.
 // The map never calls the account API (PROJECT_RULES 7); this route reads the shared ingest settings through
-// `public.internal_map_client_state(p_user)` and returns exactly its five fields after strict validation.
+// `public.internal_map_client_state(p_user)` and returns exactly its seven fields after strict validation.
+// 2026-10-22: `upload_pause` (2-9 maintenance banner) and `update_gate` (2-10 required version: the map web shows the
+// update screen instead of the map while `blocked`). The decision is made in SQL (community_user_meets_requirement).
 // Notice shape: contracts/community-ingest-v2/client-notice.schema.json. Links are https only (others become null).
 
 export type ClientConsent = 'active' | 'outdated' | 'none' | 'revoked';
@@ -11,12 +13,21 @@ export interface ClientNotice {
   url: { pc: string | null; mobile: string | null };
   deadline: string | null;
 }
+export interface UploadPause { paused: boolean; message: string | null; resume_at: string | null }
+export interface UpdateGate {
+  blocked: boolean;
+  min_version: { pc: string | null; mobile: string | null };
+  url: { pc: string | null; mobile: string | null };
+  message: string | null;
+}
 export interface ClientStatus {
   consent: ClientConsent;
   last_contract: string | null;
   v1_connections: number;
   v2_enabled: boolean;
   notice: ClientNotice | null;
+  upload_pause: UploadPause;
+  update_gate: UpdateGate | null;
 }
 
 const CONSENT: ReadonlySet<string> = new Set(['active', 'outdated', 'none', 'revoked']);
@@ -54,6 +65,28 @@ export function parseClientNotice(v: unknown): ClientNotice | null {
   };
 }
 
+const shortText = (v: unknown, max: number): string | null =>
+  typeof v === 'string' && v.trim() && [...v].length <= max && !/[\u0000-\u001f\u007f]/.test(v) ? v : null;
+const isoText = (v: unknown): string | null =>
+  typeof v === 'string' && Number.isFinite(Date.parse(v)) ? new Date(Date.parse(v)).toISOString() : null;
+
+/** Missing/odd pause data reads as "not paused" (a banner only; it never blocks the map). */
+export function parseUploadPause(v: unknown): UploadPause {
+  if (!obj(v) || v.paused !== true) return { paused: false, message: null, resume_at: null };
+  return { paused: true, message: shortText(v.message, 300), resume_at: isoText(v.resume_at) };
+}
+
+/** null when there is no requirement in force; undefined when the value is unusable (the route answers 503). */
+export function parseUpdateGate(v: unknown): UpdateGate | null | undefined {
+  if (v === null || v === undefined) return null;
+  if (!obj(v) || typeof v.blocked !== 'boolean') return undefined;
+  const { min_version: min, url } = v;
+  if (!obj(min) || !obj(url)) return undefined;
+  if ((min.pc !== null && version(min.pc) === null) || (min.mobile !== null && version(min.mobile) === null)) return undefined;
+  return { blocked: v.blocked, min_version: { pc: version(min.pc), mobile: version(min.mobile) },
+    url: { pc: httpsUrl(url.pc), mobile: httpsUrl(url.mobile) }, message: shortText(v.message, 300) };
+}
+
 /** Strict decode of the RPC result; null when the database answer is unusable (the route then answers 503). */
 export function parseClientStatus(v: unknown): ClientStatus | null {
   if (!obj(v)) return null;
@@ -62,6 +95,9 @@ export function parseClientStatus(v: unknown): ClientStatus | null {
   if (last !== null && last !== undefined && (typeof last !== 'string' || last.length > 64)) return null;
   if (typeof v1 !== 'number' || !Number.isInteger(v1) || v1 < 0) return null;
   if (typeof v2 !== 'boolean') return null;
+  const gate = parseUpdateGate(v.update_gate);
+  if (gate === undefined) return null;
   return { consent: consent as ClientConsent, last_contract: (last as string | null | undefined) ?? null, v1_connections: v1,
-    v2_enabled: v2, notice: v.notice === null || v.notice === undefined ? null : parseClientNotice(v.notice) };
+    v2_enabled: v2, notice: v.notice === null || v.notice === undefined ? null : parseClientNotice(v.notice),
+    upload_pause: parseUploadPause(v.upload_pause), update_gate: gate };
 }

@@ -21,7 +21,8 @@ const token = (claims: Record<string, unknown> = {}) => `${b64({ alg: 'HS256' })
 const notice = (url: { pc: string | null; mobile: string | null } = { pc: PC, mobile: MOBILE }, level = 'warning') => ({
   level, message: '서버가 보낸 안내 문구', min_version: { pc: '9.1.0', mobile: '9.2.0' }, url, deadline: null });
 const rpcState = (over: Record<string, unknown> = {}) =>
-  ({ consent: 'outdated', last_contract: 'community-ingest-v1', v1_connections: 1, v2_enabled: true, notice: notice(), ...over });
+  ({ consent: 'outdated', last_contract: 'community-ingest-v1', v1_connections: 1, v2_enabled: true, notice: notice(),
+    upload_pause: { paused: false, message: null, resume_at: null }, update_gate: null, ...over });
 
 function setup(state: unknown = rpcState(), over: Partial<PersonalDeps> = {}, viewer: Record<string, unknown> = {}) {
   const calls: Array<[string, Record<string, unknown>]> = [];
@@ -47,14 +48,14 @@ const req = (path = '/functions/v1/my-analytics/client-status', init: { method?:
 };
 
 describe('GET /my-analytics/client-status (server)', () => {
-  it('returns exactly the five fields of internal_map_client_state for the verified user only', async () => {
+  it('returns exactly the seven fields of internal_map_client_state for the verified user only', async () => {
     const { handle, calls } = setup();
     const res = await handle(req());
     expect(res.status).toBe(200);
     expect(res.headers.get('access-control-allow-origin')).toBe(ORIGIN);
     expect(res.headers.get('cache-control')).toContain('no-store');
     const body = await res.json();
-    expect(Object.keys(body).sort()).toEqual(['consent', 'last_contract', 'notice', 'v1_connections', 'v2_enabled']);
+    expect(Object.keys(body).sort()).toEqual(['consent', 'last_contract', 'notice', 'update_gate', 'upload_pause', 'v1_connections', 'v2_enabled']);
     expect(body).toEqual(rpcState());
     expect(calls.find(([n]) => n === 'internal_map_client_state')?.[1]).toEqual({ p_user: UID });
     // own rate bucket, separate from compare/statistics

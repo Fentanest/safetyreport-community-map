@@ -216,7 +216,7 @@ tail = (ROOT/'scripts/raw-ingest/migration_tail.sql').read_text()
 tail = sub(tail, '    -- @@PARSED_UPSERT@@\n', parsed_upsert)
 
 # Kept as source-controlled mapping for worker/tests, not a runtime generated schema.
-(ROOT / 'server/parser-py/parsed_columns.json').write_text(__import__('json').dumps(list(columns), indent=2)+'\n')
+(ROOT / 'contracts/parser/parsed_columns.json').write_text(__import__('json').dumps(list(columns), indent=2)+'\n')
 (ROOT / 'supabase/migrations/202610210100_raw_json_ingest.sql').write_text(
     header + '\n' + helper + '\n' + user_changed + '\n' + v1 + '\n' + tail + '\n'
     + (ROOT/'scripts/raw-ingest/v2_rpc.sql').read_text() + '\ncommit;\n')

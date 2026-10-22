@@ -2,7 +2,8 @@ import type { DashboardData } from '../domain/public';
 import { fmtDate } from './format';
 
 /** Deletion requests and questions (public board; user decision 2026-09-27). */
-export const ISSUES_URL = 'https://github.com/Fentanest/safetyreport-community-map/issues';
+// 2026-10-22 사용자 결정: 문의·버그·삭제 요청은 모바일 레포 이슈로 일원화(지도 레포 이슈는 쓰지 않는다).
+export const ISSUES_URL = 'https://github.com/Fentanest/safetyreport-mobile/issues';
 
 /** Plain-language names for features the data source does not provide yet (never show internal keys). */
 const NOT_YET: Record<string, string> = {

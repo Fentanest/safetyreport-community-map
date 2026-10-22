@@ -386,7 +386,7 @@ describe('v1 under the production-like config (capabilities injected)', () => {
     expect(calls).toEqual([]);
   });
 
-  it('keeps the v1 order: JSON 400 before auth, user rate limit before capabilities, then conn rate limit and the write', async () => {
+  it('keeps the v1 order: JSON 400 before auth, capabilities (pause switch) before any write, then rate limits and the write', async () => {
     const { handler, calls } = prod();
     const bad = await handler(oversized({}, '{"protocol":1,'));
     expect(bad.status).toBe(400);
@@ -395,14 +395,15 @@ describe('v1 under the production-like config (capabilities injected)', () => {
 
     const ok = await handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
     expect(ok.status).toBe(200);
-    expect(calls).toEqual(['getUser', 'internal_community_ingest_rate_limit', 'capabilities', 'internal_community_ingest_rate_limit',
+    // 2026-10-22: the shared settings are read right after auth so a paused switch answers before the rate-limit write.
+    expect(calls).toEqual(['getUser', 'capabilities', 'internal_community_ingest_rate_limit', 'internal_community_ingest_rate_limit',
       'internal_community_ingest']);
     // without capabilities (tests above) the sequence is the same minus the capabilities read
     const plain = setup();
     await plain.handler(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
     expect(plain.calls.map(c => c.name)).toEqual(['internal_community_ingest_rate_limit', 'internal_community_ingest_rate_limit',
       'internal_community_ingest']);
-    // a user over the limit never reaches the capabilities RPC
+    // a user over the limit is still refused (a failing capabilities read lets v1 continue to the rate limit)
     const limited = createIngestHandler({ enabled: true, jwtIssuer: null, allowedOrigins: [], getUser: async () => ({ id: UID, isAnonymous: false }),
       capabilities: async () => { throw new Error('must not be called'); }, rpc: async () => false });
     const r = await limited(post(await envelope([await event('7d9f3b52-1c4e-4a8b-9f0e-2a3b4c5d6e7f')])));
@@ -430,13 +431,13 @@ describe('v1 under the production-like config (capabilities injected)', () => {
     expect(JSON.stringify(logs)).not.toMatch(/private-detail|PGRST301|Bearer|SPP-/);
   });
 
-  it('manifest never reads capabilities (even when it is failing)', async () => {
+  it('manifest reads capabilities only for the pause switch and continues when it is failing', async () => {
     const { handler, calls } = prod(async () => { throw new Error('down'); },
       () => ({ dataset_key: 'd', total: 0, manifest_token: '0', key_prefixes: [], next_after: null }));
     const res = await handler(post({ protocol: 1, connection_id: '11111111-2222-3333-4444-555555555555', after: null, limit: 10 }, jwt(claims),
       '/functions/v1/community-ingest/manifest'));
     expect(res.status).toBe(200);
-    expect(calls).not.toContain('capabilities');
+    expect(calls.slice(0, 2)).toEqual(['getUser', 'capabilities']);
   });
 
   it('v1 sunset from capabilities: 426 client_upgrade_required once passed, accepted before', async () => {

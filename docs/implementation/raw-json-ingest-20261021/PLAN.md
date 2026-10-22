@@ -174,7 +174,7 @@ v1 이벤트 키(`event_id, event_type, source_system, source_report_id, report_
 
 ## 6. 206 파서 워커
 
-- 위치: 지도 레포 `server/parser-py/`. Python 3.12, 표준 라이브러리 + psycopg. 206 에 컨테이너 하나로 띄운다(Coolify 또는 supabase compose 옆).
+- 위치: 지도 레포 `server/parser-py/`(2026-10-22 비공개 파서 레포로 옮김 — 15절). Python 3.12, 표준 라이브러리 + psycopg. 206 에 컨테이너 하나로 띄운다(Coolify 또는 supabase compose 옆).
 - 파서 복사본: PC `services/parser.py, report_category.py, fine_amount_syntax.py, case_fine_supplement.py, law_values.py, law_citations.py,
   law_selection.py, fine_estimate.py, plate_normalize.py` 와 `community_capture.py` 의 DTO 생성부(`build_adapter_input`·`build_payload`)를
   복사한다. 이 모듈들은 표준 라이브러리만 쓴다(`community_capture.py` 의 `core.utils.fallback` 만 작은 대체 함수로 바꾼다).
@@ -361,3 +361,24 @@ PC·모바일 같은 규칙, 같은 판정 벡터(`contracts/community-ingest-v2
   행 자체를 지우면 오래된 v1 재시도가 새 이벤트가 되어 멱등성이 깨진다. 최소 메타의 보관 문구는 정책 초안에 명시했다.
 - P6/P7과 실제 UI 브라우저·AVD 검수는 이 로컬 작업의 검수자가 수행한다. P4/P5의 raw_backfill A/B/C 및
   모든 capture 호출 지점 대응은 아직 완료되지 않았으며, 이 정정이 범위를 완료 처리하는 근거는 아니다.
+
+## 15. 2026-10-22 변경 (작업지시서 `docs/tasks/backfill-resume-20261022.md`)
+
+정본 규칙: `docs/implementation/backfill-resume-20261022/CLIENT-RULES.md`(앱), `OPS-DB-API.md`(운영 콘솔). 위 절과 다르면 이 절이 우선이다.
+
+- **6절 파서 워커 위치**: 지도 레포 `server/parser-py/` 에서 비공개 레포 `Fentanest/safetyreport-community-parser` 로 옮겼다(이력째 분리).
+  DB 스키마·투영 함수는 지도 migration 에 남고, 파서와 지도가 함께 지키는 파일(`parsed_columns.json`, `derived-v1.json`, `parser-vectors.json`)은
+  지도 `contracts/parser/` 가 정본이다. 처리기관 목록과 이 폴더는 파서 레포가 빌드·CI 때 `MAP_REF`(파서 레포 `deploy/map-ref`) 커밋에서 내려받아 해시를 비교한다.
+- **7-2 1회 전송**: "실패는 3회 뒤 holds" 를 바꾼다. 오류를 일시적(네트워크·시간 초과·5xx·429·`result` 없음·`sync_busy`·DB 잠김·점검)과
+  고정적(파서 예외 등)으로 나누고, 일시적 오류는 신고별 횟수에 넣지 않고 run 을 `paused`(1→5→15→60분)로 둔다. 고정적 오류만 3회면 `hold`,
+  `hold` 는 15분→1시간→6시간→24시간 뒤 자동으로 다시 시도한다(30일 넘으면 `stale` 표시만). 업로드 확인 3회 `retry` 는 `not_eligible` 이 아니라 `hold`.
+  새 버전 첫 실행에 멈춘 기기를 한 번 풀어 준다(보류·`upload_rejected`·`paused` 대기 초기화). 채우기 slice 가 새 이벤트를 만들면 업로더를 깨운다.
+- **진행·설정 단계 보고**: 기기 안의 진행 상태를 서버에서 보도록 `POST /community-ingest/progress`(연결별, `last_progress`·진행 기록 30일/200건)와
+  auth `POST /community-account/setup-progress`(연결 전 단계, 사용자당 1행)를 더했다. 앱 버전은 community-account 요청 헤더
+  (`X-Client-Version`·`X-Client-App`)로도 기록한다(`private.community_client_seen`).
+- **업로드 일시 중지**: `community_ingest_config.uploads_paused`·`pause_resume_at`. 중지면 v1·v2·manifest·progress 가 DB 쓰기 전에 503 `maintenance`.
+  재개 시각이 지나면 읽는 쪽이 판정해 조작 없이 재개한다. status `ingest.paused`.
+- **9절 구버전 차단**: `v1_sunset` 대신 필수 버전(`community_ingest_config.client_requirement`)을 쓴다. 요구 버전보다 낮은 v1·v2 업로드는 426,
+  지도 웹은 최근 30일 안에 요구 버전 이상 앱이 확인되지 않은 사용자에게 업데이트 안내 화면을 보인다. 요구를 PC 3.6.0 / 모바일 2.5.0 이상으로 두면
+  v1 은 전부 막히므로 `v1_sunset` 은 null 로 둔다(둘을 함께 쓰지 않는다). 앱 잠금은 PC 3.6.2·모바일 2.5.1 부터 실제로 동작한다.
+- **앱 공지·운영 콘솔**: `private.app_announcements` + 공개 Edge `app-announcements`, 운영 콘솔(비공개 레포)은 스키마 `ops` 의 함수만 부른다.
