@@ -3,7 +3,7 @@ import { gzipSync } from 'node:zlib';
 import { describe, it, expect } from 'vitest';
 import { createIngestHandler, type IngestDeps } from '../../server/ingest/handler';
 import { validateRaw, rawEventFingerprint } from '../../server/ingest/raw';
-import { canonicalJson, deriveFact, sha256Hex, type Observation } from '../../server/ingest/observation';
+import { canonicalJson, canonicalJsonLiteralEscapes, deriveFact, sha256Hex, type Observation } from '../../server/ingest/observation';
 const wire=JSON.parse(readFileSync('contracts/community-ingest-v2/vectors/wire.json','utf8'));
 const uid='11111111-1111-4111-8111-111111111111';
 const b64=(o: unknown)=>Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -24,8 +24,92 @@ function post(body: unknown,compressed=false,path='/functions/v1/community-inges
 describe('private raw v2 reception',()=>{
   it('validates exact UTF-8 bytes and preserves original serialization',async()=>{
     for(const c of wire.raw_hash_cases){expect(await sha256Hex(c.body)).toBe(c.sha256);expect(Buffer.byteLength(c.body)).toBe(c.size);}
-    await expect(validateRaw(wire.envelope.events[0])).resolves.toBeUndefined();
+    await expect(validateRaw(wire.envelope.events[0])).resolves.toBe('server');
     expect(Buffer.from(wire.envelope.events[0].raw.body).toString('hex')).toBe(wire.raw_utf8_hex);
+  });
+  it('matches both canonical strings, UTF-8 bytes and hashes in the shared vectors', async () => {
+    for (const c of [...wire.supplement_hash_cases, ...wire.canonical_hash_cases]) {
+      for (const [form, encode] of [['server', canonicalJson], ['literal', canonicalJsonLiteralEscapes]] as const) {
+        const encoded = encode(c.supplement ?? c.value);
+        expect(encoded, `${c.name}/${form}`).toBe(c[form].canonical);
+        expect(Buffer.from(encoded).toString('hex')).toBe(c[form].utf8_hex);
+        expect(await sha256Hex(encoded)).toBe(c[form].sha256);
+      }
+      expect(c.server.sha256).not.toBe(c.literal.sha256);
+    }
+    for (const encode of [canonicalJson, canonicalJsonLiteralEscapes]) {
+      for (const invalid of [[], true, 1.5, -0, 2 ** 53, undefined, { nested: [] }]) expect(() => encode(invalid)).toThrow();
+    }
+  });
+  it.each(['server', 'literal'] as const)('accepts %s supplement hashes without rewriting storage or exposing content', async form => {
+    for (const c of wire.supplement_hash_cases) {
+      const env = structuredClone(wire.envelope), e = env.events[0];
+      e.supplement = c.supplement; e.supplement_sha256 = c[form].sha256;
+      const original = structuredClone(e);
+      expect(await validateRaw(e)).toBe(form);
+      expect(e).toEqual(original);
+      const { deps, calls, logs } = setup();
+      const handle = createIngestHandler(deps);
+      expect((await handle(post(env))).status).toBe(200);
+      expect((await handle(post(env))).status).toBe(200);
+      const sent = calls.filter(c => c.name === 'internal_community_ingest_v2').map(c => (c.args.p_events as Record<string, unknown>[])[0]);
+      expect(sent[0]).toEqual(sent[1]); // stable inputs to the SQL duplicate/no_change checks
+      expect(sent[0]).toMatchObject(original);
+      expect(sent[0].payload_sha256).toBe(await rawEventFingerprint(e));
+      expect(sent[0]).not.toHaveProperty('supplement_hash_form');
+      const diagnostic = (logs as Record<string, unknown>[]).filter(l => 'supplement_hash_form' in l);
+      expect(diagnostic).toHaveLength(2);
+      for (const log of diagnostic) expect(log).toEqual({ event: 'community_ingest', route: 'ingest',
+        outcome: 'raw_hash_validated', request_id: expect.any(String), supplement_hash_form: form });
+      expect(JSON.stringify(logs)).not.toContain('합성');
+      expect(JSON.stringify(logs)).not.toContain(e.supplement_sha256);
+    }
+  });
+  it('rejects supplement hashes matching neither form before storage', async () => {
+    for (const c of wire.supplement_hash_cases) {
+      const env = structuredClone(wire.envelope);
+      env.events[0].supplement = c.supplement; env.events[0].supplement_sha256 = '0'.repeat(64);
+      const { deps, calls } = setup(); const response = await createIngestHandler(deps)(post(env));
+      expect(response.status).toBe(422); expect((await response.json()).error.code).toBe('supplement_hash_mismatch');
+      expect(calls.some(c => c.name === 'internal_community_ingest_v2')).toBe(false);
+    }
+  });
+  it('does not enable literal compatibility for v1 payload hashes', async () => {
+    const source = wire.envelope.events[0];
+    const { raw: _raw, supplement: _supplement, supplement_sha256: _supplementHash,
+      client_observation: payload, client_observation_sha256: _observationHash, ...identity } = structuredClone(source);
+    payload.address = '합성\n주소';
+    for (const encode of [canonicalJson, canonicalJsonLiteralEscapes]) {
+      const env = { ...wire.envelope, protocol: 1, contract: 'community-ingest-v1', trigger: 'manual',
+        events: [{ ...identity, payload, payload_sha256: await sha256Hex(encode(payload)) }] };
+      const { deps, calls } = setup(); const response = await createIngestHandler(deps)(post(env));
+      expect(response.status).toBe(encode === canonicalJson ? 200 : 422);
+      if (encode === canonicalJsonLiteralEscapes) {
+        expect((await response.json()).error.code).toBe('payload_hash_mismatch');
+        expect(calls.some(c => c.name === 'internal_community_ingest')).toBe(false);
+      }
+    }
+  });
+  it('accepts either client_observation hash independently of the supplement form; rejects neither', async () => {
+    for (const supplementForm of ['server', 'literal'] as const) {
+      for (const encode of [canonicalJson, canonicalJsonLiteralEscapes, () => 'wrong']) {
+        const env = structuredClone(wire.envelope), e = env.events[0];
+        const c = wire.supplement_hash_cases[0];
+        e.supplement = c.supplement; e.supplement_sha256 = c[supplementForm].sha256;
+        e.client_observation.address = '합성\n\t\r\n\u0001주소';
+        e.client_observation_sha256 = await sha256Hex(encode(e.client_observation));
+        const { deps, calls } = setup(); const response = await createIngestHandler(deps)(post(env));
+        if (encode === canonicalJson || encode === canonicalJsonLiteralEscapes) {
+          expect(response.status).toBe(200);
+          const sent = (calls.find(c => c.name === 'internal_community_ingest_v2')!.args.p_events as Record<string, unknown>[])[0];
+          expect(sent.client_observation_sha256).toBe(e.client_observation_sha256);
+          expect(sent.client_observation).toEqual(e.client_observation);
+        } else {
+          expect(response.status).toBe(422); expect((await response.json()).error.code).toBe('client_observation_hash_mismatch');
+          expect(calls.some(c => c.name === 'internal_community_ingest_v2')).toBe(false);
+        }
+      }
+    }
   });
   it.each([false,true])('stores+queues without Edge parsing, gzip=%s',async compressed=>{
     const {deps,calls,logs}=setup();const r=await createIngestHandler(deps)(post(wire.envelope,compressed));

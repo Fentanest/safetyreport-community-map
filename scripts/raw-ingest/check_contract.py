@@ -8,6 +8,7 @@ Uses explicit checks (not assert, which python -O strips) and exits 1 listing ev
 """
 import argparse
 import hashlib
+import json
 import subprocess
 import sys
 import tempfile
@@ -45,6 +46,19 @@ def main() -> int:
     for name, digest in entries.items():
         path = BASE / name
         check(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == digest, f'digest mismatch: {name}')
+
+    # Both compatibility forms must stay in the shared hash vectors, with explicit UTF-8 evidence.
+    wire = json.loads((BASE / 'vectors/wire.json').read_text())
+    cases = wire.get('supplement_hash_cases', [])
+    check({c['name'] for c in cases} == {'newline', 'tab', 'crlf', 'u0001'}, 'control-character hash cases missing')
+    for case in [*cases, *wire.get('canonical_hash_cases', [])]:
+        for form in ('server', 'literal'):
+            vector = case.get(form, {})
+            encoded = vector.get('canonical', '').encode('utf-8')
+            check(encoded.hex() == vector.get('utf8_hex'), f'{case["name"]}/{form}: UTF-8 mismatch')
+            check(hashlib.sha256(encoded).hexdigest() == vector.get('sha256'), f'{case["name"]}/{form}: hash mismatch')
+        check(case.get('server', {}).get('sha256') != case.get('literal', {}).get('sha256'),
+              f'{case["name"]}: forms must differ for controls')
 
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp)

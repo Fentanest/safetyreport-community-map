@@ -99,6 +99,21 @@ await q("update private.community_ingest_config set raw_policy_version='2026-10-
 assert.equal((await call('internal_community_ingest_v2',raw)).results[0].status,'stored');
 assert.equal((await one('select count(*)::int as n from private.community_parse_queue')).n,1);
 assert.equal((await call('internal_community_ingest_v2',raw)).results[0].status,'duplicate');
+// Hash compatibility must preserve the client's hash and the existing SQL no_change predicate.
+const hashVector=JSON.parse(readFileSync('contracts/community-ingest-v2/vectors/wire.json','utf8')).supplement_hash_cases[0];
+for (const form of ['server','literal']) {
+ await db.exec('begin');
+ try {
+  await q("update private.community_report_raw set supplement=$1,supplement_sha256=$2,parse_state='dead'",[hashVector.supplement,hashVector[form].sha256]);
+  const same={...raw,event_id:'99999999-9999-4999-8999-999999999991',supplement:hashVector.supplement,supplement_sha256:hashVector[form].sha256};
+  assert.equal((await call('internal_community_ingest_v2',same)).results[0].status,'no_change',`${form}: same hash stays no_change`);
+  assert.equal((await call('internal_community_ingest_v2',same)).results[0].status,'duplicate',`${form}: same event stays duplicate`);
+  const alternate=hashVector[form==='server'?'literal':'server'].sha256;
+  const changed={...same,event_id:'99999999-9999-4999-8999-999999999992',supplement_sha256:alternate};
+  assert.equal((await call('internal_community_ingest_v2',changed)).results[0].status,'stored','switching hash forms is a content change');
+  assert.equal((await one('select supplement_sha256 from private.community_report_raw')).supplement_sha256,alternate,'stored hash is the client hash');
+ } finally { await db.exec('rollback'); }
+}
 assert.equal((await one("select payload from private.community_ingest_events where contract='community-ingest-v2'")).payload,null);
 assert.equal((await one('select last_contract from private.community_connections')).last_contract,'community-ingest-v2');
 

@@ -1,5 +1,5 @@
 /** v2 reception validates bytes and structure only. Semantic parsing runs in Python. */
-import { canonicalJson, sha256Hex } from './observation.ts';
+import { canonicalJson, canonicalJsonLiteralEscapes, sha256Hex } from './observation.ts';
 
 export class RawFailure extends Error {
   constructor(readonly code: 'raw_hash_mismatch' | 'raw_invalid' | 'raw_reporter_keys_present' | 'supplement_invalid' |
@@ -61,7 +61,17 @@ export function validSupplement(x: unknown): boolean {
     text(l.title, 1000) && text(l.report_date, 80) && text(l.status, 80) && text(l.entry_value, 200) && text(l.ssnpc_cd, 32) && text(l.ssnpc_type, 32);
 }
 
-export async function validateRaw(e: Record<string, unknown>): Promise<void> {
+type HashForm = 'server' | 'literal';
+async function matchingHashForm(value: unknown, hash: unknown): Promise<HashForm | null> {
+  if (!hex(hash)) return null;
+  // Prefer the authoritative form when both produce identical bytes (no controls).
+  if (await sha256Hex(canonicalJson(value)) === hash) return 'server';
+  if (await sha256Hex(canonicalJsonLiteralEscapes(value)) === hash) return 'literal';
+  return null;
+}
+
+/** Returns only the supplement hash form for private diagnostics; never rewrites client hashes. */
+export async function validateRaw(e: Record<string, unknown>): Promise<HashForm> {
   const r = e.raw;
   if (!object(r) || !exact(r, ['body', 'sha256', 'size', 'fetched_at', 'source']) ||
       typeof r.body !== 'string' || !hex(r.sha256) || !Number.isSafeInteger(r.size) || Number(r.size) < 1 || Number(r.size) > 1048576 ||
@@ -76,10 +86,12 @@ export async function validateRaw(e: Record<string, unknown>): Promise<void> {
   if (Object.hasOwn(parsed.result, 'C_NO') && String(parsed.result.C_NO) !== e.source_report_id) throw new RawFailure('raw_invalid');
   if (REPORTER_KEYS.some(k => Object.hasOwn(parsed.result as object, k))) throw new RawFailure('raw_reporter_keys_present');
   if (!validSupplement(e.supplement)) throw new RawFailure('supplement_invalid');
-  if (!hex(e.supplement_sha256) || await sha256Hex(canonicalJson(e.supplement)) !== e.supplement_sha256) throw new RawFailure('supplement_hash_mismatch');
+  const supplementHashForm = await matchingHashForm(e.supplement, e.supplement_sha256);
+  if (!supplementHashForm) throw new RawFailure('supplement_hash_mismatch');
   if (Object.hasOwn(e, 'client_observation')) {
-    if (!hex(e.client_observation_sha256) || await sha256Hex(canonicalJson(e.client_observation)) !== e.client_observation_sha256) throw new RawFailure('client_observation_hash_mismatch');
+    if (!await matchingHashForm(e.client_observation, e.client_observation_sha256)) throw new RawFailure('client_observation_hash_mismatch');
   }
+  return supplementHashForm;
 }
 
 /** Ledger fingerprint covers raw metadata as well as all three content hashes; no private body is journalled. */

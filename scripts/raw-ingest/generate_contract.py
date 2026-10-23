@@ -26,8 +26,20 @@ def dump(name, obj):
     (OUT / name).write_text(json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
 def sha(text):
     return hashlib.sha256(text.encode()).hexdigest()
-def canonical(obj):
-    return json.dumps(obj, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
+def canonical(value, literal=False):
+    # JS .sort() / mobile _compareUtf16: Python code-point sorting differs for astral keys.
+    def quote(s):
+        return ('"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"') if literal else json.dumps(s, ensure_ascii=False)
+    if value is None:
+        return 'null'
+    if isinstance(value, str):
+        return quote(value)
+    if type(value) is int and abs(value) <= 2**53 - 1:
+        return str(value)
+    if isinstance(value, dict):
+        return '{' + ','.join(quote(k) + ':' + canonical(value[k], literal)
+                              for k in sorted(value, key=lambda s: s.encode('utf-16-be'))) + '}'
+    raise ValueError('canonical JSON allows objects, strings, safe integers and null only')
 def obj(props, required=None):
     return {'type': 'object', 'additionalProperties': False, 'properties': props, 'required': list(props) if required is None else required}
 def ns(maximum):
@@ -103,8 +115,21 @@ e = {'event_id': '10000000-0000-4000-8000-000000000001', 'event_type': 'complete
     'supplement': supplement, 'supplement_sha256': sha(canonical(supplement)), 'client_observation': observation, 'client_observation_sha256': sha(canonical(observation))}
 env = {'protocol': 2, 'contract': 'community-ingest-v2', 'source_app': 'safetyreport', 'source_mode': 'server', 'connection_id': '20000000-0000-4000-8000-000000000001',
     'consent_grant_id': '30000000-0000-4000-8000-000000000001', 'policy_version': '2026-10-21.1', 'client_version': '3.6.0', 'parser_version': 'pc-parser-13', 'trigger': 'raw_backfill', 'events': [e]}
+def hash_forms(value):
+    return {form: {'canonical': encoded, 'utf8_hex': encoded.encode().hex(), 'sha256': sha(encoded)}
+            for form, encoded in [('server', canonical(value)), ('literal', canonical(value, literal=True))]}
+
+supplement_hash_cases = []
+for name, control in [('newline', '\n'), ('tab', '\t'), ('crlf', '\r\n'), ('u0001', '\u0001')]:
+    sample = {**supplement, 'list': {**supplement['list'], 'title': '합성 "신고"\\경로' + control + '다음😀'}}
+    supplement_hash_cases.append({'name': name, 'supplement': sample, **hash_forms(sample)})
+
 dump('vectors/wire.json', {'synthetic': True, 'envelope': env, 'raw_utf8_hex': raw_body.encode().hex(), 'supplement_canonical': canonical(supplement),
     'client_observation_canonical': canonical(observation), 'request_utf8_sha256': sha(json.dumps(env, ensure_ascii=False, separators=(',', ':'))),
+    'supplement_hash_cases': supplement_hash_cases,
+    'canonical_hash_cases': [{'name': 'utf16_keys_nested_controls_and_integer_limits',
+        'value': (value := {'\ue000': None, '😀': {'z': 9007199254740991, 'a': -9007199254740991},
+                            'key\n"\\': '\b\f\r\t\u0001/한글😀\u2028\u2029', 'zero': 0}), **hash_forms(value)}],
     'raw_hash_cases': [{'body': s, 'sha256': sha(s), 'size': len(s.encode())} for s in ['{"result":{"a":1.0,"b":2}}', '{"result":{"b":2,"a":1}}', '{ "result": {} }', '{"result":{"문자":"한글😀"}}']]})
 
 def manifest():

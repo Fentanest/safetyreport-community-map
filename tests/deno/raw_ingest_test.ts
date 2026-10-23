@@ -1,5 +1,5 @@
 import { validateRaw, rawEventFingerprint } from '../../server/ingest/raw.ts';
-import { canonicalJson, sha256Hex } from '../../server/ingest/observation.ts';
+import { canonicalJson, canonicalJsonLiteralEscapes, sha256Hex } from '../../server/ingest/observation.ts';
 import { createIngestHandler, gunzipLimited, type IngestDeps } from '../../server/ingest/handler.ts';
 const v=JSON.parse(await Deno.readTextFile(new URL('../../contracts/community-ingest-v2/vectors/wire.json',import.meta.url)));
 function check(x:boolean, what='synthetic vector mismatch') { if(!x) throw new Error(what); }
@@ -37,6 +37,34 @@ function gzipRequest(body: Uint8Array): Request {
   return new Request('https://fixture.invalid/functions/v1/community-ingest', { method: 'POST', body: body as Uint8Array<ArrayBuffer>,
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'content-encoding': 'gzip' } });
 }
+
+Deno.test('v2 handler accepts both control-character hash forms and rejects neither', async () => {
+  for (const c of [...v.supplement_hash_cases, ...v.canonical_hash_cases]) {
+    for (const [form, encode] of [['server', canonicalJson], ['literal', canonicalJsonLiteralEscapes]] as const) {
+      const encoded = encode(c.supplement ?? c.value);
+      check(encoded === c[form].canonical, `${c.name}/${form} canonical bytes`);
+      check(await sha256Hex(encoded) === c[form].sha256, `${c.name}/${form} SHA-256`);
+    }
+  }
+  for (const c of v.supplement_hash_cases) {
+    for (const form of ['server', 'literal', 'invalid']) {
+      const env = structuredClone(v.envelope), e = env.events[0];
+      e.supplement = c.supplement;
+      e.supplement_sha256 = form === 'invalid' ? '0'.repeat(64) : c[form].sha256;
+      e.client_observation.address = c.supplement.list.title;
+      e.client_observation_sha256 = await sha256Hex((form === 'literal' ? canonicalJsonLiteralEscapes : canonicalJson)(e.client_observation));
+      const calls: string[] = [];
+      const request = new Request('https://fixture.invalid/functions/v1/community-ingest', { method: 'POST',
+        body: JSON.stringify(env), headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' } });
+      const response = await createIngestHandler(deps(true, calls))(request);
+      check(response.status === (form === 'invalid' ? 422 : 200), `${c.name}/${form} response`);
+      if (form === 'invalid') {
+        check((await response.json()).error.code === 'supplement_hash_mismatch');
+        check(!calls.includes('internal_community_ingest_v2'), 'no invalid hash stored');
+      } else check(calls.includes('internal_community_ingest_v2'), 'valid hash reaches storage');
+    }
+  }
+});
 
 Deno.test('gzip bomb: 300MB of zeros is rejected with 413 without large RSS growth (Deno runtime)', async () => {
   const bomb = await zerosGzip(300);

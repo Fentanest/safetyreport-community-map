@@ -433,7 +433,9 @@ export function createIngestHandler(deps: IngestDeps): (request: Request) => Pro
             if (!isObservation(raw.client_observation) || hasLoneSurrogate(raw.client_observation) || hasNul(raw.client_observation)) fail('schema_invalid');
           }
           // 해시 쌍·원문 무결성은 항상 검증한다(불일치는 거절).
-          await validateRaw(raw);
+          const supplementHashForm = await validateRaw(raw);
+          deps.log?.({ event: 'community_ingest', route, outcome: 'raw_hash_validated', request_id: rid,
+            supplement_hash_form: supplementHashForm });
           let ev = raw;
           if (Object.hasOwn(raw, 'client_observation') && validateObservationValues(raw.client_observation as Observation)) {
             // 선택적 비교용 관찰값의 "값" 이 잘못됐다고 원문 보존까지 막지 않는다: 관찰값(과 해시 쌍)만 버리고 저장한다.

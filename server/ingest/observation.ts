@@ -78,6 +78,25 @@ export function canonicalJson(value: unknown): string {
   throw new Error(`canonical JSON does not allow ${Array.isArray(value) ? 'arrays' : typeof value}`);
 }
 
+/** v2 compatibility with mobile <=2.5.1: only quote/backslash are escaped, even in keys.
+ * Controls remain literal UTF-8 bytes (this hash input need not be valid JSON).
+ * Keep the contract's safe-integer/object/string/null domain; arrays are not allowed in either DTO. */
+export function canonicalJsonLiteralEscapes(value: unknown): string {
+  const quote = (s: string) => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  if (value === null) return 'null';
+  if (typeof value === 'string') return quote(value);
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value) || Object.is(value, -0)) throw new Error('canonical JSON allows safe integers only');
+    return String(value);
+  }
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const entries = Object.keys(value as Record<string, unknown>).sort()
+      .map(key => `${quote(key)}:${canonicalJsonLiteralEscapes((value as Record<string, unknown>)[key])}`);
+    return `{${entries.join(',')}}`;
+  }
+  throw new Error(`canonical JSON does not allow ${Array.isArray(value) ? 'arrays' : typeof value}`);
+}
+
 export async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
