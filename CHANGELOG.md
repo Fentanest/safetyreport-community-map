@@ -1,6 +1,11 @@
 # Changelog
 
-## 2026-10-22 · 1회 전송 재개·점검 스위치·필수 버전·앱 공지·운영 콘솔 DB (미배포)
+## 2026-10-22 · 1회 전송 재개·점검 스위치·필수 버전·앱 공지·운영 콘솔 DB (206·지도 웹 배포됨)
+
+- 2026-10-24 배포 상태 대조: 206 migration `202610220100`(auth)·`202610220200` 적용, Edge `community-ingest`·`my-analytics`·`app-announcements`·`public-analytics`·
+  `user-rankings` 소스가 main(`59075c0`)과 해시 일치(`my-reports` 는 주석 한 줄만 다름), 라우터 JWT 예외에 `app-announcements` 있음, 지도 웹 Pages 는 `59075c0` 배포.
+  운영 콘솔은 `9fcd6c5` 로 동작(이후 커밋은 README·예시 compose 문서뿐). 파서 워커 `community-parser:map-b19e837` 은 파서 레포 최신과 파싱 코드가 같아(경로 한 줄만 다름)
+  다시 빌드하지 않았다. 필수 버전(`client_requirement`)은 아직 걸지 않았다(배포 문서 7단계: 두 앱 100% 출시 확인 뒤).
 
 - migration `202610220200_backfill_resume_ops.sql`: 업로드 일시 중지(재개 시각은 읽는 쪽이 판정)·필수 버전 설정과 변경 이력, 진행 보고(`last_progress`,
   진행 기록 30일·연결당 200건), 업로드 거절 수, 앱 공지 표·공개 읽기 함수, 운영 콘솔용 `ops` 스키마 함수·`ops_admins`·`community_ops` 역할, 대시보드 분류 함수.
